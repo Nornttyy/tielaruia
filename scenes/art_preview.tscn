@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://teilaruia_art_preview"]
+
+[ext_resource type="Script" path="res://scripts/art_preview.gd" id="1_artprev"]
+
+[node name="ArtPreview" type="Node2D"]
+script = ExtResource("1_artprev")

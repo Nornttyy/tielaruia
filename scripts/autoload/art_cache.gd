@@ -1,0 +1,83 @@
+# 启动时预生成所有像素画资源并缓存。Autoload 单例。
+# 场景脚本通过 ArtCache.player_frames / ArtCache.get_inventory_icon("planks") 等获取。
+#
+# 在 project.godot 注册：
+#   [autoload]
+#   ArtCache="*res://scripts/autoload/art_cache.gd"
+extends Node
+
+# 用 preload 而非 class_name 引用，避免 autoload 启动时机早于 class_name 索引扫描的问题。
+const PixelArt = preload("res://scripts/art/pixel_art.gd")
+const BlocksArt = preload("res://scripts/art/blocks_art.gd")
+const PlayerArt = preload("res://scripts/art/player_art.gd")
+const SlimeArt = preload("res://scripts/art/slime_art.gd")
+const VillagerArt = preload("res://scripts/art/villager_art.gd")
+const DoorArt = preload("res://scripts/art/door_art.gd")
+const ItemsArt = preload("res://scripts/art/items_art.gd")
+
+var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture
+var item_icons: Dictionary = {}            # String (item_id) -> ImageTexture
+var door_closed_texture: ImageTexture
+var door_open_texture: ImageTexture
+var player_frames: SpriteFrames
+var slime_frames: SpriteFrames
+var villager_frames: SpriteFrames
+
+
+func _ready() -> void:
+	_build_blocks()
+	_build_items()
+	_build_doors()
+	_build_entities()
+
+
+func _build_blocks() -> void:
+	var tile_ids := [
+		BlocksArt.GRASS, BlocksArt.DIRT, BlocksArt.STONE, BlocksArt.SAND,
+		BlocksArt.LOG, BlocksArt.LEAVES, BlocksArt.PLANKS, BlocksArt.WORKBENCH,
+		BlocksArt.DOOR, BlocksArt.BEDROCK,
+	]
+	for tile_id in tile_ids:
+		block_textures[tile_id] = BlocksArt.get_texture(tile_id)
+
+
+func _build_items() -> void:
+	for item_id in ["wood_sword", "wood_pickaxe", "wood_axe", "stick", "slime_ball"]:
+		item_icons[item_id] = ItemsArt.get_icon(item_id)
+
+
+func _build_doors() -> void:
+	door_closed_texture = DoorArt.get_closed_texture()
+	door_open_texture = DoorArt.get_open_texture()
+
+
+func _build_entities() -> void:
+	player_frames = PlayerArt.build_sprite_frames()
+	slime_frames = SlimeArt.build_sprite_frames()
+	villager_frames = VillagerArt.build_sprite_frames()
+
+
+# 统一的"取背包/热键栏图标"接口。
+# - 方块类物品 (planks/log/dirt 等)：返回 16×16 方块纹理
+# - 工具/素材物品 (wood_sword/stick 等)：返回 16×16 图标
+# 物品 id → tile id 的映射在这里硬编码 (M2 改 ItemDatabase 后由 Item.placeable_tile_id 自动驱动)。
+const _ITEM_TO_TILE := {
+	"grass": BlocksArt.GRASS,
+	"dirt": BlocksArt.DIRT,
+	"stone": BlocksArt.STONE,
+	"sand": BlocksArt.SAND,
+	"log": BlocksArt.LOG,
+	"leaves": BlocksArt.LEAVES,
+	"planks": BlocksArt.PLANKS,
+	"workbench": BlocksArt.WORKBENCH,
+	"door": BlocksArt.DOOR,
+}
+
+
+func get_inventory_icon(item_id: String) -> ImageTexture:
+	if _ITEM_TO_TILE.has(item_id):
+		return block_textures[_ITEM_TO_TILE[item_id]]
+	if item_icons.has(item_id):
+		return item_icons[item_id]
+	push_warning("未知 item icon: %s" % item_id)
+	return null

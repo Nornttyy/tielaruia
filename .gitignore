@@ -1,0 +1,15 @@
+# Godot 自动生成
+.godot/
+*.translation
+*.import
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
+
+# 用户存档 (开发期暂留，发布时再处理)
+# user://*  (不影响 git，只是提示)
