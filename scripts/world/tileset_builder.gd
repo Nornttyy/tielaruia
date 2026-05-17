@@ -20,17 +20,16 @@ static func build() -> TileSet:
 		var source := TileSetAtlasSource.new()
 		source.texture = ArtCache.block_textures[tile_id]
 		source.texture_region_size = Vector2i(16, 16)
+		# 先挂到 TileSet (source 才能感知 physics layer 数量)，再 create_tile + 设碰撞
+		ts.add_source(source, tile_id)
 		source.create_tile(Vector2i.ZERO)
 
-		# 给实心 tile 加碰撞 (leaves 不实心)
 		if Tiles.is_solid(tile_id):
-			# 注意：source.get_tile_data 返回 Godot 内建 TileData 类型，故省略类型注解
+			# source.get_tile_data 返回 Godot 内建 TileData 类型 (与本项目 Tiles autoload 不同)
 			var tile_props = source.get_tile_data(Vector2i.ZERO, 0)
 			tile_props.add_collision_polygon(0)
 			tile_props.set_collision_polygon_points(0, 0, PackedVector2Array([
 				Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8),
 			]))
-
-		ts.add_source(source, tile_id)
 
 	return ts
