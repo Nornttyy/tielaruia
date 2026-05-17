@@ -666,3 +666,19 @@ const VILLAGER_LINES = [
 - **v1（2026-05-17）** — 草案，等待用户复审
 - 之后任何变更：本文件新增"变更日志"章节
 
+---
+
+## 18. 实施进度
+
+- ✅ **P1 Foundation** — tag `demo-p1-foundation` — 2026-05-17
+  - GUT 9.3.0 接入 + 23 个自动化测试通过
+  - TileData (→ autoload `Tiles`，规避内建类冲突) + WorldGenerator + SkyLightGrid
+  - TileSetBuilder 程序构建 (含实心物理 polygon)
+  - Player CharacterBody2D + 4 状态动画 + coyote time
+  - World 场景 (1024×256 tile + 玩家出生 + 相机平滑跟随)
+  - Debug HUD (FPS / Pos / Tile / Dark，F3 切换)
+  - 用户验收方式：信任 smoke integration test (3 个)，不开编辑器
+- ⏳ **P2 Items & Interaction** — 待开始（挖/放/掉落/拾取/工具）
+- ⏳ **P3 Crafting & UI** — 待开始（背包/合成台/6 配方）
+- ⏳ **P4 Content & Persistence** — 待开始（史莱姆/村民/村庄/门/存档）
+
