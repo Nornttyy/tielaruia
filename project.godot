@@ -11,7 +11,7 @@ run/main_scene="res://scenes/art_preview.tscn"
 
 [autoload]
 
-TileData="*res://scripts/world/tile_data.gd"
+Tiles="*res://scripts/world/tile_data.gd"
 ArtCache="*res://scripts/autoload/art_cache.gd"
 
 [display]
