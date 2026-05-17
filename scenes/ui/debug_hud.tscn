@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3 uid="uid://b3teilaruiadhud"]
+
+[ext_resource type="Script" path="res://scripts/debug/debug_hud.gd" id="1_dhud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0, 0, 0, 0.55)
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+
+[node name="DebugHUD" type="CanvasLayer"]
+script = ExtResource("1_dhud")
+
+[node name="Panel" type="PanelContainer" parent="."]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 220.0
+offset_bottom = 96.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Label" type="Label" parent="Panel"]
+text = "FPS: --
+Pos: --
+Tile: --
+Dark: --"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
