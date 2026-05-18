@@ -1,8 +1,6 @@
 # 粒子贴图程序生成。所有方法 static，返回 ImageTexture。
 extends RefCounted
 
-const PixelArt = preload("res://scripts/art/pixel_art.gd")
-
 
 # 3x3 实心小方块，单色
 static func get_block_chip(color: Color) -> ImageTexture:

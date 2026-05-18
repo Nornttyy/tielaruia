@@ -53,9 +53,9 @@ static func get_texture(shape: int, color: Color) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
-static func all_shapes() -> Array:
+static func all_shapes() -> Array[int]:
 	return [SHAPE_FLAT, SHAPE_PUFF, SHAPE_LONG]
 
 
-static func all_colors() -> Array:
+static func all_colors() -> Array[Color]:
 	return [COLOR_NEAR, COLOR_MID, COLOR_FAR]
