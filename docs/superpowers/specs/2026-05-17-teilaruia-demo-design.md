@@ -685,7 +685,12 @@ const VILLAGER_LINES = [
   - FloatingPrompt 「按 E」提示框架 (API: show_prompt/hide_prompt)
   - 57 个测试全过
   - P2 接 5 个 hook 即可接通 mining/place 的视觉反馈
-- ⏳ **P2 Items + Interaction + Crafting** — 待开始（挖/放/掉落/拾取/热键栏 + 2x2/3x3 合成 + 6 配方）
-- ⏳ **P3 Crafting & UI** — 待开始（背包/合成台/6 配方）
-- ⏳ **P4 Content & Persistence** — 待开始（史莱姆/村民/村庄/门/存档）
+- ✅ **P2 Items + Interaction + Crafting** — tag `demo-p2-items` — 2026-05-18
+  - 挖/放/掉落/拾取/热键栏 UI (9 格图标 + 计数 + 高亮)
+  - Inventory (36 槽) + ItemDB (14 物品) + RecipeDB (6 配方) + RecipeMatcher (镜像 + 平移 + 边界)
+  - 2×2 内置合成 (按 C) + 3×3 工作台合成 (按 E + chebyshev ≤ 2)
+  - 工具 tier 强制 (徒手不挖石、木镚开锁 stone、木斧砍 LOG ×3)
+  - 接通 P1.5 视觉：挖进度裂纹 + 块破碎粒子 + 放下弹动
+  - 114 个自动化测试全过 (整局闭环 + 60s 长跑)
+- ⏳ **P3** — 内容 + 持久化 (史莱姆 / 村民 / 门 / 存档 / 主背包 UI / 拖拽 / shift-move)
 
