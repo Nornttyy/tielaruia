@@ -14,6 +14,8 @@ const SlimeArt = preload("res://scripts/art/slime_art.gd")
 const VillagerArt = preload("res://scripts/art/villager_art.gd")
 const DoorArt = preload("res://scripts/art/door_art.gd")
 const ItemsArt = preload("res://scripts/art/items_art.gd")
+const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
+const CloudsArt = preload("res://scripts/fx/clouds_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture
 var item_icons: Dictionary = {}            # String (item_id) -> ImageTexture
@@ -22,6 +24,8 @@ var door_open_texture: ImageTexture
 var player_frames: SpriteFrames
 var slime_frames: SpriteFrames
 var villager_frames: SpriteFrames
+var cloud_textures: Array = []  # Array of {shape, color, texture}
+var dust_puff_texture: ImageTexture
 
 
 func _ready() -> void:
@@ -29,6 +33,8 @@ func _ready() -> void:
 	_build_items()
 	_build_doors()
 	_build_entities()
+	_build_clouds()
+	_build_particles()
 
 
 func _build_blocks() -> void:
@@ -72,6 +78,20 @@ const _ITEM_TO_TILE := {
 	"workbench": BlocksArt.WORKBENCH,
 	"door": BlocksArt.DOOR,
 }
+
+
+func _build_clouds() -> void:
+	for shape in CloudsArt.all_shapes():
+		for color in CloudsArt.all_colors():
+			cloud_textures.append({
+				"shape": shape,
+				"color": color,
+				"texture": CloudsArt.get_texture(shape, color),
+			})
+
+
+func _build_particles() -> void:
+	dust_puff_texture = ParticlesArt.get_dust_puff()
 
 
 func get_inventory_icon(item_id: String) -> ImageTexture:
