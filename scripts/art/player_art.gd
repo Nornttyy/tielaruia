@@ -12,29 +12,29 @@ const PixelArt = preload("res://scripts/art/pixel_art.gd")
 
 const PALETTE := {
 	".": Color(0, 0, 0, 0),
-	"h": Color8(93, 64, 55),     # 头发深棕
-	"H": Color8(62, 39, 35),     # 头发阴影
-	"s": Color8(255, 204, 153),  # 皮肤
+	"h": Color8(121, 85, 72),    # 头发暖棕
+	"H": Color8(78, 52, 46),     # 头发阴影
+	"s": Color8(255, 218, 185),  # 皮肤 (略亮)
 	"k": Color8(217, 168, 122),  # 皮肤阴影
-	"e": Color8(26, 26, 26),     # 眼睛
-	"m": Color8(215, 96, 96),    # 嘴
-	"w": Color8(250, 250, 250),  # 衬衫
-	"W": Color8(204, 204, 204),  # 衬衫阴影
-	"b": Color8(25, 118, 210),   # 裤子蓝
-	"B": Color8(13, 71, 161),    # 裤子阴影
-	"o": Color8(66, 66, 66),     # 鞋
-	"O": Color8(33, 33, 33),     # 鞋阴影
+	"e": Color8(20, 20, 20),     # 眼睛
+	"m": Color8(200, 80, 80),    # 嘴
+	"w": Color8(229, 57, 53),    # 衬衫红
+	"W": Color8(183, 28, 28),    # 衬衫红阴影
+	"b": Color8(38, 70, 130),    # 裤子深蓝 (牛仔感)
+	"B": Color8(19, 47, 90),     # 裤子阴影
+	"o": Color8(74, 47, 26),     # 靴棕
+	"O": Color8(48, 30, 15),     # 靴阴影
 }
 
 # 基础站姿 (脚踏地面在 row 23)
 const _IDLE_A := [
 	"............",
 	"....hHhh....",
-	"...HssssH...",
-	"...hseesh...",
-	"...kssssk...",
+	"...HsssssH..",
+	"...hsssssh..",
+	"...hsesesh..",
+	"...ksssssk..",
 	"...ssmmss...",
-	"...kssssk...",
 	"....skss....",
 	"...wwwwww...",
 	"..wWwwwwWw..",
@@ -59,11 +59,11 @@ const _IDLE_B := [
 	"............",
 	"............",
 	"....hHhh....",
-	"...HssssH...",
-	"...hseesh...",
-	"...kssssk...",
+	"...HsssssH..",
+	"...hsssssh..",
+	"...hsesesh..",
+	"...ksssssk..",
 	"...ssmmss...",
-	"...kssssk...",
 	"....skss....",
 	"...wwwwww...",
 	"..wWwwwwWw..",
@@ -86,11 +86,11 @@ const _IDLE_B := [
 const _WALK_A := [
 	"............",
 	"....hHhh....",
-	"...HssssH...",
-	"...hseesh...",
-	"...kssssk...",
+	"...HsssssH..",
+	"...hsssssh..",
+	"...hsesesh..",
+	"...ksssssk..",
 	"...ssmmss...",
-	"...kssssk...",
 	"....skss....",
 	"...wwwwww...",
 	"..wWwwwwWw..",
@@ -117,11 +117,11 @@ const _WALK_B := _IDLE_A
 const _WALK_C := [
 	"............",
 	"....hHhh....",
-	"...HssssH...",
-	"...hseesh...",
-	"...kssssk...",
+	"...HsssssH..",
+	"...hsssssh..",
+	"...hsesesh..",
+	"...ksssssk..",
 	"...ssmmss...",
-	"...kssssk...",
 	"....skss....",
 	"...wwwwww...",
 	"..wWwwwwWw..",
@@ -145,11 +145,11 @@ const _WALK_C := [
 const _JUMP := [
 	"............",
 	"....hHhh....",
-	"...HssssH...",
-	"...hseesh...",
-	"...kssssk...",
+	"...HsssssH..",
+	"...hsssssh..",
+	"...hsesesh..",
+	"...ksssssk..",
 	"...ssmmss...",
-	"...kssssk...",
 	"....skss....",
 	".s.wwwwww.s.",   # 手臂上抬
 	".sWwwwwwwWs.",
@@ -173,11 +173,11 @@ const _JUMP := [
 const _FALL := [
 	"............",
 	"....hHhh....",
-	"...HssssH...",
-	"...hseesh...",
-	"...kssssk...",
+	"...HsssssH..",
+	"...hsssssh..",
+	"...hsesesh..",
+	"...ksssssk..",
 	"...ssmmss...",
-	"...kssssk...",
 	"....skss....",
 	"s..wwwwww..s",   # 手臂下垂展开
 	"sWwwwwwwwwWs",

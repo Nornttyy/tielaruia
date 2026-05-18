@@ -97,11 +97,13 @@ const _P_BEDROCK := {
 # --- 图案 (每方块 16x16) ---
 
 const _GRASS := [
-	"aaGgaGGgaGgGagGa",
-	"gaGGagGgaGgGGaGg",
-	"gggggggggggggggg",
-	"ggdgggggggdggggg",
-	"ddgdgggggggdgggg",
+	"aaaaaaaaaaaaaaaa",
+	"gaagagagagagaaga",
+	"gggGgGgGgggGgggg",
+	"GGGGGGGGGGGGGGGG",
+	"gddgdGgdgddggGgg",
+	"ddgdgddgdgGggddd",
+	"dddgddddddddgddd",
 	"dddddddddddddddd",
 	"dDddddDdddddddDd",
 	"ddDddddddddddddd",
@@ -110,9 +112,7 @@ const _GRASS := [
 	"ddddddddDdddDddd",
 	"DddddDdddddddddd",
 	"dddDddddddddDddd",
-	"dDdddddDdddddddd",
-	"ddddddddDdddddDd",
-	"DddDdDDddDddddDD",
+	"dDdddddDdddddddD",
 ]
 
 const _DIRT := [
@@ -135,22 +135,22 @@ const _DIRT := [
 ]
 
 const _STONE := [
-	"sssssSssssslssss",
-	"sssSsssssssssSss",
-	"sslsssssksssssss",
+	"SSsSsSsSsSsSsSSS",
+	"SssssssssssssssS",
+	"sslsssssksssslss",
 	"ssssssksssssssss",
 	"SsssssssssssssSs",
-	"sssssksssssssssl",
+	"sssssksslsssssss",
 	"ssslsssksssssSss",
 	"sssssssssksssssS",
 	"sslsssssssssssss",
-	"sssssksssssksssS",
+	"sssssksssslksssS",
 	"sssssssssssssSss",
 	"sslsssksssssssss",
-	"sSssssssssssksss",
-	"sssssssSsssssSss",
-	"slssssssssksssss",
-	"SssssSssSslssSss",
+	"sSsssslsssssksss",
+	"sssssssSssssksss",
+	"SssssssssssksSsS",
+	"SSsSsSsSsSsSsSSS",
 ]
 
 const _SAND := [
