@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b13teilaruiclouds"]
+
+[ext_resource type="Script" path="res://scripts/world/cloud_layer.gd" id="1_cl"]
+
+[node name="CloudLayer" type="ParallaxBackground"]
+script = ExtResource("1_cl")
