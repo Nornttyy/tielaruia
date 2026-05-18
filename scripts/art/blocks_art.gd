@@ -324,16 +324,16 @@ const _PATTERN_MAP := {
 
 
 const _PALETTES := {
-	GRASS:     [Color(0.30, 0.65, 0.27), Color(0.18, 0.42, 0.18)],
-	DIRT:      [Color(0.50, 0.34, 0.22), Color(0.32, 0.20, 0.12)],
-	STONE:     [Color(0.60, 0.60, 0.62), Color(0.38, 0.38, 0.40)],
-	SAND:      [Color(0.92, 0.84, 0.55), Color(0.70, 0.60, 0.38)],
-	LOG:       [Color(0.55, 0.36, 0.20), Color(0.34, 0.20, 0.10)],
-	LEAVES:    [Color(0.32, 0.60, 0.28), Color(0.18, 0.36, 0.16)],
-	PLANKS:    [Color(0.78, 0.58, 0.34), Color(0.50, 0.36, 0.20)],
-	WORKBENCH: [Color(0.62, 0.42, 0.22), Color(0.36, 0.24, 0.14)],
-	DOOR:      [Color(0.50, 0.34, 0.20), Color(0.32, 0.20, 0.10)],
-	BEDROCK:   [Color(0.25, 0.25, 0.28), Color(0.10, 0.10, 0.12)],
+	GRASS:     [_P_GRASS["g"],     _P_GRASS["G"]],
+	DIRT:      [_P_DIRT["d"],      _P_DIRT["D"]],
+	STONE:     [_P_STONE["s"],     _P_STONE["S"]],
+	SAND:      [_P_SAND["y"],      _P_SAND["Y"]],
+	LOG:       [_P_LOG["b"],       _P_LOG["B"]],
+	LEAVES:    [_P_LEAVES["l"],    _P_LEAVES["L"]],
+	PLANKS:    [_P_PLANKS["p"],    _P_PLANKS["P"]],
+	WORKBENCH: [_P_WORKBENCH["p"], _P_WORKBENCH["P"]],
+	DOOR:      [_P_DOOR["d"],      _P_DOOR["D"]],
+	BEDROCK:   [_P_BEDROCK["b"],   _P_BEDROCK["B"]],
 }
 const _DEFAULT_PALETTE := [Color(0.7, 0.7, 0.7), Color(0.4, 0.4, 0.4)]
 
