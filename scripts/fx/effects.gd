@@ -3,6 +3,7 @@
 extends Node
 
 const BlockBreakParticleScene = preload("res://scenes/fx/block_break_particle.tscn")
+const DustParticleScene = preload("res://scenes/fx/dust_particle.tscn")
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
 const TILE_SIZE := 16
 const CHIPS_PER_BREAK := 6
@@ -41,15 +42,25 @@ func spawn_place_bounce(tile_coord: Vector2i) -> void:
 
 
 func spawn_jump_dust(world_pos: Vector2) -> void:
-	# Task 5 实现
-	pass
+	var parent: Node = _root()
+	for i in 4:
+		var d = DustParticleScene.instantiate()
+		parent.add_child(d)
+		d.setup(world_pos + Vector2(randf_range(-5, 5), randf_range(-2, 2)),
+			randf_range(0.7, 1.0))
 
 
 func spawn_land_dust(world_pos: Vector2) -> void:
-	# Task 5 实现
-	pass
+	var parent: Node = _root()
+	for i in 6:
+		var d = DustParticleScene.instantiate()
+		parent.add_child(d)
+		d.setup(world_pos + Vector2(randf_range(-8, 8), randf_range(-1, 1)),
+			randf_range(1.0, 1.4))
 
 
 func spawn_walk_puff(world_pos: Vector2) -> void:
-	# Task 5 实现
-	pass
+	var parent: Node = _root()
+	var d = DustParticleScene.instantiate()
+	parent.add_child(d)
+	d.setup(world_pos + Vector2(randf_range(-2, 2), 0), 0.6)

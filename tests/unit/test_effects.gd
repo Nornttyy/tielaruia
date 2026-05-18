@@ -42,3 +42,32 @@ func test_chips_auto_free_after_lifetime():
 	# 0.5s = 30 帧 @ 60fps; 等 40 帧确保过期
 	await wait_frames(40)
 	assert_eq(root.get_child_count(), 0, "chips 应自删")
+
+
+func test_spawn_jump_dust_creates_4():
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	Effects.spawn_jump_dust(Vector2(100, 100))
+	await wait_frames(1)
+	assert_eq(root.get_child_count(), 4)
+
+
+func test_spawn_walk_puff_creates_1():
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	Effects.spawn_walk_puff(Vector2(0, 0))
+	await wait_frames(1)
+	assert_eq(root.get_child_count(), 1)
+
+
+func test_dust_auto_frees():
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	Effects.spawn_walk_puff(Vector2.ZERO)
+	await wait_frames(1)
+	assert_eq(root.get_child_count(), 1)
+	await wait_frames(30)  # 0.5s
+	assert_eq(root.get_child_count(), 0)

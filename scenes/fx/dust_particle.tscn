@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b9teilaruiadust"]
+
+[ext_resource type="Script" path="res://scripts/fx/dust_particle.gd" id="1_dust"]
+
+[node name="DustParticle" type="Sprite2D"]
+script = ExtResource("1_dust")
