@@ -60,3 +60,9 @@ func get_player() -> CharacterBody2D:
 
 func get_crack_overlay() -> Node:
 	return $CrackOverlay
+
+
+func _set_tile(x: int, y: int, tile_id: int) -> void:
+	if x < 0 or x >= WORLD_WIDTH or y < 0 or y >= WORLD_HEIGHT:
+		return
+	_tiles[x][y] = tile_id

@@ -6,9 +6,11 @@ var _width: int = 0
 var _height: int = 0
 # _exposed[x][y] = true 表示 (x,y) 可被天光直射 (本格不实心 + 上方无实心遮挡)
 var _exposed: Array = []
+var _tiles_ref: Array = []
 
 
 func recompute_from(tiles: Array) -> void:
+	_tiles_ref = tiles
 	_width = tiles.size()
 	if _width == 0:
 		_height = 0
@@ -20,10 +22,11 @@ func recompute_from(tiles: Array) -> void:
 		_exposed[x] = _compute_column(tiles[x])
 
 
-func invalidate_column(x: int, tiles: Array) -> void:
+func invalidate_column(x: int, tiles: Variant = null) -> void:
 	if x < 0 or x >= _width:
 		return
-	_exposed[x] = _compute_column(tiles[x])
+	var col: Array = (tiles[x] if tiles != null else _tiles_ref[x])
+	_exposed[x] = _compute_column(col)
 
 
 func is_sky_exposed(x: int, y: int) -> bool:

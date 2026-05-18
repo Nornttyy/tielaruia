@@ -38,3 +38,60 @@ func test_invalid_tile_not_in_reach():
 	var player = main.get_node("World").get_player()
 	var action: Node2D = player.get_node("PlayerAction")
 	assert_false(action.in_reach(Vector2i(-1, -1)))
+
+
+func test_mine_dirt_with_bare_hands():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	await wait_frames(2)
+	var world = main.get_node("World")
+	var player = world.get_player()
+	var action: Node2D = player.get_node("PlayerAction")
+	var terrain: TileMapLayer = world.get_node("TerrainLayer")
+	var pt: Vector2i = action.player_tile()
+	var target: Vector2i = pt + Vector2i(2, 0)
+	terrain.set_cell(target, Tiles.DIRT, Vector2i.ZERO)
+	world._set_tile(target.x, target.y, Tiles.DIRT)
+	action.aim_override = target
+	action.primary_override = true
+	await wait_frames(60)
+	assert_eq(terrain.get_cell_source_id(target), -1, "dirt 应被挖空")
+
+
+func test_cannot_mine_stone_bare_hand():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	await wait_frames(2)
+	var world = main.get_node("World")
+	var player = world.get_player()
+	var action: Node2D = player.get_node("PlayerAction")
+	var terrain: TileMapLayer = world.get_node("TerrainLayer")
+	var pt: Vector2i = action.player_tile()
+	var target: Vector2i = pt + Vector2i(2, 0)
+	terrain.set_cell(target, Tiles.STONE, Vector2i.ZERO)
+	world._set_tile(target.x, target.y, Tiles.STONE)
+	action.aim_override = target
+	action.primary_override = true
+	await wait_frames(60)
+	assert_eq(terrain.get_cell_source_id(target), Tiles.STONE, "stone 不应被徒手挖空")
+
+
+func test_can_mine_stone_with_pickaxe():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	await wait_frames(2)
+	var world = main.get_node("World")
+	var player = world.get_player()
+	var action: Node2D = player.get_node("PlayerAction")
+	var inv: Node = player.get_node("PlayerInventory")
+	var terrain: TileMapLayer = world.get_node("TerrainLayer")
+	inv.inventory.add("wood_pickaxe", 1)
+	inv.set_hotbar_selection(0)
+	var pt: Vector2i = action.player_tile()
+	var target: Vector2i = pt + Vector2i(2, 0)
+	terrain.set_cell(target, Tiles.STONE, Vector2i.ZERO)
+	world._set_tile(target.x, target.y, Tiles.STONE)
+	action.aim_override = target
+	action.primary_override = true
+	await wait_frames(90)
+	assert_eq(terrain.get_cell_source_id(target), -1, "有镚应能挖空 stone")
