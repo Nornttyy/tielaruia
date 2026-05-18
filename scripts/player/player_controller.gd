@@ -80,6 +80,7 @@ func _physics_process(delta: float) -> void:
 
 	# 动画状态机
 	_update_animation(dir, on_floor_after)
+	_update_workbench_prompt()
 
 
 func _update_animation(dir: float, on_floor: bool) -> void:
@@ -92,3 +93,23 @@ func _update_animation(dir: float, on_floor: bool) -> void:
 		next_anim = "idle"
 	if sprite.animation != next_anim:
 		sprite.play(next_anim)
+
+
+func _update_workbench_prompt() -> void:
+	var fp: CanvasLayer = get_tree().get_first_node_in_group("floating_prompt")
+	if fp == null:
+		return
+	var terrain := get_tree().get_first_node_in_group("terrain_layer") as TileMapLayer
+	if terrain == null:
+		return
+	var foot := global_position
+	var pt := Vector2i(int(floor(foot.x / 16.0)), int(floor(foot.y / 16.0)))
+	for dx in range(-2, 3):
+		for dy in range(-2, 3):
+			var coord := pt + Vector2i(dx, dy)
+			if terrain.get_cell_source_id(coord) == Tiles.WORKBENCH:
+				fp.show_prompt(Vector2(coord.x * 16 + 8, coord.y * 16 - 4), "按 E")
+				return
+	# 没找到
+	if fp.is_showing():
+		fp.hide_prompt()
