@@ -30,12 +30,59 @@ var _mining_progress: float = 0.0
 
 
 func _physics_process(delta: float) -> void:
+	# C/E 不管面板开关都响应 (用于开/关面板)
+	if Input.is_action_just_pressed("crafting_2x2"):
+		_toggle_crafting(2)
+	if Input.is_action_just_pressed("interact"):
+		_try_open_workbench_or_close()
+	# 其余动作面板开则跳过
+	if _crafting_open():
+		return
 	_update_mining(delta)
 	if place_override:
 		try_place()
 		place_override = false
 	if Input.is_action_just_pressed("secondary"):
 		try_place()
+
+
+func _crafting_open() -> bool:
+	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
+	return cp != null and cp.is_open()
+
+
+func _toggle_crafting(n: int) -> void:
+	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
+	if cp == null:
+		return
+	if cp.is_open():
+		cp.close()
+	else:
+		cp.open(n)
+
+
+func _try_open_workbench_or_close() -> void:
+	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
+	if cp == null:
+		return
+	if cp.is_open():
+		cp.close()
+		return
+	if _has_workbench_nearby():
+		cp.open(3)
+
+
+func _has_workbench_nearby() -> bool:
+	var terrain := _terrain()
+	if terrain == null:
+		return false
+	var pt: Vector2i = player_tile()
+	for dx in range(-2, 3):
+		for dy in range(-2, 3):
+			var tid: int = terrain.get_cell_source_id(pt + Vector2i(dx, dy))
+			if tid == Tiles.WORKBENCH:
+				return true
+	return false
 
 
 func _update_mining(delta: float) -> void:
