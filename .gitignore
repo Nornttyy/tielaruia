@@ -3,6 +3,9 @@
 *.translation
 *.import
 
+# 导出产物
+build/
+
 # OS
 .DS_Store
 Thumbs.db
