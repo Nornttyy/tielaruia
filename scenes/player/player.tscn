@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://b1teilaruiaplayer"]
+[gd_scene load_steps=6 format=3 uid="uid://b1teilaruiaplayer"]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_ctrl"]
 [ext_resource type="Script" path="res://scripts/player/player_inventory.gd" id="2_inv"]
+[ext_resource type="Script" path="res://scripts/player/player_action.gd" id="3_act"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(10, 22)
@@ -20,3 +21,6 @@ shape = SubResource("RectangleShape2D_player")
 
 [node name="PlayerInventory" type="Node" parent="."]
 script = ExtResource("2_inv")
+
+[node name="PlayerAction" type="Node2D" parent="."]
+script = ExtResource("3_act")
