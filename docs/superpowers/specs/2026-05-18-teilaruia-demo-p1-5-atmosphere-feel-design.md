@@ -38,7 +38,7 @@ P1.5 完成后玩家在没有 P2 的情况下也能感受到：
 | **玩家尘埃** | jump dust / land dust / walking puff 三种粒子，触发由 player_controller 的状态切换决定 |
 | **块破碎粒子** | 调用 API `Effects.spawn_block_break(tile_coord, tile_id)`；4-8 个小方块碎片飞溅，色取自该 tile 调色板 |
 | **挖进度裂纹** | CrackOverlay 节点，API `set_progress(tile_coord, ratio_0_to_1)` / `clear(tile_coord)`；视觉用 4 阶段裂纹纹理叠在 tile 上 |
-| **块放下弹动** | API `Effects.spawn_place_bounce(tile_coord)`；该 tile 上叠一个 Sprite2D，scale 从 1.2 → 1.0 用 Tween 100ms |
+| **块放下弹动** | API `Effects.spawn_place_bounce(tile_coord, tile_id)`；该 tile 上叠一个 Sprite2D，scale 从 1.2 → 1.0 用 Tween 100ms |
 | **交互提示浮标** | FloatingPrompt 场景；API `show(target_pos, text)` / `hide()`；P1.5 仅由 PlayerController 在靠近 workbench 时调用作为占位测试（即使 workbench 还没合成出来，spec 验收可在地图上预放一个） |
 
 ### 2.2 Out of Scope
@@ -181,7 +181,7 @@ CrackOverlay 维护 `_active: Dictionary<Vector2i, Sprite2D>`：
 
 ### 4.5 块放下弹动（P2 接通）
 
-`Effects.spawn_place_bounce(tile)`:
+`Effects.spawn_place_bounce(tile, tile_id)`:
 - 实例 PlaceBounce 节点（一个透明 Sprite2D 占位 + Tween）
 - 取 tile 当前贴图作 Sprite 纹理
 - Tween: scale (1.2, 1.2) → (1.0, 1.0) ease_out_cubic 100ms
