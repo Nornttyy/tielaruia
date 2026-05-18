@@ -21,6 +21,8 @@ var _tiles: Array  # tiles[x][y] = Tiles const
 
 func _ready() -> void:
 	terrain_layer.tile_set = TileSetBuilder.build()
+	terrain_layer.add_to_group("terrain_layer")
+	$EffectsRoot.add_to_group("effects_root")
 	_generate_and_apply()
 	_spawn_player()
 	SkyLightGrid.recompute_from(_tiles)
@@ -54,3 +56,7 @@ func get_player() -> CharacterBody2D:
 		if child is CharacterBody2D:
 			return child
 	return null
+
+
+func get_crack_overlay() -> Node:
+	return $CrackOverlay

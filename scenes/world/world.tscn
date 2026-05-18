@@ -1,11 +1,19 @@
-[gd_scene load_steps=2 format=3 uid="uid://b2teilaruiaworld"]
+[gd_scene load_steps=4 format=3 uid="uid://b2teilaruiaworld"]
 
 [ext_resource type="Script" path="res://scripts/world/world.gd" id="1_world"]
+[ext_resource type="PackedScene" path="res://scenes/world/cloud_layer.tscn" id="2_clouds"]
+[ext_resource type="PackedScene" path="res://scenes/world/crack_overlay.tscn" id="3_crack"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1_world")
 
+[node name="CloudLayer" parent="." instance=ExtResource("2_clouds")]
+
 [node name="TerrainLayer" type="TileMapLayer" parent="."]
+
+[node name="CrackOverlay" parent="." instance=ExtResource("3_crack")]
+
+[node name="EffectsRoot" type="Node2D" parent="."]
 
 [node name="Entities" type="Node2D" parent="."]
 
