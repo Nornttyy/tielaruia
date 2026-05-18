@@ -59,9 +59,25 @@ func test_grass_on_surface_dirt_below():
 	for x in [10, 50, 100, 150, 200]:
 		for y in 128:
 			var t = w.tiles[x][y]
-			if t != Tiles.AIR:
-				assert_true(
-					t == Tiles.GRASS or t == Tiles.SAND,
-					"列 %d 的地表 tile 应是 grass/sand，实际 %d" % [x, t]
-				)
-				break
+			# 跳过空气和树（LOG/LEAVES），找首个地面 tile
+			if t == Tiles.AIR or t == Tiles.LOG or t == Tiles.LEAVES:
+				continue
+			assert_true(
+				t == Tiles.GRASS or t == Tiles.SAND,
+				"列 %d 的地表 tile 应是 grass/sand，实际 %d" % [x, t]
+			)
+			break
+
+
+func test_world_has_trees():
+	var w = WorldGenerator.generate(42, 256, 128)
+	var log_count := 0
+	var leaves_count := 0
+	for x in 256:
+		for y in 128:
+			if w.tiles[x][y] == Tiles.LOG:
+				log_count += 1
+			elif w.tiles[x][y] == Tiles.LEAVES:
+				leaves_count += 1
+	assert_gt(log_count, 10, "应有至少 10 个 LOG (树干)")
+	assert_gt(leaves_count, 10, "应有至少 10 个 LEAVES (树冠)")
