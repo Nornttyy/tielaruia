@@ -34,6 +34,8 @@ func _physics_process(delta: float) -> void:
 	if place_override:
 		try_place()
 		place_override = false
+	if Input.is_action_just_pressed("secondary"):
+		try_place()
 
 
 func _update_mining(delta: float) -> void:
@@ -132,9 +134,37 @@ func _spawn_drop(item_id: String, tile: Vector2i) -> void:
 	entities.add_child(drop)
 
 
-# T10 会替换为真实逻辑
+# 返回 true 表示成功放置 (用于测试断言)
 func try_place() -> bool:
-	return false
+	var terrain := _terrain()
+	var inv: Node = _inventory_node()
+	if terrain == null or inv == null:
+		return false
+	var slot: Variant = inv.current_hotbar_slot()
+	if slot == null:
+		return false
+	if not ItemDB.is_placeable(slot.item_id):
+		return false
+	var tile: Vector2i = aim_tile_coord()
+	if not in_reach(tile):
+		return false
+	# 目标必须为空气
+	if terrain.get_cell_source_id(tile) != -1:
+		return false
+	# 不与玩家碰撞框重叠（玩家占 2 tile 高：脚底 tile 和上方 tile）
+	var pt: Vector2i = player_tile()
+	if tile == pt or tile == pt - Vector2i(0, 1):
+		return false
+	var def = ItemDB.get_def(slot.item_id)
+	terrain.set_cell(tile, def.placeable_tile_id, Vector2i.ZERO)
+	var world: Node = terrain.get_parent()
+	if world.has_method("_set_tile"):
+		world._set_tile(tile.x, tile.y, def.placeable_tile_id)
+	inv.consume_current(1)
+	SkyLightGrid.invalidate_column(tile.x)
+	# P1.5 hook: 放下弹动
+	Effects.spawn_place_bounce(tile, def.placeable_tile_id)
+	return true
 
 
 # ---- Helpers ----

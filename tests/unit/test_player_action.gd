@@ -95,3 +95,61 @@ func test_can_mine_stone_with_pickaxe():
 	action.primary_override = true
 	await wait_frames(90)
 	assert_eq(terrain.get_cell_source_id(target), -1, "有镚应能挖空 stone")
+
+
+func test_place_dirt_consumes_slot_and_creates_tile():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	await wait_frames(2)
+	var world = main.get_node("World")
+	var player = world.get_player()
+	var action: Node2D = player.get_node("PlayerAction")
+	var inv: Node = player.get_node("PlayerInventory")
+	var terrain: TileMapLayer = world.get_node("TerrainLayer")
+	inv.inventory.add("dirt", 5)
+	inv.set_hotbar_selection(0)
+	var pt: Vector2i = action.player_tile()
+	var target: Vector2i = pt + Vector2i(2, -2)
+	action.aim_override = target
+	action.place_override = true
+	await wait_frames(3)
+	assert_eq(terrain.get_cell_source_id(target), Tiles.DIRT, "tile 应出现 dirt")
+	assert_eq(inv.inventory.slots[0].count, 4, "槽内 dirt 应减 1")
+
+
+func test_place_fails_on_occupied_tile():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	await wait_frames(2)
+	var world = main.get_node("World")
+	var player = world.get_player()
+	var action: Node2D = player.get_node("PlayerAction")
+	var inv: Node = player.get_node("PlayerInventory")
+	var terrain: TileMapLayer = world.get_node("TerrainLayer")
+	inv.inventory.add("dirt", 5)
+	inv.set_hotbar_selection(0)
+	var pt: Vector2i = action.player_tile()
+	var target: Vector2i = pt + Vector2i(2, -2)
+	terrain.set_cell(target, Tiles.STONE, Vector2i.ZERO)
+	action.aim_override = target
+	action.place_override = true
+	await wait_frames(3)
+	assert_eq(terrain.get_cell_source_id(target), Tiles.STONE, "不应覆盖")
+	assert_eq(inv.inventory.slots[0].count, 5, "未消耗")
+
+
+func test_place_fails_when_not_placeable():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	await wait_frames(2)
+	var world = main.get_node("World")
+	var player = world.get_player()
+	var action: Node2D = player.get_node("PlayerAction")
+	var inv: Node = player.get_node("PlayerInventory")
+	inv.inventory.add("wood_pickaxe", 1)
+	inv.set_hotbar_selection(0)
+	var pt: Vector2i = action.player_tile()
+	action.aim_override = pt + Vector2i(2, -2)
+	action.place_override = true
+	await wait_frames(3)
+	assert_eq(inv.inventory.slots[0].count, 1, "工具不应被消耗")
