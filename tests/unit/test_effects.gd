@@ -20,3 +20,25 @@ func test_root_falls_back_to_current_scene_when_no_group():
 	# Effects._root() 应不为 null
 	var root = Effects._root()
 	assert_not_null(root)
+
+
+func test_spawn_block_break_creates_chips():
+	# 建一个临时 root
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	Effects.spawn_block_break(Vector2i(5, 5), 1)  # GRASS
+	await wait_frames(1)
+	assert_eq(root.get_child_count(), 6, "应生成 6 个 chip")
+
+
+func test_chips_auto_free_after_lifetime():
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	Effects.spawn_block_break(Vector2i.ZERO, 1)
+	await wait_frames(1)
+	assert_eq(root.get_child_count(), 6)
+	# 0.5s = 30 帧 @ 60fps; 等 40 帧确保过期
+	await wait_frames(40)
+	assert_eq(root.get_child_count(), 0, "chips 应自删")
