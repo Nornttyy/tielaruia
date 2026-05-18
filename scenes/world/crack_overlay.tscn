@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b11teilaruicrack"]
+
+[ext_resource type="Script" path="res://scripts/world/crack_overlay.gd" id="1_crack"]
+
+[node name="CrackOverlay" type="Node2D"]
+script = ExtResource("1_crack")

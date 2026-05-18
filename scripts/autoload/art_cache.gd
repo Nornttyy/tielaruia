@@ -26,6 +26,7 @@ var slime_frames: SpriteFrames
 var villager_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
+var crack_textures: Array = []  # 4 个阶段
 
 
 func _ready() -> void:
@@ -92,6 +93,8 @@ func _build_clouds() -> void:
 
 func _build_particles() -> void:
 	dust_puff_texture = ParticlesArt.get_dust_puff()
+	for stage in 4:
+		crack_textures.append(ParticlesArt.get_crack_stage(stage))
 
 
 func get_inventory_icon(item_id: String) -> ImageTexture:
