@@ -1,0 +1,33 @@
+# 物品定义表 (autoload)。所有 item_id → 属性查询的单一入口。
+extends Node
+
+const _DEFS := {
+	"dirt":         {"placeable_tile_id": Tiles.DIRT,      "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"grass":        {"placeable_tile_id": Tiles.GRASS,     "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"stone":        {"placeable_tile_id": Tiles.STONE,     "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"sand":         {"placeable_tile_id": Tiles.SAND,      "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"log":          {"placeable_tile_id": Tiles.LOG,       "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"leaves":       {"placeable_tile_id": Tiles.LEAVES,    "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"planks":       {"placeable_tile_id": Tiles.PLANKS,    "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"workbench":    {"placeable_tile_id": Tiles.WORKBENCH, "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"door":         {"placeable_tile_id": Tiles.DOOR,      "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"stick":        {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"wood_sword":   {"placeable_tile_id": -1,              "tool_kind": "sword",   "tool_tier": 1, "max_stack": 1},
+	"wood_pickaxe": {"placeable_tile_id": -1,              "tool_kind": "pickaxe", "tool_tier": 1, "max_stack": 1},
+	"wood_axe":     {"placeable_tile_id": -1,              "tool_kind": "axe",     "tool_tier": 1, "max_stack": 1},
+	"slime_ball":   {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+}
+
+
+func get_def(item_id: String) -> Variant:
+	return _DEFS.get(item_id, null)
+
+
+func is_placeable(item_id: String) -> bool:
+	var def = get_def(item_id)
+	return def != null and def.placeable_tile_id != -1
+
+
+func max_stack(item_id: String) -> int:
+	var def = get_def(item_id)
+	return 0 if def == null else def.max_stack
