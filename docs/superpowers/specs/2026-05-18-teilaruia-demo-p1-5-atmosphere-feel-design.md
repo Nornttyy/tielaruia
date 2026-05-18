@@ -66,8 +66,8 @@ CrackOverlay.set_progress(tile_coord: Vector2i, ratio: float)  # 0..1
 CrackOverlay.clear(tile_coord: Vector2i)
 
 # Node in world tree
-FloatingPrompt.show(target_world_pos: Vector2, text: String)
-FloatingPrompt.hide()
+FloatingPrompt.show_prompt(target_world_pos: Vector2, text: String)
+FloatingPrompt.hide_prompt()
 ```
 
 ---
@@ -189,7 +189,7 @@ CrackOverlay 维护 `_active: Dictionary<Vector2i, Sprite2D>`：
 
 ### 4.6 交互提示浮标
 
-`FloatingPrompt` 是 CanvasLayer 下的 Label。`show(world_pos, text)` 设位置（world → screen 转换）+ 显示。`hide()` 隐藏。
+`FloatingPrompt` 是 CanvasLayer 下的 Label。`show_prompt(world_pos, text)` 设位置（world → screen 转换）+ 显示。`hide_prompt()` 隐藏。注意：Godot 4.3 parser 拒绝重载 `Node.show()`/`hide()` 因签名冲突，因此用 `_prompt` 后缀。
 
 P1.5 触发：player_controller 在 `_physics_process` 末尾，检查 chebyshev ≤ 2 的 workbench tile（不存在就不显示）。P2 会扩到所有 interactables。
 

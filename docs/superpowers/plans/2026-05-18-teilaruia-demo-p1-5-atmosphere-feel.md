@@ -1695,11 +1695,11 @@ func _update_workbench_prompt() -> void:
 		for dy in range(-2, 3):
 			var coord := pt + Vector2i(dx, dy)
 			if terrain.get_cell_source_id(coord) == Tiles.WORKBENCH:
-				fp.show(Vector2(coord.x * 16 + 8, coord.y * 16 - 4), "按 E")
+				fp.show_prompt(Vector2(coord.x * 16 + 8, coord.y * 16 - 4), "按 E")
 				return
 	# 没找到
 	if fp.is_showing():
-		fp.hide()
+		fp.hide_prompt()
 ```
 
 - [ ] **Step 3: 冷启动 + 跑测试**
