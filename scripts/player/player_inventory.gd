@@ -13,10 +13,12 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# 数字键 1-9 选热键
-	for i in 9:
-		if Input.is_action_just_pressed("hotbar_%d" % (i + 1)):
-			set_hotbar_selection(i)
+	# 数字键 1-9 选热键 (直接读 keycode 比 Input.is_action_just_pressed 稳)
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key: int = event.keycode
+		if key >= KEY_1 and key <= KEY_9:
+			set_hotbar_selection(key - KEY_1)
+			get_viewport().set_input_as_handled()
 			return
 	# 滚轮切换
 	if event is InputEventMouseButton and event.pressed:

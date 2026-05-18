@@ -27,9 +27,19 @@ func _ready() -> void:
 	lifetime.timeout.connect(queue_free)
 	# 初始随机弹跳动量
 	velocity = Vector2(randf_range(-30.0, 30.0), -80.0)
-	# 短暂延迟才可拾取
-	get_tree().create_timer(PICKUP_DELAY).timeout.connect(func(): _pickup_ready = true)
+	# 短暂延迟才可拾取；到时再扫一次已重叠的 body（玩家跟着掉落同帧重叠时
+	# body_entered 不会触发，需要主动检查）
+	get_tree().create_timer(PICKUP_DELAY).timeout.connect(_on_pickup_ready)
 	body_entered.connect(_on_body_entered)
+
+
+func _on_pickup_ready() -> void:
+	_pickup_ready = true
+	# 扫描所有已重叠的 body，触发一次 pickup
+	for body in get_overlapping_bodies():
+		_on_body_entered(body)
+		if not is_inside_tree():
+			return  # 已经被 queue_free 了
 
 
 func _physics_process(delta: float) -> void:
