@@ -33,7 +33,7 @@
 | 放（place） | RMB；当前热键格物品需 placeable；目标格空气 + 不重叠玩家 |
 | ItemDrop 实体 | Area2D + Sprite + 30s 自毁 + 弹跳动量；玩家碰 → 拾取 |
 | 拾取（pickup） | 自动，进入第一个可堆叠槽或第一个空槽 |
-| Inventory 数据 | 41 槽：hotbar(9) + main(27) + craft_in(4) + craft_out(1) |
+| Inventory 数据 | 36 槽：hotbar(9) + main(27)；合成 grid 由 CraftingPanel 独立持 |
 | 热键栏 UI | 9 格底部居中；图标 + 计数；1-9/滚轮切换；选中描边 |
 | 2×2 合成 UI | C 切换；2 输入 + 1 输出；ESC 关 |
 | 3×3 工作台 UI | 靠近 ≤ 2 tile 的 workbench + E 触发；同 UI 风格但 3×3 |
