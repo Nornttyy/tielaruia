@@ -19,6 +19,7 @@ func _make_slot() -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.clip_contents = true   # 防溢出影响相邻槽
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0, 0, 0, 0.4)
 	style.border_color = Color(0.4, 0.4, 0.4, 1.0)
@@ -27,33 +28,46 @@ func _make_slot() -> PanelContainer:
 	style.border_width_right = 1
 	style.border_width_bottom = 1
 	panel.add_theme_stylebox_override("panel", style)
+	# 用一个 Control 作为绝对定位容器，所有 child 用 anchors
+	var layout := Control.new()
+	layout.name = "Layout"
+	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layout.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
+	panel.add_child(layout)
+	# Icon 居中
 	var icon := TextureRect.new()
 	icon.name = "Icon"
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(icon)
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layout.add_child(icon)
+	# 计数右下
 	var count := Label.new()
 	count.name = "Count"
 	count.add_theme_font_size_override("font_size", 10)
 	count.add_theme_color_override("font_color", Color.WHITE)
 	count.add_theme_color_override("font_outline_color", Color.BLACK)
 	count.add_theme_constant_override("outline_size", 2)
-	count.size_flags_horizontal = Control.SIZE_SHRINK_END | Control.SIZE_FILL
-	count.size_flags_vertical = Control.SIZE_SHRINK_END | Control.SIZE_FILL
 	count.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(count)
-	# 槽位编号 (左上角)
+	count.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	count.position = Vector2(-18, -16)
+	count.size = Vector2(16, 14)
+	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	count.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	layout.add_child(count)
+	# 编号左上
 	var idx_label := Label.new()
 	idx_label.name = "IndexLabel"
 	idx_label.add_theme_font_size_override("font_size", 9)
 	idx_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
 	idx_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	idx_label.add_theme_constant_override("outline_size", 2)
-	idx_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN | Control.SIZE_FILL
-	idx_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN | Control.SIZE_FILL
 	idx_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(idx_label)
+	idx_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	idx_label.position = Vector2(2, 0)
+	idx_label.size = Vector2(12, 12)
+	layout.add_child(idx_label)
 	return panel
 
 
@@ -70,9 +84,9 @@ func refresh() -> void:
 	for i in 9:
 		var slot_data = _player_inv.inventory.slots[i]
 		var panel: PanelContainer = _slot_nodes[i]
-		var icon: TextureRect = panel.get_node("Icon")
-		var count_label: Label = panel.get_node("Count")
-		var idx_label: Label = panel.get_node("IndexLabel")
+		var icon: TextureRect = panel.get_node("Layout/Icon")
+		var count_label: Label = panel.get_node("Layout/Count")
+		var idx_label: Label = panel.get_node("Layout/IndexLabel")
 		idx_label.text = str(i + 1)  # 显示 1..9 编号
 		if slot_data == null:
 			icon.texture = null
