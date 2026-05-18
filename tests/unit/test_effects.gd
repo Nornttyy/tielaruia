@@ -71,3 +71,33 @@ func test_dust_auto_frees():
 	assert_eq(root.get_child_count(), 1)
 	await wait_frames(30)  # 0.5s
 	assert_eq(root.get_child_count(), 0)
+
+
+func test_spawn_place_bounce_creates_node():
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	Effects.spawn_place_bounce(Vector2i(5, 5), 1)  # GRASS
+	await wait_frames(1)
+	assert_eq(root.get_child_count(), 1)
+
+
+func test_spawn_place_bounce_auto_frees():
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	Effects.spawn_place_bounce(Vector2i.ZERO, 1)
+	await wait_frames(1)
+	assert_eq(root.get_child_count(), 1)
+	# 100ms = 6 帧；等 12 帧
+	await wait_frames(12)
+	assert_eq(root.get_child_count(), 0)
+
+
+func test_spawn_place_bounce_with_invalid_id_does_nothing():
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	Effects.spawn_place_bounce(Vector2i.ZERO)  # 不传 tile_id → -1 → noop
+	await wait_frames(1)
+	assert_eq(root.get_child_count(), 0)

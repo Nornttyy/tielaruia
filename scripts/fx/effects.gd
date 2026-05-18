@@ -4,6 +4,7 @@ extends Node
 
 const BlockBreakParticleScene = preload("res://scenes/fx/block_break_particle.tscn")
 const DustParticleScene = preload("res://scenes/fx/dust_particle.tscn")
+const PlaceBounceScene = preload("res://scenes/fx/place_bounce.tscn")
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
 const TILE_SIZE := 16
 const CHIPS_PER_BREAK := 6
@@ -36,9 +37,12 @@ func spawn_block_break(tile_coord: Vector2i, tile_id: int) -> void:
 		chip.setup(center + Vector2(randf_range(-4, 4), randf_range(-4, 4)), color, vel)
 
 
-func spawn_place_bounce(tile_coord: Vector2i) -> void:
-	# 占位：Task 6
-	pass
+func spawn_place_bounce(tile_coord: Vector2i, tile_id: int = -1) -> void:
+	if tile_id == -1:
+		return
+	var pb = PlaceBounceScene.instantiate()
+	_root().add_child(pb)
+	pb.setup(tile_coord, tile_id)
 
 
 func spawn_jump_dust(world_pos: Vector2) -> void:

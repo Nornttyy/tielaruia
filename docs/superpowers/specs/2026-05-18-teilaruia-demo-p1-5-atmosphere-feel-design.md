@@ -56,7 +56,7 @@ P1.5 提供以下 autoload / API，P2 直接调用（已写好且测试通过）
 ```gdscript
 # autoload Effects
 Effects.spawn_block_break(tile_coord: Vector2i, tile_id: int)
-Effects.spawn_place_bounce(tile_coord: Vector2i)
+Effects.spawn_place_bounce(tile_coord: Vector2i, tile_id: int)
 Effects.spawn_jump_dust(world_pos: Vector2)
 Effects.spawn_land_dust(world_pos: Vector2)
 Effects.spawn_walk_puff(world_pos: Vector2)
