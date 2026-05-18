@@ -678,7 +678,14 @@ const VILLAGER_LINES = [
   - World 场景 (1024×256 tile + 玩家出生 + 相机平滑跟随)
   - Debug HUD (FPS / Pos / Tile / Dark，F3 切换)
   - 用户验收方式：信任 smoke integration test (3 个)，不开编辑器
-- ⏳ **P2 Items & Interaction** — 待开始（挖/放/掉落/拾取/工具）
+- ✅ **P1.5 Atmosphere & Feel** — tag `demo-p1.5-feel` — 2026-05-18
+  - 视差云 3 层 + 玩家 jump/land/walk 尘埃
+  - Effects autoload (block_break / place_bounce / jump_dust / land_dust / walk_puff)
+  - CrackOverlay 挖进度裂纹 4 阶段框架
+  - FloatingPrompt 「按 E」提示框架 (API: show_prompt/hide_prompt)
+  - 57 个测试全过
+  - P2 接 5 个 hook 即可接通 mining/place 的视觉反馈
+- ⏳ **P2 Items + Interaction + Crafting** — 待开始（挖/放/掉落/拾取/热键栏 + 2x2/3x3 合成 + 6 配方）
 - ⏳ **P3 Crafting & UI** — 待开始（背包/合成台/6 配方）
 - ⏳ **P4 Content & Persistence** — 待开始（史莱姆/村民/村庄/门/存档）
 
