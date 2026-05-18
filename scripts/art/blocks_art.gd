@@ -323,6 +323,25 @@ const _PATTERN_MAP := {
 }
 
 
+const _PALETTES := {
+	GRASS:     [Color(0.30, 0.65, 0.27), Color(0.18, 0.42, 0.18)],
+	DIRT:      [Color(0.50, 0.34, 0.22), Color(0.32, 0.20, 0.12)],
+	STONE:     [Color(0.60, 0.60, 0.62), Color(0.38, 0.38, 0.40)],
+	SAND:      [Color(0.92, 0.84, 0.55), Color(0.70, 0.60, 0.38)],
+	LOG:       [Color(0.55, 0.36, 0.20), Color(0.34, 0.20, 0.10)],
+	LEAVES:    [Color(0.32, 0.60, 0.28), Color(0.18, 0.36, 0.16)],
+	PLANKS:    [Color(0.78, 0.58, 0.34), Color(0.50, 0.36, 0.20)],
+	WORKBENCH: [Color(0.62, 0.42, 0.22), Color(0.36, 0.24, 0.14)],
+	DOOR:      [Color(0.50, 0.34, 0.20), Color(0.32, 0.20, 0.10)],
+	BEDROCK:   [Color(0.25, 0.25, 0.28), Color(0.10, 0.10, 0.12)],
+}
+const _DEFAULT_PALETTE := [Color(0.7, 0.7, 0.7), Color(0.4, 0.4, 0.4)]
+
+
+static func get_palette(tile_id: int) -> Array:
+	return _PALETTES.get(tile_id, _DEFAULT_PALETTE)
+
+
 static func get_texture(tile_id: int) -> ImageTexture:
 	assert(_PATTERN_MAP.has(tile_id), "未知 tile_id: %d" % tile_id)
 	var entry: Array = _PATTERN_MAP[tile_id]
