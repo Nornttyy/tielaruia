@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://b12teilaruifp"]
+
+[ext_resource type="Script" path="res://scripts/ui/floating_prompt.gd" id="1_fp"]
+
+[node name="FloatingPrompt" type="CanvasLayer"]
+script = ExtResource("1_fp")
+
+[node name="Label" type="Label" parent="."]
+text = "按 E"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
