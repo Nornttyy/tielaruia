@@ -33,17 +33,11 @@ func test_wood_pickaxe_is_tool_not_placeable():
 	assert_eq(def.max_stack, 1)
 
 
-func test_stick_is_neither_tool_nor_placeable():
-	var def = db.get_def("stick")
-	assert_eq(def.placeable_tile_id, -1)
-	assert_eq(def.tool_kind, "")
-	assert_eq(def.max_stack, 64)
-
-
 func test_all_known_items_present():
 	for item_id in ["dirt", "grass", "stone", "sand", "log", "leaves",
-			"planks", "workbench", "door", "stick",
-			"wood_sword", "wood_pickaxe", "wood_axe", "slime_ball"]:
+			"planks", "workbench", "door",
+			"wood_sword", "wood_pickaxe", "wood_axe", "slime_ball",
+			"stone_sword", "stone_pickaxe", "stone_axe", "slime_torch"]:
 		assert_not_null(db.get_def(item_id), "缺失 item: %s" % item_id)
 
 
@@ -51,3 +45,8 @@ func test_is_placeable():
 	assert_true(db.is_placeable("dirt"))
 	assert_false(db.is_placeable("wood_pickaxe"))
 	assert_false(db.is_placeable("unknown"))
+
+
+func test_stick_removed():
+	# Terraria 风格: 没有 stick 中间品
+	assert_null(db.get_def("stick"), "stick 已删除")
