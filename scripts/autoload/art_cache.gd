@@ -43,6 +43,7 @@ func _build_blocks() -> void:
 		BlocksArt.GRASS, BlocksArt.DIRT, BlocksArt.STONE, BlocksArt.SAND,
 		BlocksArt.LOG, BlocksArt.LEAVES, BlocksArt.PLANKS, BlocksArt.WORKBENCH,
 		BlocksArt.DOOR, BlocksArt.BEDROCK,
+		BlocksArt.LEAVES_PINE, BlocksArt.LEAVES_AUTUMN,
 	]
 	for tile_id in tile_ids:
 		block_textures[tile_id] = BlocksArt.get_texture(tile_id)
@@ -75,6 +76,8 @@ const _ITEM_TO_TILE := {
 	"sand": BlocksArt.SAND,
 	"log": BlocksArt.LOG,
 	"leaves": BlocksArt.LEAVES,
+	"pine_leaves": BlocksArt.LEAVES_PINE,
+	"autumn_leaves": BlocksArt.LEAVES_AUTUMN,
 	"planks": BlocksArt.PLANKS,
 	"workbench": BlocksArt.WORKBENCH,
 	"door": BlocksArt.DOOR,

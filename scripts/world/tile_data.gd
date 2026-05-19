@@ -8,11 +8,13 @@ const DIRT := 2
 const STONE := 3
 const SAND := 4
 const LOG := 5
-const LEAVES := 6
+const LEAVES := 6           # 橡木叶 (默认)
 const PLANKS := 7
 const WORKBENCH := 8
 const DOOR := 9
 const BEDROCK := 10
+const LEAVES_PINE := 11     # 松针 (深暖绿)
+const LEAVES_AUTUMN := 12   # 秋叶 (红橙)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -44,7 +46,8 @@ const _PROPS := {
 		"drops": [["sand", 100, 1, 1]],
 	},
 	LOG: {
-		"solid": true, "mineable": true,
+		# 原木不实心 — 玩家可穿过树干 (像 Terraria)
+		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["log", 100, 1, 1]],
 	},
@@ -74,6 +77,18 @@ const _PROPS := {
 		"solid": true, "mineable": false,
 		"tool_tiers": {},
 		"drops": [],
+	},
+	LEAVES_PINE: {
+		# 松针：不实心 + 掉松针变种 + 偶发木棍
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["pine_leaves", 100, 1, 1], ["stick", 20, 1, 1]],
+	},
+	LEAVES_AUTUMN: {
+		# 秋叶：不实心 + 掉秋叶变种 + 偶发木棍
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["autumn_leaves", 100, 1, 1], ["stick", 20, 1, 1]],
 	},
 }
 

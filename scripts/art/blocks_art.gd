@@ -15,11 +15,13 @@ const DIRT := 2
 const STONE := 3
 const SAND := 4
 const LOG := 5
-const LEAVES := 6
+const LEAVES := 6           # 橡木叶 (默认)
 const PLANKS := 7
 const WORKBENCH := 8
 const DOOR := 9
 const BEDROCK := 10
+const LEAVES_PINE := 11     # 松针 (深暖绿)
+const LEAVES_AUTUMN := 12   # 秋叶 (红橙)
 
 # --- 调色板 (每方块独立) ---
 
@@ -90,6 +92,28 @@ const _P_LEAVES := {
 	"s": Color8(108, 142, 88),   # 中阴影
 	"a": Color8(180, 185, 120),  # 鼠尾草
 	"r": Color8(184, 100, 58),   # 秋红
+}
+
+# 松针：深暖绿 + 灰绿暗色，无透角更密实
+const _P_LEAVES_PINE := {
+	"l": Color8(82, 130, 78),    # 中绿
+	"L": Color8(50, 95, 55),     # 阴影
+	"d": Color8(28, 60, 35),     # 最深
+	"h": Color8(120, 165, 95),   # 高光
+	"s": Color8(70, 115, 70),    # 中阴影
+	"y": Color8(155, 175, 90),   # 黄橄榄 (松果?)
+}
+
+# 秋叶：暖红橙 + 金黄 + 深红
+const _P_LEAVES_AUTUMN := {
+	"l": Color8(195, 110, 55),   # 橙基
+	"L": Color8(160, 70, 35),    # 深橙阴影
+	"d": Color8(110, 50, 30),    # 深红
+	"h": Color8(225, 165, 95),   # 金橙高光
+	"y": Color8(230, 200, 80),   # 黄秋叶
+	"s": Color8(180, 90, 45),    # 中阴影
+	"a": Color8(215, 145, 70),   # 桃色变种
+	"r": Color8(140, 50, 30),    # 深红浆果
 }
 
 const _P_PLANKS := {
@@ -223,7 +247,7 @@ const _LOG := [
 	"bbbBbbBbbBbbBbpb",
 ]
 
-# 树叶：4 角透空 + 多个叶簇 (簇心 h 高光 + d 阴影框) + 秋红浆果 r + 金橄榄 y + 鼠尾草 a
+# 橡木叶：4 角透空 + 多个叶簇 (簇心 h 高光 + d 阴影框) + 秋红浆果 r + 金橄榄 y + 鼠尾草 a
 const _LEAVES := [
 	".lhLh....hLhl.h.",
 	"lLhddhlllhddhLls",
@@ -240,6 +264,46 @@ const _LEAVES := [
 	"lLyddhsssddyaLls",
 	"Lddyhddssddyhdds",
 	"lLhddhlllhddhLls",
+	".lhLh....hLhl.h.",
+]
+
+# 松针：密实无透角 + 矩形针簇 + 暗影包裹 + 偶发松果 y
+const _LEAVES_PINE := [
+	"ddLddLLLLLLddLdd",
+	"dLLddssddssddLLd",
+	"LdsshhhhhhhhssdL",
+	"LdssddhhhhddssdL",
+	"LhddssssssssddhL",
+	"LssLLddddddLLssL",
+	"LssLddhhhhddLssL",
+	"LssLddhyyhddLssL",
+	"LssLddhyyhddLssL",
+	"LssLddhhhhddLssL",
+	"LssLLddddddLLssL",
+	"LhddssssssssddhL",
+	"LdssddhhhhddssdL",
+	"LdsshhhhhhhhssdL",
+	"dLLddssddssddLLd",
+	"ddLddLLLLLLddLdd",
+]
+
+# 秋叶：橡木叶骨架,色调换成橙红/金黄/深红浆果 r
+const _LEAVES_AUTUMN := [
+	".lhLh....hLhl.h.",
+	"lLhddhlllhddhLla",
+	"Lddyhddrrddyhddr",
+	"lLyddhrrrddyaLla",
+	"llLLLrLLLLrLLLll",
+	"lLLddhhhhhhddLLs",
+	"Lddhhddyyddhhddl",
+	"LddyrrrrryydddrL",
+	"lddyrrrrryyddddl",
+	"Lddhhddyyddhhddl",
+	"lLLddhhhhhhddLLs",
+	"llLLLrLLLLrLLLll",
+	"lLyddhrrrddyaLla",
+	"Lddyhddrrddyhddr",
+	"lLhddhlllhddhLla",
 	".lhLh....hLhl.h.",
 ]
 
@@ -352,6 +416,8 @@ const _PATTERN_MAP := {
 	WORKBENCH: [_WORKBENCH, _P_WORKBENCH],
 	DOOR: [_DOOR_CLOSED, _P_DOOR],
 	BEDROCK: [_BEDROCK, _P_BEDROCK],
+	LEAVES_PINE: [_LEAVES_PINE, _P_LEAVES_PINE],
+	LEAVES_AUTUMN: [_LEAVES_AUTUMN, _P_LEAVES_AUTUMN],
 }
 
 
@@ -366,6 +432,8 @@ const _PALETTES := {
 	WORKBENCH: [_P_WORKBENCH["p"], _P_WORKBENCH["P"]],
 	DOOR:      [_P_DOOR["d"],      _P_DOOR["D"]],
 	BEDROCK:   [_P_BEDROCK["b"],   _P_BEDROCK["B"]],
+	LEAVES_PINE:   [_P_LEAVES_PINE["l"],   _P_LEAVES_PINE["L"]],
+	LEAVES_AUTUMN: [_P_LEAVES_AUTUMN["l"], _P_LEAVES_AUTUMN["L"]],
 }
 const _DEFAULT_PALETTE := [Color(0.7, 0.7, 0.7), Color(0.4, 0.4, 0.4)]
 

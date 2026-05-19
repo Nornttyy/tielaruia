@@ -59,8 +59,10 @@ func test_grass_on_surface_dirt_below():
 	for x in [10, 50, 100, 150, 200]:
 		for y in 128:
 			var t = w.tiles[x][y]
-			# 跳过空气和树（LOG/LEAVES），找首个地面 tile
-			if t == Tiles.AIR or t == Tiles.LOG or t == Tiles.LEAVES:
+			# 跳过空气和树（LOG/各种 LEAVES），找首个地面 tile
+			if t == Tiles.AIR or t == Tiles.LOG \
+					or t == Tiles.LEAVES or t == Tiles.LEAVES_PINE \
+					or t == Tiles.LEAVES_AUTUMN:
 				continue
 			assert_true(
 				t == Tiles.GRASS or t == Tiles.SAND,
@@ -73,11 +75,20 @@ func test_world_has_trees():
 	var w = WorldGenerator.generate(42, 256, 128)
 	var log_count := 0
 	var leaves_count := 0
+	var pine_count := 0
+	var autumn_count := 0
 	for x in 256:
 		for y in 128:
-			if w.tiles[x][y] == Tiles.LOG:
+			var t = w.tiles[x][y]
+			if t == Tiles.LOG:
 				log_count += 1
-			elif w.tiles[x][y] == Tiles.LEAVES:
+			elif t == Tiles.LEAVES:
 				leaves_count += 1
+			elif t == Tiles.LEAVES_PINE:
+				pine_count += 1
+			elif t == Tiles.LEAVES_AUTUMN:
+				autumn_count += 1
 	assert_gt(log_count, 10, "应有至少 10 个 LOG (树干)")
-	assert_gt(leaves_count, 10, "应有至少 10 个 LEAVES (树冠)")
+	assert_gt(leaves_count + pine_count + autumn_count, 10, "应有至少 10 个树叶 (任意品种)")
+	assert_gt(pine_count, 0, "应至少长出 1 棵松树")
+	assert_gt(autumn_count, 0, "应至少长出 1 棵秋树")
