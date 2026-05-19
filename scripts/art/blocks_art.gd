@@ -24,64 +24,72 @@ const BEDROCK := 10
 # --- 调色板 (每方块独立) ---
 
 const _P_GRASS := {
-	"a": Color8(143, 179, 112),  # 高光 (柔化)
-	"g": Color8(111, 149, 96),   # 基色 (降饱和)
-	"G": Color8(84, 120, 74),    # 阴影
-	"m": Color8(125, 158, 95),   # 中绿 (新)
-	"y": Color8(176, 190, 110),  # 黄绿草尖 (新)
-	"d": Color8(141, 111, 76),   # 泥土过渡 (变暖)
-	"D": Color8(117, 89, 74),    # 泥土阴影
-	"k": Color8(91, 69, 58),     # 小石子
+	"a": Color8(181, 214, 115),  # 暖黄绿高光
+	"g": Color8(125, 173, 90),   # 暖绿基
+	"G": Color8(79, 124, 62),    # 深暖绿
+	"m": Color8(149, 194, 97),   # 中暖绿
+	"y": Color8(220, 220, 120),  # 金黄草尖
+	"s": Color8(199, 204, 90),   # 金黄草穗
+	"d": Color8(156, 112, 72),   # 暖泥
+	"D": Color8(126, 88, 64),    # 泥阴影
+	"k": Color8(94, 65, 44),     # 小石子
+	"l": Color8(186, 144, 112),  # 泥高光
+	"r": Color8(160, 90, 48),    # 红棕根
 }
 
 const _P_DIRT := {
-	"d": Color8(153, 120, 92),   # 基色 (柔化)
-	"D": Color8(117, 89, 74),    # 阴影 (柔化)
-	"k": Color8(91, 69, 58),     # 小石子 (变暖)
-	"l": Color8(179, 149, 122),  # 高光 (柔化)
-	"L": Color8(195, 169, 141),  # 凸起亮面 (柔化)
-	"p": Color8(126, 106, 86),   # 冷棕调 (新)
-	"r": Color8(139, 109, 79),   # 红棕调 (新)
+	"d": Color8(160, 122, 85),   # 暖泥基
+	"D": Color8(126, 88, 64),    # 深暗
+	"k": Color8(92, 63, 42),     # 石子
+	"l": Color8(188, 149, 115),  # 高光
+	"L": Color8(204, 166, 129),  # 凸起亮
+	"r": Color8(160, 85, 46),    # 红棕
+	"p": Color8(136, 97, 68),    # 冷棕
+	"o": Color8(201, 126, 69),   # 暖橙
 }
 
 const _P_STONE := {
-	"s": Color8(163, 166, 171),  # 基色 (微冷蓝调)
-	"S": Color8(126, 131, 137),  # 阴影
-	"l": Color8(182, 186, 190),  # 高光
-	"k": Color8(95, 100, 108),   # 裂纹 (柔化)
-	"L": Color8(199, 202, 206),  # 凸起亮面 (柔化, 不再刺眼)
-	"m": Color8(142, 146, 154),  # 中灰 (新)
-	"b": Color8(107, 112, 122),  # 冷蓝灰 (新)
+	"s": Color8(156, 144, 136),  # 暖灰基 (warm warm-grey)
+	"S": Color8(122, 110, 102),  # 暖灰阴影
+	"l": Color8(182, 168, 158),  # 暖高光
+	"k": Color8(92, 80, 72),     # 暖裂纹
+	"L": Color8(204, 191, 181),  # 暖凸起
+	"m": Color8(138, 125, 116),  # 中暖灰
+	"b": Color8(110, 98, 90),    # 深暖灰
+	"o": Color8(184, 154, 130),  # 砂岩调
 }
 
 const _P_SAND := {
-	"y": Color8(220, 190, 131),  # 基色 (大幅降饱和)
-	"Y": Color8(184, 156, 110),  # 阴影
-	"l": Color8(235, 215, 168),  # 高光 (柔和米黄)
-	"k": Color8(147, 121, 77),   # 小石子
-	"L": Color8(240, 222, 181),  # 凸起亮面 (柔化)
-	"o": Color8(202, 168, 119),  # 暖中调 (新)
-	"b": Color8(214, 189, 140),  # 沙色变种 (新)
+	"y": Color8(229, 196, 133),  # 暖沙基
+	"Y": Color8(184, 152, 104),  # 阴影
+	"l": Color8(240, 220, 168),  # 高光
+	"k": Color8(138, 110, 69),   # 石子
+	"L": Color8(245, 227, 181),  # 凸起亮
+	"o": Color8(213, 162, 107),  # 暖橙
+	"r": Color8(193, 130, 80),   # 深暖
+	"b": Color8(221, 183, 120),  # 沙变种
 }
 
 const _P_LOG := {
-	"b": Color8(110, 80, 67),    # 树皮基色 (柔化)
-	"B": Color8(74, 52, 41),     # 树皮深沟
-	"l": Color8(154, 131, 119),  # 树皮高光（凸条, 柔化)
-	"R": Color8(92, 67, 56),     # 木结
-	"r": Color8(132, 103, 87),   # 中树皮 (新)
-	"p": Color8(120, 90, 75),    # 副基色 (新)
-	"s": Color8(146, 119, 106),  # 树皮变种 (新)
+	"b": Color8(124, 86, 64),    # 暖树皮基
+	"B": Color8(85, 53, 41),     # 深沟
+	"l": Color8(163, 133, 115),  # 树皮高光
+	"R": Color8(108, 70, 54),    # 木结
+	"r": Color8(148, 111, 88),   # 中树皮
+	"p": Color8(136, 96, 76),    # 副基
+	"s": Color8(161, 132, 114),  # 树皮变种
+	"o": Color8(184, 131, 106),  # 樱木暖橙
 }
 
 const _P_LEAVES := {
-	"l": Color8(111, 150, 112),  # 中绿 (柔化)
-	"L": Color8(79, 116, 79),    # 阴影
-	"d": Color8(53, 79, 52),     # 最深
-	"h": Color8(143, 181, 144),  # 高光 (柔化)
-	"y": Color8(181, 190, 116),  # 黄橄榄 (新)
-	"s": Color8(91, 126, 91),    # 中阴影 (新)
-	"a": Color8(162, 176, 122),  # 鼠尾草 (新)
+	"l": Color8(125, 173, 92),   # 暖中绿
+	"L": Color8(86, 129, 74),    # 暖阴影
+	"d": Color8(58, 89, 56),     # 最深
+	"h": Color8(164, 197, 122),  # 暖高光
+	"y": Color8(201, 197, 111),  # 金橄榄
+	"s": Color8(108, 142, 88),   # 中阴影
+	"a": Color8(180, 185, 120),  # 鼠尾草
+	"r": Color8(184, 100, 58),   # 秋红
 }
 
 const _P_PLANKS := {
@@ -115,124 +123,124 @@ const _P_BEDROCK := {
 
 # --- 图案 (每方块 16x16) ---
 
-# 草方块：草尖 (y黄绿 + a高光 + .透空) + 中绿 m 增加色彩层次
+# 草方块：参差不齐草尖 (透空+金黄y+穗s) → 多层暖绿 (a/g/m/G) → 草根下垂 (r) → 暖泥
 const _GRASS := [
-	".y..aa..a..ay..a",
-	"amaagaagamagaaya",
-	"agGmgmGggmgmgGga",
-	"GgmgGgGmggGgGmgg",
-	"gGddgdGddgGdgdgg",
-	"ddggddgdgdggddgd",
-	"dddgddddddddgddd",
-	"dddddddddddddddd",
-	"dDdddddDdddddddd",
-	"ddDddddddddddddd",
-	"DdddddddddDdkddd",
-	"ddDddDdddddddddd",
-	"dddddddDdkddDddd",
-	"DddddDddddddddDd",
-	"dddDddddddddDddd",
-	"dDddddDdddddkddd",
+	".y..s.y.s.a.y.s.",
+	"ayasaysaygasaaya",
+	"gagmgaGmgaGmgagm",
+	"mgGmgmGgmGgmGgGm",
+	"GgmGgGmgGgmGgGmg",
+	"gGdgrgGdgrGdgrGd",
+	"drddrddgddrddddg",
+	"dDdldDddkddDdddl",
+	"ddDdddDddlddrddd",
+	"DdlrddddDddkdddd",
+	"ddDddrdDddddddDd",
+	"ddrdkddddrddDddd",
+	"dDdddDdddrkddDdd",
+	"drdddddDdldDdddd",
+	"ddDdddrddkdDdddd",
+	"Ddrdddrkddrdldrd",
 ]
 
-# 泥土：凸起 (LL) + 石子 (k) + 红棕 (r) + 冷棕 (p) 色斑加色彩层次
+# 泥土：暖土团块 (LL+边缘 o 暖橙) + 红棕 (r) 砂粒 + 冷棕 (p) + 深石子 (k) 细节
 const _DIRT := [
-	"dDdDdpDddDpdDdDd",
-	"ddlDdrdddddddkdd",
-	"dDdddkdDdLLdrddd",
-	"dddpdddddLLdkddd",
-	"dDddDdpdddddrddd",
-	"ddkddDdddddpdddD",
-	"ddDdddddrdkLLddd",
-	"dpddddddddDLLdkd",
-	"dlddpdddDdddddDd",
-	"ddddDddrdddddpDd",
-	"DdpdddddddDddkdd",
-	"ddddDkdrdddddddd",
-	"ddDLLdpdddddDddD",
-	"dpdLLddDdddddDDd",
-	"ddddddDdrddkdDdd",
-	"DddDdDdpdDddrdDd",
+	"dDdpdDdDdpdDdpdD",
+	"dlddddrddpkddpdd",
+	"ddoLLddddDLLdrdd",
+	"dDoLLrdddDLLdkdd",
+	"dpddDdoLLdrkdLLd",
+	"ddpdrddLLddDddLd",
+	"ddDdrkddrdkdrkdd",
+	"dpdddDdpdldDdldD",
+	"dllLdpddrdkdldDd",
+	"dpdLLrddpdddrDdd",
+	"DdddorddddLLkdpd",
+	"ddpdDodddpdLLrdd",
+	"dDdrdLLddpdddoDd",
+	"dpddrdDdkddpdkdD",
+	"drDdpdrddoddDddo",
+	"DdpdrdDpdrdpDdrd",
 ]
 
-# 石头：凸起 (LL) + 裂纹 (k) + 中灰 (m) + 冷蓝灰 (b) 加色彩
+# 石头：暖灰岩石块 (LL 凸块带 o 暖砂岩高光) + 横向裂纹 (kkkk) + 中灰 m / 深灰 b
 const _STONE := [
-	"sSmSsssSsSmSsSbs",
-	"slksslLLslsmsLss",
-	"ssksklLLslsssLbs",
-	"ssklssklssbsklss",
-	"sLLLLkssksssklms",
-	"sLLLLklllksbsLss",
-	"sLLLLklllksssLss",
-	"sssklllllkLLkbss",
-	"ssbklssklsLLkLss",
-	"ssklksksslsklsLm",
-	"slkssklllsmLLkss",
-	"slksslssklsLLkms",
-	"sssklssklsbsklss",
-	"sssLLkssssklbsLs",
-	"ssLLLkksssmklssb",
-	"sSsSsbsSsSmSsSss",
+	"SbsSsbsSsbsSsbsS",
+	"smLLkssssooLLkss",
+	"sLLLkssksslLLkss",
+	"sslksskkkkksslkk",
+	"somLLLsksslkmLss",
+	"soLLLLssllksLLls",
+	"ssLLLkssbkssLLLs",
+	"slkkkkbsslkkkkls",
+	"somsLLLsskLLLmss",
+	"sLLkssolksLLLkbs",
+	"sLLslkkbskssLLls",
+	"ssssLLLLossolssm",
+	"somsLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"somssklllksmsLls",
+	"sSsbsSsSsbsSsSss",
 ]
 
-# 沙：凸起 (LL) + 石子 (k) + 暖中调 (o) + 变种 (b) 加色彩
+# 沙：横向波纹 (Y 浅条) + 暖橙 o/b 沙粒 + 凸起沙丘 (LL) + 偶发暗石 (k)
 const _SAND := [
-	"yyoyylyybyyyyyyy",
-	"yyyykybyyyyoyLLy",
-	"yoyLLyybyyyyyLLy",
-	"yyLLLyobkyyybyyy",
-	"yYybyyykyoyyyYyy",
-	"yyyyYbyyyoyykyyy",
-	"yyokyybyyYyyyyly",
-	"yyobyyybyykLLyyy",
-	"yobyybyyykLLLLby",
-	"ylobyyYbyyLLLlyo",
-	"yyobyykyyybyyyyo",
-	"yyobyyyyybyyooyy",
-	"yobyyybyyyyylyyo",
-	"yyoykLLyybkyyybo",
-	"yYyykLLybyyyyooy",
-	"yyybyyybyyyooyyy",
+	"yYyyyYyyyYyyyYyy",
+	"yllyybyybyybyylo",
+	"yobyyyykyyyybyyy",
+	"yLLLlyybyobyyyly",
+	"Ybobyybkyybobyyy",
+	"yyyyobyyooyyybky",
+	"yyobyLLlyybyykyo",
+	"yyybLLLlobyykyly",
+	"yyyobLLlyybyyooy",
+	"yloyyybyobyykyyy",
+	"Ybyyobyyyykyybyo",
+	"yyobyybyyybobyyy",
+	"yyybLLlyobyykyyy",
+	"yYobLLlyyykyyybo",
+	"Ybobyyykyybobyko",
+	"yYyyyYyyyYyyyYyy",
 ]
 
-# 原木：竖向树皮 + 凸条 (l) + 木结 (R) + 中树皮 (r) + 副基 (p) 增加色彩
+# 原木：暖竖纹树皮 (4 道凹沟 B + 凸条 l) + 2 个木结 (RR 带 B 框) + 中树皮 r + 樱木暖橙 o 微调
 const _LOG := [
-	"bbBbbBbbBbbBbbBb",
-	"bBblbBblbBblpBbl",
-	"bbblbBblbbblbBbl",
-	"bBblbBblbBblbBbl",
+	"bBbpBbbBpbBbpBbB",
+	"bBblrBblbBblrBbl",
+	"brBlbBblpBblbBol",
+	"bBblbBplbBblbBbl",
 	"bBblbRRlbBblbBbl",
-	"bBblbRRlbBblbBbl",
+	"bBpbBRRBbBblbBbl",
+	"bBblbrblbBblbBbl",
+	"brblbBblpBblrBbl",
 	"bBblbBblbBblbBbl",
-	"brblpBblbBblbBbl",
-	"bBblbBblbBblbBbl",
+	"bBblbBblbBplbRRl",
 	"bBblbBblbBblbRRl",
-	"bBblbBblbBblbRRl",
-	"bBblbBblbBrlbBbl",
-	"bbblbBblpBblbBbl",
-	"bBblbBblbBblbBbl",
-	"bbBbbBbpBbbBbbBb",
-	"bbbBbbBbbBbbBbbb",
+	"bBblbBblobblbrbl",
+	"brblbBplbBblbBbl",
+	"bBblbBblbBblbBpl",
+	"bbBbpBbpBbBbpBbB",
+	"bbbBbbBbbBbbBbpb",
 ]
 
-# 树叶：叶簇 + 高光 + 透角 + 黄橄榄 (y) + 中阴影 (s) + 鼠尾草 (a) 增色彩
+# 树叶：4 角透空 + 多个叶簇 (簇心 h 高光 + d 阴影框) + 秋红浆果 r + 金橄榄 y + 鼠尾草 a
 const _LEAVES := [
-	".lLyll....llylL.",
-	"lLLddyllllyddLLl",
-	"lLddhdLsLdhddLll",
-	"lLaddhLLhLLddyLl",
-	"llLLsLLLLLLsLLll",
-	"llLLddddddddLLll",
-	"lLydhhdLLdhhdyLl",
-	"lLddhsLLLLshddLl",
-	"lLddhsLLLLshddLl",
-	"lLydhhdLLdhhdyLl",
-	"llLLddddddddLLll",
-	"llLLsLLLLLLsLLll",
-	"lLaddhLLhLLddyLl",
-	"lLddhdLsLdhddLll",
-	"lLLddyllllyddLLl",
-	".lyLll....llLyl.",
+	".lhLh....hLhl.h.",
+	"lLhddhlllhddhLls",
+	"Lddyhddssddyhdds",
+	"lLyddhsssddyaLls",
+	"llLLLsLLLLsLLLll",
+	"lLLddhhhhhhddLLs",
+	"Lddhhddrrddhhddl",
+	"Lddysssssyydddal",
+	"lddysssssyyddddl",
+	"Lddhhddrrddhhddl",
+	"lLLddhhhhhhddLLs",
+	"llLLLsLLLLsLLLll",
+	"lLyddhsssddyaLls",
+	"Lddyhddssddyhdds",
+	"lLhddhlllhddhLls",
+	".lhLh....hLhl.h.",
 ]
 
 const _PLANKS := [
