@@ -53,10 +53,10 @@ const _PROPS := {
 		"drops": [["log", 100, 1, 1]],
 	},
 	LEAVES: {
-		# 不实心 (玩家可穿过)；100% 掉树叶本身 + 20% 额外掉根木棍
+		# 不实心 (玩家可穿过)；100% 掉树叶本身
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
-		"drops": [["leaves", 100, 1, 1], ["stick", 20, 1, 1]],
+		"drops": [["leaves", 100, 1, 1]],
 	},
 	PLANKS: {
 		"solid": true, "mineable": true,
@@ -80,16 +80,16 @@ const _PROPS := {
 		"drops": [],
 	},
 	LEAVES_PINE: {
-		# 松针：不实心 + 掉松针变种 + 偶发木棍
+		# 松针：不实心 + 掉松针变种
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
-		"drops": [["pine_leaves", 100, 1, 1], ["stick", 20, 1, 1]],
+		"drops": [["pine_leaves", 100, 1, 1]],
 	},
 	LEAVES_AUTUMN: {
-		# 秋叶：不实心 + 掉秋叶变种 + 偶发木棍
+		# 秋叶：不实心 + 掉秋叶变种
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
-		"drops": [["autumn_leaves", 100, 1, 1], ["stick", 20, 1, 1]],
+		"drops": [["autumn_leaves", 100, 1, 1]],
 	},
 	SLIME_TORCH: {
 		"solid": false, "mineable": true,
