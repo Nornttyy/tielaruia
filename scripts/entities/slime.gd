@@ -6,8 +6,8 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const MAX_HEALTH := 4
 const CONTACT_DAMAGE := 2
 const GRAVITY := 900.0
-const HOP_VY := -110.0          # 跳高 ~6.7 px, 跨不过 16px 方块
-const HOP_VX := 55.0
+const HOP_VY := -200.0          # 跳高 ~22 px, 能跨 1 格 (16 px) 但跨不过 2 格
+const HOP_VX := 65.0
 const HOP_COOLDOWN_MIN := 0.8
 const HOP_COOLDOWN_MAX := 1.8
 const AGGRO_RANGE_PX := 160.0   # 10 tiles
@@ -45,12 +45,11 @@ func _physics_process(delta: float) -> void:
 			_attempt_hop()
 
 	move_and_slide()
-	# 撞墙立即转向并掐掉向上速度 (不让 slime 翻上方块)
-	if is_on_wall():
-		velocity.x = -velocity.x
-		if velocity.y < 0.0:
-			velocity.y = 0.0
-		sprite.flip_h = velocity.x < 0.0
+	# 撞墙 + 落地 → 下次跳转反方向 (避免卡墙原地)
+	if is_on_wall() and is_on_floor():
+		velocity.x = 0
+		sprite.flip_h = not sprite.flip_h
+		_hop_timer = min(_hop_timer, 0.2)
 	_check_player_contact()
 
 

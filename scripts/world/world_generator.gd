@@ -179,6 +179,7 @@ static func _place_trees(tiles: Array, heights: PackedInt32Array, world_seed: in
 
 # 按形状画树冠。坐标 (trunk_x, trunk_top) 是树干顶部。
 # dy <=0 在树干顶部及上方; dy=+1 是树干第二节,leaves 在两侧 (中柱被 LOG 覆盖)。
+# 树叶下方不能是地形 (grass/dirt/stone), 否则短树会"脚底长叶"。
 static func _place_canopy(tiles: Array, trunk_x: int, trunk_top: int, kind: String,
 		leaves_tile: int, width: int, height: int) -> void:
 	var offsets: Array = _canopy_offsets(kind)
@@ -187,8 +188,16 @@ static func _place_canopy(tiles: Array, trunk_x: int, trunk_top: int, kind: Stri
 		var cy: int = trunk_top + off.y
 		if cx < 0 or cx >= width or cy < 0 or cy >= height:
 			continue
-		if tiles[cx][cy] == Tiles.AIR:
-			tiles[cx][cy] = leaves_tile
+		if tiles[cx][cy] != Tiles.AIR:
+			continue
+		# 防"贴地叶": 下方一格必须是 AIR/叶子/树干, 不能是地表方块
+		if cy + 1 < height:
+			var below: int = tiles[cx][cy + 1]
+			if below != Tiles.AIR and below != Tiles.LOG \
+					and below != Tiles.LEAVES and below != Tiles.LEAVES_PINE \
+					and below != Tiles.LEAVES_AUTUMN:
+				continue
+		tiles[cx][cy] = leaves_tile
 
 
 static func _canopy_offsets(kind: String) -> Array:
