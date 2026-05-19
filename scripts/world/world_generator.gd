@@ -17,12 +17,39 @@ const _SPECIES_OAK := 0
 const _SPECIES_PINE := 1
 const _SPECIES_AUTUMN := 2
 
-# 各树种参数: [min_h, max_h, leaves_tile, canopy_kind]
-# canopy_kind: "round_3x3" / "tall_3x5" / "wide_5x3"
+# 每个 canopy_kind 向上伸的最大格数 (用于检查是否出界)
+const _CANOPY_REACH := {
+	"oak_small": 1,
+	"oak_med": 1,
+	"oak_large": 2,
+	"oak_tall": 3,
+	"pine_small": 2,
+	"pine_med": 3,
+	"pine_large": 4,
+	"pine_huge": 5,
+	"autumn_small": 1,
+	"autumn_med": 1,
+	"autumn_large": 2,
+	"autumn_huge": 1,
+}
+
+# 树种参数。canopies 列表中重复表示该尺寸更常见 (med x2 = 40% 概率)
 const _SPECIES_PARAMS := {
-	_SPECIES_OAK:    [4, 6, Tiles.LEAVES,        "round_3x3"],
-	_SPECIES_PINE:   [5, 8, Tiles.LEAVES_PINE,   "tall_3x5"],
-	_SPECIES_AUTUMN: [3, 5, Tiles.LEAVES_AUTUMN, "wide_5x3"],
+	_SPECIES_OAK: {
+		"trunk_range": [3, 7],
+		"leaves": Tiles.LEAVES,
+		"canopies": ["oak_small", "oak_med", "oak_med", "oak_large", "oak_tall"],
+	},
+	_SPECIES_PINE: {
+		"trunk_range": [4, 9],
+		"leaves": Tiles.LEAVES_PINE,
+		"canopies": ["pine_small", "pine_med", "pine_med", "pine_large", "pine_huge"],
+	},
+	_SPECIES_AUTUMN: {
+		"trunk_range": [2, 6],
+		"leaves": Tiles.LEAVES_AUTUMN,
+		"canopies": ["autumn_small", "autumn_med", "autumn_med", "autumn_large", "autumn_huge"],
+	},
 }
 
 
@@ -119,21 +146,16 @@ static func _place_trees(tiles: Array, heights: PackedInt32Array, world_seed: in
 		if rng.randf() > TREE_CHANCE:
 			x += 1
 			continue
-		# 随机选树种
+		# 随机选树种 + 该树种的随机 canopy 变体
 		var species: int = rng.randi_range(_SPECIES_OAK, _SPECIES_AUTUMN)
-		var params: Array = _SPECIES_PARAMS[species]
-		var min_h: int = params[0]
-		var max_h: int = params[1]
-		var leaves_tile: int = params[2]
-		var canopy_kind: String = params[3]
-		var trunk_height: int = rng.randi_range(min_h, max_h)
+		var params: Dictionary = _SPECIES_PARAMS[species]
+		var trunk_range: Array = params["trunk_range"]
+		var leaves_tile: int = params["leaves"]
+		var canopies: Array = params["canopies"]
+		var canopy_kind: String = canopies[rng.randi() % canopies.size()]
+		var trunk_height: int = rng.randi_range(trunk_range[0], trunk_range[1])
 		var trunk_top: int = surf - trunk_height
-		# 树冠所需的最高 y 取决于形状
-		var canopy_top: int = trunk_top
-		match canopy_kind:
-			"round_3x3": canopy_top = trunk_top - 1
-			"tall_3x5":  canopy_top = trunk_top - 3
-			"wide_5x3":  canopy_top = trunk_top - 1
+		var canopy_top: int = trunk_top - _CANOPY_REACH[canopy_kind]
 		if canopy_top < 0:
 			x += 1
 			continue
@@ -155,36 +177,11 @@ static func _place_trees(tiles: Array, heights: PackedInt32Array, world_seed: in
 		x += TREE_MIN_SPACING
 
 
-# 按形状画树冠。坐标 (trunk_x, trunk_top) 是树干顶部所在格。
+# 按形状画树冠。坐标 (trunk_x, trunk_top) 是树干顶部。
+# dy <=0 在树干顶部及上方; dy=+1 是树干第二节,leaves 在两侧 (中柱被 LOG 覆盖)。
 static func _place_canopy(tiles: Array, trunk_x: int, trunk_top: int, kind: String,
 		leaves_tile: int, width: int, height: int) -> void:
-	# 偏移列表：相对树干顶 (dx, dy) 都填 leaves_tile (限于 AIR)
-	var offsets: Array = []
-	match kind:
-		"round_3x3":
-			# 3x3 中心在 (0, 0)
-			for dy in range(-1, 2):
-				for dx in range(-1, 2):
-					offsets.append(Vector2i(dx, dy))
-		"tall_3x5":
-			# 5 高 3 宽,顶上 1 个尖 (松树锥形)
-			# 行 dy=-3: 仅中心
-			offsets.append(Vector2i(0, -3))
-			# 行 dy=-2..0: 全 3 宽
-			for dy in range(-2, 1):
-				for dx in range(-1, 2):
-					offsets.append(Vector2i(dx, dy))
-		"wide_5x3":
-			# 5 宽 3 高,中间一行最宽,上下行收一格 (秋树扁阔)
-			# dy=-1: dx -1..1 (3 wide)
-			for dx in range(-1, 2):
-				offsets.append(Vector2i(dx, -1))
-			# dy=0: dx -2..2 (5 wide)
-			for dx in range(-2, 3):
-				offsets.append(Vector2i(dx, 0))
-			# dy=1: dx -1..1 (3 wide)
-			for dx in range(-1, 2):
-				offsets.append(Vector2i(dx, 1))
+	var offsets: Array = _canopy_offsets(kind)
 	for off in offsets:
 		var cx: int = trunk_x + off.x
 		var cy: int = trunk_top + off.y
@@ -192,3 +189,91 @@ static func _place_canopy(tiles: Array, trunk_x: int, trunk_top: int, kind: Stri
 			continue
 		if tiles[cx][cy] == Tiles.AIR:
 			tiles[cx][cy] = leaves_tile
+
+
+static func _canopy_offsets(kind: String) -> Array:
+	var offs: Array = []
+	match kind:
+		# === OAK 橡木 ===
+		"oak_small":
+			# 5 格小冠: 上排 3 + 两侧 2
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -1))
+			offs.append(Vector2i(-1, 0)); offs.append(Vector2i(1, 0))
+		"oak_med":
+			# 经典 3x3
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					offs.append(Vector2i(dx, dy))
+		"oak_large":
+			# 5 宽圆冠 (rhombus)
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -2))
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
+			for dx in range(-2, 3):
+				if dx == 0: continue
+				offs.append(Vector2i(dx, 0))
+			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))
+		"oak_tall":
+			# 3 宽 x 4 高
+			offs.append(Vector2i(0, -3))
+			for dy in range(-2, 2):
+				for dx in range(-1, 2):
+					offs.append(Vector2i(dx, dy))
+		# === PINE 松树 (始终锥形) ===
+		"pine_small":
+			# 顶尖 + 3 宽 x 2
+			offs.append(Vector2i(0, -2))
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					offs.append(Vector2i(dx, dy))
+		"pine_med":
+			# 顶尖 + 3 宽 x 3
+			offs.append(Vector2i(0, -3))
+			for dy in range(-2, 2):
+				for dx in range(-1, 2):
+					offs.append(Vector2i(dx, dy))
+		"pine_large":
+			# 双层锥
+			offs.append(Vector2i(0, -4))
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -3))
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -2))
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
+			for dx in range(-2, 3):
+				if dx == 0: continue
+				offs.append(Vector2i(dx, 0))
+			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))
+		"pine_huge":
+			# 5 层超高锥
+			offs.append(Vector2i(0, -5))
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -4))
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -3))
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -2))
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
+			for dx in range(-2, 3):
+				if dx == 0: continue
+				offs.append(Vector2i(dx, 0))
+			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))
+		# === AUTUMN 秋树 (始终偏宽扁) ===
+		"autumn_small":
+			# 3x3 (跟 oak_med 一样但叶色不同)
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					offs.append(Vector2i(dx, dy))
+		"autumn_med":
+			# 5 宽 x 3 高菱形
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -1))
+			for dx in range(-2, 3): offs.append(Vector2i(dx, 0))
+			for dx in range(-1, 2): offs.append(Vector2i(dx, 1))
+		"autumn_large":
+			# 5 宽 x 4 高
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -2))
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
+			for dx in range(-2, 3):
+				if dx == 0: continue
+				offs.append(Vector2i(dx, 0))
+			for dx in range(-1, 2): offs.append(Vector2i(dx, 1))
+		"autumn_huge":
+			# 7 宽 x 3 高扁阔伞冠
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
+			for dx in range(-3, 4): offs.append(Vector2i(dx, 0))
+			for dx in range(-2, 3): offs.append(Vector2i(dx, 1))
+	return offs
