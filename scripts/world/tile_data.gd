@@ -15,6 +15,7 @@ const DOOR := 9
 const BEDROCK := 10
 const LEAVES_PINE := 11     # 松针 (深暖绿)
 const LEAVES_AUTUMN := 12   # 秋叶 (红橙)
+const SLIME_TORCH := 13     # 史莱姆灯 (装饰, 不实心)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -89,6 +90,11 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["autumn_leaves", 100, 1, 1], ["stick", 20, 1, 1]],
+	},
+	SLIME_TORCH: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["slime_torch", 100, 1, 1]],
 	},
 }
 

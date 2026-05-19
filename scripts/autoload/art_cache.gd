@@ -54,7 +54,7 @@ func _build_blocks() -> void:
 		BlocksArt.GRASS, BlocksArt.DIRT, BlocksArt.STONE, BlocksArt.SAND,
 		BlocksArt.LOG, BlocksArt.LEAVES, BlocksArt.PLANKS, BlocksArt.WORKBENCH,
 		BlocksArt.DOOR, BlocksArt.BEDROCK,
-		BlocksArt.LEAVES_PINE, BlocksArt.LEAVES_AUTUMN,
+		BlocksArt.LEAVES_PINE, BlocksArt.LEAVES_AUTUMN, BlocksArt.SLIME_TORCH,
 	]
 	for tile_id in tile_ids:
 		block_textures[tile_id] = BlocksArt.get_texture(tile_id)

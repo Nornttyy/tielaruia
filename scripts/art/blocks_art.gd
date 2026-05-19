@@ -22,6 +22,7 @@ const DOOR := 9
 const BEDROCK := 10
 const LEAVES_PINE := 11     # 松针 (深暖绿)
 const LEAVES_AUTUMN := 12   # 秋叶 (红橙)
+const SLIME_TORCH := 13     # 史莱姆灯
 
 # --- 调色板 (每方块独立) ---
 
@@ -114,6 +115,15 @@ const _P_LEAVES_AUTUMN := {
 	"s": Color8(180, 90, 45),    # 中阴影
 	"a": Color8(215, 145, 70),   # 桃色变种
 	"r": Color8(140, 50, 30),    # 深红浆果
+}
+
+# 史莱姆灯: 暗木棍 + 顶部黄绿史莱姆胶发光感
+const _P_SLIME_TORCH := {
+	"b": Color8(74, 52, 41),    # 木棍深
+	"r": Color8(110, 80, 67),   # 木棍中
+	"g": Color8(120, 200, 100), # 胶体绿
+	"G": Color8(76, 175, 80),   # 胶体阴影
+	"h": Color8(220, 255, 180), # 高光
 }
 
 const _P_PLANKS := {
@@ -307,6 +317,26 @@ const _LEAVES_AUTUMN := [
 	".lhLh....hLhl.h.",
 ]
 
+# 史莱姆灯: 顶部 4x3 绿胶 + 中间细木棍
+const _SLIME_TORCH := [
+	"................",
+	"....hgggggggh...",
+	"...gggGGGggggg..",
+	"...ggGGgGGggGg..",
+	"...gGgGGGgGGgg..",
+	"....ggGGGgggg...",
+	".....gggggg.....",
+	".......bb.......",
+	".......br.......",
+	".......bb.......",
+	".......br.......",
+	".......bb.......",
+	".......br.......",
+	".......bb.......",
+	"......bbbb......",
+	"................",
+]
+
 const _PLANKS := [
 	"pppppppppppppppp",
 	"ppPpppppllpppPpp",
@@ -418,6 +448,7 @@ const _PATTERN_MAP := {
 	BEDROCK: [_BEDROCK, _P_BEDROCK],
 	LEAVES_PINE: [_LEAVES_PINE, _P_LEAVES_PINE],
 	LEAVES_AUTUMN: [_LEAVES_AUTUMN, _P_LEAVES_AUTUMN],
+	SLIME_TORCH: [_SLIME_TORCH, _P_SLIME_TORCH],
 }
 
 
@@ -434,6 +465,7 @@ const _PALETTES := {
 	BEDROCK:   [_P_BEDROCK["b"],   _P_BEDROCK["B"]],
 	LEAVES_PINE:   [_P_LEAVES_PINE["l"],   _P_LEAVES_PINE["L"]],
 	LEAVES_AUTUMN: [_P_LEAVES_AUTUMN["l"], _P_LEAVES_AUTUMN["L"]],
+	SLIME_TORCH:   [_P_SLIME_TORCH["g"],   _P_SLIME_TORCH["G"]],
 }
 const _DEFAULT_PALETTE := [Color(0.7, 0.7, 0.7), Color(0.4, 0.4, 0.4)]
 
