@@ -35,6 +35,7 @@ const _P_DIRT := {
 	"D": Color8(109, 68, 38),
 	"k": Color8(74, 47, 26),     # 小石子
 	"l": Color8(166, 124, 82),   # 高光
+	"L": Color8(200, 149, 106),  # 凸起亮面
 }
 
 const _P_STONE := {
@@ -42,6 +43,7 @@ const _P_STONE := {
 	"S": Color8(117, 117, 117),
 	"l": Color8(189, 189, 189),
 	"k": Color8(89, 89, 89),     # 裂纹
+	"L": Color8(221, 221, 221),  # 凸起亮面
 }
 
 const _P_SAND := {
@@ -49,13 +51,14 @@ const _P_SAND := {
 	"Y": Color8(230, 193, 77),
 	"l": Color8(250, 234, 122),
 	"k": Color8(186, 152, 56),
+	"L": Color8(255, 244, 168),  # 凸起亮面
 }
 
 const _P_LOG := {
 	"b": Color8(93, 64, 55),     # 树皮基色
-	"B": Color8(62, 39, 35),     # 树皮深
-	"r": Color8(121, 85, 72),    # 木芯高光
-	"R": Color8(78, 52, 46),     # 年轮
+	"B": Color8(62, 39, 35),     # 树皮深沟
+	"l": Color8(161, 136, 127),  # 树皮高光（凸条）
+	"R": Color8(78, 52, 46),     # 木结
 }
 
 const _P_LEAVES := {
@@ -96,119 +99,124 @@ const _P_BEDROCK := {
 
 # --- 图案 (每方块 16x16) ---
 
+# 草方块：顶部 1-2px 草尖 (透空 + 高光) + 渐变到泥土
 const _GRASS := [
-	"aaaaaaaaaaaaaaaa",
-	"gaagagagagagaaga",
-	"gggGgGgGgggGgggg",
-	"GGGGGGGGGGGGGGGG",
-	"gddgdGgdgddggGgg",
-	"ddgdgddgdgGggddd",
+	".a..aa..a..aa..a",
+	"agaagaagaagaagaa",
+	"agGgggGggggGggga",
+	"GgggGgGgggGggGgg",
+	"gGddgdGddgGdgdgg",
+	"ddggddgdgdggddgd",
 	"dddgddddddddgddd",
 	"dddddddddddddddd",
-	"dDddddDdddddddDd",
+	"dDdddddDdddddddd",
 	"ddDddddddddddddd",
-	"DdddddddddddDddd",
-	"ddddDdddddddDddd",
-	"ddddddddDdddDddd",
-	"DddddDdddddddddd",
+	"DdddddddddDdkddd",
+	"ddDddDdddddddddd",
+	"dddddddDdkddDddd",
+	"DddddDddddddddDd",
 	"dddDddddddddDddd",
-	"dDdddddDdddddddD",
+	"dDddddDdddddkddd",
 ]
 
+# 泥土：散布凸起 (LL 簇) + 小石子 (k) + 阴影变化 (D)
 const _DIRT := [
-	"dddddddddddddddd",
-	"dddlddddddddddDd",
-	"ddDddddkdddddddd",
-	"dddddddddddDdddd",
-	"dDdddddddddddddd",
-	"dddddddDdddddddd",
-	"ddDdddddddkddddd",
-	"ddddddddddddDddd",
+	"dDdDddDddDddDdDd",
+	"ddlDdddddddddkdd",
+	"dDdddkdDdLLddddd",
+	"dddddddddLLdkddd",
+	"dDddDddddddddddd",
+	"ddkddDdddddddddD",
+	"ddDdddddddkLLddd",
+	"ddddddddddDLLdkd",
 	"dlddddddDdddddDd",
 	"ddddDdddddddddDd",
-	"DdddddddddDddddd",
-	"dddddkdddddddddd",
-	"ddDdddddddddDddD",
-	"dddddddDddddddDd",
+	"DdddddddddDddkdd",
+	"ddddDkdddddddddd",
+	"ddDLLdddddddDddD",
+	"dddLLddDdddddDDd",
 	"ddddddDddddkdDdd",
-	"DddDdDddddDddddD",
+	"DddDdDdddDddddDd",
 ]
 
+# 石头：凸起团 (LL) + 裂纹 (k) + 高光散点 (l) — 加块面感
 const _STONE := [
-	"SSsSsSsSsSsSsSSS",
-	"SssssssssssssssS",
-	"sslsssssksssslss",
-	"ssssssksssssssss",
-	"SsssssssssssssSs",
-	"sssssksslsssssss",
-	"ssslsssksssssSss",
-	"sssssssssksssssS",
-	"sslsssssssssssss",
-	"sssssksssslksssS",
-	"sssssssssssssSss",
-	"sslsssksssssssss",
-	"sSsssslsssssksss",
-	"sssssssSssssksss",
-	"SssssssssssksSsS",
-	"SSsSsSsSsSsSsSSS",
+	"sSsSsssSsSsSsSss",
+	"slksslLLslsssLss",
+	"ssksklLLslsssLss",
+	"ssklssklssssklss",
+	"sLLLLkssksssklss",
+	"sLLLLklllksssLss",
+	"sLLLLklllksssLss",
+	"sssklllllkLLksss",
+	"sssklssklsLLkLss",
+	"ssklksksslsklsLs",
+	"slkssklllssLLkss",
+	"slksslssklsLLkss",
+	"sssklssklsssklss",
+	"sssLLkssssklssLs",
+	"ssLLLkksssklssss",
+	"sSsSsssSsSsSsSss",
 ]
 
+# 沙：散落沙丘小凸起 (LL) + 偶发石子 (k)
 const _SAND := [
-	"yyyylyyyyyyyyyyy",
-	"yyyyyyyyyyyyyyly",
-	"yyyyykyyyyyyyyyy",
-	"yyyyyyyyyyyyyyyy",
-	"ylyyyyyyyyyyyyYy",
-	"yyyyyyykyyyyyyyy",
-	"yyYyyyyyyyyyyyly",
-	"yyyyyyyyyyyyyyyy",
-	"yyyyyyyyyyykyyyy",
-	"ylyyyyyYyyyyyyyy",
+	"yyyyylyyyyyyyyyy",
+	"yyyykyyyyyyyyLLy",
+	"yyyLLyyyyyyyyLLy",
+	"yyLLLyyykyyyyyyy",
+	"yYyyyyykyyyyyYyy",
+	"yyyyYyyyyyyykyyy",
+	"yyykyyyyyYyyyyly",
+	"yyyyyyyyyykLLyyy",
+	"yyyyyyyyykLLLLyy",
+	"ylyyyyYyyyLLLlyy",
 	"yyyyyykyyyyyyyyy",
 	"yyyyyyyyyyyyyyyy",
 	"yyyyyyyyyyyylyyy",
-	"yyyyyyyyykyyyyyy",
-	"yYyyyyyyyyyyyyyy",
+	"yyyykLLyyykyyyyy",
+	"yYyykLLyyyyyyyyy",
 	"yyyyyyyyyyyyyyyy",
 ]
 
-# 原木从上往下看 (用作树干)：环形年轮
+# 原木从侧面看（用作树干）：竖向树皮纹理 + 凸起高光条 + 偶发木结
 const _LOG := [
-	"bbbbbbbbbbbbbbbb",
-	"bBbbbbbbbbbbbbBb",
-	"bbrrrrrrrrrrrrbb",
-	"bbrRRRRRRRRRRrbb",
-	"bbrRrrrrrrrrRrbb",
-	"bbrRrRRRRRRrRrbb",
-	"bbrRrRrrrrRrRrbb",
-	"bbrRrRrRRrRrRrbb",
-	"bbrRrRrRRrRrRrbb",
-	"bbrRrRrrrrRrRrbb",
-	"bbrRrRRRRRRrRrbb",
-	"bbrRrrrrrrrrRrbb",
-	"bbrRRRRRRRRRRrbb",
-	"bbrrrrrrrrrrrrbb",
-	"bBbbbbbbbbbbbbBb",
-	"bbbbbbbbbbbbbbbb",
+	"bbBbbBbbBbbBbbBb",
+	"bBblbBblbBblbBbl",
+	"bbblbBblbbblbBbl",
+	"bBblbBblbBblbBbl",
+	"bBblbRRlbBblbBbl",
+	"bBblbRRlbBblbBbl",
+	"bBblbBblbBblbBbl",
+	"bBblbBblbBblbBbl",
+	"bBblbBblbBblbBbl",
+	"bBblbBblbBblbRRl",
+	"bBblbBblbBblbRRl",
+	"bBblbBblbBblbBbl",
+	"bbblbBblbBblbBbl",
+	"bBblbBblbBblbBbl",
+	"bbBbbBbbBbbBbbBb",
+	"bbbBbbBbbBbbBbbb",
 ]
 
+# 树叶：多个叶簇 + 簇心高光 + 四角透空 (打破方形轮廓)
 const _LEAVES := [
-	"LlllLllLlLllLlLl",
-	"llhllldlLlhlllll",
-	"LlllLlllLllLllll",
-	"lllldlllllldllLl",
-	"lLlllllhllllllll",
-	"lllldlllLlllllld",
-	"lhlllllllllhllll",
-	"lllLllldllllllll",
-	"lllllllllLllllhl",
-	"lhlldllllllldlll",
-	"llllLllllhlllllL",
-	"llldlllllllllldl",
-	"lhlllllLllllllhl",
-	"lllldllllldllllL",
-	"lLlllLlllhlllLll",
-	"llllLLllLllllhll",
+	".lLLll....llLll.",
+	"lLLddLllllLddLLl",
+	"lLddhdLLLdhddLll",
+	"lLLddhLLhLLddLll",
+	"llLLLLLLLLLLLLll",
+	"llLLddddddddLLll",
+	"lLLdhhdLLdhhdLLl",
+	"lLddhdLLLLdhddLl",
+	"lLddhdLLLLdhddLl",
+	"lLLdhhdLLdhhdLLl",
+	"llLLddddddddLLll",
+	"llLLLLLLLLLLLLll",
+	"lLLddhLLhLLddLll",
+	"lLddhdLLLdhddLll",
+	"lLLddLllllLddLLl",
+	".lLLll....llLll.",
 ]
 
 const _PLANKS := [

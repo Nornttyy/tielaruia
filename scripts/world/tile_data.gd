@@ -49,10 +49,10 @@ const _PROPS := {
 		"drops": [["log", 100, 1, 1]],
 	},
 	LEAVES: {
-		# 不实心 (玩家可穿过)；砍下 30% 概率掉原木代替树苗
+		# 不实心 (玩家可穿过)；100% 掉树叶本身 + 20% 额外掉根木棍
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
-		"drops": [["log", 30, 1, 1]],
+		"drops": [["leaves", 100, 1, 1], ["stick", 20, 1, 1]],
 	},
 	PLANKS: {
 		"solid": true, "mineable": true,
