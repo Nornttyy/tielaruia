@@ -1,69 +1,77 @@
-# 配方重划 (Demo Phase Combat++) — Design
+# 配方重划 + Terraria 风 UI — Design
 
 - **日期**: 2026-05-19
-- **状态**: v1 草案,等用户复审
+- **状态**: v2 草案 (Terraria 对齐), 等用户复审
 - **作者**: AI 与用户协作
 
 ## 1. 背景与动机
 
-Demo 当前 6 个配方 (planks / stick / workbench / wood_sword / wood_pickaxe / wood_axe),足够展示 2x2 与 3x3 合成系统,但暴露三个问题:
+Demo 当前 6 个配方,UI 是居中弹窗遮住整个游戏。三大问题:
 
-1. **死路物品**: `stone` 挖出来无用,`slime_ball` 杀史莱姆掉但无用,门 (door) tile 有但无合成路径
-2. **无 tier 进阶**: 杀了一只 slime 之后 (1 hit kill) 玩家再无新目标
-3. **配方少觉得空**: 用户在新 E 键面板看到只有 6 个按钮觉得"很乱/不完整"
+1. **死路物品**: stone / slime_ball / door 都不可造或用不了
+2. **居中弹窗不像泰拉瑞亚**: 用户期望"开背包看到列表 + 世界仍可见"那种横排/竖排列表
+3. **配方数量"太少觉得乱"**: 11 个分层后会更有结构
 
-本 spec 加 **5 个新配方** + 调整既有数据形成 **木 → 石** 工具进阶,让现有 `stone` 和 `slime_ball` 物品有用,门可造,体验版有 ~15-20 分钟内容深度。
+本 spec 做 **两件事**:
+- **A**: 配方表对齐 Terraria 格式 (去掉"木棍"中间品, 工具直接用 planks; 数值对齐)
+- **B**: UI 重排为 Terraria 风 (背包 + 配方列表 都在左上角, 世界可见)
 
 ## 2. 范围
 
-### 2.1 In Scope (本次)
+### 2.1 In Scope
 
-- ✅ 新增 5 个配方 (door + 3 石器 + slime_torch)
-- ✅ ItemDB 新增 4 个物品 (stone_sword / stone_pickaxe / stone_axe / slime_torch)
-- ✅ ItemsArt 新增 4 个 16×16 像素图标
-- ✅ TileData 调整:
-  - 提高 stone 所需 tool_tier (现 1 → 保持 1, 但 stone_pickaxe tier 2 挖更快)
-  - slime HP 4 → 6 (让木剑 2 击杀,石剑 1 击杀)
-- ✅ Tool speed 与 damage 在 player_action.gd 按 tool_kind+tier 查表
-- ✅ slime_torch 是 placeable tile (放下后未来作为光源接 P3 昼夜包;现在只是一个发光像素方块)
-- ✅ 更新 RecipeDB 6 + 5 = **11 个配方**
+**配方/物品改造**:
+- ✅ 删除 `stick` 物品 (Terraria 无)
+- ✅ Leaves 改成只掉自己 (不再掉 stick)
+- ✅ 新增 4 个物品: stone_sword / stone_pickaxe / stone_axe / slime_torch
+- ✅ 新增 1 个 tile: SLIME_TORCH (暂不发光,P3 昼夜包接管)
+- ✅ 重写 RecipeDB 为 **10 个配方** (4 个 2×2 + 6 个 3×3)
+- ✅ ItemsArt 新增 4 个 16×16 图标
+- ✅ Slime HP 4→6 (让木→石进阶有感)
+- ✅ Tool tier 与速度/伤害查表
 
-### 2.2 Out of Scope (推迟)
+**UI 重排 (Terraria 风)**:
+- ✅ CraftingPanel 从居中弹窗 → 左上角锚定 (anchor top-left)
+- ✅ 半透明面板背景 (世界仍可见)
+- ✅ 背包 4×9 显示在面板顶部
+- ✅ 配方列表为**纵向列表**, 每行: [输出图标 32px] [名字] [材料 简写] [一键合成 hint]
+- ✅ 当前选中 = 黄色边框高亮 (鼠标 hover 即"选中")
+- ✅ 不可合成 = 灰显 + 不响应点击
+- ✅ 关闭仍为 E
 
-- ❌ 新 tile 类型: 不加 chest/bed/iron_ore 等(避免开新坑)
-- ❌ 昼夜系统: slime_torch 现在只是 placeable, 不实际发光; P3 昼夜包接管
-- ❌ leaves 用途: 暂不为 leaves/pine_leaves/autumn_leaves 加合成路径 (后续若做染料/食物再说)
-- ❌ 防具系统: 不加头盔/胸甲
+### 2.2 Out of Scope
 
-## 3. 进阶链路
+- ❌ Terraria 的多种工作站 (anvil, furnace) — demo 只有 workbench
+- ❌ 工具菜单滚轮选中机制 — 直接点列表行就好,无需 Terraria 那种"滚到中间放大"
+- ❌ 防具/弓箭/食物
+- ❌ 昼夜联动 (slime_torch 现在不发光)
+
+## 3. 进阶链路 (Terraria 对齐)
 
 ```
-log ─┬─→ planks ─┬─→ workbench ─→ (进 3×3)
-     │           ├─→ door
-     │           ├─→ wood_sword
-     │           ├─→ wood_pickaxe  ─→ 挖 stone
-     │           └─→ wood_axe
-     └─→ stick
+log ─→ planks ─┬─→ workbench
+               ├─→ door
+               ├─→ wood_sword
+               ├─→ wood_pickaxe ─→ 挖 stone
+               ├─→ wood_axe
+               └─→ (作为石器手柄)
 
-stone ─┬─→ stone_sword   (剑 +damage)
-       ├─→ stone_pickaxe (镐 +speed)
-       └─→ stone_axe     (斧 +speed)
+stone ─┬─→ stone_sword   (2 stone + 1 plank 手柄)
+       ├─→ stone_pickaxe (3 stone + 2 plank 手柄)
+       └─→ stone_axe     (3 stone + 2 plank 手柄)
 
-slime_ball + stick → slime_torch (放下来当装饰; 昼夜包做后变光源)
+slime_ball + plank → slime_torch (3 个)
 ```
 
-**典型一局 ~15 分钟**:
-1. 0-2 min: 砍 2-3 棵树, 2x2 合 planks → stick → workbench
-2. 2-3 min: 工作台旁 3x3 合 wood_axe + wood_pickaxe + wood_sword
-3. 3-5 min: 砍更多树 (有斧子 4×速) + 挖到地下 stone 矿
-4. 5-7 min: 回工作台合 stone 三件套
-5. 7-12 min: 用石剑一击杀 slime 收集 slime_ball, 合 slime_torch 装饰家
-6. 12-15 min: 用 door 围一个房子, 探索地图
+Terraria 没有 stick, 所有工具直接用 planks 或 planks+矿石 → 我们也是。
 
 ## 4. 数据变更详表
 
-### 4.1 ItemDB 新增 (4 项)
+### 4.1 ItemDB 改动
 
+**删除**: `stick` (Terraria 无)
+
+**新增 4 项**:
 ```gdscript
 "stone_sword":   {"placeable_tile_id": -1, "tool_kind": "sword",   "tool_tier": 2, "max_stack": 1},
 "stone_pickaxe": {"placeable_tile_id": -1, "tool_kind": "pickaxe", "tool_tier": 2, "max_stack": 1},
@@ -71,10 +79,21 @@ slime_ball + stick → slime_torch (放下来当装饰; 昼夜包做后变光源
 "slime_torch":   {"placeable_tile_id": Tiles.SLIME_TORCH, "tool_kind": "", "tool_tier": 0, "max_stack": 64},
 ```
 
-### 4.2 TileData 新增 1 项
+最终 ItemDB: log/planks/dirt/grass/stone/sand/leaves(×3)/workbench/door/slime_ball/wood_sword/wood_pickaxe/wood_axe/stone_sword/stone_pickaxe/stone_axe/slime_torch = **18 项**
+
+### 4.2 LEAVES drops 调整
+
+去掉 stick 后:
+```
+LEAVES.drops: [["leaves", 100, 1, 1]]    # 不再 20% 掉 stick
+LEAVES_PINE.drops: [["pine_leaves", 100, 1, 1]]
+LEAVES_AUTUMN.drops: [["autumn_leaves", 100, 1, 1]]
+```
+
+### 4.3 TileData 新增
 
 ```gdscript
-# 史莱姆灯 — 不实心 (可穿过), 黄绿色发光像素方块
+const SLIME_TORCH := 13
 SLIME_TORCH: {
     "solid": false, "mineable": true,
     "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
@@ -82,147 +101,200 @@ SLIME_TORCH: {
 }
 ```
 
-Tile ID 常量: `SLIME_TORCH := 13`
-
-### 4.3 工具效果表
+### 4.4 工具效果表
 
 | 工具 | tier | 挖速倍数 | 攻击伤害 |
 |---|---|---|---|
 | 徒手 | 0 | 1.0 | 1 |
-| wood_sword | 1 | 1.0 | 4 (改自 5) |
-| wood_pickaxe | 1 | 1.0 (基础) | 2 |
+| wood_sword | 1 | 1.0 | 4 |
+| wood_pickaxe | 1 | 1.0 | 2 |
 | wood_axe | 1 | 3.0 (LOG only) | 2 |
 | stone_sword | 2 | 1.0 | 7 |
 | stone_pickaxe | 2 | 1.5 (STONE only) | 3 |
 | stone_axe | 2 | 4.0 (LOG only) | 3 |
 
-`player_action.gd:_tool_speed()` 和 `_swing_sword()` 按 tool_kind + tier 查表。
+实现在 `player_action.gd`:
+- `_swing_sword` 按 tool tier (1 vs 2) 取伤害 (4 或 7)
+- `_tool_speed(tool_kind, tile_id)` 按 tool tier + 目标 tile 查表
 
-### 4.4 Slime HP 调整
+### 4.5 Slime HP
 
-- 当前: HP=4, CONTACT_DAMAGE=2
-- 改: HP=6, CONTACT_DAMAGE=2
-- 结果: 木剑 4 dmg × 2 = 8 → 2 击杀; 石剑 7 dmg × 1 = 7 → 1 击杀
+4 → 6
+- 木剑 4 dmg × 2 击 = 8 → 杀
+- 石剑 7 dmg × 1 击 = 7 → 杀
 
-### 4.5 RecipeDB 新增 5 项
+### 4.6 RecipeDB (10 个配方, 重写)
 
-#### door (2×3 板)
+#### 2×2 (4 个, 任意位置可造)
 ```
-PP
-PP
-PP
+planks: 1 log → 4 planks
+  pattern: [["log",""],["",""]]
+
+workbench: 4 planks → 1 workbench
+  pattern: [["planks","planks"],["planks","planks"]]
+
+slime_torch: 1 plank + 1 slime_ball → 3 torches
+  pattern: [["slime_ball",""],["planks",""]]   # ball 在上, plank 在下 (像火把柄)
+
+door: 6 planks → 1 door
+  pattern: [["planks","planks"],
+            ["planks","planks"],
+            ["planks","planks"]]
+  grid_size: Vector2i(2, 3)
+  注: 这个虽然 2 宽 3 高, 但 grid 是 2×2 模式 → 装不下!
 ```
-- grid_size: 2×3 (注: 当前 RecipeMatcher 用 Vector2i(cols, rows), 但所有现有 recipe 都是方形 2×2 或 3×3)
-- **决策**: door 配方占 3×3 模板的左 2 列, mirror_ok=true
-- output: 1 door
 
-#### stone_sword (3×3)
+**修正决策**: door 改放到 3×3 桶里 (需要工作台), 因为 demo 2×2 grid 是 2 行 2 列, 装不下 3 行的图案。Terraria 木门也是 workbench 配方。
+
+#### 3×3 (6 个, 需工作台)
 ```
-.S.
-.S.
-.K.    K = stick
+door: 6 planks (2 cols × 3 rows)
+  pattern: [["planks","planks",""],
+            ["planks","planks",""],
+            ["planks","planks",""]]
+  mirror_ok: true (左右对称都行)
+
+wood_sword: 3 planks (3 vertical)
+  pattern: [["","planks",""],
+            ["","planks",""],
+            ["","planks",""]]
+
+wood_pickaxe: 5 planks (T-shape: 3 top + 2 vertical handle)
+  pattern: [["planks","planks","planks"],
+            ["",      "planks",""],
+            ["",      "planks",""]]
+
+wood_axe: 5 planks (L-shape + 2 vertical handle)
+  pattern: [["planks","planks",""],
+            ["planks","planks",""],
+            ["",      "planks",""]]
+  mirror_ok: true
+
+stone_sword: 2 stone + 1 plank handle
+  pattern: [["","stone", ""],
+            ["","stone", ""],
+            ["","planks",""]]
+
+stone_pickaxe: 3 stone head + 2 planks handle
+  pattern: [["stone","stone","stone"],
+            ["",     "planks",""],
+            ["",     "planks",""]]
+
+stone_axe: 3 stone head + 2 planks handle (L)
+  pattern: [["stone","stone",""],
+            ["stone","planks",""],
+            ["",     "planks",""]]
+  mirror_ok: true
 ```
-- output: 1 stone_sword
 
-#### stone_pickaxe (3×3)
+总计: 3 个 2×2 + 7 个 3×3 = **10 个配方**
+
+## 5. UI 重排详图
+
+### 5.1 当前 (旧)
 ```
-SSS
-.K.
-.K.
+┌─────[ESC overlay 居中 -------]──────┐
+│      [合成 & 背包]                   │
+│      [配方按钮一排]                  │
+│      [背包 4×9]                      │
+│      [按 E 关闭]                     │
+└──────────────────────────────────────┘
+游戏被弹窗 全部遮挡
 ```
-- output: 1 stone_pickaxe
 
-#### stone_axe (3×3)
+### 5.2 新 (Terraria 风)
 ```
-SS.
-SK.
-.K.
+┌─背包 4×9 grid (顶) ──┐
+│ [ ][ ][ ][ ][ ][ ]   │  ← 左上角锚定, ~360x144
+│ [ ][ ][ ][ ][ ][ ]   │
+│ [ ][ ][ ][ ][ ][ ]   │
+│ [ ][ ][ ][ ][ ][ ]   │
+└──────────────────────┘
+┌─配方列表 ────────────┐
+│ ✋ 徒手 / 🛠 工作台旁│  ← 当前状态指示
+├──────────────────────┤
+│ [icon] planks  1原木 │  ← 高亮 (mouse hover)
+│ [icon] workbench 4板 │
+│ [icon] slime_torch …│
+│ [icon] door     6板 │  ← 灰 (没工作台)
+│ [icon] wood_sword …│  ← 灰
+│ ...                 │
+└──────────────────────┘
+                      [世界仍可见 →]
 ```
-- output: 1 stone_axe, mirror_ok=true
 
-#### slime_torch (2×2)
+- 左上角整块, 不挡视野中心
+- 半透明背景 (`Color(0,0,0,0.4)`)
+- 每个配方一行 = [40×40 输出图标] + [配方名] + [材料简写] + [hover 高亮黄边]
+- 点击行 = 一键合成 (素材足时)
+- 灰显: 缺素材 或 (3×3 配方 + 不在工作台旁)
+
+### 5.3 实现细节
+
+CraftingPanel 节点改造:
 ```
-B.    B = slime_ball
-K.    K = stick
+CanvasLayer
+  └ TopLeftAnchor (Control, anchor PRESET_TOP_LEFT)
+     └ Panel (PanelContainer, semi-transparent bg)
+        └ VBox
+           ├ Title "背包 & 合成"
+           ├ Status label (✋/🛠)
+           ├ InventoryGrid (4×9 子 panel)
+           ├ Separator
+           ├ RecipeListVBox (10 行)
+           └ CloseHint "按 E 关闭"
 ```
-- output: 4 slime_torches, mirror_ok=true
 
-## 5. 美术工作量
+不再用 CenterContainer 让面板居中; 改 `set_anchors_preset(PRESET_TOP_LEFT)` + 边距 16px。
 
-新增 5 个 16×16 图标 (放 items_art.gd):
-1. `stone_sword` — 灰色刀身 + 木柄
-2. `stone_pickaxe` — 灰色十字头 + 木柄
-3. `stone_axe` — 灰色斧头 + 木柄
-4. `slime_torch` (item 图标) — 绿色顶 + 木棍
-5. `slime_torch` (作为 block tile in BlocksArt) — 16×16 暗木棍 + 顶部发光绿色
+## 6. 美术工作量
 
-注: 4/5 复用同一图标更省事; 但 ArtCache.get_inventory_icon 对 placeable 物品默认查 BlocksArt 纹理, 所以做 block tile 那张就行。
+新增图标 (放 ItemsArt 或 BlocksArt):
+- `stone_sword` (16×16): 灰刀身 + 木柄
+- `stone_pickaxe` (16×16): 灰镐头 + 木柄
+- `stone_axe` (16×16): 灰斧头 + 木柄
+- `slime_torch` BlocksArt (16×16): 暗木棍 + 顶部黄绿史莱姆胶 (作为 placeable tile 自动复用为物品图标)
 
-## 6. 文件改动清单
+## 7. 文件改动清单
 
-- `scripts/world/tile_data.gd`:
-  - 加 `SLIME_TORCH := 13` 常量
-  - 加 SLIME_TORCH 到 _PROPS
-- `scripts/art/blocks_art.gd`:
-  - 加 `SLIME_TORCH := 13` 常量
-  - 加 _P_SLIME_TORCH 调色板 + _SLIME_TORCH pattern
-  - 加 _PATTERN_MAP + _PALETTES 条目
-- `scripts/art/items_art.gd`:
-  - 加 _STONE_SWORD / _STONE_PICKAXE / _STONE_AXE 三个 16×16 pattern
-- `scripts/items/item_db.gd`:
-  - 加 4 个物品 def
-- `scripts/autoload/art_cache.gd`:
-  - _build_blocks: 加 SLIME_TORCH
-  - _build_items: 加 3 个石器
-  - _ITEM_TO_TILE: 加 slime_torch
-- `scripts/world/tileset_builder.gd`:
-  - tile_ids 加 SLIME_TORCH (非实心 → 不加碰撞)
-- `scripts/crafting/recipe_db.gd`:
-  - 加 5 个 _RECIPES 条目
-- `scripts/player/player_action.gd`:
-  - _swing_sword 按 tool tier 取伤害
-  - _tool_speed 按 tool kind+tier 取倍率
-- `scripts/entities/slime.gd`:
-  - MAX_HEALTH 4 → 6
-- `tests/unit/test_item_db.gd`:
-  - test_all_known_items_present 加 4 项
-- `tests/unit/test_recipe_db.gd` (新, 若不存在):
-  - 验证 11 个 recipe 都能 RecipeMatcher.find_match 命中
+修改:
+- `scripts/world/tile_data.gd`: 加 SLIME_TORCH 常量+ _PROPS; LEAVES drops 去掉 stick
+- `scripts/art/blocks_art.gd`: 加 SLIME_TORCH 常量+调色板+pattern+映射
+- `scripts/art/items_art.gd`: 加 3 个石器 pattern
+- `scripts/items/item_db.gd`: **删除 stick**; 加 4 个新物品
+- `scripts/autoload/art_cache.gd`: tile_ids 加 SLIME_TORCH; item_icons 加 3 石器; _ITEM_TO_TILE 加 slime_torch
+- `scripts/world/tileset_builder.gd`: tile_ids 加 SLIME_TORCH
+- `scripts/crafting/recipe_db.gd`: 重写为 10 个配方 (全部去 stick)
+- `scripts/player/player_action.gd`: 攻击/挖速按 tool tier 查
+- `scripts/entities/slime.gd`: MAX_HEALTH 6
+- `scripts/ui/crafting_panel.gd`: 大改 — 列表式布局, 左上角锚定
+- `scenes/ui/crafting_panel.tscn`: 删除居中 CenterContainer, 改 TopLeftAnchor 结构
 
-## 7. 测试策略
+测试改动:
+- `tests/unit/test_item_db.gd`: 删 stick, 加 4 新物品
+- `tests/unit/test_tile_data.gd`: 加 SLIME_TORCH 测
+- 既有合成集成测试 (test_craft_loop / test_workbench_3x3 / test_full_loop): 重写, 用 planks 代替 stick
 
-### 7.1 单元
-- ItemDB 14 → 18 个物品 (test_item_db.gd 扩列表)
-- 5 个新 recipe 各做一个 find_match 命中测试 (类似既有 wood_sword 测)
-
-### 7.2 集成
-- test_full_loop.gd 不必改 (现有流程能跑通即可)
-- 新增 test_stone_tier_loop.gd:
-  - 挖 stone (有 wood_pickaxe) → 工作台合 stone_sword → 一击杀 slime
-
-### 7.3 手动验收
-- E 面板看到 11 个按钮 (3 行: 2x2 一行 4 个, 3x3 一行 6 个)
-- 杀史莱姆需要 2 hit (木剑) 或 1 hit (石剑)
-- stone_torch 放下后是绿色顶部的方块
-
-## 8. 风险与决策
+## 8. 风险与缓解
 
 | 风险 | 缓解 |
 |---|---|
-| door 配方 2×3 不是方形, 现有 RecipeMatcher 对方形 grid 平移匹配 — 验证可行 | 直接在 3×3 grid 摆 2 宽 3 高图案, RecipeMatcher 已支持 (bbox + 平移) |
-| 加 SLIME_TORCH 后 P3 昼夜包要重做光逻辑 | 现在 slime_torch 只是普通可放置 tile, 不接 SkyLightGrid; P3 加 "light_source" 字段时再扩 |
-| 14 + 4 = 18 个物品, hotbar 9 格放不下 | 主背包 27 格已够, hotbar 是选当前手持; 不冲突 |
+| 删 stick 破多个测试 | 必须更新 6+ 个测试文件 (大改) |
+| Door 配方在 3×3 grid, 不在 2×2 (导致需要工作台才能造门) | Terraria 也是 workbench → 设计一致 |
+| UI 重排可能挡 hotbar (hotbar 在底部, 不挡) | 左上角面板, hotbar 在屏幕底中 → 不重叠 |
+| 配方列表 10 行可能太长 | 试运行后调字号; 必要时分两栏 |
 
 ## 9. 验收门禁
 
-- [ ] 11 个配方在 E 面板按钮中均可见
-- [ ] 不在工作台旁: 只有 4 个 2×2 配方亮 (planks / stick / workbench / slime_torch)
-- [ ] 在工作台旁: 11 个全亮 (素材够时)
-- [ ] 木剑 2 hit 杀 slime, 石剑 1 hit
-- [ ] stone_axe 比 wood_axe 砍树明显更快
-- [ ] door 可造可放 (3×3 配方)
-- [ ] 全部 GUT 测试通过, 含 4 个新物品 + 5 个新 recipe 命中测
+- [ ] 10 个配方按钮可见, 列表式纵向布局, 左上角
+- [ ] 世界在面板背后可见 (半透明)
+- [ ] 木剑 2 击 / 石剑 1 击杀 slime
+- [ ] stone_axe 砍树明显比 wood_axe 快 (4×)
+- [ ] door 在工作台旁可造可放 (6 planks)
+- [ ] stick 物品完全消失 (背包里没有, 没人掉)
+- [ ] 全部 GUT 测试过 (含 4 个新物品 + 10 个 recipe 命中测)
 
-## 10. 修订
+## 10. 修订历史
 
-- **v1 (2026-05-19)** — 草案, 11 个配方 + 4 个新物品 + 1 个新 tile
+- **v1 (2026-05-19)** — 11 配方含 stick 中间品, 居中弹窗 UI
+- **v2 (2026-05-19)** — 删 stick (Terraria 对齐) → 10 配方; UI 改左上角锚定列表式 (Terraria 风)
