@@ -1,10 +1,30 @@
-[gd_scene load_steps=3 format=3 uid="uid://b6teilaruiahud"]
+[gd_scene load_steps=4 format=3 uid="uid://b6teilaruiahud"]
 
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
 [ext_resource type="Script" path="res://scripts/ui/hotbar_view.gd" id="2_hbar"]
+[ext_resource type="Script" path="res://scripts/ui/health_hud.gd" id="3_hp"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
+
+[node name="HealthHUD" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 184.0
+offset_bottom = 36.0
+script = ExtResource("3_hp")
+
+[node name="Label" type="Label" parent="HealthHUD"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = 164.0
+offset_bottom = 24.0
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "20 / 20"
 
 [node name="HotbarAnchor" type="Control" parent="."]
 layout_mode = 3

@@ -28,6 +28,12 @@ var place_override: bool = false
 var _mining_target: Vector2i = INVALID_TILE
 var _mining_progress: float = 0.0
 
+# 战斗
+const SWORD_RANGE_PX := 36.0
+const SWORD_DAMAGE := 5
+const SWORD_COOLDOWN := 0.3
+var _attack_cooldown: float = 0.0
+
 
 func _physics_process(delta: float) -> void:
 	# C/E 不管面板开关都响应 (用于开/关面板)
@@ -38,7 +44,14 @@ func _physics_process(delta: float) -> void:
 	# 其余动作面板开则跳过
 	if _crafting_open():
 		return
-	_update_mining(delta)
+	_attack_cooldown = max(0.0, _attack_cooldown - delta)
+	# 持剑 LMB → 攻击, 否则 LMB → 挖
+	if _current_tool_kind() == "sword":
+		_reset_mining()  # 切到剑时清挖进度
+		if Input.is_action_pressed("primary") and _attack_cooldown <= 0.0:
+			_swing_sword()
+	else:
+		_update_mining(delta)
 	if place_override:
 		try_place()
 		place_override = false
@@ -246,6 +259,31 @@ func aim_tile_coord() -> Vector2i:
 
 func _terrain() -> TileMapLayer:
 	return get_tree().get_first_node_in_group("terrain_layer") as TileMapLayer
+
+
+func _current_tool_kind() -> String:
+	var inv: Node = _inventory_node()
+	return "" if inv == null else inv.current_tool_kind()
+
+
+func _swing_sword() -> void:
+	_attack_cooldown = SWORD_COOLDOWN
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	var facing: int = 1
+	if player.has_method("facing_dir"):
+		facing = player.facing_dir()
+	# 攻击中心点: 玩家身前 半个 SWORD_RANGE
+	var center: Vector2 = player.global_position + Vector2(facing * SWORD_RANGE_PX * 0.5, -8.0)
+	# 找范围内所有 slime
+	for s in get_tree().get_nodes_in_group("slimes"):
+		var sn := s as Node2D
+		if sn == null:
+			continue
+		if center.distance_to(sn.global_position) <= SWORD_RANGE_PX * 0.7:
+			if s.has_method("take_damage"):
+				s.take_damage(SWORD_DAMAGE, player.global_position)
 
 
 func _inventory_node() -> Node:

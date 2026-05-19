@@ -21,6 +21,12 @@ var _walk_step_timer: float = 0.0
 func _ready() -> void:
 	sprite.sprite_frames = ArtCache.player_frames
 	sprite.play("idle")
+	add_to_group("player")
+
+
+# 公共接口: 朝向 (+1 右, -1 左)
+func facing_dir() -> int:
+	return 1 if _facing_right else -1
 
 
 func _physics_process(delta: float) -> void:
