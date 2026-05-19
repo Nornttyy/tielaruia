@@ -3,7 +3,7 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const MAX_HEALTH := 4
+const MAX_HEALTH := 6   # 木剑 4 dmg × 2 击, 石剑 7 dmg × 1 击
 const CONTACT_DAMAGE := 2
 const GRAVITY := 900.0
 const HOP_VY := -200.0          # 跳高 ~22 px, 能跨 1 格 (16 px) 但跨不过 2 格
