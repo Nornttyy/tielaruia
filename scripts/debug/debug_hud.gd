@@ -5,7 +5,7 @@ const TILE_SIZE := 16
 
 @onready var label: Label = $Panel/Label
 var _player: Node2D
-var _visible: bool = true
+var _visible: bool = false  # 默认隐藏, 按 F3 (toggle_debug action) 显示
 
 
 func _ready() -> void:
