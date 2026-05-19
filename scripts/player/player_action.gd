@@ -36,9 +36,7 @@ var _attack_cooldown: float = 0.0
 
 
 func _physics_process(delta: float) -> void:
-	# C/E 不管面板开关都响应 (用于开/关面板)
-	if Input.is_action_just_pressed("crafting_2x2"):
-		_toggle_crafting(2)
+	# E 一键合成: 工作台旁开 3x3, 否则 2x2; 已开则关
 	if Input.is_action_just_pressed("interact"):
 		_try_open_workbench_or_close()
 	# 其余动作面板开则跳过
@@ -81,8 +79,11 @@ func _try_open_workbench_or_close() -> void:
 	if cp.is_open():
 		cp.close()
 		return
+	# 工作台 2 格内 → 3x3, 否则 → 2x2 (E 一键合成)
 	if _has_workbench_nearby():
 		cp.open(3)
+	else:
+		cp.open(2)
 
 
 func _has_workbench_nearby() -> bool:
