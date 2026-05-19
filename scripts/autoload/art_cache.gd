@@ -14,6 +14,7 @@ const SlimeArt = preload("res://scripts/art/slime_art.gd")
 const VillagerArt = preload("res://scripts/art/villager_art.gd")
 const DoorArt = preload("res://scripts/art/door_art.gd")
 const ItemsArt = preload("res://scripts/art/items_art.gd")
+const HeartsArt = preload("res://scripts/art/hearts_art.gd")
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 const CloudsArt = preload("res://scripts/fx/clouds_art.gd")
 
@@ -27,6 +28,9 @@ var villager_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
 var crack_textures: Array = []  # 4 个阶段
+var heart_full: ImageTexture
+var heart_half: ImageTexture
+var heart_empty: ImageTexture
 
 
 func _ready() -> void:
@@ -36,6 +40,13 @@ func _ready() -> void:
 	_build_entities()
 	_build_clouds()
 	_build_particles()
+	_build_hearts()
+
+
+func _build_hearts() -> void:
+	heart_full = HeartsArt.build_full()
+	heart_half = HeartsArt.build_half()
+	heart_empty = HeartsArt.build_empty()
 
 
 func _build_blocks() -> void:

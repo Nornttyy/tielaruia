@@ -1,22 +1,21 @@
-# 血条 HUD: 左上角红条 + 数字 "HP/MAX"。
-# 通过 hud.gd 的 bind_player 绑定 PlayerHealth.health_changed 信号。
+# 10 颗红心: 每颗 2 HP; cur >= (i+1)*2 满, cur == 2i+1 半, 否则空。
 extends Control
 
-const BAR_WIDTH := 160
-const BAR_HEIGHT := 16
-const BG_COLOR := Color(0.15, 0.05, 0.05, 0.85)
-const FILL_COLOR := Color(0.85, 0.15, 0.18)
-const FILL_LOW_COLOR := Color(0.65, 0.55, 0.15)  # < 30% 时偏黄警告
-const BORDER_COLOR := Color(0.0, 0.0, 0.0, 0.9)
+const HEART_SIZE := 10
+const HEART_SCALE := 2          # 渲染放大倍数 (20px 每颗)
+const HEART_SPACING := 2
+const NUM_HEARTS := 10
+const PAD := 8
 
 var _cur: int = 20
 var _max: int = 20
 
-@onready var _label: Label = $Label
-
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(BAR_WIDTH + 8, BAR_HEIGHT + 8)
+	custom_minimum_size = Vector2(
+		PAD * 2 + (HEART_SIZE * HEART_SCALE + HEART_SPACING) * NUM_HEARTS - HEART_SPACING,
+		PAD * 2 + HEART_SIZE * HEART_SCALE
+	)
 
 
 func bind(health_node: Node) -> void:
@@ -30,19 +29,21 @@ func bind(health_node: Node) -> void:
 func _on_changed(cur: int, maximum: int) -> void:
 	_cur = cur
 	_max = maximum
-	_label.text = "%d / %d" % [cur, maximum]
 	queue_redraw()
 
 
 func _draw() -> void:
-	var bar_rect := Rect2(4, 4, BAR_WIDTH, BAR_HEIGHT)
-	# 背景
-	draw_rect(bar_rect, BG_COLOR)
-	# 填充
-	if _max > 0 and _cur > 0:
-		var ratio: float = float(_cur) / float(_max)
-		var fill := Rect2(bar_rect.position, Vector2(BAR_WIDTH * ratio, BAR_HEIGHT))
-		var col: Color = FILL_LOW_COLOR if ratio < 0.3 else FILL_COLOR
-		draw_rect(fill, col)
-	# 边框
-	draw_rect(bar_rect, BORDER_COLOR, false, 1.0)
+	var heart_px := HEART_SIZE * HEART_SCALE
+	for i in NUM_HEARTS:
+		var x: float = PAD + i * (heart_px + HEART_SPACING)
+		var y: float = PAD
+		var tex: ImageTexture
+		var threshold: int = (i + 1) * 2  # 这颗心代表 HP 范围 (2i+1, 2i+2)
+		if _cur >= threshold:
+			tex = ArtCache.heart_full
+		elif _cur == threshold - 1:
+			tex = ArtCache.heart_half
+		else:
+			tex = ArtCache.heart_empty
+		if tex != null:
+			draw_texture_rect(tex, Rect2(x, y, heart_px, heart_px), false)

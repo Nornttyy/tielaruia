@@ -169,6 +169,34 @@ const _JUMP := [
 	"............",
 ]
 
+# 受击: 闭眼眯缝 + 嘴张大 (mmmm) + 右手举起护脸
+const _HURT := [
+	"............",
+	"....hHhh....",
+	"...HsssssH..",
+	"...hsssssh..",
+	"...hseesh...",   # 眼眯缝 (e e)
+	"...ksssssk..",
+	"...smmmmss..",   # 嘴张大 (m 痛苦)
+	"....skss....",
+	"...wwwwww.s.",   # 右手举起 (s 手腕)
+	"..wWwwwwsws.",
+	"..wwwwwwwww.",
+	"..wwwwwwww..",
+	"..wWwwwwWw..",
+	"...wwwwww...",
+	"...wwwwww...",
+	"..bbbbbbbb..",
+	"..bbb..bbb..",
+	"..bBb..bBb..",
+	"..bbb..bbb..",
+	"..bbb..bbb..",
+	"..bbb..bbb..",
+	"..bbb..bbb..",
+	"..ooo..ooo..",
+	"..OOO..OOO..",
+]
+
 # 下落：身体张开
 const _FALL := [
 	"............",
@@ -204,4 +232,5 @@ static func build_sprite_frames() -> SpriteFrames:
 		"walk": {"frames": [_WALK_A, _WALK_B, _WALK_C, _WALK_B], "fps": 10.0, "loop": true},
 		"jump": {"frames": [_JUMP], "fps": 1.0, "loop": false},
 		"fall": {"frames": [_FALL], "fps": 1.0, "loop": false},
+		"hurt": {"frames": [_HURT], "fps": 1.0, "loop": false},
 	}, PALETTE)

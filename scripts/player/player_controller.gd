@@ -11,17 +11,26 @@ const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
+const HURT_DURATION := 0.4
+const KNOCKBACK_VX := 90.0
+const KNOCKBACK_VY := -180.0
+
 var _coyote_timer: float = 0.0
 var _facing_right: bool = true
 var _was_on_floor: bool = true
 var _previous_vy: float = 0.0
 var _walk_step_timer: float = 0.0
+var _hurt_timer: float = 0.0
 
 
 func _ready() -> void:
 	sprite.sprite_frames = ArtCache.player_frames
 	sprite.play("idle")
 	add_to_group("player")
+	# 连受击信号
+	var hp: Node = get_node_or_null("PlayerHealth")
+	if hp != null and hp.has_signal("damaged"):
+		hp.damaged.connect(_on_damaged)
 
 
 # 公共接口: 朝向 (+1 右, -1 左)
@@ -29,7 +38,30 @@ func facing_dir() -> int:
 	return 1 if _facing_right else -1
 
 
+func _on_damaged(_amount: int, source_pos: Vector2) -> void:
+	_hurt_timer = HURT_DURATION
+	# 击退: 远离 source
+	var dx: float = global_position.x - source_pos.x
+	var kb_dir: float = signf(dx) if abs(dx) > 0.1 else 1.0
+	velocity.x = kb_dir * KNOCKBACK_VX
+	velocity.y = KNOCKBACK_VY
+
+
 func _physics_process(delta: float) -> void:
+	# 受击 lockout: 保留击退速度, 玩家暂失输入控制
+	if _hurt_timer > 0.0:
+		_hurt_timer = max(0.0, _hurt_timer - delta)
+		if not is_on_floor():
+			velocity.y += GRAVITY * delta
+		else:
+			velocity.x = move_toward(velocity.x, 0.0, 400.0 * delta)
+		move_and_slide()
+		if sprite.animation != "hurt":
+			sprite.play("hurt")
+		_was_on_floor = is_on_floor()
+		_previous_vy = velocity.y
+		return
+
 	var dir := Input.get_axis("move_left", "move_right")
 	velocity.x = dir * SPEED
 
