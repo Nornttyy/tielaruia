@@ -202,6 +202,14 @@ func try_place() -> bool:
 	var pt: Vector2i = player_tile()
 	if tile == pt or tile == pt - Vector2i(0, 1):
 		return false
+	# 上下左右至少要有一个相邻方块（防空中漂浮）
+	var has_neighbor: bool = false
+	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		if terrain.get_cell_source_id(tile + offset) != -1:
+			has_neighbor = true
+			break
+	if not has_neighbor:
+		return false
 	var def = ItemDB.get_def(slot.item_id)
 	terrain.set_cell(tile, def.placeable_tile_id, Vector2i.ZERO)
 	var world: Node = terrain.get_parent()
