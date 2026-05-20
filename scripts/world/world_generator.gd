@@ -61,14 +61,7 @@ const _SPECIES_PARAMS := {
 static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkConstants.WORLD_HEIGHT) -> Chunk:
 	var chunk_width := ChunkConstants.CHUNK_WIDTH
 	var c := Chunk.new(chunk_x)
-	c.init_empty()
-	# 若 height 与默认 WORLD_HEIGHT 不同 (例如测试用 128), 重置每列长度
-	if height != ChunkConstants.WORLD_HEIGHT:
-		for lx in chunk_width:
-			var col: Array = []
-			col.resize(height)
-			col.fill(Tiles.AIR)
-			c.tiles[lx] = col
+	c.init_empty(height)
 
 	var noise := FastNoiseLite.new()
 	noise.seed = world_seed
@@ -81,19 +74,19 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	sand_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	sand_noise.frequency = 0.05
 
-	# 计算本 chunk 范围内 + ±2 buffer 列的 heights (供树木使用)
-	var ext_start := chunk_x * chunk_width - 2
-	var ext_end := chunk_x * chunk_width + chunk_width + 2
-	var ext_heights := {}  # world_x → surf_y
-	for wx in range(ext_start, ext_end):
+	# 计算本 chunk 范围内每列的 heights (供地形 + 树木使用)
+	var chunk_start_x := chunk_x * chunk_width
+	var chunk_end_x := chunk_start_x + chunk_width
+	var chunk_heights := {}  # world_x → surf_y
+	for wx in range(chunk_start_x, chunk_end_x):
 		var n: float = noise.get_noise_1d(float(wx))
 		var h: int = int(height * (SURFACE_BASE + n * SURFACE_AMP))
-		ext_heights[wx] = clampi(h, 4, height - BEDROCK_ROWS - 1)
+		chunk_heights[wx] = clampi(h, 4, height - BEDROCK_ROWS - 1)
 
 	# 填本 chunk 64 列
 	for local_x in chunk_width:
-		var world_x: int = chunk_x * chunk_width + local_x
-		var surf: int = ext_heights[world_x]
+		var world_x: int = chunk_start_x + local_x
+		var surf: int = chunk_heights[world_x]
 		var is_sand_col := sand_noise.get_noise_1d(float(world_x)) > SAND_THRESHOLD
 		for y in height:
 			var tid: int
@@ -109,13 +102,15 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 				tid = Tiles.STONE
 			c.tiles[local_x][y] = tid
 
-	# 树: 在 ext range 内决定树根 x, 但只画本 chunk 范围内
-	_place_trees_chunk(c, ext_heights, world_seed, chunk_x, chunk_width, height)
+	# 树: 树根只在本 chunk [chunk_start, chunk_end) 内决定 — canopy 越界部分裁掉
+	# 邻 chunk 自己会有它的树, 不会出现"漂浮叶"。
+	_place_trees_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 	return c
 
 
-# Chunk 版本树木放置: ext_heights 包含 ±2 buffer 列, 树根可在 buffer 内 (canopy 伸入本 chunk).
-static func _place_trees_chunk(c: Chunk, ext_heights: Dictionary, world_seed: int,
+# Chunk 版本树木放置: 树根只在本 chunk [chunk_start, chunk_end) 内, canopy 越界部分裁掉。
+# 邻 chunk 各自有树, 边界不会出现"漂浮叶"。
+static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: int,
 		chunk_x: int, chunk_width: int, height: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	# 基于 (world_seed, chunk_x) 派生子种子, 同 chunk 同结果
@@ -123,18 +118,13 @@ static func _place_trees_chunk(c: Chunk, ext_heights: Dictionary, world_seed: in
 	var chunk_start: int = chunk_x * chunk_width
 	var chunk_end: int = chunk_start + chunk_width
 	var last_tree_x: int = -1000
-	# 扫 ext 范围 (±2 buffer)
-	var ext_start: int = chunk_start - 2
-	var ext_end: int = chunk_end + 2
-	for world_x in range(ext_start, ext_end):
-		var surf: int = ext_heights.get(world_x, -1)
+	for world_x in range(chunk_start, chunk_end):
+		var surf: int = chunk_heights.get(world_x, -1)
 		if surf < 0:
 			continue
-		# 必须是 grass (用本 chunk tile 查; buffer 列不在 chunk 内则跳过 grass 检查 — buffer 假设 grass)
-		if world_x >= chunk_start and world_x < chunk_end:
-			var lx: int = world_x - chunk_start
-			if c.tiles[lx][surf] != Tiles.GRASS:
-				continue
+		var lx: int = world_x - chunk_start
+		if c.tiles[lx][surf] != Tiles.GRASS:
+			continue
 		if world_x - last_tree_x < TREE_MIN_SPACING:
 			continue
 		if rng.randf() > TREE_CHANCE:
@@ -150,20 +140,18 @@ static func _place_trees_chunk(c: Chunk, ext_heights: Dictionary, world_seed: in
 		var canopy_top: int = trunk_top - _CANOPY_REACH[canopy_kind]
 		if canopy_top < 0:
 			continue
-		# 放树干 (只在 chunk 内)
-		if world_x >= chunk_start and world_x < chunk_end:
-			var lx: int = world_x - chunk_start
-			var all_clear: bool = true
-			for ty in range(canopy_top, surf):
-				if c.tiles[lx][ty] != Tiles.AIR:
-					all_clear = false
-					break
-			if not all_clear:
-				continue
-			# 树干
-			for ty in range(trunk_top, surf):
-				c.tiles[lx][ty] = Tiles.LOG
-		# 树冠: 偏移到 chunk 内的 cells 才画
+		# 检查树干列空间是否 AIR
+		var all_clear: bool = true
+		for ty in range(canopy_top, surf):
+			if c.tiles[lx][ty] != Tiles.AIR:
+				all_clear = false
+				break
+		if not all_clear:
+			continue
+		# 树干
+		for ty in range(trunk_top, surf):
+			c.tiles[lx][ty] = Tiles.LOG
+		# 树冠: 越出 chunk 的部分裁掉
 		_place_canopy_chunk(c, world_x, trunk_top, canopy_kind, leaves_tile, chunk_start, chunk_end, height)
 		last_tree_x = world_x
 
@@ -244,79 +232,6 @@ static func _find_spawn_x(tiles: Array, heights: PackedInt32Array, center_x: int
 				continue
 			return cx
 	return center_x
-
-
-# 在 grass 地表种树。3 种树:橡木 (3x3 圆冠) / 松树 (3x5 高瘦) / 秋树 (5x3 宽矮)。
-# LOG 不实心,玩家可穿过;LEAVES 用 3 个变种 (橡/松/秋) 分别掉自己的物品。
-# 用 seeded RNG 保证同种子同结果。
-static func _place_trees(tiles: Array, heights: PackedInt32Array, world_seed: int, width: int, height: int) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = world_seed * 1000003 + 17
-	var last_tree_x: int = -1000
-	var x: int = 2
-	while x < width - 2:
-		var surf: int = heights[x]
-		if tiles[x][surf] != Tiles.GRASS:
-			x += 1
-			continue
-		if x - last_tree_x < TREE_MIN_SPACING:
-			x += 1
-			continue
-		if rng.randf() > TREE_CHANCE:
-			x += 1
-			continue
-		# 随机选树种 + 该树种的随机 canopy 变体
-		var species: int = rng.randi_range(_SPECIES_OAK, _SPECIES_AUTUMN)
-		var params: Dictionary = _SPECIES_PARAMS[species]
-		var trunk_range: Array = params["trunk_range"]
-		var leaves_tile: int = params["leaves"]
-		var canopies: Array = params["canopies"]
-		var canopy_kind: String = canopies[rng.randi() % canopies.size()]
-		var trunk_height: int = rng.randi_range(trunk_range[0], trunk_range[1])
-		var trunk_top: int = surf - trunk_height
-		var canopy_top: int = trunk_top - _CANOPY_REACH[canopy_kind]
-		if canopy_top < 0:
-			x += 1
-			continue
-		# 检查整个树干列空间是否 AIR
-		var all_clear: bool = true
-		for ty in range(canopy_top, surf):
-			if tiles[x][ty] != Tiles.AIR:
-				all_clear = false
-				break
-		if not all_clear:
-			x += 1
-			continue
-		# 按 canopy_kind 放树冠
-		_place_canopy(tiles, x, trunk_top, canopy_kind, leaves_tile, width, height)
-		# 树干 (覆盖叶子)
-		for ty in range(trunk_top, surf):
-			tiles[x][ty] = Tiles.LOG
-		last_tree_x = x
-		x += TREE_MIN_SPACING
-
-
-# 按形状画树冠。坐标 (trunk_x, trunk_top) 是树干顶部。
-# dy <=0 在树干顶部及上方; dy=+1 是树干第二节,leaves 在两侧 (中柱被 LOG 覆盖)。
-# 树叶下方不能是地形 (grass/dirt/stone), 否则短树会"脚底长叶"。
-static func _place_canopy(tiles: Array, trunk_x: int, trunk_top: int, kind: String,
-		leaves_tile: int, width: int, height: int) -> void:
-	var offsets: Array = _canopy_offsets(kind)
-	for off in offsets:
-		var cx: int = trunk_x + off.x
-		var cy: int = trunk_top + off.y
-		if cx < 0 or cx >= width or cy < 0 or cy >= height:
-			continue
-		if tiles[cx][cy] != Tiles.AIR:
-			continue
-		# 防"贴地叶": 下方一格必须是 AIR/叶子/树干, 不能是地表方块
-		if cy + 1 < height:
-			var below: int = tiles[cx][cy + 1]
-			if below != Tiles.AIR and below != Tiles.LOG \
-					and below != Tiles.LEAVES and below != Tiles.LEAVES_PINE \
-					and below != Tiles.LEAVES_AUTUMN:
-				continue
-		tiles[cx][cy] = leaves_tile
 
 
 static func _canopy_offsets(kind: String) -> Array:

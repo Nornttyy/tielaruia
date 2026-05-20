@@ -29,7 +29,8 @@ const _PROPS := {
 	GRASS: {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
-		"drops": [["dirt", 80, 1, 1], ["grass", 20, 1, 1]],
+		# dirt 必掉 + 20% 概率额外掉 grass (稀有种子)
+		"drops": [["dirt", 100, 1, 1], ["grass", 20, 1, 1]],
 	},
 	DIRT: {
 		"solid": true, "mineable": true,
