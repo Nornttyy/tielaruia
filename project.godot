@@ -17,6 +17,7 @@ ItemDB="*res://scripts/items/item_db.gd"
 RecipeDB="*res://scripts/crafting/recipe_db.gd"
 ArtCache="*res://scripts/autoload/art_cache.gd"
 Effects="*res://scripts/fx/effects.gd"
+GameSettings="*res://scripts/autoload/game_settings.gd"
 
 [display]
 
