@@ -12,11 +12,11 @@ const CELL_NORMAL_COLOR := Color(0, 0, 0, 0.4)
 signal opened
 signal closed
 
-@onready var grid: GridContainer = $Center/Panel/VBox/Row/InputGrid
-@onready var output_slot: PanelContainer = $Center/Panel/VBox/Row/OutputSlot
+@onready var grid: GridContainer = $TopLeft/Panel/VBox/Row/InputGrid
+@onready var output_slot: PanelContainer = $TopLeft/Panel/VBox/Row/OutputSlot
 @onready var cursor: PanelContainer = $Cursor
-@onready var vbox: VBoxContainer = $Center/Panel/VBox
-@onready var row_old: HBoxContainer = $Center/Panel/VBox/Row
+@onready var vbox: VBoxContainer = $TopLeft/Panel/VBox
+@onready var row_old: HBoxContainer = $TopLeft/Panel/VBox/Row
 
 var _player_inv: Node = null
 var _mode: int = 0
@@ -103,48 +103,56 @@ func _build_ui() -> void:
 
 
 func _build_recipe_buttons() -> void:
-	# 分两行: 2x2 在上 (徒手), 3x3 在下 (工作台)
-	var row_2x2 := HBoxContainer.new()
-	row_2x2.add_theme_constant_override("separation", 6)
-	_recipe_container.add_child(row_2x2)
-	var row_3x3 := HBoxContainer.new()
-	row_3x3.add_theme_constant_override("separation", 6)
-	_recipe_container.add_child(row_3x3)
-
 	for r in RecipeDB.all_recipes():
-		var entry := _make_recipe_button(r)
+		var entry := _make_recipe_row(r)
 		_recipe_buttons.append(entry)
-		var parent: HBoxContainer = row_2x2 if r.grid_size.x == 2 else row_3x3
-		parent.add_child(entry.button)
+		_recipe_container.add_child(entry.button)
 
 
-func _make_recipe_button(recipe: Dictionary) -> Dictionary:
+func _make_recipe_row(recipe: Dictionary) -> Dictionary:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(RECIPE_SIZE + 24, RECIPE_SIZE + 24)
+	btn.custom_minimum_size = Vector2(380, 44)
+	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.tooltip_text = _recipe_tooltip(recipe)
-	# 内容: 图标在上 + 数量, 下方小文字材料
-	var vb := VBoxContainer.new()
-	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.set_anchors_preset(Control.PRESET_FULL_RECT)
-	btn.add_child(vb)
 
+	# HBox 容器
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 8)
+	hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hb.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hb.offset_left = 8.0
+	hb.offset_right = -8.0
+	btn.add_child(hb)
+
+	# 输出图标
 	var icon := TextureRect.new()
 	icon.texture = ArtCache.get_inventory_icon(recipe.output_id)
-	icon.custom_minimum_size = Vector2(RECIPE_SIZE, RECIPE_SIZE)
+	icon.custom_minimum_size = Vector2(36, 36)
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.add_child(icon)
+	hb.add_child(icon)
 
-	var cost_label := Label.new()
-	cost_label.add_theme_font_size_override("font_size", 9)
-	cost_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
-	cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	cost_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.add_child(cost_label)
-	cost_label.text = _short_cost_text(recipe)
+	# 名字 + 材料 (竖向 2 行)
+	var vb := VBoxContainer.new()
+	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hb.add_child(vb)
+
+	var name_lbl := Label.new()
+	name_lbl.text = "%s × %d" % [recipe.output_id, recipe.output_count]
+	name_lbl.add_theme_font_size_override("font_size", 12)
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(name_lbl)
+
+	var cost_lbl := Label.new()
+	cost_lbl.text = _short_cost_text(recipe)
+	cost_lbl.add_theme_font_size_override("font_size", 10)
+	cost_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
+	cost_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(cost_lbl)
 
 	btn.pressed.connect(_on_recipe_pressed.bind(recipe.id))
-	return {"recipe": recipe, "button": btn, "cost_label": cost_label}
+	return {"recipe": recipe, "button": btn, "cost_label": cost_lbl}
 
 
 func _build_inv_slots() -> void:
@@ -226,8 +234,9 @@ func _short_cost_text(recipe: Dictionary) -> String:
 
 func _short_name(item_id: String) -> String:
 	const SHORT := {
-		"log": "原木", "planks": "板", "stick": "棍",
+		"log": "原木", "planks": "板",
 		"workbench": "台", "leaves": "叶",
+		"stone": "石", "slime_ball": "胶",
 	}
 	return SHORT.get(item_id, item_id)
 
@@ -365,10 +374,10 @@ func _refresh_wb_label() -> void:
 	if _wb_label == null:
 		return
 	if _mode == 3:
-		_wb_label.text = "🛠 工作台旁 — 全部配方可用"
+		_wb_label.text = "[ 工作台旁 — 全部配方可用 ]"
 		_wb_label.add_theme_color_override("font_color", Color(0.6, 1.0, 0.6))
 	else:
-		_wb_label.text = "✋ 徒手 — 仅 2×2 配方可用"
+		_wb_label.text = "[ 徒手 — 仅 2×2 配方可用 ]"
 		_wb_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.5))
 
 
