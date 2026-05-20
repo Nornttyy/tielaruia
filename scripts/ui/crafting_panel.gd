@@ -12,11 +12,12 @@ const CELL_NORMAL_COLOR := Color(0, 0, 0, 0.4)
 signal opened
 signal closed
 
-@onready var grid: GridContainer = $TopLeft/Panel/VBox/Row/InputGrid
-@onready var output_slot: PanelContainer = $TopLeft/Panel/VBox/Row/OutputSlot
+@onready var grid: GridContainer = $RecipeAnchor/RecipePanel/RecipeVBox/Row/InputGrid
+@onready var output_slot: PanelContainer = $RecipeAnchor/RecipePanel/RecipeVBox/Row/OutputSlot
 @onready var cursor: PanelContainer = $Cursor
-@onready var vbox: VBoxContainer = $TopLeft/Panel/VBox
-@onready var row_old: HBoxContainer = $TopLeft/Panel/VBox/Row
+@onready var inv_vbox: VBoxContainer = $InvAnchor/InvPanel/InvVBox
+@onready var recipe_vbox: VBoxContainer = $RecipeAnchor/RecipePanel/RecipeVBox
+@onready var row_old: HBoxContainer = $RecipeAnchor/RecipePanel/RecipeVBox/Row
 
 var _player_inv: Node = null
 var _mode: int = 0
@@ -26,7 +27,6 @@ var _output_preview: Variant = null
 var _cursor_item: Variant = null
 
 # 新 UI 节点 (由 _ready 程序化构建)
-var _title_label: Label
 var _wb_label: Label
 var _recipe_container: VBoxContainer
 var _recipe_buttons: Array = []  # [{recipe_dict, button, cost_label}]
@@ -49,57 +49,48 @@ func _ready() -> void:
 
 
 func _build_ui() -> void:
-	# 标题
-	_title_label = Label.new()
-	_title_label.text = "合成 & 背包"
-	_title_label.add_theme_font_size_override("font_size", 20)
-	_title_label.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
-	vbox.add_child(_title_label)
-	vbox.move_child(_title_label, 0)
-
-	# 工作台状态
-	_wb_label = Label.new()
-	_wb_label.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(_wb_label)
-	vbox.move_child(_wb_label, 1)
-
-	# 配方区
-	var rec_title := Label.new()
-	rec_title.text = "── 配方 ──"
-	rec_title.add_theme_font_size_override("font_size", 12)
-	rec_title.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	vbox.add_child(rec_title)
-	vbox.move_child(rec_title, 2)
-
-	_recipe_container = VBoxContainer.new()
-	_recipe_container.add_theme_constant_override("separation", 4)
-	vbox.add_child(_recipe_container)
-	vbox.move_child(_recipe_container, 3)
-	_build_recipe_buttons()
-
-	# 背包区
+	# ===== 背包面板 (左上) =====
 	var inv_title := Label.new()
-	inv_title.text = "── 背包 ──"
-	inv_title.add_theme_font_size_override("font_size", 12)
-	inv_title.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	vbox.add_child(inv_title)
-	vbox.move_child(inv_title, 4)
+	inv_title.text = "背包"
+	inv_title.add_theme_font_size_override("font_size", 16)
+	inv_title.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+	inv_vbox.add_child(inv_title)
 
 	_inv_grid = GridContainer.new()
 	_inv_grid.columns = 9
 	_inv_grid.add_theme_constant_override("h_separation", 3)
 	_inv_grid.add_theme_constant_override("v_separation", 3)
-	vbox.add_child(_inv_grid)
-	vbox.move_child(_inv_grid, 5)
+	inv_vbox.add_child(_inv_grid)
 	_build_inv_slots()
 
-	# 关闭提示
+	# ===== 配方面板 (左下) =====
+	var rec_title := Label.new()
+	rec_title.text = "合成"
+	rec_title.add_theme_font_size_override("font_size", 16)
+	rec_title.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+	recipe_vbox.add_child(rec_title)
+	recipe_vbox.move_child(rec_title, 0)
+
+	_wb_label = Label.new()
+	_wb_label.add_theme_font_size_override("font_size", 12)
+	recipe_vbox.add_child(_wb_label)
+	recipe_vbox.move_child(_wb_label, 1)
+
+	_recipe_container = VBoxContainer.new()
+	_recipe_container.add_theme_constant_override("separation", 4)
+	recipe_vbox.add_child(_recipe_container)
+	recipe_vbox.move_child(_recipe_container, 2)
+	_build_recipe_buttons()
+
+	# Row (旧 input grid, 测试用) 放在最末尾且隐藏
+	row_old.visible = false
+
 	var hint := Label.new()
 	hint.text = "按 E 关闭"
 	hint.add_theme_font_size_override("font_size", 10)
 	hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(hint)
+	recipe_vbox.add_child(hint)
 
 
 func _build_recipe_buttons() -> void:

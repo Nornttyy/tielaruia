@@ -17,29 +17,59 @@ content_margin_bottom = 12.0
 [node name="CraftingPanel" type="CanvasLayer"]
 script = ExtResource("1_craft")
 
-[node name="TopLeft" type="Control" parent="."]
+[node name="InvAnchor" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 460.0
-offset_bottom = 720.0
+offset_left = 12.0
+offset_top = 60.0
+offset_right = 380.0
+offset_bottom = 240.0
 
-[node name="Panel" type="PanelContainer" parent="TopLeft"]
+[node name="InvPanel" type="PanelContainer" parent="InvAnchor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="VBox" type="VBoxContainer" parent="TopLeft/Panel"]
+[node name="InvVBox" type="VBoxContainer" parent="InvAnchor/InvPanel"]
+layout_mode = 2
 
-[node name="Row" type="HBoxContainer" parent="TopLeft/Panel/VBox"]
+[node name="RecipeAnchor" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -464.0
+offset_right = 440.0
+offset_bottom = -12.0
+grow_vertical = 0
 
-[node name="InputGrid" type="GridContainer" parent="TopLeft/Panel/VBox/Row"]
+[node name="RecipePanel" type="PanelContainer" parent="RecipeAnchor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="RecipeVBox" type="VBoxContainer" parent="RecipeAnchor/RecipePanel"]
+layout_mode = 2
+
+[node name="Row" type="HBoxContainer" parent="RecipeAnchor/RecipePanel/RecipeVBox"]
+
+[node name="InputGrid" type="GridContainer" parent="RecipeAnchor/RecipePanel/RecipeVBox/Row"]
 columns = 3
 
-[node name="Arrow" type="Label" parent="TopLeft/Panel/VBox/Row"]
+[node name="Arrow" type="Label" parent="RecipeAnchor/RecipePanel/RecipeVBox/Row"]
 text = " → "
 theme_override_font_sizes/font_size = 24
 
-[node name="OutputSlot" type="PanelContainer" parent="TopLeft/Panel/VBox/Row"]
+[node name="OutputSlot" type="PanelContainer" parent="RecipeAnchor/RecipePanel/RecipeVBox/Row"]
 custom_minimum_size = Vector2(40, 40)
 
 [node name="Cursor" type="PanelContainer" parent="."]
