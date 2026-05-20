@@ -30,7 +30,6 @@ var _mining_progress: float = 0.0
 
 # 战斗
 const SWORD_RANGE_PX := 36.0
-const SWORD_DAMAGE := 5
 const SWORD_COOLDOWN := 0.3
 var _attack_cooldown: float = 0.0
 
@@ -243,8 +242,14 @@ func _hardness(tid: int) -> float:
 
 
 func _tool_speed(tool_kind: String, tid: int) -> float:
+	# axe 砍 LOG: wood ×3, stone ×4
 	if tool_kind == "axe" and tid == Tiles.LOG:
-		return 3.0
+		var tier := _current_tool_tier()
+		return 4.0 if tier >= 2 else 3.0
+	# pickaxe 挖 STONE: wood ×1, stone ×1.5
+	if tool_kind == "pickaxe" and tid == Tiles.STONE:
+		var tier := _current_tool_tier()
+		return 1.5 if tier >= 2 else 1.0
 	return 1.0
 
 
@@ -267,10 +272,40 @@ func _current_tool_kind() -> String:
 	return "" if inv == null else inv.current_tool_kind()
 
 
+func _sword_damage() -> int:
+	var inv: Node = _inventory_node()
+	if inv == null:
+		return 0
+	var slot = inv.current_hotbar_slot()
+	if slot == null:
+		return 0
+	var def = ItemDB.get_def(slot.item_id)
+	if def == null or def.tool_kind != "sword":
+		return 0
+	# wood tier 1 → 4; stone tier 2 → 7
+	return 7 if def.tool_tier >= 2 else 4
+
+
+func _current_tool_tier() -> int:
+	var inv: Node = _inventory_node()
+	if inv == null:
+		return 0
+	var slot = inv.current_hotbar_slot()
+	if slot == null:
+		return 0
+	var def = ItemDB.get_def(slot.item_id)
+	if def == null:
+		return 0
+	return def.tool_tier
+
+
 func _swing_sword() -> void:
 	_attack_cooldown = SWORD_COOLDOWN
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
+		return
+	var damage: int = _sword_damage()
+	if damage <= 0:
 		return
 	var facing: int = 1
 	if player.has_method("facing_dir"):
@@ -284,7 +319,7 @@ func _swing_sword() -> void:
 			continue
 		if center.distance_to(sn.global_position) <= SWORD_RANGE_PX * 0.7:
 			if s.has_method("take_damage"):
-				s.take_damage(SWORD_DAMAGE, player.global_position)
+				s.take_damage(damage, player.global_position)
 
 
 func _inventory_node() -> Node:
