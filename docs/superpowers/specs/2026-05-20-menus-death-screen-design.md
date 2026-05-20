@@ -73,20 +73,82 @@ var master_volume: float = 1.0:
 
 ### 1. MainMenu (`scenes/ui/main_menu.tscn` + `scripts/ui/main_menu.gd`)
 
-布局（CanvasLayer + Control 全屏）：
-- 背景：纯色暖色调（参考现有 HUD 配色，#2a1f1a 之类暗棕）
-- 标题 Label "teilaruia"，居中靠上，字号 48
-- VBoxContainer 居中，4 个按钮（每个 200×40）：
-  - "新游戏"
-  - "继续"（disabled = true）
-  - "设置"
-  - "退出"
-- 设置子面板（Panel，启动隐藏）：标题 + 主音量滑条（0~100）+ "返回"按钮
+主菜单是玩家对游戏的第一印象，做"高品质版"。分三层：背景层 / 标题层 / 按钮层。
+
+#### 1.1 背景层 —— 动态像素场景
+
+不复用游戏 World（开销大、控制难），而是手搓一个固定布局的小场景，绘制顺序由远及近：
+
+```
+天空 (CanvasLayer/back, layer=-2)
+├── GradientSky (ColorRect with GradientTexture)
+│   黄昏暖色：上方深紫 #2a1a3a → 中部橙红 #c46e3c → 地平线金黄 #f2c265
+├── DistantClouds (Sprite2D x 3，水平慢速漂移，loop_x)
+│   像素云：椭圆白云块，alpha 0.6，速度 4-8 px/s
+│   绕屏：x 超出右侧后从左侧重新进入
+├── DistantHills (Sprite2D, 紫灰色山形轮廓，无动画)
+│   一行像素轮廓，颜色比天空暗 30%
+├── Trees (Sprite2D x 4-6, 黑色森林剪影)
+│   不同高度的尖顶树轮廓，错落分布在中下方
+├── Ground (ColorRect 实色暗棕带噪点纹理，下方 1/4 屏)
+└── Slimes (AnimatedSprite2D x 2, 复用现有 slime_art)
+    在地面层上以慢速从一侧跳到另一侧（每 2-3 秒跳一次），到边缘后掉头
+```
+
+实现要点：
+- 所有元素用 `Sprite2D.position` 动画，简单 Tween 循环；或 `_process` 累加 x 偏移取模屏宽
+- 像素元素整体放 `scale = 4`（保持锐利），分辨率参考：背景画在 320×180 的逻辑像素上，放大到 1280×720
+- 用 `Camera2D` 做轻微视差：鼠标移动时背景反向位移 5-10 px（可选，看实现复杂度）
+- 全部用 `PixelArt.grid_to_texture` 从 ASCII 画
+
+#### 1.2 标题层 —— 像素 LOGO
+
+`teilaruia` 用 ASCII 网格手画，约 9 字符 × 5-6 像素高的字号，整体尺寸 ~80×8 像素，放大 6x = 480×48 显示。
+
+风格：
+- 主色 #f2c265（金黄）
+- 1px 深棕描边 (#3a1a0a)
+- 下方 2px offset 黑色阴影
+- 居中靠上，距顶部约 18% 屏高
+
+加微动画：标题整体 y 用 sin 缓慢上下浮动 ±2px，周期 3 秒（呼吸感）。
+
+LOGO 像素图作为独立资源：`scripts/art/logo_art.gd`，跟 `slime_art.gd` / `villager_art.gd` 一个模式，导出 `static func make_texture() -> ImageTexture`。
+
+副标题：LOGO 下方一行小字 "2D 沙盒 · Terraria 风" 字号 14 #d4b58a，淡化。
+
+#### 1.3 按钮层
+
+VBoxContainer 居中靠下方 1/3，4 个按钮（每个 240×44）：
+- "新游戏"
+- "继续"（disabled = true，灰色 + 旁边小字 "暂未开放"）
+- "设置"
+- "退出"
+
+每个按钮做成 `Button` + 自定义 StyleBoxFlat：
+- normal：#3a2a1a 底 + #d4b58a 描边 1px + #f2c265 文字
+- hover：底变 #5a3a2a + 描边变 #f2c265 + 文字变白；同时左侧出现一个 ▶ 小箭头（用 Label 字符 "▶"，hover 时 visible=true）
+- pressed：整个按钮下移 2px（用 StyleBoxFlat content_margin 实现）+ 底色变 #2a1a0a
+
+实现：所有 4 个按钮共用一个 `_apply_button_style(btn)` 函数，初始化时遍历应用。
+
+设置子面板（Panel，启动隐藏）：
+- 跟主菜单一样的暖色风格 Panel
+- 标题 "设置" + 主音量滑条（0~100 整数）+ 当前数值 Label
+- "返回" 按钮回主菜单按钮列表
+- 切换时主菜单按钮列表淡出 (0.2s)，设置面板淡入 (0.2s)
+
+#### 1.4 进入游戏的过渡
+
+点"新游戏"后：
+- 按钮列表淡出 0.3s
+- 整个 MainMenu 全屏黑场淡入 0.4s（一个 ColorRect 全屏覆盖，alpha 0→1）
+- 黑场满了发 `start_game` 信号，Main 实例化 game 节点组并隐藏 MainMenu
 
 信号：
-- `start_game` → 主菜单不直接做事，Main 监听后切到 game 状态
+- `start_game` → Main 监听
 - 退出按钮：直接 `get_tree().quit()`
-- 设置按钮：切换子面板可见性
+- 设置按钮：切到设置面板（内部状态）
 
 ### 2. PauseMenu (`scenes/ui/pause_menu.tscn` + `scripts/ui/pause_menu.gd`)
 
@@ -214,8 +276,10 @@ func _on_respawn() -> void:
 
 **tests/test_main_menu.gd**
 - 实例化 MainMenu，验证 4 个按钮存在
-- 模拟点击"新游戏"按钮 → 验证发出 start_game 信号
+- 模拟点击"新游戏"按钮 → 验证发出 start_game 信号（过渡淡出完成后）
 - 验证"继续"按钮 disabled = true
+- 验证 LOGO 纹理生成成功（非 null，尺寸大于 0）
+- 验证按钮 hover 时左侧箭头变可见
 
 **tests/test_pause_menu.gd**
 - 实例化 PauseMenu，验证默认隐藏
@@ -237,8 +301,10 @@ func _on_respawn() -> void:
 
 | 文件 | 动作 |
 |---|---|
-| `scenes/ui/main_menu.tscn` | 新建 |
-| `scripts/ui/main_menu.gd` | 新建 |
+| `scenes/ui/main_menu.tscn` | 新建（背景层 + 标题层 + 按钮层 + 设置面板） |
+| `scripts/ui/main_menu.gd` | 新建（动画 + 按钮样式 + 状态切换） |
+| `scripts/art/logo_art.gd` | 新建（teilaruia 像素 LOGO 的 ASCII 网格） |
+| `scripts/art/menu_scene_art.gd` | 新建（云/山/树/地面 像素纹理生成） |
 | `scenes/ui/pause_menu.tscn` | 新建 |
 | `scripts/ui/pause_menu.gd` | 新建 |
 | `scenes/ui/death_screen.tscn` | 新建 |
