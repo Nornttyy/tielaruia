@@ -92,3 +92,28 @@ func test_world_has_trees():
 	assert_gt(leaves_count + pine_count + autumn_count, 10, "应有至少 10 个树叶 (任意品种)")
 	assert_gt(pine_count, 0, "应至少长出 1 棵松树")
 	assert_gt(autumn_count, 0, "应至少长出 1 棵秋树")
+
+
+func test_generate_chunk_returns_64_wide():
+	var c = WorldGenerator.generate_chunk(42, 0, 128)
+	assert_eq(c.tiles.size(), 64, "chunk 宽 64 列")
+	assert_eq(c.tiles[0].size(), 128, "高度按参数")
+	assert_eq(c.chunk_x, 0)
+
+
+func test_generate_chunk_deterministic():
+	var a = WorldGenerator.generate_chunk(42, 3, 128)
+	var b = WorldGenerator.generate_chunk(42, 3, 128)
+	for lx in 64:
+		assert_eq(a.tiles[lx], b.tiles[lx], "同 seed+chunk_x 同结果, 列 %d" % lx)
+
+
+func test_generate_chunk_different_x_different():
+	var a = WorldGenerator.generate_chunk(42, 0, 128)
+	var b = WorldGenerator.generate_chunk(42, 10, 128)
+	var diff: int = 0
+	for lx in 64:
+		for y in 128:
+			if a.tiles[lx][y] != b.tiles[lx][y]:
+				diff += 1
+	assert_gt(diff, 100, "不同 chunk 差异 > 100 tiles")
