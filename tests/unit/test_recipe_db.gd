@@ -176,3 +176,10 @@ func test_matcher_stone_axe():
 	]
 	var hit = RecipeMatcher.find_match(g)
 	assert_eq(hit.output_id, "stone_axe")
+
+
+func test_door_grid_size_is_2x3():
+	# 防回归: door 是 2 宽 3 高, max(x,y)=3 → 需 3x3 模式 (工作台)
+	var r = db.get_recipe("door")
+	assert_eq(r.grid_size, Vector2i(2, 3))
+	assert_eq(max(r.grid_size.x, r.grid_size.y), 3, "door 应被识别为需要 3x3 模式")

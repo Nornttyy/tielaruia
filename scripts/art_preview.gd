@@ -17,7 +17,7 @@ func _ready() -> void:
 	_draw_blocks(Vector2(MARGIN, MARGIN + 32))
 
 	var items_y := MARGIN + 32 + TILE_BOX + 48
-	_draw_section_title("物品 (5)", Vector2(MARGIN, items_y))
+	_draw_section_title("物品 (8)", Vector2(MARGIN, items_y))
 	_draw_items(Vector2(MARGIN, items_y + 32))
 
 	var entities_y := items_y + 32 + TILE_BOX + 48
@@ -64,13 +64,16 @@ func _draw_blocks(origin: Vector2) -> void:
 
 
 func _draw_items(origin: Vector2) -> void:
-	var item_ids := ["wood_sword", "wood_pickaxe", "wood_axe", "stick", "slime_ball"]
+	var item_ids := ["wood_sword", "wood_pickaxe", "wood_axe", "slime_ball", "stone_sword", "stone_pickaxe", "stone_axe", "slime_torch"]
 	var names := {
 		"wood_sword": "木剑",
 		"wood_pickaxe": "木镐",
 		"wood_axe": "木斧",
-		"stick": "棍子",
 		"slime_ball": "史莱姆球",
+		"stone_sword": "石剑",
+		"stone_pickaxe": "石镐",
+		"stone_axe": "石斧",
+		"slime_torch": "史莱姆火把",
 	}
 	for i in item_ids.size():
 		var spr := Sprite2D.new()

@@ -306,7 +306,7 @@ func _on_recipe_pressed(recipe_id: String) -> void:
 	if recipe == null:
 		return
 	# 检查模式: 3x3 配方需要工作台 (_mode == 3)
-	if recipe.grid_size.x > _mode:
+	if max(recipe.grid_size.x, recipe.grid_size.y) > _mode:
 		return
 	if _player_inv == null:
 		return
@@ -388,7 +388,7 @@ func _refresh_recipes() -> void:
 	for entry in _recipe_buttons:
 		var recipe: Dictionary = entry.recipe
 		var btn: Button = entry.button
-		var needs_workbench: bool = recipe.grid_size.x == 3
+		var needs_workbench: bool = max(recipe.grid_size.x, recipe.grid_size.y) > 2
 		var has_workbench: bool = _mode == 3
 		var req: Dictionary = _required_inputs(recipe)
 		var has_materials: bool = true
