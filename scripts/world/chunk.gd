@@ -11,11 +11,11 @@ func _init(p_chunk_x: int = 0) -> void:
 	chunk_x = p_chunk_x
 
 
-func init_empty() -> void:
+func init_empty(height: int = ChunkConstants.WORLD_HEIGHT) -> void:
 	tiles.resize(ChunkConstants.CHUNK_WIDTH)
 	for lx in ChunkConstants.CHUNK_WIDTH:
 		var col: Array = []
-		col.resize(ChunkConstants.WORLD_HEIGHT)
+		col.resize(height)
 		col.fill(Tiles.AIR)
 		tiles[lx] = col
 

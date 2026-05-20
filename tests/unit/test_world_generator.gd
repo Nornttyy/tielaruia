@@ -116,4 +116,28 @@ func test_generate_chunk_different_x_different():
 		for y in 128:
 			if a.tiles[lx][y] != b.tiles[lx][y]:
 				diff += 1
-	assert_gt(diff, 100, "不同 chunk 差异 > 100 tiles")
+	assert_gt(diff, 400, "不同 chunk 差异 > 400 tiles")
+
+
+func test_no_orphan_leaves_at_chunk_seams():
+	# 跨 chunk 边界不能有"漂浮叶"(无树干的叶子)。
+	# 检查每片叶子的小邻域内必须能找到 LOG。
+	var w = WorldGenerator.generate(42, 256, 128)
+	var leaf_tiles := [Tiles.LEAVES, Tiles.LEAVES_PINE, Tiles.LEAVES_AUTUMN]
+	for x in 256:
+		for y in 128:
+			if not w.tiles[x][y] in leaf_tiles:
+				continue
+			var has_log := false
+			for dx in range(-3, 4):
+				for dy in range(0, 10):
+					var nx: int = x + dx
+					var ny: int = y + dy
+					if nx < 0 or nx >= 256 or ny < 0 or ny >= 128:
+						continue
+					if w.tiles[nx][ny] == Tiles.LOG:
+						has_log = true
+						break
+				if has_log:
+					break
+			assert_true(has_log, "孤立叶 at (%d, %d) — 跨 chunk 边界树漂浮叶 bug" % [x, y])
