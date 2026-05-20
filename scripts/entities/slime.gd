@@ -94,12 +94,23 @@ func _check_player_contact() -> void:
 
 
 # 返回 true 表示本次造成有效伤害
-func take_damage(amount: int, _source_pos: Vector2 = Vector2.ZERO) -> bool:
+func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 	if _is_dying or amount <= 0:
 		return false
 	current_health = max(0, current_health - amount)
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
+	# 击退: 远离 source
+	if source_pos != Vector2.ZERO:
+		var dx: float = global_position.x - source_pos.x
+		var kb_dir: float = signf(dx) if abs(dx) > 0.1 else 1.0
+		velocity.x = kb_dir * 220.0
+		velocity.y = -160.0
+		_hop_timer = 0.6  # 击退后冷却一下再跳
+	# 压缩弹动: sprite scale Y 压扁
+	var tween := create_tween()
+	tween.tween_property(sprite, "scale", Vector2(1.25, 0.75), 0.06)
+	tween.tween_property(sprite, "scale", Vector2.ONE, 0.12)
 	if current_health == 0:
 		_die()
 	return true

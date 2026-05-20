@@ -14,6 +14,8 @@ const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 const HURT_DURATION := 0.4
 const KNOCKBACK_VX := 90.0
 const KNOCKBACK_VY := -180.0
+const SHAKE_MAX_OFFSET := 4.0
+const SHAKE_DECAY := 20.0
 
 var _coyote_timer: float = 0.0
 var _facing_right: bool = true
@@ -21,6 +23,7 @@ var _was_on_floor: bool = true
 var _previous_vy: float = 0.0
 var _walk_step_timer: float = 0.0
 var _hurt_timer: float = 0.0
+var _shake_amount: float = 0.0
 
 
 func _ready() -> void:
@@ -109,6 +112,15 @@ func _physics_process(delta: float) -> void:
 	_was_on_floor = on_floor_after
 	_previous_vy = pre_move_vy
 
+	# 相机震屏
+	var camera: Camera2D = get_node_or_null("Camera2D")
+	if camera != null:
+		if _shake_amount > 0.01:
+			camera.offset = Vector2(randf_range(-_shake_amount, _shake_amount), randf_range(-_shake_amount, _shake_amount))
+			_shake_amount = max(0.0, _shake_amount - SHAKE_DECAY * delta)
+		else:
+			camera.offset = Vector2.ZERO
+
 	# 朝向
 	if dir > 0.01:
 		_facing_right = true
@@ -151,3 +163,7 @@ func _update_workbench_prompt() -> void:
 	# 没找到
 	if fp.is_showing():
 		fp.hide_prompt()
+
+
+func shake(amount: float = 4.0) -> void:
+	_shake_amount = clampf(amount, 0.0, SHAKE_MAX_OFFSET)

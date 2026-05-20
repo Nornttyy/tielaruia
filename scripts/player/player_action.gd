@@ -31,6 +31,7 @@ var _mining_progress: float = 0.0
 # 战斗
 const SWORD_RANGE_PX := 36.0
 const SWORD_COOLDOWN := 0.3
+const SWORD_ARC_LIFETIME := 0.18
 var _attack_cooldown: float = 0.0
 
 
@@ -320,6 +321,33 @@ func _swing_sword() -> void:
 		if center.distance_to(sn.global_position) <= SWORD_RANGE_PX * 0.7:
 			if s.has_method("take_damage"):
 				s.take_damage(damage, player.global_position)
+	# 挥剑视觉: 一个白色弧线 sprite, 0.18s 淡出
+	_spawn_swing_arc(player.global_position + Vector2(facing * 18.0, -10.0), facing)
+	if player.has_method("shake"):
+		player.shake(3.0)
+
+
+func _spawn_swing_arc(pos: Vector2, facing: int) -> void:
+	var arc := Line2D.new()
+	arc.width = 3.0
+	arc.default_color = Color(1, 1, 1, 0.9)
+	arc.global_position = pos
+	# 简单弧线: 3 个点构成 ⌒ 形, 朝向 facing
+	if facing > 0:
+		arc.add_point(Vector2(-6, 8))
+		arc.add_point(Vector2(12, 0))
+		arc.add_point(Vector2(-6, -10))
+	else:
+		arc.add_point(Vector2(6, 8))
+		arc.add_point(Vector2(-12, 0))
+		arc.add_point(Vector2(6, -10))
+	var parent: Node = get_tree().get_first_node_in_group("effects_root")
+	if parent == null:
+		parent = get_parent()
+	parent.add_child(arc)
+	var tween := arc.create_tween()
+	tween.tween_property(arc, "modulate:a", 0.0, SWORD_ARC_LIFETIME)
+	tween.tween_callback(arc.queue_free)
 
 
 func _inventory_node() -> Node:
