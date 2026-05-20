@@ -13,10 +13,9 @@ func test_place_workbench_and_craft_pickaxe():
 	var inv: Node = player.get_node("PlayerInventory")
 	var terrain: TileMapLayer = world.get_node("TerrainLayer")
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
-	# 玩家持 1 workbench + 3 planks + 2 sticks
+	# 玩家持 1 workbench + 5 planks
 	inv.inventory.add("workbench", 1)
-	inv.inventory.add("planks", 3)
-	inv.inventory.add("stick", 2)
+	inv.inventory.add("planks", 5)
 	# 选中 workbench 放置
 	inv.set_hotbar_selection(0)
 	var pt: Vector2i = action.player_tile()
@@ -34,8 +33,8 @@ func test_place_workbench_and_craft_pickaxe():
 	cp.place_in_cell(0, 0, "planks", 1)
 	cp.place_in_cell(0, 1, "planks", 1)
 	cp.place_in_cell(0, 2, "planks", 1)
-	cp.place_in_cell(1, 1, "stick", 1)
-	cp.place_in_cell(2, 1, "stick", 1)
+	cp.place_in_cell(1, 1, "planks", 1)
+	cp.place_in_cell(2, 1, "planks", 1)
 	var preview = cp.get_output_preview()
 	assert_not_null(preview, "应匹配 wood_pickaxe")
 	assert_eq(preview.output_id, "wood_pickaxe")

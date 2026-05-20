@@ -34,15 +34,6 @@ func test_full_survival_loop():
 			total_planks += s.count
 	assert_gte(total_planks, 16)
 
-	# 3. 2x2 合 4 planks → 4 sticks
-	cp.open(2)
-	cp.place_in_cell(0, 0, "planks", 1)
-	cp.place_in_cell(1, 0, "planks", 1)
-	var p2 = cp.get_output_preview()
-	assert_eq(p2.output_id, "stick")
-	cp.simulate_take_output()
-	cp.close()
-
 	# 4. 2x2 合 4 planks → 1 workbench
 	cp.open(2)
 	cp.place_in_cell(0, 0, "planks", 1)
@@ -72,13 +63,13 @@ func test_full_survival_loop():
 	await wait_frames(3)
 	assert_eq(terrain.get_cell_source_id(wb_target), Tiles.WORKBENCH)
 
-	# 6. 3x3 合 wood_pickaxe (3 planks + 2 sticks)
+	# 6. 3x3 合 wood_pickaxe (5 planks, 不要 stick)
 	cp.open(3)
 	cp.place_in_cell(0, 0, "planks", 1)
 	cp.place_in_cell(0, 1, "planks", 1)
 	cp.place_in_cell(0, 2, "planks", 1)
-	cp.place_in_cell(1, 1, "stick", 1)
-	cp.place_in_cell(2, 1, "stick", 1)
+	cp.place_in_cell(1, 1, "planks", 1)
+	cp.place_in_cell(2, 1, "planks", 1)
 	var p4 = cp.get_output_preview()
 	assert_eq(p4.output_id, "wood_pickaxe")
 	cp.simulate_take_output()
