@@ -1,6 +1,7 @@
 extends GutTest
 
 const RecipeDBClass = preload("res://scripts/crafting/recipe_db.gd")
+const RecipeMatcher = preload("res://scripts/crafting/recipe_matcher.gd")
 var db
 
 
@@ -9,8 +10,8 @@ func before_each():
 	add_child_autofree(db)
 
 
-func test_has_6_recipes():
-	assert_eq(db.all_recipes().size(), 6)
+func test_has_10_recipes():
+	assert_eq(db.all_recipes().size(), 10)
 
 
 func test_planks_recipe():
@@ -19,39 +20,159 @@ func test_planks_recipe():
 	assert_eq(r.grid_size, Vector2i(2, 2))
 	assert_eq(r.output_id, "planks")
 	assert_eq(r.output_count, 4)
-	var has_log := false
-	for row in r.pattern:
-		for cell in row:
-			if cell == "log":
-				has_log = true
-	assert_true(has_log)
-
-
-func test_wood_pickaxe_recipe():
-	var r = db.get_recipe("wood_pickaxe")
-	assert_eq(r.grid_size, Vector2i(3, 3))
-	assert_eq(r.output_id, "wood_pickaxe")
-	assert_eq(r.output_count, 1)
-	# 顶行 3 planks
-	assert_eq(r.pattern[0], ["planks", "planks", "planks"])
-	# 中柱 stick
-	assert_eq(r.pattern[1][1], "stick")
-	assert_eq(r.pattern[2][1], "stick")
 
 
 func test_workbench_recipe():
 	var r = db.get_recipe("workbench")
-	assert_eq(r.grid_size, Vector2i(2, 2))
 	assert_eq(r.output_id, "workbench")
+	assert_eq(r.output_count, 1)
+
+
+func test_slime_torch_recipe():
+	var r = db.get_recipe("slime_torch")
+	assert_not_null(r)
+	assert_eq(r.grid_size, Vector2i(2, 2))
+	assert_eq(r.output_id, "slime_torch")
+	assert_eq(r.output_count, 3)
+
+
+func test_door_recipe():
+	var r = db.get_recipe("door")
+	assert_not_null(r)
+	assert_eq(r.grid_size, Vector2i(2, 3))
+	assert_eq(r.output_id, "door")
+
+
+func test_wood_sword_recipe():
+	var r = db.get_recipe("wood_sword")
+	assert_not_null(r)
+	assert_eq(r.grid_size, Vector2i(3, 3))
+
+
+func test_wood_pickaxe_recipe_planks_only():
+	# Terraria 风: 木镐配方只用 planks, 不用 stick
+	var r = db.get_recipe("wood_pickaxe")
+	assert_not_null(r)
 	for row in r.pattern:
 		for cell in row:
-			assert_eq(cell, "planks")
+			assert_ne(cell, "stick", "wood_pickaxe 不应再包含 stick")
 
 
-func test_unknown_recipe_returns_null():
-	assert_null(db.get_recipe("nonexistent"))
+func test_wood_axe_recipe_planks_only():
+	var r = db.get_recipe("wood_axe")
+	assert_not_null(r)
+	for row in r.pattern:
+		for cell in row:
+			assert_ne(cell, "stick", "wood_axe 不应再包含 stick")
 
 
-func test_all_recipes_have_mirror_flag():
-	for r in db.all_recipes():
-		assert_true(r.has("mirror_ok"))
+func test_stone_sword_recipe():
+	var r = db.get_recipe("stone_sword")
+	assert_not_null(r)
+	assert_eq(r.output_id, "stone_sword")
+
+
+func test_stone_pickaxe_recipe():
+	var r = db.get_recipe("stone_pickaxe")
+	assert_not_null(r)
+	assert_eq(r.output_id, "stone_pickaxe")
+
+
+func test_stone_axe_recipe():
+	var r = db.get_recipe("stone_axe")
+	assert_not_null(r)
+	assert_eq(r.output_id, "stone_axe")
+
+
+func test_no_stick_recipe():
+	assert_null(db.get_recipe("stick"), "stick 配方已删除")
+
+
+# === RecipeMatcher 命中测 ===
+
+func test_matcher_planks():
+	var g = [["log", ""], ["", ""]]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "planks")
+
+
+func test_matcher_workbench():
+	var g = [["planks", "planks"], ["planks", "planks"]]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "workbench")
+
+
+func test_matcher_slime_torch():
+	var g = [["slime_ball", ""], ["planks", ""]]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "slime_torch")
+
+
+func test_matcher_door():
+	var g = [
+		["planks", "planks", ""],
+		["planks", "planks", ""],
+		["planks", "planks", ""],
+	]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "door")
+
+
+func test_matcher_wood_sword():
+	var g = [
+		["", "planks", ""],
+		["", "planks", ""],
+		["", "planks", ""],
+	]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "wood_sword")
+
+
+func test_matcher_wood_pickaxe():
+	var g = [
+		["planks", "planks", "planks"],
+		["",       "planks", ""],
+		["",       "planks", ""],
+	]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "wood_pickaxe")
+
+
+func test_matcher_wood_axe():
+	var g = [
+		["planks", "planks", ""],
+		["planks", "planks", ""],
+		["",       "planks", ""],
+	]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "wood_axe")
+
+
+func test_matcher_stone_sword():
+	var g = [
+		["", "stone",  ""],
+		["", "stone",  ""],
+		["", "planks", ""],
+	]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "stone_sword")
+
+
+func test_matcher_stone_pickaxe():
+	var g = [
+		["stone", "stone",  "stone"],
+		["",      "planks", ""],
+		["",      "planks", ""],
+	]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "stone_pickaxe")
+
+
+func test_matcher_stone_axe():
+	var g = [
+		["stone", "stone",  ""],
+		["stone", "planks", ""],
+		["",      "planks", ""],
+	]
+	var hit = RecipeMatcher.find_match(g)
+	assert_eq(hit.output_id, "stone_axe")

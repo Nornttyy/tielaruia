@@ -44,24 +44,11 @@ func test_workbench_recipe():
 	assert_eq(m.recipe_id, "workbench")
 
 
-func test_stick_recipe():
-	var grid = _g(["planks .", "planks ."])
-	var m = RecipeMatcher.find_match(grid)
-	assert_eq(m.recipe_id, "stick")
-
-
-func test_stick_recipe_mirrored():
-	# 镜像形态：planks 在右列
-	var grid = _g([". planks", ". planks"])
-	var m = RecipeMatcher.find_match(grid)
-	assert_eq(m.recipe_id, "stick")
-
-
 func test_wood_pickaxe_3x3():
 	var grid = _g([
 		"planks planks planks",
-		". stick .",
-		". stick .",
+		". planks .",
+		". planks .",
 	])
 	var m = RecipeMatcher.find_match(grid)
 	assert_eq(m.recipe_id, "wood_pickaxe")
@@ -70,19 +57,19 @@ func test_wood_pickaxe_3x3():
 func test_wood_axe_3x3():
 	var grid = _g([
 		"planks planks .",
-		"planks stick .",
-		". stick .",
+		"planks planks .",
+		". planks .",
 	])
 	var m = RecipeMatcher.find_match(grid)
 	assert_eq(m.recipe_id, "wood_axe")
 
 
 func test_wood_axe_mirrored():
-	# axe 镜像：planks 在右，stick 立柱不变
+	# axe 镜像：planks 在右
 	var grid = _g([
 		". planks planks",
-		". stick  planks",
-		". stick  .",
+		". planks planks",
+		". planks .",
 	])
 	var m = RecipeMatcher.find_match(grid)
 	assert_eq(m.recipe_id, "wood_axe")
@@ -92,7 +79,7 @@ func test_wood_sword_3x3():
 	var grid = _g([
 		". planks .",
 		". planks .",
-		". stick  .",
+		". planks .",
 	])
 	var m = RecipeMatcher.find_match(grid)
 	assert_eq(m.recipe_id, "wood_sword")
@@ -109,10 +96,10 @@ func test_wrong_item_no_match():
 
 
 func test_partial_pattern_no_match():
-	# pickaxe 缺一个 stick → 不应匹配
+	# pickaxe 缺一格 planks → 不应匹配
 	var grid = _g([
 		"planks planks planks",
-		". stick .",
+		". planks .",
 		". . .",
 	])
 	assert_null(RecipeMatcher.find_match(grid))
