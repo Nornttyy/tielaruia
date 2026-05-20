@@ -129,6 +129,11 @@ func _on_player_died() -> void:
 			inv.slots[i] = null
 		if inv_node.has_signal("inventory_changed"):
 			inv_node.inventory_changed.emit()
+	# 清掉地图上所有 slime (防止复活时聚一堆)
+	for s in get_tree().get_nodes_in_group("slimes"):
+		s.queue_free()
+	# 重置 spawn timer, 给玩家几秒缓冲再开始刷新
+	_slime_spawn_timer = 5.0
 	# 传送回出生点 + 满血
 	player.global_position = _spawn_world_pos()
 	var hp: Node = player.get_node_or_null("PlayerHealth")

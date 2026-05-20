@@ -100,13 +100,13 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 	current_health = max(0, current_health - amount)
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
-	# 击退: 远离 source
+	# 击退: 远离 source (轻度, 不要弹太远)
 	if source_pos != Vector2.ZERO:
 		var dx: float = global_position.x - source_pos.x
 		var kb_dir: float = signf(dx) if abs(dx) > 0.1 else 1.0
-		velocity.x = kb_dir * 220.0
-		velocity.y = -160.0
-		_hop_timer = 0.6  # 击退后冷却一下再跳
+		velocity.x = kb_dir * 90.0
+		velocity.y = -80.0
+		_hop_timer = 0.5  # 击退后冷却再跳
 	# 压缩弹动: sprite scale Y 压扁
 	var tween := create_tween()
 	tween.tween_property(sprite, "scale", Vector2(1.25, 0.75), 0.06)
