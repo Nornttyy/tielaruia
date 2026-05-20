@@ -306,16 +306,27 @@ func _on_recipe_pressed(recipe_id: String) -> void:
 	for item_id in req:
 		if _count_in_inv(inv, item_id) < req[item_id]:
 			return
-	# 输出格够不够? add 会自动判断 leftover
-	# 先扣再加, leftover 用 drop 兜底 (简单起见)
+	# 快照 + 试做 + 装不下回滚 (避免材料消耗后产物无处放)
+	var snapshot: Array = _snapshot_slots(inv)
 	for item_id in req:
 		_remove_from_inv(inv, item_id, req[item_id])
-	var leftover = inv.add(recipe.output_id, recipe.output_count)
-	# leftover 暂时丢弃 (后续可改成掉地上)
+	var leftover: int = inv.add(recipe.output_id, recipe.output_count)
 	if leftover > 0:
-		# 加回去保证不丢: 跑一遍 add (理论上不应发生因为输出 count 通常 <=4)
-		pass
+		_restore_slots(inv, snapshot)
+		return
 	_player_inv.inventory_changed.emit()
+
+
+func _snapshot_slots(inv) -> Array:
+	var snap: Array = []
+	for s in inv.slots:
+		snap.append(null if s == null else {"item_id": s.item_id, "count": s.count})
+	return snap
+
+
+func _restore_slots(inv, snapshot: Array) -> void:
+	for i in inv.slots.size():
+		inv.slots[i] = snapshot[i]
 
 
 func _required_inputs(recipe: Dictionary) -> Dictionary:
