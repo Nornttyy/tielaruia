@@ -364,10 +364,10 @@ func _refresh_wb_label() -> void:
 	if _wb_label == null:
 		return
 	if _mode == 3:
-		_wb_label.text = "[ 工作台旁 — 全部配方可用 ]"
+		_wb_label.text = "[ 工作台 3×3 ]"
 		_wb_label.add_theme_color_override("font_color", Color(0.6, 1.0, 0.6))
 	else:
-		_wb_label.text = "[ 徒手 — 仅 2×2 配方可用 ]"
+		_wb_label.text = "[ 徒手 2×2 ]"
 		_wb_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.5))
 
 
@@ -378,21 +378,20 @@ func _refresh_recipes() -> void:
 	for entry in _recipe_buttons:
 		var recipe: Dictionary = entry.recipe
 		var btn: Button = entry.button
-		var needs_workbench: bool = max(recipe.grid_size.x, recipe.grid_size.y) > 2
-		var has_workbench: bool = _mode == 3
+		# 模式过滤: 2x2 模式仅显示 2x2 配方; 3x3 模式仅显示 3x3 配方 (含 2×3 门)
+		var recipe_size: int = max(recipe.grid_size.x, recipe.grid_size.y)
+		btn.visible = (recipe_size == _mode)
+		if not btn.visible:
+			continue
+		# 素材是否够 → 灰显
 		var req: Dictionary = _required_inputs(recipe)
 		var has_materials: bool = true
 		for item_id in req:
 			if _count_in_inv(inv, item_id) < req[item_id]:
 				has_materials = false
 				break
-		var disabled: bool = (needs_workbench and not has_workbench) or not has_materials
-		btn.disabled = disabled
-		# 视觉提示
-		if disabled:
-			btn.modulate = Color(0.5, 0.5, 0.5, 0.7)
-		else:
-			btn.modulate = Color(1, 1, 1, 1)
+		btn.disabled = not has_materials
+		btn.modulate = Color(1, 1, 1, 1) if has_materials else Color(0.5, 0.5, 0.5, 0.7)
 
 
 func _refresh_inv() -> void:
