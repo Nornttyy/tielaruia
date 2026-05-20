@@ -101,49 +101,37 @@ func _build_recipe_buttons() -> void:
 
 
 func _make_recipe_row(recipe: Dictionary) -> Dictionary:
+	# 紧凑行: 小图标 + 中文名, 材料细节在 hover tooltip
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(380, 44)
+	btn.custom_minimum_size = Vector2(180, 32)
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.tooltip_text = _recipe_tooltip(recipe)
 
-	# HBox 容器
 	var hb := HBoxContainer.new()
-	hb.add_theme_constant_override("separation", 8)
+	hb.add_theme_constant_override("separation", 6)
 	hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hb.set_anchors_preset(Control.PRESET_FULL_RECT)
-	hb.offset_left = 8.0
-	hb.offset_right = -8.0
+	hb.offset_left = 6.0
+	hb.offset_right = -6.0
 	btn.add_child(hb)
 
-	# 输出图标
 	var icon := TextureRect.new()
 	icon.texture = ArtCache.get_inventory_icon(recipe.output_id)
-	icon.custom_minimum_size = Vector2(36, 36)
+	icon.custom_minimum_size = Vector2(24, 24)
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hb.add_child(icon)
 
-	# 名字 + 材料 (竖向 2 行)
-	var vb := VBoxContainer.new()
-	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hb.add_child(vb)
-
 	var name_lbl := Label.new()
-	name_lbl.text = "%s × %d" % [recipe.output_id, recipe.output_count]
-	name_lbl.add_theme_font_size_override("font_size", 12)
+	name_lbl.text = _zh_name(recipe.output_id)
+	name_lbl.add_theme_font_size_override("font_size", 13)
 	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.add_child(name_lbl)
-
-	var cost_lbl := Label.new()
-	cost_lbl.text = _short_cost_text(recipe)
-	cost_lbl.add_theme_font_size_override("font_size", 10)
-	cost_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
-	cost_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.add_child(cost_lbl)
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hb.add_child(name_lbl)
 
 	btn.pressed.connect(_on_recipe_pressed.bind(recipe.id))
-	return {"recipe": recipe, "button": btn, "cost_label": cost_lbl}
+	return {"recipe": recipe, "button": btn}
 
 
 func _build_inv_slots() -> void:
@@ -207,29 +195,40 @@ func _make_inv_slot(idx: int) -> PanelContainer:
 
 func _recipe_tooltip(recipe: Dictionary) -> String:
 	var req: Dictionary = _required_inputs(recipe)
-	var lines: Array = ["产出: %s × %d" % [recipe.output_id, recipe.output_count]]
+	var lines: Array = ["产出: %s × %d" % [_zh_name(recipe.output_id), recipe.output_count]]
 	for item_id in req:
-		lines.append("  · %s × %d" % [item_id, req[item_id]])
-	if recipe.grid_size.x == 3:
+		lines.append("  · %s × %d" % [_zh_name(item_id), req[item_id]])
+	if max(recipe.grid_size.x, recipe.grid_size.y) > 2:
 		lines.append("(需要工作台)")
 	return "\n".join(lines)
 
 
-func _short_cost_text(recipe: Dictionary) -> String:
-	var req: Dictionary = _required_inputs(recipe)
-	var parts: Array = []
-	for item_id in req:
-		parts.append("%d%s" % [req[item_id], _short_name(item_id)])
-	return " ".join(parts)
+# 物品/方块中文名 (面板用)
+const _ZH_NAMES := {
+	"log": "原木",
+	"planks": "木板",
+	"dirt": "泥土",
+	"grass": "草",
+	"stone": "石头",
+	"sand": "沙子",
+	"leaves": "树叶",
+	"pine_leaves": "松针",
+	"autumn_leaves": "秋叶",
+	"workbench": "工作台",
+	"door": "门",
+	"slime_ball": "史莱姆球",
+	"slime_torch": "史莱姆灯",
+	"wood_sword": "木剑",
+	"wood_pickaxe": "木镐",
+	"wood_axe": "木斧",
+	"stone_sword": "石剑",
+	"stone_pickaxe": "石镐",
+	"stone_axe": "石斧",
+}
 
 
-func _short_name(item_id: String) -> String:
-	const SHORT := {
-		"log": "原木", "planks": "板",
-		"workbench": "台", "leaves": "叶",
-		"stone": "石", "slime_ball": "胶",
-	}
-	return SHORT.get(item_id, item_id)
+func _zh_name(item_id: String) -> String:
+	return _ZH_NAMES.get(item_id, item_id)
 
 
 # ---- 公共 API ----
