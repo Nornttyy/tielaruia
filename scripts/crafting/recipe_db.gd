@@ -1,4 +1,4 @@
-# 6 个 Demo 配方。pattern[row][col] = item_id 或 "" (空)。
+# 10 个 Demo 配方。pattern[row][col] = item_id 或 "" (空)。
 # grid_size 表 pattern 的形状 (Vector2i(cols, rows))。
 # RecipeMatcher 负责把 pattern 平移/镜像后对位匹配玩家的 craft grid。
 extends Node
@@ -11,6 +11,7 @@ extends Node
 #   output_count: int
 #   mirror_ok: bool
 const _RECIPES := [
+	# === 2×2 (徒手) ===
 	{
 		"id": "planks",
 		"grid_size": Vector2i(2, 2),
@@ -19,17 +20,6 @@ const _RECIPES := [
 			["",    ""],
 		],
 		"output_id": "planks",
-		"output_count": 4,
-		"mirror_ok": true,
-	},
-	{
-		"id": "stick",
-		"grid_size": Vector2i(2, 2),
-		"pattern": [
-			["planks", ""],
-			["planks", ""],
-		],
-		"output_id": "stick",
 		"output_count": 4,
 		"mirror_ok": true,
 	},
@@ -45,12 +35,36 @@ const _RECIPES := [
 		"mirror_ok": true,
 	},
 	{
+		"id": "slime_torch",
+		"grid_size": Vector2i(2, 2),
+		"pattern": [
+			["slime_ball", ""],
+			["planks",     ""],
+		],
+		"output_id": "slime_torch",
+		"output_count": 3,
+		"mirror_ok": true,
+	},
+	# === 3×3 (工作台) ===
+	{
+		"id": "door",
+		"grid_size": Vector2i(2, 3),
+		"pattern": [
+			["planks", "planks"],
+			["planks", "planks"],
+			["planks", "planks"],
+		],
+		"output_id": "door",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
 		"id": "wood_sword",
 		"grid_size": Vector2i(3, 3),
 		"pattern": [
 			["", "planks", ""],
 			["", "planks", ""],
-			["", "stick",  ""],
+			["", "planks", ""],
 		],
 		"output_id": "wood_sword",
 		"output_count": 1,
@@ -61,8 +75,8 @@ const _RECIPES := [
 		"grid_size": Vector2i(3, 3),
 		"pattern": [
 			["planks", "planks", "planks"],
-			["",       "stick",  ""],
-			["",       "stick",  ""],
+			["",       "planks", ""],
+			["",       "planks", ""],
 		],
 		"output_id": "wood_pickaxe",
 		"output_count": 1,
@@ -73,10 +87,46 @@ const _RECIPES := [
 		"grid_size": Vector2i(3, 3),
 		"pattern": [
 			["planks", "planks", ""],
-			["planks", "stick",  ""],
-			["",       "stick",  ""],
+			["planks", "planks", ""],
+			["",       "planks", ""],
 		],
 		"output_id": "wood_axe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "stone_sword",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["", "stone",  ""],
+			["", "stone",  ""],
+			["", "planks", ""],
+		],
+		"output_id": "stone_sword",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "stone_pickaxe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["stone", "stone",  "stone"],
+			["",      "planks", ""],
+			["",      "planks", ""],
+		],
+		"output_id": "stone_pickaxe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "stone_axe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["stone", "stone",  ""],
+			["stone", "planks", ""],
+			["",      "planks", ""],
+		],
+		"output_id": "stone_axe",
 		"output_count": 1,
 		"mirror_ok": true,
 	},
