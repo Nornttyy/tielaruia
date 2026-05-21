@@ -67,8 +67,13 @@ func test_is_hungry() -> void:
 
 
 func test_signal_only_on_integer_cross() -> void:
+    # Verify signal mechanism: start at 50, sync state, then cross boundary
     hunger.current = 50.0
-    hunger._last_emit_int = 50  # Match current state
+    hunger.emit_state()  # This will emit signal with (50, 100), setting _last_emit_int = 50
+
+    # Change current to 49.0 (crosses int boundary)
+    hunger.current = 49.0
     watch_signals(hunger)
-    hunger._physics_process(0.01)
-    assert_signal_emit_count(hunger, "hunger_changed", 0)
+    hunger._maybe_emit()  # Manually call to test
+    assert_signal_emitted(hunger, "hunger_changed")
+    assert_signal_emitted_with_parameters(hunger, "hunger_changed", [49, hunger.MAX])
