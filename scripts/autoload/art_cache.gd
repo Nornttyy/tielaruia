@@ -74,7 +74,8 @@ func _build_blocks() -> void:
 
 func _build_items() -> void:
 	for item_id in ["wood_sword", "wood_pickaxe", "wood_axe", "slime_jelly", "apple",
-			"stone_sword", "stone_pickaxe", "stone_axe"]:
+			"stone_sword", "stone_pickaxe", "stone_axe",
+			"coal", "iron_ore", "iron_pickaxe"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 
 
@@ -106,6 +107,7 @@ const _ITEM_TO_TILE := {
 	"workbench": BlocksArt.WORKBENCH,
 	"door": BlocksArt.DOOR,
 	"slime_torch": BlocksArt.SLIME_TORCH,
+	"torch": BlocksArt.TORCH,
 }
 
 

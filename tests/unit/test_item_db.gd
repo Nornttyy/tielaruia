@@ -50,3 +50,34 @@ func test_is_placeable():
 func test_stick_removed():
 	# Terraria 风格: 没有 stick 中间品
 	assert_null(db.get_def("stick"), "stick 已删除")
+
+
+func test_torch_item():
+	var def = db.get_def("torch")
+	assert_not_null(def, "torch item 应存在")
+	assert_eq(def.placeable_tile_id, Tiles.TORCH)
+	assert_eq(def.max_stack, 99)
+	assert_true(db.is_placeable("torch"))
+
+
+func test_coal_item():
+	var def = db.get_def("coal")
+	assert_not_null(def)
+	assert_eq(def.placeable_tile_id, -1)
+	assert_eq(def.max_stack, 99)
+	assert_false(db.is_placeable("coal"))
+
+
+func test_iron_ore_item():
+	var def = db.get_def("iron_ore")
+	assert_not_null(def)
+	assert_eq(def.placeable_tile_id, -1)
+	assert_eq(def.max_stack, 99)
+
+
+func test_iron_pickaxe_item():
+	var def = db.get_def("iron_pickaxe")
+	assert_not_null(def)
+	assert_eq(def.tool_kind, "pickaxe")
+	assert_eq(def.tool_tier, 3)
+	assert_eq(def.max_stack, 1)
