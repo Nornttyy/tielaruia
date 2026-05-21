@@ -17,6 +17,18 @@ func is_sky_exposed(x: int, y: int) -> bool:
 	return y <= _light_top[x]
 
 
+# 公开 API: 该 (x, y) 离天光顶有多深 (单位: tile)
+# 返回 0 = 自己在/上方就是天光顶 (该列地表层及以上)
+# 返回 >0 = 地表下方 N 格
+func depth_from_sky(x: int, y: int) -> int:
+	if not _light_top.has(x):
+		_light_top[x] = _compute_light_top(x)
+	# _light_top 存的是"最后一个空气格" → 地表块在 _light_top + 1
+	# 即: depth = y - (_light_top[x] + 1) = y - _light_top[x] - 1
+	# y 在地表块以下时 depth 为正; y 在地表或以上时 depth <= 0
+	return y - _light_top[x] - 1
+
+
 # 由 World 在 set_tile 后调用
 func invalidate_column(x: int, _tiles_unused: Variant = null) -> void:
 	_light_top.erase(x)

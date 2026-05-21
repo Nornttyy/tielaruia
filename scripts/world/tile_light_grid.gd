@@ -23,11 +23,22 @@ const TORCH_PEAK := 7   # 火把中心满亮
 #   player_tile: 玩家所在 tile (Vector2i)
 #   torch_tiles: 已放置火把的 tile 坐标 Array (Vector2i)
 # 返回 0..MAX_LIGHT。
+const SKY_DEPTH_LIT := 5   # 地表往下 5 格内仍有天光衰减
+
+
 static func compute_light(x: int, y: int, player_tile: Vector2i, torch_tiles: Array) -> int:
 	var light: int = 0
-	# 1. 天空暴露 → 满亮
+	# 1. 天空暴露: 自己在地表或天空 (depth <= 0) → 满亮
+	#    地表往下 1..SKY_DEPTH_LIT 格 → 衰减光
+	#    SkyLightGrid.is_sky_exposed 只算"地表上方空气", 地表块自己 depth=0 也要算
 	if SkyLightGrid.is_sky_exposed(x, y):
 		return MAX_LIGHT
+	var depth: int = SkyLightGrid.depth_from_sky(x, y)
+	if depth <= 0:
+		return MAX_LIGHT
+	if depth <= SKY_DEPTH_LIT:
+		# depth=1 → 6, depth=2 → 5, ..., depth=5 → 2
+		light = max(light, MAX_LIGHT - depth - 1)
 	# 2. 玩家光圈
 	var dp_x: int = abs(x - player_tile.x)
 	var dp_y: int = abs(y - player_tile.y)
