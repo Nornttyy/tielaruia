@@ -13,6 +13,7 @@ func _fill_inventory_with(inv, item_id: String) -> void:
 func test_craft_refused_when_inventory_full_keeps_materials():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -43,6 +44,7 @@ func test_craft_refused_when_inventory_full_keeps_materials():
 func test_craft_succeeds_when_room_exists():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -73,6 +75,7 @@ func test_craft_uses_freed_slot_when_consuming_all_materials():
 	# 边界情况: log 占满某个槽, 输出 4 planks 需要这个槽腾空才能放
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()

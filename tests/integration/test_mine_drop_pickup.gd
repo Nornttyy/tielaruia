@@ -6,6 +6,7 @@ const MainScene = preload("res://scenes/main.tscn")
 func test_mine_grass_then_pick_up():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()

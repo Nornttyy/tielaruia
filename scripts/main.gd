@@ -1,4 +1,6 @@
-# 游戏根：实例化 World + HUD + CraftingPanel + DebugHUD + FloatingPrompt。
+# 游戏根 + 状态机。
+# 状态: "menu" (主菜单显示中) / "game" (世界 + HUD + 面板存在)。
+# 启动进 menu。MainMenu 点新游戏 → game。暂停菜单点回主菜单 → menu。
 extends Node
 
 const WorldScene = preload("res://scenes/world/world.tscn")
@@ -7,58 +9,116 @@ const FloatingPromptScene = preload("res://scenes/ui/floating_prompt.tscn")
 const HudScene = preload("res://scenes/ui/hud.tscn")
 const CraftingPanelScene = preload("res://scenes/ui/crafting_panel.tscn")
 
-var world: Node2D
-var debug_hud: CanvasLayer
-var floating_prompt: CanvasLayer
-var hud: CanvasLayer
-var crafting_panel: CanvasLayer
+@onready var _main_menu: CanvasLayer = $MainMenu
+@onready var _pause_menu: CanvasLayer = $PauseMenu
+@onready var _death_screen: CanvasLayer = $DeathScreen
+
+var _state: String = "menu"
+var _game_nodes: Array[Node] = []
+
+var world: Node2D:
+	get:
+		return get_node_or_null("World")
 
 
 func _ready() -> void:
-	world = WorldScene.instantiate()
-	add_child(world)
+	_main_menu.start_game.connect(_start_game)
+	_pause_menu.return_to_menu.connect(_return_to_menu)
+	_death_screen.respawn.connect(_on_respawn)
+	_show_menu_state()
 
-	hud = HudScene.instantiate()
+
+func _show_menu_state() -> void:
+	_state = "menu"
+	_main_menu.visible = true
+	_pause_menu.close()
+	_death_screen.hide_death()
+
+
+func _start_game() -> void:
+	_state = "game"
+	if _main_menu != null and is_instance_valid(_main_menu):
+		_main_menu.visible = false
+	var w = WorldScene.instantiate()
+	w.name = "World"
+	add_child(w)
+	_game_nodes.append(w)
+
+	var hud = HudScene.instantiate()
+	hud.name = "HUD"
 	add_child(hud)
+	_game_nodes.append(hud)
 
-	crafting_panel = CraftingPanelScene.instantiate()
-	crafting_panel.add_to_group("crafting_panel")
-	add_child(crafting_panel)
+	var crafting = CraftingPanelScene.instantiate()
+	crafting.name = "CraftingPanel"
+	crafting.add_to_group("crafting_panel")
+	add_child(crafting)
+	_game_nodes.append(crafting)
 
-	floating_prompt = FloatingPromptScene.instantiate()
-	floating_prompt.add_to_group("floating_prompt")
-	add_child(floating_prompt)
+	var floating = FloatingPromptScene.instantiate()
+	floating.add_to_group("floating_prompt")
+	add_child(floating)
+	_game_nodes.append(floating)
 
-	debug_hud = DebugHudScene.instantiate()
-	add_child(debug_hud)
+	var debug = DebugHudScene.instantiate()
+	add_child(debug)
+	_game_nodes.append(debug)
 
 	_wire_player.call_deferred()
 
 
+# 测试用 helper: 同步切到 game 状态。等价于按"新游戏"。
+# 顺便 queue_free MainMenu (测试不需要主菜单的 tween/动画副作用)。
+func boot_to_game() -> void:
+	if _state == "game":
+		return
+	if _main_menu != null and is_instance_valid(_main_menu):
+		_main_menu.queue_free()
+		_main_menu = null
+	_start_game()
+
+
 func _wire_player() -> void:
-	var player: Node2D = world.get_player()
+	var w := world
+	if w == null:
+		return
+	var player: Node2D = w.get_player()
 	if player == null:
 		return
-	debug_hud.set_player(player)
-	hud.bind_player(player)
-	crafting_panel.bind_inventory(player.get_node("PlayerInventory"))
-	# 死亡信号 → 死亡屏，按钮按下 → world.respawn_player + 关屏
+	for child in _game_nodes:
+		if child.has_method("bind_player"):
+			child.bind_player(player)
+		if child.has_method("bind_inventory"):
+			child.bind_inventory(player.get_node("PlayerInventory"))
+		if child.has_method("set_player"):
+			child.set_player(player)
+	# 死亡信号 → 死亡屏
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_signal("died"):
-		hp.died.connect($DeathScreen.show_death)
-	if not $DeathScreen.respawn.is_connected(_on_respawn):
-		$DeathScreen.respawn.connect(_on_respawn)
+		if not hp.died.is_connected(_death_screen.show_death):
+			hp.died.connect(_death_screen.show_death)
+
+
+func _return_to_menu() -> void:
+	_pause_menu.close()
+	for n in _game_nodes:
+		if is_instance_valid(n):
+			n.queue_free()
+	_game_nodes.clear()
+	get_tree().paused = false
+	_show_menu_state()
 
 
 func _on_respawn() -> void:
-	world.respawn_player()
-	$DeathScreen.hide_death()
+	var w := world
+	if w != null:
+		w.respawn_player()
+	_death_screen.hide_death()
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_pause"):
-		# 死亡屏可见时 ESC 不响应 (避免误关死亡屏)
-		if $DeathScreen.visible:
+	if event.is_action_pressed("ui_pause") and _state == "game":
+		if _death_screen.visible:
 			return
-		$PauseMenu.toggle()
+		_pause_menu.toggle()
 		get_viewport().set_input_as_handled()

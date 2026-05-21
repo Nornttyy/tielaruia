@@ -6,6 +6,7 @@ const MainScene = preload("res://scenes/main.tscn")
 func test_place_workbench_and_craft_pickaxe():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -52,6 +53,7 @@ func test_place_workbench_and_craft_pickaxe():
 func test_workbench_proximity_check():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()

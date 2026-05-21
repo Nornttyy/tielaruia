@@ -6,6 +6,7 @@ const MainScene = preload("res://scenes/main.tscn")
 func test_in_reach_with_aim_override():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var player = main.get_node("World").get_player()
 	var action: Node2D = player.get_node("PlayerAction")
@@ -24,6 +25,7 @@ func test_in_reach_with_aim_override():
 func test_aim_override_returns_set_value():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var player = main.get_node("World").get_player()
 	var action: Node2D = player.get_node("PlayerAction")
@@ -34,6 +36,7 @@ func test_aim_override_returns_set_value():
 func test_invalid_tile_not_in_reach():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var player = main.get_node("World").get_player()
 	var action: Node2D = player.get_node("PlayerAction")
@@ -43,6 +46,7 @@ func test_invalid_tile_not_in_reach():
 func test_mine_dirt_with_bare_hands():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -61,6 +65,7 @@ func test_mine_dirt_with_bare_hands():
 func test_cannot_mine_stone_bare_hand():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -79,6 +84,7 @@ func test_cannot_mine_stone_bare_hand():
 func test_can_mine_stone_with_pickaxe():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -100,6 +106,7 @@ func test_can_mine_stone_with_pickaxe():
 func test_place_dirt_consumes_slot_and_creates_tile():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -122,6 +129,7 @@ func test_place_fails_when_no_neighbor():
 	# 空中无邻接方块时不能放
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -149,6 +157,7 @@ func test_place_fails_when_no_neighbor():
 func test_place_fails_on_occupied_tile():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -170,6 +179,7 @@ func test_place_fails_on_occupied_tile():
 func test_place_fails_when_not_placeable():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()

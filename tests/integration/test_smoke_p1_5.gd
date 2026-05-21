@@ -6,6 +6,7 @@ const MainScene = preload("res://scenes/main.tscn")
 func test_runs_600_frames_no_crash_and_effects_bounded():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(600)
 	assert_not_null(main.get_node_or_null("World"))
 	var root: Node = get_tree().get_first_node_in_group("effects_root")
@@ -17,6 +18,7 @@ func test_runs_600_frames_no_crash_and_effects_bounded():
 func test_player_moving_60_frames():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	Input.action_press("move_right")
 	await wait_frames(60)

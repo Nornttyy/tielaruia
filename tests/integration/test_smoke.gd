@@ -6,6 +6,7 @@ const MainScene = preload("res://scenes/main.tscn")
 func test_main_scene_loads_without_crash():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	assert_not_null(main, "Main 节点存在")
 	var world = main.get_node_or_null("World")
@@ -15,6 +16,7 @@ func test_main_scene_loads_without_crash():
 func test_player_spawns_and_falls_to_ground():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -29,6 +31,7 @@ func test_player_spawns_and_falls_to_ground():
 func test_sky_light_grid_initialized():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	# 顶部 (0,0) 应被天光直射
 	assert_true(SkyLightGrid.is_sky_exposed(0, 0), "世界顶部有天光")

@@ -6,6 +6,7 @@ const MainScene = preload("res://scenes/main.tscn")
 func test_prompt_shows_near_workbench():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -22,6 +23,7 @@ func test_prompt_shows_near_workbench():
 func test_prompt_hides_when_no_workbench():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	# 默认没有工作台 → 不显示
 	var fp: CanvasLayer = get_tree().get_first_node_in_group("floating_prompt")

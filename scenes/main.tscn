@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://b4teilaruiamain"]
+[gd_scene load_steps=5 format=3 uid="uid://b4teilaruiamain"]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/ui/death_screen.tscn" id="2_ds"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="3_pm"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_menu.tscn" id="4_mm"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
@@ -10,3 +11,5 @@ script = ExtResource("1_main")
 [node name="DeathScreen" parent="." instance=ExtResource("2_ds")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("3_pm")]
+
+[node name="MainMenu" parent="." instance=ExtResource("4_mm")]

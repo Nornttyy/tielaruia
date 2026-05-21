@@ -6,6 +6,7 @@ const MainScene = preload("res://scenes/main.tscn")
 func test_craft_planks_from_log():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
@@ -41,6 +42,7 @@ func test_craft_planks_from_log():
 func test_craft_workbench_from_planks():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()

@@ -11,6 +11,7 @@ func _effects_count() -> int:
 func test_player_walking_emits_puffs():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
+	main.boot_to_game()
 	await wait_frames(2)
 	var world = main.get_node("World")
 	var player = world.get_player()
