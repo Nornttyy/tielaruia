@@ -59,15 +59,4 @@ func test_apply_chunk_deltas_restores():
 	assert_eq(cm._deltas[3][Vector2i(11, 20)], Tiles.DIRT)
 
 
-func test_village_tiles_in_save():
-	# 启动游戏 → 村庄 tile 应在 chunk delta 里 (因为 VillagePlacer.place 用 set_tile)
-	var main = MainScene.instantiate()
-	add_child_autofree(main)
-	main.boot_to_game(42)
-	await wait_frames(3)
-	SaveManager.save(main)
-	var data = SaveManager.load_save()
-	# chunk 0 应有 village deltas (planks + door)
-	assert_true(data.chunk_deltas.has(0), "chunk 0 含村庄 delta")
-	var arr: PackedInt32Array = data.chunk_deltas[0]
-	assert_gt(arr.size(), 30, "至少 10 个 tile (每个 3 int) 来自村庄盖章")
+# test_village_tiles_in_save 已删除: 村庄 / 村民已停用, 不再写 village delta 到 chunk

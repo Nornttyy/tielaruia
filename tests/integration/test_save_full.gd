@@ -15,17 +15,16 @@ func after_each():
 
 
 func test_save_captures_entities():
+	# 村庄 / 村民已停用. 这里仅断言 SaveManager 能正常 dump entities 数组
+	# (即使为空也应可序列化), 不再要求 villager 在内.
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
 	main.boot_to_game()
 	await wait_frames(3)
 	SaveManager.save(main)
 	var data = SaveManager.load_save()
-	# 至少 villager 应在 entities 里
-	var types: Array = []
-	for e in data.entities:
-		types.append(e.type)
-	assert_true("villager" in types, "村民应在 entities 快照里")
+	assert_not_null(data, "存档可读")
+	assert_true(data.entities is Array, "entities 字段是 Array")
 
 
 func test_f5_triggers_save():

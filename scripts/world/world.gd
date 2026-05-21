@@ -51,7 +51,8 @@ func _ready() -> void:
 	chunk_manager.ensure_loaded(0)
 	# 找出生点 (chunk 0 内)
 	spawn_point = _find_spawn_in_loaded()
-	_place_village()
+	# 村庄 + 村民已停用 (用户要求): 不再调用 _place_village() / _spawn_villagers()
+	# 函数保留供未来重启用; 也避免破坏 SaveManager / dialogue 等引用
 	SkyLightGrid.recompute_from([])
 	_spawn_player()
 
