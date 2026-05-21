@@ -24,6 +24,7 @@ const _HARDNESS := {
 var aim_override: Variant = null
 var primary_override: Variant = null     # null = 真实输入；bool = 强制
 var place_override: bool = false
+var secondary_held_override: Variant = null  # null = 真实输入；bool = 强制（测试）
 
 # Mining 状态
 var _mining_target: Vector2i = INVALID_TILE
@@ -34,6 +35,15 @@ const SWORD_RANGE_PX := 36.0
 const SWORD_COOLDOWN := 0.3
 const SWORD_ARC_LIFETIME := 0.18
 var _attack_cooldown: float = 0.0
+
+# 进食状态
+const EAT_DURATION_SEC := 1.0
+var _eat_t: float = 0.0
+var _eat_item_id: String = ""
+
+
+func set_secondary_held_for_test(held: bool) -> void:
+	secondary_held_override = held
 
 
 func _physics_process(delta: float) -> void:
@@ -51,11 +61,7 @@ func _physics_process(delta: float) -> void:
 			_swing_sword()
 	else:
 		_update_mining(delta)
-	if place_override:
-		try_place()
-		place_override = false
-	if Input.is_action_just_pressed("secondary"):
-		try_place()
+	_update_eat_or_place(delta)
 
 
 func _crafting_open() -> bool:
@@ -319,12 +325,59 @@ func _current_tool_tier() -> int:
 	return def.tool_tier
 
 
+func _effective_sword_damage() -> int:
+	var base: int = _sword_damage()
+	if base <= 0:
+		return 0
+	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
+	var mult: float = 1.0 if hunger == null else hunger.get_attack_multiplier()
+	return max(1, int(round(float(base) * mult)))
+
+
+func _update_eat_or_place(delta: float) -> void:
+	# 优先级: place_override (测试) → 进食 → 放置
+	if place_override:
+		try_place()
+		place_override = false
+		return
+
+	var held: bool = (secondary_held_override == true) if secondary_held_override != null \
+			else Input.is_action_pressed("secondary")
+	var just: bool = secondary_held_override == null and Input.is_action_just_pressed("secondary")
+
+	var inv: Node = _inventory_node()
+	var slot = null if inv == null else inv.current_hotbar_slot()
+	var holding_food: bool = slot != null and ItemDB.is_food(slot.item_id)
+	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
+
+	# 持食物 + 按住 + 没吃饱 → 进入/保持 eating
+	if holding_food and held and hunger != null and int(hunger.current) < hunger.MAX:
+		if _eat_item_id != slot.item_id:
+			_eat_item_id = slot.item_id
+			_eat_t = 0.0
+		_eat_t += delta
+		if _eat_t >= EAT_DURATION_SEC:
+			_eat_t = 0.0
+			hunger.consume(ItemDB.food_fill(slot.item_id))
+			inv.consume_current(1)
+		return
+
+	# 取消进食
+	if _eat_t > 0.0:
+		_eat_t = 0.0
+		_eat_item_id = ""
+
+	# 退回放置逻辑（与原行为一致）
+	if just:
+		try_place()
+
+
 func _swing_sword() -> void:
 	_attack_cooldown = SWORD_COOLDOWN
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
-	var damage: int = _sword_damage()
+	var damage: int = _effective_sword_damage()
 	if damage <= 0:
 		return
 	var facing: int = 1
