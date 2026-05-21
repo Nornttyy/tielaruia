@@ -134,3 +134,18 @@ func get_inventory_icon(item_id: String) -> ImageTexture:
 		return item_icons[item_id]
 	push_warning("未知 item icon: %s" % item_id)
 	return null
+
+
+# 径向白色渐变纹理，供 Light2D 使用。size = 边长 (px)；中心 alpha=1, 边缘 alpha=0。
+# 平方衰减使光圈中心更亮、边缘更柔。每次调用都新建——少量光源没问题，多用时建议在调用方缓存。
+func radial_gradient(size: int) -> ImageTexture:
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var center := Vector2(size * 0.5, size * 0.5)
+	var max_dist := size * 0.5
+	for y in size:
+		for x in size:
+			var d: float = Vector2(x, y).distance_to(center)
+			var a: float = clamp(1.0 - d / max_dist, 0.0, 1.0)
+			a = a * a
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	return ImageTexture.create_from_image(img)
