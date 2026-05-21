@@ -155,8 +155,12 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 	rng.seed = world_seed * 1000003 + chunk_x * 31 + 17
 	var chunk_start: int = chunk_x * chunk_width
 	var chunk_end: int = chunk_start + chunk_width
+	# canopy 横向最大 ±2 tile (oak_large / pine_huge), 留 3 格安全边距避免树冠被 chunk 边界裁掉
+	const CANOPY_EDGE_MARGIN := 3
+	var safe_start: int = chunk_start + CANOPY_EDGE_MARGIN
+	var safe_end: int = chunk_end - CANOPY_EDGE_MARGIN
 	var last_tree_x: int = -1000
-	for world_x in range(chunk_start, chunk_end):
+	for world_x in range(safe_start, safe_end):
 		var surf: int = chunk_heights.get(world_x, -1)
 		if surf < 0:
 			continue
