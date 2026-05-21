@@ -41,3 +41,50 @@ func test_grass_drops_dirt_or_self():
 			any_drop = true
 			break
 	assert_true(any_drop, "草 20 次抽样至少掉一次 dirt 或 grass")
+
+
+func test_torch_properties() -> void:
+	assert_false(td.is_solid(td.TORCH), "TORCH 不实心")
+	assert_true(td.is_mineable(td.TORCH), "TORCH 可挖")
+	assert_eq(td.required_tool_tier(td.TORCH, "pickaxe"), 0)
+	var any_drop := false
+	for _i in 10:
+		if td.drops_for(td.TORCH, "").has("torch"):
+			any_drop = true
+			break
+	assert_true(any_drop, "TORCH 应能掉 torch 物品")
+
+
+func test_coal_ore_properties() -> void:
+	assert_true(td.is_solid(td.COAL_ORE))
+	assert_true(td.is_mineable(td.COAL_ORE))
+	assert_eq(td.required_tool_tier(td.COAL_ORE, "pickaxe"), 1)
+	assert_eq(td.required_tool_tier(td.COAL_ORE, ""), -1)
+	var got_coal := false
+	for _i in 10:
+		if td.drops_for(td.COAL_ORE, "").has("coal"):
+			got_coal = true
+			break
+	assert_true(got_coal, "COAL_ORE 应掉 coal")
+
+
+func test_iron_ore_properties() -> void:
+	assert_true(td.is_solid(td.IRON_ORE))
+	assert_eq(td.required_tool_tier(td.IRON_ORE, "pickaxe"), 2)
+	var got_iron := false
+	for _i in 10:
+		if td.drops_for(td.IRON_ORE, "").has("iron_ore"):
+			got_iron = true
+			break
+	assert_true(got_iron, "IRON_ORE 应掉 iron_ore")
+
+
+func test_deep_stone_properties() -> void:
+	assert_true(td.is_solid(td.DEEP_STONE))
+	assert_eq(td.required_tool_tier(td.DEEP_STONE, "pickaxe"), 1)
+	var got_stone := false
+	for _i in 10:
+		if td.drops_for(td.DEEP_STONE, "").has("stone"):
+			got_stone = true
+			break
+	assert_true(got_stone, "DEEP_STONE 应掉 stone")
