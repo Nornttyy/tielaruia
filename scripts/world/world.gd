@@ -1,8 +1,13 @@
-# 世界根：生成 tile 数据 → 应用到 TileMapLayer → 放置玩家 → 重算天光。
+# 世界根：通过 ChunkManager 流式加载 64-宽列, 每次启动随机种子。
+# 维护 TileMapLayer 视觉 (chunk_loaded/unloaded 信号驱动)。
 extends Node2D
 
 const TileSetBuilder = preload("res://scripts/world/tileset_builder.gd")
-const WorldGenerator = preload("res://scripts/world/world_generator.gd")
+const ChunkManagerClass = preload("res://scripts/world/chunk_manager.gd")
+const Chunk = preload("res://scripts/world/chunk.gd")
+const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
+const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
+const VillagePlacer = preload("res://scripts/world/village_placer.gd")
 const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
@@ -12,18 +17,17 @@ const SLIME_SPAWN_INTERVAL := 6.0
 const SLIME_SPAWN_RANGE_MIN := 12  # tiles
 const SLIME_SPAWN_RANGE_MAX := 22
 
-const WORLD_WIDTH := 1024
-const WORLD_HEIGHT := 256
 const TILE_SIZE := 16
 
-@export var world_seed: int = 20260517
+@export var world_seed: int = 0   # 0 表示 _ready 内随机化
 
 @onready var terrain_layer: TileMapLayer = $TerrainLayer
 @onready var entities_root: Node2D = $Entities
 @onready var camera: Camera2D = $Camera2D
 
 var spawn_point: Vector2i
-var _tiles: Array  # tiles[x][y] = Tiles const
+var chunk_manager: ChunkManager
+var village_villager_spawns: Array = []
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 
 
@@ -31,9 +35,30 @@ func _ready() -> void:
 	terrain_layer.tile_set = TileSetBuilder.build()
 	terrain_layer.add_to_group("terrain_layer")
 	$EffectsRoot.add_to_group("effects_root")
-	_generate_and_apply()
+	if world_seed == 0:
+		world_seed = randi()
+	chunk_manager = ChunkManagerClass.new()
+	chunk_manager.name = "ChunkManager"
+	add_child(chunk_manager)
+	chunk_manager.setup(world_seed)
+	chunk_manager.chunk_loaded.connect(_on_chunk_loaded)
+	chunk_manager.chunk_unloaded.connect(_on_chunk_unloaded)
+	# 初始加载中心 ±VIEW_RADIUS
+	chunk_manager.ensure_loaded(0)
+	# 找出生点 (chunk 0 内)
+	spawn_point = _find_spawn_in_loaded()
+	_place_village()
+	SkyLightGrid.recompute_from([])
 	_spawn_player()
-	SkyLightGrid.recompute_from(_tiles)
+
+
+func _place_village() -> void:
+	var prefab = VillagePrefab.load_default()
+	if prefab.is_empty():
+		return
+	village_villager_spawns = VillagePlacer.place(
+		chunk_manager, terrain_layer, prefab, spawn_point
+	)
 
 
 func _process(delta: float) -> void:
@@ -41,6 +66,48 @@ func _process(delta: float) -> void:
 	if _slime_spawn_timer <= 0.0:
 		_slime_spawn_timer = SLIME_SPAWN_INTERVAL
 		_try_spawn_slime()
+
+
+func _on_chunk_loaded(c: Chunk) -> void:
+	# 把 chunk 数据写到 TileMapLayer
+	var chunk_start: int = c.chunk_x * ChunkConstants.CHUNK_WIDTH
+	for lx in c.tiles.size():
+		var world_x: int = chunk_start + lx
+		var col: Array = c.tiles[lx]
+		for y in col.size():
+			var tid: int = col[y]
+			if tid != Tiles.AIR:
+				terrain_layer.set_cell(Vector2i(world_x, y), tid, Vector2i.ZERO)
+		SkyLightGrid.invalidate_column(world_x)
+
+
+func _on_chunk_unloaded(cx: int) -> void:
+	var chunk_start: int = cx * ChunkConstants.CHUNK_WIDTH
+	# 清 TileMapLayer 这一柱
+	for lx in ChunkConstants.CHUNK_WIDTH:
+		var world_x: int = chunk_start + lx
+		for y in ChunkConstants.WORLD_HEIGHT:
+			terrain_layer.set_cell(Vector2i(world_x, y), -1)
+		SkyLightGrid.invalidate_column(world_x)
+
+
+# 在 chunk 0 内找 GRASS 上方 3 格空气列, fallback 到 (0, 100)
+func _find_spawn_in_loaded() -> Vector2i:
+	var ch: Chunk = chunk_manager.get_chunk(0)
+	if ch == null:
+		return Vector2i(0, 100)
+	for lx in ch.tiles.size():
+		var col: Array = ch.tiles[lx]
+		for y in range(3, col.size() - 1):
+			if col[y] != Tiles.GRASS:
+				continue
+			if col[y - 1] != Tiles.AIR \
+					or col[y - 2] != Tiles.AIR \
+					or col[y - 3] != Tiles.AIR:
+				continue
+			# world_x = chunk_x*64 + lx = 0 + lx = lx
+			return Vector2i(lx, y - 1)
+	return Vector2i(0, 100)
 
 
 func _try_spawn_slime() -> void:
@@ -56,21 +123,17 @@ func _try_spawn_slime() -> void:
 		var sign_x: int = 1 if randf() < 0.5 else -1
 		var dx: int = sign_x * randi_range(SLIME_SPAWN_RANGE_MIN, SLIME_SPAWN_RANGE_MAX)
 		var cand_x: int = px + dx
-		if cand_x < 1 or cand_x >= WORLD_WIDTH - 1:
-			continue
 		# 找该列地表 (从顶往下第一个非 AIR tile)
 		var surf_y: int = -1
-		for y in WORLD_HEIGHT:
-			if _tiles[cand_x][y] != Tiles.AIR:
+		for y in ChunkConstants.WORLD_HEIGHT:
+			if chunk_manager.get_tile(cand_x, y) != Tiles.AIR:
 				surf_y = y
 				break
 		if surf_y <= 0:
 			continue
-		# 地表上方一格必须是空气 (有站位)
-		if _tiles[cand_x][surf_y - 1] != Tiles.AIR:
+		if chunk_manager.get_tile(cand_x, surf_y - 1) != Tiles.AIR:
 			continue
-		# 不长在沙漠正中: GRASS 优先
-		if _tiles[cand_x][surf_y] == Tiles.BEDROCK:
+		if chunk_manager.get_tile(cand_x, surf_y) == Tiles.BEDROCK:
 			continue
 		var slime := SlimeScene.instantiate()
 		slime.global_position = Vector2(
@@ -79,18 +142,6 @@ func _try_spawn_slime() -> void:
 		)
 		entities_root.add_child(slime)
 		return
-
-
-func _generate_and_apply() -> void:
-	var data := WorldGenerator.generate(world_seed, WORLD_WIDTH, WORLD_HEIGHT)
-	_tiles = data.tiles
-	spawn_point = data.spawn_point
-	for x in WORLD_WIDTH:
-		for y in WORLD_HEIGHT:
-			var tile_id: int = _tiles[x][y]
-			if tile_id == Tiles.AIR:
-				continue
-			terrain_layer.set_cell(Vector2i(x, y), tile_id, Vector2i.ZERO)
 
 
 func _spawn_player() -> void:
@@ -161,6 +212,12 @@ func get_crack_overlay() -> Node:
 
 
 func _set_tile(x: int, y: int, tile_id: int) -> void:
-	if x < 0 or x >= WORLD_WIDTH or y < 0 or y >= WORLD_HEIGHT:
+	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
 		return
-	_tiles[x][y] = tile_id
+	chunk_manager.set_tile(x, y, tile_id)
+	# 同步 TileMapLayer (chunk_manager 数据已写, 但视觉需另外刷)
+	if tile_id == Tiles.AIR:
+		terrain_layer.set_cell(Vector2i(x, y), -1)
+	else:
+		terrain_layer.set_cell(Vector2i(x, y), tile_id, Vector2i.ZERO)
+	SkyLightGrid.invalidate_column(x)
