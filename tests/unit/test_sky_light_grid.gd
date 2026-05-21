@@ -1,69 +1,65 @@
 extends GutTest
 
 const SkyLightGridClass = preload("res://scripts/world/sky_light_grid.gd")
+
 var grid
+var mock_cm: Node
+
+
+class MockChunkManager extends Node:
+	# 简单 mock: tiles[Vector2i(x, y)] = tile_id; 未设 → AIR
+	var tiles: Dictionary = {}
+
+	func _enter_tree() -> void:
+		add_to_group("chunk_manager")
+
+	func get_tile(x: int, y: int) -> int:
+		return tiles.get(Vector2i(x, y), Tiles.AIR)
 
 
 func before_each():
+	mock_cm = MockChunkManager.new()
+	add_child_autofree(mock_cm)
 	grid = SkyLightGridClass.new()
 	add_child_autofree(grid)
-
-
-func _make_tiles(w: int, h: int, default_id: int) -> Array:
-	var t := []
-	t.resize(w)
-	for x in w:
-		var col := []
-		col.resize(h)
-		col.fill(default_id)
-		t[x] = col
-	return t
+	# 清掉 autoload SkyLightGrid 的缓存 (本测试 grid 是本地实例, 不污染 autoload)
 
 
 func test_pure_air_is_all_lit():
-	var tiles = _make_tiles(8, 8, Tiles.AIR)
-	grid.recompute_from(tiles)
-	for x in 8:
-		for y in 8:
-			assert_true(grid.is_sky_exposed(x, y), "(%d,%d) 应有天光" % [x, y])
+	# 没设任何 tile → 全 AIR → 所有 y 都 exposed (top = WORLD_HEIGHT-1)
+	for y in [0, 50, 100, 200]:
+		assert_true(grid.is_sky_exposed(0, y), "(0, %d) 应有天光" % y)
 
 
 func test_solid_blocks_light():
-	var tiles = _make_tiles(8, 8, Tiles.AIR)
-	tiles[3][4] = Tiles.STONE
-	grid.recompute_from(tiles)
-	# (3, 4) 本身实心，不算 sky_exposed
+	mock_cm.tiles[Vector2i(3, 4)] = Tiles.STONE
+	# (3, 4) 本身实心 → top_solid_y = 3 → exposed if y <= 3
+	# 注意: is_sky_exposed(3, 4) = (4 <= 3) = false ✓
 	assert_false(grid.is_sky_exposed(3, 4))
-	# (3, 5) 及以下都被遮挡
+	# (3, 5) 被遮挡
 	assert_false(grid.is_sky_exposed(3, 5))
-	assert_false(grid.is_sky_exposed(3, 7))
-	# 邻列不受影响
+	# (3, 3) 在 stone 上方一格 → exposed
+	assert_true(grid.is_sky_exposed(3, 3))
+	# 邻列 (2, 5) 不受影响 (邻列空气 → 全 exposed)
 	assert_true(grid.is_sky_exposed(2, 5))
 
 
 func test_invalidate_column_updates():
-	var tiles = _make_tiles(8, 8, Tiles.AIR)
-	tiles[2][3] = Tiles.STONE
-	grid.recompute_from(tiles)
+	mock_cm.tiles[Vector2i(2, 3)] = Tiles.STONE
 	assert_false(grid.is_sky_exposed(2, 5))
 	# 移除遮挡
-	tiles[2][3] = Tiles.AIR
-	grid.invalidate_column(2, tiles)
+	mock_cm.tiles.erase(Vector2i(2, 3))
+	grid.invalidate_column(2)
 	assert_true(grid.is_sky_exposed(2, 5))
 
 
 func test_out_of_bounds_returns_false():
-	var tiles = _make_tiles(8, 8, Tiles.AIR)
-	grid.recompute_from(tiles)
-	assert_false(grid.is_sky_exposed(-1, 0))
-	assert_false(grid.is_sky_exposed(8, 0))
+	# y 越界
 	assert_false(grid.is_sky_exposed(0, -1))
-	assert_false(grid.is_sky_exposed(0, 8))
+	assert_false(grid.is_sky_exposed(0, 256))
 
 
 func test_non_solid_tile_does_not_block():
-	var tiles = _make_tiles(8, 8, Tiles.AIR)
-	tiles[1][3] = Tiles.LEAVES  # leaves 不实心
-	grid.recompute_from(tiles)
-	# leaves 不挡光：下方仍亮
+	mock_cm.tiles[Vector2i(1, 3)] = Tiles.LEAVES  # leaves 不实心
+	# leaves 不挡光: 下方仍亮
 	assert_true(grid.is_sky_exposed(1, 5))
