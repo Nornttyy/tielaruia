@@ -25,6 +25,7 @@ const TILE_SIZE := 16
 @onready var terrain_layer: TileMapLayer = $TerrainLayer
 @onready var entities_root: Node2D = $Entities
 @onready var camera: Camera2D = $Camera2D
+@onready var world_lighting: Node = $WorldLighting
 
 var spawn_point: Vector2i
 var chunk_manager: ChunkManager
@@ -107,6 +108,8 @@ func _on_chunk_loaded(c: Chunk) -> void:
 			if tid != Tiles.AIR:
 				terrain_layer.set_cell(Vector2i(world_x, y), tid, Vector2i.ZERO)
 		SkyLightGrid.invalidate_column(world_x)
+	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
+	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)
 
 
 func _on_chunk_unloaded(cx: int) -> void:
@@ -126,6 +129,8 @@ func _on_chunk_unloaded(cx: int) -> void:
 	for ent in get_tree().get_nodes_in_group("item_drops"):
 		if ent.global_position.x >= chunk_start_px and ent.global_position.x < chunk_end_px:
 			ent.queue_free()
+	# 清该 chunk 范围内所有火把光
+	world_lighting.on_chunk_unloaded(cx, ChunkConstants.CHUNK_WIDTH)
 
 
 # 在 chunk 0 内找 GRASS 上方 3 格空气列, fallback 到 (0, 100)
@@ -254,6 +259,7 @@ func get_crack_overlay() -> Node:
 func _set_tile(x: int, y: int, tile_id: int) -> void:
 	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
 		return
+	var old_tid: int = chunk_manager.get_tile(x, y)
 	chunk_manager.set_tile(x, y, tile_id)
 	# 同步 TileMapLayer (chunk_manager 数据已写, 但视觉需另外刷)
 	if tile_id == Tiles.AIR:
@@ -261,3 +267,6 @@ func _set_tile(x: int, y: int, tile_id: int) -> void:
 	else:
 		terrain_layer.set_cell(Vector2i(x, y), tile_id, Vector2i.ZERO)
 	SkyLightGrid.invalidate_column(x)
+	# 火把光源生命周期: 先 remove 旧, 再 place 新
+	world_lighting.on_tile_removed(x, y, old_tid)
+	world_lighting.on_tile_placed(x, y, tile_id)
