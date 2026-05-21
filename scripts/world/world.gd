@@ -99,12 +99,21 @@ func _on_chunk_loaded(c: Chunk) -> void:
 
 func _on_chunk_unloaded(cx: int) -> void:
 	var chunk_start: int = cx * ChunkConstants.CHUNK_WIDTH
+	var chunk_start_px: float = chunk_start * TILE_SIZE
+	var chunk_end_px: float = chunk_start_px + ChunkConstants.CHUNK_WIDTH * TILE_SIZE
 	# 清 TileMapLayer 这一柱
 	for lx in ChunkConstants.CHUNK_WIDTH:
 		var world_x: int = chunk_start + lx
 		for y in ChunkConstants.WORLD_HEIGHT:
 			terrain_layer.set_cell(Vector2i(world_x, y), -1)
 		SkyLightGrid.invalidate_column(world_x)
+	# 清 entity (slime + drop) 在该 chunk 像素范围内
+	for ent in get_tree().get_nodes_in_group("slimes"):
+		if ent.global_position.x >= chunk_start_px and ent.global_position.x < chunk_end_px:
+			ent.queue_free()
+	for ent in get_tree().get_nodes_in_group("item_drops"):
+		if ent.global_position.x >= chunk_start_px and ent.global_position.x < chunk_end_px:
+			ent.queue_free()
 
 
 # 在 chunk 0 内找 GRASS 上方 3 格空气列, fallback 到 (0, 100)

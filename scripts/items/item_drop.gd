@@ -31,6 +31,7 @@ func _ready() -> void:
 	# body_entered 不会触发，需要主动检查）
 	get_tree().create_timer(PICKUP_DELAY).timeout.connect(_on_pickup_ready)
 	body_entered.connect(_on_body_entered)
+	add_to_group("item_drops")
 
 
 func _on_pickup_ready() -> void:
