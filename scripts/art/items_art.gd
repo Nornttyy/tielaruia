@@ -23,6 +23,10 @@ const PALETTE := {
 	"q": Color8(102, 187, 106),  # 史莱姆球高光
 	"y": Color8(212, 160, 90),   # 木刀身 (沙黄)
 	"Y": Color8(157, 113, 56),   # 木刀身阴影
+	"A": Color8(200, 45, 50),    # 苹果红
+	"a": Color8(235, 90, 80),    # 苹果高光
+	"L": Color8(85, 145, 65),    # 叶绿
+	"S": Color8(95, 60, 30),     # 苹果梗棕
 }
 
 # 木剑：对角线刀身 + 木柄 + 护手 + 圆头柄
@@ -145,22 +149,42 @@ const _STONE_AXE := [
 	"................",
 ]
 
-# 史莱姆球：小圆球
-const _SLIME_BALL := [
+# 史莱姆果冻：方形果冻块 + 高光 (比 slime_ball 视觉略立方)
+const _SLIME_JELLY := [
 	"................",
-	".....oqqo.......",
-	"....oqqqqo......",
-	"...oqqqqqqO.....",
-	"..oqqOOqqqO.....",
-	"..oqqOqqqqO.....",
-	"..oqqqqqqqO.....",
-	"..ooqqqqqqO.....",
-	"...OOqqqqqO.....",
-	"....OOOOOO......",
-	".....OOOO.......",
+	"...oqqqqqqo.....",
+	"..oqqqqqqqqo....",
+	"..oqyyqqqqqo....",
+	"..oqyqqqqqqo....",
+	"..oqqqqqqqqo....",
+	"..oqqqqqqqqo....",
+	"..oqqqqqqqqo....",
+	"..oqqqqqqqqo....",
+	"..oOOOOOOOOo....",
+	"..oOOOOOOOOo....",
+	"...OOOOOOOO.....",
 	"................",
 	"................",
 	"................",
+	"................",
+]
+
+# 苹果：圆形红身 + 棕梗 + 绿叶
+const _APPLE := [
+	"................",
+	"........S.......",
+	".......LSL......",
+	"......LSLL......",
+	".....AAaAA......",
+	"....AaaaaAA.....",
+	"...AaaAAaaaA....",
+	"...AaaAaaaaA....",
+	"...AaaaaaaaA....",
+	"...AAaaaaaAA....",
+	"....AaaaaaA.....",
+	"....AAaaaAA.....",
+	".....AAAAA......",
+	"......AAA.......",
 	"................",
 	"................",
 ]
@@ -169,7 +193,8 @@ const _ICONS := {
 	"wood_sword": _WOOD_SWORD,
 	"wood_pickaxe": _WOOD_PICKAXE,
 	"wood_axe": _WOOD_AXE,
-	"slime_ball": _SLIME_BALL,
+	"slime_jelly": _SLIME_JELLY,
+	"apple": _APPLE,
 	"stone_sword": _STONE_SWORD,
 	"stone_pickaxe": _STONE_PICKAXE,
 	"stone_axe": _STONE_AXE,
