@@ -29,6 +29,7 @@ var spawn_point: Vector2i
 var chunk_manager: ChunkManager
 var village_villager_spawns: Array = []
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
+var _last_player_chunk_x: int = 0
 
 
 func _ready() -> void:
@@ -66,6 +67,21 @@ func _process(delta: float) -> void:
 	if _slime_spawn_timer <= 0.0:
 		_slime_spawn_timer = SLIME_SPAWN_INTERVAL
 		_try_spawn_slime()
+
+
+func _physics_process(_delta: float) -> void:
+	_check_chunk_load()
+
+
+func _check_chunk_load() -> void:
+	var player := get_player()
+	if player == null:
+		return
+	var pcx: int = Chunk.chunk_x_of(int(floor(player.global_position.x / TILE_SIZE)))
+	if pcx != _last_player_chunk_x:
+		_last_player_chunk_x = pcx
+		chunk_manager.ensure_loaded(pcx)
+		chunk_manager.unload_far_from(pcx, ChunkConstants.VIEW_RADIUS + 1)
 
 
 func _on_chunk_loaded(c: Chunk) -> void:
