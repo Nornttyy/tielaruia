@@ -2,6 +2,7 @@
 extends Node2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
+const VillagerLines = preload("res://scripts/npc/villager_lines.gd")
 const TILE_SIZE := 16
 const REACH_TILES := 4
 const INVALID_TILE := Vector2i(-1, -1)
@@ -73,6 +74,13 @@ func _toggle_crafting(n: int) -> void:
 
 
 func _try_open_workbench_or_close() -> void:
+	# 优先级: 附近村民 → 对话 (跳过合成面板)
+	var villager = _find_villager_nearby()
+	if villager != null:
+		var db = get_tree().get_first_node_in_group("dialogue_box")
+		if db != null and db.has_method("open"):
+			db.open(VillagerLines.random_line())
+		return
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
 	if cp == null:
 		return
@@ -84,6 +92,17 @@ func _try_open_workbench_or_close() -> void:
 		cp.open(3)
 	else:
 		cp.open(2)
+
+
+func _find_villager_nearby() -> Node2D:
+	var parent: Node2D = get_parent() as Node2D
+	if parent == null:
+		return null
+	var player_pos: Vector2 = parent.global_position
+	for v in get_tree().get_nodes_in_group("villagers"):
+		if v is Node2D and v.global_position.distance_to(player_pos) <= 2.0 * TILE_SIZE:
+			return v
+	return null
 
 
 func _has_workbench_nearby() -> bool:

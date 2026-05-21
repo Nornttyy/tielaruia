@@ -10,6 +10,7 @@ const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
 const VillagePlacer = preload("res://scripts/world/village_placer.gd")
 const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
+const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const MAX_SLIMES := 4
@@ -60,6 +61,17 @@ func _place_village() -> void:
 	village_villager_spawns = VillagePlacer.place(
 		chunk_manager, terrain_layer, prefab, spawn_point
 	)
+	_spawn_villagers()
+
+
+func _spawn_villagers() -> void:
+	for tile_pos in village_villager_spawns:
+		var v = VillagerScene.instantiate()
+		v.global_position = Vector2(
+			tile_pos.x * TILE_SIZE + TILE_SIZE / 2.0,
+			tile_pos.y * TILE_SIZE + TILE_SIZE
+		)
+		entities_root.add_child(v)
 
 
 func _process(delta: float) -> void:

@@ -8,6 +8,7 @@ const DebugHudScene = preload("res://scenes/ui/debug_hud.tscn")
 const FloatingPromptScene = preload("res://scenes/ui/floating_prompt.tscn")
 const HudScene = preload("res://scenes/ui/hud.tscn")
 const CraftingPanelScene = preload("res://scenes/ui/crafting_panel.tscn")
+const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
 
 @onready var _main_menu: CanvasLayer = $MainMenu
 @onready var _pause_menu: CanvasLayer = $PauseMenu
@@ -35,12 +36,14 @@ func _show_menu_state() -> void:
 	_death_screen.hide_death()
 
 
-func _start_game() -> void:
+func _start_game(world_seed: int = 0) -> void:
 	_state = "game"
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.visible = false
 	var w = WorldScene.instantiate()
 	w.name = "World"
+	if world_seed != 0:
+		w.world_seed = world_seed
 	add_child(w)
 	_game_nodes.append(w)
 
@@ -64,18 +67,23 @@ func _start_game() -> void:
 	add_child(debug)
 	_game_nodes.append(debug)
 
+	var dialogue = DialogueBoxScene.instantiate()
+	add_child(dialogue)
+	_game_nodes.append(dialogue)
+
 	_wire_player.call_deferred()
 
 
 # 测试用 helper: 同步切到 game 状态。等价于按"新游戏"。
 # 顺便 queue_free MainMenu (测试不需要主菜单的 tween/动画副作用)。
-func boot_to_game() -> void:
+# 默认固定 seed=42 让测试结果可重复; 生产路径走 _main_menu.start_game 信号 → _start_game() 走随机.
+func boot_to_game(world_seed: int = 42) -> void:
 	if _state == "game":
 		return
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.queue_free()
 		_main_menu = null
-	_start_game()
+	_start_game(world_seed)
 
 
 func _wire_player() -> void:
@@ -119,6 +127,10 @@ func _on_respawn() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_pause") and _state == "game":
 		if _death_screen.visible:
+			return
+		# 对话框开着时 ESC 优先让对话框自己关 (它的 _unhandled_input 会消费)
+		var db := get_tree().get_first_node_in_group("dialogue_box")
+		if db != null and db.visible:
 			return
 		_pause_menu.toggle()
 		get_viewport().set_input_as_handled()
