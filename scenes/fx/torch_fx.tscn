@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_torch_fx_main"]
+
+[ext_resource type="Script" path="res://scripts/fx/torch_fx.gd" id="1_tfx"]
+
+[node name="TorchFx" type="Node2D"]
+script = ExtResource("1_tfx")
+
+[node name="Flame" type="Sprite2D" parent="."]
+
+[node name="Light" type="PointLight2D" parent="."]
+
+[node name="SparkTimer" type="Timer" parent="."]
+wait_time = 0.15
+one_shot = false
