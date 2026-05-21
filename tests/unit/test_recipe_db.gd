@@ -103,7 +103,7 @@ func test_matcher_workbench():
 
 
 func test_matcher_slime_torch():
-	var g = [["slime_ball", ""], ["planks", ""]]
+	var g = [["slime_jelly", ""], ["planks", ""]]
 	var hit = RecipeMatcher.find_match(g)
 	assert_eq(hit.output_id, "slime_torch")
 

@@ -38,8 +38,8 @@ const _RECIPES := [
 		"id": "slime_torch",
 		"grid_size": Vector2i(2, 2),
 		"pattern": [
-			["slime_ball", ""],
-			["planks",     ""],
+			["slime_jelly", ""],
+			["planks",      ""],
 		],
 		"output_id": "slime_torch",
 		"output_count": 3,

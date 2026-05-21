@@ -64,12 +64,13 @@ func _draw_blocks(origin: Vector2) -> void:
 
 
 func _draw_items(origin: Vector2) -> void:
-	var item_ids := ["wood_sword", "wood_pickaxe", "wood_axe", "slime_ball", "stone_sword", "stone_pickaxe", "stone_axe", "slime_torch"]
+	var item_ids := ["wood_sword", "wood_pickaxe", "wood_axe", "slime_jelly", "apple", "stone_sword", "stone_pickaxe", "stone_axe", "slime_torch"]
 	var names := {
 		"wood_sword": "木剑",
 		"wood_pickaxe": "木镐",
 		"wood_axe": "木斧",
-		"slime_ball": "史莱姆球",
+		"slime_jelly": "史莱姆果冻",
+		"apple": "苹果",
 		"stone_sword": "石剑",
 		"stone_pickaxe": "石镐",
 		"stone_axe": "石斧",

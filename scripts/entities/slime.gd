@@ -1,4 +1,4 @@
-# 史莱姆: 跳向玩家, 接触造成伤害, HP=4, 死亡掉 slime_ball。
+# 史莱姆: 跳向玩家, 接触造成伤害, HP=6, 死亡掉 slime_jelly。
 extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
@@ -118,10 +118,10 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 
 func _die() -> void:
 	_is_dying = true
-	# 掉 1-2 个 slime_ball
+	# 掉 1-2 个 slime_jelly
 	var n := 1 + (randi() % 2)
 	for i in n:
-		_spawn_drop("slime_ball")
+		_spawn_drop("slime_jelly")
 	queue_free()
 
 

@@ -16,7 +16,8 @@ const _DEFS := {
 	"wood_sword":   {"placeable_tile_id": -1,              "tool_kind": "sword",   "tool_tier": 1, "max_stack": 1},
 	"wood_pickaxe": {"placeable_tile_id": -1,              "tool_kind": "pickaxe", "tool_tier": 1, "max_stack": 1},
 	"wood_axe":     {"placeable_tile_id": -1,              "tool_kind": "axe",     "tool_tier": 1, "max_stack": 1},
-	"slime_ball":   {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64},
+	"slime_jelly":  {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 40},
+	"apple":        {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 25},
 	"stone_sword":   {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 2, "max_stack": 1},
 	"stone_pickaxe": {"placeable_tile_id": -1,                     "tool_kind": "pickaxe", "tool_tier": 2, "max_stack": 1},
 	"stone_axe":     {"placeable_tile_id": -1,                     "tool_kind": "axe",     "tool_tier": 2, "max_stack": 1},
@@ -36,3 +37,13 @@ func is_placeable(item_id: String) -> bool:
 func max_stack(item_id: String) -> int:
 	var def = get_def(item_id)
 	return 0 if def == null else def.max_stack
+
+
+func is_food(item_id: String) -> bool:
+	var def = get_def(item_id)
+	return def != null and def.get("food_fill", 0) > 0
+
+
+func food_fill(item_id: String) -> int:
+	var def = get_def(item_id)
+	return 0 if def == null else def.get("food_fill", 0)

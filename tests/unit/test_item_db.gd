@@ -36,7 +36,7 @@ func test_wood_pickaxe_is_tool_not_placeable():
 func test_all_known_items_present():
 	for item_id in ["dirt", "grass", "stone", "sand", "log", "leaves",
 			"planks", "workbench", "door",
-			"wood_sword", "wood_pickaxe", "wood_axe", "slime_ball",
+			"wood_sword", "wood_pickaxe", "wood_axe", "slime_jelly", "apple",
 			"stone_sword", "stone_pickaxe", "stone_axe", "slime_torch"]:
 		assert_not_null(db.get_def(item_id), "缺失 item: %s" % item_id)
 
