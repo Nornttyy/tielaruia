@@ -130,6 +130,31 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# === 火把 (1x2 徒手) ===
+	{
+		"id": "torch",
+		"grid_size": Vector2i(1, 2),
+		"pattern": [
+			["coal"],
+			["log"],
+		],
+		"output_id": "torch",
+		"output_count": 4,
+		"mirror_ok": false,
+	},
+	# === 铁镐 (3x3 工作台, tier 3) ===
+	{
+		"id": "iron_pickaxe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["iron_ore", "iron_ore", "iron_ore"],
+			["",         "planks",   ""],
+			["",         "planks",   ""],
+		],
+		"output_id": "iron_pickaxe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
 ]
 
 

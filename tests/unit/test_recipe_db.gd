@@ -10,8 +10,9 @@ func before_each():
 	add_child_autofree(db)
 
 
-func test_has_10_recipes():
-	assert_eq(db.all_recipes().size(), 10)
+func test_has_12_recipes():
+	# 10 原始 + torch + iron_pickaxe
+	assert_eq(db.all_recipes().size(), 12)
 
 
 func test_planks_recipe():
@@ -183,3 +184,28 @@ func test_door_grid_size_is_2x3():
 	var r = db.get_recipe("door")
 	assert_eq(r.grid_size, Vector2i(2, 3))
 	assert_eq(max(r.grid_size.x, r.grid_size.y), 3, "door 应被识别为需要 3x3 模式")
+
+
+func test_torch_recipe_exists():
+	var r = db.get_recipe("torch")
+	assert_not_null(r, "torch 配方应存在")
+	assert_eq(r.output_id, "torch")
+	assert_eq(r.output_count, 4)
+	# 1x2: coal 上, log 下
+	assert_eq(r.grid_size, Vector2i(1, 2))
+	assert_eq(r.pattern[0][0], "coal")
+	assert_eq(r.pattern[1][0], "log")
+
+
+func test_iron_pickaxe_recipe_exists():
+	var r = db.get_recipe("iron_pickaxe")
+	assert_not_null(r, "iron_pickaxe 配方应存在")
+	assert_eq(r.output_id, "iron_pickaxe")
+	assert_eq(r.output_count, 1)
+	# 3x3: 顶三铁矿 + 中下双 planks
+	assert_eq(r.grid_size, Vector2i(3, 3))
+	assert_eq(r.pattern[0][0], "iron_ore")
+	assert_eq(r.pattern[0][1], "iron_ore")
+	assert_eq(r.pattern[0][2], "iron_ore")
+	assert_eq(r.pattern[1][1], "planks")
+	assert_eq(r.pattern[2][1], "planks")
