@@ -23,6 +23,10 @@ const BEDROCK := 10
 const LEAVES_PINE := 11     # 松针 (深暖绿)
 const LEAVES_AUTUMN := 12   # 秋叶 (红橙)
 const SLIME_TORCH := 13     # 史莱姆灯
+const TORCH := 14           # 火把 (放置版本，含动画 fx)
+const COAL_ORE := 15        # 煤矿
+const IRON_ORE := 16        # 铁矿
+const DEEP_STONE := 17      # 深层岩石 (暗暖灰)
 
 # --- 调色板 (每方块独立) ---
 
@@ -153,6 +157,58 @@ const _P_BEDROCK := {
 	"B": Color8(33, 33, 33),
 	"l": Color8(97, 97, 97),
 	"k": Color8(15, 15, 15),
+}
+
+# 深石: STONE 同结构但整体降亮 35% + 暖深底
+const _P_DEEP_STONE := {
+	"s": Color8(102, 88, 78),
+	"S": Color8(72, 60, 52),
+	"l": Color8(125, 108, 96),
+	"k": Color8(48, 36, 28),
+	"L": Color8(140, 122, 108),
+	"m": Color8(88, 75, 66),
+	"b": Color8(60, 50, 42),
+	"o": Color8(122, 96, 72),
+}
+
+# 煤矿: STONE 底色 + c/C/h 系列煤块
+const _P_COAL_ORE := {
+	"s": Color8(156, 144, 136),
+	"S": Color8(122, 110, 102),
+	"l": Color8(182, 168, 158),
+	"k": Color8(92, 80, 72),
+	"L": Color8(204, 191, 181),
+	"m": Color8(138, 125, 116),
+	"b": Color8(110, 98, 90),
+	"o": Color8(184, 154, 130),
+	"c": Color8(50, 40, 35),
+	"C": Color8(28, 22, 20),
+	"h": Color8(80, 65, 55),
+}
+
+# 铁矿: STONE 底色 + r/R/H 系列铁锈
+const _P_IRON_ORE := {
+	"s": Color8(156, 144, 136),
+	"S": Color8(122, 110, 102),
+	"l": Color8(182, 168, 158),
+	"k": Color8(92, 80, 72),
+	"L": Color8(204, 191, 181),
+	"m": Color8(138, 125, 116),
+	"b": Color8(110, 98, 90),
+	"o": Color8(184, 154, 130),
+	"r": Color8(168, 100, 60),
+	"R": Color8(130, 70, 40),
+	"H": Color8(200, 140, 90),
+}
+
+# 火把 tile: 木棍底 + 暖色火苗 (静态视觉，动画 fx 由 TorchFx 叠加)
+const _P_TORCH := {
+	"b": Color8(74, 52, 41),
+	"r": Color8(110, 80, 67),
+	"h": Color8(150, 110, 80),
+	"f": Color8(255, 180, 50),
+	"F": Color8(220, 100, 30),
+	"d": Color8(170, 60, 20),
 }
 
 # --- 图案 (每方块 16x16) ---
@@ -435,6 +491,86 @@ const _BEDROCK := [
 	"bblbbbbbbbblbbbB",
 ]
 
+# 深石: STONE 同骨架但更密裂纹 + 暗调
+const _DEEP_STONE := [
+	"SbsSsbsSsbsSsbsS",
+	"smbbkssssoobbkss",
+	"sbbbkssksslbbkss",
+	"sslksskkkkksslkk",
+	"sombbbsksslkmbss",
+	"sobbbbsslbksbbls",
+	"ssbbbkssbkssbbbs",
+	"sbkkkkbsslkkkkls",
+	"sombsbbbsskbbbms",
+	"sbbkssolksbbbkbs",
+	"sbbslkkbskssbbls",
+	"ssssbbbbossolssm",
+	"sombsbbbkssbkbbs",
+	"sslkkkbsslkbbbss",
+	"sombssklllksmsbs",
+	"sSsbsSsSsbsSsSss",
+]
+
+# 煤矿: STONE 底 + 3 簇煤块 (左上 / 中右 / 左下)
+const _COAL_ORE := [
+	"SbsSsbsSsbsSsbsS",
+	"sccChssssooLLkss",
+	"scCCkssksslLLkss",
+	"scchkkkkkkksslkk",
+	"somLLLsksslcCCss",
+	"soLLLLssllkcChls",
+	"ssLLLkssbkscCCks",
+	"slkkkkbsslkkkkls",
+	"somsLLLsskLLLmss",
+	"scCkssolksLLLkbs",
+	"cCCslkkbskssLLls",
+	"chsLLLLossolssmm",
+	"somsLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"somssklllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+# 铁矿: STONE 底 + 3 簇铁锈斑
+const _IRON_ORE := [
+	"SbsSsbsSsbsSsbsS",
+	"srRHkssssooLLkss",
+	"sRRRkssksslLLkss",
+	"srhkkskkkkksslkk",
+	"somLLLsksslrRHss",
+	"soLLLLssllkrRhls",
+	"ssLLLkssbkssRRks",
+	"slkkkkbsslkkkkls",
+	"somsLLLsskLLLmss",
+	"sRhkssolksLLLkbs",
+	"rRRslkkbskssLLls",
+	"sHsLLLLossolssmm",
+	"somsLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"somssklllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+# 火把 tile: 中央木棍 + 顶部火苗 (4×3)
+const _TORCH := [
+	"................",
+	"................",
+	"......ff........",
+	".....fFFf.......",
+	"....fFFFFf......",
+	"....fFFFFf......",
+	".....FdFd.......",
+	".....rbhr.......",
+	"......bh........",
+	"......bh........",
+	"......bh........",
+	"......bh........",
+	"......bh........",
+	"......bh........",
+	"......bh........",
+	"................",
+]
+
 const _PATTERN_MAP := {
 	GRASS: [_GRASS, _P_GRASS],
 	DIRT: [_DIRT, _P_DIRT],
@@ -449,6 +585,10 @@ const _PATTERN_MAP := {
 	LEAVES_PINE: [_LEAVES_PINE, _P_LEAVES_PINE],
 	LEAVES_AUTUMN: [_LEAVES_AUTUMN, _P_LEAVES_AUTUMN],
 	SLIME_TORCH: [_SLIME_TORCH, _P_SLIME_TORCH],
+	DEEP_STONE: [_DEEP_STONE, _P_DEEP_STONE],
+	COAL_ORE: [_COAL_ORE, _P_COAL_ORE],
+	IRON_ORE: [_IRON_ORE, _P_IRON_ORE],
+	TORCH: [_TORCH, _P_TORCH],
 }
 
 
@@ -466,6 +606,10 @@ const _PALETTES := {
 	LEAVES_PINE:   [_P_LEAVES_PINE["l"],   _P_LEAVES_PINE["L"]],
 	LEAVES_AUTUMN: [_P_LEAVES_AUTUMN["l"], _P_LEAVES_AUTUMN["L"]],
 	SLIME_TORCH:   [_P_SLIME_TORCH["g"],   _P_SLIME_TORCH["G"]],
+	DEEP_STONE:    [_P_DEEP_STONE["s"],    _P_DEEP_STONE["S"]],
+	COAL_ORE:      [_P_COAL_ORE["c"],      _P_COAL_ORE["C"]],
+	IRON_ORE:      [_P_IRON_ORE["r"],      _P_IRON_ORE["R"]],
+	TORCH:         [_P_TORCH["F"],         _P_TORCH["d"]],
 }
 const _DEFAULT_PALETTE := [Color(0.7, 0.7, 0.7), Color(0.4, 0.4, 0.4)]
 
