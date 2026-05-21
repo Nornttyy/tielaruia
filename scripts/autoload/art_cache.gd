@@ -15,6 +15,7 @@ const VillagerArt = preload("res://scripts/art/villager_art.gd")
 const DoorArt = preload("res://scripts/art/door_art.gd")
 const ItemsArt = preload("res://scripts/art/items_art.gd")
 const HeartsArt = preload("res://scripts/art/hearts_art.gd")
+const DrumstickArt = preload("res://scripts/art/drumstick_art.gd")
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 const CloudsArt = preload("res://scripts/fx/clouds_art.gd")
 
@@ -31,6 +32,9 @@ var crack_textures: Array = []  # 4 个阶段
 var heart_full: ImageTexture
 var heart_half: ImageTexture
 var heart_empty: ImageTexture
+var drumstick_full: ImageTexture
+var drumstick_half: ImageTexture
+var drumstick_empty: ImageTexture
 
 
 func _ready() -> void:
@@ -41,6 +45,7 @@ func _ready() -> void:
 	_build_clouds()
 	_build_particles()
 	_build_hearts()
+	_build_drumsticks()
 
 
 func _build_hearts() -> void:
@@ -49,19 +54,26 @@ func _build_hearts() -> void:
 	heart_empty = HeartsArt.build_empty()
 
 
+func _build_drumsticks() -> void:
+	drumstick_full = DrumstickArt.build_full()
+	drumstick_half = DrumstickArt.build_half()
+	drumstick_empty = DrumstickArt.build_empty()
+
+
 func _build_blocks() -> void:
 	var tile_ids := [
 		BlocksArt.GRASS, BlocksArt.DIRT, BlocksArt.STONE, BlocksArt.SAND,
 		BlocksArt.LOG, BlocksArt.LEAVES, BlocksArt.PLANKS, BlocksArt.WORKBENCH,
 		BlocksArt.DOOR, BlocksArt.BEDROCK,
 		BlocksArt.LEAVES_PINE, BlocksArt.LEAVES_AUTUMN, BlocksArt.SLIME_TORCH,
+		BlocksArt.DEEP_STONE, BlocksArt.COAL_ORE, BlocksArt.IRON_ORE, BlocksArt.TORCH,
 	]
 	for tile_id in tile_ids:
 		block_textures[tile_id] = BlocksArt.get_texture(tile_id)
 
 
 func _build_items() -> void:
-	for item_id in ["wood_sword", "wood_pickaxe", "wood_axe", "slime_ball",
+	for item_id in ["wood_sword", "wood_pickaxe", "wood_axe", "slime_jelly", "apple",
 			"stone_sword", "stone_pickaxe", "stone_axe"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 
