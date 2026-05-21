@@ -57,43 +57,60 @@
 
 - [ ] **Step 1: 写测试断言（覆盖 4 个新 tile 的属性）**
 
-在 `tests/unit/test_tile_data.gd` 末尾追加：
+在 `tests/unit/test_tile_data.gd` 末尾追加。**注意 API 名**：`required_tool_tier(tid, tool)`、`drops_for(tid, tool)` 返回 `{item_id: count}` Dict（概率抽样，断言要么用 100% drop 多次抽样断"至少出过一次"）：
 
 ```gdscript
 func test_torch_properties() -> void:
-	assert_false(Tiles.is_solid(Tiles.TORCH), "TORCH 不实心")
-	assert_true(Tiles.is_mineable(Tiles.TORCH), "TORCH 可挖")
+	assert_false(td.is_solid(td.TORCH), "TORCH 不实心")
+	assert_true(td.is_mineable(td.TORCH), "TORCH 可挖")
 	# 徒手即可挖
-	assert_eq(Tiles.tool_tier_required(Tiles.TORCH, "pickaxe"), 0)
-	var drops = Tiles.drops_for(Tiles.TORCH)
-	assert_eq(drops.size(), 1)
-	assert_eq(drops[0][0], "torch")
+	assert_eq(td.required_tool_tier(td.TORCH, "pickaxe"), 0)
+	# drops 100% → 单次抽样必有 torch
+	var any_drop := false
+	for _i in 10:
+		if td.drops_for(td.TORCH, "").has("torch"):
+			any_drop = true
+			break
+	assert_true(any_drop, "TORCH 应能掉 torch 物品")
 
 
 func test_coal_ore_properties() -> void:
-	assert_true(Tiles.is_solid(Tiles.COAL_ORE))
-	assert_true(Tiles.is_mineable(Tiles.COAL_ORE))
+	assert_true(td.is_solid(td.COAL_ORE))
+	assert_true(td.is_mineable(td.COAL_ORE))
 	# 需 pickaxe tier 1
-	assert_eq(Tiles.tool_tier_required(Tiles.COAL_ORE, "pickaxe"), 1)
-	assert_eq(Tiles.tool_tier_required(Tiles.COAL_ORE, ""), -1)
-	assert_eq(Tiles.drops_for(Tiles.COAL_ORE)[0][0], "coal")
+	assert_eq(td.required_tool_tier(td.COAL_ORE, "pickaxe"), 1)
+	assert_eq(td.required_tool_tier(td.COAL_ORE, ""), -1)
+	var got_coal := false
+	for _i in 10:
+		if td.drops_for(td.COAL_ORE, "").has("coal"):
+			got_coal = true
+			break
+	assert_true(got_coal, "COAL_ORE 应掉 coal")
 
 
 func test_iron_ore_properties() -> void:
-	assert_true(Tiles.is_solid(Tiles.IRON_ORE))
+	assert_true(td.is_solid(td.IRON_ORE))
 	# 需 pickaxe tier 2 (石镐+)
-	assert_eq(Tiles.tool_tier_required(Tiles.IRON_ORE, "pickaxe"), 2)
-	assert_eq(Tiles.drops_for(Tiles.IRON_ORE)[0][0], "iron_ore")
+	assert_eq(td.required_tool_tier(td.IRON_ORE, "pickaxe"), 2)
+	var got_iron := false
+	for _i in 10:
+		if td.drops_for(td.IRON_ORE, "").has("iron_ore"):
+			got_iron = true
+			break
+	assert_true(got_iron, "IRON_ORE 应掉 iron_ore")
 
 
 func test_deep_stone_properties() -> void:
-	assert_true(Tiles.is_solid(Tiles.DEEP_STONE))
+	assert_true(td.is_solid(td.DEEP_STONE))
 	# 跟 STONE 一样需 pickaxe tier 1，掉普通 stone
-	assert_eq(Tiles.tool_tier_required(Tiles.DEEP_STONE, "pickaxe"), 1)
-	assert_eq(Tiles.drops_for(Tiles.DEEP_STONE)[0][0], "stone")
+	assert_eq(td.required_tool_tier(td.DEEP_STONE, "pickaxe"), 1)
+	var got_stone := false
+	for _i in 10:
+		if td.drops_for(td.DEEP_STONE, "").has("stone"):
+			got_stone = true
+			break
+	assert_true(got_stone, "DEEP_STONE 应掉 stone")
 ```
-
-> 检查现有测试用的 helper 名（`is_solid` / `is_mineable` / `tool_tier_required` / `drops_for`）—— 看 `test_tile_data.gd` 已有用法，按相同 API 调用。若 helper 名不同（项目代码用 `_PROPS[tid].solid` 直接读），把上面断言改为 `assert_eq(Tiles._PROPS[Tiles.TORCH].solid, false)` 等等。
 
 - [ ] **Step 2: 跑测试确认 fail**
 
