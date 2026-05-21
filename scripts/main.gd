@@ -31,7 +31,8 @@ func _ready() -> void:
 
 func _show_menu_state() -> void:
 	_state = "menu"
-	_main_menu.visible = true
+	if _main_menu != null and is_instance_valid(_main_menu):
+		_main_menu.visible = true
 	_pause_menu.close()
 	_death_screen.hide_death()
 

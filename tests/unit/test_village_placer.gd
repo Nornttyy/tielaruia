@@ -32,14 +32,14 @@ func test_place_door_at_correct_position():
 	assert_eq(cm.get_tile(35, 50), Tiles.DOOR, "房 1 门在左下")
 
 
-func test_place_interior_not_overwritten():
+func test_place_clears_interior_to_air():
 	var cm = _make_chunk_manager()
-	# 提前在屋内放个标记 tile (DIRT) 看看会不会被村庄覆盖
+	# 提前在屋内放个 DIRT 模拟树/草, 应被清空
 	cm.set_tile(36, 48, Tiles.DIRT)
 	var prefab = VillagePrefab.load_default()
 	VillagePlacer.place(cm, null, prefab, Vector2i(30, 50))
-	# (36, 48) 在 grid row 1 col 1 = "." 应被跳过, 保留 DIRT
-	assert_eq(cm.get_tile(36, 48), Tiles.DIRT, ". 不应覆盖已有 tile")
+	# (36, 48) 在 grid row 1 col 1 = ".", 两遍式应把它清成 AIR
+	assert_eq(cm.get_tile(36, 48), Tiles.AIR, "屋内 . 位应清成空气")
 
 
 func test_place_returns_villager_spawn():
