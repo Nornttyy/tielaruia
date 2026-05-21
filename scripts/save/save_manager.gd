@@ -23,6 +23,7 @@ func save(main: Node) -> bool:
 	data.world_seed = world.world_seed
 	data.spawn_point = world.spawn_point
 	data.chunk_deltas = _serialize_chunk_deltas(world.chunk_manager)
+	data.entities = _serialize_entities()
 	var player: Node2D = world.get_player()
 	if player != null:
 		data.player_position = player.global_position
@@ -98,6 +99,23 @@ static func apply_chunk_deltas(cm, serialized: Dictionary) -> void:
 			inner[Vector2i(arr[i], arr[i + 1])] = arr[i + 2]
 			i += 3
 		cm._deltas[cx] = inner
+
+
+# 收集 slime/villager/item_drop 位置 + 状态。
+func _serialize_entities() -> Array:
+	var out: Array = []
+	for s in get_tree().get_nodes_in_group("slimes"):
+		out.append({"type": "slime", "pos": s.global_position})
+	for v in get_tree().get_nodes_in_group("villagers"):
+		out.append({"type": "villager", "pos": v.global_position})
+	for d in get_tree().get_nodes_in_group("item_drops"):
+		out.append({
+			"type": "item_drop",
+			"pos": d.global_position,
+			"item_id": d.item_id,
+			"count": d.count
+		})
+	return out
 
 
 # 反序列化背包槽 — 给外部调用方用 (load 后把 SaveData.inventory_slots 还原)。

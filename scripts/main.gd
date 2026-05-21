@@ -125,6 +125,10 @@ func _on_respawn() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_save") and _state == "game":
+		SaveManager.save(self)
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_pause") and _state == "game":
 		if _death_screen.visible:
 			return
