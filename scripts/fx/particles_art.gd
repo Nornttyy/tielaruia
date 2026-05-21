@@ -47,3 +47,10 @@ static func get_crack_stage(stage: int) -> ImageTexture:
 		if p.x >= 0 and p.x < 16 and p.y >= 0 and p.y < 16:
 			img.set_pixel(p.x, p.y, crack_color)
 	return ImageTexture.create_from_image(img)
+
+
+# 火花粒子: 2x2 实心暖色块。TorchSparkParticle 用此纹理作为单帧 sprite。
+static func get_torch_spark(color: Color) -> ImageTexture:
+	var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+	img.fill(color)
+	return ImageTexture.create_from_image(img)
