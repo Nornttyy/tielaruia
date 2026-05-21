@@ -13,6 +13,10 @@ const TorchFxScene = preload("res://scenes/fx/torch_fx.tscn")
 var _torches: Dictionary = {}  # Vector2i tile_coord → TorchFx Node2D
 
 
+func _ready() -> void:
+	add_to_group("world_lighting")
+
+
 func on_tile_placed(x: int, y: int, tile_id: int) -> void:
 	if tile_id != Tiles.TORCH:
 		return

@@ -34,9 +34,9 @@ script = ExtResource("4_hp")
 script = ExtResource("5_hg")
 
 [node name="PlayerAura" type="PointLight2D" parent="."]
-energy = 0.5
-color = Color(1, 0.95, 0.85, 1)
+energy = 0.0
+enabled = false
 
 [node name="SunAura" type="PointLight2D" parent="."]
 energy = 0.0
-color = Color(1, 0.95, 0.8, 1)
+enabled = false

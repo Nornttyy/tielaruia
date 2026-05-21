@@ -25,9 +25,9 @@ var _flame_frame: int = 0
 
 
 func _ready() -> void:
-	light.texture = ArtCache.radial_gradient(LIGHT_RADIUS * 2)
-	light.energy = BASE_ENERGY
-	light.color = LIGHT_COLOR
+	# 老 Light2D 光照已禁用 (改用 DarknessLayer 瓦片光照)。
+	# Light 节点保留场景结构兼容性, 但不发光 — 真实照明由 TileLightGrid 计算。
+	light.enabled = false
 	_setup_flame_texture()
 	spark_timer.wait_time = randf_range(0.12, 0.20)
 	spark_timer.start()
@@ -44,9 +44,7 @@ func _setup_flame_texture() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	# 光呼吸: sin(8t) ± OSC + 每帧随机 ± NOISE
-	light.energy = BASE_ENERGY + sin(_time * 8.0) * ENERGY_OSC + randf_range(-ENERGY_NOISE, ENERGY_NOISE)
-	# 火焰 2 帧切换 (scale.y 跳一下)
+	# Light 已禁用, 仅做火焰 2 帧切换
 	_flame_t += delta
 	if _flame_t >= FLAME_FRAME_TIME:
 		_flame_t = 0.0
