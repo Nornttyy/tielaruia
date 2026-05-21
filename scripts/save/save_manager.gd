@@ -22,6 +22,7 @@ func save(main: Node) -> bool:
 	var data := SaveData.new()
 	data.world_seed = world.world_seed
 	data.spawn_point = world.spawn_point
+	data.chunk_deltas = _serialize_chunk_deltas(world.chunk_manager)
 	var player: Node2D = world.get_player()
 	if player != null:
 		data.player_position = player.global_position
@@ -70,6 +71,33 @@ func _serialize_inventory(slots: Array) -> Array:
 		else:
 			out.append({"item_id": s.item_id, "count": s.count})
 	return out
+
+
+# Vector2i 在 .tres 里不能当 Dict key, 转成 flat PackedInt32Array (lx, y, tid)*N.
+# 返回 Dict<int (cx), PackedInt32Array>。
+func _serialize_chunk_deltas(cm) -> Dictionary:
+	var out: Dictionary = {}
+	for cx in cm._deltas.keys():
+		var inner: Dictionary = cm._deltas[cx]
+		var arr := PackedInt32Array()
+		for pos_v2i in inner.keys():
+			arr.append(pos_v2i.x)
+			arr.append(pos_v2i.y)
+			arr.append(inner[pos_v2i])
+		out[cx] = arr
+	return out
+
+
+# 把序列化的 deltas 还原到 chunk_manager._deltas (供 load 后调用)。
+static func apply_chunk_deltas(cm, serialized: Dictionary) -> void:
+	for cx in serialized.keys():
+		var arr: PackedInt32Array = serialized[cx]
+		var inner: Dictionary = {}
+		var i: int = 0
+		while i + 2 < arr.size():
+			inner[Vector2i(arr[i], arr[i + 1])] = arr[i + 2]
+			i += 3
+		cm._deltas[cx] = inner
 
 
 # 反序列化背包槽 — 给外部调用方用 (load 后把 SaveData.inventory_slots 还原)。
