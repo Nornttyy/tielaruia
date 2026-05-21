@@ -1,52 +1,39 @@
-# 天光暗格：每列从上往下扫描，遇到首个实心 tile 之后下方均标记为"无天光"。
-# 用于 P4 史莱姆刷新条件查询。本类不渲染、不影响视觉。
+# 天光遮蔽: 查询某 tile 是否暴露在天空下 (无方块挡住).
+# 列存改 Dictionary 懒填: 第一次查 column x 时算 _light_top[x], 之后缓存.
+# 修改 tile 时由 World 调 invalidate_column(x) 清缓存.
 extends Node
 
-var _width: int = 0
-var _height: int = 0
-# _exposed[x][y] = true 表示 (x,y) 可被天光直射 (本格不实心 + 上方无实心遮挡)
-var _exposed: Array = []
-var _tiles_ref: Array = []
+const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
+
+var _light_top: Dictionary = {}  # int x → int top_solid_y (该列最顶的 solid tile 的 y; 找不到返回 WORLD_HEIGHT-1)
 
 
-func recompute_from(tiles: Array) -> void:
-	_tiles_ref = tiles
-	_width = tiles.size()
-	if _width == 0:
-		_height = 0
-		_exposed = []
-		return
-	_height = (tiles[0] as Array).size()
-	_exposed.resize(_width)
-	for x in _width:
-		_exposed[x] = _compute_column(tiles[x])
-
-
-func invalidate_column(x: int, tiles: Variant = null) -> void:
-	if x < 0 or x >= _width:
-		return
-	var col: Array = (tiles[x] if tiles != null else _tiles_ref[x])
-	_exposed[x] = _compute_column(col)
-
-
+# 公开 API: 该 tile 是否在天空下
 func is_sky_exposed(x: int, y: int) -> bool:
-	if x < 0 or x >= _width or y < 0 or y >= _height:
+	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
 		return false
-	return _exposed[x][y]
+	if not _light_top.has(x):
+		_light_top[x] = _compute_light_top(x)
+	return y <= _light_top[x]
 
 
-func _compute_column(col: Array) -> Array:
-	var result := []
-	result.resize(_height)
-	var blocked := false
-	for y in _height:
-		var tile_id: int = col[y]
-		if blocked:
-			result[y] = false
-			continue
-		if Tiles.is_solid(tile_id):
-			result[y] = false  # 实心本身不算"被天光照"
-			blocked = true
-		else:
-			result[y] = true
-	return result
+# 由 World 在 set_tile 后调用
+func invalidate_column(x: int, _tiles_unused: Variant = null) -> void:
+	_light_top.erase(x)
+
+
+# 兼容旧 API: 不再预算, 仅清缓存
+func recompute_from(_tiles: Array) -> void:
+	_light_top.clear()
+
+
+# 从顶往下找第一个 solid tile, 返回它上方一格的 y. 找不到返回 WORLD_HEIGHT-1.
+func _compute_light_top(x: int) -> int:
+	var cm: Node = get_tree().get_first_node_in_group("chunk_manager")
+	if cm == null:
+		return ChunkConstants.WORLD_HEIGHT - 1
+	for y in ChunkConstants.WORLD_HEIGHT:
+		var tid: int = cm.get_tile(x, y)
+		if tid != Tiles.AIR and Tiles.is_solid(tid):
+			return y - 1
+	return ChunkConstants.WORLD_HEIGHT - 1
