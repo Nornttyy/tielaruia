@@ -26,6 +26,7 @@ const TILE_SIZE := 16
 @onready var entities_root: Node2D = $Entities
 @onready var camera: Camera2D = $Camera2D
 @onready var world_lighting: Node = $WorldLighting
+@onready var darkness_layer: TileMapLayer = $DarknessLayer
 
 var spawn_point: Vector2i
 var chunk_manager: ChunkManager
@@ -110,6 +111,8 @@ func _on_chunk_loaded(c: Chunk) -> void:
 		SkyLightGrid.invalidate_column(world_x)
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
 	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)
+	# 黑暗层: chunk 加载时全列预算光值
+	darkness_layer.recompute_chunk(c.chunk_x, ChunkConstants.CHUNK_WIDTH, ChunkConstants.WORLD_HEIGHT)
 
 
 func _on_chunk_unloaded(cx: int) -> void:
@@ -131,6 +134,8 @@ func _on_chunk_unloaded(cx: int) -> void:
 			ent.queue_free()
 	# 清该 chunk 范围内所有火把光
 	world_lighting.on_chunk_unloaded(cx, ChunkConstants.CHUNK_WIDTH)
+	# 清该 chunk 范围内黑暗瓦片
+	darkness_layer.clear_chunk(cx, ChunkConstants.CHUNK_WIDTH, ChunkConstants.WORLD_HEIGHT)
 
 
 # 在 chunk 0 内找 GRASS 上方 3 格空气列, fallback 到 (0, 100)
@@ -270,3 +275,5 @@ func _set_tile(x: int, y: int, tile_id: int) -> void:
 	# 火把光源生命周期: 先 remove 旧, 再 place 新
 	world_lighting.on_tile_removed(x, y, old_tid)
 	world_lighting.on_tile_placed(x, y, tile_id)
+	# 黑暗层: tile 改了 → 局部重算光值 (±8 涵盖火把半径 6)
+	darkness_layer.recompute_around(x, y, 8)

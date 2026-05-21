@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_darkness_layer"]
+
+[ext_resource type="Script" path="res://scripts/world/darkness_layer.gd" id="1_dark"]
+
+[node name="DarknessLayer" type="TileMapLayer"]
+script = ExtResource("1_dark")
