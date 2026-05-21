@@ -53,3 +53,12 @@ func _wire_player() -> void:
 func _on_respawn() -> void:
 	world.respawn_player()
 	$DeathScreen.hide_death()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_pause"):
+		# 死亡屏可见时 ESC 不响应 (避免误关死亡屏)
+		if $DeathScreen.visible:
+			return
+		$PauseMenu.toggle()
+		get_viewport().set_input_as_handled()
