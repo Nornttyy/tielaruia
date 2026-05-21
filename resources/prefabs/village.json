@@ -1,0 +1,28 @@
+{
+  "name": "starter_village",
+  "comment": "锚点 = 玩家 spawn_y 行的指定 x。anchor_x/y 是相对锚点的 offset。grid 字符: P=planks, D=door, .=interior air。villager_offset = [col, row] 在 grid 内。",
+  "houses": [
+    {
+      "anchor_x": 5,
+      "anchor_y": -3,
+      "grid": [
+        "PPPPP",
+        "P...P",
+        "P...P",
+        "D...P"
+      ],
+      "villager_offset": [2, 3]
+    },
+    {
+      "anchor_x": 12,
+      "anchor_y": -3,
+      "grid": [
+        "PPPPP",
+        "P...P",
+        "P...P",
+        "D...P"
+      ],
+      "villager_offset": null
+    }
+  ]
+}
