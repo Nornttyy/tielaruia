@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://b4teilaruiamain"]
+[gd_scene load_steps=3 format=3 uid="uid://b4teilaruiamain"]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/ui/death_screen.tscn" id="2_ds"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
+
+[node name="DeathScreen" parent="." instance=ExtResource("2_ds")]

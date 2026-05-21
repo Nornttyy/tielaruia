@@ -42,3 +42,14 @@ func _wire_player() -> void:
 	debug_hud.set_player(player)
 	hud.bind_player(player)
 	crafting_panel.bind_inventory(player.get_node("PlayerInventory"))
+	# 死亡信号 → 死亡屏，按钮按下 → world.respawn_player + 关屏
+	var hp: Node = player.get_node_or_null("PlayerHealth")
+	if hp != null and hp.has_signal("died"):
+		hp.died.connect($DeathScreen.show_death)
+	if not $DeathScreen.respawn.is_connected(_on_respawn):
+		$DeathScreen.respawn.connect(_on_respawn)
+
+
+func _on_respawn() -> void:
+	world.respawn_player()
+	$DeathScreen.hide_death()

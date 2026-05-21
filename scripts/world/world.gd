@@ -99,10 +99,6 @@ func _spawn_player() -> void:
 	entities_root.add_child(player)
 	camera.reparent(player)
 	camera.position = Vector2.ZERO
-	# 连死亡信号
-	var hp: Node = player.get_node_or_null("PlayerHealth")
-	if hp != null and hp.has_signal("died"):
-		hp.died.connect(_on_player_died)
 
 
 func _spawn_world_pos() -> Vector2:
@@ -112,7 +108,7 @@ func _spawn_world_pos() -> Vector2:
 	)
 
 
-func _on_player_died() -> void:
+func respawn_player() -> void:
 	var player := get_player()
 	if player == null:
 		return
