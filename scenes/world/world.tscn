@@ -7,6 +7,9 @@
 [node name="World" type="Node2D"]
 script = ExtResource("1_world")
 
+[node name="CanvasModulate" type="CanvasModulate" parent="."]
+color = Color(0.12, 0.08, 0.06, 1)
+
 [node name="CloudLayer" parent="." instance=ExtResource("2_clouds")]
 
 [node name="TerrainLayer" type="TileMapLayer" parent="."]
