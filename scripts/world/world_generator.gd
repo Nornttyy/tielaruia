@@ -15,6 +15,11 @@ const SAND_THRESHOLD := 0.4      # sand_noise 超过此阈值的列为沙列
 const TREE_MIN_SPACING := 5      # 相邻两棵树之间最少 N 列间距
 const TREE_CHANCE := 0.45        # 候选格子里实际长树的概率
 
+const DEEP_STONE_RATIO := 0.5    # 地表往下 (height-surf)*0.5 处起为 DEEP_STONE
+const COAL_THRESHOLD := 0.55     # coal_noise 超过此值生成煤矿
+const IRON_THRESHOLD := 0.55     # iron_noise 超过此值 + 在深石层 → 铁矿 (稀疏感由层位限制保证)
+const CAVE_THRESHOLD := 0.55     # abs(cave_noise) 超过此值挖空 (除 BEDROCK)
+
 # 树种枚举 (内部 idx)
 const _SPECIES_OAK := 0
 const _SPECIES_PINE := 1
@@ -74,6 +79,22 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	sand_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	sand_noise.frequency = 0.05
 
+	var cave_noise := FastNoiseLite.new()
+	cave_noise.seed = world_seed + 2
+	cave_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	cave_noise.frequency = 0.06
+	cave_noise.fractal_octaves = 2
+
+	var coal_noise := FastNoiseLite.new()
+	coal_noise.seed = world_seed + 3
+	coal_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	coal_noise.frequency = 0.12
+
+	var iron_noise := FastNoiseLite.new()
+	iron_noise.seed = world_seed + 4
+	iron_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	iron_noise.frequency = 0.10
+
 	# 计算本 chunk 范围内每列的 heights (供地形 + 树木使用)
 	var chunk_start_x := chunk_x * chunk_width
 	var chunk_end_x := chunk_start_x + chunk_width
@@ -88,6 +109,7 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
 		var is_sand_col := sand_noise.get_noise_1d(float(world_x)) > SAND_THRESHOLD
+		var deep_threshold: int = surf + int((height - surf) * DEEP_STONE_RATIO)
 		for y in height:
 			var tid: int
 			if y < surf:
@@ -99,7 +121,23 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 			elif y >= height - BEDROCK_ROWS:
 				tid = Tiles.BEDROCK
 			else:
-				tid = Tiles.STONE
+				tid = Tiles.DEEP_STONE if y >= deep_threshold else Tiles.STONE
+
+			# 矿石覆盖: 仅在 STONE / DEEP_STONE 上, 铁矿仅深层出现
+			if tid == Tiles.STONE or tid == Tiles.DEEP_STONE:
+				var cn: float = coal_noise.get_noise_2d(float(world_x), float(y))
+				var inn: float = iron_noise.get_noise_2d(float(world_x), float(y))
+				if cn > COAL_THRESHOLD:
+					tid = Tiles.COAL_ORE
+				elif tid == Tiles.DEEP_STONE and inn > IRON_THRESHOLD:
+					tid = Tiles.IRON_ORE
+
+			# 洞穴: 除 BEDROCK 外都可被挖空 (y > surf 才生效, 不挖天空)
+			if tid != Tiles.BEDROCK and tid != Tiles.AIR and y > surf:
+				var cv: float = abs(cave_noise.get_noise_2d(float(world_x), float(y)))
+				if cv > CAVE_THRESHOLD:
+					tid = Tiles.AIR
+
 			c.tiles[local_x][y] = tid
 
 	# 树: 树根只在本 chunk [chunk_start, chunk_end) 内决定 — canopy 越界部分裁掉

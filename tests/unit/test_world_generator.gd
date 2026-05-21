@@ -141,3 +141,66 @@ func test_no_orphan_leaves_at_chunk_seams():
 				if has_log:
 					break
 			assert_true(has_log, "孤立叶 at (%d, %d) — 跨 chunk 边界树漂浮叶 bug" % [x, y])
+
+
+# ===== 地底视野更新: 洞穴 / 矿石 / 深石分层 =====
+
+const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
+
+
+func test_underground_has_air_caves() -> void:
+	var c = WorldGenerator.generate_chunk(54321, 0)
+	var air_count = 0
+	for x in c.tiles.size():
+		var col: Array = c.tiles[x]
+		# 跳过地表上空: 从 y = WORLD_HEIGHT/3 起开始数 (一定在地下)
+		for y in range(ChunkConstants.WORLD_HEIGHT / 3, col.size()):
+			if col[y] == Tiles.AIR:
+				air_count += 1
+	assert_gt(air_count, 20, "地下应至少有 20 个洞穴 AIR tile")
+
+
+func test_has_coal_ore() -> void:
+	var c = WorldGenerator.generate_chunk(54321, 0)
+	var coal_count = 0
+	for x in c.tiles.size():
+		for y in c.tiles[x].size():
+			if c.tiles[x][y] == Tiles.COAL_ORE:
+				coal_count += 1
+	assert_gt(coal_count, 0, "应至少有 1 个煤矿")
+
+
+func test_has_iron_ore() -> void:
+	# 铁矿只在 DEEP_STONE 层 + noise > IRON_THRESHOLD, 单 chunk + 单 seed 可能命中不到
+	# 跨 10 个 seed × chunk_x=0 累计应远大于 0
+	var iron_count = 0
+	for seed_v in [1, 2, 3, 7, 11, 42, 99, 100, 500, 1000]:
+		var c = WorldGenerator.generate_chunk(seed_v, 0)
+		for x in c.tiles.size():
+			for y in c.tiles[x].size():
+				if c.tiles[x][y] == Tiles.IRON_ORE:
+					iron_count += 1
+	assert_gt(iron_count, 0, "10 个 seed 应至少累计出 1 个铁矿 (got %d)" % iron_count)
+
+
+func test_has_deep_stone() -> void:
+	var c = WorldGenerator.generate_chunk(11111, 0)
+	var has_deep = false
+	for x in c.tiles.size():
+		for y in c.tiles[x].size():
+			if c.tiles[x][y] == Tiles.DEEP_STONE:
+				has_deep = true
+				break
+		if has_deep: break
+	assert_true(has_deep, "应有 DEEP_STONE tile")
+
+
+func test_bedrock_never_air() -> void:
+	# 跑 3 个 seed, 断言最底 BEDROCK_ROWS 行永远不是 AIR
+	for seed_v in [1, 2, 3]:
+		var c = WorldGenerator.generate_chunk(seed_v, 0)
+		var h = ChunkConstants.WORLD_HEIGHT
+		for x in c.tiles.size():
+			for y in range(h - 2, h):  # BEDROCK_ROWS = 2
+				assert_ne(c.tiles[x][y], Tiles.AIR,
+					"seed=%d (%d,%d) BEDROCK 不应被挖空" % [seed_v, x, y])
