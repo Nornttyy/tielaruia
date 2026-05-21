@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_torch_spark_p"]
+
+[ext_resource type="Script" path="res://scripts/fx/torch_spark_particle.gd" id="1_tsp"]
+
+[node name="TorchSparkParticle" type="Sprite2D"]
+script = ExtResource("1_tsp")
