@@ -14,17 +14,15 @@ func _boot() -> Node:
 	return main
 
 
-func test_world_has_canvas_modulate_with_warm_dark() -> void:
+func test_world_has_darkness_layer() -> void:
+	# 旧 Light2D 视觉栈已砍 (CanvasModulate + PointLight2D), 改 Terraria 风瓦片光照
 	var main = await _boot()
 	var world: Node2D = main.get_node("World")
-	var cm: CanvasModulate = world.get_node_or_null("CanvasModulate")
-	assert_not_null(cm, "World 下应有 CanvasModulate 子节点")
-	# 暖洞穴色 Color(0.12, 0.08, 0.06)
-	assert_almost_eq(cm.color.r, 0.12, 0.01, "CanvasModulate.r 应为 0.12 (暖暗)")
-	assert_almost_eq(cm.color.g, 0.08, 0.01, "CanvasModulate.g 应为 0.08")
-	assert_almost_eq(cm.color.b, 0.06, 0.01, "CanvasModulate.b 应为 0.06")
-	# r > g > b → 偏暖色
-	assert_gt(cm.color.r, cm.color.b, "CanvasModulate 应偏暖 (r > b)")
+	var dl: TileMapLayer = world.get_node_or_null("DarknessLayer")
+	assert_not_null(dl, "World 下应有 DarknessLayer (TileMapLayer)")
+	assert_not_null(dl.tile_set, "DarknessLayer 应已注入 TileSet (8 级暗瓦)")
+	# 老 CanvasModulate 应该没了
+	assert_null(world.get_node_or_null("CanvasModulate"), "CanvasModulate 应已被移除")
 
 
 func test_world_has_torch_lights_and_world_lighting_nodes() -> void:
@@ -49,16 +47,24 @@ func test_player_has_player_aura_and_sun_aura() -> void:
 	assert_not_null(sun_aura.texture, "SunAura.texture 应被 _ready 赋值")
 
 
-func test_sun_aura_lerps_off_when_underground() -> void:
+func test_darkness_layer_covers_underground() -> void:
 	var main = await _boot()
 	var world: Node2D = main.get_node("World")
 	var player: CharacterBody2D = world.get_player()
-	var sun_aura: PointLight2D = player.get_node("SunAura")
-	# 把玩家瞬移到地底深处 (y=200, 远低于地表)
+	var dl: TileMapLayer = world.get_node("DarknessLayer")
+	# 把玩家瞬移到地底 (y=200, 远低于地表)
 	player.global_position = Vector2(player.global_position.x, 200 * TILE_SIZE)
-	# 跑足够多帧让 lerp 收敛 (lerp 每帧朝 target 移动 delta/0.3 比例, 60 帧 ~1s 应收敛)
-	await wait_frames(60)
-	assert_lt(sun_aura.energy, 0.2, "地底 SunAura.energy 应 lerp 到接近 0 (got %.3f)" % sun_aura.energy)
+	# 等 DarknessLayer 视野更新触发 (UPDATE_INTERVAL = 0.1s)
+	await wait_frames(15)
+	# 在玩家附近 (3 tile 之外) 应该是有暗瓦片的 (level < 7)
+	var px: int = int(player.global_position.x / TILE_SIZE)
+	var py: int = int(player.global_position.y / TILE_SIZE)
+	var dark_count = 0
+	for dx in range(-5, 6):
+		for dy in range(-5, 6):
+			if dl.get_cell_source_id(Vector2i(px + dx, py + dy)) != -1:
+				dark_count += 1
+	assert_gt(dark_count, 30, "地底玩家视野内应有大量暗瓦片 (got %d)" % dark_count)
 
 
 func test_torch_placement_creates_torch_fx_with_children() -> void:
@@ -73,11 +79,11 @@ func test_torch_placement_creates_torch_fx_with_children() -> void:
 	var fx: Node2D = torch_lights.get_child(torch_lights.get_child_count() - 1)
 	# 验证 TorchFx 结构: Flame / Light / SparkTimer 三个子节点
 	assert_not_null(fx.get_node_or_null("Flame"), "TorchFx 应有 Flame 子节点")
-	assert_not_null(fx.get_node_or_null("Light"), "TorchFx 应有 Light (PointLight2D)")
+	assert_not_null(fx.get_node_or_null("Light"), "TorchFx 应有 Light (兼容场景结构，禁用)")
 	assert_not_null(fx.get_node_or_null("SparkTimer"), "TorchFx 应有 SparkTimer")
-	# Light 应是 PointLight2D 类型 + 已挂 texture
+	# Light 节点保留但已禁用 (改用 DarknessLayer 瓦片光照)
 	var light: PointLight2D = fx.get_node("Light")
-	assert_not_null(light.texture, "TorchFx.Light.texture 应被 _ready 赋值")
+	assert_false(light.enabled, "TorchFx.Light 应被禁用 (照明由 DarknessLayer 接管)")
 
 
 func test_torch_removal_frees_torch_fx() -> void:
