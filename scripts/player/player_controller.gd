@@ -10,12 +10,22 @@ const LAND_VY_THRESHOLD := 200.0    # 落地时 vy 超此值才扬大灰
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var _player_aura: PointLight2D = $PlayerAura
+@onready var _sun_aura: PointLight2D = $SunAura
 
 const HURT_DURATION := 0.4
 const KNOCKBACK_VX := 90.0
 const KNOCKBACK_VY := -180.0
 const SHAKE_MAX_OFFSET := 4.0
 const SHAKE_DECAY := 20.0
+
+# Light2D 配置: PlayerAura 常亮小光圈, SunAura 头顶天空时大日光 (0.3s lerp)
+const PLAYER_AURA_TEX_SIZE := 64
+const SUN_AURA_TEX_SIZE := 400
+const SUN_ENERGY_ON := 1.5
+const SUN_ENERGY_OFF := 0.0
+const SUN_FADE_TIME := 0.3
+const TILE_SIZE := 16
 
 var _coyote_timer: float = 0.0
 var _facing_right: bool = true
@@ -34,6 +44,23 @@ func _ready() -> void:
 	var hp: Node = get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_signal("damaged"):
 		hp.damaged.connect(_on_damaged)
+	# 光源纹理: 两个尺寸 (玩家身光 + 大日光)
+	_player_aura.texture = ArtCache.radial_gradient(PLAYER_AURA_TEX_SIZE)
+	_sun_aura.texture = ArtCache.radial_gradient(SUN_AURA_TEX_SIZE)
+
+
+func _process(delta: float) -> void:
+	_update_sun_aura(delta)
+
+
+# SunAura 跟随 SkyLightGrid: 玩家头顶有天空 → 启用大日光; 钻进洞穴 → 关掉。0.3s lerp 避免硬切。
+func _update_sun_aura(delta: float) -> void:
+	var tile_x: int = int(floor(global_position.x / TILE_SIZE))
+	var tile_y: int = int(floor(global_position.y / TILE_SIZE))
+	var exposed: bool = SkyLightGrid.is_sky_exposed(tile_x, tile_y)
+	var target: float = SUN_ENERGY_ON if exposed else SUN_ENERGY_OFF
+	var t: float = clamp(delta / SUN_FADE_TIME, 0.0, 1.0)
+	_sun_aura.energy = lerp(_sun_aura.energy, target, t)
 
 
 # 公共接口: 朝向 (+1 右, -1 左)
