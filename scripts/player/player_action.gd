@@ -37,7 +37,7 @@ const SWORD_ARC_LIFETIME := 0.18
 var _attack_cooldown: float = 0.0
 
 # 进食状态
-const EAT_DURATION_SEC := 1.0
+const EAT_DURATION_SEC := 0.2   # 短按 0.2s 就吃 (从 1.0 降下来, 减少 Mac 触摸板右键的 UX 痛点)
 var _eat_t: float = 0.0
 var _eat_item_id: String = ""
 
@@ -341,9 +341,15 @@ func _update_eat_or_place(delta: float) -> void:
 		place_override = false
 		return
 
-	var held: bool = (secondary_held_override == true) if secondary_held_override != null \
-			else Input.is_action_pressed("secondary")
-	var just: bool = secondary_held_override == null and Input.is_action_just_pressed("secondary")
+	# 右键或 F 键都能吃 (F 给 Mac 触摸板用户的备选)
+	var held: bool
+	var just: bool
+	if secondary_held_override != null:
+		held = (secondary_held_override == true)
+		just = false
+	else:
+		held = Input.is_action_pressed("secondary") or Input.is_key_pressed(KEY_F)
+		just = Input.is_action_just_pressed("secondary") or Input.is_key_pressed(KEY_F)
 
 	var inv: Node = _inventory_node()
 	var slot = null if inv == null else inv.current_hotbar_slot()

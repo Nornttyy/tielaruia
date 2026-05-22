@@ -36,11 +36,12 @@ func test_eat_slime_jelly_success() -> void:
 	assert_eq(_slot_count(0), 0)
 
 
-func test_eat_release_before_1s_cancels() -> void:
+func test_eat_release_before_duration_cancels() -> void:
+	# EAT_DURATION_SEC = 0.2s, 测试 0.1s 内释放不应吃成功
 	_give_food("slime_jelly", 1)
 	hunger.current = 50.0
 	action.set_secondary_held_for_test(true)
-	action._physics_process(0.5)
+	action._physics_process(0.1)
 	action.set_secondary_held_for_test(false)
 	action._physics_process(0.01)
 	assert_between(int(hunger.current), 49, 50)
