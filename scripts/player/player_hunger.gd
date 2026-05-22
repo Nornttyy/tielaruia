@@ -81,7 +81,9 @@ func _tick_heal(delta: float) -> void:
 
 
 func _maybe_emit() -> void:
-	var cur_i := int(current)
+	# 用 ceil 避免: 1 帧后 99.997 → int=99 → HUD 立刻显示 9.5, 永远到不了满格
+	# ceil(99.997)=100, 当 current ∈ (99, 100] 都显示 100 满 (6 秒后才降到 99 显示 9.5)
+	var cur_i := int(ceil(current))
 	if cur_i != _last_emit_int:
 		_last_emit_int = cur_i
 		hunger_changed.emit(cur_i, MAX)
