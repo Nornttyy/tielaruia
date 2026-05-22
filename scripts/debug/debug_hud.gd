@@ -26,9 +26,15 @@ func _process(_delta: float) -> void:
 	var tile_x := int(floor(pos.x / TILE_SIZE))
 	var tile_y := int(floor(pos.y / TILE_SIZE))
 	var dark := not SkyLightGrid.is_sky_exposed(tile_x, tile_y)
-	label.text = "FPS: %d\nPos: (%.1f, %.1f)\nTile: (%d, %d)\nDark: %s" % [
+	var hunger: Node = _player.get_node_or_null("PlayerHunger")
+	var hunger_txt: String = "n/a"
+	if hunger != null:
+		hunger_txt = "%.2f / %d" % [hunger.current, hunger.MAX]
+	label.text = "FPS: %d\nPos: (%.1f, %.1f)\nTile: (%d, %d)\nDark: %s\nHunger: %s\nFrames: %d" % [
 		Engine.get_frames_per_second(),
 		pos.x, pos.y,
 		tile_x, tile_y,
 		"YES" if dark else "no",
+		hunger_txt,
+		Engine.get_frames_drawn(),
 	]
