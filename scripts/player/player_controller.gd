@@ -8,6 +8,7 @@ const GRAVITY := 900.0
 const COYOTE_TIME := 0.10
 const LAND_VY_THRESHOLD := 200.0    # 落地时 vy 超此值才扬大灰
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
+const TILE_SIZE := 16
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _player_aura: PointLight2D = $PlayerAura
@@ -26,7 +27,6 @@ const SUN_AURA_TEX_SIZE := 400
 const SUN_ENERGY_ON := 1.5
 const SUN_ENERGY_OFF := 0.0
 const SUN_FADE_TIME := 0.3
-const TILE_SIZE := 16
 
 var _coyote_timer: float = 0.0
 var _facing_right: bool = true
