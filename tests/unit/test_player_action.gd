@@ -192,3 +192,27 @@ func test_place_fails_when_not_placeable():
 	action.place_override = true
 	await wait_frames(3)
 	assert_eq(inv.inventory.slots[0].count, 1, "工具不应被消耗")
+
+
+func test_sword_swing_aims_at_mouse_direction():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	main.boot_to_game()
+	await wait_frames(2)
+	var world = main.get_node("World")
+	var player = world.get_player()
+	var action: Node2D = player.get_node("PlayerAction")
+	# 给玩家一把木剑
+	var inv: Node = player.get_node("PlayerInventory")
+	inv.inventory.add("wood_sword", 1)
+	inv.set_hotbar_selection(0)
+	# 鼠标在玩家右上方 (世界坐标), 期望挥击中心朝向那里
+	var player_pos: Vector2 = player.global_position
+	action.mouse_world_override = player_pos + Vector2(100.0, -100.0)
+	action.primary_override = true
+	await wait_frames(2)
+	# 命中中心应在 player_pos + normalize(100,-100) * SWORD_RANGE_PX * 0.5
+	var expected_dir: Vector2 = Vector2(100.0, -100.0).normalized()
+	var expected_center: Vector2 = player_pos + expected_dir * 18.0  # SWORD_RANGE_PX=36 * 0.5
+	assert_almost_eq(action.last_swing_center.x, expected_center.x, 1.0)
+	assert_almost_eq(action.last_swing_center.y, expected_center.y, 1.0)

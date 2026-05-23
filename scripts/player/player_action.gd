@@ -37,6 +37,11 @@ const SWORD_COOLDOWN := 0.3
 const SWORD_ARC_LIFETIME := 0.18
 var _attack_cooldown: float = 0.0
 
+# 测试用: 记录最近一次挥剑的命中中心点 (玩家中心 + 鼠标方向 * 半径)
+var last_swing_center: Vector2 = Vector2.ZERO
+# 测试用: 注入鼠标世界坐标 (null = 真实 get_global_mouse_position)
+var mouse_world_override: Variant = null
+
 # 进食状态
 const EAT_DURATION_SEC := 0.2   # 短按 0.2s 就吃 (从 1.0 降下来, 减少 Mac 触摸板右键的 UX 痛点)
 var _eat_t: float = 0.0
@@ -58,7 +63,8 @@ func _physics_process(delta: float) -> void:
 	# 持剑 LMB → 攻击, 否则 LMB → 挖
 	if _current_tool_kind() == "sword":
 		_reset_mining()  # 切到剑时清挖进度
-		if Input.is_action_pressed("primary") and _attack_cooldown <= 0.0:
+		var primary_pressed: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
+		if primary_pressed and _attack_cooldown <= 0.0:
 			_swing_sword()
 	else:
 		_update_mining(delta)
@@ -396,38 +402,52 @@ func _swing_sword() -> void:
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
-	# 手持物品挥摆动画
+	# 鼠标方向 (测试用 override > 真实输入)
+	var mouse_world: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
+	var to_mouse: Vector2 = (mouse_world - player.global_position)
+	if to_mouse.length() < 0.001:
+		to_mouse = Vector2(1.0 if player.has_method("facing_dir") and player.facing_dir() > 0 else -1.0, 0)
+	var swing_dir: Vector2 = to_mouse.normalized()
+	# 命中中心点 = 玩家中心 + 方向 × 半个射程
+	var center: Vector2 = player.global_position + swing_dir * SWORD_RANGE_PX * 0.5
+	last_swing_center = center
+	# 手持物品挥摆动画 (角度跟随鼠标; Task 2 实现)
 	var held: Node = player.get_node_or_null("HeldItem")
-	if held != null and held.has_method("play_swing"):
-		held.play_swing()
+	if held != null:
+		if held.has_method("play_swing_directional"):
+			held.play_swing_directional(swing_dir.angle())
+		elif held.has_method("play_swing"):
+			held.play_swing()
 	SfxBank.play("swing", 0.10)
 	var damage: int = _effective_sword_damage()
 	if damage <= 0:
 		return
-	var facing: int = 1
-	if player.has_method("facing_dir"):
-		facing = player.facing_dir()
-	# 攻击中心点: 玩家身前 半个 SWORD_RANGE
-	var center: Vector2 = player.global_position + Vector2(facing * SWORD_RANGE_PX * 0.5, -8.0)
-	# 找范围内所有 slime
-	for s in get_tree().get_nodes_in_group("slimes"):
-		var sn := s as Node2D
+	# 命中判定: 圆形范围, 半径 SWORD_RANGE_PX * 0.7
+	# 目标: slimes (含 zombies, zombie 也 add_to_group("slimes")) + animals (牛/羊/猪)
+	# dict 去重防同节点多组双击 (虽然现在 zombie 已 dedupe, 加 animals 后保险用 dict)
+	var hit_targets: Dictionary = {}
+	for group in ["slimes", "animals"]:
+		for s in get_tree().get_nodes_in_group(group):
+			hit_targets[s.get_instance_id()] = s
+	for target in hit_targets.values():
+		var sn := target as Node2D
 		if sn == null:
 			continue
 		if center.distance_to(sn.global_position) <= SWORD_RANGE_PX * 0.7:
-			if s.has_method("take_damage"):
-				s.take_damage(damage, player.global_position)
-	# 挥剑视觉: 一个白色弧线 sprite, 0.18s 淡出
-	_spawn_swing_arc(player.global_position + Vector2(facing * 18.0, -10.0), facing)
+			if target.has_method("take_damage"):
+				target.take_damage(damage, player.global_position)
+	# 月牙挥击拖尾 (Task 3 重写)
+	_spawn_swing_arc(player.global_position, swing_dir)
 	if player.has_method("shake"):
 		player.shake(3.0)
 
 
-func _spawn_swing_arc(pos: Vector2, facing: int) -> void:
+func _spawn_swing_arc(origin: Vector2, dir: Vector2) -> void:
+	var facing: int = 1 if dir.x >= 0 else -1
 	var arc := Line2D.new()
 	arc.width = 3.0
 	arc.default_color = Color(1, 1, 1, 0.9)
-	arc.global_position = pos
+	arc.global_position = origin + dir * 18.0
 	# 简单弧线: 3 个点构成 ⌒ 形, 朝向 facing
 	if facing > 0:
 		arc.add_point(Vector2(-6, 8))
