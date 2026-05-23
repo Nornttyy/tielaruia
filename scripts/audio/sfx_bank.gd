@@ -38,6 +38,22 @@ func play(sfx_name: String, pitch_variation: float = 0.05, volume_db: float = 0.
 			return
 
 
+# 空间音效: 按距离衰减. world_pos 是发声体世界坐标; max_dist 像素 (一般 240 = 15 tile);
+# 超过 max_dist 直接不播; 二次衰减 (近处饱满, 远处快速变小).
+func play_at(sfx_name: String, world_pos: Vector2, max_dist: float = 240.0,
+		pitch_variation: float = 0.05) -> void:
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player == null:
+		return
+	var dist: float = (player.global_position as Vector2).distance_to(world_pos)
+	if dist > max_dist:
+		return
+	var factor: float = 1.0 - (dist / max_dist)
+	factor = factor * factor  # 二次衰减
+	var atten_db: float = linear_to_db(maxf(factor, 0.001))
+	play(sfx_name, pitch_variation, atten_db)
+
+
 func _master_db() -> float:
 	var v: float = clampf(GameSettings.master_volume, 0.0, 1.0)
 	if v <= 0.001:
