@@ -15,12 +15,14 @@ func _boot() -> Node:
 
 
 func test_world_has_darkness_layer() -> void:
-	# 旧 Light2D 视觉栈已砍 (CanvasModulate + PointLight2D), 改 Terraria 风瓦片光照
+	# 旧 TileMapLayer 暗瓦已升级为 Sprite2D + bilinear 平滑光照
 	var main = await _boot()
 	var world: Node2D = main.get_node("World")
-	var dl: TileMapLayer = world.get_node_or_null("DarknessLayer")
-	assert_not_null(dl, "World 下应有 DarknessLayer (TileMapLayer)")
-	assert_not_null(dl.tile_set, "DarknessLayer 应已注入 TileSet (8 级暗瓦)")
+	var dl: Sprite2D = world.get_node_or_null("DarknessLayer")
+	assert_not_null(dl, "World 下应有 DarknessLayer (Sprite2D)")
+	# 等一帧让 _ready 创建 texture
+	await wait_frames(2)
+	assert_not_null(dl.texture, "DarknessLayer 应已挂 ImageTexture")
 	# 老 CanvasModulate 应该没了
 	assert_null(world.get_node_or_null("CanvasModulate"), "CanvasModulate 应已被移除")
 
@@ -51,20 +53,19 @@ func test_darkness_layer_covers_underground() -> void:
 	var main = await _boot()
 	var world: Node2D = main.get_node("World")
 	var player: CharacterBody2D = world.get_player()
-	var dl: TileMapLayer = world.get_node("DarknessLayer")
-	# 把玩家瞬移到地底 (y=200, 远低于地表)
+	var dl: Sprite2D = world.get_node("DarknessLayer")
+	# 瞬移到地底
 	player.global_position = Vector2(player.global_position.x, 200 * TILE_SIZE)
-	# 等 DarknessLayer 视野更新触发 (UPDATE_INTERVAL = 0.1s)
+	# 等更新触发
 	await wait_frames(15)
-	# 在玩家附近 (3 tile 之外) 应该是有暗瓦片的 (level < 7)
-	var px: int = int(player.global_position.x / TILE_SIZE)
-	var py: int = int(player.global_position.y / TILE_SIZE)
-	var dark_count = 0
-	for dx in range(-5, 6):
-		for dy in range(-5, 6):
-			if dl.get_cell_source_id(Vector2i(px + dx, py + dy)) != -1:
-				dark_count += 1
-	assert_gt(dark_count, 30, "地底玩家视野内应有大量暗瓦片 (got %d)" % dark_count)
+	# 读纹理像素: 玩家远端应有暗 alpha (远 > 6 tile, 光衰减完)
+	var img: Image = dl.texture.get_image()
+	var dark_pixels: int = 0
+	for x in img.get_width():
+		for y in img.get_height():
+			if img.get_pixel(x, y).a > 0.5:
+				dark_pixels += 1
+	assert_gt(dark_pixels, 100, "地底视野内应有大量暗像素 (got %d)" % dark_pixels)
 
 
 func test_torch_placement_creates_torch_fx_with_children() -> void:
