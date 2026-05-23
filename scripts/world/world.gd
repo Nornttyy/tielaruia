@@ -5,6 +5,8 @@ extends Node2D
 const TileSetBuilder = preload("res://scripts/world/tileset_builder.gd")
 const ChunkManagerClass = preload("res://scripts/world/chunk_manager.gd")
 const MinimapDataClass = preload("res://scripts/world/minimap_data.gd")
+const WeatherClass = preload("res://scripts/world/weather.gd")
+const RainLayerClass = preload("res://scripts/fx/rain_layer.gd")
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
@@ -43,6 +45,8 @@ const MINIMAP_MARK_INTERVAL := 0.1  # 每 0.1s 标记一次玩家周围 (减少�
 var spawn_point: Vector2i
 var chunk_manager: ChunkManager
 var minimap_data: Node
+var weather: Node
+var rain_layer: CanvasLayer
 var village_villager_spawns: Array = []
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
@@ -65,6 +69,15 @@ func _ready() -> void:
 	minimap_data = MinimapDataClass.new()
 	minimap_data.name = "MinimapData"
 	add_child(minimap_data)
+	# 天气 + 雨视觉
+	weather = WeatherClass.new()
+	weather.name = "Weather"
+	add_child(weather)
+	rain_layer = RainLayerClass.new()
+	rain_layer.name = "RainLayer"
+	add_child(rain_layer)
+	weather.weather_changed.connect(_on_weather_changed)
+	weather.lightning_flash.connect(_on_lightning_flash)
 	# 初始加载中心 ±VIEW_RADIUS
 	chunk_manager.ensure_loaded(0)
 	# 找出生点 (chunk 0 内)
@@ -125,11 +138,24 @@ func _mark_explored_around_player() -> void:
 	var pty: int = int(floor(player.global_position.y / TILE_SIZE))
 	var hx: int = MINIMAP_VIEW_TILES_X / 2
 	var hy: int = MINIMAP_VIEW_TILES_Y / 2
-	minimap_data.mark_rect(ptx - hx, pty - hy, ptx + hx, pty + hy)
+	minimap_data.mark_rect(chunk_manager, ptx - hx, pty - hy, ptx + hx, pty + hy)
 
 
 func _physics_process(_delta: float) -> void:
 	_check_chunk_load()
+
+
+func _on_weather_changed(state: String) -> void:
+	if rain_layer != null:
+		rain_layer.set_enabled(state == "rainy")
+
+
+func _on_lightning_flash() -> void:
+	if rain_layer != null:
+		rain_layer.flash_lightning()
+	# 雷声 (远距离低频 rumble) — 借用 SfxBank thunder, 没有的话就 skip
+	if SfxBank != null and SfxBank.has_method("play"):
+		SfxBank.play("thunder", 0.10)
 
 
 func _check_chunk_load() -> void:
@@ -170,13 +196,12 @@ func _on_chunk_unloaded(cx: int) -> void:
 		for y in ChunkConstants.WORLD_HEIGHT:
 			terrain_layer.set_cell(Vector2i(world_x, y), -1)
 		SkyLightGrid.invalidate_column(world_x)
-	# 清 entity (slime + drop) 在该 chunk 像素范围内
-	for ent in get_tree().get_nodes_in_group("slimes"):
-		if ent.global_position.x >= chunk_start_px and ent.global_position.x < chunk_end_px:
-			ent.queue_free()
-	for ent in get_tree().get_nodes_in_group("item_drops"):
-		if ent.global_position.x >= chunk_start_px and ent.global_position.x < chunk_end_px:
-			ent.queue_free()
+	# 清该 chunk 像素范围内所有"短命"实体: 怪物 (slime/zombie) + 动物 (cow/sheep/pig) + 掉落物
+	# 注意: villager 用专门 group, 由村庄系统管, 这里不清
+	for group in ["slimes", "zombies", "animals", "item_drops"]:
+		for ent in get_tree().get_nodes_in_group(group):
+			if ent.global_position.x >= chunk_start_px and ent.global_position.x < chunk_end_px:
+				ent.queue_free()
 	# 清该 chunk 范围内所有火把光
 	world_lighting.on_chunk_unloaded(cx, ChunkConstants.CHUNK_WIDTH)
 	# 清该 chunk 范围内黑暗瓦片

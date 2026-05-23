@@ -85,6 +85,35 @@ func _build_all() -> void:
 	# 史莱姆跳: 弹性"boing", 200→130 chirp, 加抖动
 	# 史莱姆跳: 湿润胶体"波丁" — 棕噪声 splat + 低 sine 下沉, 三阶低通超湿
 	_sfx["slime_hop"] = _glop(0.30)
+	# 雷声: 远距离低频隆隆, ~1.2s 长棕噪声 + 三阶超低通, 衰减包络
+	_sfx["thunder"] = _thunder(1.2)
+
+
+# 雷声: 棕噪声 + 三阶超低通 + 缓慢衰减包络, 拟远距离闷雷
+func _thunder(duration: float) -> AudioStreamWAV:
+	var samples := int(duration * SAMPLE_RATE)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	var bn := BrownNoise.new()
+	var lp1 := 0.0
+	var lp2 := 0.0
+	var lp3 := 0.0
+	for i in samples:
+		var t: float = float(i) / float(samples)
+		# 包络: 0~0.1 attack, 0.1~1.0 缓慢衰减
+		var env: float
+		if t < 0.1:
+			env = t / 0.1
+		else:
+			env = 1.0 - (t - 0.1) / 0.9
+			env = env * env  # 平方衰减更自然
+		var raw: float = bn.sample() * 0.85 * env
+		# 三阶超低通 (alpha 0.08 = 仅留 ~200Hz 以下)
+		lp1 = _lpf(lp1, raw, 0.08)
+		lp2 = _lpf(lp2, lp1, 0.08)
+		lp3 = _lpf(lp3, lp2, 0.08)
+		_write_sample(data, i, lp3)
+	return _wrap_stream(data)
 
 
 # 棕色噪声生成器: 每次返回积分的随机值, 频谱偏低频. -1..1 范围.
