@@ -6,8 +6,12 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const MAX_HEALTH := 10   # 木剑 3 dmg × 4 击, 石剑 5 dmg × 2 击
 const CONTACT_DAMAGE := 2
 const GRAVITY := 900.0
-const HOP_VY := -240.0          # 跳高 ~32 px, 稳稳越过 1 格方块 (留余量避免临界撞墙)
-const HOP_VX := 75.0            # 横向速度稍涨, 配合更高的跳过更宽容
+# 跳高/跳远: 每次跳前随机挑 (tile, 16 px 一格).
+# 高度 1-2 格, 距离 0-3 格. 由物理公式反算 vy/vx.
+const HOP_HEIGHT_MIN_TILES := 1.0
+const HOP_HEIGHT_MAX_TILES := 2.0
+const HOP_DIST_MIN_TILES := 0.0
+const HOP_DIST_MAX_TILES := 3.0
 const HOP_COOLDOWN_MIN := 0.8
 const HOP_COOLDOWN_MAX := 1.8
 const AGGRO_RANGE_PX := 160.0   # 10 tiles
@@ -18,6 +22,7 @@ var current_health: int = MAX_HEALTH
 var _hop_timer: float = 0.5
 var _hit_flash: float = 0.0
 var _is_dying: bool = false
+var _current_hop_vx: float = 0.0  # 本次跳跃的目标横速 (空中维持用, 含方向符号)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -48,11 +53,10 @@ func _physics_process(delta: float) -> void:
 			_attempt_hop()
 
 	move_and_slide()
-	# 空中贴墙时, move_and_slide.slide() 会把横速归零, 导致跳起来变成纯垂直, 永远过不去 1 格方块.
-	# 强制维持空中横速 = 朝向 × HOP_VX, 让 slime 攀越方块边缘后能水平推进上去.
-	if not is_on_floor():
-		var dir_x: float = -1.0 if sprite.flip_h else 1.0
-		velocity.x = dir_x * HOP_VX
+	# 空中贴墙时 move_and_slide.slide() 会把横速归零导致跳成垂直, 过不去方块.
+	# 维持空中横速 = 本次跳跃设定的 _current_hop_vx (含方向符号).
+	if not is_on_floor() and _current_hop_vx != 0.0:
+		velocity.x = _current_hop_vx
 	# 撞墙 + 落地 → 下次跳转反方向 (避免卡墙原地). 只有 _hop_timer 接近触发时才反向,
 	# 给 slime 多次跳跃机会越过方块.
 	if is_on_wall() and is_on_floor() and _hop_timer < 0.05:
@@ -77,8 +81,18 @@ func _attempt_hop() -> void:
 			sprite.flip_h = dir < 0
 		else:
 			return
-	velocity.x = dir * HOP_VX
-	velocity.y = HOP_VY
+	# 本次跳跃: 高度 1-2 tile, 距离 0-3 tile, 由物理反算 vy/vx
+	var h_tiles: float = randf_range(HOP_HEIGHT_MIN_TILES, HOP_HEIGHT_MAX_TILES)
+	var d_tiles: float = randf_range(HOP_DIST_MIN_TILES, HOP_DIST_MAX_TILES)
+	var h_px: float = h_tiles * TILE_SIZE
+	var d_px: float = d_tiles * TILE_SIZE
+	# h = vy² / (2g) → vy = sqrt(2*g*h)
+	var vy_mag: float = sqrt(2.0 * GRAVITY * h_px)
+	# 滞空 = 2*vy/g, 距离 = vx * 滞空 → vx = d*g / (2*vy)
+	var vx_mag: float = 0.0 if vy_mag == 0.0 else (d_px * GRAVITY) / (2.0 * vy_mag)
+	_current_hop_vx = dir * vx_mag
+	velocity.x = _current_hop_vx
+	velocity.y = -vy_mag
 	sprite.play("hop")
 
 
