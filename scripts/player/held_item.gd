@@ -1,28 +1,33 @@
 # 手持物品视觉. 跟着 hotbar 选中的物品显示在玩家手里, 攻击/挖矿时挥摆动画.
 # 由 player_controller 在 _ready 绑定 inventory + 每帧 set_facing; 由 player_action 在
 # 挥剑/挖矿时调 play_swing.
+#
+# 关键点: sprite 的旋转/缩放支点 = 玩家手部. 用 centered=false + offset 把贴图的
+# 底部中心对齐到 position 这个"手"点, 这样挥摆时手柄不离手, 像真的握住一样.
 extends Sprite2D
 
 const HAND_OFFSET_X := 5.0     # 手相对玩家中心 x 偏移
-const HAND_OFFSET_Y := -12.0   # y (玩家中部胸口位置)
-const HAND_SIZE := 0.55        # 物品在手上整体缩小到 55% (16px → ~9px), 不显大块
+const HAND_OFFSET_Y := -10.0   # y (玩家中部胸口位置)
+const TOOL_SIZE := 1.0         # 工具 (剑/镐/斧) 原尺寸
+const BLOCK_SIZE := 0.55       # 方块/材料 缩小到 55% 避免太胖
 const SWING_ANGLE_DEG := 75.0
 const SWING_DURATION := 0.18
 
 var _player_inventory: Node = null
 var _facing_right: bool = true
 var _tween: Tween = null
+var _current_size: float = TOOL_SIZE
 
 
 func _ready() -> void:
-	centered = true
+	# 支点放在贴图底部中心: 玩家手抓在物品底端 (剑柄 / 方块底沿)
+	centered = false
+	offset = Vector2(-8, -16)
 	position = Vector2(HAND_OFFSET_X, HAND_OFFSET_Y)
-	scale = Vector2(HAND_SIZE, HAND_SIZE)
 	visible = false
 	z_index = 1  # 画在玩家身体前面
 
 
-# player_controller._ready 调
 func bind_inventory(inv: Node) -> void:
 	_player_inventory = inv
 	if inv.has_signal("hotbar_selection_changed"):
@@ -32,17 +37,14 @@ func bind_inventory(inv: Node) -> void:
 	_refresh()
 
 
-# player_controller._physics_process 每帧调 (face 跟着 player flip_h 走)
 func set_facing(right: bool) -> void:
 	if right == _facing_right:
 		return
 	_facing_right = right
-	# 镜像 + 反向手偏移. 缩放保持 HAND_SIZE, 只翻 x 正负
-	scale.x = HAND_SIZE if right else -HAND_SIZE
+	_apply_scale()
 	position.x = HAND_OFFSET_X if right else -HAND_OFFSET_X
 
 
-# player_action 调: 一次挥砍/挥镐动画
 func play_swing() -> void:
 	if not visible:
 		return
@@ -51,7 +53,7 @@ func play_swing() -> void:
 	rotation = 0.0
 	_tween = create_tween()
 	var dir: float = 1.0 if _facing_right else -1.0
-	# 起手: 向后抬 (反向 ~30°), 然后劈到前方 +75°, 再回 0
+	# 起手: 向后抬 ~30°, 然后劈到前方 +75°, 再回 0
 	_tween.tween_property(self, "rotation", deg_to_rad(-30.0 * dir), SWING_DURATION * 0.25)
 	_tween.tween_property(self, "rotation", deg_to_rad(SWING_ANGLE_DEG * dir), SWING_DURATION * 0.35)
 	_tween.tween_property(self, "rotation", 0.0, SWING_DURATION * 0.40)
@@ -75,3 +77,16 @@ func _refresh() -> void:
 		return
 	texture = tex
 	visible = true
+	# 工具用原大小, 其他物品缩小
+	_current_size = TOOL_SIZE if _is_tool(slot.item_id) else BLOCK_SIZE
+	_apply_scale()
+
+
+func _is_tool(item_id: String) -> bool:
+	var def = ItemDB.get_def(item_id)
+	return def != null and def.tool_kind != ""
+
+
+func _apply_scale() -> void:
+	var sx: float = _current_size if _facing_right else -_current_size
+	scale = Vector2(sx, _current_size)
