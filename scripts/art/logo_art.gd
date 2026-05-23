@@ -3,12 +3,12 @@
 extends RefCounted
 
 const TEXT := "teilaruia"
-const FONT_SIZE := 64
-const COLOR_MAIN := Color8(242, 194, 101)       # 金黄
-const COLOR_OUTLINE := Color8(58, 26, 10)       # 深棕描边
-const COLOR_SHADOW := Color8(0, 0, 0, 180)      # 阴影
-const OUTLINE_PX := 3                            # 描边粗细
-const SHADOW_OFFSET := Vector2(4, 4)             # 阴影位移
+const FONT_SIZE := 88
+const COLOR_MAIN := Color8(255, 220, 130)       # 亮金黄
+const COLOR_OUTLINE := Color8(80, 36, 16)       # 深棕描边 (略深)
+const COLOR_SHADOW := Color8(0, 0, 0, 200)      # 阴影
+const OUTLINE_PX := 4                            # 描边粗细
+const SHADOW_OFFSET := Vector2(5, 5)             # 阴影位移
 
 
 # 应用到主 Label：金黄 + 深棕描边

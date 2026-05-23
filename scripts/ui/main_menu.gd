@@ -36,9 +36,11 @@ var _slime_base_y: Array[float] = []
 
 func _ready() -> void:
 	_setup_sky_gradient()
+	_setup_stars()
 	_setup_hills()
 	_setup_trees()
 	_setup_clouds()
+	_setup_torches()
 	_setup_slimes()
 	_setup_title()
 	_start_title_breathing()
@@ -56,11 +58,13 @@ func _process(delta: float) -> void:
 # ---- background ----
 
 func _setup_sky_gradient() -> void:
-	# 在 Sky ColorRect 上叠一个 GradientTexture2D TextureRect 实现渐变
+	# 在 Sky ColorRect 上叠一个 GradientTexture2D TextureRect 实现渐变.
+	# 夕阳色板: 顶 深红紫 → 中 暖橙 → 底 金黄 → 地平线 暖肉粉, 营造黄昏氛围
 	var gradient := Gradient.new()
-	gradient.set_color(0, Color8(42, 26, 58))
-	gradient.add_point(0.5, Color8(196, 110, 60))
-	gradient.set_color(gradient.get_point_count() - 1, Color8(242, 194, 101))
+	gradient.set_color(0, Color8(80, 50, 90))           # 顶: 深紫红
+	gradient.add_point(0.35, Color8(220, 110, 90))      # 暮色橙红
+	gradient.add_point(0.65, Color8(255, 180, 110))     # 金橙
+	gradient.set_color(gradient.get_point_count() - 1, Color8(255, 210, 150))  # 底: 暖肉粉
 	var grad_tex := GradientTexture2D.new()
 	grad_tex.gradient = gradient
 	grad_tex.fill_from = Vector2(0, 0)
@@ -98,6 +102,66 @@ func _setup_trees() -> void:
 		# 12×16 像素 × scale，树底贴到地面 (y = 0.75 * 720)
 		s.position = Vector2(x_positions[i], VIEWPORT_SIZE.y * 0.75 - 16.0 * scales[i])
 		_trees_root.add_child(s)
+
+
+func _setup_stars() -> void:
+	# 暮色顶部 14 颗微亮星, 随机位置 + 缓慢闪烁
+	var sky_layer: Control = $BackgroundLayer
+	for i in 14:
+		var s := ColorRect.new()
+		s.color = Color(1, 1, 0.88, 0.7)
+		s.size = Vector2(2, 2)
+		var x: float = randf() * VIEWPORT_SIZE.x
+		var y: float = randf_range(20.0, VIEWPORT_SIZE.y * 0.28)
+		s.position = Vector2(x, y)
+		s.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		sky_layer.add_child(s)
+		var period: float = randf_range(1.2, 2.6)
+		var min_a: float = randf_range(0.15, 0.45)
+		var t := create_tween().set_loops()
+		t.tween_property(s, "modulate:a", min_a, period).set_trans(Tween.TRANS_SINE)
+		t.tween_property(s, "modulate:a", 1.0, period).set_trans(Tween.TRANS_SINE)
+
+
+func _setup_torches() -> void:
+	# 地上 2 个小火把: 暖橙竖块 + 黄火苗 + 周围浅光晕, 火苗 scale.y 跳动
+	var ground_layer: Control = $BackgroundLayer
+	var torch_x := [180.0, 1050.0]
+	var ground_y: float = VIEWPORT_SIZE.y * 0.75
+	for tx in torch_x:
+		# 木棍
+		var stick := ColorRect.new()
+		stick.color = Color8(110, 70, 40)
+		stick.size = Vector2(4, 14)
+		stick.position = Vector2(tx, ground_y - 14.0)
+		stick.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ground_layer.add_child(stick)
+		# 火苗 (Sprite-like 用 ColorRect 模拟)
+		var flame := ColorRect.new()
+		flame.color = Color(1, 0.7, 0.25, 1)
+		flame.size = Vector2(6, 10)
+		flame.position = Vector2(tx - 1, ground_y - 22.0)
+		flame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		flame.pivot_offset = flame.size / 2.0
+		ground_layer.add_child(flame)
+		# 光晕 (大半透明橙圆 — 用 ColorRect 加圆形 stylebox 太麻烦, 直接渐变 sprite)
+		var glow := ColorRect.new()
+		glow.color = Color(1, 0.6, 0.2, 0.18)
+		glow.size = Vector2(60, 60)
+		glow.position = Vector2(tx - 28, ground_y - 50.0)
+		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		glow.pivot_offset = glow.size / 2.0
+		ground_layer.add_child(glow)
+		# 火苗 + 光晕同步闪烁
+		var t := create_tween().set_loops()
+		t.tween_property(flame, "scale:y", 1.18, 0.10).set_trans(Tween.TRANS_QUAD)
+		t.parallel().tween_property(glow, "scale", Vector2(1.12, 1.12), 0.10)
+		t.tween_property(flame, "scale:y", 0.95, 0.13)
+		t.parallel().tween_property(glow, "scale", Vector2(0.95, 0.95), 0.13)
+		t.tween_property(flame, "scale:y", 1.08, 0.09)
+		t.parallel().tween_property(glow, "scale", Vector2(1.05, 1.05), 0.09)
+		t.tween_property(flame, "scale:y", 1.0, 0.12)
+		t.parallel().tween_property(glow, "scale", Vector2(1.0, 1.0), 0.12)
 
 
 func _setup_clouds() -> void:
@@ -175,12 +239,25 @@ func _start_title_breathing() -> void:
 	var shadow: Label = $TitleLayer/LogoShadow
 	var base_y := logo.offset_top
 	var sh_base := shadow.offset_top
+	# Y 漂浮 (上下 4 px)
 	var t := create_tween().set_loops()
 	t.tween_property(logo, "offset_top", base_y - 4.0, 1.5).set_trans(Tween.TRANS_SINE)
 	t.tween_property(logo, "offset_top", base_y, 1.5).set_trans(Tween.TRANS_SINE)
 	var t2 := create_tween().set_loops()
 	t2.tween_property(shadow, "offset_top", sh_base - 4.0, 1.5).set_trans(Tween.TRANS_SINE)
 	t2.tween_property(shadow, "offset_top", sh_base, 1.5).set_trans(Tween.TRANS_SINE)
+	# 缩放呼吸 (1.0 ↔ 1.06), 配合 pivot 居中
+	logo.pivot_offset = logo.size / 2.0
+	shadow.pivot_offset = shadow.size / 2.0
+	var t3 := create_tween().set_loops()
+	t3.tween_property(logo, "scale", Vector2(1.06, 1.06), 1.8).set_trans(Tween.TRANS_SINE)
+	t3.tween_property(logo, "scale", Vector2(1.0, 1.0), 1.8).set_trans(Tween.TRANS_SINE)
+	# 主标签颜色冷暖循环, 模拟金光呼吸
+	var c_warm := Color8(255, 230, 150)
+	var c_cool := Color8(220, 180, 80)
+	var t4 := create_tween().set_loops()
+	t4.tween_property(logo, "theme_override_colors/font_color", c_warm, 2.2).set_trans(Tween.TRANS_SINE)
+	t4.tween_property(logo, "theme_override_colors/font_color", c_cool, 2.2).set_trans(Tween.TRANS_SINE)
 
 
 # ---- buttons ----
@@ -197,8 +274,18 @@ func _setup_buttons() -> void:
 		var btn: Button = $ButtonLayer/VBox.get_node(row_name + "/Button")
 		var arrow: Label = $ButtonLayer/VBox.get_node(row_name + "/Arrow")
 		_apply_button_style(btn)
-		btn.mouse_entered.connect(func(): arrow.visible = true)
-		btn.mouse_exited.connect(func(): arrow.visible = false)
+		btn.pivot_offset = btn.size / 2.0
+		btn.mouse_entered.connect(func():
+			arrow.visible = true
+			# hover 时按钮微微放大 (1.05) 给视觉反馈
+			var tw := create_tween()
+			tw.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.08).set_trans(Tween.TRANS_QUAD)
+		)
+		btn.mouse_exited.connect(func():
+			arrow.visible = false
+			var tw := create_tween()
+			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.10).set_trans(Tween.TRANS_QUAD)
+		)
 		var cb: Callable = entry["callback"]
 		if cb.is_valid():
 			btn.pressed.connect(cb)
