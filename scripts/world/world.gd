@@ -7,6 +7,9 @@ const ChunkManagerClass = preload("res://scripts/world/chunk_manager.gd")
 const MinimapDataClass = preload("res://scripts/world/minimap_data.gd")
 const WeatherClass = preload("res://scripts/world/weather.gd")
 const RainLayerClass = preload("res://scripts/fx/rain_layer.gd")
+const FirefliesClass = preload("res://scripts/fx/fireflies.gd")
+const ShootingStarClass = preload("res://scripts/fx/shooting_star.gd")
+const FallingLeavesClass = preload("res://scripts/fx/falling_leaves.gd")
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
@@ -47,6 +50,9 @@ var chunk_manager: ChunkManager
 var minimap_data: Node
 var weather: Node
 var rain_layer: CanvasLayer
+var fireflies: Node2D
+var shooting_star: Node2D
+var falling_leaves: Node2D
 var village_villager_spawns: Array = []
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
@@ -78,6 +84,16 @@ func _ready() -> void:
 	add_child(rain_layer)
 	weather.weather_changed.connect(_on_weather_changed)
 	weather.lightning_flash.connect(_on_lightning_flash)
+	# 夜晚气氛: 萤火虫 / 流星 / 树下飘叶子
+	fireflies = FirefliesClass.new()
+	fireflies.name = "Fireflies"
+	add_child(fireflies)
+	shooting_star = ShootingStarClass.new()
+	shooting_star.name = "ShootingStar"
+	add_child(shooting_star)
+	falling_leaves = FallingLeavesClass.new()
+	falling_leaves.name = "FallingLeaves"
+	add_child(falling_leaves)
 	# 初始加载中心 ±VIEW_RADIUS
 	chunk_manager.ensure_loaded(0)
 	# 找出生点 (chunk 0 内)
@@ -294,6 +310,13 @@ func _spawn_player() -> void:
 	entities_root.add_child(player)
 	camera.reparent(player)
 	camera.position = Vector2.ZERO
+	# 把 player 引用给气氛效果, 让它们知道在哪里生成
+	if fireflies != null:
+		fireflies.bind_player(player)
+	if shooting_star != null:
+		shooting_star.bind_player(player)
+	if falling_leaves != null:
+		falling_leaves.bind_player(player)
 
 
 func _spawn_world_pos() -> Vector2:
