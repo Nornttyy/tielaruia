@@ -365,6 +365,17 @@ func _on_new_game_pressed() -> void:
 	t.tween_callback(func(): start_game.emit())
 
 
+# 回主菜单时复位淡出状态: VBox 重新可见, FadeOverlay 透明.
+# 由 main.gd 在 _show_menu_state 重新显示菜单时调用.
+func reset_visuals() -> void:
+	var fade: ColorRect = $ButtonLayer/FadeOverlay
+	var vbox: VBoxContainer = $ButtonLayer/VBox
+	if fade != null:
+		fade.modulate.a = 0.0
+	if vbox != null:
+		vbox.modulate.a = 1.0
+
+
 func _on_settings_pressed() -> void:
 	$SettingsPanel.visible = true
 	$ButtonLayer/VBox.visible = false

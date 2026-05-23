@@ -33,6 +33,9 @@ func _show_menu_state() -> void:
 	_state = "menu"
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.visible = true
+		# 复位"新游戏"按钮的淡出 tween (不然回主菜单是黑屏 + 看不见按钮)
+		if _main_menu.has_method("reset_visuals"):
+			_main_menu.reset_visuals()
 	_pause_menu.close()
 	_death_screen.hide_death()
 
