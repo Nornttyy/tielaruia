@@ -94,7 +94,7 @@ func _attempt_hop() -> void:
 	velocity.x = _current_hop_vx
 	velocity.y = -vy_mag
 	sprite.play("hop")
-	SfxBank.play_at("slime_hop", global_position, 240.0, 0.25)  # 远于 15 tile 静音
+	SfxBank.play_at("slime_hop", global_position, 128.0, 0.25)  # 远于 8 tile 静音
 
 
 func _on_anim_done() -> void:
