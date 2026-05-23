@@ -5,6 +5,7 @@ extends Sprite2D
 
 const HAND_OFFSET_X := 5.0     # 手相对玩家中心 x 偏移
 const HAND_OFFSET_Y := -12.0   # y (玩家中部胸口位置)
+const HAND_SIZE := 0.55        # 物品在手上整体缩小到 55% (16px → ~9px), 不显大块
 const SWING_ANGLE_DEG := 75.0
 const SWING_DURATION := 0.18
 
@@ -16,6 +17,7 @@ var _tween: Tween = null
 func _ready() -> void:
 	centered = true
 	position = Vector2(HAND_OFFSET_X, HAND_OFFSET_Y)
+	scale = Vector2(HAND_SIZE, HAND_SIZE)
 	visible = false
 	z_index = 1  # 画在玩家身体前面
 
@@ -35,8 +37,8 @@ func set_facing(right: bool) -> void:
 	if right == _facing_right:
 		return
 	_facing_right = right
-	# 镜像 + 反向手偏移
-	scale.x = 1.0 if right else -1.0
+	# 镜像 + 反向手偏移. 缩放保持 HAND_SIZE, 只翻 x 正负
+	scale.x = HAND_SIZE if right else -HAND_SIZE
 	position.x = HAND_OFFSET_X if right else -HAND_OFFSET_X
 
 
