@@ -1,48 +1,65 @@
-# 瓦片级光照: BFS 扩散 (Terraria 风).
-# 光值 0..MAX_LIGHT (15). 来源:
-#   - 天空暴露 tile: TimeOfDay.sky_light_level() (15 白天 / 4 夜间 lerp)
-#   - 火把 tile: TORCH_LIGHT 14
-#   - 玩家 tile: PLAYER_LIGHT 5 (小范围辅助光)
+# 瓦片级光照: 两套 BFS 扩散 (Terraria 风).
+#   Pass 1 (天光): 高衰减 — 挖个洞不会让天光灌满深处. ATTEN_AIR=3.
+#   Pass 2 (火把+玩家): 低衰减 — 火把照亮一片. ATTEN_AIR=1.
+# 最终每 tile 取两 pass 的 max.
 #
-# 扩散: 每往邻居走一步, 空气 -1, 实心墙 -3. 光自然被墙挡住.
-# 入口: compute_region(chunk_manager, x0, y0, x1, y1, player_tile, torch_tiles) → Dict {Vector2i: int}
+# 光值 0..15. 数值越大越亮.
 extends RefCounted
 
 const MAX_LIGHT := 15
 const PLAYER_LIGHT := 5
 const TORCH_LIGHT := 14
-const ATTEN_AIR := 1
-const ATTEN_SOLID := 3   # 墙吃光更多, 但不至于一格全挡死
+
+# 天光: 穿空气衰减很大, 模拟"洞穴里没几格就黑"
+const SKY_ATTEN_AIR := 3
+const SKY_ATTEN_SOLID := 4
+
+# 火把/玩家: 穿空气慢衰减, 火把能照亮一圈
+const PT_ATTEN_AIR := 1
+const PT_ATTEN_SOLID := 3
 
 
-# 计算 [x0, x1) × [y0, y1) 区域每个 tile 的光值. BFS 起点 = 区域内所有源点.
-# chunk_manager 用于查 tile 类型 (判断墙 vs 空气).
 static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: int,
 		player_tile: Vector2i, torch_tiles: Array) -> Dictionary:
-	var grid: Dictionary = {}
-	var queue: Array = []
 	var sky_light: int = TimeOfDay.sky_light_level()
-	# 1. 天空暴露 tile 直接置为 sky_light + 入队作为扩散源
+	# Pass 1: 天光. 所有 sky_exposed tile 作为源, 高衰减扩散.
+	var sky_grid: Dictionary = {}
+	var sky_queue: Array = []
 	for x in range(x0, x1):
 		for y in range(y0, y1):
 			if SkyLightGrid.is_sky_exposed(x, y):
 				var p := Vector2i(x, y)
-				grid[p] = sky_light
-				queue.append(p)
-	# 2. 火把源
+				sky_grid[p] = sky_light
+				sky_queue.append(p)
+	_bfs(chunk_manager, x0, y0, x1, y1, sky_grid, sky_queue, SKY_ATTEN_AIR, SKY_ATTEN_SOLID)
+
+	# Pass 2: 火把 + 玩家. 独立 BFS, 低衰减.
+	var pt_grid: Dictionary = {}
+	var pt_queue: Array = []
 	for t in torch_tiles:
 		var tp: Vector2i = t
 		if tp.x < x0 or tp.x >= x1 or tp.y < y0 or tp.y >= y1:
 			continue
-		if int(grid.get(tp, 0)) < TORCH_LIGHT:
-			grid[tp] = TORCH_LIGHT
-			queue.append(tp)
-	# 3. 玩家源
+		pt_grid[tp] = TORCH_LIGHT
+		pt_queue.append(tp)
 	if player_tile.x >= x0 and player_tile.x < x1 and player_tile.y >= y0 and player_tile.y < y1:
-		if int(grid.get(player_tile, 0)) < PLAYER_LIGHT:
-			grid[player_tile] = PLAYER_LIGHT
-			queue.append(player_tile)
-	# 4. BFS 扩散
+		if int(pt_grid.get(player_tile, 0)) < PLAYER_LIGHT:
+			pt_grid[player_tile] = PLAYER_LIGHT
+			pt_queue.append(player_tile)
+	_bfs(chunk_manager, x0, y0, x1, y1, pt_grid, pt_queue, PT_ATTEN_AIR, PT_ATTEN_SOLID)
+
+	# 合并: 每 tile 取两 pass 的 max
+	var out: Dictionary = sky_grid
+	for k in pt_grid.keys():
+		var v: int = int(pt_grid[k])
+		if int(out.get(k, 0)) < v:
+			out[k] = v
+	return out
+
+
+# BFS 内部. 把 queue 里的 tile 按衰减规则扩散到邻居.
+static func _bfs(chunk_manager: Node, x0: int, y0: int, x1: int, y1: int,
+		grid: Dictionary, queue: Array, atten_air: int, atten_solid: int) -> void:
 	var dirs := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 	while not queue.is_empty():
 		var pos: Vector2i = queue.pop_front()
@@ -55,9 +72,8 @@ static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: i
 				continue
 			var tid: int = chunk_manager.get_tile(np.x, np.y)
 			var is_wall: bool = tid != Tiles.AIR and Tiles.is_solid(tid)
-			var atten: int = ATTEN_SOLID if is_wall else ATTEN_AIR
+			var atten: int = atten_solid if is_wall else atten_air
 			var nv: int = cur - atten
 			if nv > 0 and int(grid.get(np, 0)) < nv:
 				grid[np] = nv
 				queue.append(np)
-	return grid
