@@ -56,6 +56,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_update_sun_aura(delta)
+	_update_music_context()
 
 
 # SunAura 跟随 SkyLightGrid: 玩家头顶有天空 → 启用大日光; 钻进洞穴 → 关掉。0.3s lerp 避免硬切。
@@ -66,6 +67,21 @@ func _update_sun_aura(delta: float) -> void:
 	var target: float = SUN_ENERGY_ON if exposed else SUN_ENERGY_OFF
 	var t: float = clamp(delta / SUN_FADE_TIME, 0.0, 1.0)
 	_sun_aura.energy = lerp(_sun_aura.energy, target, t)
+
+
+# 背景音乐场景检测: 地下 → cave, 地表 + 白天 → day, 地表 + 夜晚 → night
+func _update_music_context() -> void:
+	var tile_x: int = int(floor(global_position.x / TILE_SIZE))
+	var tile_y: int = int(floor(global_position.y / TILE_SIZE))
+	var exposed: bool = SkyLightGrid.is_sky_exposed(tile_x, tile_y)
+	var ctx: String
+	if not exposed:
+		ctx = "cave"
+	elif TimeOfDay.is_night():
+		ctx = "night"
+	else:
+		ctx = "day"
+	MusicBank.set_context(ctx)
 
 
 # 公共接口: 朝向 (+1 右, -1 左)
