@@ -56,8 +56,8 @@ func _build_all() -> void:
 	_sfx["jump"] = _whoosh(0.12, 200.0, 350.0, 0.25)
 	# 落地: 厚实 thud, 60Hz 主导
 	_sfx["land"] = _thunk(0.13, 55.0, 0.35)
-	# 捡物: Minecraft 式 "波" — 短促 sine 频率下滑, 快 attack 快衰减
-	_sfx["pickup"] = _blop(0.08, 230.0, 0.28)
+	# 捡物: 人类啵嘴 — 极短气流噪声爆破 + 腔体共鸣 sine 下滑
+	_sfx["pickup"] = _lip_pop(0.32)
 	# 挥剑: 短 whoosh 下降
 	_sfx["swing"] = _whoosh(0.13, 350.0, 150.0, 0.22)
 	# 击中: 低频 thud + 短噪声
@@ -210,30 +210,44 @@ func _chomp(duration: float, amp: float) -> AudioStreamWAV:
 	return _wrap_stream(data)
 
 
-# Minecraft 式 "波" 拾取音: sine 频率从 base*1.5 快速下滑到 base*0.7
-# 极短 (60-100ms), 锐衰减. 配合 SfxBank.play 的随机变调更像原版.
-func _blop(duration: float, base_freq: float, amp: float) -> AudioStreamWAV:
-	var samples := int(duration * SAMPLE_RATE)
+# 啵嘴: 极短气流爆破 + 腔体下沉
+#   - 前 6ms 强噪声 (双唇分开瞬间的气流), 厚低通让它"湿"
+#   - 整体 50ms, sine 320→160Hz 下滑 (口腔共鸣), 锐衰减
+#   - 强随机变调 (调用时 ±20%) 让每次都不一样
+func _lip_pop(amp: float) -> AudioStreamWAV:
+	var duration: float = 0.05
+	var samples: int = int(duration * SAMPLE_RATE)
 	var data := PackedByteArray()
 	data.resize(samples * 2)
-	var phase := 0.0
-	var lp1 := 0.0
-	var attack_n: int = int(0.003 * SAMPLE_RATE)  # 3ms 极快 attack
+	var phase: float = 0.0
+	var bn := BrownNoise.new()
+	var lp1: float = 0.0
+	var lp2: float = 0.0
+	var attack_n: int = int(0.0008 * SAMPLE_RATE)  # 0.8ms 超快 attack 给清脆"啵"感
+	var burst_n: int = int(0.006 * SAMPLE_RATE)    # 6ms 气流噪声爆破
 	for i in samples:
 		var t: float = float(i) / float(samples)
-		# 频率快速下滑: 起 1.5x, 滑到 0.7x
-		var freq: float = base_freq * lerp(1.5, 0.7, t)
+		# 320→160 Hz sine 下滑, 模拟口腔共鸣往下收
+		var freq: float = lerp(320.0, 160.0, t)
 		phase += freq * TAU / SAMPLE_RATE
 		var env: float
 		if i < attack_n:
 			env = float(i) / float(attack_n)
 		else:
-			# 三次方衰减, 锐落
-			var n: float = (float(i - attack_n) / float(samples - attack_n))
-			env = pow(1.0 - n, 3.0)
-		var raw: float = sin(phase) * amp * env
-		lp1 = _lpf(lp1, raw, 0.6)
-		_write_sample(data, i, lp1)
+			var n: float = float(i - attack_n) / float(samples - attack_n)
+			env = pow(1.0 - n, 4.0)  # 四次方锐衰减
+		# 气流噪声 (只在前 6ms)
+		var noise_env: float = 0.0
+		if i < burst_n:
+			var ne: float = 1.0 - float(i) / float(burst_n)
+			noise_env = ne * ne
+		var sine_s: float = sin(phase) * 0.55
+		var noise_s: float = bn.sample() * 0.6 * noise_env
+		var raw: float = (sine_s + noise_s) * amp * env
+		# 双低通 → "湿"感
+		lp1 = _lpf(lp1, raw, 0.5)
+		lp2 = _lpf(lp2, lp1, 0.5)
+		_write_sample(data, i, lp2)
 	return _wrap_stream(data)
 
 
