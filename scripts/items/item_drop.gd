@@ -73,7 +73,7 @@ func _on_body_entered(body: Node) -> void:
 		return
 	var leftover: int = pi.pickup(item_id, count)
 	if leftover < count:
-		SfxBank.play("pickup", 0.10)
+		SfxBank.play("pickup", 0.20)  # ±20% 变调, Minecraft 风
 	if leftover == 0:
 		queue_free()
 	else:

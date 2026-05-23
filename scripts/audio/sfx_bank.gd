@@ -56,8 +56,8 @@ func _build_all() -> void:
 	_sfx["jump"] = _whoosh(0.12, 200.0, 350.0, 0.25)
 	# 落地: 厚实 thud, 60Hz 主导
 	_sfx["land"] = _thunk(0.13, 55.0, 0.35)
-	# 捡物: 柔和铃声 (基频 + 八度), 平滑包络
-	_sfx["pickup"] = _bell(0.18, 420.0, 0.20)
+	# 捡物: Minecraft 式 "波" — 短促 sine 频率下滑, 快 attack 快衰减
+	_sfx["pickup"] = _blop(0.08, 230.0, 0.28)
 	# 挥剑: 短 whoosh 下降
 	_sfx["swing"] = _whoosh(0.13, 350.0, 150.0, 0.22)
 	# 击中: 低频 thud + 短噪声
@@ -207,6 +207,33 @@ func _chomp(duration: float, amp: float) -> AudioStreamWAV:
 		lp2 = _lpf(lp2, lp1, 0.3)
 		lp3 = _lpf(lp3, lp2, 0.3)
 		_write_sample(data, i, lp3)
+	return _wrap_stream(data)
+
+
+# Minecraft 式 "波" 拾取音: sine 频率从 base*1.5 快速下滑到 base*0.7
+# 极短 (60-100ms), 锐衰减. 配合 SfxBank.play 的随机变调更像原版.
+func _blop(duration: float, base_freq: float, amp: float) -> AudioStreamWAV:
+	var samples := int(duration * SAMPLE_RATE)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	var phase := 0.0
+	var lp1 := 0.0
+	var attack_n: int = int(0.003 * SAMPLE_RATE)  # 3ms 极快 attack
+	for i in samples:
+		var t: float = float(i) / float(samples)
+		# 频率快速下滑: 起 1.5x, 滑到 0.7x
+		var freq: float = base_freq * lerp(1.5, 0.7, t)
+		phase += freq * TAU / SAMPLE_RATE
+		var env: float
+		if i < attack_n:
+			env = float(i) / float(attack_n)
+		else:
+			# 三次方衰减, 锐落
+			var n: float = (float(i - attack_n) / float(samples - attack_n))
+			env = pow(1.0 - n, 3.0)
+		var raw: float = sin(phase) * amp * env
+		lp1 = _lpf(lp1, raw, 0.6)
+		_write_sample(data, i, lp1)
 	return _wrap_stream(data)
 
 
