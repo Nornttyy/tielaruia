@@ -1,0 +1,66 @@
+name: Deploy to GitHub Pages
+
+# 触发: 推到 main 分支
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:  # 也可以手动触发
+
+# 给 GITHUB_TOKEN 写 pages 的权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一次 (新推的取消旧的)
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: 4.3.0
+      EXPORT_NAME: Web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Godot
+        run: |
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O godot.zip
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+
+      - name: Install Web export templates
+        run: |
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz" -O templates.zip
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          unzip -q templates.zip -d /tmp/templates
+          mv /tmp/templates/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+
+      - name: Import project assets
+        run: |
+          # --import 触发 reimport, 失败也继续 (有时第一次会因为编辑器初始化报错)
+          godot --headless --import || true
+
+      - name: Export web build
+        run: |
+          mkdir -p build/web
+          godot --headless --export-release "${EXPORT_NAME}" build/web/index.html
+          # GitHub Pages 默认会跑 Jekyll, 加 .nojekyll 关掉它 (不然 Godot 的 _ 开头文件会被忽略)
+          touch build/web/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
