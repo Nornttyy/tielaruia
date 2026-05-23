@@ -1,6 +1,9 @@
 #!/bin/bash
-# 硬刷新启动 godot: kill 旧进程 → 删 .godot 缓存 → 重建 class 索引 → 启动游戏.
-# 自动找 Godot 二进制: 优先 PATH 里的 godot, 否则 Mac 上 /Applications/Godot.app.
+# 启动 godot 游戏. 自动找 Godot 二进制 (PATH 或 /Applications).
+#
+# 用法:
+#   ./run.sh             # 仅启动游戏 (快, 不重建缓存)
+#   ./run.sh --rebuild   # 完整重建 .godot 缓存后启动 (慢, 改了 class_name/资源后用)
 set -e
 
 # 找 godot 二进制
@@ -15,8 +18,26 @@ else
 	exit 1
 fi
 
+# 解析 --rebuild
+REBUILD=false
+ARGS=()
+for arg in "$@"; do
+	if [ "$arg" = "--rebuild" ]; then
+		REBUILD=true
+	else
+		ARGS+=("$arg")
+	fi
+done
+
 killall Godot 2>/dev/null || true
 killall godot 2>/dev/null || true
-rm -rf .godot
-"$GODOT" --headless --editor --quit 2>/dev/null
-"$GODOT" --path . "$@"
+
+if [ "$REBUILD" = true ]; then
+	echo "[run.sh] 重建 .godot 缓存 (可能 10-30s)..."
+	rm -rf .godot
+	# --import 比 --editor --quit 更直接, 而且不静默 stderr 方便看错误
+	"$GODOT" --headless --path . --import
+	echo "[run.sh] 缓存重建完, 启动游戏"
+fi
+
+"$GODOT" --path . "${ARGS[@]}"
