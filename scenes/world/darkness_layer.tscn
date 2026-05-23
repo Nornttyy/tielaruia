@@ -5,4 +5,4 @@
 [node name="DarknessLayer" type="Sprite2D"]
 script = ExtResource("1_dark")
 centered = false
-texture_filter = 3
+texture_filter = 2
