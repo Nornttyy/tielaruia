@@ -72,6 +72,8 @@ func _on_body_entered(body: Node) -> void:
 	if not pi.has_method("pickup"):
 		return
 	var leftover: int = pi.pickup(item_id, count)
+	if leftover < count:
+		SfxBank.play("pickup", 0.10)
 	if leftover == 0:
 		queue_free()
 	else:

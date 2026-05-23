@@ -33,6 +33,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 	current_health = max(0, current_health - amount)
 	_iframe_timer = IFRAMES_SEC
 	damaged.emit(amount, source_pos)
+	SfxBank.play("hurt", 0.08)
 	health_changed.emit(current_health, MAX_HEALTH)
 	if current_health == 0:
 		died.emit()

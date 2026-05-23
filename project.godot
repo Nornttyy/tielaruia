@@ -20,6 +20,7 @@ ArtCache="*res://scripts/autoload/art_cache.gd"
 Effects="*res://scripts/fx/effects.gd"
 GameSettings="*res://scripts/autoload/game_settings.gd"
 SaveManager="*res://scripts/save/save_manager.gd"
+SfxBank="*res://scripts/audio/sfx_bank.gd"
 
 [display]
 

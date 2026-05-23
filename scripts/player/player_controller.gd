@@ -115,6 +115,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = JUMP_VELOCITY
 		_coyote_timer = 0.0
 		did_jump = true
+		SfxBank.play("jump", 0.08)
 
 	# 记录跳前 vy 给落地用
 	var pre_move_vy := velocity.y
@@ -130,6 +131,7 @@ func _physics_process(delta: float) -> void:
 	# 落地瞬间扬灰：本帧由空中变地面 + 之前的 vy 够大
 	if not _was_on_floor and on_floor_after and _previous_vy > LAND_VY_THRESHOLD:
 		Effects.spawn_land_dust(global_position)
+		SfxBank.play("land", 0.10, -3.0)
 
 	# 走路 puff：在地 + 有移动
 	if on_floor_after and abs(dir) > 0.01:

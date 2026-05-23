@@ -94,6 +94,7 @@ func _attempt_hop() -> void:
 	velocity.x = _current_hop_vx
 	velocity.y = -vy_mag
 	sprite.play("hop")
+	SfxBank.play("slime_hop", 0.15, -6.0)
 
 
 func _on_anim_done() -> void:

@@ -210,6 +210,7 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	SkyLightGrid.invalidate_column(tile.x)
 	# P1.5 hook: 块破碎粒子
 	Effects.spawn_block_break(tile, tid)
+	SfxBank.play("break", 0.15)
 	var drops: Dictionary = Tiles.drops_for(tid, tool_kind)
 	for item_id in drops:
 		for _i in drops[item_id]:
@@ -268,6 +269,7 @@ func try_place() -> bool:
 	SkyLightGrid.invalidate_column(tile.x)
 	# P1.5 hook: 放下弹动
 	Effects.spawn_place_bounce(tile, def.placeable_tile_id)
+	SfxBank.play("place", 0.10)
 	return true
 
 
@@ -375,6 +377,7 @@ func _update_eat_or_place(delta: float) -> void:
 		if _eat_t >= EAT_DURATION_SEC:
 			_eat_t = 0.0
 			hunger.consume(ItemDB.food_fill(slot.item_id))
+			SfxBank.play("eat", 0.10)
 			inv.consume_current(1)
 		return
 
@@ -397,6 +400,7 @@ func _swing_sword() -> void:
 	var held: Node = player.get_node_or_null("HeldItem")
 	if held != null and held.has_method("play_swing"):
 		held.play_swing()
+	SfxBank.play("swing", 0.10)
 	var damage: int = _effective_sword_damage()
 	if damage <= 0:
 		return
