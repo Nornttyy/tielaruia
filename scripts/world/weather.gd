@@ -7,10 +7,13 @@ extends Node
 signal weather_changed(state: String)
 signal lightning_flash
 
-const CLEAR_MIN_SEC := 60.0     # 晴天最短 1 分钟 (测试方便, 真要部署可拉长到 300)
-const CLEAR_MAX_SEC := 180.0    # 晴天最长 3 分钟
+const CLEAR_MIN_SEC := 90.0     # 晴天最短 1.5 分钟
+const CLEAR_MAX_SEC := 240.0    # 晴天最长 4 分钟
 const RAIN_MIN_SEC := 30.0
 const RAIN_MAX_SEC := 90.0
+# 进游戏第一次晴天缩短, 让玩家快点见到雨
+const FIRST_CLEAR_MIN_SEC := 20.0
+const FIRST_CLEAR_MAX_SEC := 40.0
 
 # 雨中闪雷间隔 (秒)
 const LIGHTNING_MIN_INTERVAL := 8.0
@@ -19,6 +22,7 @@ const LIGHTNING_MAX_INTERVAL := 25.0
 var state: String = "clear"
 var _time_left: float = 0.0
 var _lightning_t: float = 0.0
+var _first_clear: bool = true
 
 
 func _ready() -> void:
@@ -37,16 +41,32 @@ func _process(delta: float) -> void:
 		if _lightning_t <= 0.0:
 			_lightning_t = randf_range(LIGHTNING_MIN_INTERVAL, LIGHTNING_MAX_INTERVAL)
 			lightning_flash.emit()
+	# F10 强制切换 (debug)
+	if Input.is_action_just_pressed("toggle_weather"):
+		toggle()
 
 
 func _enter_state(s: String) -> void:
 	state = s
 	if s == "clear":
-		_time_left = randf_range(CLEAR_MIN_SEC, CLEAR_MAX_SEC)
+		if _first_clear:
+			_time_left = randf_range(FIRST_CLEAR_MIN_SEC, FIRST_CLEAR_MAX_SEC)
+			_first_clear = false
+		else:
+			_time_left = randf_range(CLEAR_MIN_SEC, CLEAR_MAX_SEC)
 	else:
 		_time_left = randf_range(RAIN_MIN_SEC, RAIN_MAX_SEC)
 		_lightning_t = randf_range(LIGHTNING_MIN_INTERVAL, LIGHTNING_MAX_INTERVAL)
+	print("[Weather] → ", s, " (持续 ", "%.1f" % _time_left, "s)")
 	weather_changed.emit(s)
+
+
+# 切换天气 (debug 用)
+func toggle() -> void:
+	if state == "clear":
+		_enter_state("rainy")
+	else:
+		_enter_state("clear")
 
 
 # 测试 / 调试用: 强制切到某天气

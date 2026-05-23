@@ -26,8 +26,9 @@ var _vp_size: Vector2
 
 
 func _ready() -> void:
-	layer = 10  # 在世界之上, 但在 HUD 之下 (HUD 默认 layer=1, 这里设比 HUD 高...
-	# 实际看效果再调)
+	# 渲染层: 5 在 HUD (1) 上面但在菜单 (50+) 下面.
+	# 雨点 + 闪雷会盖一点 HUD 但视觉清晰, 测试方便. 后续可以调到 0 让 HUD 在雨上.
+	layer = 5
 	# 雨天压暗的全屏 overlay
 	_darken_rect.color = Color(DARK_OVERLAY_COLOR.r, DARK_OVERLAY_COLOR.g,
 		DARK_OVERLAY_COLOR.b, 0.0)  # 初始透明, 雨天 fade in
