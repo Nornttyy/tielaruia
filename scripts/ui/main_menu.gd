@@ -8,6 +8,7 @@ signal start_game
 const MenuSceneArt = preload("res://scripts/art/menu_scene_art.gd")
 const LogoArt = preload("res://scripts/art/logo_art.gd")
 const SlimeArt = preload("res://scripts/art/slime_art.gd")
+const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 
 const VIEWPORT_SIZE := Vector2(1280, 720)
 const CLOUD_COUNT := 4
@@ -124,44 +125,81 @@ func _setup_stars() -> void:
 
 
 func _setup_torches() -> void:
-	# 地上 2 个小火把: 暖橙竖块 + 黄火苗 + 周围浅光晕, 火苗 scale.y 跳动
-	var ground_layer: Control = $BackgroundLayer
+	# 用游戏内 BlocksArt 的 TORCH 像素贴图 (16×16 放大 3x) + 软光晕 + 火花粒子, 与游戏内火把统一
+	var torch_tex: Texture2D = ArtCache.block_textures.get(Tiles.TORCH)
+	if torch_tex == null:
+		return
+	var glow_tex: Texture2D = ArtCache.radial_gradient(160)
+	var ground_layer: Node = $BackgroundLayer
 	var torch_x := [180.0, 1050.0]
 	var ground_y: float = VIEWPORT_SIZE.y * 0.75
 	for tx in torch_x:
-		# 木棍
-		var stick := ColorRect.new()
-		stick.color = Color8(110, 70, 40)
-		stick.size = Vector2(4, 14)
-		stick.position = Vector2(tx, ground_y - 14.0)
-		stick.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ground_layer.add_child(stick)
-		# 火苗 (Sprite-like 用 ColorRect 模拟)
-		var flame := ColorRect.new()
-		flame.color = Color(1, 0.7, 0.25, 1)
-		flame.size = Vector2(6, 10)
-		flame.position = Vector2(tx - 1, ground_y - 22.0)
-		flame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		flame.pivot_offset = flame.size / 2.0
-		ground_layer.add_child(flame)
-		# 光晕 (大半透明橙圆 — 用 ColorRect 加圆形 stylebox 太麻烦, 直接渐变 sprite)
-		var glow := ColorRect.new()
-		glow.color = Color(1, 0.6, 0.2, 0.18)
-		glow.size = Vector2(60, 60)
-		glow.position = Vector2(tx - 28, ground_y - 50.0)
-		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		glow.pivot_offset = glow.size / 2.0
+		# 光晕 (画在最底)
+		var glow := Sprite2D.new()
+		glow.texture = glow_tex
+		glow.modulate = Color(1.0, 0.65, 0.25, 0.45)
+		glow.scale = Vector2(1.4, 1.4)
+		glow.position = Vector2(tx, ground_y - 30.0)
 		ground_layer.add_child(glow)
-		# 火苗 + 光晕同步闪烁
+		# 火把本体 (像素画 16×16 → 48×48)
+		var torch := Sprite2D.new()
+		torch.texture = torch_tex
+		torch.scale = Vector2(3, 3)
+		torch.centered = false
+		torch.position = Vector2(tx - 24.0, ground_y - 48.0)
+		ground_layer.add_child(torch)
+		# 火苗叠加 (一颗暖色 spark 放大, 罩在像素火焰位置上, 周期闪烁让火"活")
+		var flame_overlay := Sprite2D.new()
+		flame_overlay.texture = ParticlesArt.get_torch_spark(Color(1.0, 0.85, 0.35))
+		flame_overlay.scale = Vector2(8, 11)
+		flame_overlay.position = Vector2(tx, ground_y - 38.0)
+		flame_overlay.modulate = Color(1, 1, 1, 0.55)
+		ground_layer.add_child(flame_overlay)
+		# 火苗 + 光晕同步呼吸 (有节奏的火光感)
 		var t := create_tween().set_loops()
-		t.tween_property(flame, "scale:y", 1.18, 0.10).set_trans(Tween.TRANS_QUAD)
-		t.parallel().tween_property(glow, "scale", Vector2(1.12, 1.12), 0.10)
-		t.tween_property(flame, "scale:y", 0.95, 0.13)
-		t.parallel().tween_property(glow, "scale", Vector2(0.95, 0.95), 0.13)
-		t.tween_property(flame, "scale:y", 1.08, 0.09)
-		t.parallel().tween_property(glow, "scale", Vector2(1.05, 1.05), 0.09)
-		t.tween_property(flame, "scale:y", 1.0, 0.12)
-		t.parallel().tween_property(glow, "scale", Vector2(1.0, 1.0), 0.12)
+		t.tween_property(flame_overlay, "scale", Vector2(9.0, 12.5), 0.10).set_trans(Tween.TRANS_QUAD)
+		t.parallel().tween_property(glow, "modulate:a", 0.60, 0.10)
+		t.tween_property(flame_overlay, "scale", Vector2(7.0, 10.0), 0.13)
+		t.parallel().tween_property(glow, "modulate:a", 0.35, 0.13)
+		t.tween_property(flame_overlay, "scale", Vector2(8.5, 12.0), 0.09)
+		t.parallel().tween_property(glow, "modulate:a", 0.50, 0.09)
+		t.tween_property(flame_overlay, "scale", Vector2(8.0, 11.0), 0.12)
+		t.parallel().tween_property(glow, "modulate:a", 0.45, 0.12)
+		# 周期生成上升火花
+		_start_menu_spark_timer(Vector2(tx, ground_y - 42.0), ground_layer)
+
+
+func _start_menu_spark_timer(spawn_pos: Vector2, parent: Node) -> void:
+	var timer := Timer.new()
+	timer.wait_time = randf_range(0.15, 0.25)
+	timer.one_shot = false
+	timer.autostart = true
+	add_child(timer)
+	timer.timeout.connect(func():
+		_spawn_menu_spark(spawn_pos, parent)
+		timer.wait_time = randf_range(0.15, 0.30)
+	)
+
+
+# 一颗向上飘的暖色火花. 0.8s 内淡出 + 上升 + 微随机水平摆.
+func _spawn_menu_spark(pos: Vector2, parent: Node) -> void:
+	var color: Color
+	if randf() < 0.05:
+		color = Color(1.0, 0.3, 0.1)  # 5% 红
+	else:
+		color = Color(1.0, 0.9, 0.4).lerp(Color(1.0, 0.5, 0.2), randf())
+	var spark := Sprite2D.new()
+	spark.texture = ParticlesArt.get_torch_spark(color)
+	spark.scale = Vector2(2, 2)
+	spark.position = pos + Vector2(randf_range(-3, 3), 0)
+	parent.add_child(spark)
+	var rise: float = randf_range(40.0, 80.0)
+	var drift: float = randf_range(-12.0, 12.0)
+	var t := create_tween().set_parallel(true)
+	t.tween_property(spark, "position:y", spark.position.y - rise, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(spark, "position:x", spark.position.x + drift, 0.8)
+	t.tween_property(spark, "modulate:a", 0.0, 0.8).set_trans(Tween.TRANS_QUAD)
+	t.chain().tween_callback(spark.queue_free)
 
 
 func _setup_clouds() -> void:
