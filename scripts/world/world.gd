@@ -10,13 +10,15 @@ const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
 const VillagePlacer = preload("res://scripts/world/village_placer.gd")
 const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
+const ZombieScene = preload("res://scenes/entities/zombie.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const MAX_SLIMES := 4
-const SLIME_SPAWN_INTERVAL := 6.0
-const SLIME_SPAWN_RANGE_MIN := 12  # tiles
-const SLIME_SPAWN_RANGE_MAX := 22
+const MAX_SLIMES := 4              # 白天上限 (slime)
+const MAX_ZOMBIES := 5             # 夜间上限 (zombie)
+const SPAWN_INTERVAL := 6.0
+const SPAWN_RANGE_MIN := 12  # tiles
+const SPAWN_RANGE_MAX := 22
 
 const TILE_SIZE := 16
 
@@ -80,8 +82,12 @@ func _spawn_villagers() -> void:
 func _process(delta: float) -> void:
 	_slime_spawn_timer -= delta
 	if _slime_spawn_timer <= 0.0:
-		_slime_spawn_timer = SLIME_SPAWN_INTERVAL
-		_try_spawn_slime()
+		_slime_spawn_timer = SPAWN_INTERVAL
+		# 夜间刷僵尸, 白天刷史莱姆
+		if TimeOfDay.is_night():
+			_try_spawn_zombie()
+		else:
+			_try_spawn_slime()
 
 
 func _physics_process(_delta: float) -> void:
@@ -162,16 +168,27 @@ func _try_spawn_slime() -> void:
 	var slimes := get_tree().get_nodes_in_group("slimes")
 	if slimes.size() >= MAX_SLIMES:
 		return
+	_spawn_surface_creature(SlimeScene)
+
+
+func _try_spawn_zombie() -> void:
+	# 夜间僵尸刷新. 上限独立于白天 slime.
+	var zombies := get_tree().get_nodes_in_group("zombies")
+	if zombies.size() >= MAX_ZOMBIES:
+		return
+	_spawn_surface_creature(ZombieScene)
+
+
+# 在玩家附近地表随机刷一个 creature (slime/zombie 共用站位逻辑)
+func _spawn_surface_creature(scene: PackedScene) -> void:
 	var player := get_player()
 	if player == null:
 		return
 	var px: int = int(floor(player.global_position.x / TILE_SIZE))
-	# 随机 10 次找一个站得住脚的地表位置
 	for _i in 10:
 		var sign_x: int = 1 if randf() < 0.5 else -1
-		var dx: int = sign_x * randi_range(SLIME_SPAWN_RANGE_MIN, SLIME_SPAWN_RANGE_MAX)
+		var dx: int = sign_x * randi_range(SPAWN_RANGE_MIN, SPAWN_RANGE_MAX)
 		var cand_x: int = px + dx
-		# 找该列地表 (从顶往下第一个非 AIR tile)
 		var surf_y: int = -1
 		for y in ChunkConstants.WORLD_HEIGHT:
 			if chunk_manager.get_tile(cand_x, y) != Tiles.AIR:
@@ -183,12 +200,12 @@ func _try_spawn_slime() -> void:
 			continue
 		if chunk_manager.get_tile(cand_x, surf_y) == Tiles.BEDROCK:
 			continue
-		var slime := SlimeScene.instantiate()
-		slime.global_position = Vector2(
+		var creature := scene.instantiate()
+		creature.global_position = Vector2(
 			cand_x * TILE_SIZE + TILE_SIZE / 2.0,
 			(surf_y - 1) * TILE_SIZE + TILE_SIZE
 		)
-		entities_root.add_child(slime)
+		entities_root.add_child(creature)
 		return
 
 

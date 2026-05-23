@@ -1,13 +1,16 @@
-[gd_scene load_steps=6 format=3 uid="uid://b2teilaruiaworld"]
+[gd_scene load_steps=7 format=3 uid="uid://b2teilaruiaworld"]
 
 [ext_resource type="Script" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/world/cloud_layer.tscn" id="2_clouds"]
 [ext_resource type="PackedScene" path="res://scenes/world/crack_overlay.tscn" id="3_crack"]
 [ext_resource type="Script" path="res://scripts/world/world_lighting.gd" id="4_wlight"]
 [ext_resource type="PackedScene" path="res://scenes/world/darkness_layer.tscn" id="5_dark"]
+[ext_resource type="PackedScene" path="res://scenes/world/sky_background.tscn" id="6_sky"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1_world")
+
+[node name="SkyBackground" parent="." instance=ExtResource("6_sky")]
 
 [node name="CloudLayer" parent="." instance=ExtResource("2_clouds")]
 

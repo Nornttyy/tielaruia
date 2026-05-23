@@ -13,6 +13,7 @@ run/main_scene="res://scenes/main.tscn"
 
 Tiles="*res://scripts/world/tile_data.gd"
 SkyLightGrid="*res://scripts/world/sky_light_grid.gd"
+TimeOfDay="*res://scripts/world/time_of_day.gd"
 ItemDB="*res://scripts/items/item_db.gd"
 RecipeDB="*res://scripts/crafting/recipe_db.gd"
 ArtCache="*res://scripts/autoload/art_cache.gd"

@@ -28,17 +28,18 @@ const SKY_DEPTH_LIT := 5   # 地表往下 5 格内仍有天光衰减
 
 static func compute_light(x: int, y: int, player_tile: Vector2i, torch_tiles: Array) -> int:
 	var light: int = 0
-	# 1. 天空暴露: 自己在地表或天空 (depth <= 0) → 满亮
-	#    地表往下 1..SKY_DEPTH_LIT 格 → 衰减光
+	# 1. 天空暴露: 用 TimeOfDay 当前光值 (白天=7, 夜间=2, 黄昏/黎明 lerp)
+	#    地表往下 1..SKY_DEPTH_LIT 格 → 在天光值基础上再衰减
 	#    SkyLightGrid.is_sky_exposed 只算"地表上方空气", 地表块自己 depth=0 也要算
+	var sky_light: int = TimeOfDay.sky_light_level()
 	if SkyLightGrid.is_sky_exposed(x, y):
-		return MAX_LIGHT
+		return sky_light
 	var depth: int = SkyLightGrid.depth_from_sky(x, y)
 	if depth <= 0:
-		return MAX_LIGHT
+		return sky_light
 	if depth <= SKY_DEPTH_LIT:
-		# depth=1 → 6, depth=2 → 5, ..., depth=5 → 2
-		light = max(light, MAX_LIGHT - depth - 1)
+		# depth=1 → sky-1, depth=2 → sky-2, ... 夜间深处自然黑
+		light = max(light, sky_light - depth)
 	# 2. 玩家光圈
 	var dp_x: int = abs(x - player_tile.x)
 	var dp_y: int = abs(y - player_tile.y)

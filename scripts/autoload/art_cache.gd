@@ -11,6 +11,7 @@ const PixelArt = preload("res://scripts/art/pixel_art.gd")
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
 const PlayerArt = preload("res://scripts/art/player_art.gd")
 const SlimeArt = preload("res://scripts/art/slime_art.gd")
+const ZombieArt = preload("res://scripts/art/zombie_art.gd")
 const VillagerArt = preload("res://scripts/art/villager_art.gd")
 const DoorArt = preload("res://scripts/art/door_art.gd")
 const ItemsArt = preload("res://scripts/art/items_art.gd")
@@ -25,6 +26,7 @@ var door_closed_texture: ImageTexture
 var door_open_texture: ImageTexture
 var player_frames: SpriteFrames
 var slime_frames: SpriteFrames
+var zombie_frames: SpriteFrames
 var villager_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
@@ -87,6 +89,7 @@ func _build_doors() -> void:
 func _build_entities() -> void:
 	player_frames = PlayerArt.build_sprite_frames()
 	slime_frames = SlimeArt.build_sprite_frames()
+	zombie_frames = ZombieArt.build_sprite_frames()
 	villager_frames = VillagerArt.build_sprite_frames()
 
 

@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://b_zombie"]
+
+[ext_resource type="Script" path="res://scripts/entities/zombie.gd" id="1_zomb"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_zomb"]
+size = Vector2(10, 22)
+
+[node name="Zombie" type="CharacterBody2D"]
+script = ExtResource("1_zomb")
+collision_layer = 4
+collision_mask = 1
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -24)
+centered = false
+offset = Vector2(-8, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -11)
+shape = SubResource("RectangleShape2D_zomb")

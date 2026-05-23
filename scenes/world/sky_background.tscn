@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_sky_bg"]
+
+[ext_resource type="Script" path="res://scripts/world/sky_background.gd" id="1_sky"]
+
+[node name="SkyBackground" type="CanvasLayer"]
+layer = -10
+
+[node name="Bg" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.55, 0.78, 0.95, 1)
+script = ExtResource("1_sky")
