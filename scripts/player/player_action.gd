@@ -443,27 +443,32 @@ func _swing_sword() -> void:
 
 
 func _spawn_swing_arc(origin: Vector2, dir: Vector2) -> void:
-	var facing: int = 1 if dir.x >= 0 else -1
-	var arc := Line2D.new()
-	arc.width = 3.0
-	arc.default_color = Color(1, 1, 1, 0.9)
-	arc.global_position = origin + dir * 18.0
-	# 简单弧线: 3 个点构成 ⌒ 形, 朝向 facing
-	if facing > 0:
-		arc.add_point(Vector2(-6, 8))
-		arc.add_point(Vector2(12, 0))
-		arc.add_point(Vector2(-6, -10))
-	else:
-		arc.add_point(Vector2(6, 8))
-		arc.add_point(Vector2(-12, 0))
-		arc.add_point(Vector2(6, -10))
+	# 月牙扇形拖尾: 沿 dir 方向 ±50°, 外径 SWORD_RANGE_PX*0.9, 内径 *0.4
+	var outer_r: float = SWORD_RANGE_PX * 0.9
+	var inner_r: float = SWORD_RANGE_PX * 0.4
+	var half_spread: float = deg_to_rad(50.0)
+	var steps: int = 14
+	var base_angle: float = dir.angle()
+	var poly := Polygon2D.new()
+	poly.global_position = origin
+	var pts: PackedVector2Array = PackedVector2Array()
+	for i in range(steps + 1):
+		var t: float = float(i) / float(steps)
+		var a: float = base_angle - half_spread + (half_spread * 2.0) * t
+		pts.append(Vector2(cos(a), sin(a)) * outer_r)
+	for i in range(steps + 1):
+		var t2: float = float(steps - i) / float(steps)
+		var a2: float = base_angle - half_spread + (half_spread * 2.0) * t2
+		pts.append(Vector2(cos(a2), sin(a2)) * inner_r)
+	poly.polygon = pts
+	poly.color = Color(1.0, 1.0, 1.0, 0.7)
 	var parent: Node = get_tree().get_first_node_in_group("effects_root")
 	if parent == null:
 		parent = get_parent()
-	parent.add_child(arc)
-	var tween := arc.create_tween()
-	tween.tween_property(arc, "modulate:a", 0.0, SWORD_ARC_LIFETIME)
-	tween.tween_callback(arc.queue_free)
+	parent.add_child(poly)
+	var tween := poly.create_tween()
+	tween.tween_property(poly, "modulate:a", 0.0, SWORD_ARC_LIFETIME)
+	tween.tween_callback(poly.queue_free)
 
 
 func _inventory_node() -> Node:

@@ -46,6 +46,7 @@ func set_facing(right: bool) -> void:
 
 
 func play_swing() -> void:
+	# 节奏性挥摆 (挖矿/砍木用): 朝当前 facing 摆 ±75°
 	if not visible:
 		return
 	if _tween != null and _tween.is_valid():
@@ -53,10 +54,25 @@ func play_swing() -> void:
 	rotation = 0.0
 	_tween = create_tween()
 	var dir: float = 1.0 if _facing_right else -1.0
-	# 起手: 向后抬 ~30°, 然后劈到前方 +75°, 再回 0
 	_tween.tween_property(self, "rotation", deg_to_rad(-30.0 * dir), SWING_DURATION * 0.25)
 	_tween.tween_property(self, "rotation", deg_to_rad(SWING_ANGLE_DEG * dir), SWING_DURATION * 0.35)
 	_tween.tween_property(self, "rotation", 0.0, SWING_DURATION * 0.40)
+
+
+func play_swing_directional(target_angle: float) -> void:
+	# 定向挥击 (挥剑用): 沿 target_angle 方向, -45° → +45° 划过 90°.
+	# 工具贴图竖直, 旋转支点在底部中心, 所以"刀尖朝 target_angle" 的基准 = target_angle + PI/2.
+	if not visible:
+		return
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	var dir_sign: float = 1.0 if _facing_right else -1.0
+	var base: float = target_angle + PI / 2.0
+	var start_a: float = base - deg_to_rad(45.0) * dir_sign
+	var end_a:   float = base + deg_to_rad(45.0) * dir_sign
+	rotation = start_a
+	_tween = create_tween()
+	_tween.tween_property(self, "rotation", end_a, SWING_DURATION)
 
 
 func _on_changed(_arg = null) -> void:
