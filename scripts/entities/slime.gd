@@ -1,9 +1,9 @@
-# 史莱姆: 跳向玩家, 接触造成伤害, HP=6, 死亡掉 slime_jelly。
+# 史莱姆: 跳向玩家, 接触造成伤害, HP=10, 死亡掉 slime_jelly。
 extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const MAX_HEALTH := 6   # 木剑 4 dmg × 2 击, 石剑 7 dmg × 1 击
+const MAX_HEALTH := 10   # 木剑 3 dmg × 4 击, 石剑 5 dmg × 2 击
 const CONTACT_DAMAGE := 2
 const GRAVITY := 900.0
 const HOP_VY := -200.0          # 跳高 ~22 px, 能跨 1 格 (16 px) 但跨不过 2 格

@@ -72,7 +72,7 @@ func test_eat_does_not_place_block() -> void:
 func test_hungry_attack_damage_reduced() -> void:
 	_give_food("wood_sword", 1)
 	hunger.current = 29.0
-	# 木剑 base 4 → ×0.8 = 3.2 → max(1, round(3.2)) = 3
-	assert_eq(action._effective_sword_damage(), 3)
+	# 木剑 base 3 → ×0.8 = 2.4 → max(1, round(2.4)) = 2
+	assert_eq(action._effective_sword_damage(), 2)
 	hunger.current = 30.0
-	assert_eq(action._effective_sword_damage(), 4)
+	assert_eq(action._effective_sword_damage(), 3)

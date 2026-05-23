@@ -308,8 +308,8 @@ func _sword_damage() -> int:
 	var def = ItemDB.get_def(slot.item_id)
 	if def == null or def.tool_kind != "sword":
 		return 0
-	# wood tier 1 → 4; stone tier 2 → 7
-	return 7 if def.tool_tier >= 2 else 4
+	# wood tier 1 → 3 (4 击杀史莱姆); stone tier 2 → 5 (2 击杀)
+	return 5 if def.tool_tier >= 2 else 3
 
 
 func _current_tool_tier() -> int:
