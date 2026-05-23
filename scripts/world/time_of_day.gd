@@ -13,7 +13,7 @@
 #   TimeOfDay.sky_color()  → Color (给天空背景用)
 extends Node
 
-const DAY_DURATION_SEC := 240.0
+const DAY_DURATION_SEC := 600.0   # 10 分钟一个日夜 (~5 分白天 + 5 分黑夜)
 const NIGHT_LIGHT := 2          # 夜里地表光值 (0..7, 越大越亮)
 const DAY_LIGHT := 7            # 白天地表光值
 
