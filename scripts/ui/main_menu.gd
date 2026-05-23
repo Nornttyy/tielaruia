@@ -141,30 +141,19 @@ func _setup_torches() -> void:
 		glow.scale = Vector2(1.4, 1.4)
 		glow.position = Vector2(tx, ground_y - 30.0)
 		ground_layer.add_child(glow)
-		# 火把本体 (像素画 16×16 → 48×48)
+		# 火把本体 (像素画 16×16 → 48×48). 像素图本身已含火苗, 不再叠 flame_overlay.
 		var torch := Sprite2D.new()
 		torch.texture = torch_tex
 		torch.scale = Vector2(3, 3)
 		torch.centered = false
 		torch.position = Vector2(tx - 24.0, ground_y - 48.0)
 		ground_layer.add_child(torch)
-		# 火苗叠加 (一颗暖色 spark 放大, 罩在像素火焰位置上, 周期闪烁让火"活")
-		var flame_overlay := Sprite2D.new()
-		flame_overlay.texture = ParticlesArt.get_torch_spark(Color(1.0, 0.85, 0.35))
-		flame_overlay.scale = Vector2(8, 11)
-		flame_overlay.position = Vector2(tx, ground_y - 38.0)
-		flame_overlay.modulate = Color(1, 1, 1, 0.55)
-		ground_layer.add_child(flame_overlay)
-		# 火苗 + 光晕同步呼吸 (有节奏的火光感)
+		# 光晕呼吸 (alpha 节律), 让火光感来自光晕本身而非贴图叠加
 		var t := create_tween().set_loops()
-		t.tween_property(flame_overlay, "scale", Vector2(9.0, 12.5), 0.10).set_trans(Tween.TRANS_QUAD)
-		t.parallel().tween_property(glow, "modulate:a", 0.60, 0.10)
-		t.tween_property(flame_overlay, "scale", Vector2(7.0, 10.0), 0.13)
-		t.parallel().tween_property(glow, "modulate:a", 0.35, 0.13)
-		t.tween_property(flame_overlay, "scale", Vector2(8.5, 12.0), 0.09)
-		t.parallel().tween_property(glow, "modulate:a", 0.50, 0.09)
-		t.tween_property(flame_overlay, "scale", Vector2(8.0, 11.0), 0.12)
-		t.parallel().tween_property(glow, "modulate:a", 0.45, 0.12)
+		t.tween_property(glow, "modulate:a", 0.60, 0.10)
+		t.tween_property(glow, "modulate:a", 0.35, 0.13)
+		t.tween_property(glow, "modulate:a", 0.50, 0.09)
+		t.tween_property(glow, "modulate:a", 0.45, 0.12)
 		# 周期生成上升火花
 		_start_menu_spark_timer(Vector2(tx, ground_y - 42.0), ground_layer)
 
