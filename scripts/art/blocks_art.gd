@@ -42,8 +42,6 @@ const _P_GRASS := {
 	"k": Color8(94, 65, 44),     # 小石子
 	"l": Color8(186, 144, 112),  # 泥高光
 	"r": Color8(160, 90, 48),    # 红棕根
-	"X": Color8(225, 250, 165),  # 极亮草尖闪 (太阳直射感)
-	"Z": Color8(58, 38, 22),     # 极深泥底 (体积感)
 }
 
 const _P_DIRT := {
@@ -55,8 +53,6 @@ const _P_DIRT := {
 	"r": Color8(160, 85, 46),    # 红棕
 	"p": Color8(136, 97, 68),    # 冷棕
 	"o": Color8(201, 126, 69),   # 暖橙
-	"X": Color8(225, 195, 155),  # 极亮泥光 (太阳照面)
-	"Z": Color8(55, 33, 18),     # 极深泥底
 }
 
 const _P_STONE := {
@@ -68,8 +64,6 @@ const _P_STONE := {
 	"m": Color8(138, 125, 116),  # 中暖灰
 	"b": Color8(110, 98, 90),    # 深暖灰
 	"o": Color8(184, 154, 130),  # 砂岩调
-	"X": Color8(228, 216, 205),  # 极亮石面 (顶部受光)
-	"Z": Color8(50, 40, 32),     # 极深裂纹底
 }
 
 const _P_SAND := {
@@ -81,8 +75,6 @@ const _P_SAND := {
 	"o": Color8(213, 162, 107),  # 暖橙
 	"r": Color8(193, 130, 80),   # 深暖
 	"b": Color8(221, 183, 120),  # 沙变种
-	"X": Color8(255, 245, 210),  # 极亮沙面 (烈日反光)
-	"Z": Color8(95, 65, 32),     # 极深沙缝
 }
 
 const _P_LOG := {
@@ -94,8 +86,6 @@ const _P_LOG := {
 	"p": Color8(136, 96, 76),    # 副基
 	"s": Color8(161, 132, 114),  # 树皮变种
 	"o": Color8(184, 131, 106),  # 樱木暖橙
-	"X": Color8(210, 175, 145),  # 极亮树皮高光
-	"Z": Color8(40, 22, 14),     # 极深沟底
 }
 
 const _P_LEAVES := {
@@ -107,8 +97,6 @@ const _P_LEAVES := {
 	"s": Color8(108, 142, 88),   # 中阴影
 	"a": Color8(180, 185, 120),  # 鼠尾草
 	"r": Color8(184, 100, 58),   # 秋红
-	"X": Color8(215, 240, 155),  # 极亮叶尖闪 (露珠/朝阳)
-	"Z": Color8(28, 50, 25),     # 极深叶阴
 }
 
 # 松针：深暖绿 + 灰绿暗色，无透角更密实
@@ -119,8 +107,6 @@ const _P_LEAVES_PINE := {
 	"h": Color8(120, 165, 95),   # 高光
 	"s": Color8(70, 115, 70),    # 中阴影
 	"y": Color8(155, 175, 90),   # 黄橄榄 (松果?)
-	"X": Color8(170, 210, 130),  # 极亮针尖
-	"Z": Color8(12, 32, 18),     # 极深松针底
 }
 
 # 秋叶：暖红橙 + 金黄 + 深红
@@ -133,8 +119,6 @@ const _P_LEAVES_AUTUMN := {
 	"s": Color8(180, 90, 45),    # 中阴影
 	"a": Color8(215, 145, 70),   # 桃色变种
 	"r": Color8(140, 50, 30),    # 深红浆果
-	"X": Color8(255, 225, 130),  # 极亮金叶
-	"Z": Color8(60, 20, 12),     # 极深叶底
 }
 
 # 史莱姆灯: 暗木棍 + 顶部黄绿史莱姆胶发光感
@@ -144,7 +128,6 @@ const _P_SLIME_TORCH := {
 	"g": Color8(120, 200, 100), # 胶体绿
 	"G": Color8(76, 175, 80),   # 胶体阴影
 	"h": Color8(220, 255, 180), # 高光
-	"X": Color8(255, 255, 220), # 极亮核心闪 (发光感)
 }
 
 const _P_PLANKS := {
@@ -152,8 +135,6 @@ const _P_PLANKS := {
 	"P": Color8(141, 93, 53),
 	"l": Color8(192, 143, 91),
 	"k": Color8(109, 66, 38),   # 板缝
-	"X": Color8(220, 178, 130),  # 极亮木板高光
-	"Z": Color8(58, 30, 14),     # 极深板缝底
 }
 
 const _P_WORKBENCH := {
@@ -162,9 +143,6 @@ const _P_WORKBENCH := {
 	"o": Color8(191, 111, 58),  # 工具痕
 	"k": Color8(67, 40, 24),
 	"l": Color8(208, 158, 110),
-	"X": Color8(235, 195, 145),  # 极亮台面高光
-	"Z": Color8(35, 18, 8),      # 极深台底
-	"g": Color8(180, 185, 195),  # 锯子/金属工具
 }
 
 const _P_DOOR := {
@@ -172,9 +150,6 @@ const _P_DOOR := {
 	"D": Color8(78, 52, 46),
 	"l": Color8(141, 110, 99),
 	"h": Color8(200, 200, 200), # 把手
-	"X": Color8(180, 142, 125),  # 极亮门板高光
-	"Z": Color8(30, 18, 14),     # 极深门框底
-	"H": Color8(240, 220, 130),  # 把手金属高光 (黄铜亮)
 }
 
 const _P_BEDROCK := {
@@ -182,8 +157,6 @@ const _P_BEDROCK := {
 	"B": Color8(33, 33, 33),
 	"l": Color8(97, 97, 97),
 	"k": Color8(15, 15, 15),
-	"X": Color8(130, 110, 145),  # 极亮暗紫闪 (基岩神秘感)
-	"Z": Color8(5, 5, 8),        # 极深裂缝
 }
 
 # 深石: STONE 同结构但整体降亮 35% + 暖深底
@@ -196,8 +169,6 @@ const _P_DEEP_STONE := {
 	"m": Color8(88, 75, 66),
 	"b": Color8(60, 50, 42),
 	"o": Color8(122, 96, 72),
-	"X": Color8(165, 145, 125),  # 极亮石面
-	"Z": Color8(20, 14, 10),     # 极深裂底
 }
 
 # 煤矿: STONE 底色 + c/C/h 系列煤块
@@ -213,8 +184,6 @@ const _P_COAL_ORE := {
 	"c": Color8(50, 40, 35),
 	"C": Color8(28, 22, 20),
 	"h": Color8(80, 65, 55),
-	"X": Color8(228, 216, 205),  # 极亮石面 (跟 STONE 同款)
-	"Z": Color8(10, 6, 5),       # 极深煤底
 }
 
 # 铁矿: STONE 底色 + r/R/H 系列铁锈
@@ -230,8 +199,6 @@ const _P_IRON_ORE := {
 	"r": Color8(168, 100, 60),
 	"R": Color8(130, 70, 40),
 	"H": Color8(200, 140, 90),
-	"X": Color8(245, 205, 150),  # 极亮锈光点
-	"Z": Color8(45, 20, 8),      # 极深锈底
 }
 
 # 火把 tile: 木棍底 + 暖色火苗 (静态视觉，动画 fx 由 TorchFx 叠加)
@@ -242,15 +209,14 @@ const _P_TORCH := {
 	"f": Color8(255, 180, 50),
 	"F": Color8(220, 100, 30),
 	"d": Color8(170, 60, 20),
-	"X": Color8(255, 240, 180),  # 极亮火焰核心 (白热)
 }
 
 # --- 图案 (每方块 16x16) ---
 
 # 草方块：参差不齐草尖 (透空+金黄y+穗s) → 多层暖绿 (a/g/m/G) → 草根下垂 (r) → 暖泥
 const _GRASS := [
-	".y..s.X.s.a.X.s.",
-	"ayasaXsaygasaXya",
+	".y..s.y.s.a.y.s.",
+	"ayasaysaygasaaya",
 	"gagmgaGmgaGmgagm",
 	"mgGmgmGgmGgmGgGm",
 	"GgmGgGmgGgmGgGmg",
@@ -263,14 +229,14 @@ const _GRASS := [
 	"ddrdkddddrddDddd",
 	"dDdddDdddrkddDdd",
 	"drdddddDdldDdddd",
-	"ZdDdddrddkdDdddZ",
-	"ZdrdddrkddrdldrZ",
+	"ddDdddrddkdDdddd",
+	"Ddrdddrkddrdldrd",
 ]
 
 # 泥土：暖土团块 (LL+边缘 o 暖橙) + 红棕 (r) 砂粒 + 冷棕 (p) + 深石子 (k) 细节
 const _DIRT := [
-	"XdXpdXdXdpXdXpdX",
-	"dlXddXrddpkddpdd",
+	"dDdpdDdDdpdDdpdD",
+	"dlddddrddpkddpdd",
 	"ddoLLddddDLLdrdd",
 	"dDoLLrdddDLLdkdd",
 	"dpddDdoLLdrkdLLd",
@@ -283,15 +249,15 @@ const _DIRT := [
 	"ddpdDodddpdLLrdd",
 	"dDdrdLLddpdddoDd",
 	"dpddrdDdkddpdkdD",
-	"ZdDdpdrddoddDddZ",
+	"drDdpdrddoddDddo",
 	"DdpdrdDpdrdpDdrd",
 ]
 
 # 石头：暖灰岩石块 (LL 凸块带 o 暖砂岩高光) + 横向裂纹 (kkkk) + 中灰 m / 深灰 b
 const _STONE := [
-	"SbsXsbsXsbsXsbsS",
+	"SbsSsbsSsbsSsbsS",
 	"smLLkssssooLLkss",
-	"sLXLkssksslXLkss",
+	"sLLLkssksslLLkss",
 	"sslksskkkkksslkk",
 	"somLLLsksslkmLss",
 	"soLLLLssllksLLls",
@@ -304,12 +270,12 @@ const _STONE := [
 	"somsLLLkssbkLLss",
 	"sslkkkbsslkLLLss",
 	"somssklllksmsLls",
-	"ZSsbsSsZsbsZsSsZ",
+	"sSsbsSsSsbsSsSss",
 ]
 
 # 沙：横向波纹 (Y 浅条) + 暖橙 o/b 沙粒 + 凸起沙丘 (LL) + 偶发暗石 (k)
 const _SAND := [
-	"XYyyyXyyyXyyyYyX",
+	"yYyyyYyyyYyyyYyy",
 	"yllyybyybyybyylo",
 	"yobyyyykyyyybyyy",
 	"yLLLlyybyobyyyly",
@@ -324,13 +290,13 @@ const _SAND := [
 	"yyybLLlyobyykyyy",
 	"yYobLLlyyykyyybo",
 	"Ybobyyykyybobyko",
-	"ZYyyyZyyyYyyyZyZ",
+	"yYyyyYyyyYyyyYyy",
 ]
 
 # 原木：暖竖纹树皮 (4 道凹沟 B + 凸条 l) + 2 个木结 (RR 带 B 框) + 中树皮 r + 樱木暖橙 o 微调
 const _LOG := [
 	"bBbpBbbBpbBbpBbB",
-	"bXblrXblbXblrXbl",
+	"bBblrBblbBblrBbl",
 	"brBlbBblpBblbBol",
 	"bBblbBplbBblbBbl",
 	"bBblbRRlbBblbBbl",
@@ -344,12 +310,12 @@ const _LOG := [
 	"brblbBplbBblbBbl",
 	"bBblbBblbBblbBpl",
 	"bbBbpBbpBbBbpBbB",
-	"ZbbBbbBbbBbbBbpZ",
+	"bbbBbbBbbBbbBbpb",
 ]
 
 # 橡木叶：4 角透空 + 多个叶簇 (簇心 h 高光 + d 阴影框) + 秋红浆果 r + 金橄榄 y + 鼠尾草 a
 const _LEAVES := [
-	".lhXh....hXhl.h.",
+	".lhLh....hLhl.h.",
 	"lLhddhlllhddhLls",
 	"Lddyhddssddyhdds",
 	"lLyddhsssddyaLls",
@@ -364,12 +330,12 @@ const _LEAVES := [
 	"lLyddhsssddyaLls",
 	"Lddyhddssddyhdds",
 	"lLhddhlllhddhLls",
-	".lhZh....hZhl.h.",
+	".lhLh....hLhl.h.",
 ]
 
 # 松针：密实无透角 + 矩形针簇 + 暗影包裹 + 偶发松果 y
 const _LEAVES_PINE := [
-	"ddXddLLLLLLddXdd",
+	"ddLddLLLLLLddLdd",
 	"dLLddssddssddLLd",
 	"LdsshhhhhhhhssdL",
 	"LdssddhhhhddssdL",
@@ -384,12 +350,12 @@ const _LEAVES_PINE := [
 	"LdssddhhhhddssdL",
 	"LdsshhhhhhhhssdL",
 	"dLLddssddssddLLd",
-	"ZdLddLLLLLLddLdZ",
+	"ddLddLLLLLLddLdd",
 ]
 
 # 秋叶：橡木叶骨架,色调换成橙红/金黄/深红浆果 r
 const _LEAVES_AUTUMN := [
-	".lhXh....hXhl.h.",
+	".lhLh....hLhl.h.",
 	"lLhddhlllhddhLla",
 	"Lddyhddrrddyhddr",
 	"lLyddhrrrddyaLla",
@@ -404,7 +370,7 @@ const _LEAVES_AUTUMN := [
 	"lLyddhrrrddyaLla",
 	"Lddyhddrrddyhddr",
 	"lLhddhlllhddhLla",
-	".lhZh....hZhl.h.",
+	".lhLh....hLhl.h.",
 ]
 
 # 史莱姆灯: 顶部 4x3 绿胶 + 中间细木棍
@@ -412,8 +378,8 @@ const _SLIME_TORCH := [
 	"................",
 	"....hgggggggh...",
 	"...gggGGGggggg..",
-	"...ggGXgGGggGg..",
-	"...gGgGGXgGGgg..",
+	"...ggGGgGGggGg..",
+	"...gGgGGGgGGgg..",
 	"....ggGGGgggg...",
 	".....gggggg.....",
 	".......bb.......",
@@ -428,30 +394,30 @@ const _SLIME_TORCH := [
 ]
 
 const _PLANKS := [
-	"XpppXpppXpppXppX",
+	"pppppppppppppppp",
 	"ppPpppppllpppPpp",
 	"pppppPpppppPpppp",
-	"ZkkkkkkkkkkkkkkZ",
+	"kkkkkkkkkkkkkkkk",
 	"pppppppppppPpppp",
 	"pPpppllpppppppPp",
 	"ppppppppPpppppll",
-	"ZkkkkkkkkkkkkkkZ",
+	"kkkkkkkkkkkkkkkk",
 	"pppPpppllpppPppp",
 	"pppppppppppppppp",
 	"pPpppppPpppllppp",
-	"ZkkkkkkkkkkkkkkZ",
+	"kkkkkkkkkkkkkkkk",
 	"ppplllpppPppppPp",
 	"pPppppppppppppll",
 	"ppppPpppppppPppp",
-	"ZkkkkkkkkkkkkkkZ",
+	"kkkkkkkkkkkkkkkk",
 ]
 
 # 工作台：木板基底 + 顶部工具痕迹
 const _WORKBENCH := [
 	"kkkkkkkkkkkkkkkk",
-	"kXXlllllllllllPk",
-	"kloooogggoollllk",
-	"klooPPoogglooolk",
+	"klllllllllllllPk",
+	"kloooooollolllPk",
+	"klooPPoollloollk",
 	"kloooooollllooll",
 	"kllllllllllllllk",
 	"kkkkkkkkkkkkkkkk",
@@ -463,18 +429,18 @@ const _WORKBENCH := [
 	"kkkkkkkkkkkkkkkk",
 	"ppllpppppPpppppp",
 	"pPpppppPpppppllp",
-	"ZZZZZZZZZZZZZZZZ",
+	"kkkkkkkkkkkkkkkk",
 ]
 
 # 门 (关) — 占 1 tile，门顶用 Door scene 上方延伸
 const _DOOR_CLOSED := [
-	"ZZZZZZZZZZZZZZZZ",
-	"ZXlllllllllllllZ",
+	"DDDDDDDDDDDDDDDD",
+	"DllllllllllllllD",
 	"DldddddddddddldD",
 	"DldDDDDDDDDDDldD",
 	"DldDddddddddDldD",
-	"DldDdHhdddddDldD",
-	"DldDdhHdddddDldD",
+	"DldDdhhdddddDldD",
+	"DldDdhhdddddDldD",
 	"DldDddddddddDldD",
 	"DldDddddddddDldD",
 	"DldDddddddddDldD",
@@ -483,18 +449,18 @@ const _DOOR_CLOSED := [
 	"DldDddddddddDldD",
 	"DldDDDDDDDDDDldD",
 	"DllllllllllllllD",
-	"ZZZZZZZZZZZZZZZZ",
+	"DDDDDDDDDDDDDDDD",
 ]
 
 # 门 (开) — 显示为侧面窄条
 const _DOOR_OPEN := [
-	"ZZZZZZZZZZZZ....",
-	"ZXllllllllXZ....",
+	"DDDDDDDDDDDD....",
+	"DllllllllllD....",
 	"DldddddddldD....",
 	"DldDDDDDDldD....",
 	"DldDdddddldD....",
-	"DldDdHhddldD....",
-	"DldDdhHddldD....",
+	"DldDdhhddldD....",
+	"DldDdhhddldD....",
 	"DldDdddddldD....",
 	"DldDdddddldD....",
 	"DldDdddddldD....",
@@ -503,31 +469,31 @@ const _DOOR_OPEN := [
 	"DldDdddddldD....",
 	"DldDDDDDDldD....",
 	"DllllllllllD....",
-	"ZZZZZZZZZZZZ....",
+	"DDDDDDDDDDDD....",
 ]
 
 const _BEDROCK := [
-	"ZbbBBbbXbBBbbbbZ",
+	"bbbBBbbbbBBbbbbb",
 	"bbBkBbbBBkkBbbBb",
 	"bblBBblbBkkBbbbb",
 	"bbBBblbbbbbBbBBb",
 	"BbbBbbblbblbBkBb",
 	"bbblbbbBkBbbBkBb",
-	"bbBBbbXlbbbbbblB",
+	"bbBBbbblbbbbbblB",
 	"bblBBbbBkkBbbblB",
 	"bbBkkBbBkkBbBBbb",
 	"bbBkkBbBBBbbbBkB",
 	"bbBBBbblbbbbbBkB",
-	"bbblbbbBkBbbXBBb",
+	"bbblbbbBkBbbbBBb",
 	"bbBkBbbBkBbblbbb",
 	"bbBkBbblBBblbbbb",
 	"BbbBBblbbbbbbblB",
-	"ZblbbbbbXbblbbbZ",
+	"bblbbbbbbbblbbbB",
 ]
 
 # 深石: STONE 同骨架但更密裂纹 + 暗调
 const _DEEP_STONE := [
-	"SbsXsbsXsbsXsbsS",
+	"SbsSsbsSsbsSsbsS",
 	"smbbkssssoobbkss",
 	"sbbbkssksslbbkss",
 	"sslksskkkkksslkk",
@@ -542,12 +508,12 @@ const _DEEP_STONE := [
 	"sombsbbbkssbkbbs",
 	"sslkkkbsslkbbbss",
 	"sombssklllksmsbs",
-	"ZSsbsSsZsbsZsSsZ",
+	"sSsbsSsSsbsSsSss",
 ]
 
 # 煤矿: STONE 底 + 3 簇煤块 (左上 / 中右 / 左下)
 const _COAL_ORE := [
-	"SbsXsbsXsbsXsbsS",
+	"SbsSsbsSsbsSsbsS",
 	"sccChssssooLLkss",
 	"scCCkssksslLLkss",
 	"scchkkkkkkksslkk",
@@ -562,16 +528,16 @@ const _COAL_ORE := [
 	"somsLLLkssbkLLss",
 	"sslkkkbsslkLLLss",
 	"somssklllksmsLls",
-	"ZSsbsSsZsbsZsSsZ",
+	"sSsbsSsSsbsSsSss",
 ]
 
 # 铁矿: STONE 底 + 3 簇铁锈斑
 const _IRON_ORE := [
-	"SbsXsbsXsbsXsbsS",
-	"srRXkssssooLLkss",
+	"SbsSsbsSsbsSsbsS",
+	"srRHkssssooLLkss",
 	"sRRRkssksslLLkss",
 	"srhkkskkkkksslkk",
-	"somLLLsksslrXHss",
+	"somLLLsksslrRHss",
 	"soLLLLssllkrRhls",
 	"ssLLLkssbkssRRks",
 	"slkkkkbsslkkkkls",
@@ -582,7 +548,7 @@ const _IRON_ORE := [
 	"somsLLLkssbkLLss",
 	"sslkkkbsslkLLLss",
 	"somssklllksmsLls",
-	"ZSsbsSsZsbsZsSsZ",
+	"sSsbsSsSsbsSsSss",
 ]
 
 # 火把 tile: 中央木棍 + 顶部火苗 (4×3)
@@ -590,8 +556,8 @@ const _TORCH := [
 	"................",
 	"................",
 	"......ff........",
-	".....fXXf.......",
-	"....fFXXFf......",
+	".....fFFf.......",
+	"....fFFFFf......",
 	"....fFFFFf......",
 	".....FdFd.......",
 	".....rbhr.......",

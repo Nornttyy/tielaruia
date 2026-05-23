@@ -443,11 +443,12 @@ func _swing_sword() -> void:
 
 
 func _spawn_swing_arc(origin: Vector2, dir: Vector2) -> void:
-	# 月牙扇形拖尾: 沿 dir 方向 ±50°, 外径 SWORD_RANGE_PX*0.9, 内径 *0.4
-	var outer_r: float = SWORD_RANGE_PX * 0.9
-	var inner_r: float = SWORD_RANGE_PX * 0.4
-	var half_spread: float = deg_to_rad(50.0)
-	var steps: int = 14
+	# 月牙扇形拖尾 (细窄风格): 沿 dir 方向 ±35°, 外径 24px 内径 16px,
+	# 整体偏小贴近剑刃, 不再遮挡玩家.
+	var outer_r: float = 24.0
+	var inner_r: float = 16.0
+	var half_spread: float = deg_to_rad(35.0)
+	var steps: int = 10
 	var base_angle: float = dir.angle()
 	var poly := Polygon2D.new()
 	poly.global_position = origin
@@ -461,7 +462,8 @@ func _spawn_swing_arc(origin: Vector2, dir: Vector2) -> void:
 		var a2: float = base_angle - half_spread + (half_spread * 2.0) * t2
 		pts.append(Vector2(cos(a2), sin(a2)) * inner_r)
 	poly.polygon = pts
-	poly.color = Color(1.0, 1.0, 1.0, 0.7)
+	# 偏蓝白透明感, 像金属挥击残影
+	poly.color = Color(0.92, 0.96, 1.0, 0.55)
 	var parent: Node = get_tree().get_first_node_in_group("effects_root")
 	if parent == null:
 		parent = get_parent()
