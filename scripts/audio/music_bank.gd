@@ -31,15 +31,24 @@ const A4 := 440.00
 
 var _tracks: Dictionary = {}    # name -> AudioStreamWAV
 var _ambient: Dictionary = {}   # name -> AudioStreamWAV
-var _bgm: AudioStreamPlayer
+var _bgm_a: AudioStreamPlayer
+var _bgm_b: AudioStreamPlayer
 var _ambient_wind: AudioStreamPlayer
 var _ambient_cricket: AudioStreamPlayer
 var _ambient_drip: AudioStreamPlayer
 var _current_track: String = ""
+var _active_bgm: AudioStreamPlayer
+var _fade_t: float = 0.0
+var _fading: bool = false
+# BGM 目标音量缓存, 避免每帧重算
+var _bgm_target_db: float = 0.0
+# 环境声目标音量 (lerp 用)
+var _amb_target_wind: float = DB_SILENT
+var _amb_target_cricket: float = DB_SILENT
+var _amb_target_drip: float = DB_SILENT
 
 
 func _ready() -> void:
-	# 强制开 process (autoload + paused tree 也要跑)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	# 合成所有曲目
 	_tracks["day"] = _build_day_track()
@@ -48,9 +57,11 @@ func _ready() -> void:
 	_ambient["wind"] = _build_wind(8.0)
 	_ambient["cricket"] = _build_cricket(8.0)
 	_ambient["drip"] = _build_drip(10.0)
-	# 单 BGM player (不再 crossfade, 直接切; 简单可靠)
-	_bgm = _new_loop_player()
-	# 3 个环境声 player 常驻播放
+	# 双 BGM player 给 crossfade 用
+	_bgm_a = _new_loop_player()
+	_bgm_b = _new_loop_player()
+	_active_bgm = _bgm_a
+	# 环境声常驻播放
 	_ambient_wind = _new_loop_player()
 	_ambient_cricket = _new_loop_player()
 	_ambient_drip = _new_loop_player()
@@ -63,38 +74,76 @@ func _ready() -> void:
 	_ambient_wind.play()
 	_ambient_cricket.play()
 	_ambient_drip.play()
-	set_context("day")
+	# 第一首 (day) 不做 fade, 直接到 target — 进游戏立刻有音乐
+	_play_initial_track("day")
+
+
+func _process(delta: float) -> void:
+	# BGM crossfade lerp
+	if _fading:
+		_fade_t = clamp(_fade_t + delta / BGM_FADE_SEC, 0.0, 1.0)
+		var fade_in: AudioStreamPlayer = _active_bgm
+		var fade_out: AudioStreamPlayer = _bgm_b if _active_bgm == _bgm_a else _bgm_a
+		fade_in.volume_db = lerp(DB_SILENT, _bgm_target_db, _fade_t)
+		fade_out.volume_db = lerp(_bgm_target_db, DB_SILENT, _fade_t)
+		if _fade_t >= 1.0:
+			_fading = false
+			fade_out.stop()
+	# 环境声 lerp 跟随 target (每帧逼近, 1s 内基本到位)
+	var step: float = clamp(delta * 3.0, 0.0, 1.0)
+	_ambient_wind.volume_db = lerp(_ambient_wind.volume_db, _amb_target_wind, step)
+	_ambient_cricket.volume_db = lerp(_ambient_cricket.volume_db, _amb_target_cricket, step)
+	_ambient_drip.volume_db = lerp(_ambient_drip.volume_db, _amb_target_drip, step)
+
+
+# 进游戏第一次播 (没 fade, 直接到目标音量)
+func _play_initial_track(ctx: String) -> void:
+	_current_track = ctx
+	var stream: AudioStreamWAV = _tracks.get(ctx)
+	if stream == null:
+		return
+	_bgm_target_db = BGM_VOLUME_DB + _master_db()
+	_active_bgm.stream = stream
+	_active_bgm.volume_db = _bgm_target_db
+	_active_bgm.play()
+	_update_ambient_targets(ctx)
 
 
 # 切换场景音乐. 合法值: "day" / "night" / "cave"
 func set_context(ctx: String) -> void:
-	var master: float = _master_db()
-	var amb_db: float = AMBIENT_VOLUME_DB + master
-	# 环境声音量直接设 (没 lerp, 简单可靠)
-	match ctx:
-		"day":
-			_ambient_wind.volume_db = amb_db
-			_ambient_cricket.volume_db = DB_SILENT
-			_ambient_drip.volume_db = DB_SILENT
-		"night":
-			_ambient_wind.volume_db = amb_db - 4.0
-			_ambient_cricket.volume_db = amb_db
-			_ambient_drip.volume_db = DB_SILENT
-		"cave":
-			_ambient_wind.volume_db = DB_SILENT
-			_ambient_cricket.volume_db = DB_SILENT
-			_ambient_drip.volume_db = amb_db
-	# BGM 切换 (有变化才切)
+	_update_ambient_targets(ctx)
 	if ctx == _current_track:
 		return
 	_current_track = ctx
 	var stream: AudioStreamWAV = _tracks.get(ctx)
 	if stream == null:
 		return
-	_bgm.stop()
-	_bgm.stream = stream
-	_bgm.volume_db = BGM_VOLUME_DB + master
-	_bgm.play()
+	# 把新曲目装到非 active 的 player, 启动 crossfade
+	var incoming: AudioStreamPlayer = _bgm_b if _active_bgm == _bgm_a else _bgm_a
+	incoming.stream = stream
+	incoming.volume_db = DB_SILENT
+	incoming.play()
+	_active_bgm = incoming
+	_bgm_target_db = BGM_VOLUME_DB + _master_db()
+	_fade_t = 0.0
+	_fading = true
+
+
+func _update_ambient_targets(ctx: String) -> void:
+	var amb_db: float = AMBIENT_VOLUME_DB + _master_db()
+	match ctx:
+		"day":
+			_amb_target_wind = amb_db
+			_amb_target_cricket = DB_SILENT
+			_amb_target_drip = DB_SILENT
+		"night":
+			_amb_target_wind = amb_db - 4.0
+			_amb_target_cricket = amb_db
+			_amb_target_drip = DB_SILENT
+		"cave":
+			_amb_target_wind = DB_SILENT
+			_amb_target_cricket = DB_SILENT
+			_amb_target_drip = amb_db
 
 
 func _new_loop_player() -> AudioStreamPlayer:
