@@ -278,12 +278,12 @@ func _boing(duration: float, f0: float, f1: float, amp: float) -> AudioStreamWAV
 	return _wrap_stream(data)
 
 
-# 史莱姆"波丁": 胶体落地的湿渎感
-#   - 前 10ms 棕噪声爆破 (胶体落地"啪嗒")
-#   - 整体 130ms, sine 95→55Hz 下沉 (胶体往下塌的低频)
-#   - 三阶低通让所有频率压得超低, "湿"到不行
+# 史莱姆"波丁": 胶体落地, 有湿渎但听得清是个"音"
+#   - 前 8ms 棕噪声爆破 (胶体落地"啪嗒")
+#   - 整体 110ms, sine 320→180Hz 下沉 (中频, 耳朵能识别音高)
+#   - 2 阶低通 alpha=0.5 (轻一点保留质感)
 func _glop(amp: float) -> AudioStreamWAV:
-	var duration: float = 0.13
+	var duration: float = 0.11
 	var samples: int = int(duration * SAMPLE_RATE)
 	var data := PackedByteArray()
 	data.resize(samples * 2)
@@ -291,31 +291,29 @@ func _glop(amp: float) -> AudioStreamWAV:
 	var bn := BrownNoise.new()
 	var lp1: float = 0.0
 	var lp2: float = 0.0
-	var lp3: float = 0.0
 	var attack_n: int = int(0.002 * SAMPLE_RATE)
-	var burst_n: int = int(0.010 * SAMPLE_RATE)
+	var burst_n: int = int(0.008 * SAMPLE_RATE)
 	for i in samples:
 		var t: float = float(i) / float(samples)
-		var freq: float = lerp(95.0, 55.0, t)
+		var freq: float = lerp(320.0, 180.0, t)
 		phase += freq * TAU / SAMPLE_RATE
 		var env: float
 		if i < attack_n:
 			env = float(i) / float(attack_n)
 		else:
 			var n: float = float(i - attack_n) / float(samples - attack_n)
-			env = pow(1.0 - n, 3.0)
+			env = pow(1.0 - n, 2.5)
 		var noise_env: float = 0.0
 		if i < burst_n:
 			var ne: float = 1.0 - float(i) / float(burst_n)
 			noise_env = ne * ne
-		var sine_s: float = sin(phase) * 0.55
-		var noise_s: float = bn.sample() * 0.55 * noise_env
+		var sine_s: float = sin(phase) * 0.65   # sine 主导, 突出音高
+		var noise_s: float = bn.sample() * 0.45 * noise_env
 		var raw: float = (sine_s + noise_s) * amp * env
-		# 三阶低通 → 超湿超闷
-		lp1 = _lpf(lp1, raw, 0.35)
-		lp2 = _lpf(lp2, lp1, 0.35)
-		lp3 = _lpf(lp3, lp2, 0.35)
-		_write_sample(data, i, lp3)
+		# 2 阶低通 (alpha 拉大, 高频留更多)
+		lp1 = _lpf(lp1, raw, 0.5)
+		lp2 = _lpf(lp2, lp1, 0.5)
+		_write_sample(data, i, lp2)
 	return _wrap_stream(data)
 
 
