@@ -48,8 +48,14 @@ func _physics_process(delta: float) -> void:
 			_attempt_hop()
 
 	move_and_slide()
-	# 撞墙 + 落地 → 下次跳转反方向 (避免卡墙原地)
-	if is_on_wall() and is_on_floor():
+	# 空中贴墙时, move_and_slide.slide() 会把横速归零, 导致跳起来变成纯垂直, 永远过不去 1 格方块.
+	# 强制维持空中横速 = 朝向 × HOP_VX, 让 slime 攀越方块边缘后能水平推进上去.
+	if not is_on_floor():
+		var dir_x: float = -1.0 if sprite.flip_h else 1.0
+		velocity.x = dir_x * HOP_VX
+	# 撞墙 + 落地 → 下次跳转反方向 (避免卡墙原地). 只有 _hop_timer 接近触发时才反向,
+	# 给 slime 多次跳跃机会越过方块.
+	if is_on_wall() and is_on_floor() and _hop_timer < 0.05:
 		velocity.x = 0
 		sprite.flip_h = not sprite.flip_h
 		_hop_timer = min(_hop_timer, 0.2)

@@ -132,8 +132,11 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 				elif tid == Tiles.DEEP_STONE and inn > IRON_THRESHOLD:
 					tid = Tiles.IRON_ORE
 
-			# 洞穴: 除 BEDROCK 外都可被挖空 (y > surf 才生效, 不挖天空)
-			if tid != Tiles.BEDROCK and tid != Tiles.AIR and y > surf:
+			# 洞穴: 除 BEDROCK / 矿石 外都可被挖空 (y > surf 才生效, 不挖天空)
+			# 矿石保留 → 洞壁上能露出矿脉, 玩家挖洞才能采到
+			if tid != Tiles.BEDROCK and tid != Tiles.AIR \
+					and tid != Tiles.COAL_ORE and tid != Tiles.IRON_ORE \
+					and y > surf:
 				var cv: float = abs(cave_noise.get_noise_2d(float(world_x), float(y)))
 				if cv > CAVE_THRESHOLD:
 					tid = Tiles.AIR

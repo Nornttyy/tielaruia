@@ -219,12 +219,16 @@ const _ZH_NAMES := {
 	"slime_jelly": "史莱姆果冻",
 	"apple": "苹果",
 	"slime_torch": "史莱姆灯",
+	"torch": "火把",
+	"coal": "煤",
+	"iron_ore": "铁矿",
 	"wood_sword": "木剑",
 	"wood_pickaxe": "木镐",
 	"wood_axe": "木斧",
 	"stone_sword": "石剑",
 	"stone_pickaxe": "石镐",
 	"stone_axe": "石斧",
+	"iron_pickaxe": "铁镐",
 }
 
 
