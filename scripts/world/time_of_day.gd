@@ -14,8 +14,8 @@
 extends Node
 
 const DAY_DURATION_SEC := 600.0   # 10 分钟一个日夜 (~5 分白天 + 5 分黑夜)
-const NIGHT_LIGHT := 2          # 夜里地表光值 (0..7, 越大越亮)
-const DAY_LIGHT := 7            # 白天地表光值
+const NIGHT_LIGHT := 4          # 夜里地表光值 (0..15, 越大越亮; 月光不至于全黑)
+const DAY_LIGHT := 15           # 白天地表光值
 
 const DAY_SKY := Color(0.55, 0.78, 0.95)      # 浅蓝
 const DUSK_SKY := Color(0.85, 0.55, 0.40)     # 橙红

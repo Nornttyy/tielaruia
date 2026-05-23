@@ -1,21 +1,16 @@
-# 黑暗覆盖层。盖在 TerrainLayer 上面, 按 TileLightGrid 算的光值
-# 给每个 tile 画 0..6 级别的黑色半透明瓦片 (level 7 = 满亮 = 不画)。
+# 黑暗覆盖层. 盖在 TerrainLayer 上面, 按 TileLightGrid (BFS 扩散) 计算每 tile 光值,
+# 画对应等级的半透明黑瓦. 16 级过渡 (0=满黑, 15=透明).
 #
-# 触发器:
-#   - _process: 每 UPDATE_INTERVAL 秒重算玩家视野范围
-#   - recompute_chunk(chunk_x, chunk_width): chunk 加载时一次性算整柱
-#   - clear_chunk(chunk_x, chunk_width): chunk 卸载时清掉
-#   - recompute_around(tile_x, tile_y, radius): tile 改 / 火把 改时局部重算
-#
-# 光值 0..7 → tile_id 0..6 (level 7 不画)。
+# 每 UPDATE_INTERVAL 秒重算玩家视野范围. 触发 BFS 一次, 输出 dict, 按光值 set_cell.
+# chunk_unloaded 时清掉该 chunk 的所有暗瓦 (防 stale).
 extends TileMapLayer
 
 const TileLightGrid = preload("res://scripts/world/tile_light_grid.gd")
 const DarknessArt = preload("res://scripts/art/darkness_art.gd")
 
-const UPDATE_INTERVAL := 0.1   # 每 0.1s 刷一次玩家视野
-const VIEW_HALF_W := 30        # ±30 tiles 半宽 (覆盖典型屏幕)
-const VIEW_HALF_H := 18        # ±18 tiles 半高
+const UPDATE_INTERVAL := 0.1   # 每 0.1s 刷一次 (10 Hz, 视觉够顺)
+const VIEW_HALF_W := 30
+const VIEW_HALF_H := 20
 
 var _last_update: float = 0.0
 var _player_tile: Vector2i = Vector2i.ZERO
@@ -29,7 +24,7 @@ func _ready() -> void:
 func _build_tileset() -> TileSet:
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(16, 16)
-	# Level 0..6 各一个 source (level 7 = 满亮, 不需要瓦片)
+	# 0..14 = 暗瓦 (source_id = level). 15 = 满亮不画.
 	for level in range(DarknessArt.LEVELS - 1):
 		var src := TileSetAtlasSource.new()
 		src.texture = DarknessArt.get_texture(level)
@@ -51,19 +46,28 @@ func _update_viewport() -> void:
 	var player: Node2D = get_tree().get_first_node_in_group("player")
 	if player == null:
 		return
+	var cm: Node = get_tree().get_first_node_in_group("chunk_manager")
+	if cm == null:
+		return
 	var px: int = int(floor(player.global_position.x / 16.0))
 	var py: int = int(floor(player.global_position.y / 16.0))
 	_player_tile = Vector2i(px, py)
 	var torches: Array = _collect_torches()
-	# 视野范围 ±VIEW
-	for dx in range(-VIEW_HALF_W, VIEW_HALF_W + 1):
-		for dy in range(-VIEW_HALF_H, VIEW_HALF_H + 1):
-			var tx: int = px + dx
-			var ty: int = py + dy
-			_set_dark_cell(tx, ty, torches)
+	var x0: int = px - VIEW_HALF_W
+	var x1: int = px + VIEW_HALF_W + 1
+	var y0: int = py - VIEW_HALF_H
+	var y1: int = py + VIEW_HALF_H + 1
+	var grid: Dictionary = TileLightGrid.compute_region(cm, x0, y0, x1, y1, _player_tile, torches)
+	for x in range(x0, x1):
+		for y in range(y0, y1):
+			var light: int = int(grid.get(Vector2i(x, y), 0))
+			if light >= TileLightGrid.MAX_LIGHT:
+				set_cell(Vector2i(x, y), -1)
+			else:
+				set_cell(Vector2i(x, y), light, Vector2i.ZERO)
 
 
-# 收集已放置的火把 tile 坐标 (走 WorldLighting._torches dict)
+# 收集 WorldLighting 管理的火把坐标
 func _collect_torches() -> Array:
 	var wl: Node = get_tree().get_first_node_in_group("world_lighting")
 	if wl == null or not "_torches" in wl:
@@ -71,24 +75,7 @@ func _collect_torches() -> Array:
 	return wl._torches.keys()
 
 
-func _set_dark_cell(x: int, y: int, torches: Array) -> void:
-	var light: int = TileLightGrid.compute_light(x, y, _player_tile, torches)
-	if light >= TileLightGrid.MAX_LIGHT:
-		set_cell(Vector2i(x, y), -1)
-	else:
-		set_cell(Vector2i(x, y), light, Vector2i.ZERO)
-
-
-# 公共 API: chunk 加载时全列预算
-func recompute_chunk(chunk_x: int, chunk_width: int, world_height: int) -> void:
-	var torches: Array = _collect_torches()
-	var x0: int = chunk_x * chunk_width
-	for x in range(x0, x0 + chunk_width):
-		for y in world_height:
-			_set_dark_cell(x, y, torches)
-
-
-# 公共 API: chunk 卸载时清掉
+# 公共 API: chunk 卸载时清掉一列 (防 stale 暗瓦留在屏幕上 / 后续 BFS 计算不到)
 func clear_chunk(chunk_x: int, chunk_width: int, world_height: int) -> void:
 	var x0: int = chunk_x * chunk_width
 	for x in range(x0, x0 + chunk_width):
@@ -96,9 +83,11 @@ func clear_chunk(chunk_x: int, chunk_width: int, world_height: int) -> void:
 			set_cell(Vector2i(x, y), -1)
 
 
-# 公共 API: 局部重算 (tile 改 / 火把 改 时调)
-func recompute_around(tile_x: int, tile_y: int, radius: int) -> void:
-	var torches: Array = _collect_torches()
-	for dx in range(-radius, radius + 1):
-		for dy in range(-radius, radius + 1):
-			_set_dark_cell(tile_x + dx, tile_y + dy, torches)
+# 兼容旧接口: 现在 BFS 接管, chunk_loaded 不需要预算, 但保留 stub 避免 world.gd 报错
+func recompute_chunk(_chunk_x: int, _chunk_width: int, _world_height: int) -> void:
+	pass
+
+
+# 兼容旧接口: tile 改了由下次 _update_viewport 涵盖, 不需要立刻局部重算
+func recompute_around(_tile_x: int, _tile_y: int, _radius: int) -> void:
+	pass

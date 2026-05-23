@@ -3,8 +3,8 @@
 # 调用方按 light_value (0..7) 选对应的纹理。
 extends RefCounted
 
-# alpha 阶梯: 0 = 满黑, 7 = 全透。中间均匀过渡。
-const LEVELS := 8
+# alpha 阶梯: 0 = 满黑, 15 = 全透。16 级让暗→亮过渡更顺滑。
+const LEVELS := 16
 
 
 static func get_texture(level: int) -> ImageTexture:
