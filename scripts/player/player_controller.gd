@@ -12,6 +12,7 @@ const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _player_aura: PointLight2D = $PlayerAura
 @onready var _sun_aura: PointLight2D = $SunAura
+@onready var _held_item: Sprite2D = $HeldItem
 
 const HURT_DURATION := 0.4
 const KNOCKBACK_VX := 90.0
@@ -47,6 +48,10 @@ func _ready() -> void:
 	# 光源纹理: 两个尺寸 (玩家身光 + 大日光)
 	_player_aura.texture = ArtCache.radial_gradient(PLAYER_AURA_TEX_SIZE)
 	_sun_aura.texture = ArtCache.radial_gradient(SUN_AURA_TEX_SIZE)
+	# 手持物品: 绑定 inventory, 之后 hotbar 切换会自动刷新 sprite
+	var pinv: Node = get_node_or_null("PlayerInventory")
+	if pinv != null and _held_item != null:
+		_held_item.bind_inventory(pinv)
 
 
 func _process(delta: float) -> void:
@@ -154,6 +159,8 @@ func _physics_process(delta: float) -> void:
 	elif dir < -0.01:
 		_facing_right = false
 	sprite.flip_h = not _facing_right
+	if _held_item != null:
+		_held_item.set_facing(_facing_right)
 
 	# 动画状态机
 	_update_animation(dir, on_floor_after)

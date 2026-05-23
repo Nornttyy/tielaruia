@@ -29,6 +29,7 @@ var secondary_held_override: Variant = null  # null = 真实输入；bool = 强�
 # Mining 状态
 var _mining_target: Vector2i = INVALID_TILE
 var _mining_progress: float = 0.0
+var _mining_swing_t: float = 0.0  # 挖矿挥镐动画节流
 
 # 战斗
 const SWORD_RANGE_PX := 36.0
@@ -152,7 +153,16 @@ func _update_mining(delta: float) -> void:
 		_clear_crack(_mining_target)
 		_mining_target = tile
 		_mining_progress = 0.0
+		_mining_swing_t = 0.0
 	_mining_progress += _tool_speed(tool_kind, tid) * delta
+	# 挥镐/挥斧动画: 每 0.35s 挥一次
+	_mining_swing_t -= delta
+	if _mining_swing_t <= 0.0:
+		_mining_swing_t = 0.35
+		var player_node: Node = get_parent()
+		var held: Node = null if player_node == null else player_node.get_node_or_null("HeldItem")
+		if held != null and held.has_method("play_swing"):
+			held.play_swing()
 	# 通知 CrackOverlay 当前进度
 	var ratio: float = clamp(_mining_progress / _hardness(tid), 0.0, 1.0)
 	_set_crack(tile, ratio)
@@ -383,6 +393,10 @@ func _swing_sword() -> void:
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
+	# 手持物品挥摆动画
+	var held: Node = player.get_node_or_null("HeldItem")
+	if held != null and held.has_method("play_swing"):
+		held.play_swing()
 	var damage: int = _effective_sword_damage()
 	if damage <= 0:
 		return

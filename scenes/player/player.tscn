@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=3 uid="uid://b1teilaruiaplayer"]
+[gd_scene load_steps=9 format=3 uid="uid://b1teilaruiaplayer"]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_ctrl"]
 [ext_resource type="Script" path="res://scripts/player/player_inventory.gd" id="2_inv"]
 [ext_resource type="Script" path="res://scripts/player/player_action.gd" id="3_act"]
 [ext_resource type="Script" path="res://scripts/player/player_health.gd" id="4_hp"]
 [ext_resource type="Script" path="res://scripts/player/player_hunger.gd" id="5_hg"]
+[ext_resource type="Script" path="res://scripts/player/held_item.gd" id="6_hi"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(10, 22)
@@ -40,3 +41,6 @@ enabled = false
 [node name="SunAura" type="PointLight2D" parent="."]
 energy = 0.0
 enabled = false
+
+[node name="HeldItem" type="Sprite2D" parent="."]
+script = ExtResource("6_hi")
