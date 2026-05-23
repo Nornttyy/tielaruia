@@ -67,7 +67,8 @@ func _build_all() -> void:
 	# 吃: 2 次低噪声咬, 强低通
 	_sfx["eat"] = _chomp(0.20, 0.22)
 	# 史莱姆跳: 弹性"boing", 200→130 chirp, 加抖动
-	_sfx["slime_hop"] = _boing(0.16, 200.0, 130.0, 0.20)
+	# 史莱姆跳: 湿润胶体"波丁" — 棕噪声 splat + 低 sine 下沉, 三阶低通超湿
+	_sfx["slime_hop"] = _glop(0.30)
 
 
 # 棕色噪声生成器: 每次返回积分的随机值, 频谱偏低频. -1..1 范围.
@@ -274,6 +275,47 @@ func _boing(duration: float, f0: float, f1: float, amp: float) -> AudioStreamWAV
 		var raw: float = sin(phase) * amp * env
 		lp1 = _lpf(lp1, raw, 0.5)
 		_write_sample(data, i, lp1)
+	return _wrap_stream(data)
+
+
+# 史莱姆"波丁": 胶体落地的湿渎感
+#   - 前 10ms 棕噪声爆破 (胶体落地"啪嗒")
+#   - 整体 130ms, sine 95→55Hz 下沉 (胶体往下塌的低频)
+#   - 三阶低通让所有频率压得超低, "湿"到不行
+func _glop(amp: float) -> AudioStreamWAV:
+	var duration: float = 0.13
+	var samples: int = int(duration * SAMPLE_RATE)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	var phase: float = 0.0
+	var bn := BrownNoise.new()
+	var lp1: float = 0.0
+	var lp2: float = 0.0
+	var lp3: float = 0.0
+	var attack_n: int = int(0.002 * SAMPLE_RATE)
+	var burst_n: int = int(0.010 * SAMPLE_RATE)
+	for i in samples:
+		var t: float = float(i) / float(samples)
+		var freq: float = lerp(95.0, 55.0, t)
+		phase += freq * TAU / SAMPLE_RATE
+		var env: float
+		if i < attack_n:
+			env = float(i) / float(attack_n)
+		else:
+			var n: float = float(i - attack_n) / float(samples - attack_n)
+			env = pow(1.0 - n, 3.0)
+		var noise_env: float = 0.0
+		if i < burst_n:
+			var ne: float = 1.0 - float(i) / float(burst_n)
+			noise_env = ne * ne
+		var sine_s: float = sin(phase) * 0.55
+		var noise_s: float = bn.sample() * 0.55 * noise_env
+		var raw: float = (sine_s + noise_s) * amp * env
+		# 三阶低通 → 超湿超闷
+		lp1 = _lpf(lp1, raw, 0.35)
+		lp2 = _lpf(lp2, lp1, 0.35)
+		lp3 = _lpf(lp3, lp2, 0.35)
+		_write_sample(data, i, lp3)
 	return _wrap_stream(data)
 
 

@@ -94,7 +94,7 @@ func _attempt_hop() -> void:
 	velocity.x = _current_hop_vx
 	velocity.y = -vy_mag
 	sprite.play("hop")
-	SfxBank.play("slime_hop", 0.15, -6.0)
+	SfxBank.play("slime_hop", 0.25, -4.0)  # ±25% 变调 让每次胶体落地不一样
 
 
 func _on_anim_done() -> void:
