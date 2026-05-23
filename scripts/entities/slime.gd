@@ -25,6 +25,9 @@ var _is_dying: bool = false
 func _ready() -> void:
 	sprite.sprite_frames = ArtCache.slime_frames
 	sprite.play("idle")
+	# hop 动画不循环, 播完会停在最后那个"压扁落地"帧, 看着像被压扁
+	# 接 animation_finished, 落地后切回 idle
+	sprite.animation_finished.connect(_on_anim_done)
 	add_to_group("slimes")
 
 
@@ -71,6 +74,13 @@ func _attempt_hop() -> void:
 	velocity.x = dir * HOP_VX
 	velocity.y = HOP_VY
 	sprite.play("hop")
+
+
+func _on_anim_done() -> void:
+	if _is_dying:
+		return
+	if sprite.animation == "hop":
+		sprite.play("idle")
 
 
 func _find_player() -> Node2D:
