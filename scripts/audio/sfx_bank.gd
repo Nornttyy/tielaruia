@@ -1,12 +1,19 @@
-# 程序生成的音效库 (autoload). 启动时合成所有 SFX 为 AudioStreamWAV.
-# 用法: SfxBank.play("jump") / SfxBank.play("break", 0.15) (0.15 = ±15% 随机变调)
-# 内部维护 8 个 AudioStreamPlayer 池, 允许多个音效同时播放.
+# 程序生成 SFX (autoload). 启动时合成所有音效为 AudioStreamWAV.
+# 用法: SfxBank.play("jump") / SfxBank.play("break", 0.15)
+#
+# 设计原则:
+#   - 频率压低 (80-250 Hz 主导), 避免高频刺耳
+#   - 白噪声 → 棕噪声 (低频为主, 像"沙土感"而非"嘶"声)
+#   - 多级低通 (3 阶) 让声音"厚"
+#   - 慢 attack 消除起始 click
+#   - sine + 噪声混合, 不用 sawtooth/square
 extends Node
 
 const SAMPLE_RATE := 22050
 const POOL_SIZE := 8
+const GLOBAL_ATTEN_DB := -4.0
 
-var _sfx: Dictionary = {}            # name → AudioStreamWAV
+var _sfx: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
 
 
@@ -16,9 +23,6 @@ func _ready() -> void:
 		add_child(p)
 		_players.append(p)
 	_build_all()
-
-
-const GLOBAL_ATTEN_DB := -8.0  # 整体衰减, 避免音效刺耳
 
 
 func play(sfx_name: String, pitch_variation: float = 0.05, volume_db: float = 0.0) -> void:
@@ -35,162 +39,207 @@ func play(sfx_name: String, pitch_variation: float = 0.05, volume_db: float = 0.
 
 
 func _master_db() -> float:
-	# GameSettings.master_volume ∈ [0, 1] → -60..0 dB
 	var v: float = clampf(GameSettings.master_volume, 0.0, 1.0)
 	if v <= 0.001:
 		return -80.0
 	return linear_to_db(v)
 
 
-# ===== SFX 合成 =====
+# ===== 音效合成 =====
 
 func _build_all() -> void:
-	# 所有振幅压到 ~0.18 (原来 0.3-0.5), 频率下移 + 低通平滑, 避免刺耳
-	# 跳: 上升 chirp, 频率降低
-	_sfx["jump"] = _chirp(0.10, 240.0, 440.0, 0.18)
-	# 落地"扑通"
-	_sfx["land"] = _noise_thud(0.10, 0.20)
-	# 挖完: 低通过滤后的噪声爆破
-	_sfx["break"] = _noise_burst(0.14, 0.22, 0.85)
-	# 放方块: 软"啪"
-	_sfx["place"] = _noise_burst(0.06, 0.18, 0.3)
-	# 捡物: chirp 频率降下来, 不那么尖
-	_sfx["pickup"] = _chirp(0.13, 420.0, 660.0, 0.18)
-	# 挥剑 swoosh: 低通后柔和很多
-	_sfx["swing"] = _swoosh(0.11, 0.18)
-	# 击中
-	_sfx["hit"] = _thump(0.10, 150.0, 0.22)
-	# 受伤: 改用 sine 下降 (sawtooth 太蜂鸣), 频率更低
-	_sfx["hurt"] = _chirp(0.18, 200.0, 90.0, 0.20)
-	# 吃东西: 单口柔噪声 + 低通
-	_sfx["eat"] = _eat_chomp(0.18, 0.18)
-	# 史莱姆跳 boing
-	_sfx["slime_hop"] = _chirp(0.14, 240.0, 150.0, 0.15)
+	# 挖完: 低沉"咚", 不是噪声爆破. 80Hz sine + 棕噪声短爆
+	_sfx["break"] = _thunk(0.18, 75.0, 0.35)
+	# 放方块: 比挖更短更清脆, 120Hz
+	_sfx["place"] = _thunk(0.10, 130.0, 0.30)
+	# 跳: 短促 whoosh, 棕噪声 + 上升 LFO 调制
+	_sfx["jump"] = _whoosh(0.12, 200.0, 350.0, 0.25)
+	# 落地: 厚实 thud, 60Hz 主导
+	_sfx["land"] = _thunk(0.13, 55.0, 0.35)
+	# 捡物: 柔和铃声 (基频 + 八度), 平滑包络
+	_sfx["pickup"] = _bell(0.18, 420.0, 0.20)
+	# 挥剑: 短 whoosh 下降
+	_sfx["swing"] = _whoosh(0.13, 350.0, 150.0, 0.22)
+	# 击中: 低频 thud + 短噪声
+	_sfx["hit"] = _thunk(0.14, 90.0, 0.32)
+	# 受伤: 低 sine 短下滑 + 厚低通
+	_sfx["hurt"] = _moan(0.22, 220.0, 110.0, 0.25)
+	# 吃: 2 次低噪声咬, 强低通
+	_sfx["eat"] = _chomp(0.20, 0.22)
+	# 史莱姆跳: 弹性"boing", 200→130 chirp, 加抖动
+	_sfx["slime_hop"] = _boing(0.16, 200.0, 130.0, 0.20)
 
 
-# 频率从 f0 chirp 到 f1, sine 波, 指数 amplitude 衰减
-func _chirp(duration: float, f0: float, f1: float, amp: float) -> AudioStreamWAV:
+# 棕色噪声生成器: 每次返回积分的随机值, 频谱偏低频. -1..1 范围.
+class BrownNoise:
+	var _state: float = 0.0
+	func sample() -> float:
+		_state = clampf(_state * 0.95 + (randf() * 2.0 - 1.0) * 0.1, -1.0, 1.0)
+		return _state
+
+
+# 多级单极低通: 调用 N 次单极得到 N 阶低通, 削高频更狠
+func _lpf(prev: float, raw: float, alpha: float) -> float:
+	return prev * (1.0 - alpha) + raw * alpha
+
+
+# 低沉敲击: 短 sine 主体 + 棕噪声短爆 + 厚低通. 用于 break/place/land/hit.
+func _thunk(duration: float, base_freq: float, amp: float) -> AudioStreamWAV:
 	var samples := int(duration * SAMPLE_RATE)
 	var data := PackedByteArray()
 	data.resize(samples * 2)
 	var phase := 0.0
+	var bn := BrownNoise.new()
+	var lp1 := 0.0
+	var lp2 := 0.0
+	# 慢 attack 5ms 消 click
+	var attack_n: int = int(0.005 * SAMPLE_RATE)
+	for i in samples:
+		var t: float = float(i) / float(samples)
+		# sine 主体降频 (敲击的"实心感")
+		var freq: float = base_freq * (1.0 - t * 0.4)
+		phase += freq * TAU / SAMPLE_RATE
+		var env: float
+		if i < attack_n:
+			env = float(i) / float(attack_n)
+		else:
+			env = 1.0 - t
+			env = env * env  # 指数衰减
+		var sine_s: float = sin(phase) * 0.7
+		var noise_s: float = bn.sample() * 0.4  # 棕噪声给"质感"
+		var raw: float = (sine_s + noise_s) * amp * env
+		# 2 阶低通
+		lp1 = _lpf(lp1, raw, 0.4)
+		lp2 = _lpf(lp2, lp1, 0.4)
+		_write_sample(data, i, lp2)
+	return _wrap_stream(data)
+
+
+# Whoosh: 棕噪声 + 频率扫描调制 (虚拟扫频, 噪声本身就低频)
+func _whoosh(duration: float, _f0: float, _f1: float, amp: float) -> AudioStreamWAV:
+	var samples := int(duration * SAMPLE_RATE)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	var bn := BrownNoise.new()
+	var lp1 := 0.0
+	var lp2 := 0.0
+	for i in samples:
+		var t: float = float(i) / float(samples)
+		var env: float = sin(t * PI)  # 钟形 (柔起柔收)
+		var noise_s: float = bn.sample()
+		var raw: float = noise_s * amp * env
+		lp1 = _lpf(lp1, raw, 0.5)
+		lp2 = _lpf(lp2, lp1, 0.5)
+		_write_sample(data, i, lp2)
+	return _wrap_stream(data)
+
+
+# 铃声: 基频 + 八度倍频, 缓慢衰减, 弱低通保留一些泛音
+func _bell(duration: float, base_freq: float, amp: float) -> AudioStreamWAV:
+	var samples := int(duration * SAMPLE_RATE)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	var ph1 := 0.0
+	var ph2 := 0.0
+	var lp1 := 0.0
+	var attack_n: int = int(0.008 * SAMPLE_RATE)
+	for i in samples:
+		var t: float = float(i) / float(samples)
+		ph1 += base_freq * TAU / SAMPLE_RATE
+		ph2 += base_freq * 2.0 * TAU / SAMPLE_RATE
+		var env: float
+		if i < attack_n:
+			env = float(i) / float(attack_n)
+		else:
+			env = 1.0 - t * 0.9
+		var raw: float = (sin(ph1) * 0.7 + sin(ph2) * 0.3) * amp * env
+		lp1 = _lpf(lp1, raw, 0.6)
+		_write_sample(data, i, lp1)
+	return _wrap_stream(data)
+
+
+# 呻吟: sine 下降, 厚低通
+func _moan(duration: float, f0: float, f1: float, amp: float) -> AudioStreamWAV:
+	var samples := int(duration * SAMPLE_RATE)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	var phase := 0.0
+	var lp1 := 0.0
+	var lp2 := 0.0
+	var attack_n: int = int(0.01 * SAMPLE_RATE)
 	for i in samples:
 		var t: float = float(i) / float(samples)
 		var freq: float = lerp(f0, f1, t)
 		phase += freq * TAU / SAMPLE_RATE
-		var env: float = 1.0 - t
-		env = env * env  # 指数衰减
-		var s: float = sin(phase) * amp * env
-		_write_sample(data, i, s)
-	return _wrap_stream(data)
-
-
-# 噪声 + 低频 sin 混合, 模拟落地"扑通". 加低通让声音更厚
-func _noise_thud(duration: float, amp: float) -> AudioStreamWAV:
-	var samples := int(duration * SAMPLE_RATE)
-	var data := PackedByteArray()
-	data.resize(samples * 2)
-	var phase := 0.0
-	var prev := 0.0
-	for i in samples:
-		var t: float = float(i) / float(samples)
-		phase += 100.0 * TAU / SAMPLE_RATE
-		var env: float = 1.0 - t
-		var noise: float = (randf() * 2.0 - 1.0) * 0.5
-		var raw: float = (sin(phase) * 0.6 + noise * 0.4) * amp * env * env
-		# 单极低通: 0.7 * 上帧 + 0.3 * 当前 → 削高频
-		var s: float = prev * 0.7 + raw * 0.3
-		prev = s
-		_write_sample(data, i, s)
-	return _wrap_stream(data)
-
-
-# 噪声爆破, 模拟挖碎方块. 加低通让噪声不那么"沙"
-func _noise_burst(duration: float, amp: float, attack: float) -> AudioStreamWAV:
-	var samples := int(duration * SAMPLE_RATE)
-	var data := PackedByteArray()
-	data.resize(samples * 2)
-	var attack_n: int = int(attack * SAMPLE_RATE * 0.02)
-	var prev := 0.0
-	for i in samples:
 		var env: float
-		if i < attack_n and attack_n > 0:
+		if i < attack_n:
 			env = float(i) / float(attack_n)
 		else:
-			env = 1.0 - (float(i - attack_n) / float(samples - attack_n))
-			env = env * env
-		var raw: float = (randf() * 2.0 - 1.0) * amp * env
-		# 强低通: 0.8 * prev + 0.2 * raw → 浑厚不刺耳
-		var s: float = prev * 0.8 + raw * 0.2
-		prev = s
-		_write_sample(data, i, s)
+			env = 1.0 - t * 0.85
+		var raw: float = sin(phase) * amp * env
+		lp1 = _lpf(lp1, raw, 0.4)
+		lp2 = _lpf(lp2, lp1, 0.4)
+		_write_sample(data, i, lp2)
 	return _wrap_stream(data)
 
 
-# 挥剑 swoosh: 噪声 + 低通让 swoosh 不再刺耳
-func _swoosh(duration: float, amp: float) -> AudioStreamWAV:
+# 吃: 2 次低棕噪声咬, 强低通
+func _chomp(duration: float, amp: float) -> AudioStreamWAV:
 	var samples := int(duration * SAMPLE_RATE)
 	var data := PackedByteArray()
 	data.resize(samples * 2)
-	var prev := 0.0
-	for i in samples:
-		var t: float = float(i) / float(samples)
-		var env: float = sin(t * PI)
-		var noise: float = (randf() * 2.0 - 1.0)
-		var raw: float = noise * amp * env
-		var s: float = prev * 0.75 + raw * 0.25
-		prev = s
-		_write_sample(data, i, s)
-	return _wrap_stream(data)
-
-
-# 击中: 短低频 + 低通噪声
-func _thump(duration: float, base_freq: float, amp: float) -> AudioStreamWAV:
-	var samples := int(duration * SAMPLE_RATE)
-	var data := PackedByteArray()
-	data.resize(samples * 2)
-	var phase := 0.0
-	var prev := 0.0
-	for i in samples:
-		var t: float = float(i) / float(samples)
-		phase += base_freq * TAU / SAMPLE_RATE
-		var env: float = 1.0 - t
-		env = env * env
-		var sine_s: float = sin(phase)
-		var noise: float = (randf() * 2.0 - 1.0) * 0.3
-		var raw: float = (sine_s * 0.7 + noise * 0.3) * amp * env
-		var s: float = prev * 0.7 + raw * 0.3
-		prev = s
-		_write_sample(data, i, s)
-	return _wrap_stream(data)
-
-
-# 吃东西: 2 次柔咬 (低通后柔和很多)
-func _eat_chomp(duration: float, amp: float) -> AudioStreamWAV:
-	var samples := int(duration * SAMPLE_RATE)
-	var data := PackedByteArray()
-	data.resize(samples * 2)
-	var prev := 0.0
+	var bn := BrownNoise.new()
+	var lp1 := 0.0
+	var lp2 := 0.0
+	var lp3 := 0.0
 	for i in samples:
 		var t: float = float(i) / float(samples)
 		var env: float = 0.0
-		for bite_t in [0.0, 0.45]:
+		for bite_t in [0.0, 0.5]:
 			var d: float = t - bite_t
 			if d >= 0.0 and d < 0.15:
 				var be: float = 1.0 - d / 0.15
 				env = max(env, be * be)
-		var noise: float = (randf() * 2.0 - 1.0)
-		var raw: float = noise * amp * env
-		var s: float = prev * 0.8 + raw * 0.2
-		prev = s
-		_write_sample(data, i, s)
+		var noise_s: float = bn.sample()
+		var raw: float = noise_s * amp * env
+		# 3 阶低通超厚
+		lp1 = _lpf(lp1, raw, 0.3)
+		lp2 = _lpf(lp2, lp1, 0.3)
+		lp3 = _lpf(lp3, lp2, 0.3)
+		_write_sample(data, i, lp3)
+	return _wrap_stream(data)
+
+
+# 史莱姆 boing: chirp 下降 + 轻微 vibrato + 低通
+func _boing(duration: float, f0: float, f1: float, amp: float) -> AudioStreamWAV:
+	var samples := int(duration * SAMPLE_RATE)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	var phase := 0.0
+	var lp1 := 0.0
+	var attack_n: int = int(0.008 * SAMPLE_RATE)
+	for i in samples:
+		var t: float = float(i) / float(samples)
+		# 加 vibrato (6Hz, ±10%) 让它"弹"
+		var vib: float = 1.0 + sin(t * TAU * 6.0) * 0.10
+		var freq: float = lerp(f0, f1, t) * vib
+		phase += freq * TAU / SAMPLE_RATE
+		var env: float
+		if i < attack_n:
+			env = float(i) / float(attack_n)
+		else:
+			env = 1.0 - t
+			env = env * env
+		var raw: float = sin(phase) * amp * env
+		lp1 = _lpf(lp1, raw, 0.5)
+		_write_sample(data, i, lp1)
 	return _wrap_stream(data)
 
 
 func _write_sample(data: PackedByteArray, idx: int, sample: float) -> void:
 	var v: int = int(clamp(sample, -1.0, 1.0) * 32767.0)
 	if v < 0:
-		v += 65536  # 二进制补码
+		v += 65536
 	data[idx * 2] = v & 0xFF
 	data[idx * 2 + 1] = (v >> 8) & 0xFF
 
