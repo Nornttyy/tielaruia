@@ -4,6 +4,7 @@ extends Node2D
 
 const TileSetBuilder = preload("res://scripts/world/tileset_builder.gd")
 const ChunkManagerClass = preload("res://scripts/world/chunk_manager.gd")
+const MinimapDataClass = preload("res://scripts/world/minimap_data.gd")
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
@@ -12,15 +13,24 @@ const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
 const ZombieScene = preload("res://scenes/entities/zombie.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
+const CowScene = preload("res://scenes/entities/cow.tscn")
+const SheepScene = preload("res://scenes/entities/sheep.tscn")
+const PigScene = preload("res://scenes/entities/pig.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const MAX_SLIMES := 4              # 白天上限 (slime)
 const MAX_ZOMBIES := 5             # 夜间上限 (zombie)
+const MAX_ANIMALS := 6             # 动物上限 (牛+羊+猪 总和)
 const SPAWN_INTERVAL := 6.0
+const ANIMAL_SPAWN_INTERVAL := 12.0  # 动物刷新更慢
 const SPAWN_RANGE_MIN := 12  # tiles
 const SPAWN_RANGE_MAX := 22
 
 const TILE_SIZE := 16
+
+const MINIMAP_VIEW_TILES_X := 18  # 玩家屏幕能看到的横向 tile (略大于实际视野)
+const MINIMAP_VIEW_TILES_Y := 14  # 纵向
+const MINIMAP_MARK_INTERVAL := 0.1  # 每 0.1s 标记一次玩家周围 (减少开销)
 
 @export var world_seed: int = 0   # 0 表示 _ready 内随机化
 
@@ -28,13 +38,16 @@ const TILE_SIZE := 16
 @onready var entities_root: Node2D = $Entities
 @onready var camera: Camera2D = $Camera2D
 @onready var world_lighting: Node = $WorldLighting
-@onready var darkness_layer: TileMapLayer = $DarknessLayer
+@onready var darkness_layer: Sprite2D = $DarknessLayer  # 平滑光照 (Sprite2D + bilinear), 不是 TileMapLayer
 
 var spawn_point: Vector2i
 var chunk_manager: ChunkManager
+var minimap_data: Node
 var village_villager_spawns: Array = []
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
+var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
 var _last_player_chunk_x: int = 0
+var _minimap_mark_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -49,6 +62,9 @@ func _ready() -> void:
 	chunk_manager.setup(world_seed)
 	chunk_manager.chunk_loaded.connect(_on_chunk_loaded)
 	chunk_manager.chunk_unloaded.connect(_on_chunk_unloaded)
+	minimap_data = MinimapDataClass.new()
+	minimap_data.name = "MinimapData"
+	add_child(minimap_data)
 	# 初始加载中心 ±VIEW_RADIUS
 	chunk_manager.ensure_loaded(0)
 	# 找出生点 (chunk 0 内)
@@ -88,6 +104,28 @@ func _process(delta: float) -> void:
 			_try_spawn_zombie()
 		else:
 			_try_spawn_slime()
+	# 动物只在白天刷新, 独立于怪物 timer
+	_animal_spawn_timer -= delta
+	if _animal_spawn_timer <= 0.0:
+		_animal_spawn_timer = ANIMAL_SPAWN_INTERVAL
+		if not TimeOfDay.is_night():
+			_try_spawn_animal()
+	# 玩家视野内 tile 标记为 minimap 可见
+	_minimap_mark_timer -= delta
+	if _minimap_mark_timer <= 0.0:
+		_minimap_mark_timer = MINIMAP_MARK_INTERVAL
+		_mark_explored_around_player()
+
+
+func _mark_explored_around_player() -> void:
+	var player := get_player()
+	if player == null or minimap_data == null:
+		return
+	var ptx: int = int(floor(player.global_position.x / TILE_SIZE))
+	var pty: int = int(floor(player.global_position.y / TILE_SIZE))
+	var hx: int = MINIMAP_VIEW_TILES_X / 2
+	var hy: int = MINIMAP_VIEW_TILES_Y / 2
+	minimap_data.mark_rect(ptx - hx, pty - hy, ptx + hx, pty + hy)
 
 
 func _physics_process(_delta: float) -> void:
@@ -177,6 +215,22 @@ func _try_spawn_zombie() -> void:
 	if zombies.size() >= MAX_ZOMBIES:
 		return
 	_spawn_surface_creature(ZombieScene)
+
+
+func _try_spawn_animal() -> void:
+	# 牛/羊/猪 共享上限. 随机挑一种刷.
+	var animals := get_tree().get_nodes_in_group("animals")
+	if animals.size() >= MAX_ANIMALS:
+		return
+	var r: float = randf()
+	var scene: PackedScene
+	if r < 0.33:
+		scene = CowScene
+	elif r < 0.66:
+		scene = SheepScene
+	else:
+		scene = PigScene
+	_spawn_surface_creature(scene)
 
 
 # 在玩家附近地表随机刷一个 creature (slime/zombie 共用站位逻辑)
