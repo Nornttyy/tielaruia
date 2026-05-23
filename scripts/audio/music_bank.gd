@@ -13,8 +13,8 @@ extends Node
 const SAMPLE_RATE := 22050
 const TAU_F := TAU
 const BGM_FADE_SEC := 1.0
-const BGM_VOLUME_DB := -8.0       # BGM 比 SFX 小, 不抢戏
-const AMBIENT_VOLUME_DB := -16.0  # 环境声更小, 衬底
+const BGM_VOLUME_DB := 0.0        # BGM 跟 SFX 同响度
+const AMBIENT_VOLUME_DB := -8.0   # 环境声小一档, 衬底
 const DB_SILENT := -80.0
 
 # 五声音阶频率 (Hz)
@@ -50,13 +50,16 @@ var _amb_target_drip: float = DB_SILENT
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	print("[MusicBank] _ready 开始合成 (master_volume=", GameSettings.master_volume, ")")
 	# 合成所有曲目
 	_tracks["day"] = _build_day_track()
 	_tracks["night"] = _build_night_track()
 	_tracks["cave"] = _build_cave_track()
+	print("[MusicBank] 3 首音乐合成完 day=", _tracks["day"].data.size(), " bytes")
 	_ambient["wind"] = _build_wind(8.0)
 	_ambient["cricket"] = _build_cricket(8.0)
 	_ambient["drip"] = _build_drip(10.0)
+	print("[MusicBank] 3 种环境声合成完")
 	# 双 BGM player 给 crossfade 用
 	_bgm_a = _new_loop_player()
 	_bgm_b = _new_loop_player()
@@ -74,8 +77,11 @@ func _ready() -> void:
 	_ambient_wind.play()
 	_ambient_cricket.play()
 	_ambient_drip.play()
+	print("[MusicBank] 5 个 player 创建+ambient 已 play (volume=-80)")
 	# 第一首 (day) 不做 fade, 直接到 target — 进游戏立刻有音乐
 	_play_initial_track("day")
+	print("[MusicBank] day track 已启动, bgm.playing=", _active_bgm.playing,
+		" volume_db=", _active_bgm.volume_db, " target=", _bgm_target_db)
 
 
 func _process(delta: float) -> void:
