@@ -33,9 +33,18 @@ static func build() -> TileSet:
 		ts.add_source(source, tile_id)
 
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
-			# Autotile 方块: 47 cell
-			for i in BlobLookup.VARIANT_KEYS.size():
-				var coord := Vector2i(i % 8, i / 8)
+			# Autotile 方块. slope tile (GRASS/DIRT) 用 82 变体 + 12×7 atlas,
+			# 其它 (含 SAND, 石/木/叶/墙族) 用 47 变体 + 8×6 atlas.
+			var variant_count: int
+			var cols: int
+			if EdgeTemplates.is_slope_tile(tile_id):
+				variant_count = BlobLookup.SLOPE_VARIANT_KEYS.size()
+				cols = BlobLookup.SLOPE_ATLAS_COLS
+			else:
+				variant_count = BlobLookup.VARIANT_KEYS.size()
+				cols = 8
+			for i in variant_count:
+				var coord := Vector2i(i % cols, i / cols)
 				source.create_tile(coord)
 				if Tiles.is_solid(tile_id):
 					var props = source.get_tile_data(coord, 0)

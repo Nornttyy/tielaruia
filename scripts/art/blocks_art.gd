@@ -799,7 +799,8 @@ static func get_full_palette(tile_id: int) -> Dictionary:
 	return _PATTERN_MAP[tile_id][1]
 
 
-# 构建 47 变体 atlas (128×96 = 8 列 × 6 行 × 16 px).
+# 构建 atlas. 标准 tile = 47 变体 (128×96 = 8×6×16 px),
+# slope tile (GRASS/DIRT) = 82 变体 (192×112 = 12×7×16 px).
 # 仅对 EdgeTemplates.FAMILY_OF 里有的方块有效; 其它方块抛 assert.
 static func build_atlas(tile_id: int) -> ImageTexture:
 	var EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
@@ -809,19 +810,34 @@ static func build_atlas(tile_id: int) -> ImageTexture:
 		"tile %d 没在 FAMILY_OF 里, 不支持 autotile" % tile_id)
 
 	var family: String = EdgeTemplates.FAMILY_OF[tile_id]
-	var family_tpl: Dictionary = EdgeTemplates.TEMPLATES[family]
 	var base_pattern: Array = _PATTERN_MAP[tile_id][0]
 	var palette: Dictionary = _PATTERN_MAP[tile_id][1]
 	var transparent := Color(0, 0, 0, 0)
 
-	var atlas_img := Image.create(128, 96, false, Image.FORMAT_RGBA8)
+	# 选择标准 vs slope 模板 + atlas 尺寸
+	var family_tpl: Dictionary
+	var variant_keys: Array
+	var cols: int
+	var rows: int
+	if EdgeTemplates.is_slope_tile(tile_id):
+		family_tpl = EdgeTemplates.SLOPE_TEMPLATES[family]
+		variant_keys = BlobLookup.SLOPE_VARIANT_KEYS
+		cols = BlobLookup.SLOPE_ATLAS_COLS
+		rows = BlobLookup.SLOPE_ATLAS_ROWS
+	else:
+		family_tpl = EdgeTemplates.TEMPLATES[family]
+		variant_keys = BlobLookup.VARIANT_KEYS
+		cols = 8
+		rows = 6
+
+	var atlas_img := Image.create(cols * 16, rows * 16, false, Image.FORMAT_RGBA8)
 	atlas_img.fill(transparent)
 
-	for i in BlobLookup.VARIANT_KEYS.size():
-		var variant_key: String = BlobLookup.VARIANT_KEYS[i]
+	for i in variant_keys.size():
+		var variant_key: String = variant_keys[i]
 		var edge: Array = family_tpl[variant_key]
-		var col: int = i % 8
-		var row: int = i / 8
+		var col: int = i % cols
+		var row: int = i / cols
 		var ox: int = col * 16
 		var oy: int = row * 16
 		for y in 16:
