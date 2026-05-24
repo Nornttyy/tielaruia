@@ -2,6 +2,9 @@
 # 朝向通过 sprite.flip_h 处理；面向右默认。
 extends CharacterBody2D
 
+const Chunk = preload("res://scripts/world/chunk.gd")
+const CAVE_DEPTH_THRESHOLD := 10   # 玩家离原始地表 >10 格才算"地下" (即使顶上方块挖掉了)
+
 const SPEED := 140.0
 const JUMP_VELOCITY := -320.0
 const GRAVITY := 900.0
@@ -69,19 +72,49 @@ func _update_sun_aura(delta: float) -> void:
 	_sun_aura.energy = lerp(_sun_aura.energy, target, t)
 
 
-# 背景音乐场景检测: 地下 → cave, 地表 + 白天 → day, 地表 + 夜晚 → night
+# 背景音乐场景检测:
+# cave 条件 (满足一个就播洞穴音乐):
+#   1) 玩家所在格背后有墙 (= 自然矿洞内)
+#   2) 玩家深度 (= y_tile - 原始 surf) > CAVE_DEPTH_THRESHOLD
+#      用 chunk.surfaces[lx] 取原始地表, 跟玩家挖没挖无关 — "顶上方块挖掉也算"
+# 否则按白天/夜晚分.
 func _update_music_context() -> void:
 	var tile_x: int = int(floor(global_position.x / TILE_SIZE))
 	var tile_y: int = int(floor(global_position.y / TILE_SIZE))
-	var exposed: bool = SkyLightGrid.is_sky_exposed(tile_x, tile_y)
 	var ctx: String
-	if not exposed:
+	if _is_player_underground(tile_x, tile_y):
 		ctx = "cave"
 	elif TimeOfDay.is_night():
 		ctx = "night"
 	else:
 		ctx = "day"
 	MusicBank.set_context(ctx)
+
+
+func _is_player_underground(tile_x: int, tile_y: int) -> bool:
+	# 找 World.chunk_manager (terrain_layer 在 group 里, 它父亲就是 World)
+	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
+	if terrain == null:
+		return false
+	var world: Node = terrain.get_parent()
+	if world == null:
+		return false
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return false
+	# 条件 1: 自然矿洞 (有墙背景)
+	if cm.get_wall(tile_x, tile_y) != Tiles.AIR:
+		return true
+	# 条件 2: 深度 > 10 (用原始 surf, 不被玩家挖掉影响)
+	var chunk_x: int = Chunk.chunk_x_of(tile_x)
+	var local_x: int = Chunk.local_x_of(tile_x)
+	var ch = cm.get_chunk(chunk_x)
+	if ch == null:
+		return false
+	if not ("surfaces" in ch) or ch.surfaces.size() <= local_x:
+		return false
+	var surf: int = ch.surfaces[local_x]
+	return (tile_y - surf) > CAVE_DEPTH_THRESHOLD
 
 
 # 公共接口: 朝向 (+1 右, -1 左)
