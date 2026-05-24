@@ -33,10 +33,10 @@ static func mask_to_key(mask: int) -> String:
 	sides += "C" if w else "O"
 
 	var corners := ""
-	# SE 角: 看 S 和 E (index 4)
-	corners += _corner_char(s, e, se)
-	# NE 角: 看 N 和 E (index 5)
+	# NE 角: 看 N 和 E (index 4)
 	corners += _corner_char(n, e, ne)
+	# SE 角: 看 S 和 E (index 5)
+	corners += _corner_char(s, e, se)
 	# SW 角: 看 S 和 W (index 6)
 	corners += _corner_char(s, w, sw)
 	# NW 角: 看 N 和 W (index 7)

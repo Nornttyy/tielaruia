@@ -15,12 +15,12 @@ func test_only_north_neighbor():
 
 func test_north_and_east_no_corner():
 	# N + E 闭, NE 角缺 (concave): bits 0|1 = 3
-	assert_eq(BlobLookup.mask_to_key(0b0000_0011), "CCOO.X..")
+	assert_eq(BlobLookup.mask_to_key(0b0000_0011), "CCOOX...")
 
 
 func test_north_and_east_with_corner():
 	# N + E + NE: bits 0|1|16 = 19
-	assert_eq(BlobLookup.mask_to_key(0b0001_0011), "CCOO.I..")
+	assert_eq(BlobLookup.mask_to_key(0b0001_0011), "CCOOI...")
 
 
 func test_north_open_makes_ne_dot():
