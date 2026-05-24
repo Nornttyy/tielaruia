@@ -152,6 +152,7 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	for local_x in chunk_width:
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
+		c.surfaces[local_x] = surf  # 给 ScenicDirector 等查询用
 		var is_sand_col := sand_noise.get_noise_1d(float(world_x)) > SAND_THRESHOLD
 		var deep_threshold: int = surf + int((height - surf) * DEEP_STONE_RATIO)
 		for y in height:
@@ -194,12 +195,10 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	return c
 
 
-# 按深度给本 chunk 每列填背景墙.
-# - 地表上方 (y < surf): 天空, 无墙
-# - 浅层 (y in [surf, surf+WALL_HIDE_TOP_TILES)): 无墙
-#   (玩家在浅层挖洞背后看天空, 跟矿洞远景一致)
-# - 中层 (DIRT 区): DIRT_WALL
-# - 深层 (STONE 区): STONE_WALL
+# 按深度给本 chunk 每列填背景墙. 只在"自然矿洞"里填墙 — 即原本生成的 AIR 格.
+# - 玩家挖出来的洞: 背后 AIR (没墙), 看到的是天空/纯背景色
+# - 自然矿洞 (worm 挖出的隧道) 里面: 有墙 (DIRT_WALL / STONE_WALL 按深度)
+# - 地表上方 + 浅层 (前 WALL_HIDE_TOP_TILES 格): 仍无墙
 const WALL_HIDE_TOP_TILES := 3
 static func _fill_walls_chunk(c: Chunk, chunk_heights: Dictionary, chunk_width: int, height: int) -> void:
 	var chunk_start_x: int = c.chunk_x * chunk_width
@@ -209,6 +208,9 @@ static func _fill_walls_chunk(c: Chunk, chunk_heights: Dictionary, chunk_width: 
 		var wall_start: int = surf + WALL_HIDE_TOP_TILES
 		for y in height:
 			if y < wall_start:
+				continue
+			# 只有原本就是 AIR 的格才放墙 (= 自然 worm 矿洞内部)
+			if c.tiles[local_x][y] != Tiles.AIR:
 				continue
 			var wid: int
 			if y < surf + DIRT_DEPTH:

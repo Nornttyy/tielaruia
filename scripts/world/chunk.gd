@@ -8,6 +8,7 @@ const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 var chunk_x: int = 0
 var tiles: Array = []
 var walls: Array = []
+var surfaces: Array = []   # 每列原始地表 y_tile (生成时定, 不被玩家挖动)
 
 
 func _init(p_chunk_x: int = 0) -> void:
@@ -17,6 +18,8 @@ func _init(p_chunk_x: int = 0) -> void:
 func init_empty(height: int = ChunkConstants.WORLD_HEIGHT) -> void:
 	tiles.resize(ChunkConstants.CHUNK_WIDTH)
 	walls.resize(ChunkConstants.CHUNK_WIDTH)
+	surfaces.resize(ChunkConstants.CHUNK_WIDTH)
+	surfaces.fill(0)
 	for lx in ChunkConstants.CHUNK_WIDTH:
 		var col: Array = []
 		col.resize(height)

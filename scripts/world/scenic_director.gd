@@ -18,10 +18,6 @@ const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const WorldGenerator = preload("res://scripts/world/world_generator.gd")
 const TILE_SIZE := 16
 
-# walls 现在从 surf + WALL_HIDE_TOP_TILES 开始 (浅层无墙), 找到的第一行
-# wall 比真实 surf 低 N 行, 算 depth 时要减回去.
-const WALL_HIDE_TOP_TILES := 3
-
 # 距离原始草方块多少格才开始切换
 const SHALLOW_START_TILES := 10      # >10 格深才开始显远岩壁
 const SHALLOW_TRANSITION_TILES := 4  # 10→14 格 浅 t 0→1
@@ -139,9 +135,7 @@ func _player_depth_below_surface_tiles() -> float:
 	return player_y_tile - float(surf_y_tile)
 
 
-# 用 chunk 的 walls 数组找原始地表行.
-# walls 不会被玩家挖掉, 但从 surf + WALL_HIDE_TOP_TILES 开始填 (浅层无墙),
-# 所以找到第一行 wall 后要减 WALL_HIDE_TOP_TILES 回到真实 surf.
+# 用 chunk.surfaces 取原始地表 y_tile (世界生成时存下, 不被玩家挖动).
 func _find_surface_y_tile(world_x_tile: int) -> int:
 	if _world == null:
 		return -1
@@ -150,14 +144,13 @@ func _find_surface_y_tile(world_x_tile: int) -> int:
 		return -1
 	var chunk_x: int = Chunk.chunk_x_of(world_x_tile)
 	var local_x: int = Chunk.local_x_of(world_x_tile)
-	# 不加 : Chunk 类型注解 (mock 测试用别的类). 鸭子类型 get_wall 即可.
+	# 不加 : Chunk 类型注解 (mock 测试用别的类). 鸭子类型 surfaces 即可.
 	var ch = cm.get_chunk(chunk_x)
 	if ch == null:
 		return -1
-	for y in ChunkConstants.WORLD_HEIGHT:
-		if ch.get_wall(local_x, y) != Tiles.AIR:
-			return y - WALL_HIDE_TOP_TILES  # 减回浅层 hide 偏移
-	return -1
+	if not ("surfaces" in ch) or ch.surfaces == null or ch.surfaces.size() <= local_x:
+		return -1
+	return ch.surfaces[local_x]
 
 
 func _get_player_node() -> Node2D:
