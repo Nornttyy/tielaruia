@@ -33,7 +33,19 @@ const CACTUS_HEIGHT_MAX := 3     # 最高 3 格
 
 const DEEP_STONE_RATIO := 0.5    # 地表往下 (height-surf)*0.5 处起为 DEEP_STONE
 const COAL_THRESHOLD := 0.30     # 降低 → 煤矿更密
-const IRON_THRESHOLD := 0.40     # 降低 → 铁矿更多 (仅深石层有效)
+const IRON_THRESHOLD := 0.30     # 铁矿密度 (DEEP_STONE 用此, STONE 用 IRON_SHALLOW_THRESHOLD)
+const IRON_SHALLOW_THRESHOLD := 0.55  # 浅 STONE 里铁矿也能出, 但稀
+# 新矿 (T26):
+const COPPER_THRESHOLD := 0.30   # 铜矿: 浅层 STONE 常见
+const TIN_THRESHOLD := 0.35      # 锡矿: 浅层 STONE 稍稀
+const GOLD_THRESHOLD := 0.40     # 金矿: 深度 > 40 (相对 surf), 中等
+const DIAMOND_THRESHOLD := 0.50  # 钻石: 深度 > 80, 较稀
+const HELL_THRESHOLD := 0.55     # 地狱晶体: 深度 > 150, 很稀
+# 矿层深度边界 (y - surf), 单位 tile
+const ORE_DEPTH_SHALLOW_MAX := 50   # 铜锡浅层上限
+const ORE_DEPTH_MID_MIN := 40       # 金矿起始深度
+const ORE_DEPTH_DEEP_MIN := 80      # 钻石起始深度
+const ORE_DEPTH_HELL_MIN := 150     # 地狱晶体起始深度
 
 # Perlin Worms 洞穴系统 (细隧道网 + 分叉 + 死路, 按深度分层: 表少 / 深密)
 const WORM_SPAWN_GRID := 14      # 每 14×14 tile 一个候选 worm 起点 (密)
@@ -143,6 +155,32 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	iron_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	iron_noise.frequency = 0.10
 
+	# 新矿噪声 (T26): 每种独立 seed, 不同 frequency 让斑块大小有差异
+	var copper_noise := FastNoiseLite.new()
+	copper_noise.seed = world_seed + 10
+	copper_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	copper_noise.frequency = 0.13
+
+	var tin_noise := FastNoiseLite.new()
+	tin_noise.seed = world_seed + 11
+	tin_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	tin_noise.frequency = 0.13
+
+	var gold_noise := FastNoiseLite.new()
+	gold_noise.seed = world_seed + 12
+	gold_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	gold_noise.frequency = 0.09
+
+	var diamond_noise := FastNoiseLite.new()
+	diamond_noise.seed = world_seed + 13
+	diamond_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	diamond_noise.frequency = 0.08
+
+	var hell_noise := FastNoiseLite.new()
+	hell_noise.seed = world_seed + 14
+	hell_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	hell_noise.frequency = 0.07
+
 	# 山区 noise: 低频, 决定哪些列是高山 (factor>0) 哪些是平地 (factor=0)
 	var mountain_noise := FastNoiseLite.new()
 	mountain_noise.seed = world_seed + 5
@@ -189,14 +227,34 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 			else:
 				tid = Tiles.DEEP_STONE if y >= deep_threshold else Tiles.STONE
 
-			# 矿石覆盖: 仅在 STONE / DEEP_STONE 上, 铁矿仅深层出现
+			# 矿石覆盖: 仅在 STONE / DEEP_STONE 上. 优先级 高 → 低:
+			# 地狱晶体 > 钻石 > 金 > 铁 > 锡 > 铜 > 煤 (深度限制 + 噪声 threshold).
+			# 同位置多种 noise 都过 threshold 时, 用 elif 链优先取稀有的.
 			if tid == Tiles.STONE or tid == Tiles.DEEP_STONE:
+				var depth: int = y - surf
 				var cn: float = coal_noise.get_noise_2d(float(world_x), float(y))
 				var inn: float = iron_noise.get_noise_2d(float(world_x), float(y))
-				if cn > COAL_THRESHOLD:
-					tid = Tiles.COAL_ORE
+				var hn: float = hell_noise.get_noise_2d(float(world_x), float(y))
+				var dn: float = diamond_noise.get_noise_2d(float(world_x), float(y))
+				var gn: float = gold_noise.get_noise_2d(float(world_x), float(y))
+				var un: float = copper_noise.get_noise_2d(float(world_x), float(y))
+				var tn: float = tin_noise.get_noise_2d(float(world_x), float(y))
+				if depth >= ORE_DEPTH_HELL_MIN and hn > HELL_THRESHOLD:
+					tid = Tiles.HELL_CRYSTAL
+				elif depth >= ORE_DEPTH_DEEP_MIN and dn > DIAMOND_THRESHOLD:
+					tid = Tiles.DIAMOND_ORE
+				elif depth >= ORE_DEPTH_MID_MIN and gn > GOLD_THRESHOLD:
+					tid = Tiles.GOLD_ORE
 				elif tid == Tiles.DEEP_STONE and inn > IRON_THRESHOLD:
 					tid = Tiles.IRON_ORE
+				elif tid == Tiles.STONE and inn > IRON_SHALLOW_THRESHOLD:
+					tid = Tiles.IRON_ORE
+				elif depth <= ORE_DEPTH_SHALLOW_MAX and tn > TIN_THRESHOLD:
+					tid = Tiles.TIN_ORE
+				elif depth <= ORE_DEPTH_SHALLOW_MAX and un > COPPER_THRESHOLD:
+					tid = Tiles.COPPER_ORE
+				elif cn > COAL_THRESHOLD:
+					tid = Tiles.COAL_ORE
 
 			c.tiles[local_x][y] = tid
 

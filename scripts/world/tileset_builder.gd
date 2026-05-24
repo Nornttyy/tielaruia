@@ -26,6 +26,8 @@ static func build() -> TileSet:
 		Tiles.DEEP_STONE, Tiles.COAL_ORE, Tiles.IRON_ORE, Tiles.TORCH,
 		Tiles.GRASS_WALL, Tiles.DIRT_WALL, Tiles.STONE_WALL,
 		Tiles.CACTUS,
+		Tiles.COPPER_ORE, Tiles.TIN_ORE, Tiles.GOLD_ORE,
+		Tiles.DIAMOND_ORE, Tiles.HELL_CRYSTAL,
 	]
 	for tile_id in tile_ids:
 		var source := TileSetAtlasSource.new()

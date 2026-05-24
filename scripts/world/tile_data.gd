@@ -25,6 +25,11 @@ const GRASS_WALL := 18      # 草墙: 接近地表第 1-2 行
 const DIRT_WALL := 19       # 土墙: 中层 (土块对应)
 const STONE_WALL := 20      # 石墙: 深层 (石头对应)
 const CACTUS := 21          # 仙人掌: 沙漠地表装饰 (非实心, 可砍)
+const COPPER_ORE := 22      # 铜矿: 浅层 (wood 镐可挖)
+const TIN_ORE := 23         # 锡矿: 浅层 (wood 镐可挖)
+const GOLD_ORE := 24        # 金矿: 中深 (iron 镐才挖)
+const DIAMOND_ORE := 25     # 钻石矿: 深 (iron 镐才挖)
+const HELL_CRYSTAL := 26    # 地狱晶体: 接近基岩 (iron 镐才挖)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -141,6 +146,31 @@ const _PROPS := {
 		"solid": false, "mineable": false,
 		"tool_tiers": {},
 		"drops": [],
+	},
+	COPPER_ORE: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"drops": [["copper_ore", 100, 1, 1]],
+	},
+	TIN_ORE: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"drops": [["tin_ore", 100, 1, 1]],
+	},
+	GOLD_ORE: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
+		"drops": [["gold_ore", 100, 1, 1]],
+	},
+	DIAMOND_ORE: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
+		"drops": [["diamond", 100, 1, 1]],
+	},
+	HELL_CRYSTAL: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
+		"drops": [["hell_crystal", 100, 1, 1]],
 	},
 	CACTUS: {
 		# 仙人掌: 不实心 (玩家穿过, 像 LOG), 任何工具都能砍, 掉 cactus 物品

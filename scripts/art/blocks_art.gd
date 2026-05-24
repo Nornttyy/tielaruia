@@ -31,6 +31,11 @@ const GRASS_WALL := 18      # 背景墙: 草墙 (近地表)
 const DIRT_WALL := 19       # 背景墙: 土墙 (中层)
 const STONE_WALL := 20      # 背景墙: 石墙 (深层)
 const CACTUS := 21          # 仙人掌 (沙漠装饰)
+const COPPER_ORE := 22      # 铜矿 (浅层, 暖橙铜)
+const TIN_ORE := 23         # 锡矿 (浅层, 银白)
+const GOLD_ORE := 24        # 金矿 (中深, 暖金黄)
+const DIAMOND_ORE := 25     # 钻石矿 (深层, 青蓝发光)
+const HELL_CRYSTAL := 26    # 地狱晶体 (接近基岩, 烈火红)
 
 # --- 调色板 (每方块独立) ---
 
@@ -264,6 +269,74 @@ const _P_IRON_ORE := {
 	"_h": Color8(195, 180, 170), # 边缘高光
 	"_H": Color8(222, 205, 188), # 顶强高光 (暖)
 }
+
+# ─── 新矿石调色板 (STONE 底色 + 矿色 + 边缘槽位 同 STONE) ─────────────
+
+# 铜矿: STONE 底 + u/U/p 暖橙铜
+const _P_COPPER_ORE := {
+	"s": Color8(156, 144, 136), "S": Color8(122, 110, 102),
+	"l": Color8(182, 168, 158), "k": Color8(92, 80, 72),
+	"L": Color8(204, 191, 181), "m": Color8(138, 125, 116),
+	"b": Color8(110, 98, 90),   "o": Color8(184, 154, 130),
+	"u": Color8(192, 110, 60),  # 暖橙铜
+	"U": Color8(150, 75, 35),   # 深铜
+	"p": Color8(230, 150, 90),  # 高光铜
+	"_o": Color8(40, 32, 28), "_e": Color8(95, 85, 78),
+	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
+}
+
+# 锡矿: STONE 底 + n/N/x 银白
+const _P_TIN_ORE := {
+	"s": Color8(156, 144, 136), "S": Color8(122, 110, 102),
+	"l": Color8(182, 168, 158), "k": Color8(92, 80, 72),
+	"L": Color8(204, 191, 181), "m": Color8(138, 125, 116),
+	"b": Color8(110, 98, 90),   "o": Color8(184, 154, 130),
+	"n": Color8(195, 200, 210), # 银白锡
+	"N": Color8(140, 150, 160), # 深锡灰
+	"x": Color8(235, 240, 248), # 高光锡 (近白)
+	"_o": Color8(40, 32, 28), "_e": Color8(95, 85, 78),
+	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
+}
+
+# 金矿: STONE 底 + g/G/y 暖金
+const _P_GOLD_ORE := {
+	"s": Color8(156, 144, 136), "S": Color8(122, 110, 102),
+	"l": Color8(182, 168, 158), "k": Color8(92, 80, 72),
+	"L": Color8(204, 191, 181), "m": Color8(138, 125, 116),
+	"b": Color8(110, 98, 90),   "o": Color8(184, 154, 130),
+	"g": Color8(235, 195, 70),  # 暖金
+	"G": Color8(180, 140, 25),  # 深金阴影
+	"y": Color8(255, 230, 130), # 高光金
+	"_o": Color8(40, 32, 28), "_e": Color8(95, 85, 78),
+	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
+}
+
+# 钻石矿: STONE 底 + d/D/x 青蓝
+const _P_DIAMOND_ORE := {
+	"s": Color8(156, 144, 136), "S": Color8(122, 110, 102),
+	"l": Color8(182, 168, 158), "k": Color8(92, 80, 72),
+	"L": Color8(204, 191, 181), "m": Color8(138, 125, 116),
+	"b": Color8(110, 98, 90),   "o": Color8(184, 154, 130),
+	"d": Color8(130, 205, 235), # 青蓝钻
+	"D": Color8(55, 130, 175),  # 深钻阴影
+	"x": Color8(220, 250, 255), # 高光钻 (近白透)
+	"_o": Color8(40, 32, 28), "_e": Color8(95, 85, 78),
+	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
+}
+
+# 地狱晶体: DEEP_STONE 底 (更暗背景烘托) + h/H/y 烈火红
+const _P_HELL_CRYSTAL := {
+	"s": Color8(102, 88, 78),   "S": Color8(72, 60, 52),
+	"l": Color8(125, 108, 96),  "k": Color8(48, 36, 28),
+	"L": Color8(140, 122, 108), "m": Color8(88, 75, 66),
+	"b": Color8(60, 50, 42),    "o": Color8(122, 96, 72),
+	"h": Color8(255, 80, 30),   # 烈火红
+	"H": Color8(180, 30, 10),   # 深岩浆红
+	"y": Color8(255, 220, 120), # 黄红发光高光
+	"_o": Color8(20, 15, 12), "_e": Color8(50, 40, 33),
+	"_h": Color8(128, 110, 98), "_H": Color8(148, 126, 108),
+}
+
 
 # 背景墙: 比对应方块暗 ~50%, 图案更糊 (少高光多深色, 偶尔小石子)
 # 草墙: 顶部 1 行深绿根 + 下面深棕土
@@ -664,6 +737,109 @@ const _IRON_ORE := [
 	"sSsbsSsSsbsSsSss",
 ]
 
+# ─── 新矿石图案 (STONE 骨架, 替换 r/R/H → 各矿色) ──────────────────────
+
+# 铜矿: u 暖橙铜基 + U 深铜 + p 高光
+const _COPPER_ORE := [
+	"SbsSsbsSsbsSsbsS",
+	"suUpkssssooLLkss",
+	"sUUUkssksslLLkss",
+	"supkkskkkkksslkk",
+	"somLLLsksslUUUss",
+	"soLLLLssllkUUpls",
+	"ssLLLkssbkssUUks",
+	"slkkkkbsslkkkkls",
+	"somsLLLsskLLLmss",
+	"sUpkssolksLLLkbs",
+	"uUUslkkbskssLLls",
+	"spsLLLLossolssmm",
+	"somsLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"somssklllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+# 锡矿: n 银白基 + N 深锡 + x 高光近白
+const _TIN_ORE := [
+	"SbsSsbsSsbsSsbsS",
+	"snNxkssssooLLkss",
+	"sNNNkssksslLLkss",
+	"snxkkskkkkksslkk",
+	"somLLLsksslNNNss",
+	"soLLLLssllkNNxls",
+	"ssLLLkssbkssNNks",
+	"slkkkkbsslkkkkls",
+	"somsLLLsskLLLmss",
+	"sNxkssolksLLLkbs",
+	"nNNslkkbskssLLls",
+	"sxsLLLLossolssmm",
+	"somsLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"somssklllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+# 金矿: g 暖金 + G 深金 + y 高光
+const _GOLD_ORE := [
+	"SbsSsbsSsbsSsbsS",
+	"sgGykssssooLLkss",
+	"sGGGkssksslLLkss",
+	"sgykkskkkkksslkk",
+	"somLLLsksslGGGss",
+	"soLLLLssllkGGyls",
+	"ssLLLkssbkssGGks",
+	"slkkkkbsslkkkkls",
+	"somsLLLsskLLLmss",
+	"sGykssolksLLLkbs",
+	"gGGslkkbskssLLls",
+	"sysLLLLossolssmm",
+	"somsLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"somssklllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+# 钻石矿: d 青蓝基 + D 深钻 + x 高光近白
+const _DIAMOND_ORE := [
+	"SbsSsbsSsbsSsbsS",
+	"sdDxkssssooLLkss",
+	"sDDDkssksslLLkss",
+	"sdxkkskkkkksslkk",
+	"somLLLsksslDDDss",
+	"soLLLLssllkDDxls",
+	"ssLLLkssbkssDDks",
+	"slkkkkbsslkkkkls",
+	"somsLLLsskLLLmss",
+	"sDxkssolksLLLkbs",
+	"dDDslkkbskssLLls",
+	"sxsLLLLossolssmm",
+	"somsLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"somssklllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+# 地狱晶体: DEEP_STONE 骨架更暗 + h 烈火红 + H 深岩浆 + y 黄红发光
+const _HELL_CRYSTAL := [
+	"SbsSsbsSsbsSsbsS",
+	"shHykssssooLLkss",
+	"sHHHkssksslLLkss",
+	"shykkskkkkksslkk",
+	"somLLLsksslHHHss",
+	"soLLLLssllkHHyls",
+	"ssLLLkssbkssHHks",
+	"slkkkkbsslkkkkls",
+	"somsLLLsskLLLmss",
+	"sHykssolksLLLkbs",
+	"hHHslkkbskssLLls",
+	"sysLLLLossolssmm",
+	"somsLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"somssklllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+
 # 火把 tile: 中央木棍 + 顶部火苗 (4×3)
 const _TORCH := [
 	"................",
@@ -786,6 +962,11 @@ const _PATTERN_MAP := {
 	DIRT_WALL: [_DIRT_WALL, _P_DIRT_WALL],
 	STONE_WALL: [_STONE_WALL, _P_STONE_WALL],
 	CACTUS: [_CACTUS, _P_CACTUS],
+	COPPER_ORE: [_COPPER_ORE, _P_COPPER_ORE],
+	TIN_ORE: [_TIN_ORE, _P_TIN_ORE],
+	GOLD_ORE: [_GOLD_ORE, _P_GOLD_ORE],
+	DIAMOND_ORE: [_DIAMOND_ORE, _P_DIAMOND_ORE],
+	HELL_CRYSTAL: [_HELL_CRYSTAL, _P_HELL_CRYSTAL],
 }
 
 
