@@ -50,6 +50,15 @@ func test_atlas_coord_isolated_is_origin():
 	assert_eq(BlobLookup.ATLAS_COORD[0], Vector2i(0, 0))
 
 
+func test_atlas_coord_for_mask_255_points_to_CCCCIIII():
+	# mask 0xFF (全 8 邻居) 必须映射到 "CCCCIIII" (全闭 + 全 interior 角) 这个 key,
+	# 它代表"完全被包围"的内部块, 无任何边缘装饰. T4 (art_cache.gd) 用此格作 inventory icon.
+	# 此处不绑定具体索引/坐标 (字典序排序可能让它在 4-闭组首位 31, 不是末尾 46).
+	var coord: Vector2i = BlobLookup.ATLAS_COORD[255]
+	var idx: int = coord.x + coord.y * 8
+	assert_eq(BlobLookup.VARIANT_KEYS[idx], "CCCCIIII")
+
+
 func test_atlas_coord_size_256():
 	assert_eq(BlobLookup.ATLAS_COORD.size(), 256)
 

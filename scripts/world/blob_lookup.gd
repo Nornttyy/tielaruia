@@ -13,7 +13,7 @@ extends RefCounted
 static var VARIANT_KEYS: Array[String] = _enumerate_keys()
 
 # 256 项查表: mask → atlas Vector2i (col, row). 8 列 6 行.
-static var ATLAS_COORD: Array = _build_atlas_coord()
+static var ATLAS_COORD: Array[Vector2i] = _build_atlas_coord()
 
 
 static func mask_to_key(mask: int) -> String:
@@ -81,12 +81,12 @@ static func _closed_side_count(mask: int) -> int:
 	return c
 
 
-static func _build_atlas_coord() -> Array:
+static func _build_atlas_coord() -> Array[Vector2i]:
 	# 每个 mask 映射到它的 key 在 VARIANT_KEYS 里的下标, 再换算成 (col, row).
 	var key_to_index := {}
 	for i in VARIANT_KEYS.size():
 		key_to_index[VARIANT_KEYS[i]] = i
-	var result: Array = []
+	var result: Array[Vector2i] = []
 	result.resize(256)
 	for m in range(256):
 		var k := mask_to_key(m)

@@ -18,7 +18,7 @@
 
 | 文件 | 职责 |
 |---|---|
-| `scripts/world/blob_lookup.gd` | 纯数据 + 静态函数. `mask_to_variant_key(mask)` → 8 字符 key, `VARIANT_KEYS` 47 项, `ATLAS_COORD[256]` → Vector2i |
+| `scripts/world/blob_lookup.gd` | 纯数据 + 静态函数. `mask_to_key(mask)` → 8 字符 key, `VARIANT_KEYS` 47 项, `ATLAS_COORD[256]` → Vector2i |
 | `scripts/world/autotile.gd` | 帮手层. `refresh_tile()` 和 `refresh_with_neighbors()` 集中 set_cell + 邻居 mask 计算 |
 | `scripts/art/edge_templates.gd` | 5 族 × 47 边缘模板 (语义字符 ASCII) + `FAMILY_OF[tile_id]` 映射 |
 | `tests/unit/test_blob_lookup.gd` | 验证 mask → key 和 47 唯一性 |
@@ -57,8 +57,8 @@
 2     OCOO....    只有东邻居
 3     OOCO....    只有南邻居
 4     OOOC....    只有西邻居
-5     CCOO.I..    N+E 封闭, NE 角内 (interior)
-5+1   CCOO.X..    N+E 封闭, NE 角缺 (concave) [注: 此 mask 不可达, 因 N+E 闭但 NE 开 = 凹角]
+5     CCOOI...    N+E 封闭, NE 角内 (interior)
+5+1   CCOOX...    N+E 封闭, NE 角缺 (concave) [NE 在角 chars 第 0 位, 即 key 第 4 位]
 ... 实际索引按下面算法生成 ...
 ```
 
@@ -119,12 +119,12 @@ func test_only_north_neighbor():
 
 func test_north_and_east_no_corner():
 	# N + E 闭, NE 角缺 (concave): bits 0|1 = 3
-	assert_eq(BlobLookup.mask_to_key(0b0000_0011), "CCOO.X..")
+	assert_eq(BlobLookup.mask_to_key(0b0000_0011), "CCOOX...")
 
 
 func test_north_and_east_with_corner():
 	# N + E + NE: bits 0|1|16 = 19
-	assert_eq(BlobLookup.mask_to_key(0b0001_0011), "CCOO.I..")
+	assert_eq(BlobLookup.mask_to_key(0b0001_0011), "CCOOI...")
 
 
 func test_north_open_makes_ne_dot():
