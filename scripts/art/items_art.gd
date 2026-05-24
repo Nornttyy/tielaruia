@@ -49,6 +49,15 @@ const PALETTE := {
 	"x": Color8(190, 195, 205),    # 石质冷灰高光
 	"i": Color8(115, 78, 44),      # 木柄中间纹 (比 h 暗一档)
 	"I": Color8(204, 156, 102),    # 木柄反光高光 (比 y 亮一档)
+	# --- 新工具色 (T27): 金 (Z/z/P/R) + 钻石 (N/X/Q/T) ---
+	"Z": Color8(220, 180, 60),     # 金中
+	"z": Color8(255, 220, 110),    # 金高光
+	"P": Color8(255, 245, 180),    # 金极亮 (闪光点)
+	"R": Color8(160, 110, 20),     # 金深阴影
+	"N": Color8(80, 175, 215),     # 钻石中 (青蓝)
+	"X": Color8(180, 235, 255),    # 钻石高光 (淡蓝)
+	"Q": Color8(225, 250, 255),    # 钻石极亮 (近白冰光)
+	"T": Color8(40, 110, 165),     # 钻石深阴影 (深海蓝)
 }
 
 # 木剑：对角线刀身 + 木柄 + 护手 + 黑描边 (RPG 金属闪风)
@@ -328,6 +337,162 @@ const _WOOL := [
 	"................",
 ]
 
+# --- 铁剑 / 铁斧 (T27): 钢蓝闪光刀身 + 木柄, 模仿 stone 形状 ---
+const _IRON_SWORD := [
+	"............nnn.",
+	"...........nEEn.",
+	"..........nEeEn.",
+	".........nEeEFn.",
+	"........nEeEFn..",
+	".......nEeEFn...",
+	"......nEeEFn....",
+	".....nEeEFn.....",
+	"....nEeEFn......",
+	"...nggGGGn......",
+	"..nggGGGGn......",
+	".nggGGGGn.......",
+	"....nhIn........",
+	"....nhin........",
+	"....nKKn........",
+	"................",
+]
+
+const _IRON_AXE := [
+	"..nEEEEn........",
+	".nEFFFFFn.......",
+	"nEFFFFFFFn......",
+	"nEFFFeeeEn......",
+	"nEFFFeEEn.......",
+	"nEFFeEEn........",
+	".nEeEEn.........",
+	"..nhIn..........",
+	"..nhin..........",
+	".nhin...........",
+	".nhin...........",
+	"nhin............",
+	"nhin............",
+	"nhin............",
+	"nKKn............",
+	"................",
+]
+
+# --- 金 (T27): 金黄刀身 + 1 点 P 闪光 ---
+const _GOLD_SWORD := [
+	"............nnn.",
+	"...........nZZn.",
+	"..........nZRZn.",
+	".........nZRZzn.",
+	"........nZRZPn..",
+	".......nZRZzn...",
+	"......nZRZzn....",
+	".....nZRZzn.....",
+	"....nZRZzn......",
+	"...nggGGGn......",
+	"..nggGGGGn......",
+	".nggGGGGn.......",
+	"....nhIn........",
+	"....nhin........",
+	"....nKKn........",
+	"................",
+]
+
+const _GOLD_PICKAXE := [
+	"...nnnnnnnnn....",
+	"..nZZZZZzPzZn...",
+	".nZzzzzzzzzZRn..",
+	"..nZRRZZZZZRn...",
+	"...nnZRRRznn....",
+	".....nhIn.......",
+	"....nhIn........",
+	"....nhin........",
+	"...nhin.........",
+	"...nhin.........",
+	"..nhin..........",
+	"..nhin..........",
+	".nhin...........",
+	".nhin...........",
+	"nKKn............",
+	"................",
+]
+
+const _GOLD_AXE := [
+	"..nZZZZn........",
+	".nZzzzzPn.......",
+	"nZzzzzzzzn......",
+	"nZzzzRRRZn......",
+	"nZzzzRZZn.......",
+	"nZzzRZZn........",
+	".nZRZZn.........",
+	"..nhIn..........",
+	"..nhin..........",
+	".nhin...........",
+	".nhin...........",
+	"nhin............",
+	"nhin............",
+	"nhin............",
+	"nKKn............",
+	"................",
+]
+
+# --- 钻石 (T27): 青蓝刀身 + Q 冰光 ---
+const _DIAMOND_SWORD := [
+	"............nnn.",
+	"...........nNNn.",
+	"..........nNTNn.",
+	".........nNTNXn.",
+	"........nNTNQn..",
+	".......nNTNXn...",
+	"......nNTNXn....",
+	".....nNTNXn.....",
+	"....nNTNXn......",
+	"...nggGGGn......",
+	"..nggGGGGn......",
+	".nggGGGGn.......",
+	"....nhIn........",
+	"....nhin........",
+	"....nKKn........",
+	"................",
+]
+
+const _DIAMOND_PICKAXE := [
+	"...nnnnnnnnn....",
+	"..nNNNNNXQXNn...",
+	".nNXXXXXXXXXNn..",
+	"..nNTTNNNNNNTn..",
+	"...nnNTTTXnn....",
+	".....nhIn.......",
+	"....nhIn........",
+	"....nhin........",
+	"...nhin.........",
+	"...nhin.........",
+	"..nhin..........",
+	"..nhin..........",
+	".nhin...........",
+	".nhin...........",
+	"nKKn............",
+	"................",
+]
+
+const _DIAMOND_AXE := [
+	"..nNNNNn........",
+	".nNXXXXQn.......",
+	"nNXXXXXXXn......",
+	"nNXXXTTTNn......",
+	"nNXXXTNNn.......",
+	"nNXXTNNn........",
+	".nNTNNn.........",
+	"..nhIn..........",
+	"..nhin..........",
+	".nhin...........",
+	".nhin...........",
+	"nhin............",
+	"nhin............",
+	"nhin............",
+	"nKKn............",
+	"................",
+]
+
+
 const _ICONS := {
 	"wood_sword": _WOOD_SWORD,
 	"wood_pickaxe": _WOOD_PICKAXE,
@@ -340,6 +505,14 @@ const _ICONS := {
 	"coal": _COAL,
 	"iron_ore": _IRON_ORE_ICON,
 	"iron_pickaxe": _IRON_PICKAXE,
+	"iron_sword": _IRON_SWORD,
+	"iron_axe": _IRON_AXE,
+	"gold_sword": _GOLD_SWORD,
+	"gold_pickaxe": _GOLD_PICKAXE,
+	"gold_axe": _GOLD_AXE,
+	"diamond_sword": _DIAMOND_SWORD,
+	"diamond_pickaxe": _DIAMOND_PICKAXE,
+	"diamond_axe": _DIAMOND_AXE,
 	"raw_meat": _RAW_MEAT,
 	"leather": _LEATHER,
 	"wool": _WOOL,

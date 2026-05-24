@@ -163,13 +163,15 @@ const _PROPS := {
 		"drops": [["gold_ore", 100, 1, 1]],
 	},
 	DIAMOND_ORE: {
+		# 钻石: 金镐 (tier 4) 才能挖 — 进阶门槛
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 4, "axe": -1, "sword": -1},
 		"drops": [["diamond", 100, 1, 1]],
 	},
 	HELL_CRYSTAL: {
+		# 地狱晶体: 钻石镐 (tier 5) 才能挖 — 终局装备
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 5, "axe": -1, "sword": -1},
 		"drops": [["hell_crystal", 100, 1, 1]],
 	},
 	CACTUS: {

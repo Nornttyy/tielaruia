@@ -108,6 +108,9 @@ func _build_items() -> void:
 	for item_id in ["wood_sword", "wood_pickaxe", "wood_axe", "slime_jelly", "apple",
 			"stone_sword", "stone_pickaxe", "stone_axe",
 			"coal", "iron_ore", "iron_pickaxe",
+			"iron_sword", "iron_axe",
+			"gold_sword", "gold_pickaxe", "gold_axe",
+			"diamond_sword", "diamond_pickaxe", "diamond_axe",
 			"raw_meat", "leather", "wool"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 

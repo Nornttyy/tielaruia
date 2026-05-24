@@ -142,7 +142,7 @@ const _RECIPES := [
 		"output_count": 4,
 		"mirror_ok": false,
 	},
-	# === 铁镐 (3x3 工作台, tier 3) ===
+	# === 铁工具 (3x3 工作台, tier 3) ===
 	{
 		"id": "iron_pickaxe",
 		"grid_size": Vector2i(3, 3),
@@ -152,6 +152,104 @@ const _RECIPES := [
 			["",         "planks",   ""],
 		],
 		"output_id": "iron_pickaxe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "iron_sword",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["", "iron_ore", ""],
+			["", "iron_ore", ""],
+			["", "planks",   ""],
+		],
+		"output_id": "iron_sword",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "iron_axe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["iron_ore", "iron_ore", ""],
+			["iron_ore", "planks",   ""],
+			["",         "planks",   ""],
+		],
+		"output_id": "iron_axe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	# === 金工具 (tier 4, 用 gold_ore + planks) ===
+	{
+		"id": "gold_sword",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["", "gold_ore", ""],
+			["", "gold_ore", ""],
+			["", "planks",   ""],
+		],
+		"output_id": "gold_sword",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "gold_pickaxe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["gold_ore", "gold_ore", "gold_ore"],
+			["",         "planks",   ""],
+			["",         "planks",   ""],
+		],
+		"output_id": "gold_pickaxe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "gold_axe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["gold_ore", "gold_ore", ""],
+			["gold_ore", "planks",   ""],
+			["",         "planks",   ""],
+		],
+		"output_id": "gold_axe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	# === 钻石工具 (tier 5, 终局; 用 diamond + planks) ===
+	{
+		"id": "diamond_sword",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["", "diamond", ""],
+			["", "diamond", ""],
+			["", "planks",  ""],
+		],
+		"output_id": "diamond_sword",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "diamond_pickaxe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["diamond", "diamond", "diamond"],
+			["",        "planks",  ""],
+			["",        "planks",  ""],
+		],
+		"output_id": "diamond_pickaxe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "diamond_axe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["diamond", "diamond", ""],
+			["diamond", "planks",  ""],
+			["",        "planks",  ""],
+		],
+		"output_id": "diamond_axe",
 		"output_count": 1,
 		"mirror_ok": true,
 	},
