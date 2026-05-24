@@ -43,23 +43,24 @@ const WORM_DEPTH_SHALLOW_MAX := 40  # 地表 40 格内安全, 不会"踩进去"
 const WORM_DEPTH_MID_MAX := 110     # surf+110 起密集
 const WORM_SURFACE_BUFFER := 20     # worm 路径距地表至少 20 格 (走近就 break, 防止深层 worm 窜到地表)
 
-# 露天矿洞 (Terraria 风表面洞穴): 平地小坡上有小开口, 下面是分叉迷宫 + 死路.
-# 山区不生成 (用户要求: 不在山上面). 平均每 OPEN_PIT_SPACING 列一个.
-# 结构: 1) 表面小开口 (2-3 宽×3-5 深) 2) 起始室 (3 半径圆) 3) 派 2-3 worm 散开
+# 露天矿洞 (Terraria 山坡侧面洞穴): 山坡侧面挖个洞口, 朝左/右开, 不是天坑.
+# 在斜坡 (terrain slope) 上找一个低边, 朝高边方向挖横向隧道进山 + 工程师分叉.
+# 山区 (mountain_factor > MOUNTAIN_PIT_THRESHOLD) 不生成.
 # 跨 chunk 一致: 用 _hash3 派生 RNG. 邻 chunk 搜索 ±OPEN_WORM_PAD_CELLS.
-const OPEN_PIT_SPACING := 60         # 1/60 ≈ 1.67% 概率/列 (非山区 ≈ 85% × 1.67% ≈ 1.4%/列)
-const OPEN_OPENING_WIDTH_MIN := 2    # 表面开口最窄
-const OPEN_OPENING_WIDTH_MAX := 3    # 表面开口最宽 (玩家能看见的洞口)
-const OPEN_OPENING_DEPTH_MIN := 3
-const OPEN_OPENING_DEPTH_MAX := 5
-const OPEN_CHAMBER_RADIUS := 3.0     # 开口底下的小起始室
-const OPEN_WORM_COUNT_MIN := 2       # 起始室派出的 worm 数 (= 分叉数)
+const OPEN_PIT_SPACING := 50         # 1/50 = 2% 概率/列, 但还要过斜坡过滤
+const OPEN_SLOPE_CHECK_DX := 6       # 检查 ±6 列内 surf 高度差 (= 斜坡探测半径)
+const OPEN_SLOPE_MIN_DIFF := 3       # 至少 3 格高度差才算斜坡 (= 不在平地刷)
+const OPEN_TUNNEL_LEN_MIN := 4       # 横向隧道长度 (玩家看到的入口段)
+const OPEN_TUNNEL_LEN_MAX := 8
+const OPEN_TUNNEL_HEIGHT := 3        # 隧道高 (= 玩家能站直 + 一格余地)
+const OPEN_CHAMBER_RADIUS := 3.0     # 隧道尽头小室
+const OPEN_WORM_COUNT_MIN := 2       # 小室派出的 worm 数 (= 分叉数)
 const OPEN_WORM_COUNT_MAX := 3
-const OPEN_WORM_LEN_MIN := 50        # 每条 worm 长度 (= 路径深度)
+const OPEN_WORM_LEN_MIN := 50
 const OPEN_WORM_LEN_MAX := 100
-const OPEN_WORM_RADIUS_SCALE := 1.4  # worm 半径系数 (默认 0.8-1.3 × 1.4 = 1.1-1.8 实际)
+const OPEN_WORM_RADIUS_SCALE := 1.4  # worm 半径系数 (实际 1.1-1.8)
 const OPEN_WORM_SURFACE_BUFFER := 3  # worm 距地表 ≥ 3, 不会再戳破地表
-const OPEN_WORM_PAD_CELLS := 100     # 邻 chunk 搜索 pad (= 最远 worm 可达)
+const OPEN_WORM_PAD_CELLS := 100     # 邻 chunk 搜索 pad
 
 # 树种枚举 (内部 idx)
 const _SPECIES_OAK := 0
@@ -384,11 +385,11 @@ static func _carve_circle(c: Chunk, center: Vector2, radius: float,
 			c.tiles[lx][wy] = Tiles.AIR
 
 
-# ===== 露天矿洞 (Terraria 表面洞穴风) =====
-# 平地小坡上有小开口, 下面是 worm 分叉迷宫. 山区不生成.
-# 结构: 1) 表面 2-3 宽×3-5 深小开口 2) 起始室 (3 半径圆) 3) 派 2-3 worm 散开
-# worm 用 surface_buffer=3 (能贴开口但不戳破地表), 半径×1.4 比普通矿道粗.
-# worm 自带分叉 (WORM_BRANCH_CHANCE) + 死路 (worm_len 跑完就停) → 自然迷宫.
+# ===== 露天矿洞 (Terraria 山坡侧面洞穴) =====
+# 洞口朝山坡的高侧开 (横向), 不是从顶部直插下去. 玩家沿地表走能看到山腰里的洞口.
+# 流程: 1) spawn_x 找斜坡方向 (左/右哪边 surf 高) 2) 朝高侧挖横向隧道 (在低 surf 高度水平)
+#       3) 隧道尽头小室 4) 派 2-3 worm 继续往里 + 往下分叉.
+# 平地无斜坡 → 跳过. 山区也跳过 (mountain_factor > THRESHOLD).
 # 跨 chunk 一致: 同 spawn_x 用 _hash3 派生 RNG, worm 用各自子 hash.
 static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
@@ -417,34 +418,43 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 	mountain_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	mountain_noise.frequency = MOUNTAIN_NOISE_FREQ
 
-	# 扫描邻 chunk 边缘 (worm 最远可达 OPEN_WORM_PAD_CELLS)
 	for spawn_x in range(chunk_start_x - OPEN_WORM_PAD_CELLS, chunk_end_x + OPEN_WORM_PAD_CELLS):
 		var rng := RandomNumberGenerator.new()
 		rng.seed = _hash3(world_seed, spawn_x, 7777)
 		if rng.randf() > 1.0 / float(OPEN_PIT_SPACING):
 			continue
-		# 反转: 山区跳过 (用户要求 不在山上面). 平地/小坡才生成
+		# 山区跳过
 		var mtn: float = maxf(0.0, mountain_noise.get_noise_1d(float(spawn_x)))
 		if mtn > MOUNTAIN_PIT_THRESHOLD:
 			continue
 
-		# 本列地表 (邻 chunk 用 _surf_at 估算, 跟 generate_chunk 同公式)
-		var col_surf: int = chunk_heights.get(spawn_x, -1)
-		if col_surf < 0:
-			col_surf = _surf_at(surf_noise, mountain_noise, spawn_x, height)
+		# === 找斜坡方向: 左/右哪边 surf 更高 (= 山坡上去的方向, 朝那里挖洞口) ===
+		var entrance_surf: int = chunk_heights.get(spawn_x, -1)
+		if entrance_surf < 0:
+			entrance_surf = _surf_at(surf_noise, mountain_noise, spawn_x, height)
+		var slope_dir: int = 0
+		var slope_diff: int = 0
+		for check_dx in [-OPEN_SLOPE_CHECK_DX, -OPEN_SLOPE_CHECK_DX / 2,
+				OPEN_SLOPE_CHECK_DX / 2, OPEN_SLOPE_CHECK_DX]:
+			var other_surf: int = _surf_at(surf_noise, mountain_noise,
+					spawn_x + check_dx, height)
+			var diff: int = entrance_surf - other_surf  # 正 = 那边更高 (y 更小)
+			if diff > slope_diff:
+				slope_diff = diff
+				slope_dir = 1 if check_dx > 0 else -1
+		# 没足够斜坡 → 跳过 (= 平地不刷洞)
+		if slope_diff < OPEN_SLOPE_MIN_DIFF or slope_dir == 0:
+			continue
 
-		# === 1. 表面小开口 (玩家能看到的洞口, 直接挖穿 GRASS) ===
-		var opening_w: int = rng.randi_range(OPEN_OPENING_WIDTH_MIN, OPEN_OPENING_WIDTH_MAX)
-		var opening_d: int = rng.randi_range(OPEN_OPENING_DEPTH_MIN, OPEN_OPENING_DEPTH_MAX)
-		var half_w: int = opening_w / 2
-		for i in range(opening_w):
-			var dx: int = i - half_w
-			var wx: int = spawn_x + dx
+		# === 1. 朝山坡方向挖横向隧道 (在低 surf 水平高度) ===
+		var tunnel_len: int = rng.randi_range(OPEN_TUNNEL_LEN_MIN, OPEN_TUNNEL_LEN_MAX)
+		for i in range(tunnel_len):
+			var wx: int = spawn_x + i * slope_dir
 			var lx: int = wx - chunk_start_x
 			if lx < 0 or lx >= chunk_width:
 				continue
-			for dy in range(opening_d):
-				var y: int = col_surf + dy
+			for dy in range(OPEN_TUNNEL_HEIGHT):
+				var y: int = entrance_surf + dy
 				if y < 0 or y >= height - BEDROCK_ROWS:
 					continue
 				var t: int = c.tiles[lx][y]
@@ -452,20 +462,23 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 					continue
 				c.tiles[lx][y] = Tiles.AIR
 
-		# === 2. 起始室 (开口底下圆) ===
-		var chamber_y: float = float(col_surf + opening_d + 2)
-		_carve_circle(c, Vector2(float(spawn_x), chamber_y), OPEN_CHAMBER_RADIUS,
+		# === 2. 隧道尽头小室 (3 半径圆, 钻进山里的小厅) ===
+		var chamber_x: int = spawn_x + tunnel_len * slope_dir
+		var chamber_y: float = float(entrance_surf + 1)  # 隧道中间高度
+		_carve_circle(c, Vector2(float(chamber_x), chamber_y), OPEN_CHAMBER_RADIUS,
 				chunk_start_x, chunk_end_x, height)
 
-		# === 3. 派 2-3 worm 散开 (各带初始角度偏移, 自然 fan-out) ===
+		# === 3. 派 2-3 worm 继续往山坡里 + 往下 (角度 fan 在 in-and-down 象限) ===
 		var worm_count: int = rng.randi_range(OPEN_WORM_COUNT_MIN, OPEN_WORM_COUNT_MAX)
+		# 朝山的方向 = 角度 0 (右) 或 PI (左). 加 0..PI/2 = right-down 或 left-down 象限
+		var bias_min: float = 0.0 if slope_dir == 1 else (PI / 2.0)
+		var bias_max: float = (PI / 2.0) if slope_dir == 1 else PI
 		for wi in range(worm_count):
 			var worm_rng := RandomNumberGenerator.new()
 			worm_rng.seed = _hash3(world_seed, spawn_x, 5000 + wi)
 			var worm_len: int = worm_rng.randi_range(OPEN_WORM_LEN_MIN, OPEN_WORM_LEN_MAX)
-			# 初始方向偏向"下方扇形" (30°-150°), 让 worm 往地下散开而不是飘空中
-			var bias: float = worm_rng.randf_range(PI / 6.0, 5.0 * PI / 6.0)
-			_simulate_worm(c, Vector2(float(spawn_x), chamber_y), worm_len, worm_rng,
+			var bias: float = worm_rng.randf_range(bias_min, bias_max)
+			_simulate_worm(c, Vector2(float(chamber_x), chamber_y), worm_len, worm_rng,
 					dir_noise, rad_noise, surf_noise, mountain_noise,
 					chunk_start_x, chunk_end_x, height, 0,
 					OPEN_WORM_RADIUS_SCALE, OPEN_WORM_SURFACE_BUFFER, bias)
