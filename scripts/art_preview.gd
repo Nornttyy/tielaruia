@@ -54,7 +54,7 @@ func _draw_blocks(origin: Vector2) -> void:
 	var i := 0
 	for tile_id in names.keys():
 		var spr := Sprite2D.new()
-		spr.texture = ArtCache.block_textures[tile_id]
+		spr.texture = ArtCache.block_icons[tile_id]
 		spr.scale = Vector2(SCALE, SCALE)
 		spr.centered = false
 		spr.position = origin + Vector2(i * (TILE_BOX + 16), 0)

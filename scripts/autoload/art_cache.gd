@@ -9,6 +9,8 @@ extends Node
 # 用 preload 而非 class_name 引用，避免 autoload 启动时机早于 class_name 索引扫描的问题。
 const PixelArt = preload("res://scripts/art/pixel_art.gd")
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
+const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
+const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
 const PlayerArt = preload("res://scripts/art/player_art.gd")
 const SlimeArt = preload("res://scripts/art/slime_art.gd")
 const ZombieArt = preload("res://scripts/art/zombie_art.gd")
@@ -23,7 +25,8 @@ const DrumstickArt = preload("res://scripts/art/drumstick_art.gd")
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 const CloudsArt = preload("res://scripts/fx/clouds_art.gd")
 
-var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture
+var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
+var block_icons: Dictionary = {}           # int (tile_id) -> 16x16 ImageTexture (UI / inventory)
 var item_icons: Dictionary = {}            # String (item_id) -> ImageTexture
 var door_closed_texture: ImageTexture
 var door_open_texture: ImageTexture
@@ -78,7 +81,24 @@ func _build_blocks() -> void:
 		BlocksArt.GRASS_WALL, BlocksArt.DIRT_WALL, BlocksArt.STONE_WALL,
 	]
 	for tile_id in tile_ids:
-		block_textures[tile_id] = BlocksArt.get_texture(tile_id)
+		if EdgeTemplates.FAMILY_OF.has(tile_id):
+			block_textures[tile_id] = BlocksArt.build_atlas(tile_id)
+			block_icons[tile_id] = _extract_interior_icon(block_textures[tile_id])
+		else:
+			var single: ImageTexture = BlocksArt.get_texture(tile_id)
+			block_textures[tile_id] = single
+			block_icons[tile_id] = single
+
+
+# 从 atlas 抽 mask=255 (CCCCIIII, 全包围) 那一格做 UI 图标. 16×16.
+static func _extract_interior_icon(atlas: ImageTexture) -> ImageTexture:
+	var coord: Vector2i = BlobLookup.ATLAS_COORD[255]
+	var ox: int = coord.x * 16
+	var oy: int = coord.y * 16
+	var src: Image = atlas.get_image()
+	var dst := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+	dst.blit_rect(src, Rect2i(ox, oy, 16, 16), Vector2i.ZERO)
+	return ImageTexture.create_from_image(dst)
 
 
 func _build_items() -> void:
@@ -143,7 +163,7 @@ func _build_particles() -> void:
 
 func get_inventory_icon(item_id: String) -> ImageTexture:
 	if _ITEM_TO_TILE.has(item_id):
-		return block_textures[_ITEM_TO_TILE[item_id]]
+		return block_icons[_ITEM_TO_TILE[item_id]]
 	if item_icons.has(item_id):
 		return item_icons[item_id]
 	push_warning("未知 item icon: %s" % item_id)

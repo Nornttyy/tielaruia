@@ -126,7 +126,7 @@ func _setup_stars() -> void:
 
 func _setup_torches() -> void:
 	# 用游戏内 BlocksArt 的 TORCH 像素贴图 (16×16 放大 3x) + 软光晕 + 火花粒子, 与游戏内火把统一
-	var torch_tex: Texture2D = ArtCache.block_textures.get(Tiles.TORCH)
+	var torch_tex: Texture2D = ArtCache.block_icons.get(Tiles.TORCH)
 	if torch_tex == null:
 		return
 	var glow_tex: Texture2D = ArtCache.radial_gradient(160)
