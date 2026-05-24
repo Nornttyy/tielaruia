@@ -41,8 +41,9 @@ func _process(delta: float) -> void:
 		if _lightning_t <= 0.0:
 			_lightning_t = randf_range(LIGHTNING_MIN_INTERVAL, LIGHTNING_MAX_INTERVAL)
 			lightning_flash.emit()
-	# F10 强制切换 (debug)
+	# Y / F10 强制切换 (debug)
 	if Input.is_action_just_pressed("toggle_weather"):
+		print("[Weather] Y/F10 pressed — toggle from ", state)
 		toggle()
 
 
