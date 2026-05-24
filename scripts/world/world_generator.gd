@@ -8,8 +8,13 @@ const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 
 const SURFACE_BASE := 0.45       # 地表平均高度 (相对世界 0..1)
-const SURFACE_AMP := 0.10        # 地表起伏振幅
+const SURFACE_AMP := 0.10        # 地表小起伏振幅 (普通山丘)
 const DIRT_DEPTH := 6            # 地表下泥土层厚度
+# 山区 noise: 低频 → 30-60 列宽的山区, max(0, n) 作为山高度系数 (实测 Perlin max ~0.31)
+# MOUNTAIN_BOOST 对世界高度的比例: 0.40 × 0.31 × 256 = 最高峰比平均地表再高 ~32 格
+const MOUNTAIN_NOISE_FREQ := 0.008
+const MOUNTAIN_BOOST := 0.40
+const MOUNTAIN_PIT_THRESHOLD := 0.12  # mountain_factor > 0.12 = 山区 (实测约占 16% 列)
 const BEDROCK_ROWS := 2          # 基岩占最底几行
 const SAND_THRESHOLD := 0.4      # sand_noise 超过此阈值的列为沙列
 const TREE_MIN_SPACING := 5      # 相邻两棵树之间最少 N 列间距
@@ -120,13 +125,22 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	iron_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	iron_noise.frequency = 0.10
 
+	# 山区 noise: 低频, 决定哪些列是高山 (factor>0) 哪些是平地 (factor=0)
+	var mountain_noise := FastNoiseLite.new()
+	mountain_noise.seed = world_seed + 5
+	mountain_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	mountain_noise.frequency = MOUNTAIN_NOISE_FREQ
+
 	# 计算本 chunk 范围内每列的 heights (供地形 + 树木使用)
 	var chunk_start_x := chunk_x * chunk_width
 	var chunk_end_x := chunk_start_x + chunk_width
 	var chunk_heights := {}  # world_x → surf_y
 	for wx in range(chunk_start_x, chunk_end_x):
 		var n: float = noise.get_noise_1d(float(wx))
-		var h: int = int(height * (SURFACE_BASE + n * SURFACE_AMP))
+		# 山高度: noise 的正部分作为山高系数 (0=平地 1=山顶)
+		var mtn: float = maxf(0.0, mountain_noise.get_noise_1d(float(wx)))
+		# surf 减去山高度 (y 越小 = 越高)
+		var h: int = int(float(height) * (SURFACE_BASE + n * SURFACE_AMP - mtn * MOUNTAIN_BOOST))
 		chunk_heights[wx] = clampi(h, 4, height - BEDROCK_ROWS - 1)
 
 	# 填本 chunk 64 列
@@ -369,6 +383,9 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 		rng.seed = _hash3(world_seed, spawn_x, 7777)
 		if rng.randf() > 1.0 / float(OPEN_PIT_SPACING):
 			continue
+		# 仅在山区 (mountain_factor > 阈值) 才生成露天洞 — 平地不刷
+		if _mountain_factor(spawn_x, world_seed) < MOUNTAIN_PIT_THRESHOLD:
+			continue
 		var is_crack: bool = rng.randf() < 0.5
 		var width: int
 		var depth: int
@@ -418,8 +435,20 @@ static func _estimate_surf(world_x: int, world_seed: int, height: int) -> int:
 	n.frequency = 0.015
 	n.fractal_octaves = 3
 	var v: float = n.get_noise_1d(float(world_x))
-	var h: int = int(float(height) * (SURFACE_BASE + v * SURFACE_AMP))
+	# 山高度系数 (跟 generate_chunk 完全一致)
+	var mtn: float = _mountain_factor(world_x, world_seed)
+	var h: int = int(float(height) * (SURFACE_BASE + v * SURFACE_AMP - mtn * MOUNTAIN_BOOST))
 	return clampi(h, 4, height - BEDROCK_ROWS - 1)
+
+
+# 山区高度系数: 0=平地, 1=山顶. 用低频 perlin 取正部分.
+# 注: 每次重建 FastNoiseLite 开销小, 但相比 cache 慢 — pit 生成时 ~200 列调一次, 可接受.
+static func _mountain_factor(world_x: int, world_seed: int) -> float:
+	var n := FastNoiseLite.new()
+	n.seed = world_seed + 5
+	n.noise_type = FastNoiseLite.TYPE_PERLIN
+	n.frequency = MOUNTAIN_NOISE_FREQ
+	return maxf(0.0, n.get_noise_1d(float(world_x)))
 
 
 # 3 整数 → 64-bit 稳定 hash (worm RNG 种子). 不用内建 hash() 因为它对 int 输入返回值未指定.
