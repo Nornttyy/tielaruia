@@ -6,8 +6,11 @@ const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const WorldGenerator = preload("res://scripts/world/world_generator.gd")
 const TILE_SIZE := 16
 
-# 玩家在地表 surface_y 之下多少 tile 时算"完全进入矿洞"
-const CAVE_TRANSITION_TILES := 10
+# 矿洞远景什么时候开始/全显:
+# 玩家在地表下 ≥ STONE_LAYER_TILES 格 (穿透泥土层进入石头层) 才开始显示矿洞背景.
+# 再往下 CAVE_TRANSITION_TILES 格内 lerp 0→1 完全显出.
+const STONE_LAYER_TILES := 6        # 泥土层厚度 (跟 WorldGenerator.DIRT_DEPTH 同步)
+const CAVE_TRANSITION_TILES := 8    # 石头层往下 8 格内过渡完
 
 var _world: Node = null
 var _mountains: Node = null
@@ -64,12 +67,17 @@ func _process(_delta: float) -> void:
 	_apply_cave_t(cave_t)
 
 
-# 计算 cave_t: 0=地表, 1=矿洞深处. 玩家 Y 在地表上方 → 0, 地表下 10 tile 内 lerp 0→1.
+# 计算 cave_t: 0=地表/泥土, 1=矿洞深处.
+# 在泥土层 (前 6 格) 仍是地表; 进入石头层后开始 lerp 0→1, 再往下 8 格全显.
 static func compute_cave_t(player_y_px: float) -> float:
 	var surface_y_px: float = WorldGenerator.SURFACE_BASE \
 		* float(ChunkConstants.WORLD_HEIGHT) * float(TILE_SIZE)
-	var depth_below_px: float = max(0.0, player_y_px - surface_y_px)
-	return clamp(depth_below_px / float(CAVE_TRANSITION_TILES * TILE_SIZE), 0.0, 1.0)
+	var depth_below_px: float = player_y_px - surface_y_px
+	# 进入石头层之前 (depth < 6 tiles) 全是 0
+	var depth_in_stone_px: float = depth_below_px - float(STONE_LAYER_TILES * TILE_SIZE)
+	if depth_in_stone_px <= 0.0:
+		return 0.0
+	return clamp(depth_in_stone_px / float(CAVE_TRANSITION_TILES * TILE_SIZE), 0.0, 1.0)
 
 
 func _get_player_y() -> float:
