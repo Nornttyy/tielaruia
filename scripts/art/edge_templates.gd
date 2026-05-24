@@ -118,6 +118,22 @@ const _WALL_STYLE := {
 	"concave": [],
 }
 
+# 木族 (T14): 木色描边 (o = 暖深棕) + h 顶高光 (不要 H 太刺眼) + 1px 圆角 + 1px 内凹
+# 设计意图: 木板是建材, 玩家造房子多, 边缘要清晰但不刺眼. 顶 h 暖高光 + e 过渡,
+# 其它 3 边 1px o 木色描边. 内凹角 1px e (木板断面).
+const _WOOD_STYLE := {
+	"top_row0":    "hhhhhhhhhhhhhhhh",
+	"top_row1":    "eeeeeeeeeeeeeeee",
+	"bot_row14":   "eeeeeeeeeeeeeeee",
+	"bot_row15":   "oooooooooooooooo",
+	"left_col0":   "oooooooooooo",
+	"left_col1":   "............",
+	"right_col14": "............",
+	"right_col15": "oooooooooooo",
+	"corner_round": 1,
+	"concave": [[0, 0, "e"]],
+}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5 族模板字典. TEMPLATES[family][variant_key] = Array[String] 16 行 × 16 字符.
@@ -132,7 +148,7 @@ static func _build_all_templates() -> Dictionary:
 		"soil": _build_family(_SOIL_STYLE),
 		"leaf": _build_family(_LEAF_STYLE),
 		"wall": _build_family(_WALL_STYLE),
-		"wood": _build_family(_BLANK_STYLE),
+		"wood": _build_family(_WOOD_STYLE),
 	}
 
 
