@@ -920,24 +920,25 @@ const _STONE_WALL := [
 	"sSsSssSssSsSsSsS",
 ]
 
-# 仙人掌: 居中柱 (主体宽 6 格) + 顶部圆头 + 双侧白刺 + 暗轮廓
+# 仙人掌: 居中柱 (主体宽 8 格 含侧 outline) + 无 top/bottom outline → 堆叠无缝.
+# 侧面交错白尖刺 (w), 中心 yhgy 暖棱线 (顶光感). 16 行循环时上下接界还是身体.
 const _CACTUS := [
-	"......dddd......",
-	".....dGggGd.....",
+	"....dGgyhgGd....",
+	"..w.dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd.w..",
 	"....dGgyhgGd....",
 	"....dGgyhgGd....",
-	"..w.dGgyhgGd.w..",
-	".w..dGgyhgGd..w.",
+	"..w.dGgyhgGd....",
 	"....dGgyhgGd....",
-	"..w.dGgyhgGd.w..",
-	".w..dGgyhgGd..w.",
-	"....dGgyhgGd....",
-	"..w.dGgyhgGd.w..",
-	".w..dGgyhgGd..w.",
+	"....dGgyhgGd.w..",
 	"....dGgyhgGd....",
 	"....dGgyhgGd....",
-	"....dGgyGGGd....",
-	"....dddddddd....",
+	"..w.dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd.w..",
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
 ]
 
 const _PATTERN_MAP := {
