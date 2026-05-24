@@ -70,6 +70,22 @@ const _ROCK_STYLE := {
 	"concave": [[0, 0, "e"], [1, 0, "e"], [0, 1, "e"]],
 }
 
+# 土族 (T11): 碎描边 + 暖顶高光 + 2px 大圆角 + 单点内凹 + "颗粒掉落感"
+# 设计意图: 顶部 H 主调中夹 e 凹坑 (拟泥块凹凸), 底/左/右边 1px o 描边 +
+# 1px 内侧偶发 e 颗粒. 外凸角削 2px (土质柔软). 内凹角仅 1px e (土的断面糊一点).
+const _SOIL_STYLE := {
+	"top_row0":    "HHeHHHeHHHHeHHHe",
+	"top_row1":    "eeeeeHeeeeeHeeee",
+	"bot_row14":   "eeeeeeeeeeeeeeee",
+	"bot_row15":   "oeoooeooooeooooo",
+	"left_col0":   "oooeoooooeoo",
+	"left_col1":   "............",
+	"right_col14": "............",
+	"right_col15": "ooeoooooeooo",
+	"corner_round": 2,
+	"concave": [[0, 0, "e"]],
+}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5 族模板字典. TEMPLATES[family][variant_key] = Array[String] 16 行 × 16 字符.
@@ -81,7 +97,7 @@ static var TEMPLATES: Dictionary = _build_all_templates()
 static func _build_all_templates() -> Dictionary:
 	return {
 		"rock": _build_family(_ROCK_STYLE),
-		"soil": _build_family(_BLANK_STYLE),
+		"soil": _build_family(_SOIL_STYLE),
 		"leaf": _build_family(_BLANK_STYLE),
 		"wall": _build_family(_BLANK_STYLE),
 		"wood": _build_family(_BLANK_STYLE),
