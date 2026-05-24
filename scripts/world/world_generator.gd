@@ -43,19 +43,23 @@ const WORM_DEPTH_SHALLOW_MAX := 40  # 地表 40 格内安全, 不会"踩进去"
 const WORM_DEPTH_MID_MAX := 110     # surf+110 起密集
 const WORM_SURFACE_BUFFER := 20     # worm 路径距地表至少 20 格 (走近就 break, 防止深层 worm 窜到地表)
 
-# 露天矿洞 (open-air pits / cracks): 从地表往下挖空的洞口, 玩家走过就能跳下去探险.
-# 跟普通矿道一样深, 只是有露天入口 — 中心列深度进入 worm 中层 (depth>=40), 自然
-# 接上 worm 矿道网, 形成"露天矿洞 = 一通到底的真正矿洞".
-# 平均每 OPEN_PIT_SPACING 列一个, 跨 chunk 用 _hash3 保证一致.
-const OPEN_PIT_SPACING := 25         # 1/25 = 4% 概率每列生成 (自然丛聚, 不强制最小间距)
-const PIT_WIDTH_MIN := 5
-const PIT_WIDTH_MAX := 9
-const PIT_DEPTH_MIN := 25            # 中心进 mid worm 层 (depth>=40 时半径变大边缘也很深)
-const PIT_DEPTH_MAX := 45
-const CRACK_WIDTH_MIN := 2
-const CRACK_WIDTH_MAX := 3
-const CRACK_DEPTH_MIN := 35          # 窄缝更深, 像矿井入口竖直往下
-const CRACK_DEPTH_MAX := 60
+# 露天矿洞 (Terraria 风表面洞穴): 平地小坡上有小开口, 下面是分叉迷宫 + 死路.
+# 山区不生成 (用户要求: 不在山上面). 平均每 OPEN_PIT_SPACING 列一个.
+# 结构: 1) 表面小开口 (2-3 宽×3-5 深) 2) 起始室 (3 半径圆) 3) 派 2-3 worm 散开
+# 跨 chunk 一致: 用 _hash3 派生 RNG. 邻 chunk 搜索 ±OPEN_WORM_PAD_CELLS.
+const OPEN_PIT_SPACING := 60         # 1/60 ≈ 1.67% 概率/列 (非山区 ≈ 85% × 1.67% ≈ 1.4%/列)
+const OPEN_OPENING_WIDTH_MIN := 2    # 表面开口最窄
+const OPEN_OPENING_WIDTH_MAX := 3    # 表面开口最宽 (玩家能看见的洞口)
+const OPEN_OPENING_DEPTH_MIN := 3
+const OPEN_OPENING_DEPTH_MAX := 5
+const OPEN_CHAMBER_RADIUS := 3.0     # 开口底下的小起始室
+const OPEN_WORM_COUNT_MIN := 2       # 起始室派出的 worm 数 (= 分叉数)
+const OPEN_WORM_COUNT_MAX := 3
+const OPEN_WORM_LEN_MIN := 50        # 每条 worm 长度 (= 路径深度)
+const OPEN_WORM_LEN_MAX := 100
+const OPEN_WORM_RADIUS_SCALE := 1.4  # worm 半径系数 (默认 0.8-1.3 × 1.4 = 1.1-1.8 实际)
+const OPEN_WORM_SURFACE_BUFFER := 3  # worm 距地表 ≥ 3, 不会再戳破地表
+const OPEN_WORM_PAD_CELLS := 100     # 邻 chunk 搜索 pad (= 最远 worm 可达)
 
 # 树种枚举 (内部 idx)
 const _SPECIES_OAK := 0
@@ -190,29 +194,24 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	return c
 
 
-# 按深度给本 chunk 每列填背景墙. 地表 (含) 以下都有墙, 上面是天空所以无墙.
-# 草墙规则: 仅在"露天矿洞"内部前 2 个空气格出现 (= y=surf 是 AIR 表示这列地表被挖穿了).
-# 其他位置 (含未挖穿的地表行) 用 土墙/石墙 按深度区分.
-const _GRASS_WALL_OPEN_PIT_DEPTH := 2
+# 按深度给本 chunk 每列填背景墙.
+# - 地表上方 (y < surf): 天空, 无墙
+# - 浅层 (y in [surf, surf+WALL_HIDE_TOP_TILES)): 无墙
+#   (玩家在浅层挖洞背后看天空, 跟矿洞远景一致)
+# - 中层 (DIRT 区): DIRT_WALL
+# - 深层 (STONE 区): STONE_WALL
+const WALL_HIDE_TOP_TILES := 3
 static func _fill_walls_chunk(c: Chunk, chunk_heights: Dictionary, chunk_width: int, height: int) -> void:
 	var chunk_start_x: int = c.chunk_x * chunk_width
 	for local_x in chunk_width:
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
-		# 这列是不是露天矿洞 = 地表行被挖空了 (worms 有 20 格 buffer 不会挖到, 只有 pits 挖到)
-		var is_open_pit_column: bool = c.tiles[local_x][surf] == Tiles.AIR
-		var grass_count: int = 0
+		var wall_start: int = surf + WALL_HIDE_TOP_TILES
 		for y in height:
-			if y < surf:
-				continue  # 天空, 无墙
+			if y < wall_start:
+				continue
 			var wid: int
-			# 露天洞: 前 2 个 AIR 格用草墙 (洞口看着像绿绿的草根垂下来)
-			if is_open_pit_column \
-					and grass_count < _GRASS_WALL_OPEN_PIT_DEPTH \
-					and c.tiles[local_x][y] == Tiles.AIR:
-				wid = Tiles.GRASS_WALL
-				grass_count += 1
-			elif y < surf + DIRT_DEPTH:
+			if y < surf + DIRT_DEPTH:
 				wid = Tiles.DIRT_WALL
 			else:
 				wid = Tiles.STONE_WALL
@@ -298,19 +297,24 @@ static func _carve_worms_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 
 
 # 沿路径挖一条 worm. depth = 当前分叉递归深度, radius_scale = 子孙 worm 半径系数.
+# surface_buffer = worm 距地表最少留几格 (普通 worm 用 WORM_SURFACE_BUFFER=20,
+# 露天洞的 worm 用 3 让它能贴近开口).
+# initial_ang_bias = 调用方强加的初始方向偏移 (露天洞从同一起始室派多 worm 用, 让它们散开).
 static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 		rng: RandomNumberGenerator, dir_noise: FastNoiseLite, rad_noise: FastNoiseLite,
 		surf_noise: FastNoiseLite, mountain_noise: FastNoiseLite,
 		chunk_start: int, chunk_end: int, height: int, depth: int,
-		radius_scale: float) -> void:
+		radius_scale: float, surface_buffer: int = WORM_SURFACE_BUFFER,
+		initial_ang_bias: float = 0.0) -> void:
 	# 每条 worm 独有的角度偏移 (避免子 worm 跟主 worm 路径重合, 因为 dir_noise 是位置决定的)
 	# 主 worm depth=0 偏移小, 子/孙 worm 偏更多 → 真正岔开
-	var ang_bias: float = rng.randf_range(-PI, PI) * float(depth) * 0.5
+	# 额外加 initial_ang_bias (露天洞主 worm 用, 让多条 worm 从同一点散开)
+	var ang_bias: float = rng.randf_range(-PI, PI) * float(depth) * 0.5 + initial_ang_bias
 	var pos: Vector2 = start_pos
 	for step in worm_len:
 		# 触及地表缓冲 → worm 终止 (避免深层 worm 窜到地表附近)
 		var surf_at: int = _surf_at(surf_noise, mountain_noise, int(floor(pos.x)), height)
-		if pos.y < float(surf_at + WORM_SURFACE_BUFFER):
+		if pos.y < float(surf_at + surface_buffer):
 			break
 		# 方向: perlin 输出 [-1,1] → angle [-PI, PI] (smooth turns) + worm 个体 bias
 		var ang: float = dir_noise.get_noise_2d(pos.x, pos.y) * PI + ang_bias
@@ -331,7 +335,7 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 					chunk_start, chunk_end, height)
 			_simulate_worm(c, branch_start, branch_len, sub_rng,
 					dir_noise, rad_noise, surf_noise, mountain_noise,
-					chunk_start, chunk_end, height, depth + 1, sub_scale)
+					chunk_start, chunk_end, height, depth + 1, sub_scale, surface_buffer)
 		# 前进 1 tile
 		pos += Vector2(cos(ang), sin(ang))
 		# 走出世界边界 / 进入基岩区 → 提前终止
@@ -378,62 +382,91 @@ static func _carve_circle(c: Chunk, center: Vector2, radius: float,
 			c.tiles[lx][wy] = Tiles.AIR
 
 
-# ===== 露天矿洞 =====
-# 思路: 沿世界每列用 _hash3 派生 RNG, 1/OPEN_PIT_SPACING 概率生成一个.
-# pit (漏斗) / crack (窄缝) 各 50%, 形状中心最深边缘渐浅, 加小幅噪声让边缘自然.
-# 跨 chunk 一致: 同 spawn_x 在 A/B chunk 里都产生同 RNG 序列 → 同形状.
+# ===== 露天矿洞 (Terraria 表面洞穴风) =====
+# 平地小坡上有小开口, 下面是 worm 分叉迷宫. 山区不生成.
+# 结构: 1) 表面 2-3 宽×3-5 深小开口 2) 起始室 (3 半径圆) 3) 派 2-3 worm 散开
+# worm 用 surface_buffer=3 (能贴开口但不戳破地表), 半径×1.4 比普通矿道粗.
+# worm 自带分叉 (WORM_BRANCH_CHANCE) + 死路 (worm_len 跑完就停) → 自然迷宫.
+# 跨 chunk 一致: 同 spawn_x 用 _hash3 派生 RNG, worm 用各自子 hash.
 static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
 	var chunk_start_x: int = chunk_x * chunk_width
 	var chunk_end_x: int = chunk_start_x + chunk_width
-	# 邻 chunk 边缘的 spawn_x 也要扫描 (pit 中心可能落邻 chunk, 但部分覆盖本 chunk)
-	var max_half_width: int = PIT_WIDTH_MAX / 2 + 1
-	for spawn_x in range(chunk_start_x - max_half_width, chunk_end_x + max_half_width):
+
+	# 共享 noises (worm 模拟用), 跟 _carve_worms_chunk 同 seed 偏移
+	var dir_noise := FastNoiseLite.new()
+	dir_noise.seed = world_seed + 100
+	dir_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	dir_noise.frequency = WORM_DIR_FREQUENCY
+
+	var rad_noise := FastNoiseLite.new()
+	rad_noise.seed = world_seed + 200
+	rad_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	rad_noise.frequency = 0.08
+
+	var surf_noise := FastNoiseLite.new()
+	surf_noise.seed = world_seed
+	surf_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	surf_noise.frequency = 0.015
+	surf_noise.fractal_octaves = 3
+
+	var mountain_noise := FastNoiseLite.new()
+	mountain_noise.seed = world_seed + 5
+	mountain_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	mountain_noise.frequency = MOUNTAIN_NOISE_FREQ
+
+	# 扫描邻 chunk 边缘 (worm 最远可达 OPEN_WORM_PAD_CELLS)
+	for spawn_x in range(chunk_start_x - OPEN_WORM_PAD_CELLS, chunk_end_x + OPEN_WORM_PAD_CELLS):
 		var rng := RandomNumberGenerator.new()
 		rng.seed = _hash3(world_seed, spawn_x, 7777)
 		if rng.randf() > 1.0 / float(OPEN_PIT_SPACING):
 			continue
-		# 仅在山区 (mountain_factor > 阈值) 才生成露天洞 — 平地不刷
-		if _mountain_factor(spawn_x, world_seed) < MOUNTAIN_PIT_THRESHOLD:
+		# 反转: 山区跳过 (用户要求 不在山上面). 平地/小坡才生成
+		var mtn: float = maxf(0.0, mountain_noise.get_noise_1d(float(spawn_x)))
+		if mtn > MOUNTAIN_PIT_THRESHOLD:
 			continue
-		var is_crack: bool = rng.randf() < 0.5
-		var width: int
-		var depth: int
-		if is_crack:
-			width = rng.randi_range(CRACK_WIDTH_MIN, CRACK_WIDTH_MAX)
-			depth = rng.randi_range(CRACK_DEPTH_MIN, CRACK_DEPTH_MAX)
-		else:
-			width = rng.randi_range(PIT_WIDTH_MIN, PIT_WIDTH_MAX)
-			depth = rng.randi_range(PIT_DEPTH_MIN, PIT_DEPTH_MAX)
-		var half_w: int = width / 2
-		for i in range(width):
+
+		# 本列地表 (邻 chunk 用 _surf_at 估算, 跟 generate_chunk 同公式)
+		var col_surf: int = chunk_heights.get(spawn_x, -1)
+		if col_surf < 0:
+			col_surf = _surf_at(surf_noise, mountain_noise, spawn_x, height)
+
+		# === 1. 表面小开口 (玩家能看到的洞口, 直接挖穿 GRASS) ===
+		var opening_w: int = rng.randi_range(OPEN_OPENING_WIDTH_MIN, OPEN_OPENING_WIDTH_MAX)
+		var opening_d: int = rng.randi_range(OPEN_OPENING_DEPTH_MIN, OPEN_OPENING_DEPTH_MAX)
+		var half_w: int = opening_w / 2
+		for i in range(opening_w):
 			var dx: int = i - half_w
 			var wx: int = spawn_x + dx
 			var lx: int = wx - chunk_start_x
-			# 中心最深, 边缘按距离衰减 (40% 下限保留洞口宽度)
-			var dx_abs: int = abs(dx)
-			var ratio: float = 1.0 - float(dx_abs) / float(half_w + 1)
-			var col_depth: int = int(float(depth) * (0.4 + 0.6 * ratio))
-			# 小幅噪声让边缘不那么齐整 (±1 格)
-			col_depth += rng.randi_range(-1, 1)
-			if col_depth < 1:
-				continue
-			# 跨 chunk: 邻 chunk 的列跳过 carve 但仍要消耗 RNG 保证序列一致
 			if lx < 0 or lx >= chunk_width:
 				continue
-			# 本列地表 (本 chunk 用 chunk_heights, 邻 chunk 估算 — 但被上面 lx 检查滤掉了)
-			var col_surf: int = chunk_heights.get(wx, -1)
-			if col_surf < 0:
-				col_surf = _estimate_surf(wx, world_seed, height)
-			# carve: 从 col_surf 向下 col_depth 格全设 AIR (跳过矿石和基岩)
-			for dy in range(col_depth):
+			for dy in range(opening_d):
 				var y: int = col_surf + dy
 				if y < 0 or y >= height - BEDROCK_ROWS:
 					continue
 				var t: int = c.tiles[lx][y]
-				if t == Tiles.COAL_ORE or t == Tiles.IRON_ORE or t == Tiles.BEDROCK:
+				if t == Tiles.BEDROCK or t == Tiles.COAL_ORE or t == Tiles.IRON_ORE:
 					continue
 				c.tiles[lx][y] = Tiles.AIR
+
+		# === 2. 起始室 (开口底下圆) ===
+		var chamber_y: float = float(col_surf + opening_d + 2)
+		_carve_circle(c, Vector2(float(spawn_x), chamber_y), OPEN_CHAMBER_RADIUS,
+				chunk_start_x, chunk_end_x, height)
+
+		# === 3. 派 2-3 worm 散开 (各带初始角度偏移, 自然 fan-out) ===
+		var worm_count: int = rng.randi_range(OPEN_WORM_COUNT_MIN, OPEN_WORM_COUNT_MAX)
+		for wi in range(worm_count):
+			var worm_rng := RandomNumberGenerator.new()
+			worm_rng.seed = _hash3(world_seed, spawn_x, 5000 + wi)
+			var worm_len: int = worm_rng.randi_range(OPEN_WORM_LEN_MIN, OPEN_WORM_LEN_MAX)
+			# 初始方向偏向"下方扇形" (30°-150°), 让 worm 往地下散开而不是飘空中
+			var bias: float = worm_rng.randf_range(PI / 6.0, 5.0 * PI / 6.0)
+			_simulate_worm(c, Vector2(float(spawn_x), chamber_y), worm_len, worm_rng,
+					dir_noise, rad_noise, surf_noise, mountain_noise,
+					chunk_start_x, chunk_end_x, height, 0,
+					OPEN_WORM_RADIUS_SCALE, OPEN_WORM_SURFACE_BUFFER, bias)
 
 
 # 跟 generate_chunk 里 surf 公式一致: 用主 noise 的种子重算单列 surf.
