@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_rare_overlay_layer"]
+
+[ext_resource type="Script" path="res://scripts/world/rare_overlay_layer.gd" id="1_rare"]
+
+[node name="RareOverlayLayer" type="CanvasLayer"]
+script = ExtResource("1_rare")
+kind = "rainbow"

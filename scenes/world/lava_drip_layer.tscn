@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_lava_drip_layer"]
+
+[ext_resource type="Script" path="res://scripts/world/lava_drip_layer.gd" id="1_lava"]
+
+[node name="LavaDripLayer" type="Node2D"]
+script = ExtResource("1_lava")

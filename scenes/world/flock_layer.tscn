@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_flock_layer"]
+
+[ext_resource type="Script" path="res://scripts/world/flock_layer.gd" id="1_flock"]
+
+[node name="FlockLayer" type="Node2D"]
+script = ExtResource("1_flock")
+kind = "bird"

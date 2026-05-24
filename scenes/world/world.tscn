@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://b2teilaruiaworld"]
+[gd_scene load_steps=14 format=3 uid="uid://b2teilaruiaworld"]
 
 [ext_resource type="Script" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/world/cloud_layer.tscn" id="2_clouds"]
@@ -7,15 +7,41 @@
 [ext_resource type="PackedScene" path="res://scenes/world/darkness_layer.tscn" id="5_dark"]
 [ext_resource type="PackedScene" path="res://scenes/world/sky_background.tscn" id="6_sky"]
 [ext_resource type="PackedScene" path="res://scenes/world/mountains_layer.tscn" id="7_mountains"]
+[ext_resource type="PackedScene" path="res://scenes/world/celestial_layer.tscn" id="8_celestial"]
+[ext_resource type="PackedScene" path="res://scenes/world/cave_background_layer.tscn" id="9_cave_bg"]
+[ext_resource type="PackedScene" path="res://scenes/world/scenic_director.tscn" id="10_director"]
+[ext_resource type="PackedScene" path="res://scenes/world/flock_layer.tscn" id="11_flock"]
+[ext_resource type="PackedScene" path="res://scenes/world/rare_overlay_layer.tscn" id="12_rare"]
+[ext_resource type="PackedScene" path="res://scenes/world/lava_drip_layer.tscn" id="13_lava"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1_world")
 
 [node name="SkyBackground" parent="." instance=ExtResource("6_sky")]
 
+[node name="CelestialLayer" parent="." instance=ExtResource("8_celestial")]
+
 [node name="MountainsLayer" parent="." instance=ExtResource("7_mountains")]
 
+[node name="CaveBackgroundLayer" parent="." instance=ExtResource("9_cave_bg")]
+
 [node name="CloudLayer" parent="." instance=ExtResource("2_clouds")]
+
+[node name="RainbowLayer" parent="." instance=ExtResource("12_rare")]
+kind = "rainbow"
+
+[node name="AuroraLayer" parent="." instance=ExtResource("12_rare")]
+kind = "aurora"
+
+[node name="BirdLayer" parent="." instance=ExtResource("11_flock")]
+kind = "bird"
+
+[node name="BatLayer" parent="." instance=ExtResource("11_flock")]
+kind = "bat"
+
+[node name="LavaDripLayer" parent="." instance=ExtResource("13_lava")]
+
+[node name="WallLayer" type="TileMapLayer" parent="."]
 
 [node name="TerrainLayer" type="TileMapLayer" parent="."]
 
@@ -37,3 +63,5 @@ position_smoothing_speed = 8.0
 
 [node name="WorldLighting" type="Node" parent="."]
 script = ExtResource("4_wlight")
+
+[node name="ScenicDirector" parent="." instance=ExtResource("10_director")]
