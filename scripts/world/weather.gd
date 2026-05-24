@@ -26,7 +26,8 @@ var _first_clear: bool = true
 
 
 func _ready() -> void:
-	_enter_state("clear")
+	# DEBUG: 进游戏就下雨, 让用户立刻看到天气功能在跑
+	_enter_state("rainy")
 
 
 func _process(delta: float) -> void:
