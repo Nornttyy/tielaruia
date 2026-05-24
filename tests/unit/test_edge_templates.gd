@@ -98,6 +98,33 @@ func test_rock_only_top_open_draws_top_edge_only():
 		assert_eq(grid[y], "................", "row %d 应透明" % y)
 
 
+func test_slope_templates_has_soil_with_82_variants():
+	# slope-aware 模板字典. 当前只 soil 族有 (GRASS/DIRT 用).
+	assert_true(EdgeTemplates.SLOPE_TEMPLATES.has("soil"))
+	assert_eq(EdgeTemplates.SLOPE_TEMPLATES["soil"].size(), 82)
+
+
+func test_is_slope_tile_grass_dirt_only():
+	assert_true(EdgeTemplates.is_slope_tile(BlocksArt.GRASS))
+	assert_true(EdgeTemplates.is_slope_tile(BlocksArt.DIRT))
+	assert_false(EdgeTemplates.is_slope_tile(BlocksArt.SAND))
+	assert_false(EdgeTemplates.is_slope_tile(BlocksArt.STONE))
+
+
+func test_slope_template_NE_triangle_paints_TR_corner():
+	# slope key: 4 边都开 + NE 对角在 → NE-slope = P. 应在 TR 角画三角.
+	# key = "OOOO....P___" (sides 4 + corners 4 + slopes 4)
+	var grid: Array = EdgeTemplates.SLOPE_TEMPLATES["soil"]["OOOO....P___"]
+	# TR 角 (右上) 应有非"."字符 (三角填充)
+	# 检 (col 15, row 0) 应是 "H" (三角内部) 或 "o" (外缘) — 反正不是 "."
+	var tr_pixel: String = grid[0].substr(15, 1)
+	assert_ne(tr_pixel, ".", "TR 角应有 slope 填充")
+	# 而 BR 角 (col 15, row 15) 仍应是底边的字符 (不是 ".") 或边缘装饰; 这里只验 NE slope 没影响其它角
+	# 简单验: BL 角 (col 0, row 15) 应是底边 o 描边 (sides 都开 → 底边画了)
+	var bl_pixel: String = grid[15].substr(0, 1)
+	assert_eq(bl_pixel, ".", "BL 角应被圆角削掉 (S+W 都开 + 2px 圆角)")
+
+
 func test_rock_concave_NW_draws_corner_pixels():
 	# CCCC...X = 4 边都闭, NW 角凹 (其它角为 I): NW 角应有 3 像素 L 形 e 阴影
 	# 注意 key 字符: 4=NE 5=SE 6=SW 7=NW

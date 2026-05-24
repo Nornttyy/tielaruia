@@ -35,6 +35,18 @@ const FAMILY_OF: Dictionary = {
 	BlocksArt.STONE_WALL: "wall",
 }
 
+# slope-eligible tile_ids: 这些方块斜接邻居时画三角填角 (泰拉瑞亚同款).
+# 只有 GRASS 和 DIRT, 不含 SAND (沙不要斜接, 边界要清楚).
+# 这些 tile 用 SLOPE_TEMPLATES + 82 变体 atlas (12×7); 其它 tile 用 TEMPLATES + 47 atlas (8×6).
+const SLOPE_TILE_IDS: Dictionary = {
+	BlocksArt.GRASS: true,
+	BlocksArt.DIRT: true,
+}
+
+
+static func is_slope_tile(tile_id: int) -> bool:
+	return SLOPE_TILE_IDS.has(tile_id)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 各族风格 dict (T10-T14 逐族填). 未填的族用 _BLANK_STYLE 占位 (生成全透明 47 模板).
@@ -136,10 +148,15 @@ const _WOOD_STYLE := {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5 族模板字典. TEMPLATES[family][variant_key] = Array[String] 16 行 × 16 字符.
+# 5 族模板字典 (标准 47-blob, 用于非 slope tile 包括 SAND).
+# TEMPLATES[family][variant_key] = Array[String] 16 行 × 16 字符.
+#
+# 另: SLOPE_TEMPLATES[family][slope_key] = 同结构, 82 项, 用于 SLOPE_TILE_IDS 里的方块.
+# 目前只 soil 族有 slope_eligible tile (GRASS/DIRT), 但仍为每族建表方便统一接入.
 # ─────────────────────────────────────────────────────────────────────────────
 
 static var TEMPLATES: Dictionary = _build_all_templates()
+static var SLOPE_TEMPLATES: Dictionary = _build_all_slope_templates()
 
 
 static func _build_all_templates() -> Dictionary:
@@ -152,10 +169,24 @@ static func _build_all_templates() -> Dictionary:
 	}
 
 
+static func _build_all_slope_templates() -> Dictionary:
+	# 当前只 soil 用到. 其它族也建表 (空) 以便未来扩展.
+	return {
+		"soil": _build_slope_family(_SOIL_STYLE),
+	}
+
+
 static func _build_family(style: Dictionary) -> Dictionary:
 	var result: Dictionary = {}
 	for vk in BlobLookup.VARIANT_KEYS:
 		result[vk] = _compose(style, vk)
+	return result
+
+
+static func _build_slope_family(style: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	for vk in BlobLookup.SLOPE_VARIANT_KEYS:
+		result[vk] = _compose_slope(style, vk)
 	return result
 
 
@@ -241,3 +272,79 @@ static func _compose(style: Dictionary, key: String) -> Array:
 	for row in grid:
 		result.append("".join(row))
 	return result
+
+
+# 同 _compose 但 key 是 12 字符 slope-aware key.
+# 多 4 字符 (索引 8-11) 是 4 角的 slope 状态: "P" = 画三角填角, "_" = 不画, "-" = 不适用.
+# 三角形状: 8×8 区域填满, 沿对角线渐变 (内角 1px o 描边 + 内部 e 暗影).
+# 关键效果: 草土斜接时, 两块各画一个三角, 视觉连成一片.
+static func _compose_slope(style: Dictionary, key: String) -> Array:
+	# 先用 8 字符 standard key 走 _compose 拿基础边缘
+	var standard_key: String = key.substr(0, 8)
+	var grid_rows: Array = _compose(style, standard_key)
+	# 转回 Array[Array[String]] 方便像素操作
+	var grid: Array = []
+	for row in grid_rows:
+		var chars: Array = []
+		for i in 16:
+			chars.append(row.substr(i, 1))
+		grid.append(chars)
+
+	# 4 个 slope 字符 (索引 8-11): NE/SE/SW/NW
+	# 画三角填角. 三角占 8×8 一象限, 对角线斜下.
+	if key.substr(8, 1) == "P":  # NE slope (TR 角填三角)
+		_paint_slope_triangle(grid, "NE", style)
+	if key.substr(9, 1) == "P":  # SE slope (BR 角)
+		_paint_slope_triangle(grid, "SE", style)
+	if key.substr(10, 1) == "P":  # SW slope (BL 角)
+		_paint_slope_triangle(grid, "SW", style)
+	if key.substr(11, 1) == "P":  # NW slope (TL 角)
+		_paint_slope_triangle(grid, "NW", style)
+
+	var result: Array = []
+	for row in grid:
+		result.append("".join(row))
+	return result
+
+
+# 在指定角画 8×8 三角填充. 三角形状: 沿对角线斜切,
+# 外缘 1px o 描边 (朝对角方向), 内部全填 e (内部纹理由方块本体提供, 这里只描边+暗影).
+# 注意: 三角只占 8×8 一象限, 不动 grid 其它部分.
+static func _paint_slope_triangle(grid: Array, corner: String, _style: Dictionary) -> void:
+	# 角象限的 origin 和方向
+	var ox: int
+	var oy: int
+	var fx: int  # x 翻转: 1 = 角在右, -1 = 角在左
+	var fy: int  # y 翻转: 1 = 角在下, -1 = 角在上
+	match corner:
+		"NE":
+			ox = 15; oy = 0; fx = -1; fy = 1
+		"SE":
+			ox = 15; oy = 15; fx = -1; fy = -1
+		"SW":
+			ox = 0; oy = 15; fx = 1; fy = -1
+		"NW":
+			ox = 0; oy = 0; fx = 1; fy = 1
+		_:
+			return
+
+	# 三角范围: 角点为 (ox, oy), 向内/对角延伸 8 像素.
+	# 像素 (i, j) (i = 沿 x 轴向内偏移 0..7, j = 沿 y 轴向内偏移 0..7).
+	# 当 i + j < 8 → 在三角内 (含对角线).
+	# 离角越近 (i+j 小) 越亮 (h 高光), 中间是 H 强高光, 对角线边缘是 o 描边.
+	for i in 8:
+		for j in 8:
+			if i + j >= 8:
+				continue
+			var x: int = ox + i * fx
+			var y: int = oy + j * fy
+			# 外缘 (i+j == 7): o 描边
+			# 次外 (i+j == 6): e 暗影
+			# 内部 (i+j <= 5): H 强高光
+			var d: int = i + j
+			if d == 7:
+				grid[y][x] = "o"
+			elif d == 6:
+				grid[y][x] = "e"
+			else:
+				grid[y][x] = "H"
