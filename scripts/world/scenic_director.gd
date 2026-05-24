@@ -1,23 +1,28 @@
-# 远景协调器: 按玩家 Y (地表 vs 矿洞深处) 平滑切换地表背景 ↔ 矿洞背景.
-# 接 setup(refs: Dictionary) 拿到所有 layer 引用, 每帧调 modulate.a.
+# 远景协调器: 按玩家 Y 跟 "玩家所在列原始地表" 的差值 (= depth_below_surface)
+# 平滑切换地表背景 ↔ 矿洞背景.
+#
+# "原始地表" 用墙 (walls) 查询: 第一行非 AIR 墙 = 草/土/石生成时的 surf 行.
+# 这样玩家挖洞下去, surface_y 不变 (墙不能挖, 仍标记着原生地表位置).
+#
+# 切换分两阶段:
+#   [0..10 格 上层]      天空 + 山, 矿洞 0  (含泥土层 6 格 + 浅石头过渡 4 格)
+#   [10..14 格]          浅 t 0→1 远岩壁渐入 (能看到棕褐墙 + 蘑菇 + 化石)
+#   [14..30 格]          浅 t = 1, 深 t = 0  (只有岩壁, 没有钟乳石/水晶)
+#   [30..36 格]          深 t 0→1 钟乳石+水晶+岩浆+蝠 渐入
+#   [36+ 格]             完全矿洞
+#
 extends Node
 
+const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const WorldGenerator = preload("res://scripts/world/world_generator.gd")
 const TILE_SIZE := 16
 
-# 矿洞远景按"浅层" / "深层" 两阶段切换:
-#
-#   [0..6 格 泥土层]     全屏地表 (天空+山), 矿洞 0
-#   [6..14 格 浅石头层]   远岩壁 0→1 fade 进来 (能看到棕褐岩壁 + 蘑菇 🍄 + 化石 💀)
-#   [14..24 格 深石头层]  钟乳石 + 水晶 0→1 fade 进来 (整个矿洞场景到位)
-#
-# 远岩壁用 shallow_t, 钟乳石+水晶用 deep_t (cave_background_layer 双 alpha).
-# 地表层 (山/日月星/鸟/彩虹/极光) 用 shallow_t 来反向 fade out.
-const STONE_LAYER_TILES := 6         # 泥土层厚度 (跟 WorldGenerator.DIRT_DEPTH 同步)
-const SHALLOW_TRANSITION_TILES := 8  # 进石头层 8 格内 → 浅 cave_t 0→1
-const DEEP_START_TILES := 14         # 14 格深开始显钟乳石/水晶
-const DEEP_TRANSITION_TILES := 10    # 14→24 格内 deep_t 0→1
+# 距离原始草方块多少格才开始切换
+const SHALLOW_START_TILES := 10      # >10 格深才开始显远岩壁
+const SHALLOW_TRANSITION_TILES := 4  # 10→14 格 浅 t 0→1
+const DEEP_START_TILES := 30         # >30 格深才开始显钟乳石/水晶
+const DEEP_TRANSITION_TILES := 6     # 30→36 格 深 t 0→1
 
 var _world: Node = null
 var _mountains: Node = null
@@ -69,50 +74,102 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _world == null:
 		return
-	var player_y_px: float = _get_player_y()
-	var shallow_t: float = compute_shallow_t(player_y_px)
-	var deep_t: float = compute_deep_t(player_y_px)
+	var depth_tiles: float = _player_depth_below_surface_tiles()
+	var shallow_t: float = compute_shallow_t_from_depth(depth_tiles)
+	var deep_t: float = compute_deep_t_from_depth(depth_tiles)
 	_apply_depths(shallow_t, deep_t)
 
 
-# 浅 t: 进入石头层就开始 fade 远岩壁
+# === 公开 compute (静态, 容易测) ===
+
+# 给定玩家在地表下面多少 tile, 算浅 t (远岩壁渐入)
+static func compute_shallow_t_from_depth(depth_tiles: float) -> float:
+	var beyond: float = depth_tiles - float(SHALLOW_START_TILES)
+	if beyond <= 0.0:
+		return 0.0
+	return clamp(beyond / float(SHALLOW_TRANSITION_TILES), 0.0, 1.0)
+
+
+# 给定玩家在地表下面多少 tile, 算深 t (钟乳石/水晶渐入)
+static func compute_deep_t_from_depth(depth_tiles: float) -> float:
+	var beyond: float = depth_tiles - float(DEEP_START_TILES)
+	if beyond <= 0.0:
+		return 0.0
+	return clamp(beyond / float(DEEP_TRANSITION_TILES), 0.0, 1.0)
+
+
+# === 兼容旧接口 (老测试 / 老代码用 player_y_px + 平均 surface_base) ===
+
 static func compute_shallow_t(player_y_px: float) -> float:
 	var surface_y_px: float = WorldGenerator.SURFACE_BASE \
 		* float(ChunkConstants.WORLD_HEIGHT) * float(TILE_SIZE)
-	var depth_below_px: float = player_y_px - surface_y_px
-	var depth_in_stone_px: float = depth_below_px - float(STONE_LAYER_TILES * TILE_SIZE)
-	if depth_in_stone_px <= 0.0:
-		return 0.0
-	return clamp(depth_in_stone_px / float(SHALLOW_TRANSITION_TILES * TILE_SIZE), 0.0, 1.0)
+	var depth_tiles: float = (player_y_px - surface_y_px) / float(TILE_SIZE)
+	return compute_shallow_t_from_depth(depth_tiles)
 
 
-# 深 t: 14 格深才开始 fade 钟乳石/水晶
 static func compute_deep_t(player_y_px: float) -> float:
 	var surface_y_px: float = WorldGenerator.SURFACE_BASE \
 		* float(ChunkConstants.WORLD_HEIGHT) * float(TILE_SIZE)
-	var depth_below_px: float = player_y_px - surface_y_px
-	var depth_in_deep_px: float = depth_below_px - float(DEEP_START_TILES * TILE_SIZE)
-	if depth_in_deep_px <= 0.0:
-		return 0.0
-	return clamp(depth_in_deep_px / float(DEEP_TRANSITION_TILES * TILE_SIZE), 0.0, 1.0)
+	var depth_tiles: float = (player_y_px - surface_y_px) / float(TILE_SIZE)
+	return compute_deep_t_from_depth(depth_tiles)
 
 
-# 兼容老接口 (test_scenic_director 旧版本 + 自动发现路径里可能调用)
 static func compute_cave_t(player_y_px: float) -> float:
 	return compute_shallow_t(player_y_px)
 
 
-func _get_player_y() -> float:
-	if _world == null or not _world.has_method("get_player"):
+# === 实例方法: 算玩家当前所在 X 列的真实 depth_below_surface (in tiles) ===
+
+func _player_depth_below_surface_tiles() -> float:
+	var p: Node2D = _get_player_node()
+	if p == null:
 		return 0.0
-	var p = _world.get_player()
+	var px_tile: int = int(floor(p.global_position.x / float(TILE_SIZE)))
+	var surf_y_tile: int = _find_surface_y_tile(px_tile)
+	if surf_y_tile < 0:
+		# fallback: 用平均 surface_y
+		var avg_y: float = WorldGenerator.SURFACE_BASE \
+			* float(ChunkConstants.WORLD_HEIGHT)
+		return p.global_position.y / float(TILE_SIZE) - avg_y
+	var player_y_tile: float = p.global_position.y / float(TILE_SIZE)
+	return player_y_tile - float(surf_y_tile)
+
+
+# 用 chunk 的 walls 数组找原始地表行: 第一行非 AIR wall = surf 行.
+# walls 不会被玩家挖掉, 所以即便挖洞下去, 这个 surf 也保持原始位置.
+func _find_surface_y_tile(world_x_tile: int) -> int:
+	if _world == null:
+		return -1
+	var cm = _world.get("chunk_manager")
+	if cm == null:
+		return -1
+	var chunk_x: int = Chunk.chunk_x_of(world_x_tile)
+	var local_x: int = Chunk.local_x_of(world_x_tile)
+	# 不加 : Chunk 类型注解 (mock 测试用别的类). 鸭子类型 get_wall 即可.
+	var ch = cm.get_chunk(chunk_x)
+	if ch == null:
+		return -1
+	for y in ChunkConstants.WORLD_HEIGHT:
+		if ch.get_wall(local_x, y) != Tiles.AIR:
+			return y
+	return -1
+
+
+func _get_player_node() -> Node2D:
+	if _world == null or not _world.has_method("get_player"):
+		return null
+	return _world.get_player()
+
+
+func _get_player_y() -> float:
+	var p: Node2D = _get_player_node()
 	if p == null:
 		return 0.0
 	return p.global_position.y
 
 
 func _apply_depths(shallow_t: float, deep_t: float) -> void:
-	# 地表层用 shallow_t 反向 fade out (玩家一进石头层就开始 fade)
+	# 地表层用 shallow_t 反向 fade out (玩家一进浅过渡区就开始 fade)
 	_set_alpha(_mountains, 1.0 - shallow_t * 0.85)  # 矿洞里山留 15% 阴影
 	_set_alpha(_celestial, 1.0 - shallow_t)
 	# SkyBackground 节点是 CanvasLayer; 实际 ColorRect 在 Bg 子节点
@@ -160,12 +217,12 @@ func _set_alpha_sky(a: float) -> void:
 
 # 测试用
 func current_cave_t() -> float:
-	return compute_shallow_t(_get_player_y())
+	return compute_shallow_t_from_depth(_player_depth_below_surface_tiles())
 
 
 func current_shallow_t() -> float:
-	return compute_shallow_t(_get_player_y())
+	return compute_shallow_t_from_depth(_player_depth_below_surface_tiles())
 
 
 func current_deep_t() -> float:
-	return compute_deep_t(_get_player_y())
+	return compute_deep_t_from_depth(_player_depth_below_surface_tiles())
