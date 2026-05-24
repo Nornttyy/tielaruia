@@ -18,6 +18,10 @@ const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const WorldGenerator = preload("res://scripts/world/world_generator.gd")
 const TILE_SIZE := 16
 
+# walls 现在从 surf + WALL_HIDE_TOP_TILES 开始 (浅层无墙), 找到的第一行
+# wall 比真实 surf 低 N 行, 算 depth 时要减回去.
+const WALL_HIDE_TOP_TILES := 3
+
 # 距离原始草方块多少格才开始切换
 const SHALLOW_START_TILES := 10      # >10 格深才开始显远岩壁
 const SHALLOW_TRANSITION_TILES := 4  # 10→14 格 浅 t 0→1
@@ -135,8 +139,9 @@ func _player_depth_below_surface_tiles() -> float:
 	return player_y_tile - float(surf_y_tile)
 
 
-# 用 chunk 的 walls 数组找原始地表行: 第一行非 AIR wall = surf 行.
-# walls 不会被玩家挖掉, 所以即便挖洞下去, 这个 surf 也保持原始位置.
+# 用 chunk 的 walls 数组找原始地表行.
+# walls 不会被玩家挖掉, 但从 surf + WALL_HIDE_TOP_TILES 开始填 (浅层无墙),
+# 所以找到第一行 wall 后要减 WALL_HIDE_TOP_TILES 回到真实 surf.
 func _find_surface_y_tile(world_x_tile: int) -> int:
 	if _world == null:
 		return -1
@@ -151,7 +156,7 @@ func _find_surface_y_tile(world_x_tile: int) -> int:
 		return -1
 	for y in ChunkConstants.WORLD_HEIGHT:
 		if ch.get_wall(local_x, y) != Tiles.AIR:
-			return y
+			return y - WALL_HIDE_TOP_TILES  # 减回浅层 hide 偏移
 	return -1
 
 

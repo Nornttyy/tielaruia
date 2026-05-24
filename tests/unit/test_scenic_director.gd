@@ -79,12 +79,14 @@ class MockPlayer:
 class MockChunk:
 	extends RefCounted
 	const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
+	const WALL_HIDE := 3  # 跟 world_generator.WALL_HIDE_TOP_TILES 同步
 	var _surf_y: int = 100
 	func _init(p_surf_y: int = 100) -> void:
 		_surf_y = p_surf_y
-	# 模拟 Chunk.get_wall: < surf_y 返 AIR (空), >= surf_y 返非 AIR
+	# 模拟真实世界: walls 从 surf+3 开始 (浅层无墙).
+	# SD 找到第一行 wall 后会减 3, 还原真实 surf.
 	func get_wall(_lx: int, y: int) -> int:
-		if y < _surf_y:
+		if y < _surf_y + WALL_HIDE:
 			return Tiles.AIR
 		return Tiles.STONE_WALL
 

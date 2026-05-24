@@ -62,6 +62,15 @@ func get_tile(world_x: int, world_y: int) -> int:
 	return _loaded[cx].get_tile(lx, world_y)
 
 
+# world 坐标 (x, y) → wall_id (背景墙). chunk 未 load → AIR
+func get_wall(world_x: int, world_y: int) -> int:
+	var cx: int = Chunk.chunk_x_of(world_x)
+	if not _loaded.has(cx):
+		return Tiles.AIR
+	var lx: int = Chunk.local_x_of(world_x)
+	return _loaded[cx].get_wall(lx, world_y)
+
+
 # 写 tile。同时记 delta 让卸载后再加载能恢复。
 func set_tile(world_x: int, world_y: int, tid: int) -> void:
 	var cx: int = Chunk.chunk_x_of(world_x)

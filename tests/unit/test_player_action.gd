@@ -125,6 +125,34 @@ func test_place_dirt_consumes_slot_and_creates_tile():
 	assert_eq(inv.inventory.slots[0].count, 4, "槽内 dirt 应减 1")
 
 
+func test_place_on_wall_succeeds():
+	# 在背景墙上贴方块: 即使周围全是空气, 只要背后有墙, 也应允许放置.
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	main.boot_to_game()
+	await wait_frames(2)
+	var world = main.get_node("World")
+	var player = world.get_player()
+	var action: Node2D = player.get_node("PlayerAction")
+	var inv: Node = player.get_node("PlayerInventory")
+	var terrain: TileMapLayer = world.get_node("TerrainLayer")
+	var wall_layer: TileMapLayer = world.get_node("WallLayer")
+	inv.inventory.add("dirt", 5)
+	inv.set_hotbar_selection(0)
+	# 选一个空中位置, 清掉周围所有 tile, 但手动放一个墙在 target
+	var pt: Vector2i = action.player_tile()
+	var target: Vector2i = pt + Vector2i(2, -2)
+	for dx in [-1, 0, 1]:
+		for dy in [-1, 0, 1]:
+			terrain.set_cell(target + Vector2i(dx, dy), -1)
+	wall_layer.set_cell(target, Tiles.STONE_WALL, Vector2i.ZERO)
+	action.aim_override = target
+	action.place_override = true
+	await wait_frames(3)
+	assert_eq(terrain.get_cell_source_id(target), Tiles.DIRT, "墙上应能放下 dirt")
+	assert_eq(inv.inventory.slots[0].count, 4, "槽内 dirt 应减 1")
+
+
 func test_place_fails_when_no_neighbor():
 	# 空中无邻接方块时不能放
 	var main = MainScene.instantiate()
