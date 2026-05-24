@@ -23,6 +23,13 @@ var _hop_timer: float = 0.5
 var _hit_flash: float = 0.0
 var _is_dying: bool = false
 var _current_hop_vx: float = 0.0  # 本次跳跃的目标横速 (空中维持用, 含方向符号)
+# 中立/敌对状态: 白天默认中立 (闲逛, 接触不伤害). 晚上自动敌对.
+# 白天被玩家打 → 也变敌对 (撑到死或被遗忘) — 像 Minecraft 中立怪.
+var _is_provoked: bool = false
+
+
+func _is_hostile() -> bool:
+	return _is_provoked or TimeOfDay.is_night()
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -70,7 +77,9 @@ func _attempt_hop() -> void:
 	_hop_timer = randf_range(HOP_COOLDOWN_MIN, HOP_COOLDOWN_MAX)
 	var player := _find_player()
 	var dir: float = 0.0
-	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
+	# 仅在敌对状态下追玩家. 白天 (未被激怒) 当玩家不存在, 只闲逛.
+	if _is_hostile() and player != null \
+			and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
 		# 朝玩家跳
 		dir = signf(player.global_position.x - global_position.x)
 		sprite.flip_h = dir < 0
@@ -112,6 +121,9 @@ func _find_player() -> Node2D:
 
 
 func _check_player_contact() -> void:
+	# 中立 (白天未被打) → 不造成接触伤害
+	if not _is_hostile():
+		return
 	var player := _find_player()
 	if player == null:
 		return
@@ -128,6 +140,8 @@ func _check_player_contact() -> void:
 func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 	if _is_dying or amount <= 0:
 		return false
+	# 被打了 → 激怒, 白天也变敌对
+	_is_provoked = true
 	current_health = max(0, current_health - amount)
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
