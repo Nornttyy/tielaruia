@@ -45,6 +45,11 @@ const _P_GRASS := {
 	"k": Color8(94, 65, 44),     # 小石子
 	"l": Color8(186, 144, 112),  # 泥高光
 	"r": Color8(160, 90, 48),    # 红棕根
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(32, 24, 12),    # 极暗轮廓 (k×0.55 darkened)
+	"_e": Color8(88, 61, 40),    # 边缘暗影 (d×0.55)
+	"_h": Color8(157, 216, 113), # 边缘高光 (g+25%)
+	"_H": Color8(185, 220, 115), # 顶强高光 (暖, R+8 B-8)
 }
 
 const _P_DIRT := {
@@ -56,6 +61,11 @@ const _P_DIRT := {
 	"r": Color8(160, 85, 46),    # 红棕
 	"p": Color8(136, 97, 68),    # 冷棕
 	"o": Color8(201, 126, 69),   # 暖橙
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(38, 23, 12),    # 极暗轮廓 (k×0.55 → 暗棕)
+	"_e": Color8(88, 67, 47),    # 边缘暗影 (d×0.55)
+	"_h": Color8(200, 153, 106), # 边缘高光 (d+25%)
+	"_H": Color8(220, 165, 108), # 顶强高光 (暖, R+12 B-6)
 }
 
 const _P_STONE := {
@@ -67,6 +77,11 @@ const _P_STONE := {
 	"m": Color8(138, 125, 116),  # 中暖灰
 	"b": Color8(110, 98, 90),    # 深暖灰
 	"o": Color8(184, 154, 130),  # 砂岩调
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(40, 32, 28),    # 极暗轮廓 (k×0.55)
+	"_e": Color8(95, 85, 78),    # 边缘暗影 (s×0.61)
+	"_h": Color8(195, 180, 170), # 边缘高光 (s+25%)
+	"_H": Color8(222, 205, 188), # 顶强高光 (暖, R+8 B-8)
 }
 
 const _P_SAND := {
@@ -78,6 +93,11 @@ const _P_SAND := {
 	"o": Color8(213, 162, 107),  # 暖橙
 	"r": Color8(193, 130, 80),   # 深暖
 	"b": Color8(221, 183, 120),  # 沙变种
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(52, 38, 20),    # 极暗轮廓 (k×0.55 → 暗沙棕)
+	"_e": Color8(126, 107, 73),  # 边缘暗影 (y×0.55)
+	"_h": Color8(255, 245, 166), # 边缘高光 (y+25%)
+	"_H": Color8(255, 252, 165), # 顶强高光 (暖, R+8 B-8 → 淡金黄)
 }
 
 const _P_LOG := {
@@ -100,6 +120,11 @@ const _P_LEAVES := {
 	"s": Color8(108, 142, 88),   # 中阴影
 	"a": Color8(180, 185, 120),  # 鼠尾草
 	"r": Color8(184, 100, 58),   # 秋红
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(18, 34, 16),    # 极暗轮廓 (d×0.55 → 近黑绿)
+	"_e": Color8(60, 96, 51),    # 边缘暗影 (l×0.55)
+	"_h": Color8(156, 216, 115), # 边缘高光 (l+25%)
+	"_H": Color8(178, 228, 115), # 顶强高光 (暖黄绿, R+8 B-8)
 }
 
 # 松针：深暖绿 + 灰绿暗色，无透角更密实
@@ -110,6 +135,11 @@ const _P_LEAVES_PINE := {
 	"h": Color8(120, 165, 95),   # 高光
 	"s": Color8(70, 115, 70),    # 中阴影
 	"y": Color8(155, 175, 90),   # 黄橄榄 (松果?)
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(10, 22, 13),    # 极暗轮廓 (d×0.55 → 近黑绿)
+	"_e": Color8(38, 71, 43),    # 边缘暗影 (l×0.55)
+	"_h": Color8(103, 163, 98),  # 边缘高光 (l+25%)
+	"_H": Color8(118, 170, 96),  # 顶强高光 (R+8 B-8, 暗沉不过亮)
 }
 
 # 秋叶：暖红橙 + 金黄 + 深红
@@ -122,6 +152,11 @@ const _P_LEAVES_AUTUMN := {
 	"s": Color8(180, 90, 45),    # 中阴影
 	"a": Color8(215, 145, 70),   # 桃色变种
 	"r": Color8(140, 50, 30),    # 深红浆果
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(42, 14, 8),     # 极暗轮廓 (r×0.55 → 深红棕)
+	"_e": Color8(84, 46, 22),    # 边缘暗影 (l×0.55 → 深橙棕)
+	"_h": Color8(244, 138, 69),  # 边缘高光 (l+25%)
+	"_H": Color8(255, 150, 68),  # 顶强高光 (暖金橙, R+8 B-8)
 }
 
 # 史莱姆灯: 暗木棍 + 顶部黄绿史莱姆胶发光感
@@ -138,6 +173,11 @@ const _P_PLANKS := {
 	"P": Color8(141, 93, 53),
 	"l": Color8(192, 143, 91),
 	"k": Color8(109, 66, 38),   # 板缝
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(42, 26, 14),    # 极暗轮廓 (k×0.55 → 深木棕)
+	"_e": Color8(92, 64, 38),    # 边缘暗影 (p×0.55)
+	"_h": Color8(210, 145, 86),  # 边缘高光 (p+25%)
+	"_H": Color8(232, 158, 88),  # 顶强高光 (暖, R+12 B-8)
 }
 
 const _P_WORKBENCH := {
@@ -160,6 +200,11 @@ const _P_BEDROCK := {
 	"B": Color8(33, 33, 33),
 	"l": Color8(97, 97, 97),
 	"k": Color8(15, 15, 15),
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(8, 8, 8),       # 极暗轮廓 (k×0.55 → 近黑)
+	"_e": Color8(33, 33, 33),    # 边缘暗影 (b×0.5 → 深灰)
+	"_h": Color8(83, 83, 83),    # 边缘高光 (b+25%)
+	"_H": Color8(100, 96, 88),   # 顶强高光 (稍暖)
 }
 
 # 深石: STONE 同结构但整体降亮 35% + 暖深底
@@ -172,6 +217,11 @@ const _P_DEEP_STONE := {
 	"m": Color8(88, 75, 66),
 	"b": Color8(60, 50, 42),
 	"o": Color8(122, 96, 72),
+	# 新增 (T3): 边缘语义槽
+	"_o": Color8(20, 15, 12),    # 极暗轮廓 (k×0.55 → 近黑棕)
+	"_e": Color8(50, 40, 33),    # 边缘暗影 (s×0.55 → 深灰棕)
+	"_h": Color8(128, 110, 98),  # 边缘高光 (s+25%)
+	"_H": Color8(148, 126, 108), # 顶强高光 (暖, R+8 B-8)
 }
 
 # 煤矿: STONE 底色 + c/C/h 系列煤块
@@ -187,6 +237,11 @@ const _P_COAL_ORE := {
 	"c": Color8(50, 40, 35),
 	"C": Color8(28, 22, 20),
 	"h": Color8(80, 65, 55),
+	# 新增 (T3): 边缘语义槽 (与 STONE 同结构, 同色)
+	"_o": Color8(40, 32, 28),    # 极暗轮廓
+	"_e": Color8(95, 85, 78),    # 边缘暗影
+	"_h": Color8(195, 180, 170), # 边缘高光
+	"_H": Color8(222, 205, 188), # 顶强高光 (暖)
 }
 
 # 铁矿: STONE 底色 + r/R/H 系列铁锈
@@ -202,6 +257,11 @@ const _P_IRON_ORE := {
 	"r": Color8(168, 100, 60),
 	"R": Color8(130, 70, 40),
 	"H": Color8(200, 140, 90),
+	# 新增 (T3): 边缘语义槽 (与 STONE 同结构, 同色)
+	"_o": Color8(40, 32, 28),    # 极暗轮廓
+	"_e": Color8(95, 85, 78),    # 边缘暗影
+	"_h": Color8(195, 180, 170), # 边缘高光
+	"_H": Color8(222, 205, 188), # 顶强高光 (暖)
 }
 
 # 背景墙: 比对应方块暗 ~50%, 图案更糊 (少高光多深色, 偶尔小石子)
@@ -212,6 +272,11 @@ const _P_GRASS_WALL := {
 	"v": Color8(54, 80, 38),    # 深绿根
 	"V": Color8(38, 58, 28),    # 深绿根阴影
 	"k": Color8(38, 28, 20),    # 黑石子
+	# 新增 (T3): 边缘语义槽 (墙低对比度, 高光范围小)
+	"_o": Color8(16, 11, 7),    # 极暗轮廓 (k×0.55)
+	"_e": Color8(48, 36, 25),   # 边缘暗影 (d×0.6)
+	"_h": Color8(90, 70, 50),   # 边缘高光 (d+12%, 低对比)
+	"_H": Color8(102, 78, 54),  # 顶强高光 (d+20%, 暖)
 }
 # 土墙: 均匀深棕 + 零星小石子, 偶尔微亮
 const _P_DIRT_WALL := {
@@ -219,6 +284,11 @@ const _P_DIRT_WALL := {
 	"D": Color8(58, 42, 28),
 	"k": Color8(38, 26, 16),
 	"l": Color8(96, 76, 54),    # 微亮 (稀疏)
+	# 新增 (T3): 边缘语义槽 (墙低对比度)
+	"_o": Color8(15, 10, 6),    # 极暗轮廓 (k×0.55)
+	"_e": Color8(46, 34, 22),   # 边缘暗影 (d×0.58)
+	"_h": Color8(90, 68, 46),   # 边缘高光 (d+12%)
+	"_H": Color8(100, 74, 48),  # 顶强高光 (d+20%, 暖)
 }
 # 石墙: 均匀深暖灰 + 黑裂纹
 const _P_STONE_WALL := {
@@ -226,6 +296,11 @@ const _P_STONE_WALL := {
 	"S": Color8(56, 50, 46),
 	"k": Color8(34, 28, 24),
 	"l": Color8(96, 88, 80),    # 微亮
+	# 新增 (T3): 边缘语义槽 (墙低对比度)
+	"_o": Color8(14, 11, 9),    # 极暗轮廓 (k×0.55)
+	"_e": Color8(44, 40, 38),   # 边缘暗影 (s×0.58)
+	"_h": Color8(88, 81, 76),   # 边缘高光 (s+12%)
+	"_H": Color8(100, 92, 86),  # 顶强高光 (s+20%, 稍暖)
 }
 
 # 火把 tile: 木棍底 + 暖色火苗 (静态视觉，动画 fx 由 TorchFx 叠加)
@@ -716,3 +791,60 @@ static func get_texture(tile_id: int) -> ImageTexture:
 
 static func get_door_open_texture() -> ImageTexture:
 	return PixelArt.grid_to_texture(_DOOR_OPEN, _P_DOOR)
+
+
+# 返回方块完整调色板 (含 _o/_e/_h/_H 边缘槽位).
+static func get_full_palette(tile_id: int) -> Dictionary:
+	assert(_PATTERN_MAP.has(tile_id), "未知 tile_id: %d" % tile_id)
+	return _PATTERN_MAP[tile_id][1]
+
+
+# 构建 47 变体 atlas (128×96 = 8 列 × 6 行 × 16 px).
+# 仅对 EdgeTemplates.FAMILY_OF 里有的方块有效; 其它方块抛 assert.
+static func build_atlas(tile_id: int) -> ImageTexture:
+	var EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
+	var BlobLookup = preload("res://scripts/world/blob_lookup.gd")
+
+	assert(EdgeTemplates.FAMILY_OF.has(tile_id),
+		"tile %d 没在 FAMILY_OF 里, 不支持 autotile" % tile_id)
+
+	var family: String = EdgeTemplates.FAMILY_OF[tile_id]
+	var family_tpl: Dictionary = EdgeTemplates.TEMPLATES[family]
+	var base_pattern: Array = _PATTERN_MAP[tile_id][0]
+	var palette: Dictionary = _PATTERN_MAP[tile_id][1]
+	var transparent := Color(0, 0, 0, 0)
+
+	var atlas_img := Image.create(128, 96, false, Image.FORMAT_RGBA8)
+	atlas_img.fill(transparent)
+
+	for i in BlobLookup.VARIANT_KEYS.size():
+		var variant_key: String = BlobLookup.VARIANT_KEYS[i]
+		var edge: Array = family_tpl[variant_key]
+		var col: int = i % 8
+		var row: int = i / 8
+		var ox: int = col * 16
+		var oy: int = row * 16
+		for y in 16:
+			var base_row: String = base_pattern[y]
+			var edge_row: String = edge[y]
+			for x in 16:
+				var edge_ch: String = edge_row.substr(x, 1)
+				var color: Color
+				if edge_ch == ".":
+					# 显示内部纹理
+					var base_ch: String = base_row.substr(x, 1)
+					if palette.has(base_ch):
+						color = palette[base_ch]
+					else:
+						color = transparent
+				else:
+					# 边缘装饰: 用 _o/_e/_h/_H 槽位
+					var slot: String = "_" + edge_ch
+					if palette.has(slot):
+						color = palette[slot]
+					else:
+						push_warning("tile %d 缺槽位 %s (variant %s)" % [tile_id, slot, variant_key])
+						color = transparent
+				atlas_img.set_pixel(ox + x, oy + y, color)
+
+	return ImageTexture.create_from_image(atlas_img)
