@@ -12,11 +12,20 @@
 
 ### In scope
 
+**核心远景**
 - 地表 3 层视差山（远 / 中 / 近丘）+ 山尖雪 + 大气透视染色
 - 太阳走弧线（白天）+ 月亮走弧线（夜里）
 - 50-80 颗夜空星星（仅夜里淡入 + 随机眨眼）
 - 矿洞 3 层视差（远岩壁 / 钟乳石剪影 / 闪光水晶）
 - 按相机/玩家 Y 在地表背景与矿洞背景之间平滑切换
+
+**小点缀（共用 3 个机制实现）**
+- 🦅 远处鸟群 V 字飞 + 🦇 矿洞蝠群掠过（共用 `flock_layer.gd`，参数化）
+- 🌈 雨停后彩虹 + 🌌 夜里偶尔极光（共用 `rare_overlay_layer.gd`，参数化）
+- 💧 矿洞岩浆滴落（独立粒子发射器 `lava_drip_layer.gd`）
+- 🍄 矿洞发光蘑菇 + 💀 化石骨架（直接画进 `cave_bg_art` 纹理，不需要新代码）
+
+**工程约束**
 - 程序生成所有图片，跟现有 `clouds_art.gd` / `fireflies.gd` 一个套路
 - 单元测试覆盖：所有新 art 生成器吐 ImageTexture，所有新 Layer ready 不报错
 
@@ -35,14 +44,19 @@
 ```
 scripts/art/
   mountains_art.gd        # 生成 3 种山脊纹理（jagged polyline → ImageTexture）
-  celestial_art.gd        # 生成太阳圆盘、月亮圆盘（含相位轮廓）
-  cave_bg_art.gd          # 生成岩壁、钟乳石、水晶 3 种背景图
+  celestial_art.gd        # 生成太阳圆盘、月亮圆盘
+  cave_bg_art.gd          # 生成岩壁、钟乳石、水晶 + 🍄 蘑菇 + 💀 化石 (画进背景纹理)
+  flock_art.gd            # 生成单只鸟/单只蝠的小剪影 texture (2 帧拍翅)
+  rare_overlay_art.gd     # 生成彩虹弧 + 极光光带 texture
 
 scripts/world/
   mountains_layer.gd      # ParallaxBackground，地表用
   celestial_layer.gd      # CanvasLayer，天空中日月+星
   cave_background_layer.gd  # ParallaxBackground，地下用
-  scenic_director.gd      # 按玩家 Y 平滑切换两套背景的 alpha
+  flock_layer.gd          # 参数化飞行小群 (鸟/蝠 都用它)
+  rare_overlay_layer.gd   # 参数化罕见全屏 overlay (彩虹/极光 都用它)
+  lava_drip_layer.gd      # 矿洞远处橙色光点掉落粒子
+  scenic_director.gd      # 按玩家 Y + 天气/时间 协调所有 layer 的 alpha / 触发
 ```
 
 ### 渲染层次（从远到近）
@@ -51,12 +65,16 @@ scripts/world/
 |-----------|------|------|
 | CanvasLayer -10 | `SkyBackground` (已有) | 纯色 sky_color() |
 | CanvasLayer -8 | `CelestialLayer` （新） | 星 + 日月，固定屏幕位置 |
+| CanvasLayer -7 | `RareOverlayLayer` 彩虹/极光（新） | 罕见全屏 fade |
 | ParallaxBg motion_scale 0.05 | `MountainsLayer` 远山（新） | jagged peaks，半透明蓝灰 + 雪顶 |
 | ParallaxBg motion_scale 0.12 | `MountainsLayer` 中山（新） | 颜色稍深 |
 | ParallaxBg motion_scale 0.20 | `MountainsLayer` 近丘（新） | 深绿/棕 |
-| ParallaxBg motion_scale 0.10 | `CaveBackgroundLayer` 远岩壁（新） | 棕褐渐变 + 边缘 |
+| ParallaxBg motion_scale 0.10 | `CaveBackgroundLayer` 远岩壁（新） | 棕褐渐变 + 边缘 + 🍄 + 💀 |
 | ParallaxBg motion_scale 0.18 | `CaveBackgroundLayer` 钟乳石（新） | 灰黑剪影 |
 | ParallaxBg motion_scale 0.25 | `CaveBackgroundLayer` 水晶（新） | 小点闪光（cyan/紫/绿） |
+| Z 0 (Node2D 跟相机) | `FlockLayer(bird)` 鸟群（新） | 间歇 V 字飞过 |
+| Z 0 (Node2D 跟相机) | `FlockLayer(bat)` 蝠群（新） | 矿洞内间歇飞 |
+| Z 0 (Node2D 跟相机) | `LavaDripLayer` 岩浆滴（新） | 矿洞内常驻 5-15 个橙点 |
 | ParallaxBg motion_scale 0.2-0.8 | `CloudLayer` (已有) | 不变 |
 | Z 0 | `TerrainLayer` (已有) | 不变 |
 | CanvasLayer 5 | `RainLayer` (已有) | 不变 |
@@ -123,8 +141,50 @@ cave_t = clamp(depth_below_surface_px / (10 * TILE_SIZE), 0, 1)  # 10 tile 内�
 - `celestial_layer.modulate.a = 1.0 - cave_t`
 - `cave_background_layer.modulate.a = cave_t`
 - `sky_background.modulate.a = 1.0 - cave_t * 0.7`（地下天空也压暗但不全黑）
+- 鸟群 `FlockLayer(bird).modulate.a = 1.0 - cave_t`
+- 蝠群 `FlockLayer(bat).modulate.a = cave_t`
+- `LavaDripLayer.modulate.a = cave_t`
+- `RareOverlayLayer(rainbow/aurora).modulate.a = 1.0 - cave_t`（只有地表看到）
 
 播放器没创建时不跑，等 World 报 player_ready（已有 `get_player()`）。
+
+### FlockLayer (`scripts/world/flock_layer.gd`) — 鸟群 + 蝠群共用
+
+`extends Node2D`，挂在 World 下（不视差，跟相机走）。
+
+参数化：
+```
+setup(kind: String, spawn_interval_range: Vector2, count_range: Vector2i,
+      y_range: Vector2, color: Color, scale: float)
+```
+
+- 内部 `_process` 跑一个 spawn_timer，触发时孵化一群（V 字 / 横排队形），每只飞过屏幕后自销毁
+- `kind="bird"`：地表用，y 在屏幕上 15-35%，灰黑剪影，scale 1.0
+- `kind="bat"`：矿洞用，y 在屏幕 20-60%，黑剪影，scale 0.7，飞速更快更乱
+- 两只 `FlockLayer` 实例：一个 bird（地表），一个 bat（矿洞）。alpha 跟随对应的山/矿洞 modulate
+
+### RareOverlayLayer (`scripts/world/rare_overlay_layer.gd`) — 彩虹 + 极光共用
+
+`extends CanvasLayer`，挂在 World 下，layer = -7（在山前云后）。
+
+参数化：
+```
+setup(kind: String, trigger_predicate: Callable, duration_sec: float, cooldown_sec: float)
+```
+
+- 内部维持 cooldown / active / fadeout 状态机
+- `kind="rainbow"`：texture = 半圆彩虹弧，trigger = "刚从 rainy → clear"，duration=30s。订阅 `weather.weather_changed`
+- `kind="aurora"`：texture = 几条绿色流动光带（水平），trigger = "夜里 + 随机 5min 检查一次 + 20% 概率"，duration=60s
+- 出现时缓慢 fade in 2s，结束 fade out 2s
+- 两只 RareOverlayLayer 实例
+
+### LavaDripLayer (`scripts/world/lava_drip_layer.gd`)
+
+`extends Node2D`，挂在 World 下。
+
+- 每 N 秒（N=2-5 随机）从屏幕顶部远岩壁随机位置生成一个橙色光点（5x5 px 发光小圆），向下匀加速掉到屏幕下方消失
+- 同时 5-15 个常驻
+- alpha 跟随矿洞 modulate（地表时不可见）
 
 ## Procedural Art Generators
 
@@ -145,21 +205,34 @@ cave_t = clamp(depth_below_surface_px / (10 * TILE_SIZE), 0, 1)  # 10 tile 内�
 
 ### `CaveBgArt`
 
-- `rocks(width, height) → ImageTexture`：纵向棕褐渐变，顶部用噪声边缘
+- `rocks(width, height) → ImageTexture`：纵向棕褐渐变，顶部用噪声边缘，**附加** 🍄 蘑菇丛（紫绿伞菌散落点 + 软光晕）和 💀 化石（白色恐龙骨/螺壳剪影 嵌入岩壁）
 - `stalactites(width, height, count) → ImageTexture`：随机间隔下垂三角，灰黑剪影
 - `crystals(width, height, count) → ImageTexture`：随机点位置 + 颜色（用于一次性生成；闪烁靠节点 alpha 抖）
 
+### `FlockArt`
+
+- `bird_silhouette() → ImageTexture`：8x6 V 型剪影，灰黑色（动画用 2 帧 wing-up/down 拼到一张）
+- `bat_silhouette() → ImageTexture`：8x6 弧形翅膀剪影，纯黑色 + 微紫边
+
+### `RareOverlayArt`
+
+- `rainbow(width, height) → ImageTexture`：半圆 7 色弧 (红橙黄绿青蓝紫)，外缘软 alpha 渐变
+- `aurora(width, height) → ImageTexture`：3-4 条波浪绿色光带（垂直方向 alpha 渐变，水平方向用 sin 摆动）
+
 ## Wiring into World
 
-`scripts/world/world.gd::_ready()` 在创建 `rain_layer` 之前加：
+`scripts/world/world.gd::_ready()` 在创建 `rain_layer` 之前加（顺序固定：背景类先 add，director 最后 add，因为它在 _ready 就要拿到所有引用）：
 
 ```gdscript
 const MountainsLayerClass = preload("res://scripts/world/mountains_layer.gd")
 const CelestialLayerClass = preload("res://scripts/world/celestial_layer.gd")
 const CaveBackgroundLayerClass = preload("res://scripts/world/cave_background_layer.gd")
+const FlockLayerClass = preload("res://scripts/world/flock_layer.gd")
+const RareOverlayLayerClass = preload("res://scripts/world/rare_overlay_layer.gd")
+const LavaDripLayerClass = preload("res://scripts/world/lava_drip_layer.gd")
 const ScenicDirectorClass = preload("res://scripts/world/scenic_director.gd")
 
-# 远景三件套
+# 远景核心
 mountains_layer = MountainsLayerClass.new()
 mountains_layer.name = "MountainsLayer"
 add_child(mountains_layer)
@@ -169,22 +242,60 @@ add_child(celestial_layer)
 cave_bg_layer = CaveBackgroundLayerClass.new()
 cave_bg_layer.name = "CaveBackgroundLayer"
 add_child(cave_bg_layer)
+
+# 点缀
+bird_layer = FlockLayerClass.new()
+bird_layer.name = "BirdLayer"
+bird_layer.setup_bird()  # 内部封装好的 bird 参数预设
+add_child(bird_layer)
+bat_layer = FlockLayerClass.new()
+bat_layer.name = "BatLayer"
+bat_layer.setup_bat()
+add_child(bat_layer)
+rainbow_layer = RareOverlayLayerClass.new()
+rainbow_layer.name = "RainbowLayer"
+rainbow_layer.setup_rainbow(weather)  # 接 weather.weather_changed
+add_child(rainbow_layer)
+aurora_layer = RareOverlayLayerClass.new()
+aurora_layer.name = "AuroraLayer"
+aurora_layer.setup_aurora()  # 内部接 TimeOfDay
+add_child(aurora_layer)
+lava_drip_layer = LavaDripLayerClass.new()
+lava_drip_layer.name = "LavaDripLayer"
+add_child(lava_drip_layer)
+
+# 协调器最后加 (要在所有 layer ready 后拿引用)
 scenic_director = ScenicDirectorClass.new()
 scenic_director.name = "ScenicDirector"
-scenic_director.setup(self, mountains_layer, celestial_layer, cave_bg_layer, sky_background)
+scenic_director.setup({
+    "world": self,
+    "mountains": mountains_layer,
+    "celestial": celestial_layer,
+    "cave_bg": cave_bg_layer,
+    "sky_bg": sky_background,
+    "bird": bird_layer,
+    "bat": bat_layer,
+    "rainbow": rainbow_layer,
+    "aurora": aurora_layer,
+    "lava_drip": lava_drip_layer,
+})
 add_child(scenic_director)
 ```
 
-`SkyBackground` 需要拿到引用，可能要在 `scenes/world/world.tscn` 给它 unique name 或 World 用 `get_node("SkyBackground")`（看实际场景树）。
+`SkyBackground` 需要拿到引用，可能要在 `scenes/world/world.tscn` 给它 unique name 或 World 用 `get_node("SkyBackground")`（看实际场景树）。注意 `rainbow_layer.setup_rainbow(weather)` 依赖 weather 已存在 — 调整 wiring 顺序让 weather 先建好（现有顺序里 rain_layer / weather 是后建的，这次要把 weather 提前建）。
 
 ## Testing
 
 新增单元测试：
 - `tests/unit/test_mountains_art.gd`：调用每个生成器 → 验证返回 ImageTexture 且尺寸/像素非空
 - `tests/unit/test_celestial_art.gd`：同上
-- `tests/unit/test_cave_bg_art.gd`：同上
+- `tests/unit/test_cave_bg_art.gd`：同上（包括 🍄 🦴 装饰版本）
+- `tests/unit/test_flock_art.gd`：同上
+- `tests/unit/test_rare_overlay_art.gd`：同上
 - `tests/unit/test_celestial_layer.gd`：实例化 → _ready 不报错；设置 TimeOfDay.time = 0.5 → 一帧后 sun.visible=true, stars 总 alpha ≤ 0.1
-- `tests/unit/test_scenic_director.gd`：mock player Y 在地表/地下 → 验证 mountains_layer/cave_bg_layer modulate.a 数值正确（地表=1/0，地下=0/1，过渡区间在中间）
+- `tests/unit/test_flock_layer.gd`：实例化 bird/bat → _ready 不崩；调一次 spawn → 子节点 ≥1
+- `tests/unit/test_rare_overlay_layer.gd`：实例化 rainbow → 模拟 weather "rainy→clear" 信号 → overlay alpha > 0
+- `tests/unit/test_scenic_director.gd`：mock player Y 在地表/地下 → 验证所有 layer modulate.a 数值正确
 
 集成测试不新增（现有 `test_smoke` 走到 world 已可发现 _ready 崩溃）。
 
