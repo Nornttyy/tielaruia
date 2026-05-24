@@ -3,18 +3,19 @@
 # 同时附带闪雷全屏白闪 + 雨天天空变暗 modulate.
 extends CanvasLayer
 
-const RAIN_COUNT := 80          # 屏幕上同时存在的雨点数
-const RAIN_SPEED_MIN := 500.0   # 像素/秒
-const RAIN_SPEED_MAX := 800.0
-const RAIN_LENGTH_MIN := 6.0
-const RAIN_LENGTH_MAX := 14.0
-const RAIN_COLOR := Color(0.7, 0.8, 1.0, 0.5)
-const RAIN_TILT_X := 80.0       # 雨倾斜速度 (像素/秒, 风向)
+const RAIN_COUNT := 220         # 屏幕上同时存在的雨点数 (调大让雨密一点)
+const RAIN_SPEED_MIN := 600.0   # 像素/秒
+const RAIN_SPEED_MAX := 900.0
+const RAIN_LENGTH_MIN := 14.0   # 更长的雨痕
+const RAIN_LENGTH_MAX := 24.0
+const RAIN_WIDTH := 2.5         # 雨点线条宽度 (像素)
+const RAIN_COLOR := Color(0.85, 0.92, 1.0, 0.95)  # 接近白蓝, 高不透明
+const RAIN_TILT_X := 120.0      # 雨倾斜速度 (像素/秒, 风向)
 
 const LIGHTNING_FLASH_COLOR := Color(1, 1, 1, 0.7)
 const LIGHTNING_FLASH_DURATION := 0.12
 
-const DARK_OVERLAY_COLOR := Color(0.1, 0.15, 0.2, 0.25)  # 雨天天空压暗
+const DARK_OVERLAY_COLOR := Color(0.05, 0.08, 0.15, 0.45)  # 雨天明显压暗
 const DARK_FADE_SEC := 1.5
 
 var _enabled: bool = false
@@ -60,9 +61,11 @@ func flash_lightning() -> void:
 
 
 func _process(delta: float) -> void:
-	# 维持雨点数量: 不够就补 (enabled=true 时), 够就不动
-	if _enabled and _drops.size() < RAIN_COUNT:
-		_spawn_drop()
+	# 维持雨点数量: 每帧最多补 8 个, 1s 内填满到目标值, 不用等 200 帧.
+	if _enabled:
+		var to_spawn: int = min(8, RAIN_COUNT - _drops.size())
+		for _i in to_spawn:
+			_spawn_drop()
 	# 移动现有雨点
 	for i in range(_drops.size() - 1, -1, -1):
 		var d = _drops[i]
@@ -81,7 +84,7 @@ func _spawn_drop() -> void:
 	var length: float = randf_range(RAIN_LENGTH_MIN, RAIN_LENGTH_MAX)
 	line.add_point(Vector2(0, 0))
 	line.add_point(Vector2(RAIN_TILT_X * length / 700.0, length))  # 跟下落方向一致的倾斜短线
-	line.width = 1.5
+	line.width = RAIN_WIDTH
 	line.default_color = RAIN_COLOR
 	line.position = Vector2(randf_range(-100.0, _vp_size.x + 50.0), -20.0)
 	add_child(line)
