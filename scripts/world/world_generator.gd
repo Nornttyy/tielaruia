@@ -43,18 +43,19 @@ const WORM_DEPTH_SHALLOW_MAX := 40  # 地表 40 格内安全, 不会"踩进去"
 const WORM_DEPTH_MID_MAX := 110     # surf+110 起密集
 const WORM_SURFACE_BUFFER := 20     # worm 路径距地表至少 20 格 (走近就 break, 防止深层 worm 窜到地表)
 
-# 露天矿洞 (open-air pits / cracks): 从地表往下挖空的洞口, 玩家走过就能直接跳下去探险.
-# 两种形状随机混着: pit (漏斗形 5-9 宽 6-14 深) 和 crack (窄缝 2-3 宽 10-20 深).
+# 露天矿洞 (open-air pits / cracks): 从地表往下挖空的洞口, 玩家走过就能跳下去探险.
+# 跟普通矿道一样深, 只是有露天入口 — 中心列深度进入 worm 中层 (depth>=40), 自然
+# 接上 worm 矿道网, 形成"露天矿洞 = 一通到底的真正矿洞".
 # 平均每 OPEN_PIT_SPACING 列一个, 跨 chunk 用 _hash3 保证一致.
 const OPEN_PIT_SPACING := 25         # 1/25 = 4% 概率每列生成 (自然丛聚, 不强制最小间距)
 const PIT_WIDTH_MIN := 5
 const PIT_WIDTH_MAX := 9
-const PIT_DEPTH_MIN := 6
-const PIT_DEPTH_MAX := 14
+const PIT_DEPTH_MIN := 25            # 中心进 mid worm 层 (depth>=40 时半径变大边缘也很深)
+const PIT_DEPTH_MAX := 45
 const CRACK_WIDTH_MIN := 2
 const CRACK_WIDTH_MAX := 3
-const CRACK_DEPTH_MIN := 10
-const CRACK_DEPTH_MAX := 20
+const CRACK_DEPTH_MIN := 35          # 窄缝更深, 像矿井入口竖直往下
+const CRACK_DEPTH_MAX := 60
 
 # 树种枚举 (内部 idx)
 const _SPECIES_OAK := 0
@@ -248,6 +249,12 @@ static func _carve_worms_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 	surf_noise.frequency = 0.015
 	surf_noise.fractal_octaves = 3
 
+	# 山高 noise: 同 generate_chunk, 让 _surf_at 能算出真实山头位置 (山里 worm 才贴近山头)
+	var mountain_noise := FastNoiseLite.new()
+	mountain_noise.seed = world_seed + 5
+	mountain_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	mountain_noise.frequency = MOUNTAIN_NOISE_FREQ
+
 	# 计算 spawn 格搜索范围: 本 chunk 跨多少格 + 邻居 pad
 	var first_cell_x: int = int(floor(float(chunk_start) / WORM_SPAWN_GRID)) - WORM_SEARCH_PAD_CELLS
 	var last_cell_x: int = int(floor(float(chunk_end - 1) / WORM_SPAWN_GRID)) + WORM_SEARCH_PAD_CELLS
@@ -286,13 +293,14 @@ static func _carve_worms_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 			# 模拟主 worm + 可能的分叉
 			var worm_len: int = rng.randi_range(WORM_LEN_MIN, WORM_LEN_MAX)
 			_simulate_worm(c, Vector2(sx, sy), worm_len, rng,
-					dir_noise, rad_noise, surf_noise, chunk_start, chunk_end, height, 0, 1.0)
+					dir_noise, rad_noise, surf_noise, mountain_noise,
+					chunk_start, chunk_end, height, 0, 1.0)
 
 
 # 沿路径挖一条 worm. depth = 当前分叉递归深度, radius_scale = 子孙 worm 半径系数.
 static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 		rng: RandomNumberGenerator, dir_noise: FastNoiseLite, rad_noise: FastNoiseLite,
-		surf_noise: FastNoiseLite,
+		surf_noise: FastNoiseLite, mountain_noise: FastNoiseLite,
 		chunk_start: int, chunk_end: int, height: int, depth: int,
 		radius_scale: float) -> void:
 	# 每条 worm 独有的角度偏移 (避免子 worm 跟主 worm 路径重合, 因为 dir_noise 是位置决定的)
@@ -301,7 +309,7 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 	var pos: Vector2 = start_pos
 	for step in worm_len:
 		# 触及地表缓冲 → worm 终止 (避免深层 worm 窜到地表附近)
-		var surf_at: int = _surf_at(surf_noise, int(floor(pos.x)), height)
+		var surf_at: int = _surf_at(surf_noise, mountain_noise, int(floor(pos.x)), height)
 		if pos.y < float(surf_at + WORM_SURFACE_BUFFER):
 			break
 		# 方向: perlin 输出 [-1,1] → angle [-PI, PI] (smooth turns) + worm 个体 bias
@@ -322,8 +330,8 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 			_carve_circle(c, branch_start, radius * WORM_BRANCH_RADIUS_SCALE,
 					chunk_start, chunk_end, height)
 			_simulate_worm(c, branch_start, branch_len, sub_rng,
-					dir_noise, rad_noise, surf_noise, chunk_start, chunk_end, height,
-					depth + 1, sub_scale)
+					dir_noise, rad_noise, surf_noise, mountain_noise,
+					chunk_start, chunk_end, height, depth + 1, sub_scale)
 		# 前进 1 tile
 		pos += Vector2(cos(ang), sin(ang))
 		# 走出世界边界 / 进入基岩区 → 提前终止
@@ -331,10 +339,12 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 			break
 
 
-# 用共享 surf_noise 算单列 surf (供 worm 路径检查), 避免每次 new FastNoiseLite.
-static func _surf_at(surf_noise: FastNoiseLite, world_x: int, height: int) -> int:
+# 用共享 surf_noise + mountain_noise 算单列 surf (供 worm 路径检查), 避免每次 new FastNoiseLite.
+# 必须跟 generate_chunk 的 surf 公式完全一致, 才能让 worm 在山里也精准贴近真实山头.
+static func _surf_at(surf_noise: FastNoiseLite, mountain_noise: FastNoiseLite, world_x: int, height: int) -> int:
 	var v: float = surf_noise.get_noise_1d(float(world_x))
-	var h: int = int(float(height) * (SURFACE_BASE + v * SURFACE_AMP))
+	var mtn: float = maxf(0.0, mountain_noise.get_noise_1d(float(world_x)))
+	var h: int = int(float(height) * (SURFACE_BASE + v * SURFACE_AMP - mtn * MOUNTAIN_BOOST))
 	return clampi(h, 4, height - BEDROCK_ROWS - 1)
 
 
