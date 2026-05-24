@@ -3,7 +3,6 @@
 extends RefCounted
 
 const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
-const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 
 
 # 计算 8-bit 邻居 mask. bits: 0=N 1=E 2=S 3=W 4=NE 5=SE 6=SW 7=NW.
@@ -22,14 +21,9 @@ static func compute_mask(world_x: int, world_y: int, query: Callable) -> int:
 
 # 写入单格 TileMapLayer (按邻居 mask 自动算 atlas_coord).
 # source_id 通常 = tile_id (TileSet 注册时 ID == tile_id).
-# slope tile (GRASS/DIRT) 用 SLOPE_ATLAS_COORD, 其它用标准 ATLAS_COORD.
 static func refresh_tile(layer: TileMapLayer, world_pos: Vector2i, source_id: int, query: Callable) -> void:
 	var mask: int = compute_mask(world_pos.x, world_pos.y, query)
-	var atlas: Vector2i
-	if EdgeTemplates.is_slope_tile(source_id):
-		atlas = BlobLookup.SLOPE_ATLAS_COORD[mask]
-	else:
-		atlas = BlobLookup.ATLAS_COORD[mask]
+	var atlas: Vector2i = BlobLookup.ATLAS_COORD[mask]
 	layer.set_cell(world_pos, source_id, atlas)
 
 

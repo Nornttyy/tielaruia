@@ -84,7 +84,7 @@ func _build_blocks() -> void:
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
 			block_textures[tile_id] = BlocksArt.build_atlas(tile_id)
-			block_icons[tile_id] = _extract_interior_icon(block_textures[tile_id], tile_id)
+			block_icons[tile_id] = _extract_interior_icon(block_textures[tile_id])
 		else:
 			var single: ImageTexture = BlocksArt.get_texture(tile_id)
 			block_textures[tile_id] = single
@@ -92,13 +92,8 @@ func _build_blocks() -> void:
 
 
 # 从 atlas 抽 mask=255 (CCCCIIII, 全包围) 那一格做 UI 图标. 16×16.
-# slope tile 用 SLOPE_ATLAS_COORD, 其它用 ATLAS_COORD.
-static func _extract_interior_icon(atlas: ImageTexture, tile_id: int) -> ImageTexture:
-	var coord: Vector2i
-	if EdgeTemplates.is_slope_tile(tile_id):
-		coord = BlobLookup.SLOPE_ATLAS_COORD[255]
-	else:
-		coord = BlobLookup.ATLAS_COORD[255]
+static func _extract_interior_icon(atlas: ImageTexture) -> ImageTexture:
+	var coord: Vector2i = BlobLookup.ATLAS_COORD[255]
 	var ox: int = coord.x * 16
 	var oy: int = coord.y * 16
 	var src: Image = atlas.get_image()

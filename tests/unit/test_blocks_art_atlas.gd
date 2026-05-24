@@ -44,29 +44,6 @@ func test_atlas_interior_cell_matches_original_pattern():
 			assert_eq(atlas_px, single_px, "(%d,%d) 不匹配" % [x, y])
 
 
-func test_grass_atlas_is_192x112_slope():
-	# GRASS 是 slope tile → atlas 12×7 cells = 192×112 px
-	var tex: ImageTexture = BlocksArt.build_atlas(BlocksArt.GRASS)
-	var img: Image = tex.get_image()
-	assert_eq(img.get_width(), 192, "slope atlas 宽")
-	assert_eq(img.get_height(), 112, "slope atlas 高")
-
-
-func test_dirt_atlas_is_slope_size_too():
-	var tex: ImageTexture = BlocksArt.build_atlas(BlocksArt.DIRT)
-	var img: Image = tex.get_image()
-	assert_eq(img.get_width(), 192)
-	assert_eq(img.get_height(), 112)
-
-
-func test_sand_atlas_is_standard_size():
-	# SAND 在 soil 族但不在 SLOPE_TILE_IDS → 标准 128×96
-	var tex: ImageTexture = BlocksArt.build_atlas(BlocksArt.SAND)
-	var img: Image = tex.get_image()
-	assert_eq(img.get_width(), 128)
-	assert_eq(img.get_height(), 96)
-
-
 func test_palette_has_edge_slots():
 	# 验证 15 个方块的调色板都有 _o/_e/_h/_H
 	var ids: Array = [
