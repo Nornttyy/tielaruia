@@ -17,6 +17,8 @@ var _player_inventory: Node = null
 var _facing_right: bool = true
 var _tween: Tween = null
 var _current_size: float = TOOL_SIZE
+var _eating: bool = false
+var _eat_phase: float = 0.0   # 进食动画时间累积 (秒)
 
 
 func _ready() -> void:
@@ -43,6 +45,40 @@ func set_facing(right: bool) -> void:
 	_facing_right = right
 	_apply_scale()
 	position.x = HAND_OFFSET_X if right else -HAND_OFFSET_X
+
+
+# 进食动画开始: 食物上下抖动 + 微微旋转, 模拟"啃咬"
+func start_eat() -> void:
+	_eating = true
+	_eat_phase = 0.0
+	# 把潜在的挥摆 tween 杀掉, 避免冲突
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+
+
+# 进食动画结束: 食物归位
+func stop_eat() -> void:
+	_eating = false
+	_eat_phase = 0.0
+	position = Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
+	rotation = 0.0
+
+
+func _process(delta: float) -> void:
+	if not _eating or not visible:
+		return
+	_eat_phase += delta
+	# 每 0.4 秒一次"啃咬" 循环 (2 秒共 5 口的节奏)
+	var t: float = fmod(_eat_phase, 0.4) / 0.4   # 0..1 循环
+	# 食物上下抖: 嘴边 (y - 6) ↔ 手里 (y + 0), 用正弦曲线让上下平滑
+	var lift: float = sin(t * PI) * 6.0   # 0 → 6 → 0
+	position = Vector2(
+		HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X,
+		HAND_OFFSET_Y - lift
+	)
+	# 食物轻微转一下, 看起来在咬
+	var dir: float = 1.0 if _facing_right else -1.0
+	rotation = sin(t * PI) * 0.25 * dir   # 最多 ±0.25 rad ≈ 14 度
 
 
 func play_swing() -> void:

@@ -31,13 +31,13 @@ func test_eat_slime_jelly_success() -> void:
 	_give_food("slime_jelly", 1)
 	hunger.current = 50.0
 	action.set_secondary_held_for_test(true)
-	action._physics_process(1.0)
+	action._physics_process(2.0)  # EAT_DURATION_SEC = 2.0
 	assert_eq(int(hunger.current), 90)
 	assert_eq(_slot_count(0), 0)
 
 
 func test_eat_release_before_duration_cancels() -> void:
-	# EAT_DURATION_SEC = 0.2s, 测试 0.1s 内释放不应吃成功
+	# EAT_DURATION_SEC = 2.0s, 测试 0.1s 内释放不应吃成功
 	_give_food("slime_jelly", 1)
 	hunger.current = 50.0
 	action.set_secondary_held_for_test(true)

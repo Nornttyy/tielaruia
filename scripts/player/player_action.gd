@@ -43,7 +43,7 @@ var last_swing_center: Vector2 = Vector2.ZERO
 var mouse_world_override: Variant = null
 
 # 进食状态
-const EAT_DURATION_SEC := 0.2   # 短按 0.2s 就吃 (从 1.0 降下来, 减少 Mac 触摸板右键的 UX 痛点)
+const EAT_DURATION_SEC := 2.0   # 进食 2 秒 (按住右键 / F 键持续)
 var _eat_t: float = 0.0
 var _eat_item_id: String = ""
 
@@ -385,22 +385,45 @@ func _update_eat_or_place(delta: float) -> void:
 		if _eat_item_id != slot.item_id:
 			_eat_item_id = slot.item_id
 			_eat_t = 0.0
+			_start_eat_anim()
 		_eat_t += delta
 		if _eat_t >= EAT_DURATION_SEC:
 			_eat_t = 0.0
 			hunger.consume(ItemDB.food_fill(slot.item_id))
 			SfxBank.play("eat", 0.10)
 			inv.consume_current(1)
+			_stop_eat_anim()  # 吃完一口, 下次按住会重新开始
 		return
 
-	# 取消进食
+	# 取消进食 (松开 / 没食物 / 满饱)
 	if _eat_t > 0.0:
 		_eat_t = 0.0
 		_eat_item_id = ""
+		_stop_eat_anim()
 
 	# 退回放置逻辑（与原行为一致）
 	if just:
 		try_place()
+
+
+# 进食动画: 食物在玩家手里 上下抖动 + 微微旋转, 像在啃咬
+func _start_eat_anim() -> void:
+	var held = _held_item_node()
+	if held != null and held.has_method("start_eat"):
+		held.start_eat()
+
+
+func _stop_eat_anim() -> void:
+	var held = _held_item_node()
+	if held != null and held.has_method("stop_eat"):
+		held.stop_eat()
+
+
+func _held_item_node() -> Node:
+	var player_node: Node = get_parent()
+	if player_node == null:
+		return null
+	return player_node.get_node_or_null("HeldItem")
 
 
 func _swing_sword() -> void:

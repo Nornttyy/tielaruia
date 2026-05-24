@@ -24,8 +24,8 @@ func test_eating_apple_restores_hunger() -> void:
 	var before: float = hunger.current
 	# 3. 模拟按住右键
 	action.set_secondary_held_for_test(true)
-	# 4. 等 1.2 秒 (EAT_DURATION_SEC = 1.0)
-	await wait_frames(80)
+	# 4. 等 2.2 秒 (EAT_DURATION_SEC = 2.0)
+	await wait_frames(135)
 	# 5. 释放
 	action.set_secondary_held_for_test(false)
 	await wait_frames(2)
