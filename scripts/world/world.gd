@@ -191,7 +191,10 @@ func _check_chunk_load() -> void:
 
 
 func _on_chunk_loaded(c: Chunk) -> void:
+	const Autotile = preload("res://scripts/world/autotile.gd")
+	const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 	# 把 chunk 数据写到 TileMapLayer (前景方块 + 背景墙)
+	# 能 autotile 的方块用 Autotile.refresh_tile 按邻居 mask 选 atlas_coord
 	var chunk_start: int = c.chunk_x * ChunkConstants.CHUNK_WIDTH
 	for lx in c.tiles.size():
 		var world_x: int = chunk_start + lx
@@ -200,15 +203,46 @@ func _on_chunk_loaded(c: Chunk) -> void:
 		for y in col.size():
 			var tid: int = col[y]
 			if tid != Tiles.AIR:
-				terrain_layer.set_cell(Vector2i(world_x, y), tid, Vector2i.ZERO)
+				var pos := Vector2i(world_x, y)
+				if EdgeTemplates.FAMILY_OF.has(tid):
+					var q := Autotile.make_terrain_query(tid, chunk_manager)
+					Autotile.refresh_tile(terrain_layer, pos, tid, q)
+				else:
+					terrain_layer.set_cell(pos, tid, Vector2i.ZERO)
 			var wid: int = wall_col[y]
 			if wid != Tiles.AIR:
-				wall_layer.set_cell(Vector2i(world_x, y), wid, Vector2i.ZERO)
+				var wpos := Vector2i(world_x, y)
+				if EdgeTemplates.FAMILY_OF.has(wid):
+					var wq := Autotile.make_wall_query(wid, chunk_manager)
+					Autotile.refresh_tile(wall_layer, wpos, wid, wq)
+				else:
+					wall_layer.set_cell(wpos, wid, Vector2i.ZERO)
 		SkyLightGrid.invalidate_column(world_x)
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
 	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)
 	# 黑暗层: chunk 加载时全列预算光值
 	darkness_layer.recompute_chunk(c.chunk_x, ChunkConstants.CHUNK_WIDTH, ChunkConstants.WORLD_HEIGHT)
+	# 跨 chunk 边界修正: 刷邻接 chunk 朝向本 chunk 的 1 列 atlas_coord
+	# (边界列之前按"无邻居"画, 现在本 chunk 加载后邻居关系改变, 需重算)
+	for neighbor_cx in [c.chunk_x - 1, c.chunk_x + 1]:
+		if not chunk_manager.is_chunk_loaded(neighbor_cx):
+			continue
+		var col_x: int
+		if neighbor_cx < c.chunk_x:
+			# 左邻接 chunk: 刷它的最右列
+			col_x = c.chunk_x * ChunkConstants.CHUNK_WIDTH - 1
+		else:
+			# 右邻接 chunk: 刷它的最左列
+			col_x = (c.chunk_x + 1) * ChunkConstants.CHUNK_WIDTH
+		for y in ChunkConstants.WORLD_HEIGHT:
+			var sid: int = terrain_layer.get_cell_source_id(Vector2i(col_x, y))
+			if sid != -1 and EdgeTemplates.FAMILY_OF.has(sid):
+				var q := Autotile.make_terrain_query(sid, chunk_manager)
+				Autotile.refresh_tile(terrain_layer, Vector2i(col_x, y), sid, q)
+			var wsid: int = wall_layer.get_cell_source_id(Vector2i(col_x, y))
+			if wsid != -1 and EdgeTemplates.FAMILY_OF.has(wsid):
+				var wq := Autotile.make_wall_query(wsid, chunk_manager)
+				Autotile.refresh_tile(wall_layer, Vector2i(col_x, y), wsid, wq)
 
 
 func _on_chunk_unloaded(cx: int) -> void:
