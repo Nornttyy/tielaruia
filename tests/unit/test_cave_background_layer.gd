@@ -23,7 +23,18 @@ func test_set_layer_alpha_propagates():
 	add_child_autofree(cl)
 	await wait_frames(1)
 	cl.set_layer_alpha(0.7)
-	assert_almost_eq(cl.current_alpha(), 0.7, 0.01, "set_layer_alpha 应改 _layer_alpha")
+	assert_almost_eq(cl.current_alpha(), 0.7, 0.01, "set_layer_alpha 应改 _shallow_alpha")
+	assert_almost_eq(cl.deep_alpha(), 0.7, 0.01, "单 alpha 接口同步给 deep_alpha")
+
+
+func test_set_depth_alphas_split():
+	# 双 alpha 接口: 浅 0.6 + 深 0 (浅石头层只露岩壁不露钟乳石)
+	var cl = CaveBackgroundLayer.new()
+	add_child_autofree(cl)
+	await wait_frames(1)
+	cl.set_depth_alphas(0.6, 0.0)
+	assert_almost_eq(cl.shallow_alpha(), 0.6, 0.01)
+	assert_eq(cl.deep_alpha(), 0.0)
 
 
 func test_process_does_not_crash():

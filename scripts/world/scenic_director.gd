@@ -6,11 +6,18 @@ const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const WorldGenerator = preload("res://scripts/world/world_generator.gd")
 const TILE_SIZE := 16
 
-# 矿洞远景什么时候开始/全显:
-# 玩家在地表下 ≥ STONE_LAYER_TILES 格 (穿透泥土层进入石头层) 才开始显示矿洞背景.
-# 再往下 CAVE_TRANSITION_TILES 格内 lerp 0→1 完全显出.
-const STONE_LAYER_TILES := 6        # 泥土层厚度 (跟 WorldGenerator.DIRT_DEPTH 同步)
-const CAVE_TRANSITION_TILES := 8    # 石头层往下 8 格内过渡完
+# 矿洞远景按"浅层" / "深层" 两阶段切换:
+#
+#   [0..6 格 泥土层]     全屏地表 (天空+山), 矿洞 0
+#   [6..14 格 浅石头层]   远岩壁 0→1 fade 进来 (能看到棕褐岩壁 + 蘑菇 🍄 + 化石 💀)
+#   [14..24 格 深石头层]  钟乳石 + 水晶 0→1 fade 进来 (整个矿洞场景到位)
+#
+# 远岩壁用 shallow_t, 钟乳石+水晶用 deep_t (cave_background_layer 双 alpha).
+# 地表层 (山/日月星/鸟/彩虹/极光) 用 shallow_t 来反向 fade out.
+const STONE_LAYER_TILES := 6         # 泥土层厚度 (跟 WorldGenerator.DIRT_DEPTH 同步)
+const SHALLOW_TRANSITION_TILES := 8  # 进石头层 8 格内 → 浅 cave_t 0→1
+const DEEP_START_TILES := 14         # 14 格深开始显钟乳石/水晶
+const DEEP_TRANSITION_TILES := 10    # 14→24 格内 deep_t 0→1
 
 var _world: Node = null
 var _mountains: Node = null
@@ -63,21 +70,36 @@ func _process(_delta: float) -> void:
 	if _world == null:
 		return
 	var player_y_px: float = _get_player_y()
-	var cave_t: float = compute_cave_t(player_y_px)
-	_apply_cave_t(cave_t)
+	var shallow_t: float = compute_shallow_t(player_y_px)
+	var deep_t: float = compute_deep_t(player_y_px)
+	_apply_depths(shallow_t, deep_t)
 
 
-# 计算 cave_t: 0=地表/泥土, 1=矿洞深处.
-# 在泥土层 (前 6 格) 仍是地表; 进入石头层后开始 lerp 0→1, 再往下 8 格全显.
-static func compute_cave_t(player_y_px: float) -> float:
+# 浅 t: 进入石头层就开始 fade 远岩壁
+static func compute_shallow_t(player_y_px: float) -> float:
 	var surface_y_px: float = WorldGenerator.SURFACE_BASE \
 		* float(ChunkConstants.WORLD_HEIGHT) * float(TILE_SIZE)
 	var depth_below_px: float = player_y_px - surface_y_px
-	# 进入石头层之前 (depth < 6 tiles) 全是 0
 	var depth_in_stone_px: float = depth_below_px - float(STONE_LAYER_TILES * TILE_SIZE)
 	if depth_in_stone_px <= 0.0:
 		return 0.0
-	return clamp(depth_in_stone_px / float(CAVE_TRANSITION_TILES * TILE_SIZE), 0.0, 1.0)
+	return clamp(depth_in_stone_px / float(SHALLOW_TRANSITION_TILES * TILE_SIZE), 0.0, 1.0)
+
+
+# 深 t: 14 格深才开始 fade 钟乳石/水晶
+static func compute_deep_t(player_y_px: float) -> float:
+	var surface_y_px: float = WorldGenerator.SURFACE_BASE \
+		* float(ChunkConstants.WORLD_HEIGHT) * float(TILE_SIZE)
+	var depth_below_px: float = player_y_px - surface_y_px
+	var depth_in_deep_px: float = depth_below_px - float(DEEP_START_TILES * TILE_SIZE)
+	if depth_in_deep_px <= 0.0:
+		return 0.0
+	return clamp(depth_in_deep_px / float(DEEP_TRANSITION_TILES * TILE_SIZE), 0.0, 1.0)
+
+
+# 兼容老接口 (test_scenic_director 旧版本 + 自动发现路径里可能调用)
+static func compute_cave_t(player_y_px: float) -> float:
+	return compute_shallow_t(player_y_px)
 
 
 func _get_player_y() -> float:
@@ -89,21 +111,23 @@ func _get_player_y() -> float:
 	return p.global_position.y
 
 
-func _apply_cave_t(cave_t: float) -> void:
-	# 地表层: 远山 / 日月星 / 鸟群 / 彩虹+极光 / 天空 → 渐隐
-	# 矿洞层: 远岩壁 / 蝠群 / 岩浆滴 → 渐显
-	# ParallaxBackground / CanvasLayer 没 modulate, 用 set_layer_alpha() 方法;
-	# Node2D / CanvasItem 子类则直接 modulate.a
-	_set_alpha(_mountains, 1.0 - cave_t * 0.85)  # 矿洞里山留 15% 阴影
-	_set_alpha(_celestial, 1.0 - cave_t)
+func _apply_depths(shallow_t: float, deep_t: float) -> void:
+	# 地表层用 shallow_t 反向 fade out (玩家一进石头层就开始 fade)
+	_set_alpha(_mountains, 1.0 - shallow_t * 0.85)  # 矿洞里山留 15% 阴影
+	_set_alpha(_celestial, 1.0 - shallow_t)
 	# SkyBackground 节点是 CanvasLayer; 实际 ColorRect 在 Bg 子节点
-	_set_alpha_sky(1.0 - cave_t * 0.7)  # 矿洞里天空压暗但不全黑
-	_set_alpha(_cave_bg, cave_t)
-	_set_alpha(_bird, 1.0 - cave_t)
-	_set_alpha(_bat, cave_t)
-	_set_alpha(_rainbow, 1.0 - cave_t)
-	_set_alpha(_aurora, 1.0 - cave_t)
-	_set_alpha(_lava_drip, cave_t)
+	_set_alpha_sky(1.0 - shallow_t * 0.7)
+	# 矿洞背景: 远岩壁用 shallow_t, 钟乳石/水晶用 deep_t (走双 alpha 接口)
+	if _cave_bg != null and _cave_bg.has_method("set_depth_alphas"):
+		_cave_bg.set_depth_alphas(shallow_t, deep_t)
+	else:
+		_set_alpha(_cave_bg, shallow_t)
+	# 鸟/蝠/彩虹/极光跟 shallow_t (粗粒度切换), 岩浆滴跟 deep_t (深层才滴)
+	_set_alpha(_bird, 1.0 - shallow_t)
+	_set_alpha(_bat, deep_t)
+	_set_alpha(_rainbow, 1.0 - shallow_t)
+	_set_alpha(_aurora, 1.0 - shallow_t)
+	_set_alpha(_lava_drip, deep_t)
 
 
 # 优先用 set_layer_alpha() 方法 (ParallaxBackground/CanvasLayer 没 modulate);
@@ -136,4 +160,12 @@ func _set_alpha_sky(a: float) -> void:
 
 # 测试用
 func current_cave_t() -> float:
-	return compute_cave_t(_get_player_y())
+	return compute_shallow_t(_get_player_y())
+
+
+func current_shallow_t() -> float:
+	return compute_shallow_t(_get_player_y())
+
+
+func current_deep_t() -> float:
+	return compute_deep_t(_get_player_y())
