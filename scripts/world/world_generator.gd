@@ -15,10 +15,21 @@ const DIRT_DEPTH := 6            # 地表下泥土层厚度
 const MOUNTAIN_NOISE_FREQ := 0.008
 const MOUNTAIN_BOOST := 0.40
 const MOUNTAIN_PIT_THRESHOLD := 0.12  # mountain_factor > 0.12 = 山区 (实测约占 16% 列)
+
+# Biome (生态群系) — 低频 noise 把世界分成大片区域 (100-300 列宽)
+# noise > BIOME_DESERT_THRESHOLD 整列变沙漠 (黄沙地表/沙土层/无树/长仙人掌)
+const BIOME_FOREST := 0
+const BIOME_DESERT := 1
+const BIOME_NOISE_FREQ := 0.004        # 周期 ~250 列, 沙漠大片连续
+const BIOME_DESERT_THRESHOLD := 0.05   # noise > 0.05 = 沙漠 (实测约占 25-30% 列)
+
 const BEDROCK_ROWS := 2          # 基岩占最底几行
 const SAND_THRESHOLD := 0.4      # sand_noise 超过此阈值的列为沙列
-const TREE_MIN_SPACING := 5      # 相邻两棵树之间最少 N 列间距
+const TREE_MIN_SPACING := 5      # 相邻两棵树/仙人掌之间最少 N 列间距
 const TREE_CHANCE := 0.45        # 候选格子里实际长树的概率
+const CACTUS_CHANCE := 0.30      # 沙漠候选格子里实际长仙人掌的概率
+const CACTUS_HEIGHT_MIN := 1     # 仙人掌最矮 1 格
+const CACTUS_HEIGHT_MAX := 3     # 最高 3 格
 
 const DEEP_STONE_RATIO := 0.5    # 地表往下 (height-surf)*0.5 处起为 DEEP_STONE
 const COAL_THRESHOLD := 0.30     # 降低 → 煤矿更密
@@ -138,6 +149,12 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	mountain_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	mountain_noise.frequency = MOUNTAIN_NOISE_FREQ
 
+	# Biome noise: 决定列是森林还是沙漠 (大片连续区域)
+	var biome_noise := FastNoiseLite.new()
+	biome_noise.seed = world_seed + 6
+	biome_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	biome_noise.frequency = BIOME_NOISE_FREQ
+
 	# 计算本 chunk 范围内每列的 heights (供地形 + 树木使用)
 	var chunk_start_x := chunk_x * chunk_width
 	var chunk_end_x := chunk_start_x + chunk_width
@@ -155,7 +172,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
 		c.surfaces[local_x] = surf  # 给 ScenicDirector 等查询用
-		var is_sand_col := sand_noise.get_noise_1d(float(world_x)) > SAND_THRESHOLD
+		# Biome: 沙漠列整列用 SAND, 森林列保留原本的零星沙窝逻辑
+		var is_desert: bool = biome_noise.get_noise_1d(float(world_x)) > BIOME_DESERT_THRESHOLD
+		var is_sand_col: bool = is_desert or (sand_noise.get_noise_1d(float(world_x)) > SAND_THRESHOLD)
 		var deep_threshold: int = surf + int((height - surf) * DEEP_STONE_RATIO)
 		for y in height:
 			var tid: int
@@ -510,6 +529,17 @@ static func _mountain_factor(world_x: int, world_seed: int) -> float:
 	return maxf(0.0, n.get_noise_1d(float(world_x)))
 
 
+# 返回该列的 biome: BIOME_FOREST 或 BIOME_DESERT.
+# 用单独的低频 noise (seed+6), 跟山区独立. 沙漠是大片连续区域 (~250 列周期).
+static func _biome_at(world_x: int, world_seed: int) -> int:
+	var n := FastNoiseLite.new()
+	n.seed = world_seed + 6
+	n.noise_type = FastNoiseLite.TYPE_PERLIN
+	n.frequency = BIOME_NOISE_FREQ
+	var v: float = n.get_noise_1d(float(world_x))
+	return BIOME_DESERT if v > BIOME_DESERT_THRESHOLD else BIOME_FOREST
+
+
 # 3 整数 → 64-bit 稳定 hash (worm RNG 种子). 不用内建 hash() 因为它对 int 输入返回值未指定.
 static func _hash3(a: int, b: int, c: int) -> int:
 	var h: int = a * 73856093
@@ -541,9 +571,25 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 		if surf < 0:
 			continue
 		var lx: int = world_x - chunk_start
-		if c.tiles[lx][surf] != Tiles.GRASS:
-			continue
+		var top_tile: int = c.tiles[lx][surf]
 		if world_x - last_tree_x < TREE_MIN_SPACING:
+			continue
+		# 沙漠列 (SAND 地表) → 长仙人掌, 跳过普通树
+		if top_tile == Tiles.SAND:
+			if rng.randf() > CACTUS_CHANCE:
+				continue
+			var cactus_height: int = rng.randi_range(CACTUS_HEIGHT_MIN, CACTUS_HEIGHT_MAX)
+			for dy in range(cactus_height):
+				var ty: int = surf - 1 - dy
+				if ty < 0:
+					break
+				if c.tiles[lx][ty] != Tiles.AIR:
+					break
+				c.tiles[lx][ty] = Tiles.CACTUS
+			last_tree_x = world_x
+			continue
+		# 非草地表 (沙/挖空/etc) 跳过
+		if top_tile != Tiles.GRASS:
 			continue
 		if rng.randf() > TREE_CHANCE:
 			continue

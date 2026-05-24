@@ -24,6 +24,7 @@ const DEEP_STONE := 17
 const GRASS_WALL := 18      # 草墙: 接近地表第 1-2 行
 const DIRT_WALL := 19       # 土墙: 中层 (土块对应)
 const STONE_WALL := 20      # 石墙: 深层 (石头对应)
+const CACTUS := 21          # 仙人掌: 沙漠地表装饰 (非实心, 可砍)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -140,6 +141,12 @@ const _PROPS := {
 		"solid": false, "mineable": false,
 		"tool_tiers": {},
 		"drops": [],
+	},
+	CACTUS: {
+		# 仙人掌: 不实心 (玩家穿过, 像 LOG), 任何工具都能砍, 掉 cactus 物品
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["cactus", 100, 1, 1]],
 	},
 }
 

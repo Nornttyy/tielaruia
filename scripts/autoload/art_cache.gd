@@ -79,6 +79,7 @@ func _build_blocks() -> void:
 		BlocksArt.LEAVES_PINE, BlocksArt.LEAVES_AUTUMN, BlocksArt.SLIME_TORCH,
 		BlocksArt.DEEP_STONE, BlocksArt.COAL_ORE, BlocksArt.IRON_ORE, BlocksArt.TORCH,
 		BlocksArt.GRASS_WALL, BlocksArt.DIRT_WALL, BlocksArt.STONE_WALL,
+		BlocksArt.CACTUS,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -138,6 +139,7 @@ const _ITEM_TO_TILE := {
 	"dirt": BlocksArt.DIRT,
 	"stone": BlocksArt.STONE,
 	"sand": BlocksArt.SAND,
+	"cactus": BlocksArt.CACTUS,
 	"log": BlocksArt.LOG,
 	"leaves": BlocksArt.LEAVES,
 	"pine_leaves": BlocksArt.LEAVES_PINE,

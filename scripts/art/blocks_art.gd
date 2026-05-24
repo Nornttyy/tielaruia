@@ -30,6 +30,7 @@ const DEEP_STONE := 17      # 深层岩石 (暗暖灰)
 const GRASS_WALL := 18      # 背景墙: 草墙 (近地表)
 const DIRT_WALL := 19       # 背景墙: 土墙 (中层)
 const STONE_WALL := 20      # 背景墙: 石墙 (深层)
+const CACTUS := 21          # 仙人掌 (沙漠装饰)
 
 # --- 调色板 (每方块独立) ---
 
@@ -301,6 +302,16 @@ const _P_STONE_WALL := {
 	"_e": Color8(44, 40, 38),   # 边缘暗影 (s×0.58)
 	"_h": Color8(88, 81, 76),   # 边缘高光 (s+12%)
 	"_H": Color8(100, 92, 86),  # 顶强高光 (s+20%, 稍暖)
+}
+
+# 仙人掌: 暖深绿主体 + 白尖刺 + 浅绿高光
+const _P_CACTUS := {
+	"g": Color8(74, 138, 65),    # 暖中绿 (主体)
+	"G": Color8(48, 95, 44),     # 深绿阴影
+	"h": Color8(120, 180, 90),   # 黄绿高光
+	"d": Color8(28, 58, 30),     # 最深绿 (轮廓)
+	"w": Color8(255, 255, 220),  # 白尖刺
+	"y": Color8(195, 200, 110),  # 微黄高光 (棱线)
 }
 
 # 火把 tile: 木棍底 + 暖色火苗 (静态视觉，动画 fx 由 TorchFx 叠加)
@@ -733,6 +744,26 @@ const _STONE_WALL := [
 	"sSsSssSssSsSsSsS",
 ]
 
+# 仙人掌: 居中柱 (主体宽 6 格) + 顶部圆头 + 双侧白刺 + 暗轮廓
+const _CACTUS := [
+	"......dddd......",
+	".....dGggGd.....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
+	"..w.dGgyhgGd.w..",
+	".w..dGgyhgGd..w.",
+	"....dGgyhgGd....",
+	"..w.dGgyhgGd.w..",
+	".w..dGgyhgGd..w.",
+	"....dGgyhgGd....",
+	"..w.dGgyhgGd.w..",
+	".w..dGgyhgGd..w.",
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyGGGd....",
+	"....dddddddd....",
+]
+
 const _PATTERN_MAP := {
 	GRASS: [_GRASS, _P_GRASS],
 	DIRT: [_DIRT, _P_DIRT],
@@ -754,6 +785,7 @@ const _PATTERN_MAP := {
 	GRASS_WALL: [_GRASS_WALL, _P_GRASS_WALL],
 	DIRT_WALL: [_DIRT_WALL, _P_DIRT_WALL],
 	STONE_WALL: [_STONE_WALL, _P_STONE_WALL],
+	CACTUS: [_CACTUS, _P_CACTUS],
 }
 
 
