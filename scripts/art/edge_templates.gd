@@ -102,6 +102,22 @@ const _LEAF_STYLE := {
 	"concave": [[0, 0, "e"]],
 }
 
+# 墙族 (T13): 淡描边 (e 替代 o) + 无 H 强高光 + 无圆角 + 无内凹
+# 设计意图: 墙在背景, 视觉权重应弱. 仅 e 描出边界让玩家分清墙界,
+# 但不抢前景方块风头. 三种墙各自独立连接, 不同墙之间会显淡 e 缝.
+const _WALL_STYLE := {
+	"top_row0":    "eeeeeeeeeeeeeeee",
+	"top_row1":    "................",
+	"bot_row14":   "................",
+	"bot_row15":   "eeeeeeeeeeeeeeee",
+	"left_col0":   "eeeeeeeeeeee",
+	"left_col1":   "............",
+	"right_col14": "............",
+	"right_col15": "eeeeeeeeeeee",
+	"corner_round": 0,
+	"concave": [],
+}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5 族模板字典. TEMPLATES[family][variant_key] = Array[String] 16 行 × 16 字符.
@@ -115,7 +131,7 @@ static func _build_all_templates() -> Dictionary:
 		"rock": _build_family(_ROCK_STYLE),
 		"soil": _build_family(_SOIL_STYLE),
 		"leaf": _build_family(_LEAF_STYLE),
-		"wall": _build_family(_BLANK_STYLE),
+		"wall": _build_family(_WALL_STYLE),
 		"wood": _build_family(_BLANK_STYLE),
 	}
 
