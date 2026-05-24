@@ -20,8 +20,8 @@ const MOUNTAIN_PIT_THRESHOLD := 0.12  # mountain_factor > 0.12 = 山区 (实测�
 # noise > BIOME_DESERT_THRESHOLD 整列变沙漠 (黄沙地表/沙土层/无树/长仙人掌)
 const BIOME_FOREST := 0
 const BIOME_DESERT := 1
-const BIOME_NOISE_FREQ := 0.004        # 周期 ~250 列, 沙漠大片连续
-const BIOME_DESERT_THRESHOLD := 0.05   # noise > 0.05 = 沙漠 (实测约占 25-30% 列)
+const BIOME_NOISE_FREQ := 0.006        # 周期 ~167 列, 沙漠+森林交替更频繁
+const BIOME_DESERT_THRESHOLD := -0.05  # noise > -0.05 = 沙漠 (约占 ~50% 列, 走几步必遇)
 
 const BEDROCK_ROWS := 2          # 基岩占最底几行
 const SAND_THRESHOLD := 0.4      # sand_noise 超过此阈值的列为沙列

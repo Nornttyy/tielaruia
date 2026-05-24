@@ -274,10 +274,11 @@ func _find_spawn_in_loaded() -> Vector2i:
 	var ch: Chunk = chunk_manager.get_chunk(0)
 	if ch == null:
 		return Vector2i(0, 100)
+	# spawn 接受 GRASS 或 SAND 地表 (沙漠生态也能 spawn)
 	for lx in ch.tiles.size():
 		var col: Array = ch.tiles[lx]
 		for y in range(3, col.size() - 1):
-			if col[y] != Tiles.GRASS:
+			if col[y] != Tiles.GRASS and col[y] != Tiles.SAND:
 				continue
 			if col[y - 1] != Tiles.AIR \
 					or col[y - 2] != Tiles.AIR \
