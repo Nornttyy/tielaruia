@@ -59,6 +59,53 @@ func test_atlas_coord_for_mask_255_points_to_CCCCIIII():
 	assert_eq(BlobLookup.VARIANT_KEYS[idx], "CCCCIIII")
 
 
+# ─── Slope-aware 82-blob 测试 (草+土斜接) ──────────────────────────────
+
+func test_slope_isolated_no_slope_flags():
+	# mask 0 = 完全孤立, 4 角都"两相邻边都开 + 对角无" → 4 个 "_"
+	assert_eq(BlobLookup.mask_to_slope_key(0), "OOOO....____")
+
+
+func test_slope_only_SE_diagonal():
+	# 只 SE 邻居 (mask = 32 = bit 5): 4 边都开 + SE 对角在 + 其它 3 角对角无
+	# 角字符仍是 "." (因为 sides 都开 → corner 是 ".")
+	# slope 字符: NE/SW/NW = "_" (无 diag); SE = "P" (有 diag)
+	# 总 key: "OOOO" (sides 4) + "...." (corners 4) + "_P__" (slopes 4) = 12 chars
+	assert_eq(BlobLookup.mask_to_slope_key(32), "OOOO...._P__")
+
+
+func test_slope_only_NE_diagonal():
+	# 只 NE (mask = 16 = bit 4): slope NE 位应 "P", 其它 "_"
+	assert_eq(BlobLookup.mask_to_slope_key(16), "OOOO....P___")
+
+
+func test_slope_fully_interior():
+	# mask 0xFF: 全 8 邻居都闭, 4 角都 I (interior), slope 全 "-" (sides 都闭, 不适用)
+	assert_eq(BlobLookup.mask_to_slope_key(0xFF), "CCCCIIII----")
+
+
+func test_slope_variant_keys_82():
+	# slope-aware key 应有 82 唯一变体
+	assert_eq(BlobLookup.SLOPE_VARIANT_KEYS.size(), 82)
+
+
+func test_slope_atlas_coord_size_256():
+	assert_eq(BlobLookup.SLOPE_ATLAS_COORD.size(), 256)
+
+
+func test_slope_atlas_coord_in_range():
+	for v in BlobLookup.SLOPE_ATLAS_COORD:
+		assert_true(v.x >= 0 and v.x < BlobLookup.SLOPE_ATLAS_COLS, "col 越界: %d" % v.x)
+		assert_true(v.y >= 0 and v.y < BlobLookup.SLOPE_ATLAS_ROWS, "row 越界: %d" % v.y)
+
+
+func test_slope_atlas_coord_unique_count_82():
+	var seen := {}
+	for v in BlobLookup.SLOPE_ATLAS_COORD:
+		seen[v] = true
+	assert_eq(seen.size(), 82)
+
+
 func test_atlas_coord_size_256():
 	assert_eq(BlobLookup.ATLAS_COORD.size(), 256)
 
