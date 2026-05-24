@@ -38,6 +38,19 @@ const WORM_DEPTH_SHALLOW_MAX := 40  # 地表 40 格内安全, 不会"踩进去"
 const WORM_DEPTH_MID_MAX := 110     # surf+110 起密集
 const WORM_SURFACE_BUFFER := 20     # worm 路径距地表至少 20 格 (走近就 break, 防止深层 worm 窜到地表)
 
+# 露天矿洞 (open-air pits / cracks): 从地表往下挖空的洞口, 玩家走过就能直接跳下去探险.
+# 两种形状随机混着: pit (漏斗形 5-9 宽 6-14 深) 和 crack (窄缝 2-3 宽 10-20 深).
+# 平均每 OPEN_PIT_SPACING 列一个, 跨 chunk 用 _hash3 保证一致.
+const OPEN_PIT_SPACING := 25         # 1/25 = 4% 概率每列生成 (自然丛聚, 不强制最小间距)
+const PIT_WIDTH_MIN := 5
+const PIT_WIDTH_MAX := 9
+const PIT_DEPTH_MIN := 6
+const PIT_DEPTH_MAX := 14
+const CRACK_WIDTH_MIN := 2
+const CRACK_WIDTH_MAX := 3
+const CRACK_DEPTH_MIN := 10
+const CRACK_DEPTH_MAX := 20
+
 # 树种枚举 (内部 idx)
 const _SPECIES_OAK := 0
 const _SPECIES_PINE := 1
@@ -149,8 +162,12 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 洞穴: Perlin Worms — 隧道 + 偶发大房间, 跨 chunk 一致
 	_carve_worms_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
+	# 露天矿洞: 漏斗坑 (pit) 或 窄缝 (crack) 直通地表, 玩家能跳下去
+	_carve_open_pits_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+
 	# 树: 树根只在本 chunk [chunk_start, chunk_end) 内决定 — canopy 越界部分裁掉
 	# 邻 chunk 自己会有它的树, 不会出现"漂浮叶"。
+	# (在 pits 之后: pit 把 GRASS 挖空了 → 树就不会长在 pit 边缘)
 	_place_trees_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
 	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
@@ -159,21 +176,27 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 
 
 # 按深度给本 chunk 每列填背景墙. 地表 (含) 以下都有墙, 上面是天空所以无墙.
-# 墙类型 = 该列地表深度的函数, 跟前景 tile 类型对齐:
-#   GRASS (1 行)    → 草墙
-#   DIRT  层        → 土墙
-#   STONE 及更深    → 石墙
+# 草墙规则: 仅在"露天矿洞"内部前 2 个空气格出现 (= y=surf 是 AIR 表示这列地表被挖穿了).
+# 其他位置 (含未挖穿的地表行) 用 土墙/石墙 按深度区分.
+const _GRASS_WALL_OPEN_PIT_DEPTH := 2
 static func _fill_walls_chunk(c: Chunk, chunk_heights: Dictionary, chunk_width: int, height: int) -> void:
 	var chunk_start_x: int = c.chunk_x * chunk_width
 	for local_x in chunk_width:
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
+		# 这列是不是露天矿洞 = 地表行被挖空了 (worms 有 20 格 buffer 不会挖到, 只有 pits 挖到)
+		var is_open_pit_column: bool = c.tiles[local_x][surf] == Tiles.AIR
+		var grass_count: int = 0
 		for y in height:
 			if y < surf:
-				continue  # 地表上方 = 天空, 没墙
+				continue  # 天空, 无墙
 			var wid: int
-			if y == surf:
+			# 露天洞: 前 2 个 AIR 格用草墙 (洞口看着像绿绿的草根垂下来)
+			if is_open_pit_column \
+					and grass_count < _GRASS_WALL_OPEN_PIT_DEPTH \
+					and c.tiles[local_x][y] == Tiles.AIR:
 				wid = Tiles.GRASS_WALL
+				grass_count += 1
 			elif y < surf + DIRT_DEPTH:
 				wid = Tiles.DIRT_WALL
 			else:
@@ -329,6 +352,61 @@ static func _carve_circle(c: Chunk, center: Vector2, radius: float,
 			if t == Tiles.GRASS:
 				continue  # 不破坏地表 (避免随机竖井裸露)
 			c.tiles[lx][wy] = Tiles.AIR
+
+
+# ===== 露天矿洞 =====
+# 思路: 沿世界每列用 _hash3 派生 RNG, 1/OPEN_PIT_SPACING 概率生成一个.
+# pit (漏斗) / crack (窄缝) 各 50%, 形状中心最深边缘渐浅, 加小幅噪声让边缘自然.
+# 跨 chunk 一致: 同 spawn_x 在 A/B chunk 里都产生同 RNG 序列 → 同形状.
+static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
+		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
+	var chunk_start_x: int = chunk_x * chunk_width
+	var chunk_end_x: int = chunk_start_x + chunk_width
+	# 邻 chunk 边缘的 spawn_x 也要扫描 (pit 中心可能落邻 chunk, 但部分覆盖本 chunk)
+	var max_half_width: int = PIT_WIDTH_MAX / 2 + 1
+	for spawn_x in range(chunk_start_x - max_half_width, chunk_end_x + max_half_width):
+		var rng := RandomNumberGenerator.new()
+		rng.seed = _hash3(world_seed, spawn_x, 7777)
+		if rng.randf() > 1.0 / float(OPEN_PIT_SPACING):
+			continue
+		var is_crack: bool = rng.randf() < 0.5
+		var width: int
+		var depth: int
+		if is_crack:
+			width = rng.randi_range(CRACK_WIDTH_MIN, CRACK_WIDTH_MAX)
+			depth = rng.randi_range(CRACK_DEPTH_MIN, CRACK_DEPTH_MAX)
+		else:
+			width = rng.randi_range(PIT_WIDTH_MIN, PIT_WIDTH_MAX)
+			depth = rng.randi_range(PIT_DEPTH_MIN, PIT_DEPTH_MAX)
+		var half_w: int = width / 2
+		for i in range(width):
+			var dx: int = i - half_w
+			var wx: int = spawn_x + dx
+			var lx: int = wx - chunk_start_x
+			# 中心最深, 边缘按距离衰减 (40% 下限保留洞口宽度)
+			var dx_abs: int = abs(dx)
+			var ratio: float = 1.0 - float(dx_abs) / float(half_w + 1)
+			var col_depth: int = int(float(depth) * (0.4 + 0.6 * ratio))
+			# 小幅噪声让边缘不那么齐整 (±1 格)
+			col_depth += rng.randi_range(-1, 1)
+			if col_depth < 1:
+				continue
+			# 跨 chunk: 邻 chunk 的列跳过 carve 但仍要消耗 RNG 保证序列一致
+			if lx < 0 or lx >= chunk_width:
+				continue
+			# 本列地表 (本 chunk 用 chunk_heights, 邻 chunk 估算 — 但被上面 lx 检查滤掉了)
+			var col_surf: int = chunk_heights.get(wx, -1)
+			if col_surf < 0:
+				col_surf = _estimate_surf(wx, world_seed, height)
+			# carve: 从 col_surf 向下 col_depth 格全设 AIR (跳过矿石和基岩)
+			for dy in range(col_depth):
+				var y: int = col_surf + dy
+				if y < 0 or y >= height - BEDROCK_ROWS:
+					continue
+				var t: int = c.tiles[lx][y]
+				if t == Tiles.COAL_ORE or t == Tiles.IRON_ORE or t == Tiles.BEDROCK:
+					continue
+				c.tiles[lx][y] = Tiles.AIR
 
 
 # 跟 generate_chunk 里 surf 公式一致: 用主 noise 的种子重算单列 surf.
