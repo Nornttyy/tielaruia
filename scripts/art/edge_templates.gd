@@ -86,6 +86,22 @@ const _SOIL_STYLE := {
 	"concave": [[0, 0, "e"]],
 }
 
+# 叶族 (T12): 簇状描边 + 啃咬圆角 + 大量透明缝隙 (叶子轮廓不规则感)
+# 设计意图: 顶部 h 高光 (温和), 不规则间隔有 "." 让内部叶纹路透出来.
+# 侧边/底边同样断断续续. 外凸角削 2px + 锯齿. 内凹角仅 1px 暗 (叶面薄).
+const _LEAF_STYLE := {
+	"top_row0":    "hh.hh.hh.hh.hhh.",
+	"top_row1":    "h.h..hh..h.hh.h.",
+	"bot_row14":   ".h.h.h.hh.h.hh..",
+	"bot_row15":   "h.hh..h.h.hh.h.h",
+	"left_col0":   "h.hh.h.hh.h.",
+	"left_col1":   "............",
+	"right_col14": "............",
+	"right_col15": "hh.h.hh.h.h.",
+	"corner_round": 2,
+	"concave": [[0, 0, "e"]],
+}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5 族模板字典. TEMPLATES[family][variant_key] = Array[String] 16 行 × 16 字符.
@@ -98,7 +114,7 @@ static func _build_all_templates() -> Dictionary:
 	return {
 		"rock": _build_family(_ROCK_STYLE),
 		"soil": _build_family(_SOIL_STYLE),
-		"leaf": _build_family(_BLANK_STYLE),
+		"leaf": _build_family(_LEAF_STYLE),
 		"wall": _build_family(_BLANK_STYLE),
 		"wood": _build_family(_BLANK_STYLE),
 	}
