@@ -27,6 +27,9 @@ const TORCH := 14           # 火把 (放置版本，含动画 fx)
 const COAL_ORE := 15        # 煤矿
 const IRON_ORE := 16        # 铁矿
 const DEEP_STONE := 17      # 深层岩石 (暗暖灰)
+const GRASS_WALL := 18      # 背景墙: 草墙 (近地表)
+const DIRT_WALL := 19       # 背景墙: 土墙 (中层)
+const STONE_WALL := 20      # 背景墙: 石墙 (深层)
 
 # --- 调色板 (每方块独立) ---
 
@@ -199,6 +202,30 @@ const _P_IRON_ORE := {
 	"r": Color8(168, 100, 60),
 	"R": Color8(130, 70, 40),
 	"H": Color8(200, 140, 90),
+}
+
+# 背景墙: 比对应方块暗 ~50%, 图案更糊 (少高光多深色, 偶尔小石子)
+# 草墙: 顶部 1 行深绿根 + 下面深棕土
+const _P_GRASS_WALL := {
+	"d": Color8(80, 62, 44),    # 深暖棕基 (DIRT 颜色 × 0.5)
+	"D": Color8(58, 44, 30),    # 更深棕
+	"v": Color8(54, 80, 38),    # 深绿根
+	"V": Color8(38, 58, 28),    # 深绿根阴影
+	"k": Color8(38, 28, 20),    # 黑石子
+}
+# 土墙: 均匀深棕 + 零星小石子, 偶尔微亮
+const _P_DIRT_WALL := {
+	"d": Color8(80, 60, 40),
+	"D": Color8(58, 42, 28),
+	"k": Color8(38, 26, 16),
+	"l": Color8(96, 76, 54),    # 微亮 (稀疏)
+}
+# 石墙: 均匀深暖灰 + 黑裂纹
+const _P_STONE_WALL := {
+	"s": Color8(78, 72, 68),    # 深暖灰 (STONE × 0.5)
+	"S": Color8(56, 50, 46),
+	"k": Color8(34, 28, 24),
+	"l": Color8(96, 88, 80),    # 微亮
 }
 
 # 火把 tile: 木棍底 + 暖色火苗 (静态视觉，动画 fx 由 TorchFx 叠加)
@@ -571,6 +598,66 @@ const _TORCH := [
 	"................",
 ]
 
+# 草墙: 顶部 2 行有绿根, 下面是深棕土纹
+const _GRASS_WALL := [
+	"vVvvVvvVvvVvvvVv",
+	"VvdVDdvdDdvDdvDv",
+	"dDddDddDdDddDddD",
+	"DddDddDdDdkdDddd",
+	"dDddDddDdDdkdDdD",
+	"ddDddkdDdDddDddd",
+	"dDddDddDdDdDdkdD",
+	"DdDddDddDdkdDddd",
+	"dDddDddkddDddDdD",
+	"ddDddDddDdkddDdd",
+	"dDddDdDddDdDdDdd",
+	"DdDdkdDddDdDddDd",
+	"dDddDdDdDdDdkdDd",
+	"ddDdDddDdDddDddD",
+	"dDddDddDdkdDdDdd",
+	"DdDdDdkdDdDddDdD",
+]
+
+# 土墙: 全是深棕基, 稀疏小石子, 偶尔微亮
+const _DIRT_WALL := [
+	"dDddDddDdDddDddD",
+	"Dddldddkdldddddd",
+	"dDdDddDdDdDdkdDd",
+	"ddDddDddDddDddDd",
+	"DdDddDdkddDddDdD",
+	"dDddDdDddDdDdldd",
+	"ddDddDdDdkdDdDdd",
+	"dlddDddDdDddDddD",
+	"DdDdDddkdDdDddDd",
+	"dDddDdDdDdDddDdl",
+	"ddDddDddDdkdDddD",
+	"DdDdDdDdDddDddDd",
+	"dDddDddDdDddDdDd",
+	"dlDddDdDdkdDdDdD",
+	"DdDddDddDdDddDdd",
+	"dDdDddDdDddDdDdD",
+]
+
+# 石墙: 全是深暖灰, 黑裂纹, 偶尔微亮
+const _STONE_WALL := [
+	"sSssSssSsSssSssS",
+	"SsslssksSsslssss",
+	"sSsSssSsSsSskssS",
+	"ssSssSssSssSssSs",
+	"SsSssSskssSssSss",
+	"sSssSsSssSsSsSss",
+	"ssSssSsSskssSsSs",
+	"slssSssSsSssSssS",
+	"SsSsSssksSsSssSs",
+	"sSssSsSsSsSssSls",
+	"ssSssSssSskSsssS",
+	"SsSsSsSsSssSssSs",
+	"sSssSssSsSssSsSs",
+	"slSssSsSskSsSsSS",
+	"SsSssSssSsSssSss",
+	"sSsSssSssSsSsSsS",
+]
+
 const _PATTERN_MAP := {
 	GRASS: [_GRASS, _P_GRASS],
 	DIRT: [_DIRT, _P_DIRT],
@@ -589,6 +676,9 @@ const _PATTERN_MAP := {
 	COAL_ORE: [_COAL_ORE, _P_COAL_ORE],
 	IRON_ORE: [_IRON_ORE, _P_IRON_ORE],
 	TORCH: [_TORCH, _P_TORCH],
+	GRASS_WALL: [_GRASS_WALL, _P_GRASS_WALL],
+	DIRT_WALL: [_DIRT_WALL, _P_DIRT_WALL],
+	STONE_WALL: [_STONE_WALL, _P_STONE_WALL],
 }
 
 

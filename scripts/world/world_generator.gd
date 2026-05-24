@@ -16,9 +16,27 @@ const TREE_MIN_SPACING := 5      # 相邻两棵树之间最少 N 列间距
 const TREE_CHANCE := 0.45        # 候选格子里实际长树的概率
 
 const DEEP_STONE_RATIO := 0.5    # 地表往下 (height-surf)*0.5 处起为 DEEP_STONE
-const COAL_THRESHOLD := 0.55     # coal_noise 超过此值生成煤矿
-const IRON_THRESHOLD := 0.55     # iron_noise 超过此值 + 在深石层 → 铁矿 (稀疏感由层位限制保证)
-const CAVE_THRESHOLD := 0.55     # abs(cave_noise) 超过此值挖空 (除 BEDROCK)
+const COAL_THRESHOLD := 0.30     # 降低 → 煤矿更密
+const IRON_THRESHOLD := 0.40     # 降低 → 铁矿更多 (仅深石层有效)
+
+# Perlin Worms 洞穴系统 (细隧道网 + 分叉 + 死路, 按深度分层: 表少 / 深密)
+const WORM_SPAWN_GRID := 14      # 每 14×14 tile 一个候选 worm 起点 (密)
+const WORM_LEN_MIN := 25         # worm 短一点 → 形成自然死路
+const WORM_LEN_MAX := 70
+const WORM_RADIUS_MIN := 0.8     # 窄隧道: 1-2 tile 宽
+const WORM_RADIUS_MAX := 1.3
+const WORM_BRANCH_CHANCE := 0.025  # 每步 2.5% 派子 worm → 分叉
+const WORM_BRANCH_MAX_DEPTH := 2   # 分叉递归最大深度
+const WORM_BRANCH_RADIUS_SCALE := 0.6  # 子 worm 半径系数 (孙再叠加 → 越细)
+const WORM_DIR_FREQUENCY := 0.025  # 方向噪声频率
+const WORM_SEARCH_PAD_CELLS := 7   # 邻 chunk 搜索半径
+# 深度分层生成概率: depth = sy - surf
+const WORM_CHANCE_SHALLOW := 0.02  # 表层近乎实心, 只 2% 概率出"山头洞口"
+const WORM_CHANCE_MID := 0.25      # 中层零散通道, 玩家挖才会遇到
+const WORM_CHANCE_DEEP := 0.92     # 深层密如蛛网 (玩家"主动下矿"区)
+const WORM_DEPTH_SHALLOW_MAX := 40  # 地表 40 格内安全, 不会"踩进去"
+const WORM_DEPTH_MID_MAX := 110     # surf+110 起密集
+const WORM_SURFACE_BUFFER := 20     # worm 路径距地表至少 20 格 (走近就 break, 防止深层 worm 窜到地表)
 
 # 树种枚举 (内部 idx)
 const _SPECIES_OAK := 0
@@ -79,12 +97,6 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	sand_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	sand_noise.frequency = 0.05
 
-	var cave_noise := FastNoiseLite.new()
-	cave_noise.seed = world_seed + 2
-	cave_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	cave_noise.frequency = 0.06
-	cave_noise.fractal_octaves = 2
-
 	var coal_noise := FastNoiseLite.new()
 	coal_noise.seed = world_seed + 3
 	coal_noise.noise_type = FastNoiseLite.TYPE_PERLIN
@@ -132,21 +144,216 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 				elif tid == Tiles.DEEP_STONE and inn > IRON_THRESHOLD:
 					tid = Tiles.IRON_ORE
 
-			# 洞穴: 除 BEDROCK / 矿石 外都可被挖空 (y > surf 才生效, 不挖天空)
-			# 矿石保留 → 洞壁上能露出矿脉, 玩家挖洞才能采到
-			if tid != Tiles.BEDROCK and tid != Tiles.AIR \
-					and tid != Tiles.COAL_ORE and tid != Tiles.IRON_ORE \
-					and y > surf:
-				var cv: float = abs(cave_noise.get_noise_2d(float(world_x), float(y)))
-				if cv > CAVE_THRESHOLD:
-					tid = Tiles.AIR
-
 			c.tiles[local_x][y] = tid
+
+	# 洞穴: Perlin Worms — 隧道 + 偶发大房间, 跨 chunk 一致
+	_carve_worms_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
 	# 树: 树根只在本 chunk [chunk_start, chunk_end) 内决定 — canopy 越界部分裁掉
 	# 邻 chunk 自己会有它的树, 不会出现"漂浮叶"。
 	_place_trees_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+
+	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
+	_fill_walls_chunk(c, chunk_heights, chunk_width, height)
 	return c
+
+
+# 按深度给本 chunk 每列填背景墙. 地表 (含) 以下都有墙, 上面是天空所以无墙.
+# 墙类型 = 该列地表深度的函数, 跟前景 tile 类型对齐:
+#   GRASS (1 行)    → 草墙
+#   DIRT  层        → 土墙
+#   STONE 及更深    → 石墙
+static func _fill_walls_chunk(c: Chunk, chunk_heights: Dictionary, chunk_width: int, height: int) -> void:
+	var chunk_start_x: int = c.chunk_x * chunk_width
+	for local_x in chunk_width:
+		var world_x: int = chunk_start_x + local_x
+		var surf: int = chunk_heights[world_x]
+		for y in height:
+			if y < surf:
+				continue  # 地表上方 = 天空, 没墙
+			var wid: int
+			if y == surf:
+				wid = Tiles.GRASS_WALL
+			elif y < surf + DIRT_DEPTH:
+				wid = Tiles.DIRT_WALL
+			else:
+				wid = Tiles.STONE_WALL
+			c.walls[local_x][y] = wid
+
+
+# ===== Perlin Worms 洞穴 =====
+# 思路: 地下按 WORM_SPAWN_GRID 划格, 每格按确定性 RNG 决定是否生 worm + 起点偏移.
+# 每条 worm 从起点出发, 走 60-150 步, 方向由低频 perlin 驱动 (smooth turns).
+# 沿路径挖圆 (半径 ~2-3), 偶发大房间 (半径 6). 跨 chunk 时: 生成 chunk_x 会扫描
+# ±WORM_SEARCH_PAD_CELLS 内的所有起点, 重新模拟整条 worm, 但只填本 chunk 内的格.
+# → 同 seed 下任何 chunk 生成结果一致, 邻 chunk 边界 worm 平滑跨过.
+static func _carve_worms_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: int,
+		chunk_x: int, chunk_width: int, height: int) -> void:
+	var chunk_start: int = chunk_x * chunk_width
+	var chunk_end: int = chunk_start + chunk_width
+
+	# 方向噪声: 低频 → 转弯平滑
+	var dir_noise := FastNoiseLite.new()
+	dir_noise.seed = world_seed + 100
+	dir_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	dir_noise.frequency = WORM_DIR_FREQUENCY
+
+	# 半径噪声: 让通道粗细沿程变化
+	var rad_noise := FastNoiseLite.new()
+	rad_noise.seed = world_seed + 200
+	rad_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	rad_noise.frequency = 0.08
+
+	# 地表噪声: 必须跟 generate_chunk 主 noise 完全同参数, 才能在 worm 路径上算出正确的 surf
+	var surf_noise := FastNoiseLite.new()
+	surf_noise.seed = world_seed
+	surf_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	surf_noise.frequency = 0.015
+	surf_noise.fractal_octaves = 3
+
+	# 计算 spawn 格搜索范围: 本 chunk 跨多少格 + 邻居 pad
+	var first_cell_x: int = int(floor(float(chunk_start) / WORM_SPAWN_GRID)) - WORM_SEARCH_PAD_CELLS
+	var last_cell_x: int = int(floor(float(chunk_end - 1) / WORM_SPAWN_GRID)) + WORM_SEARCH_PAD_CELLS
+	var max_cell_y: int = int(ceil(float(height) / WORM_SPAWN_GRID))
+
+	for cell_x in range(first_cell_x, last_cell_x + 1):
+		for cell_y in range(0, max_cell_y + 1):
+			# 用 (world_seed, cell_x, cell_y) 派生 RNG → 全局确定性
+			var rng := RandomNumberGenerator.new()
+			rng.seed = _hash3(world_seed, cell_x, cell_y)
+
+			# 起点 = 格内随机位置
+			var sx: float = float(cell_x * WORM_SPAWN_GRID) + rng.randf() * WORM_SPAWN_GRID
+			var sy: float = float(cell_y * WORM_SPAWN_GRID) + rng.randf() * WORM_SPAWN_GRID
+
+			# 起点必须在地下 ≥3 格, 且不到基岩
+			if sy >= float(height - BEDROCK_ROWS - 1):
+				continue
+			var ix: int = int(floor(sx))
+			var surf_here: int = _estimate_surf(ix, world_seed, height)
+			if sy <= float(surf_here + 3):
+				continue
+
+			# 深度分层概率: 表层稀少 (山头偶有洞口) / 中层中等 / 深层密集
+			var depth_below: float = sy - float(surf_here)
+			var spawn_chance: float
+			if depth_below < WORM_DEPTH_SHALLOW_MAX:
+				spawn_chance = WORM_CHANCE_SHALLOW
+			elif depth_below < WORM_DEPTH_MID_MAX:
+				spawn_chance = WORM_CHANCE_MID
+			else:
+				spawn_chance = WORM_CHANCE_DEEP
+			if rng.randf() > spawn_chance:
+				continue
+
+			# 模拟主 worm + 可能的分叉
+			var worm_len: int = rng.randi_range(WORM_LEN_MIN, WORM_LEN_MAX)
+			_simulate_worm(c, Vector2(sx, sy), worm_len, rng,
+					dir_noise, rad_noise, surf_noise, chunk_start, chunk_end, height, 0, 1.0)
+
+
+# 沿路径挖一条 worm. depth = 当前分叉递归深度, radius_scale = 子孙 worm 半径系数.
+static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
+		rng: RandomNumberGenerator, dir_noise: FastNoiseLite, rad_noise: FastNoiseLite,
+		surf_noise: FastNoiseLite,
+		chunk_start: int, chunk_end: int, height: int, depth: int,
+		radius_scale: float) -> void:
+	# 每条 worm 独有的角度偏移 (避免子 worm 跟主 worm 路径重合, 因为 dir_noise 是位置决定的)
+	# 主 worm depth=0 偏移小, 子/孙 worm 偏更多 → 真正岔开
+	var ang_bias: float = rng.randf_range(-PI, PI) * float(depth) * 0.5
+	var pos: Vector2 = start_pos
+	for step in worm_len:
+		# 触及地表缓冲 → worm 终止 (避免深层 worm 窜到地表附近)
+		var surf_at: int = _surf_at(surf_noise, int(floor(pos.x)), height)
+		if pos.y < float(surf_at + WORM_SURFACE_BUFFER):
+			break
+		# 方向: perlin 输出 [-1,1] → angle [-PI, PI] (smooth turns) + worm 个体 bias
+		var ang: float = dir_noise.get_noise_2d(pos.x, pos.y) * PI + ang_bias
+		# 半径: 沿程在 [MIN, MAX] 之间慢慢变化 × 分叉缩放
+		var rn: float = (rad_noise.get_noise_2d(pos.x, pos.y) + 1.0) * 0.5  # [0,1]
+		var radius: float = lerp(WORM_RADIUS_MIN, WORM_RADIUS_MAX, rn) * radius_scale
+		# 挖圆 (只填落入本 chunk 的)
+		_carve_circle(c, pos, radius, chunk_start, chunk_end, height)
+		# 分叉: 派子 worm (角度偏移 ±60°, 长度更短, 半径更细)
+		if depth < WORM_BRANCH_MAX_DEPTH and rng.randf() < WORM_BRANCH_CHANCE:
+			var branch_len: int = rng.randi_range(WORM_LEN_MIN / 2, WORM_LEN_MAX / 2)
+			var branch_ang: float = ang + rng.randf_range(-PI / 3.0, PI / 3.0)
+			var branch_start: Vector2 = pos + Vector2(cos(branch_ang), sin(branch_ang))
+			var sub_rng := RandomNumberGenerator.new()
+			sub_rng.seed = rng.randi() ^ step
+			var sub_scale: float = radius_scale * WORM_BRANCH_RADIUS_SCALE
+			_carve_circle(c, branch_start, radius * WORM_BRANCH_RADIUS_SCALE,
+					chunk_start, chunk_end, height)
+			_simulate_worm(c, branch_start, branch_len, sub_rng,
+					dir_noise, rad_noise, surf_noise, chunk_start, chunk_end, height,
+					depth + 1, sub_scale)
+		# 前进 1 tile
+		pos += Vector2(cos(ang), sin(ang))
+		# 走出世界边界 / 进入基岩区 → 提前终止
+		if pos.y < 0.0 or pos.y >= float(height - BEDROCK_ROWS):
+			break
+
+
+# 用共享 surf_noise 算单列 surf (供 worm 路径检查), 避免每次 new FastNoiseLite.
+static func _surf_at(surf_noise: FastNoiseLite, world_x: int, height: int) -> int:
+	var v: float = surf_noise.get_noise_1d(float(world_x))
+	var h: int = int(float(height) * (SURFACE_BASE + v * SURFACE_AMP))
+	return clampi(h, 4, height - BEDROCK_ROWS - 1)
+
+
+# 挖圆: 中心 center 半径 radius, 只填 [chunk_start, chunk_end) × [0, height).
+# 不挖 BEDROCK / 矿石; 不挖地表上方 (保留天空).
+static func _carve_circle(c: Chunk, center: Vector2, radius: float,
+		chunk_start: int, chunk_end: int, height: int) -> void:
+	var r2: float = radius * radius
+	var x0: int = int(floor(center.x - radius))
+	var x1: int = int(ceil(center.x + radius))
+	var y0: int = int(floor(center.y - radius))
+	var y1: int = int(ceil(center.y + radius))
+	for wx in range(x0, x1 + 1):
+		if wx < chunk_start or wx >= chunk_end:
+			continue
+		var lx: int = wx - chunk_start
+		for wy in range(y0, y1 + 1):
+			if wy < 0 or wy >= height:
+				continue
+			var dx: float = float(wx) - center.x
+			var dy: float = float(wy) - center.y
+			if dx * dx + dy * dy > r2:
+				continue
+			var t: int = c.tiles[lx][wy]
+			if t == Tiles.BEDROCK or t == Tiles.AIR:
+				continue
+			if t == Tiles.COAL_ORE or t == Tiles.IRON_ORE:
+				continue
+			if t == Tiles.GRASS:
+				continue  # 不破坏地表 (避免随机竖井裸露)
+			c.tiles[lx][wy] = Tiles.AIR
+
+
+# 跟 generate_chunk 里 surf 公式一致: 用主 noise 的种子重算单列 surf.
+# 这里独立算一遍, 不依赖传入的 chunk_heights (worm 起点可能落在邻 chunk).
+static func _estimate_surf(world_x: int, world_seed: int, height: int) -> int:
+	var n := FastNoiseLite.new()
+	n.seed = world_seed
+	n.noise_type = FastNoiseLite.TYPE_PERLIN
+	n.frequency = 0.015
+	n.fractal_octaves = 3
+	var v: float = n.get_noise_1d(float(world_x))
+	var h: int = int(float(height) * (SURFACE_BASE + v * SURFACE_AMP))
+	return clampi(h, 4, height - BEDROCK_ROWS - 1)
+
+
+# 3 整数 → 64-bit 稳定 hash (worm RNG 种子). 不用内建 hash() 因为它对 int 输入返回值未指定.
+static func _hash3(a: int, b: int, c: int) -> int:
+	var h: int = a * 73856093
+	h ^= b * 19349663
+	h ^= c * 83492791
+	# 混合避免低位偏差
+	h ^= (h >> 16)
+	h *= 0x85ebca6b
+	h ^= (h >> 13)
+	return h & 0x7fffffff
 
 
 # Chunk 版本树木放置: 树根只在本 chunk [chunk_start, chunk_end) 内, canopy 越界部分裁掉。

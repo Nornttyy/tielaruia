@@ -40,6 +40,7 @@ const MINIMAP_MARK_INTERVAL := 0.1  # 每 0.1s 标记一次玩家周围 (减少�
 @export var world_seed: int = 0   # 0 表示 _ready 内随机化
 
 @onready var terrain_layer: TileMapLayer = $TerrainLayer
+@onready var wall_layer: TileMapLayer = $WallLayer  # 背景墙 (在 TerrainLayer 之后, 渲染在前景方块后面)
 @onready var entities_root: Node2D = $Entities
 @onready var camera: Camera2D = $Camera2D
 @onready var world_lighting: Node = $WorldLighting
@@ -61,7 +62,9 @@ var _minimap_mark_timer: float = 0.0
 
 
 func _ready() -> void:
-	terrain_layer.tile_set = TileSetBuilder.build()
+	var ts := TileSetBuilder.build()
+	terrain_layer.tile_set = ts
+	wall_layer.tile_set = ts  # 跟前景共享同一个 TileSet (墙 tile 也在里面注册过了)
 	terrain_layer.add_to_group("terrain_layer")
 	$EffectsRoot.add_to_group("effects_root")
 	if world_seed == 0:
@@ -188,15 +191,19 @@ func _check_chunk_load() -> void:
 
 
 func _on_chunk_loaded(c: Chunk) -> void:
-	# 把 chunk 数据写到 TileMapLayer
+	# 把 chunk 数据写到 TileMapLayer (前景方块 + 背景墙)
 	var chunk_start: int = c.chunk_x * ChunkConstants.CHUNK_WIDTH
 	for lx in c.tiles.size():
 		var world_x: int = chunk_start + lx
 		var col: Array = c.tiles[lx]
+		var wall_col: Array = c.walls[lx]
 		for y in col.size():
 			var tid: int = col[y]
 			if tid != Tiles.AIR:
 				terrain_layer.set_cell(Vector2i(world_x, y), tid, Vector2i.ZERO)
+			var wid: int = wall_col[y]
+			if wid != Tiles.AIR:
+				wall_layer.set_cell(Vector2i(world_x, y), wid, Vector2i.ZERO)
 		SkyLightGrid.invalidate_column(world_x)
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
 	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)
@@ -208,11 +215,12 @@ func _on_chunk_unloaded(cx: int) -> void:
 	var chunk_start: int = cx * ChunkConstants.CHUNK_WIDTH
 	var chunk_start_px: float = chunk_start * TILE_SIZE
 	var chunk_end_px: float = chunk_start_px + ChunkConstants.CHUNK_WIDTH * TILE_SIZE
-	# 清 TileMapLayer 这一柱
+	# 清 TileMapLayer 这一柱 (前景 + 背景墙)
 	for lx in ChunkConstants.CHUNK_WIDTH:
 		var world_x: int = chunk_start + lx
 		for y in ChunkConstants.WORLD_HEIGHT:
 			terrain_layer.set_cell(Vector2i(world_x, y), -1)
+			wall_layer.set_cell(Vector2i(world_x, y), -1)
 		SkyLightGrid.invalidate_column(world_x)
 	# 清该 chunk 像素范围内所有"短命"实体: 怪物 (slime/zombie) + 动物 (cow/sheep/pig) + 掉落物
 	# 注意: villager 用专门 group, 由村庄系统管, 这里不清

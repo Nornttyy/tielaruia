@@ -20,6 +20,10 @@ const TORCH := 14
 const COAL_ORE := 15
 const IRON_ORE := 16
 const DEEP_STONE := 17
+# --- 背景墙 (background wall): 装饰用, 不实心, 不可挖, 显示在主方块后面 ---
+const GRASS_WALL := 18      # 草墙: 接近地表第 1-2 行
+const DIRT_WALL := 19       # 土墙: 中层 (土块对应)
+const STONE_WALL := 20      # 石墙: 深层 (石头对应)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -121,6 +125,21 @@ const _PROPS := {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
 		"drops": [["stone", 100, 1, 1]],
+	},
+	GRASS_WALL: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {},
+		"drops": [],
+	},
+	DIRT_WALL: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {},
+		"drops": [],
+	},
+	STONE_WALL: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {},
+		"drops": [],
 	},
 }
 

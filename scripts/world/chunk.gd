@@ -1,10 +1,13 @@
-# 一柱地形数据。tiles[local_x][y] = tile_id。
+# 一柱地形数据。
+# tiles[local_x][y] = 前景方块 (玩家可破坏/放置)
+# walls[local_x][y] = 背景墙 (装饰, 不可破坏, 显示在前景方块后面)
 class_name Chunk extends RefCounted
 
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 
 var chunk_x: int = 0
-var tiles: Array = []   # tiles[local_x: 0..63][y: 0..255] = int
+var tiles: Array = []
+var walls: Array = []
 
 
 func _init(p_chunk_x: int = 0) -> void:
@@ -13,11 +16,16 @@ func _init(p_chunk_x: int = 0) -> void:
 
 func init_empty(height: int = ChunkConstants.WORLD_HEIGHT) -> void:
 	tiles.resize(ChunkConstants.CHUNK_WIDTH)
+	walls.resize(ChunkConstants.CHUNK_WIDTH)
 	for lx in ChunkConstants.CHUNK_WIDTH:
 		var col: Array = []
 		col.resize(height)
 		col.fill(Tiles.AIR)
 		tiles[lx] = col
+		var wall_col: Array = []
+		wall_col.resize(height)
+		wall_col.fill(Tiles.AIR)
+		walls[lx] = wall_col
 
 
 func get_tile(local_x: int, y: int) -> int:
@@ -32,6 +40,20 @@ func set_tile(local_x: int, y: int, tid: int) -> void:
 			or y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
 		return
 	tiles[local_x][y] = tid
+
+
+func get_wall(local_x: int, y: int) -> int:
+	if local_x < 0 or local_x >= ChunkConstants.CHUNK_WIDTH \
+			or y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
+		return Tiles.AIR
+	return walls[local_x][y]
+
+
+func set_wall(local_x: int, y: int, wid: int) -> void:
+	if local_x < 0 or local_x >= ChunkConstants.CHUNK_WIDTH \
+			or y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
+		return
+	walls[local_x][y] = wid
 
 
 func apply_delta(delta: Dictionary) -> void:

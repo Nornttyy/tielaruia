@@ -13,6 +13,9 @@ const PlayerArt = preload("res://scripts/art/player_art.gd")
 const SlimeArt = preload("res://scripts/art/slime_art.gd")
 const ZombieArt = preload("res://scripts/art/zombie_art.gd")
 const VillagerArt = preload("res://scripts/art/villager_art.gd")
+const CowArt = preload("res://scripts/art/cow_art.gd")
+const SheepArt = preload("res://scripts/art/sheep_art.gd")
+const PigArt = preload("res://scripts/art/pig_art.gd")
 const DoorArt = preload("res://scripts/art/door_art.gd")
 const ItemsArt = preload("res://scripts/art/items_art.gd")
 const HeartsArt = preload("res://scripts/art/hearts_art.gd")
@@ -28,6 +31,9 @@ var player_frames: SpriteFrames
 var slime_frames: SpriteFrames
 var zombie_frames: SpriteFrames
 var villager_frames: SpriteFrames
+var cow_frames: SpriteFrames
+var sheep_frames: SpriteFrames
+var pig_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
 var crack_textures: Array = []  # 4 个阶段
@@ -69,6 +75,7 @@ func _build_blocks() -> void:
 		BlocksArt.DOOR, BlocksArt.BEDROCK,
 		BlocksArt.LEAVES_PINE, BlocksArt.LEAVES_AUTUMN, BlocksArt.SLIME_TORCH,
 		BlocksArt.DEEP_STONE, BlocksArt.COAL_ORE, BlocksArt.IRON_ORE, BlocksArt.TORCH,
+		BlocksArt.GRASS_WALL, BlocksArt.DIRT_WALL, BlocksArt.STONE_WALL,
 	]
 	for tile_id in tile_ids:
 		block_textures[tile_id] = BlocksArt.get_texture(tile_id)
@@ -77,7 +84,8 @@ func _build_blocks() -> void:
 func _build_items() -> void:
 	for item_id in ["wood_sword", "wood_pickaxe", "wood_axe", "slime_jelly", "apple",
 			"stone_sword", "stone_pickaxe", "stone_axe",
-			"coal", "iron_ore", "iron_pickaxe"]:
+			"coal", "iron_ore", "iron_pickaxe",
+			"raw_meat", "leather", "wool"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 
 
@@ -91,6 +99,9 @@ func _build_entities() -> void:
 	slime_frames = SlimeArt.build_sprite_frames()
 	zombie_frames = ZombieArt.build_sprite_frames()
 	villager_frames = VillagerArt.build_sprite_frames()
+	cow_frames = CowArt.build_sprite_frames()
+	sheep_frames = SheepArt.build_sprite_frames()
+	pig_frames = PigArt.build_sprite_frames()
 
 
 # 统一的"取背包/热键栏图标"接口。
