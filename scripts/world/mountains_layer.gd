@@ -33,6 +33,7 @@ const _LAYERS := [
 ]
 
 var _layer_data: Array = []  # 每层 {sprite, base_color}
+var _layer_alpha: float = 1.0  # 由 ScenicDirector 设 (0=矿洞 1=地表)
 
 
 func _ready() -> void:
@@ -78,8 +79,17 @@ func _process(_delta: float) -> void:
 		# 夜里整体压暗
 		var brightness: float = lerp(0.35, 1.0, f)
 		tinted = tinted * brightness
-		tinted.a = ld.alpha
+		tinted.a = ld.alpha * _layer_alpha  # 乘 ScenicDirector 给的 alpha
 		ld.sprite.modulate = tinted
+
+
+# ScenicDirector 调这个统一改整层 alpha
+func set_layer_alpha(a: float) -> void:
+	_layer_alpha = clamp(a, 0.0, 1.0)
+
+
+func current_alpha() -> float:
+	return _layer_alpha
 
 
 # 给测试用: 当前 ParallaxLayer 数 (应 = 3)
