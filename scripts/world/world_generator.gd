@@ -34,6 +34,7 @@ const WORM_BRANCH_CHANCE := 0.025  # 每步 2.5% 派子 worm → 分叉
 const WORM_BRANCH_MAX_DEPTH := 2   # 分叉递归最大深度
 const WORM_BRANCH_RADIUS_SCALE := 0.6  # 子 worm 半径系数 (孙再叠加 → 越细)
 const WORM_DIR_FREQUENCY := 0.025  # 方向噪声频率
+const WORM_Y_SQUASH := 0.5         # Y 方向步进系数 (X=1.0 不变, Y=0.5 → 矿洞偏横向, 像泰拉瑞亚)
 const WORM_SEARCH_PAD_CELLS := 7   # 邻 chunk 搜索半径
 # 深度分层生成概率: depth = sy - surf
 const WORM_CHANCE_SHALLOW := 0.02  # 表层近乎实心, 只 2% 概率出"山头洞口"
@@ -330,7 +331,7 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 		if depth < WORM_BRANCH_MAX_DEPTH and rng.randf() < WORM_BRANCH_CHANCE:
 			var branch_len: int = rng.randi_range(WORM_LEN_MIN / 2, WORM_LEN_MAX / 2)
 			var branch_ang: float = ang + rng.randf_range(-PI / 3.0, PI / 3.0)
-			var branch_start: Vector2 = pos + Vector2(cos(branch_ang), sin(branch_ang))
+			var branch_start: Vector2 = pos + Vector2(cos(branch_ang), sin(branch_ang) * WORM_Y_SQUASH)
 			var sub_rng := RandomNumberGenerator.new()
 			sub_rng.seed = rng.randi() ^ step
 			var sub_scale: float = radius_scale * WORM_BRANCH_RADIUS_SCALE
@@ -339,8 +340,8 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 			_simulate_worm(c, branch_start, branch_len, sub_rng,
 					dir_noise, rad_noise, surf_noise, mountain_noise,
 					chunk_start, chunk_end, height, depth + 1, sub_scale, surface_buffer)
-		# 前进 1 tile
-		pos += Vector2(cos(ang), sin(ang))
+		# 前进 1 tile (Y 压扁 → 矿洞更横向, 像泰拉瑞亚的洞穴蜿蜒)
+		pos += Vector2(cos(ang), sin(ang) * WORM_Y_SQUASH)
 		# 走出世界边界 / 进入基岩区 → 提前终止
 		if pos.y < 0.0 or pos.y >= float(height - BEDROCK_ROWS):
 			break
