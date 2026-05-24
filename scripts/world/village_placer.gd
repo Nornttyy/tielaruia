@@ -29,8 +29,6 @@ static func place(
 			for cx in range(cols):
 				var pos: Vector2i = house_anchor + Vector2i(cx, ry)
 				chunk_manager.set_tile(pos.x, pos.y, Tiles.AIR)
-				if terrain_layer != null:
-					terrain_layer.set_cell(pos, -1)
 		# Pass 2: 按 grid 字符 stamp 墙/门
 		for ry in range(rows):
 			var row: String = house.grid[ry]
@@ -41,8 +39,6 @@ static func place(
 					continue
 				var pos: Vector2i = house_anchor + Vector2i(cx, ry)
 				chunk_manager.set_tile(pos.x, pos.y, tid)
-				if terrain_layer != null:
-					terrain_layer.set_cell(pos, tid, Vector2i.ZERO)
 		if house.get("villager_offset", null) != null:
 			var off = house.villager_offset
 			villager_spawns.append(house_anchor + Vector2i(off[0], off[1]))
@@ -72,5 +68,3 @@ static func _clear_bounding_rect(
 		for dx in range(min_x, max_x + 1):
 			var pos: Vector2i = anchor + Vector2i(dx, dy)
 			chunk_manager.set_tile(pos.x, pos.y, Tiles.AIR)
-			if terrain_layer != null:
-				terrain_layer.set_cell(pos, -1)

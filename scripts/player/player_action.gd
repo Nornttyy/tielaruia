@@ -209,7 +209,7 @@ func _crack_overlay() -> Node:
 
 
 func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapLayer) -> void:
-	terrain.set_cell(tile, -1)
+	# (移除 terrain.set_cell(tile, -1); world._set_tile 内部已清并刷邻居)
 	var world: Node = terrain.get_parent()
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, Tiles.AIR)
@@ -258,16 +258,22 @@ func try_place() -> bool:
 	var pt: Vector2i = player_tile()
 	if tile == pt or tile == pt - Vector2i(0, 1):
 		return false
-	# 上下左右至少要有一个相邻方块（防空中漂浮）
-	var has_neighbor: bool = false
+	# 支撑判定: 上下左右至少有 1 个相邻方块 OR 当前格背景有墙 (允许靠墙挂方块).
+	var has_support: bool = false
 	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		if terrain.get_cell_source_id(tile + offset) != -1:
-			has_neighbor = true
+			has_support = true
 			break
-	if not has_neighbor:
+	if not has_support:
+		# 检查这格背后有没有墙 (wall_layer 跟 terrain 同父 World)
+		var w_node: Node = terrain.get_parent()
+		var wall_layer = w_node.get_node_or_null("WallLayer") if w_node != null else null
+		if wall_layer != null and wall_layer.get_cell_source_id(tile) != -1:
+			has_support = true
+	if not has_support:
 		return false
 	var def = ItemDB.get_def(slot.item_id)
-	terrain.set_cell(tile, def.placeable_tile_id, Vector2i.ZERO)
+	# (移除 terrain.set_cell; world._set_tile 内部刷视觉 + 邻居)
 	var world: Node = terrain.get_parent()
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, def.placeable_tile_id)

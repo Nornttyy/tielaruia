@@ -32,6 +32,7 @@ const SPAWN_RANGE_MIN := 12  # tiles
 const SPAWN_RANGE_MAX := 22
 
 const TILE_SIZE := 16
+const WALL_HIDE_TOP_TILES := 3  # 每列顶部前 3 个墙不渲染 (浅层挖出来看不到背景墙)
 
 const MINIMAP_VIEW_TILES_X := 18  # 玩家屏幕能看到的横向 tile (略大于实际视野)
 const MINIMAP_VIEW_TILES_Y := 14  # 纵向
@@ -195,11 +196,13 @@ func _on_chunk_loaded(c: Chunk) -> void:
 	const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 	# 把 chunk 数据写到 TileMapLayer (前景方块 + 背景墙)
 	# 能 autotile 的方块用 Autotile.refresh_tile 按邻居 mask 选 atlas_coord
+	# 墙: 每列顶部前 N 行不渲染 (玩家挖在浅层时看不到墙, 跟矿洞远景一致)
 	var chunk_start: int = c.chunk_x * ChunkConstants.CHUNK_WIDTH
 	for lx in c.tiles.size():
 		var world_x: int = chunk_start + lx
 		var col: Array = c.tiles[lx]
 		var wall_col: Array = c.walls[lx]
+		var walls_skipped: int = 0
 		for y in col.size():
 			var tid: int = col[y]
 			if tid != Tiles.AIR:
@@ -211,6 +214,10 @@ func _on_chunk_loaded(c: Chunk) -> void:
 					terrain_layer.set_cell(pos, tid, Vector2i.ZERO)
 			var wid: int = wall_col[y]
 			if wid != Tiles.AIR:
+				# 顶部前 N 行墙跳过渲染 (data 保留, scenic_director 仍能用 walls 找 surf)
+				if walls_skipped < WALL_HIDE_TOP_TILES:
+					walls_skipped += 1
+					continue
 				var wpos := Vector2i(world_x, y)
 				if EdgeTemplates.FAMILY_OF.has(wid):
 					var wq := Autotile.make_wall_query(wid, chunk_manager)
@@ -426,15 +433,33 @@ func get_crack_overlay() -> Node:
 
 
 func _set_tile(x: int, y: int, tile_id: int) -> void:
+	const Autotile = preload("res://scripts/world/autotile.gd")
+	const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
 		return
 	var old_tid: int = chunk_manager.get_tile(x, y)
 	chunk_manager.set_tile(x, y, tile_id)
+	var pos := Vector2i(x, y)
 	# 同步 TileMapLayer (chunk_manager 数据已写, 但视觉需另外刷)
 	if tile_id == Tiles.AIR:
-		terrain_layer.set_cell(Vector2i(x, y), -1)
+		terrain_layer.set_cell(pos, -1)
+	elif EdgeTemplates.FAMILY_OF.has(tile_id):
+		var q := Autotile.make_terrain_query(tile_id, chunk_manager)
+		Autotile.refresh_tile(terrain_layer, pos, tile_id, q)
 	else:
-		terrain_layer.set_cell(Vector2i(x, y), tile_id, Vector2i.ZERO)
+		terrain_layer.set_cell(pos, tile_id, Vector2i.ZERO)
+	# 重算 8 邻居 (它们 mask 变了)
+	for dy in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+			var npos := pos + Vector2i(dx, dy)
+			var nsid: int = terrain_layer.get_cell_source_id(npos)
+			if nsid == -1:
+				continue
+			if EdgeTemplates.FAMILY_OF.has(nsid):
+				var nq := Autotile.make_terrain_query(nsid, chunk_manager)
+				Autotile.refresh_tile(terrain_layer, npos, nsid, nq)
 	SkyLightGrid.invalidate_column(x)
 	# 火把光源生命周期: 先 remove 旧, 再 place 新
 	world_lighting.on_tile_removed(x, y, old_tid)
