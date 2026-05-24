@@ -76,14 +76,16 @@ func _ready() -> void:
 	minimap_data.name = "MinimapData"
 	add_child(minimap_data)
 	# 天气 + 雨视觉
-	weather = WeatherClass.new()
-	weather.name = "Weather"
-	add_child(weather)
+	# 注意顺序: rain_layer 先 add_child + 信号先 connect, 再 add_child(weather)
+	# 不然 weather._ready 触发 weather_changed 时 rain_layer 还没接信号, 初始状态丢失
 	rain_layer = RainLayerClass.new()
 	rain_layer.name = "RainLayer"
 	add_child(rain_layer)
+	weather = WeatherClass.new()
+	weather.name = "Weather"
 	weather.weather_changed.connect(_on_weather_changed)
 	weather.lightning_flash.connect(_on_lightning_flash)
+	add_child(weather)
 	# 夜晚气氛: 萤火虫 / 流星 / 树下飘叶子
 	fireflies = FirefliesClass.new()
 	fireflies.name = "Fireflies"
