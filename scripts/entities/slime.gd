@@ -41,6 +41,15 @@ func _ready() -> void:
 	# 接 animation_finished, 落地后切回 idle
 	sprite.animation_finished.connect(_on_anim_done)
 	add_to_group("slimes")
+	# slime 不跟玩家物理碰撞 (玩家能穿过 slime, 像 Terraria/MC).
+	# 接触伤害靠 _check_player_contact 距离判断, 不依赖物理碰撞.
+	call_deferred("_add_player_exception")
+
+
+func _add_player_exception() -> void:
+	var player = get_tree().get_first_node_in_group("player")
+	if player != null:
+		add_collision_exception_with(player)
 
 
 func _physics_process(delta: float) -> void:
