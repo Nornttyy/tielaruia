@@ -100,43 +100,24 @@ const OASIS_WIDTH_MIN := 4            # 绿洲宽 (3→4 大点)
 const OASIS_WIDTH_MAX := 8            # 绿洲宽 (6→8 大点)
 const OASIS_DEPTH := 3                # 绿洲深 (2→3)
 
-# 树种枚举 (内部 idx)
+# 树种枚举 (内部 idx) — 现在只剩 OAK (T-tree 重做)
 const _SPECIES_OAK := 0
-const _SPECIES_PINE := 1
-const _SPECIES_AUTUMN := 2
 
 # 每个 canopy_kind 向上伸的最大格数 (用于检查是否出界)
+# 全部改成"云朵分层"形状: 多个 3 宽 puff 上下错位叠加
 const _CANOPY_REACH := {
-	"oak_small": 1,
-	"oak_med": 1,
-	"oak_large": 2,
-	"oak_tall": 3,
-	"pine_small": 2,
-	"pine_med": 3,
-	"pine_large": 4,
-	"pine_huge": 5,
-	"autumn_small": 1,
-	"autumn_med": 1,
-	"autumn_large": 2,
-	"autumn_huge": 1,
+	"oak_cloud_small": 2,    # 2 层云朵 puff
+	"oak_cloud_med": 3,      # 3 层蘑菇头
+	"oak_cloud_large": 4,    # 4 层大云朵
+	"oak_cloud_huge": 5,     # 5 层超大云朵
 }
 
-# 树种参数。canopies 列表中重复表示该尺寸更常见 (med x2 = 40% 概率)
+# 树种参数. 只剩 OAK; canopies 重复表示该尺寸更常见
 const _SPECIES_PARAMS := {
 	_SPECIES_OAK: {
-		"trunk_range": [3, 7],
+		"trunk_range": [4, 8],   # 加高 (4-8 让分支有空间)
 		"leaves": Tiles.LEAVES,
-		"canopies": ["oak_small", "oak_med", "oak_med", "oak_large", "oak_tall"],
-	},
-	_SPECIES_PINE: {
-		"trunk_range": [4, 9],
-		"leaves": Tiles.LEAVES_PINE,
-		"canopies": ["pine_small", "pine_med", "pine_med", "pine_large", "pine_huge"],
-	},
-	_SPECIES_AUTUMN: {
-		"trunk_range": [2, 6],
-		"leaves": Tiles.LEAVES_AUTUMN,
-		"canopies": ["autumn_small", "autumn_med", "autumn_med", "autumn_large", "autumn_huge"],
+		"canopies": ["oak_cloud_small", "oak_cloud_med", "oak_cloud_med", "oak_cloud_large", "oak_cloud_huge"],
 	},
 }
 
@@ -828,8 +809,8 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 			continue
 		if rng.randf() > TREE_CHANCE:
 			continue
-		var species: int = rng.randi_range(_SPECIES_OAK, _SPECIES_AUTUMN)
-		var params: Dictionary = _SPECIES_PARAMS[species]
+		# 只剩 OAK
+		var params: Dictionary = _SPECIES_PARAMS[_SPECIES_OAK]
 		var trunk_range: Array = params["trunk_range"]
 		var leaves_tile: int = params["leaves"]
 		var canopies: Array = params["canopies"]
@@ -847,12 +828,57 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 				break
 		if not all_clear:
 			continue
-		# 树干
-		for ty in range(trunk_top, surf):
+		# 树干: trunk_top 用 LOG_TOP (顶帽), 中间到底用 LOG
+		c.tiles[lx][trunk_top] = Tiles.LOG_TOP
+		for ty in range(trunk_top + 1, surf):
 			c.tiles[lx][ty] = Tiles.LOG
+		# 树根: 左右侧紧贴树干底, 替换 AIR. 不出 chunk
+		var root_y: int = surf - 1
+		if root_y >= 0:
+			if lx - 1 >= 0 and c.tiles[lx - 1][root_y] == Tiles.AIR:
+				c.tiles[lx - 1][root_y] = Tiles.LOG_ROOT_L
+			if lx + 1 < c.tiles.size() and c.tiles[lx + 1][root_y] == Tiles.AIR:
+				c.tiles[lx + 1][root_y] = Tiles.LOG_ROOT_R
+		# 侧枝: 在树干中段随机放 1-3 个 (避开树底 1 格 + 树顶)
+		_place_branches(c, lx, trunk_top, surf, rng)
 		# 树冠: 越出 chunk 的部分裁掉
 		_place_canopy_chunk(c, world_x, trunk_top, canopy_kind, leaves_tile, chunk_start, chunk_end, height)
 		last_tree_x = world_x
+
+
+# 在树干中段 (trunk_top+1 .. surf-2) 随机放 1-3 个侧枝.
+# 不和 ROOT_L/R 在同一 Y 冲突 (root 在 surf-1, 我们从 surf-2 开始往上).
+static func _place_branches(c: Chunk, lx: int, trunk_top: int, surf: int, rng: RandomNumberGenerator) -> void:
+	var min_y: int = trunk_top + 1       # 树顶下面一格起
+	var max_y: int = surf - 2             # 树底上面一格止 (留 root 空间)
+	if max_y < min_y:
+		return
+	var candidates: Array = []
+	for ty in range(min_y, max_y + 1):
+		candidates.append(ty)
+	candidates.shuffle()
+	var n_branches: int = rng.randi_range(1, mini(3, candidates.size()))
+	var placed_ys: Array = []
+	for i in n_branches:
+		var ty: int = candidates[i]
+		# 同 y 不放两根; 相邻 y 也避免 (太密)
+		var too_close: bool = false
+		for py in placed_ys:
+			if abs(py - ty) < 2:
+				too_close = true
+				break
+		if too_close:
+			continue
+		# 决定左/右. 50/50, 越界自动跳
+		var left: bool = rng.randi() % 2 == 0
+		if left:
+			if lx - 1 >= 0 and c.tiles[lx - 1][ty] == Tiles.AIR:
+				c.tiles[lx - 1][ty] = Tiles.BRANCH_L
+				placed_ys.append(ty)
+		else:
+			if lx + 1 < c.tiles.size() and c.tiles[lx + 1][ty] == Tiles.AIR:
+				c.tiles[lx + 1][ty] = Tiles.BRANCH_R
+				placed_ys.append(ty)
 
 
 # 画树冠到 chunk 内 (out-of-chunk 的部分丢弃)
@@ -934,88 +960,48 @@ static func _find_spawn_x(tiles: Array, heights: PackedInt32Array, center_x: int
 
 
 static func _canopy_offsets(kind: String) -> Array:
+	# 云朵分层蘑菇头 (Terraria 风): 多个 puff 上下错位叠加. 横向 ±2 内, 纵向 -REACH 到 +1
 	var offs: Array = []
 	match kind:
-		# === OAK 橡木 ===
-		"oak_small":
-			# 5 格小冠: 上排 3 + 两侧 2
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -1))
-			offs.append(Vector2i(-1, 0)); offs.append(Vector2i(1, 0))
-		"oak_med":
-			# 经典 3x3
-			for dy in range(-1, 2):
-				for dx in range(-1, 2):
-					offs.append(Vector2i(dx, dy))
-		"oak_large":
-			# 5 宽圆冠 (rhombus)
+		"oak_cloud_small":
+			# 2 层小蘑菇 (≈11 tile): 上层 3 宽 puff, 下层 5 宽
+			# 上 puff (y=-2): 3 宽
 			for dx in range(-1, 2): offs.append(Vector2i(dx, -2))
+			# 中肩 (y=-1): 5 宽
 			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
+			# 底层 (y=0): 5 宽中间留出树干位
 			for dx in range(-2, 3):
 				if dx == 0: continue
 				offs.append(Vector2i(dx, 0))
-			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))
-		"oak_tall":
-			# 3 宽 x 4 高
-			offs.append(Vector2i(0, -3))
-			for dy in range(-2, 2):
-				for dx in range(-1, 2):
-					offs.append(Vector2i(dx, dy))
-		# === PINE 松树 (始终锥形) ===
-		"pine_small":
-			# 顶尖 + 3 宽 x 2
-			offs.append(Vector2i(0, -2))
-			for dy in range(-1, 2):
-				for dx in range(-1, 2):
-					offs.append(Vector2i(dx, dy))
-		"pine_med":
-			# 顶尖 + 3 宽 x 3
-			offs.append(Vector2i(0, -3))
-			for dy in range(-2, 2):
-				for dx in range(-1, 2):
-					offs.append(Vector2i(dx, dy))
-		"pine_large":
-			# 双层锥
-			offs.append(Vector2i(0, -4))
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -3))
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -2))
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
+		"oak_cloud_med":
+			# 3 层中蘑菇头 (≈19 tile): puff 顶 + 肩 + 主云朵 + 底沿
+			offs.append(Vector2i(0, -3))                       # 顶 puff 中
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -2))   # 上 puff 3
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))   # 中云朵 5
 			for dx in range(-2, 3):
 				if dx == 0: continue
-				offs.append(Vector2i(dx, 0))
-			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))
-		"pine_huge":
-			# 5 层超高锥
-			offs.append(Vector2i(0, -5))
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -4))
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -3))
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -2))
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
+				offs.append(Vector2i(dx, 0))                       # 底沿 4 (留树干位)
+			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))   # 底翼 2
+		"oak_cloud_large":
+			# 4 层大云朵 (≈27 tile): 顶尖 + 上肩 + 中宽 + 主云 + 底沿
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -4))     # 顶 puff 3
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -3))     # 上肩 5
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -2))     # 中宽 5
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))     # 主云 5
 			for dx in range(-2, 3):
 				if dx == 0: continue
-				offs.append(Vector2i(dx, 0))
-			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))
-		# === AUTUMN 秋树 (始终偏宽扁) ===
-		"autumn_small":
-			# 3x3 (跟 oak_med 一样但叶色不同)
-			for dy in range(-1, 2):
-				for dx in range(-1, 2):
-					offs.append(Vector2i(dx, dy))
-		"autumn_med":
-			# 5 宽 x 3 高菱形
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -1))
-			for dx in range(-2, 3): offs.append(Vector2i(dx, 0))
-			for dx in range(-1, 2): offs.append(Vector2i(dx, 1))
-		"autumn_large":
-			# 5 宽 x 4 高
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -2))
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
+				offs.append(Vector2i(dx, 0))                            # 底沿 4
+			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))   # 底翼 2
+		"oak_cloud_huge":
+			# 5 层超大云朵 (≈38 tile): 三个 puff 在顶 + 主厚云 + 底沿
+			offs.append(Vector2i(0, -5))                                # 单顶尖
+			for dx in range(-1, 2): offs.append(Vector2i(dx, -4))       # 顶 puff 3
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -3))       # 上肩 5
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -2))       # 中宽 5
+			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))       # 主云 5
 			for dx in range(-2, 3):
 				if dx == 0: continue
-				offs.append(Vector2i(dx, 0))
-			for dx in range(-1, 2): offs.append(Vector2i(dx, 1))
-		"autumn_huge":
-			# 7 宽 x 3 高扁阔伞冠
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
-			for dx in range(-3, 4): offs.append(Vector2i(dx, 0))
-			for dx in range(-2, 3): offs.append(Vector2i(dx, 1))
+				offs.append(Vector2i(dx, 0))                              # 底沿 4
+			offs.append(Vector2i(-2, 1)); offs.append(Vector2i(-1, 1))   # 底左翼
+			offs.append(Vector2i(1, 1)); offs.append(Vector2i(2, 1))     # 底右翼
 	return offs

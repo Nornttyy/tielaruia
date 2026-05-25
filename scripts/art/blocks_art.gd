@@ -38,6 +38,11 @@ const GOLD_ORE := 24        # 金矿 (中深, 暖金黄)
 const DIAMOND_ORE := 25     # 钻石矿 (深层, 青蓝发光)
 const HELL_CRYSTAL := 26    # 地狱晶体 (接近基岩, 烈火红)
 const WATER := 28           # 水
+const LOG_TOP := 29         # 树干顶帽 (接 canopy)
+const LOG_ROOT_L := 30      # 树根 左
+const LOG_ROOT_R := 31      # 树根 右
+const BRANCH_L := 32        # 侧枝 向左 (带末端小叶簇)
+const BRANCH_R := 33        # 侧枝 向右
 
 # --- 调色板 (每方块独立) ---
 
@@ -488,6 +493,124 @@ const _SAND := [
 	"Ybobyyykyybobyko",
 	"yYyyyYyyyYyyyYyy",
 ]
+
+# 树枝 / 树根 调色板 (混 log + leaves 用)
+const _P_BRANCH := {
+	"b": Color8(124, 86, 64),    # log 基
+	"B": Color8(85, 53, 41),     # log 深
+	"l": Color8(163, 133, 115),  # log 高光
+	"r": Color8(108, 70, 54),    # log 中调
+	"g": Color8(125, 173, 92),   # 叶绿
+	"L": Color8(86, 129, 74),    # 叶阴
+	"h": Color8(164, 197, 122),  # 叶高光
+	"d": Color8(58, 89, 56),     # 叶深
+}
+
+
+# 树干顶帽: 像 LOG 但顶上多一条暗 "圆环 cap" 让树干顶部不那么生硬
+const _LOG_TOP := [
+	"bBBBBBBBBBBBBBBB",
+	"BBlrBBlbBBblrBBb",
+	"bBblbBblbBblbBbl",
+	"brblbBplbBblbBol",
+	"bBblbBblbBblbBbl",
+	"bBblbRRlbBblbBbl",
+	"bBpbBRRBbBblbBbl",
+	"bBblbrblbBblbBbl",
+	"brblbBblpBblrBbl",
+	"bBblbBblbBblbBbl",
+	"bBblbBblbBplbRRl",
+	"bBblbBblbBblbRRl",
+	"bBblbBblobblbrbl",
+	"brblbBplbBblbBbl",
+	"bBblbBblbBblbBpl",
+	"bbBbpBbpBbBbpBbB",
+]
+
+
+# 树根 左侧: 放在树干左下, 从右上 (连接树干) 向左下扩散
+const _LOG_ROOT_L := [
+	"................",
+	"................",
+	"................",
+	"................",
+	".............bBb",
+	"............bBbl",
+	"...........bBblb",
+	"..........bBblbB",
+	".........bBblbBb",
+	"........bBblbBbb",
+	".......bBblbBblb",
+	"......bBblbBblbb",
+	".....bBblbBblbBb",
+	"....bBblbBblbBbl",
+	"...bBplbBplbBplb",
+	"..bBblbBblbBblbB",
+]
+
+
+# 树根 右侧: 镜像
+const _LOG_ROOT_R := [
+	"................",
+	"................",
+	"................",
+	"................",
+	"bBb.............",
+	"lbBb............",
+	"blbBb...........",
+	"BblbBb..........",
+	"bBblbBb.........",
+	"bbBblbBb........",
+	"blbBblbBb.......",
+	"bblbBblbBb......",
+	"bBblbBblbBb.....",
+	"lbBblbBblbBb....",
+	"blpBblpBblpBb...",
+	"BblbBblbBblbBb..",
+]
+
+
+# 左侧枝: 从右 (贴树干) 向左伸出, 末端带小叶簇
+const _BRANCH_L := [
+	"................",
+	"................",
+	"................",
+	"............bBb.",
+	"...........bBblb",
+	"....dhd.bBblbBbb",
+	"...hLLLhbBblbBbb",
+	"..hgLLLhbbBlbBbb",
+	"..hgLLLhdbBlbBbb",
+	"...hdgLhbbBlbBbb",
+	"....hdhbbBblbBbb",
+	".....hbBblbBblbb",
+	"......bBblbBblbB",
+	"................",
+	"................",
+	"................",
+]
+
+
+# 右侧枝: 镜像
+const _BRANCH_R := [
+	"................",
+	"................",
+	"................",
+	".bBb............",
+	"blbBb...........",
+	"bbBblbBb.dhd....",
+	"bbBblbBbhLLLh...",
+	"bbBblbBbhLLLgh..",
+	"bbBlbBbdhLLLgh..",
+	"bbBlbBbbhLgdh...",
+	"bbBlbBbbhdh.....",
+	"bblbBblbBbh.....",
+	"BblbBblbBb......",
+	"................",
+	"................",
+	"................",
+]
+
 
 # 原木：暖竖纹树皮 (4 道凹沟 B + 凸条 l) + 2 个木结 (RR 带 B 框) + 中树皮 r + 樱木暖橙 o 微调
 const _LOG := [
@@ -1084,6 +1207,11 @@ const _PATTERN_MAP := {
 	DIAMOND_ORE: [_DIAMOND_ORE, _P_DIAMOND_ORE],
 	HELL_CRYSTAL: [_HELL_CRYSTAL, _P_HELL_CRYSTAL],
 	WATER: [_WATER, _P_WATER],
+	LOG_TOP: [_LOG_TOP, _P_LOG],
+	LOG_ROOT_L: [_LOG_ROOT_L, _P_BRANCH],
+	LOG_ROOT_R: [_LOG_ROOT_R, _P_BRANCH],
+	BRANCH_L: [_BRANCH_L, _P_BRANCH],
+	BRANCH_R: [_BRANCH_R, _P_BRANCH],
 }
 
 

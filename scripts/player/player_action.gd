@@ -18,6 +18,21 @@ const _HARDNESS := {
 	Tiles.DOOR: 0.5,
 	Tiles.LOG: 0.6,
 	Tiles.STONE: 1.2,
+	Tiles.LOG_TOP: 0.6,
+	Tiles.LOG_ROOT_L: 0.4,
+	Tiles.LOG_ROOT_R: 0.4,
+	Tiles.BRANCH_L: 0.4,
+	Tiles.BRANCH_R: 0.4,
+}
+
+# 树的所有 tile 类型 (用于级联砍树)
+const _TREE_PARTS := {
+	Tiles.LOG: true,
+	Tiles.LOG_TOP: true,
+	Tiles.LOG_ROOT_L: true,
+	Tiles.LOG_ROOT_R: true,
+	Tiles.BRANCH_L: true,
+	Tiles.BRANCH_R: true,
 }
 
 # 测试注入
@@ -209,18 +224,83 @@ func _crack_overlay() -> Node:
 
 
 func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapLayer) -> void:
-	# (移除 terrain.set_cell(tile, -1); world._set_tile 内部已清并刷邻居)
 	var world: Node = terrain.get_parent()
+	# 砍 LOG 时若是树底 (下方是地面而不是树) → 整棵爆掉
+	if tid == Tiles.LOG and _is_tree_base(world, tile.x, tile.y):
+		_cascade_chop_tree(world, tile, tool_kind)
+		return
+	# 普通破: 单格
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, Tiles.AIR)
 	SkyLightGrid.invalidate_column(tile.x)
-	# P1.5 hook: 块破碎粒子
 	Effects.spawn_block_break(tile, tid)
 	SfxBank.play("break", 0.15)
 	var drops: Dictionary = Tiles.drops_for(tid, tool_kind)
 	for item_id in drops:
 		for _i in drops[item_id]:
 			_spawn_drop(item_id, tile)
+
+
+# 是树底 = 下面那格不是空气/树/叶子, 而是 grass/dirt/sand 等
+func _is_tree_base(world: Node, x: int, y: int) -> bool:
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return false
+	var below: int = cm.get_tile(x, y + 1)
+	if below == Tiles.AIR or below == Tiles.LEAVES:
+		return false
+	if _TREE_PARTS.has(below):
+		return false
+	return true
+
+
+# 从树底沿树干向上集齐所有 LOG/LOG_TOP/BRANCH/ROOT 和上方的叶子, 一并破掉 + 集中掉物
+func _cascade_chop_tree(world: Node, base: Vector2i, tool_kind: String) -> void:
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return
+	# 沿 x 列向上走树干 (LOG → LOG_TOP)
+	var trunk_top_y: int = base.y
+	var ty: int = base.y
+	while ty >= 0:
+		var t: int = cm.get_tile(base.x, ty)
+		if t == Tiles.LOG:
+			trunk_top_y = ty
+			ty -= 1
+			continue
+		if t == Tiles.LOG_TOP:
+			trunk_top_y = ty
+			break
+		break
+	# 收集要破的 tile: trunk + ROOT/BRANCH 在每个 y 的左右 + canopy 叶子
+	var to_break: Array = []
+	for cy in range(trunk_top_y, base.y + 1):
+		var t: int = cm.get_tile(base.x, cy)
+		if _TREE_PARTS.has(t):
+			to_break.append([Vector2i(base.x, cy), t])
+		for dx in [-1, 1]:
+			var ts: int = cm.get_tile(base.x + dx, cy)
+			if _TREE_PARTS.has(ts):
+				to_break.append([Vector2i(base.x + dx, cy), ts])
+	# canopy 叶子: LOG_TOP 上方 ±3 x, [trunk_top - 6, trunk_top + 1] y 内的 LEAVES
+	for cy in range(trunk_top_y - 6, trunk_top_y + 2):
+		for dx in range(-3, 4):
+			var tx: int = base.x + dx
+			var t: int = cm.get_tile(tx, cy)
+			if t == Tiles.LEAVES:
+				to_break.append([Vector2i(tx, cy), t])
+	# 破并掉物
+	for entry in to_break:
+		var p: Vector2i = entry[0]
+		var t: int = entry[1]
+		world._set_tile(p.x, p.y, Tiles.AIR)
+		Effects.spawn_block_break(p, t)
+		var drops: Dictionary = Tiles.drops_for(t, tool_kind)
+		for item_id in drops:
+			for _i in drops[item_id]:
+				_spawn_drop(item_id, p)
+	SkyLightGrid.invalidate_column(base.x)
+	SfxBank.play("break", 0.25)
 
 
 func _spawn_drop(item_id: String, tile: Vector2i) -> void:

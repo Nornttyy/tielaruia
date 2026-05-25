@@ -32,6 +32,11 @@ const DIAMOND_ORE := 25     # 钻石矿: 深 (iron 镐才挖)
 const HELL_CRYSTAL := 26    # 地狱晶体: 接近基岩 (iron 镐才挖)
 const CACTUS_BODY := 27     # 仙人掌身体段 (堆叠时非顶端用, 无 top outline 衔接顶端 CACTUS)
 const WATER := 28           # 水 (非实心, 玩家穿过, 视觉半透明蓝)
+const LOG_TOP := 29         # 树干顶帽 (canopy 接头)
+const LOG_ROOT_L := 30      # 树根 左侧
+const LOG_ROOT_R := 31      # 树根 右侧
+const BRANCH_L := 32        # 树干侧枝 向左伸
+const BRANCH_R := 33        # 树干侧枝 向右伸
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -193,6 +198,32 @@ const _PROPS := {
 		"solid": false, "mineable": false,
 		"tool_tiers": {},
 		"drops": [],
+	},
+	LOG_TOP: {
+		# 树干顶帽: 行为同 LOG, 砍了掉 log
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["log", 100, 1, 1]],
+	},
+	LOG_ROOT_L: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["log", 100, 1, 1]],
+	},
+	LOG_ROOT_R: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["log", 100, 1, 1]],
+	},
+	BRANCH_L: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["log", 100, 1, 1]],
+	},
+	BRANCH_R: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["log", 100, 1, 1]],
 	},
 }
 
