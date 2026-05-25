@@ -280,13 +280,14 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 露天矿洞: 漏斗坑 (pit) 或 窄缝 (crack) 直通地表, 玩家能跳下去
 	_carve_open_pits_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
-	# 树: 树根只在本 chunk [chunk_start, chunk_end) 内决定 — canopy 越界部分裁掉
-	# 邻 chunk 自己会有它的树, 不会出现"漂浮叶"。
-	# (在 pits 之后: pit 把 GRASS 挖空了 → 树就不会长在 pit 边缘)
-	_place_trees_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
-
-	# 水: 矿洞底部洼地填水 + 沙漠绿洲. 在墙之前, 这样墙会渲染在水后面.
+	# 水: 矿洞洼地 + 沙漠绿洲 + 地下海洋. 先于树, 这样:
+	# - 树 _place_trees_chunk 检测 surf 是 WATER 时自动跳过 (既不是 GRASS 也不是 SAND)
+	# - 仙人掌不会长在绿洲水里
 	_fill_water_pools_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+
+	# 树: 树根只在本 chunk [chunk_start, chunk_end) 内决定 — canopy 越界部分裁掉.
+	# 在 water 之后: 绿洲水替换了 SAND 地表, 树/仙人掌不会长在水上.
+	_place_trees_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
 	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
 	_fill_walls_chunk(c, chunk_heights, chunk_width, height)
@@ -359,7 +360,7 @@ static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 			if col[y] == Tiles.AIR:
 				col[y] = Tiles.WATER
 
-	# === 2) 沙漠绿洲: 沙地表稀疏长大水池 ===
+	# === 2) 沙漠绿洲: 沙地表稀疏长碗状水池 (中心深, 边缘浅, 边带锯齿) ===
 	for lx in range(chunk_width):
 		var world_x: int = chunk_start_x + lx
 		var surf: int = chunk_heights[world_x]
@@ -377,7 +378,15 @@ static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 				continue
 			if c.tiles[tx][surf] != Tiles.SAND:
 				continue
-			for dy in range(OASIS_DEPTH):
+			# 碗状: 中心 (dx=0) 最深 OASIS_DEPTH, 边缘渐浅到 1 格
+			var dx_abs: int = absi(dx)
+			var ratio: float = 1.0 - float(dx_abs) / float(half + 1)
+			var col_depth: int = int(float(OASIS_DEPTH) * (0.3 + 0.7 * ratio))
+			# 锯齿: ±1 随机扰动让边缘不齐
+			col_depth += (_hash3(world_seed, world_x + dx, 9003) & 3) - 1   # -1 .. +2
+			if col_depth < 1:
+				continue   # 这列没水 (边缘外侧)
+			for dy in range(col_depth):
 				var ty: int = surf + dy
 				if ty < height - BEDROCK_ROWS:
 					c.tiles[tx][ty] = Tiles.WATER
