@@ -851,10 +851,9 @@ const _HELL_CRYSTAL := [
 ]
 
 
-# 水: 几乎纯色 (16 行只 4-5 个微亮点), 邻 tile 拼起来视觉无缝.
-# 边缘行/列 100% 'a' → 跟邻 tile 必无缝.
-# 中间稀疏 b/c 看着像水下闪动. 差别小到远看融成一片.
-const _WATER := [
+# 水: 4 帧动画, 高光位置渐移做"水波闪动"感. 邻 tile 拼起来视觉无缝.
+# 边缘行/列 100% 'a' → 跟邻 tile 必无缝. 帧 0-3 内部高光位置依次右移.
+const _WATER := [    # 帧 0 (做静态 fallback 用, 也作动画首帧)
 	"aaaaaaaaaaaaaaaa",
 	"aaaaaaaaaaaaaaaa",
 	"aaaaabaaaaaaaaaa",
@@ -871,6 +870,66 @@ const _WATER := [
 	"aaaaaaaaaabaaaaa",
 	"aaaaaaaaaaaaaaaa",
 	"aaaaaaaaaaaaaaaa",
+]
+
+# 帧 1: 高光右移 1 + 添 1 个新位置 (像水下闪光在游)
+const _WATER_F1 := [
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaabaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaca",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aabaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaacaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaabaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+]
+
+# 帧 2: 高光再右移 1 + 位置组合不同
+const _WATER_F2 := [
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaabaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaca",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaabaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaacaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaabaaa",
+	"aaaaaaaaaaaaaaaa",
+]
+
+# 帧 3: 完整移完一轮, 不同稀疏布局
+const _WATER_F3 := [
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaabaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaca",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaabaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaacaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaabaa",
 ]
 
 
@@ -1062,6 +1121,17 @@ static func get_texture(tile_id: int) -> ImageTexture:
 
 static func get_door_open_texture() -> ImageTexture:
 	return PixelArt.grid_to_texture(_DOOR_OPEN, _P_DOOR)
+
+
+# 水动画 atlas: 4 帧水平排列, 64×16. TileSetAtlasSource 用 set_animation_frames_count 自动循环.
+static func get_water_animated_atlas() -> ImageTexture:
+	var frames: Array = [_WATER, _WATER_F1, _WATER_F2, _WATER_F3]
+	var dst := Image.create(64, 16, false, Image.FORMAT_RGBA8)
+	dst.fill(Color(0, 0, 0, 0))
+	for i in range(4):
+		var frame_img: Image = PixelArt.grid_to_image(frames[i], _P_WATER)
+		dst.blit_rect(frame_img, Rect2i(0, 0, 16, 16), Vector2i(i * 16, 0))
+	return ImageTexture.create_from_image(dst)
 
 
 # 返回方块完整调色板 (含 _o/_e/_h/_H 边缘槽位).

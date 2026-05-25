@@ -56,5 +56,10 @@ static func build() -> TileSet:
 				props.set_collision_polygon_points(0, 0, PackedVector2Array([
 					Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8),
 				]))
+			# 水: 启用 4 帧动画 (atlas 64×16), TileMapLayer 自动循环
+			if tile_id == Tiles.WATER:
+				source.set_tile_animation_frames_count(Vector2i.ZERO, 4)
+				for f in range(4):
+					source.set_tile_animation_frame_duration(Vector2i.ZERO, f, 0.4)
 
 	return ts

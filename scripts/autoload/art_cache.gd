@@ -88,6 +88,10 @@ func _build_blocks() -> void:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
 			block_textures[tile_id] = BlocksArt.build_atlas(tile_id)
 			block_icons[tile_id] = _extract_interior_icon(block_textures[tile_id])
+		elif tile_id == BlocksArt.WATER:
+			# 水: 64×16 动画 atlas (4 帧). icon 用单帧.
+			block_textures[tile_id] = BlocksArt.get_water_animated_atlas()
+			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		else:
 			var single: ImageTexture = BlocksArt.get_texture(tile_id)
 			block_textures[tile_id] = single
