@@ -21,7 +21,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-      GODOT_VERSION: 4.3.0
+      GODOT_VERSION: "4.3"
       EXPORT_NAME: Web
     steps:
       - name: Checkout
