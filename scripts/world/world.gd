@@ -457,9 +457,31 @@ func _set_tile(x: int, y: int, tile_id: int) -> void:
 			if EdgeTemplates.FAMILY_OF.has(nsid):
 				var nq := Autotile.make_terrain_query(nsid, chunk_manager)
 				Autotile.refresh_tile(terrain_layer, npos, nsid, nq)
+	# 仙人掌连接: 调用方一律传 CACTUS, 但如果当前格上方已有仙人掌, 应是 BODY
+	# 反之如果当前格被挖掉 (变 AIR), 下面那个 BODY 应升级为 TOP
+	_fix_cactus_at(x, y)
+	_fix_cactus_at(x, y + 1)
 	SkyLightGrid.invalidate_column(x)
 	# 火把光源生命周期: 先 remove 旧, 再 place 新
 	world_lighting.on_tile_removed(x, y, old_tid)
 	world_lighting.on_tile_placed(x, y, tile_id)
 	# 黑暗层: tile 改了 → 局部重算光值 (±8 涵盖火把半径 6)
 	darkness_layer.recompute_around(x, y, 8)
+
+
+# 仙人掌连接: 单格修正 — 上方是仙人掌 → 当前应 = BODY (无头), 否则 = TOP (有头).
+# 调用在 _set_tile 末尾 + 对下面那格也调 (因为下面那格的 "上方" = 当前格变了).
+func _fix_cactus_at(x: int, y: int) -> void:
+	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
+		return
+	var tid: int = chunk_manager.get_tile(x, y)
+	if tid != Tiles.CACTUS and tid != Tiles.CACTUS_BODY:
+		return
+	var above: int = chunk_manager.get_tile(x, y - 1)
+	var is_top: bool = (above != Tiles.CACTUS and above != Tiles.CACTUS_BODY)
+	var want_tid: int = Tiles.CACTUS if is_top else Tiles.CACTUS_BODY
+	if want_tid == tid:
+		return
+	# 切换类型: 同步 chunk_manager + TileMapLayer (没 autotile family, 直接 set_cell)
+	chunk_manager.set_tile(x, y, want_tid)
+	terrain_layer.set_cell(Vector2i(x, y), want_tid, Vector2i.ZERO)
