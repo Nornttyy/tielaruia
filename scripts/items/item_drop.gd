@@ -66,6 +66,9 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if not _pickup_ready:
 		return
+	# 联机 client: 远程掉落物只看不能捡 (host 才是权威, client 捡会和主端不同步)
+	if has_meta("is_remote"):
+		return
 	if not body.has_node("PlayerInventory"):
 		return
 	var pi: Node = body.get_node("PlayerInventory")

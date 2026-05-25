@@ -198,6 +198,8 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 
 func _die() -> void:
 	_is_dying = true
+	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 	for entry in drop_table:
 		var item_id: String = entry[0]
 		var weight: int = entry[1]

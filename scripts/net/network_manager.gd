@@ -29,6 +29,7 @@ signal remote_time_weather_received(time_val: float, weather_state: String)  # h
 signal initial_state_received(chunk_deltas: Dictionary)  # host 进游戏后广播现状, client 应用 (Phase G)
 signal remote_entity_pos_received(ent_id: int, kind: String, x: float, y: float, hp: int)  # 实体位置 (Phase E)
 signal remote_entity_die_received(ent_id: int)  # 实体死亡 (Phase E)
+signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
 
 const POLL_INTERVAL := 0.1  # 每 0.1s 拉一次 status + messages
 const POS_SEND_INTERVAL := 0.1  # 玩家位置每 0.1s 发一次 (10Hz)
@@ -125,6 +126,13 @@ func _route_message(raw: String) -> void:
 		"ent_die":
 			var did: int = int(data.get("id", 0))
 			remote_entity_die_received.emit(did)
+		"drop_pos":
+			var did2: int = int(data.get("id", 0))
+			var iid: String = String(data.get("item", ""))
+			var cnt: int = int(data.get("n", 1))
+			var dx: float = float(data.get("x", 0.0))
+			var dy: float = float(data.get("y", 0.0))
+			remote_drop_pos_received.emit(did2, iid, cnt, dx, dy)
 		"pos":
 			var x: float = float(data.get("x", 0.0))
 			var y: float = float(data.get("y", 0.0))
@@ -202,6 +210,21 @@ func send_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: int = 0)
 # Phase E: host 广播实体死亡 (移除 id)
 func send_entity_die(ent_id: int) -> void:
 	send(JSON.stringify({"type": "ent_die", "id": ent_id}))
+
+
+# 掉落物同步: 跟 ent_pos 类似但带 item_id + count, kind 固定 drop
+func send_drop_pos(ent_id: int, item_id: String, count: int, x: float, y: float) -> void:
+	send(JSON.stringify({
+		"type": "drop_pos", "id": ent_id,
+		"item": item_id, "n": count,
+		"x": snappedf(x, 0.1), "y": snappedf(y, 0.1),
+	}))
+
+
+# 计算稳定的 entity_id 给某个 Node (host 内唯一就行).
+# get_instance_id() 是 int64, 取低 28 位避免 JSON 大数精度问题.
+static func entity_id_for(node: Object) -> int:
+	return int(node.get_instance_id()) & 0xFFFFFFF
 
 
 func send_tile_change(x: int, y: int, tile_id: int) -> void:

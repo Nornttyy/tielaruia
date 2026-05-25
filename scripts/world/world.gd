@@ -133,6 +133,8 @@ func _ready() -> void:
 			NetworkManager.remote_entity_pos_received.connect(_on_remote_entity_pos)
 		if not NetworkManager.remote_entity_die_received.is_connected(_on_remote_entity_die):
 			NetworkManager.remote_entity_die_received.connect(_on_remote_entity_die)
+		if not NetworkManager.remote_drop_pos_received.is_connected(_on_remote_drop_pos):
+			NetworkManager.remote_drop_pos_received.connect(_on_remote_drop_pos)
 		# host: 进 world 后立刻广播当前 chunk_deltas 给 client (Phase G)
 		if NetworkManager.is_host:
 			_mp_broadcast_initial_state.call_deferred()
@@ -200,7 +202,7 @@ func _on_remote_entity_die(ent_id: int) -> void:
 
 
 func _spawn_remote_entity(kind: String) -> Node:
-	# 用现成的 scene, 加入 entities_root, 但禁用 AI (slime 等会检测 _is_remote 跳过逻辑)
+	# 用现成的 scene, 加入 entities_root, 但禁用 AI (slime 等会检测 is_remote 跳过逻辑)
 	var scene: PackedScene = null
 	match kind:
 		"slime": scene = SlimeScene
@@ -208,6 +210,7 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"cow": scene = CowScene
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
+		"villager": scene = VillagerScene
 		_: return null
 	if scene == null:
 		return null
@@ -216,6 +219,23 @@ func _spawn_remote_entity(kind: String) -> Node:
 	ent.set_meta("is_remote", true)
 	entities_root.add_child(ent)
 	return ent
+
+
+# 掉落物同步: client 收到 drop_pos → 拿 id 找/建一个 ItemDrop
+func _on_remote_drop_pos(ent_id: int, item_id: String, count: int, x: float, y: float) -> void:
+	var ent: Node = _remote_entities.get(ent_id)
+	if ent == null:
+		# 第一次: 生成 ItemDropScene + 设 item_id/count
+		ent = ItemDropScene.instantiate()
+		if "item_id" in ent:
+			ent.item_id = item_id
+		if "count" in ent:
+			ent.count = count
+		ent.set_meta("is_remote", true)
+		entities_root.add_child(ent)
+		_remote_entities[ent_id] = ent
+	if ent is Node2D:
+		(ent as Node2D).global_position = Vector2(x, y)
 
 
 func _on_remote_tile(x: int, y: int, tile_id: int) -> void:
@@ -305,30 +325,38 @@ func _process(delta: float) -> void:
 
 
 func _mp_broadcast_entities() -> void:
-	# 给每个 slime/zombie/animal 一个稳定 id (用 get_instance_id), 广播位置.
-	# 实际游戏 ent_id 不需要是 instance_id, 但够用了 (host 范围内唯一).
-	for grp in ["slimes", "zombies", "animals"]:
+	# 怪物 / 动物 / 村民
+	for grp in ["slimes", "zombies", "animals", "villagers"]:
 		for ent in get_tree().get_nodes_in_group(grp):
 			if not (ent is Node2D):
 				continue
 			var n2d: Node2D = ent
 			var kind: String = "slime"
-			if grp == "zombies":
-				kind = "zombie"
-			elif grp == "animals":
-				# animal 分 cow/sheep/pig - 用 scene 文件名猜
-				var scene_path: String = n2d.scene_file_path if n2d.scene_file_path != null else ""
-				if "cow" in scene_path:
-					kind = "cow"
-				elif "sheep" in scene_path:
-					kind = "sheep"
-				elif "pig" in scene_path:
-					kind = "pig"
+			match grp:
+				"zombies": kind = "zombie"
+				"villagers": kind = "villager"
+				"animals":
+					var scene_path: String = n2d.scene_file_path if n2d.scene_file_path != null else ""
+					if "cow" in scene_path:
+						kind = "cow"
+					elif "sheep" in scene_path:
+						kind = "sheep"
+					elif "pig" in scene_path:
+						kind = "pig"
 			NetworkManager.send_entity_pos(
-				int(n2d.get_instance_id()) & 0xFFFFFFF,
+				NetworkManager.entity_id_for(n2d),
 				kind,
 				n2d.global_position.x, n2d.global_position.y, 0
 			)
+	# 掉落物: 走单独 drop_pos (带 item_id + count)
+	for drop in get_tree().get_nodes_in_group("item_drops"):
+		if not (drop is Node2D):
+			continue
+		var d: Node2D = drop
+		var did: int = NetworkManager.entity_id_for(d)
+		var item_id: String = String(d.get("item_id")) if "item_id" in d else ""
+		var count: int = int(d.get("count")) if "count" in d else 1
+		NetworkManager.send_drop_pos(did, item_id, count, d.global_position.x, d.global_position.y)
 
 
 func _mark_explored_around_player() -> void:

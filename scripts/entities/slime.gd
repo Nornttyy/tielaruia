@@ -199,6 +199,9 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 
 func _die() -> void:
 	_is_dying = true
+	# 联机: host 通知 client 这个实体死了 (client 端那个 slime 也会消失)
+	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 	# 掉 1-2 个 slime_jelly
 	var n := 1 + (randi() % 2)
 	for i in n:

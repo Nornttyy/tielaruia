@@ -123,6 +123,8 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 
 func _die() -> void:
 	_is_dying = true
+	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 	# 掉 1-3 个 bone
 	var n := 1 + (randi() % 3)
 	for _i in n:
