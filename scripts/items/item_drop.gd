@@ -32,6 +32,19 @@ func _ready() -> void:
 	get_tree().create_timer(PICKUP_DELAY).timeout.connect(_on_pickup_ready)
 	body_entered.connect(_on_body_entered)
 	add_to_group("item_drops")
+	# 联机 host: 离场时 (被捡 / lifetime 到期) 广播 ent_die, 让 client 端同步消失.
+	# 用 tree_exiting 信号 (queue_free 后 frame 末触发, instance_id 仍可用).
+	if not has_meta("is_remote") \
+			and NetworkManager != null \
+			and NetworkManager.connected() \
+			and NetworkManager.is_host:
+		tree_exiting.connect(_on_host_drop_exiting)
+
+
+# host 端: drop 消失时通知 client. (client 端的 is_remote drop 不连接此信号)
+func _on_host_drop_exiting() -> void:
+	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 
 
 func _on_pickup_ready() -> void:
@@ -44,6 +57,9 @@ func _on_pickup_ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# 联机 client 端的远程 drop: 位置由 host 直接 set, 自己不要跑物理 (否则跟同步信号打架抖)
+	if has_meta("is_remote"):
+		return
 	velocity.y = min(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
 	# 水平摩擦
 	velocity.x = move_toward(velocity.x, 0.0, FRICTION * delta)
