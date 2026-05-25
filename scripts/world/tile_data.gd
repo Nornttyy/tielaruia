@@ -37,6 +37,10 @@ const LOG_ROOT_L := 30      # 树根 左侧
 const LOG_ROOT_R := 31      # 树根 右侧
 const BRANCH_L := 32        # 树干侧枝 向左伸
 const BRANCH_R := 33        # 树干侧枝 向右伸
+const WATER_L1 := 34        # 1/4 水位 (流水 level 1)
+const WATER_L2 := 35        # 2/4 水位 (流水 level 2)
+const WATER_L3 := 36        # 3/4 水位 (流水 level 3)
+# WATER (=28) 表示满水 level 4
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -224,6 +228,19 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["log", 100, 1, 1]],
+	},
+	# 流水 3 个低水位 tile. 行为同 WATER: 不实心 + 不可挖
+	WATER_L1: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	WATER_L2: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	WATER_L3: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
 	},
 }
 

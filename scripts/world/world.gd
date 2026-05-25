@@ -4,6 +4,7 @@ extends Node2D
 
 const TileSetBuilder = preload("res://scripts/world/tileset_builder.gd")
 const ChunkManagerClass = preload("res://scripts/world/chunk_manager.gd")
+const WaterSimClass = preload("res://scripts/world/water_sim.gd")
 const MinimapDataClass = preload("res://scripts/world/minimap_data.gd")
 const WeatherClass = preload("res://scripts/world/weather.gd")
 const RainLayerClass = preload("res://scripts/fx/rain_layer.gd")
@@ -50,6 +51,7 @@ const MINIMAP_MARK_INTERVAL := 0.1  # 每 0.1s 标记一次玩家周围 (减少�
 
 var spawn_point: Vector2i
 var chunk_manager: ChunkManager
+var water_sim: Node
 var minimap_data: Node
 var _remote_player: Node = null   # 联机时另一个玩家的 sprite (Phase C)
 var _mp_time_sync_timer: float = 0.0   # host 广播时间+天气计时 (Phase F)
@@ -82,6 +84,11 @@ func _ready() -> void:
 	chunk_manager.setup(world_seed)
 	chunk_manager.chunk_loaded.connect(_on_chunk_loaded)
 	chunk_manager.chunk_unloaded.connect(_on_chunk_unloaded)
+	# 流水模拟: dirty 列表驱动, 接 chunk_manager + _set_tile
+	water_sim = WaterSimClass.new()
+	water_sim.name = "WaterSim"
+	water_sim.world = self
+	add_child(water_sim)
 	minimap_data = MinimapDataClass.new()
 	minimap_data.name = "MinimapData"
 	add_child(minimap_data)
@@ -183,10 +190,22 @@ func _apply_initial_state(deltas: Dictionary) -> void:
 var _remote_entities: Dictionary = {}
 
 
-func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, _hp: int) -> void:
-	var ent: Node = _remote_entities.get(ent_id)
+# 取字典里的 remote 实体, 自动清理 freed 引用 (queue_free 后 Node 引用不变 null,
+# 直接访问会报 "instance was previously freed" — 必须用 is_instance_valid)
+func _get_valid_remote(ent_id: int) -> Node:
+	var ent = _remote_entities.get(ent_id)
 	if ent == null:
-		# 第一次见这个实体: 生成视觉版本
+		return null
+	if not is_instance_valid(ent):
+		_remote_entities.erase(ent_id)
+		return null
+	return ent
+
+
+func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, _hp: int) -> void:
+	var ent: Node = _get_valid_remote(ent_id)
+	if ent == null:
+		# 第一次见这个实体 (或旧的已被释放): 生成视觉版本
 		ent = _spawn_remote_entity(kind)
 		if ent != null:
 			_remote_entities[ent_id] = ent
@@ -195,10 +214,10 @@ func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, _hp: i
 
 
 func _on_remote_entity_die(ent_id: int) -> void:
-	var ent: Node = _remote_entities.get(ent_id)
+	var ent: Node = _get_valid_remote(ent_id)
 	if ent != null:
 		ent.queue_free()
-		_remote_entities.erase(ent_id)
+	_remote_entities.erase(ent_id)
 
 
 func _spawn_remote_entity(kind: String) -> Node:
@@ -223,9 +242,9 @@ func _spawn_remote_entity(kind: String) -> Node:
 
 # 掉落物同步: client 收到 drop_pos → 拿 id 找/建一个 ItemDrop
 func _on_remote_drop_pos(ent_id: int, item_id: String, count: int, x: float, y: float) -> void:
-	var ent: Node = _remote_entities.get(ent_id)
+	var ent: Node = _get_valid_remote(ent_id)
 	if ent == null:
-		# 第一次: 生成 ItemDropScene + 设 item_id/count
+		# 第一次 (或旧引用已失效): 生成 ItemDropScene + 设 item_id/count
 		ent = ItemDropScene.instantiate()
 		if "item_id" in ent:
 			ent.item_id = item_id
@@ -678,6 +697,9 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false) -> void:
 	world_lighting.on_tile_placed(x, y, tile_id)
 	# 黑暗层: tile 改了 → 局部重算光值 (±8 涵盖火把半径 6)
 	darkness_layer.recompute_around(x, y, 8)
+	# 流水: 通知 water_sim, 让它评估 (x,y) 和 4 邻居是否要流
+	if water_sim != null:
+		water_sim.notify_tile_changed(x, y)
 
 
 # 仙人掌连接: 单格修正 — 上方是仙人掌 → 当前应 = BODY (无头), 否则 = TOP (有头).

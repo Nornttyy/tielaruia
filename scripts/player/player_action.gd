@@ -338,8 +338,11 @@ func try_place() -> bool:
 	var tile: Vector2i = aim_tile_coord()
 	if not in_reach(tile):
 		return false
-	# 目标必须为空气
-	if terrain.get_cell_source_id(tile) != -1:
+	# 目标必须为空气 (或水, 水可以被填掉 — 玩家用方块塞水)
+	var target_src: int = terrain.get_cell_source_id(tile)
+	var is_water: bool = target_src == Tiles.WATER or target_src == Tiles.WATER_L1 \
+			or target_src == Tiles.WATER_L2 or target_src == Tiles.WATER_L3
+	if target_src != -1 and not is_water:
 		return false
 	# 不与玩家碰撞框重叠（玩家占 2 tile 高：脚底 tile 和上方 tile）
 	var pt: Vector2i = player_tile()

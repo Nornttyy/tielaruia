@@ -37,12 +37,15 @@ const TIN_ORE := 23         # 锡矿 (浅层, 银白)
 const GOLD_ORE := 24        # 金矿 (中深, 暖金黄)
 const DIAMOND_ORE := 25     # 钻石矿 (深层, 青蓝发光)
 const HELL_CRYSTAL := 26    # 地狱晶体 (接近基岩, 烈火红)
-const WATER := 28           # 水
+const WATER := 28           # 水 (满水 level 4)
 const LOG_TOP := 29         # 树干顶帽 (接 canopy)
 const LOG_ROOT_L := 30      # 树根 左
 const LOG_ROOT_R := 31      # 树根 右
 const BRANCH_L := 32        # 侧枝 向左 (带末端小叶簇)
 const BRANCH_R := 33        # 侧枝 向右
+const WATER_L1 := 34        # 1/4 水位
+const WATER_L2 := 35        # 2/4 水位
+const WATER_L3 := 36        # 3/4 水位
 
 # --- 调色板 (每方块独立) ---
 
@@ -1212,6 +1215,10 @@ const _PATTERN_MAP := {
 	LOG_ROOT_R: [_LOG_ROOT_R, _P_BRANCH],
 	BRANCH_L: [_BRANCH_L, _P_BRANCH],
 	BRANCH_R: [_BRANCH_R, _P_BRANCH],
+	# 流水低水位 pattern 复用 _WATER + _P_WATER (icon 用; 真正贴图由 get_water_level_atlas 动画给)
+	WATER_L1: [_WATER, _P_WATER],
+	WATER_L2: [_WATER, _P_WATER],
+	WATER_L3: [_WATER, _P_WATER],
 }
 
 
@@ -1260,6 +1267,34 @@ static func get_water_animated_atlas() -> ImageTexture:
 		var frame_img: Image = PixelArt.grid_to_image(frames[i], _P_WATER)
 		dst.blit_rect(frame_img, Rect2i(0, 0, 16, 16), Vector2i(i * 16, 0))
 	return ImageTexture.create_from_image(dst)
+
+
+# 水位 (1/4, 2/4, 3/4) 动画 atlas: 同样 4 帧但顶部 (4-level)*4 行透明 (水位低).
+# level: 1 = 1/4 满 (顶 12 行透明), 2 = 1/2 满 (顶 8 行透明), 3 = 3/4 满 (顶 4 行透明)
+static func get_water_level_atlas(level: int) -> ImageTexture:
+	assert(level >= 1 and level <= 3, "level 必须 1-3")
+	var clip_rows: int = (4 - level) * 4  # 顶部清除多少行
+	var frames: Array = [_WATER, _WATER_F1, _WATER_F2, _WATER_F3]
+	var dst := Image.create(64, 16, false, Image.FORMAT_RGBA8)
+	var transparent := Color(0, 0, 0, 0)
+	dst.fill(transparent)
+	for i in range(4):
+		var clipped: Array = _clip_water_top(frames[i], clip_rows)
+		var frame_img: Image = PixelArt.grid_to_image(clipped, _P_WATER)
+		dst.blit_rect(frame_img, Rect2i(0, 0, 16, 16), Vector2i(i * 16, 0))
+	return ImageTexture.create_from_image(dst)
+
+
+# 把 pattern 顶部 clip_rows 行全替换成透明 (".") 模拟低水位
+static func _clip_water_top(pattern: Array, clip_rows: int) -> Array:
+	var out: Array = []
+	var blank := "................"
+	for y in range(16):
+		if y < clip_rows:
+			out.append(blank)
+		else:
+			out.append(pattern[y])
+	return out
 
 
 # 返回方块完整调色板 (含 _o/_e/_h/_H 边缘槽位).
