@@ -1,16 +1,39 @@
-# 存档管理 autoload。save()/load() 接口。
-# M1 范围: 玩家 + 背包 + 种子 + 出生点。terrain/entities 由 S2/S3 添加。
+# 存档管理 autoload. 多存档系统: user://saves/{world_name}.tres
+# 老 user://save.tres 兼容: 启动时自动迁移成 "默认存档".
 extends Node
 
 const SaveData = preload("res://scripts/save/save_data.gd")
-const SAVE_PATH := "user://save.tres"
+const SAVES_DIR := "user://saves/"
+const LEGACY_SAVE_PATH := "user://save.tres"
 
 signal save_completed
 signal load_completed(data: SaveData)
 
 
-# 从 main + world + player 收集状态, 写到 user://save.tres。
-# 返回 true 表示成功写盘。
+func _ready() -> void:
+	# 确保目录存在
+	if not DirAccess.dir_exists_absolute(SAVES_DIR):
+		DirAccess.make_dir_absolute(SAVES_DIR)
+	# 迁移老存档 (user://save.tres → user://saves/默认存档.tres)
+	_migrate_legacy_save()
+
+
+func _migrate_legacy_save() -> void:
+	if not FileAccess.file_exists(LEGACY_SAVE_PATH):
+		return
+	var legacy = ResourceLoader.load(LEGACY_SAVE_PATH)
+	if not legacy is SaveData:
+		return
+	# 老存档可能没 world_name, 给个默认
+	var name: String = legacy.world_name if (legacy.world_name != null and legacy.world_name != "") else "默认存档"
+	var new_path: String = SAVES_DIR + name + ".tres"
+	if not FileAccess.file_exists(new_path):
+		ResourceSaver.save(legacy, new_path)
+	# 不删除老文件 (保险, 用户重启游戏看不到老存档丢了)
+
+
+# 从 main + world + player 收集状态, 写到 user://saves/{world_name}.tres.
+# 返回 true 表示成功写盘.
 func save(main: Node) -> bool:
 	if main == null:
 		push_error("save: main 为 null")
@@ -36,7 +59,10 @@ func save(main: Node) -> bool:
 		if inv_node != null and inv_node.inventory != null:
 			data.inventory_slots = _serialize_inventory(inv_node.inventory.slots)
 			data.hotbar_selection = inv_node.hotbar_selected
-	var err: int = ResourceSaver.save(data, SAVE_PATH)
+	# 存档名: 用 world_name; 没有就 fallback
+	var save_name: String = data.world_name if (data.world_name != null and data.world_name != "") else "默认存档"
+	var path: String = SAVES_DIR + save_name + ".tres"
+	var err: int = ResourceSaver.save(data, path)
 	if err != OK:
 		push_error("save: ResourceSaver 失败 err=%d" % err)
 		return false
@@ -44,11 +70,38 @@ func save(main: Node) -> bool:
 	return true
 
 
-# 从 user://save.tres 读取 SaveData。无文件返回 null。
-func load_save() -> SaveData:
-	if not FileAccess.file_exists(SAVE_PATH):
+# 列出所有存档. 按文件修改时间排序 (最新的在前).
+func list_saves() -> Array:
+	var out: Array = []
+	if not DirAccess.dir_exists_absolute(SAVES_DIR):
+		return out
+	var dir := DirAccess.open(SAVES_DIR)
+	if dir == null:
+		return out
+	dir.list_dir_begin()
+	var file_name: String = dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".tres"):
+			var full_path: String = SAVES_DIR + file_name
+			var res = ResourceLoader.load(full_path)
+			if res is SaveData:
+				out.append({
+					"name": file_name.replace(".tres", ""),
+					"data": res,
+					"path": full_path,
+				})
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	# TODO 按时间排序 (FileAccess.get_modified_time 在 web 可能不可用, 暂保持文件名顺序)
+	return out
+
+
+# 用存档名读特定存档. None → null.
+func load_save_by_name(save_name: String) -> SaveData:
+	var path: String = SAVES_DIR + save_name + ".tres"
+	if not FileAccess.file_exists(path):
 		return null
-	var res = ResourceLoader.load(SAVE_PATH)
+	var res = ResourceLoader.load(path)
 	if not res is SaveData:
 		push_error("load: 文件不是 SaveData")
 		return null
@@ -56,16 +109,32 @@ func load_save() -> SaveData:
 	return res
 
 
+# 兼容老 API (单存档): 返回第一个存档 (用于"继续上次")
+func load_save() -> SaveData:
+	var saves := list_saves()
+	if saves.is_empty():
+		return null
+	return saves[0]["data"]
+
+
 func has_save() -> bool:
-	return FileAccess.file_exists(SAVE_PATH)
+	return not list_saves().is_empty()
 
 
+# 删一个存档 (不可恢复)
+func delete_save_by_name(save_name: String) -> void:
+	var path: String = SAVES_DIR + save_name + ".tres"
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
+
+
+# 兼容老 API: 删 LEGACY_SAVE_PATH
 func delete_save() -> void:
-	if FileAccess.file_exists(SAVE_PATH):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	if FileAccess.file_exists(LEGACY_SAVE_PATH):
+		DirAccess.remove_absolute(LEGACY_SAVE_PATH)
 
 
-# 把 inventory.slots (Array of Dictionary or null) 转可序列化形式。
+# 把 inventory.slots (Array of Dictionary or null) 转可序列化形式.
 func _serialize_inventory(slots: Array) -> Array:
 	var out: Array = []
 	for s in slots:
@@ -77,7 +146,7 @@ func _serialize_inventory(slots: Array) -> Array:
 
 
 # Vector2i 在 .tres 里不能当 Dict key, 转成 flat PackedInt32Array (lx, y, tid)*N.
-# 返回 Dict<int (cx), PackedInt32Array>。
+# 返回 Dict<int (cx), PackedInt32Array>.
 func _serialize_chunk_deltas(cm) -> Dictionary:
 	var out: Dictionary = {}
 	for cx in cm._deltas.keys():
@@ -91,7 +160,7 @@ func _serialize_chunk_deltas(cm) -> Dictionary:
 	return out
 
 
-# 把序列化的 deltas 还原到 chunk_manager._deltas (供 load 后调用)。
+# 把序列化的 deltas 还原到 chunk_manager._deltas (供 load 后调用).
 static func apply_chunk_deltas(cm, serialized: Dictionary) -> void:
 	for cx in serialized.keys():
 		var arr: PackedInt32Array = serialized[cx]
@@ -103,7 +172,7 @@ static func apply_chunk_deltas(cm, serialized: Dictionary) -> void:
 		cm._deltas[cx] = inner
 
 
-# 收集 slime/villager/item_drop 位置 + 状态。
+# 收集 slime/villager/item_drop 位置 + 状态.
 func _serialize_entities() -> Array:
 	var out: Array = []
 	for s in get_tree().get_nodes_in_group("slimes"):
@@ -120,7 +189,7 @@ func _serialize_entities() -> Array:
 	return out
 
 
-# 反序列化背包槽 — 给外部调用方用 (load 后把 SaveData.inventory_slots 还原)。
+# 反序列化背包槽 — 给外部调用方用 (load 后把 SaveData.inventory_slots 还原).
 static func deserialize_inventory(stored: Array) -> Array:
 	var out: Array = []
 	for s in stored:
