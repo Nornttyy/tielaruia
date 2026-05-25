@@ -11,6 +11,8 @@ const TILE_SIZE := 16
 const TorchFxScene = preload("res://scenes/fx/torch_fx.tscn")
 
 var _torches: Dictionary = {}  # Vector2i tile_coord → TorchFx Node2D
+# 史莱姆灯: 只发光, 不挂 fx 场景 (本体的方块图案就是绿火). 仅记录坐标供 DarknessLayer 查.
+var _slime_torch_tiles: Dictionary = {}  # Vector2i → true
 
 
 func _ready() -> void:
@@ -18,15 +20,17 @@ func _ready() -> void:
 
 
 func on_tile_placed(x: int, y: int, tile_id: int) -> void:
-	if tile_id != Tiles.TORCH:
-		return
-	_spawn_torch(x, y)
+	if tile_id == Tiles.TORCH:
+		_spawn_torch(x, y)
+	elif tile_id == Tiles.SLIME_TORCH:
+		_slime_torch_tiles[Vector2i(x, y)] = true
 
 
 func on_tile_removed(x: int, y: int, old_tile_id: int) -> void:
-	if old_tile_id != Tiles.TORCH:
-		return
-	_despawn_torch(x, y)
+	if old_tile_id == Tiles.TORCH:
+		_despawn_torch(x, y)
+	elif old_tile_id == Tiles.SLIME_TORCH:
+		_slime_torch_tiles.erase(Vector2i(x, y))
 
 
 # 卸载 chunk 时清掉该 chunk 内所有火把光 (chunk_x = chunk index, chunk_width = 64)
@@ -39,9 +43,16 @@ func on_chunk_unloaded(chunk_x: int, chunk_width: int) -> void:
 			keys_to_remove.append(k)
 	for k in keys_to_remove:
 		_despawn_torch(k.x, k.y)
+	# 史莱姆灯也清
+	var slime_keys: Array = []
+	for k in _slime_torch_tiles.keys():
+		if k.x >= x0 and k.x < x1:
+			slime_keys.append(k)
+	for k in slime_keys:
+		_slime_torch_tiles.erase(k)
 
 
-# 加载 chunk 时扫描 tiles 数据, 在所有 TORCH 位置重建光
+# 加载 chunk 时扫描 tiles 数据, 在所有 TORCH / SLIME_TORCH 位置重建光
 func on_chunk_loaded(chunk_x: int, chunk_width: int, tiles_2d: Array) -> void:
 	var x0: int = chunk_x * chunk_width
 	for lx in tiles_2d.size():
@@ -50,6 +61,15 @@ func on_chunk_loaded(chunk_x: int, chunk_width: int, tiles_2d: Array) -> void:
 		for y in col.size():
 			if col[y] == Tiles.TORCH:
 				_spawn_torch(world_x, y)
+			elif col[y] == Tiles.SLIME_TORCH:
+				_slime_torch_tiles[Vector2i(world_x, y)] = true
+
+
+# DarknessLayer 调用: 返回所有发光 tile 坐标 (TORCH fx + SLIME_TORCH 记录).
+func get_light_tiles() -> Array:
+	var result: Array = _torches.keys().duplicate()
+	result.append_array(_slime_torch_tiles.keys())
+	return result
 
 
 func _spawn_torch(x: int, y: int) -> void:

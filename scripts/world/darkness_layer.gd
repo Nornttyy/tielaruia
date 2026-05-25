@@ -75,12 +75,17 @@ func _update_viewport() -> void:
 	texture.update(_img)
 
 
-# 收集 WorldLighting 管理的火把坐标
+# 收集 WorldLighting 管理的发光 tile 坐标 (TORCH + SLIME_TORCH)
 func _collect_torches() -> Array:
 	var wl: Node = get_tree().get_first_node_in_group("world_lighting")
-	if wl == null or not "_torches" in wl:
+	if wl == null:
 		return []
-	return wl._torches.keys()
+	if wl.has_method("get_light_tiles"):
+		return wl.get_light_tiles()
+	# 兼容旧接口
+	if "_torches" in wl:
+		return wl._torches.keys()
+	return []
 
 
 # 兼容 stub: 现在 _process 视野更新接管, 不需要专门触发
