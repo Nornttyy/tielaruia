@@ -76,10 +76,18 @@ func _build_ui() -> void:
 	recipe_vbox.add_child(_wb_label)
 	recipe_vbox.move_child(_wb_label, 1)
 
+	# 配方列表用 ScrollContainer 包起来 (现在配方数 > 6 时会溢出, 加滚动条解决)
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(200, 280)  # 高度上限 ~ 9 个配方行高
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	recipe_vbox.add_child(scroll)
+	recipe_vbox.move_child(scroll, 2)
+
 	_recipe_container = VBoxContainer.new()
 	_recipe_container.add_theme_constant_override("separation", 4)
-	recipe_vbox.add_child(_recipe_container)
-	recipe_vbox.move_child(_recipe_container, 2)
+	_recipe_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_recipe_container)
 	_build_recipe_buttons()
 
 	# Row (旧 input grid, 测试用) 放在最末尾且隐藏
@@ -229,6 +237,23 @@ const _ZH_NAMES := {
 	"stone_pickaxe": "石镐",
 	"stone_axe": "石斧",
 	"iron_pickaxe": "铁镐",
+	"iron_sword": "铁剑",
+	"iron_axe": "铁斧",
+	"gold_sword": "金剑",
+	"gold_pickaxe": "金镐",
+	"gold_axe": "金斧",
+	"diamond_sword": "钻石剑",
+	"diamond_pickaxe": "钻石镐",
+	"diamond_axe": "钻石斧",
+	"copper_ore": "铜矿",
+	"tin_ore": "锡矿",
+	"gold_ore": "金矿",
+	"diamond": "钻石",
+	"hell_crystal": "地狱晶体",
+	"cactus": "仙人掌",
+	"raw_meat": "生肉",
+	"leather": "皮革",
+	"wool": "羊毛",
 }
 
 
