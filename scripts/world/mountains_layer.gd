@@ -46,9 +46,8 @@ func _ready() -> void:
 	for i in _LAYERS.size():
 		var ld: Dictionary = _LAYERS[i]
 		var pl := ParallaxLayer.new()
-		# X 跟 Y 都按同样的 scale 视差: 玩家在高山上 / 矿洞里看背景都跟着移动,
-		# 不会有"远山悬空在屏幕中间, 跟玩家无关"的违和感
-		pl.motion_scale = Vector2(ld.motion_scale, ld.motion_scale)
+		# 山只跟 X 视差, Y 不动
+		pl.motion_scale = Vector2(ld.motion_scale, 0.0)
 		pl.motion_mirroring = Vector2(TEX_WIDTH, 0)
 		add_child(pl)
 		var sprite := Sprite2D.new()
