@@ -326,13 +326,13 @@ const _P_DIAMOND_ORE := {
 	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
 }
 
-# 水: 半透明蓝, 不同深浅做波纹效果. 暗到亮 4 档蓝 + 透明.
+# 水: 海蓝主色 + 浅蓝波光 + 稀疏白沫. 整体偏透明但不至于看穿.
+# 大面积用同一种蓝, 稀疏点缀, 跟真水更接近 (避免棋盘感).
 const _P_WATER := {
-	"a": Color8(50, 110, 200, 180),   # 深蓝半透 (波底)
-	"b": Color8(85, 145, 225, 175),   # 中蓝
-	"c": Color8(130, 180, 240, 170),  # 亮蓝
-	"d": Color8(180, 215, 250, 160),  # 高光浅蓝
-	"e": Color8(220, 235, 250, 150),  # 白沫
+	"a": Color8(60, 130, 215, 210),   # 海蓝主色 (大部分区域)
+	"b": Color8(95, 160, 230, 200),   # 浅一档 (柔和波纹)
+	"c": Color8(155, 200, 245, 200),  # 浅蓝高光 (亮光点)
+	"e": Color8(235, 245, 255, 190),  # 白沫 (稀疏)
 }
 
 # 地狱晶体: DEEP_STONE 底 (更暗背景烘托) + h/H/y 烈火红
@@ -852,25 +852,24 @@ const _HELL_CRYSTAL := [
 ]
 
 
-# 水: 16×16 半透明波纹. 4 档蓝 + e 白沫 (高光). 横向波纹 + 偶发气泡.
-# 上下 1 行 + 中间几行做波纹效果, 看着像水面在动 (静态贴图但纹理 busy).
+# 水: 大面积海蓝 (a) 主色 + 稀疏 b/c 波光 + 偶尔 e 白沫. 像真水.
 const _WATER := [
-	"dcdcdcdcdcdcdcdc",
-	"cdcecdcedcdcecdc",
-	"bcbcbcbcbcbcbcbc",
-	"bcbcbcbcbcbcbcbc",
-	"bcbecbcbcbecbcbc",
-	"ababababababaaba",
-	"ababababababaaba",
-	"bababababababaab",
-	"ababecabababecab",
-	"bababababababaab",
-	"ababababababaaba",
-	"bababababababaab",
-	"abababecabababec",
-	"ababababababaaba",
-	"bababababababaab",
-	"abababababababab",
+	"aaaaaabaaaaaaaaa",
+	"aaaaabbaaaaaaaba",
+	"aaaaaaaaaaeaaaaa",
+	"aabaaaaaabaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaccaaaaaaaaaa",
+	"aaacccaaaaaabaaa",
+	"aaaccaaaaaaaaaaa",
+	"aaaaaaaaaaaaeaaa",
+	"abaaaaaabbaaaaaa",
+	"aaaaaaabbaaaaaaa",
+	"aaaeaaaaaaaaaaaa",
+	"aaaaaaaaaaaccaaa",
+	"aaaabaaaaaacccaa",
+	"aaaaaaaaaaaccaaa",
+	"aaaaaaaaaaaaaaaa",
 ]
 
 
