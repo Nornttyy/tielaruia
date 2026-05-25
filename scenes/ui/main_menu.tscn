@@ -103,23 +103,7 @@ visible = false
 
 [node name="Button" type="Button" parent="ButtonLayer/VBox/NewGameRow"]
 custom_minimum_size = Vector2(240, 44)
-text = "新游戏"
-
-[node name="ContinueRow" type="HBoxContainer" parent="ButtonLayer/VBox"]
-theme_override_constants/separation = 6
-
-[node name="Arrow" type="Label" parent="ButtonLayer/VBox/ContinueRow"]
-custom_minimum_size = Vector2(20, 40)
-text = "▶"
-vertical_alignment = 1
-theme_override_font_sizes/font_size = 18
-theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
-visible = false
-
-[node name="Button" type="Button" parent="ButtonLayer/VBox/ContinueRow"]
-custom_minimum_size = Vector2(240, 44)
-text = "继续 (暂未开放)"
-disabled = true
+text = "开始游戏"
 
 [node name="MultiplayerRow" type="HBoxContainer" parent="ButtonLayer/VBox"]
 theme_override_constants/separation = 6

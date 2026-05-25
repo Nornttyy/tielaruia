@@ -299,7 +299,6 @@ func _start_title_breathing() -> void:
 func _setup_buttons() -> void:
 	var rows := [
 		{"row": "NewGameRow", "callback": _on_new_game_pressed},
-		{"row": "ContinueRow", "callback": _on_continue_pressed},
 		{"row": "MultiplayerRow", "callback": _on_multiplayer_pressed},
 		{"row": "SettingsRow", "callback": _on_settings_pressed},
 		{"row": "QuitRow", "callback": _on_quit_pressed},
@@ -324,10 +323,6 @@ func _setup_buttons() -> void:
 		var cb: Callable = entry["callback"]
 		if cb.is_valid():
 			btn.pressed.connect(cb)
-	# 继续按钮: 没存档就禁用 (灰显)
-	var continue_btn: Button = $ButtonLayer/VBox/ContinueRow/Button
-	if continue_btn != null:
-		continue_btn.disabled = not SaveManager.has_save()
 
 
 func _apply_button_style(btn: Button) -> void:
@@ -415,10 +410,6 @@ func reset_visuals() -> void:
 		$SettingsPanel.visible = false
 	if has_node("MultiplayerPanel"):
 		$MultiplayerPanel.visible = false
-	# 刷新继续按钮 disabled 状态 (回菜单后可能刚保存了)
-	var continue_btn: Button = $ButtonLayer/VBox/ContinueRow/Button
-	if continue_btn != null:
-		continue_btn.disabled = not SaveManager.has_save()
 
 
 func _on_settings_pressed() -> void:

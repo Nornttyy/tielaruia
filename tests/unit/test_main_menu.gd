@@ -90,13 +90,6 @@ func test_multiplayer_button_shows_panel():
 	assert_true(panel.visible, "点联机后面板显示")
 
 
-func test_continue_button_disabled():
-	var mm = _make()
-	var cont_btn = mm.get_node_or_null("ButtonLayer/VBox/ContinueRow/Button")
-	assert_not_null(cont_btn)
-	assert_true(cont_btn.disabled)
-
-
 func test_new_game_button_shows_new_game_panel():
 	var mm = _make()
 	var panel = mm.get_node_or_null("NewGamePanel")
