@@ -32,7 +32,10 @@ const _LAYERS := [
 	},
 ]
 
-var _layer_data: Array = []  # 每层 {sprite, base_color}
+# 视口高度 (跟 project.godot 的 window/size/viewport_height 同步)
+const VIEWPORT_HEIGHT := 720
+
+var _layer_data: Array = []  # 每层 {sprite, fill, base_color}
 var _layer_alpha: float = 1.0  # 由 ScenicDirector 设 (0=矿洞 1=地表)
 
 
@@ -56,12 +59,24 @@ func _ready() -> void:
 		)
 		sprite.centered = false
 		# sprite 顶部 = horizon - tex_height + y_extra
-		# 这样山顶在 horizon 之上 ~ tex_height-y_extra, 山脚一直延伸到屏幕底
-		sprite.position = Vector2(0, HORIZON_Y - TEX_HEIGHT + ld.y_extra)
+		# 这样山顶在 horizon 之上 ~ tex_height-y_extra, 山脚延伸到 horizon+y_extra
+		var sprite_top: int = HORIZON_Y - TEX_HEIGHT + ld.y_extra
+		sprite.position = Vector2(0, sprite_top)
 		sprite.modulate.a = ld.alpha
 		pl.add_child(sprite)
+		# Fill 条: 山的底部到屏幕底, 用 base_color 填上, 不然玩家在高山上往下看
+		# 会有一片空 (露出 sky 颜色), 像浮空岛. 这里把山身延展下来覆盖到屏幕底.
+		var sprite_bottom: int = sprite_top + TEX_HEIGHT
+		var fill_h: int = max(0, VIEWPORT_HEIGHT - sprite_bottom + 200)  # 多铺 200 px 防视口变大
+		var fill := ColorRect.new()
+		fill.color = base_color
+		fill.position = Vector2(0, sprite_bottom)
+		fill.size = Vector2(TEX_WIDTH, fill_h)
+		fill.modulate.a = ld.alpha
+		pl.add_child(fill)
 		_layer_data.append({
 			"sprite": sprite,
+			"fill": fill,
 			"base_color": base_color,
 			"alpha": ld.alpha,
 		})
@@ -81,6 +96,9 @@ func _process(_delta: float) -> void:
 		tinted = tinted * brightness
 		tinted.a = ld.alpha * _layer_alpha  # 乘 ScenicDirector 给的 alpha
 		ld.sprite.modulate = tinted
+		# fill rect 同步色 + alpha (跟 sprite 一致, 不然边界突变)
+		ld.fill.color = tinted
+		ld.fill.modulate.a = 1.0  # color 已含 alpha, modulate 重置避免双重
 
 
 # ScenicDirector 调这个统一改整层 alpha

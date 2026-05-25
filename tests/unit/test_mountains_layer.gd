@@ -22,12 +22,19 @@ func test_each_layer_has_sprite_with_texture():
 	var ml = MountainsLayer.new()
 	add_child_autofree(ml)
 	await wait_frames(1)
+	# 每个 ParallaxLayer 含 1 个 Sprite2D (山脊) + 1 个 ColorRect (底色 fill)
 	for child in ml.get_children():
 		if child is ParallaxLayer:
-			assert_eq(child.get_child_count(), 1, "每个 ParallaxLayer 应只 1 个 sprite")
-			var sp = child.get_child(0)
-			assert_true(sp is Sprite2D, "子节点应是 Sprite2D")
-			assert_not_null(sp.texture, "Sprite 应有 texture")
+			assert_eq(child.get_child_count(), 2, "每个 ParallaxLayer 应有 sprite + fill")
+			var has_sprite: bool = false
+			var has_fill: bool = false
+			for sub in child.get_children():
+				if sub is Sprite2D and sub.texture != null:
+					has_sprite = true
+				elif sub is ColorRect:
+					has_fill = true
+			assert_true(has_sprite, "应有 1 个 Sprite2D 含 texture")
+			assert_true(has_fill, "应有 1 个 ColorRect 作底色")
 
 
 func test_process_does_not_crash():
