@@ -326,13 +326,12 @@ const _P_DIAMOND_ORE := {
 	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
 }
 
-# 水: 海蓝主色 + 浅蓝波光 + 稀疏白沫. 整体偏透明但不至于看穿.
-# 大面积用同一种蓝, 稀疏点缀, 跟真水更接近 (避免棋盘感).
+# 水: 几乎纯色海蓝 + 极少数微亮点. 邻 tile 拼一起视觉无缝.
+# 差别压到很小: a→b 颜色差 ~10, a→c 颜色差 ~20. 远看完全融成一片.
 const _P_WATER := {
-	"a": Color8(60, 130, 215, 210),   # 海蓝主色 (大部分区域)
-	"b": Color8(95, 160, 230, 200),   # 浅一档 (柔和波纹)
-	"c": Color8(155, 200, 245, 200),  # 浅蓝高光 (亮光点)
-	"e": Color8(235, 245, 255, 190),  # 白沫 (稀疏)
+	"a": Color8(60, 130, 215, 220),   # 海蓝主色 (95% 区域)
+	"b": Color8(70, 140, 220, 220),   # 微浅 (跟 a 差 10, 几乎看不出)
+	"c": Color8(85, 155, 230, 220),   # 浅一点点 (跟 a 差 20, 像水下微光)
 }
 
 # 地狱晶体: DEEP_STONE 底 (更暗背景烘托) + h/H/y 烈火红
@@ -852,23 +851,25 @@ const _HELL_CRYSTAL := [
 ]
 
 
-# 水: 大面积海蓝 (a) 主色 + 稀疏 b/c 波光 + 偶尔 e 白沫. 像真水.
+# 水: 几乎纯色 (16 行只 4-5 个微亮点), 邻 tile 拼起来视觉无缝.
+# 边缘行/列 100% 'a' → 跟邻 tile 必无缝.
+# 中间稀疏 b/c 看着像水下闪动. 差别小到远看融成一片.
 const _WATER := [
-	"aaaaaabaaaaaaaaa",
-	"aaaaabbaaaaaaaba",
-	"aaaaaaaaaaeaaaaa",
-	"aabaaaaaabaaaaaa",
 	"aaaaaaaaaaaaaaaa",
-	"aaaaccaaaaaaaaaa",
-	"aaacccaaaaaabaaa",
-	"aaaccaaaaaaaaaaa",
-	"aaaaaaaaaaaaeaaa",
-	"abaaaaaabbaaaaaa",
-	"aaaaaaabbaaaaaaa",
-	"aaaeaaaaaaaaaaaa",
-	"aaaaaaaaaaaccaaa",
-	"aaaabaaaaaacccaa",
-	"aaaaaaaaaaaccaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaabaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaacaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aacaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaaaaaaaa",
+	"aaaaaaaaaabaaaaa",
+	"aaaaaaaaaaaaaaaa",
 	"aaaaaaaaaaaaaaaa",
 ]
 
