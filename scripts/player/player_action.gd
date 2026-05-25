@@ -162,6 +162,13 @@ func _update_mining(delta: float) -> void:
 	if tid == -1 or not Tiles.is_mineable(tid):
 		_reset_mining()
 		return
+	# 树部件特殊规则: 只有树底 LOG 能直接挖. LOG_TOP/BRANCH/ROOT 不能直接挖,
+	# 中段 LOG 也不能 — 必须从最底下砍, 整棵爆.
+	if _TREE_PARTS.has(tid):
+		var world_node: Node = terrain.get_parent()
+		if tid != Tiles.LOG or not _is_tree_base(world_node, tile.x, tile.y):
+			_reset_mining()
+			return
 	var inv: Node = _inventory_node()
 	var tool_kind: String = "" if inv == null else inv.current_tool_kind()
 	var required: int = Tiles.required_tool_tier(tid, tool_kind)
