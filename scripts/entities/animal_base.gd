@@ -5,6 +5,9 @@ extends CharacterBody2D
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const GRAVITY := 900.0
+const SWIM_GRAVITY := 200.0     # 水里重力 (慢慢沉)
+const SWIM_MAX_SINK := 80.0     # 水里最大下沉速度
+const WATER_SPEED_MUL := 0.5    # 水里横向速度系数
 const FLEE_DURATION := 4.0
 const FLEE_SPEED_MULT := 1.8
 const WANDER_SWITCH_MIN := 2.0
@@ -52,6 +55,22 @@ func _add_player_exception() -> void:
 		add_collision_exception_with(player)
 
 
+# 动物身体在水里吗 (腰部 tile 是 WATER)
+func _is_in_water() -> bool:
+	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
+	if terrain == null:
+		return false
+	var world: Node = terrain.get_parent()
+	if world == null:
+		return false
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return false
+	var tx: int = int(floor(global_position.x / 16.0))
+	var ty: int = int(floor((global_position.y - 6.0) / 16.0))  # 腰部 (高度比玩家小)
+	return cm.get_tile(tx, ty) == Tiles.WATER
+
+
 func _physics_process(delta: float) -> void:
 	if _is_dying:
 		return
@@ -62,11 +81,19 @@ func _physics_process(delta: float) -> void:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
 
-	# 重力
-	if not is_on_floor():
+	# 水检测: 在水里用 SWIM 物理 + 横向慢一半 (跟玩家一样的逻辑)
+	var in_water: bool = _is_in_water()
+
+	# 重力: 水里弱, 空气中正常
+	if in_water:
+		velocity.y += SWIM_GRAVITY * delta
+		if velocity.y > SWIM_MAX_SINK:
+			velocity.y = SWIM_MAX_SINK
+	elif not is_on_floor():
 		velocity.y += GRAVITY * delta
 
 	# desired_dir = 本帧想去的方向 (move_and_slide 撞墙后会把 velocity.x 设为 0, 不能用它判断方向)
+	var speed_mul: float = WATER_SPEED_MUL if in_water else 1.0
 	var desired_dir: float = 0.0
 	if _flee_timer > 0.0:
 		_flee_timer -= delta
@@ -74,7 +101,7 @@ func _physics_process(delta: float) -> void:
 		if abs(dir) < 0.1:
 			dir = 1.0 if randf() < 0.5 else -1.0
 		desired_dir = dir
-		velocity.x = dir * walk_speed * FLEE_SPEED_MULT
+		velocity.x = dir * walk_speed * FLEE_SPEED_MULT * speed_mul
 		sprite.flip_h = dir < 0
 		_play_anim("walk")
 	else:
@@ -82,7 +109,7 @@ func _physics_process(delta: float) -> void:
 		if _wander_timer <= 0.0:
 			_pick_new_wander()
 		desired_dir = _wander_dir
-		velocity.x = _wander_dir * walk_speed
+		velocity.x = _wander_dir * walk_speed * speed_mul
 		if _wander_dir != 0.0:
 			sprite.flip_h = _wander_dir < 0
 			_play_anim("walk")

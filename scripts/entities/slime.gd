@@ -6,6 +6,8 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const MAX_HEALTH := 10   # 木剑 3 dmg × 4 击, 石剑 5 dmg × 2 击
 const CONTACT_DAMAGE := 2
 const GRAVITY := 900.0
+const SWIM_GRAVITY := 200.0   # 水里重力 (慢沉)
+const SWIM_MAX_SINK := 70.0   # 最大下沉速度
 # 跳高/跳远: 每次跳前随机挑 (tile, 16 px 一格).
 # 高度 1-2 格, 距离 0-3 格. 由物理公式反算 vy/vx.
 const HOP_HEIGHT_MIN_TILES := 1.0
@@ -52,6 +54,22 @@ func _add_player_exception() -> void:
 		add_collision_exception_with(player)
 
 
+# slime 身体在水里吗
+func _is_in_water() -> bool:
+	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
+	if terrain == null:
+		return false
+	var world: Node = terrain.get_parent()
+	if world == null:
+		return false
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return false
+	var tx: int = int(floor(global_position.x / 16.0))
+	var ty: int = int(floor((global_position.y - 5.0) / 16.0))
+	return cm.get_tile(tx, ty) == Tiles.WATER
+
+
 func _physics_process(delta: float) -> void:
 	if _is_dying:
 		return
@@ -59,7 +77,13 @@ func _physics_process(delta: float) -> void:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
 
-	if not is_on_floor():
+	# 水里: 弱重力 + 跳频率减半 (像浮力, 慢动)
+	var in_water: bool = _is_in_water()
+	if in_water:
+		velocity.y += SWIM_GRAVITY * delta
+		if velocity.y > SWIM_MAX_SINK:
+			velocity.y = SWIM_MAX_SINK
+	elif not is_on_floor():
 		velocity.y += GRAVITY * delta
 	else:
 		# 落地 → 摩擦 + 准备下次跳

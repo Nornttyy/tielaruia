@@ -12,6 +12,10 @@ const COYOTE_TIME := 0.10
 const LAND_VY_THRESHOLD := 200.0    # 落地时 vy 超此值才扬大灰
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 const TILE_SIZE := 16
+# 游泳物理: 水里重力 ~22%, 按 Space/W 持续上浮.
+const SWIM_GRAVITY := 200.0         # 水里重力 (vs GRAVITY 900 → 慢慢沉)
+const SWIM_UP_SPEED := -110.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -320 → 弱跳)
+const SWIM_MAX_SINK := 180.0        # 最大下沉速度 (浮力封顶)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _player_aura: PointLight2D = $PlayerAura
@@ -186,20 +190,28 @@ func _physics_process(delta: float) -> void:
 
 	var on_floor_now := is_on_floor()
 
-	# 重力
-	if not on_floor_now:
-		velocity.y += GRAVITY * delta
-		_coyote_timer = max(0.0, _coyote_timer - delta)
-	else:
-		_coyote_timer = COYOTE_TIME
-
-	# 跳跃
+	# 重力 + 游泳: 在水里用 SWIM_GRAVITY (弱), 按 jump 持续上浮.
+	# 不在水里则正常重力 + 单次跳跃.
 	var did_jump := false
-	if Input.is_action_just_pressed("jump") and _coyote_timer > 0.0:
-		velocity.y = JUMP_VELOCITY
-		_coyote_timer = 0.0
-		did_jump = true
-		SfxBank.play("jump", 0.08)
+	if in_water:
+		# 水里物理: 慢慢沉, 按 jump 上浮 (持续按住能游上去)
+		velocity.y += SWIM_GRAVITY * delta
+		if velocity.y > SWIM_MAX_SINK:
+			velocity.y = SWIM_MAX_SINK
+		if Input.is_action_pressed("jump"):
+			velocity.y = SWIM_UP_SPEED
+	else:
+		if not on_floor_now:
+			velocity.y += GRAVITY * delta
+			_coyote_timer = max(0.0, _coyote_timer - delta)
+		else:
+			_coyote_timer = COYOTE_TIME
+		# 跳跃 (仅在陆地, 水里用上浮代替)
+		if Input.is_action_just_pressed("jump") and _coyote_timer > 0.0:
+			velocity.y = JUMP_VELOCITY
+			_coyote_timer = 0.0
+			did_jump = true
+			SfxBank.play("jump", 0.08)
 
 	# 记录跳前 vy 给落地用
 	var pre_move_vy := velocity.y
