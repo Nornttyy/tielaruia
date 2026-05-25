@@ -637,13 +637,16 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 			if rng.randf() > CACTUS_CHANCE:
 				continue
 			var cactus_height: int = rng.randi_range(CACTUS_HEIGHT_MIN, CACTUS_HEIGHT_MAX)
+			# dy=0 是最底 (贴沙地), dy=cactus_height-1 是最顶. 顶端用 CACTUS (圆头),
+			# 其它用 CACTUS_BODY (无缝身体), 让堆叠看着是连续 saguaro 而不是分段方块.
 			for dy in range(cactus_height):
 				var ty: int = surf - 1 - dy
 				if ty < 0:
 					break
 				if c.tiles[lx][ty] != Tiles.AIR:
 					break
-				c.tiles[lx][ty] = Tiles.CACTUS
+				var is_top: bool = (dy == cactus_height - 1)
+				c.tiles[lx][ty] = Tiles.CACTUS if is_top else Tiles.CACTUS_BODY
 			last_tree_x = world_x
 			continue
 		# 非草地表 (沙/挖空/etc) 跳过

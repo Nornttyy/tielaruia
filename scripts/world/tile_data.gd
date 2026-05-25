@@ -30,6 +30,7 @@ const TIN_ORE := 23         # 锡矿: 浅层 (wood 镐可挖)
 const GOLD_ORE := 24        # 金矿: 中深 (iron 镐才挖)
 const DIAMOND_ORE := 25     # 钻石矿: 深 (iron 镐才挖)
 const HELL_CRYSTAL := 26    # 地狱晶体: 接近基岩 (iron 镐才挖)
+const CACTUS_BODY := 27     # 仙人掌身体段 (堆叠时非顶端用, 无 top outline 衔接顶端 CACTUS)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -176,6 +177,12 @@ const _PROPS := {
 	},
 	CACTUS: {
 		# 仙人掌: 不实心 (玩家穿过, 像 LOG), 任何工具都能砍, 掉 cactus 物品
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["cactus", 100, 1, 1]],
+	},
+	CACTUS_BODY: {
+		# 仙人掌身体段: 行为同 CACTUS, 砍了也掉 cactus 物品
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["cactus", 100, 1, 1]],

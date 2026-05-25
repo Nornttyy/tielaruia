@@ -30,7 +30,8 @@ const DEEP_STONE := 17      # 深层岩石 (暗暖灰)
 const GRASS_WALL := 18      # 背景墙: 草墙 (近地表)
 const DIRT_WALL := 19       # 背景墙: 土墙 (中层)
 const STONE_WALL := 20      # 背景墙: 石墙 (深层)
-const CACTUS := 21          # 仙人掌 (沙漠装饰)
+const CACTUS := 21          # 仙人掌顶 (圆头, 堆叠时只用于最顶端)
+const CACTUS_BODY := 27     # 仙人掌身体段 (堆叠时非顶端, 无 top outline)
 const COPPER_ORE := 22      # 铜矿 (浅层, 暖橙铜)
 const TIN_ORE := 23         # 锡矿 (浅层, 银白)
 const GOLD_ORE := 24        # 金矿 (中深, 暖金黄)
@@ -920,25 +921,46 @@ const _STONE_WALL := [
 	"sSsSssSssSsSsSsS",
 ]
 
-# 仙人掌: 居中柱 (主体宽 8 格 含侧 outline) + 无 top/bottom outline → 堆叠无缝.
-# 侧面交错白尖刺 (w), 中心 yhgy 暖棱线 (顶光感). 16 行循环时上下接界还是身体.
+# 仙人掌顶 (CACTUS): 顶部圆头 + body. 底部 4 行还是 body, 跟 CACTUS_BODY 无缝.
+# 用于堆叠最顶端 (单 1 格高也用这个).
 const _CACTUS := [
+	"......dddd......",
+	".....dGggGd.....",
 	"....dGgyhgGd....",
 	"..w.dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
 	"....dGgyhgGd....",
 	"....dGgyhgGd.w..",
 	"....dGgyhgGd....",
 	"....dGgyhgGd....",
+	"....dGgyhgGd....",
 	"..w.dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd.w..",
+]
+
+# 仙人掌身体段 (CACTUS_BODY): 上下全 body, 跟上/下方的 CACTUS 或 CACTUS_BODY 无缝.
+# 顶 (row 0) 和底 (row 15) 都是 body 像素 → 任意方向堆叠都连续.
+const _CACTUS_BODY := [
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
+	"..w.dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
 	"....dGgyhgGd....",
 	"....dGgyhgGd.w..",
 	"....dGgyhgGd....",
 	"....dGgyhgGd....",
+	"....dGgyhgGd....",
 	"..w.dGgyhgGd....",
 	"....dGgyhgGd....",
+	"....dGgyhgGd....",
+	"....dGgyhgGd....",
 	"....dGgyhgGd.w..",
-	"....dGgyhgGd....",
-	"....dGgyhgGd....",
 ]
 
 const _PATTERN_MAP := {
@@ -963,6 +985,7 @@ const _PATTERN_MAP := {
 	DIRT_WALL: [_DIRT_WALL, _P_DIRT_WALL],
 	STONE_WALL: [_STONE_WALL, _P_STONE_WALL],
 	CACTUS: [_CACTUS, _P_CACTUS],
+	CACTUS_BODY: [_CACTUS_BODY, _P_CACTUS],
 	COPPER_ORE: [_COPPER_ORE, _P_COPPER_ORE],
 	TIN_ORE: [_TIN_ORE, _P_TIN_ORE],
 	GOLD_ORE: [_GOLD_ORE, _P_GOLD_ORE],

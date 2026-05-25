@@ -79,7 +79,7 @@ func _build_blocks() -> void:
 		BlocksArt.LEAVES_PINE, BlocksArt.LEAVES_AUTUMN, BlocksArt.SLIME_TORCH,
 		BlocksArt.DEEP_STONE, BlocksArt.COAL_ORE, BlocksArt.IRON_ORE, BlocksArt.TORCH,
 		BlocksArt.GRASS_WALL, BlocksArt.DIRT_WALL, BlocksArt.STONE_WALL,
-		BlocksArt.CACTUS,
+		BlocksArt.CACTUS, BlocksArt.CACTUS_BODY,
 		BlocksArt.COPPER_ORE, BlocksArt.TIN_ORE, BlocksArt.GOLD_ORE,
 		BlocksArt.DIAMOND_ORE, BlocksArt.HELL_CRYSTAL,
 	]
