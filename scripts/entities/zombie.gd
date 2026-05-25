@@ -31,6 +31,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if has_meta("is_remote"):
+		return
 	if _is_dying:
 		return
 	if _hit_flash > 0.0:

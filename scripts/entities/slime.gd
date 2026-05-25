@@ -71,6 +71,9 @@ func _is_in_water() -> bool:
 
 
 func _physics_process(delta: float) -> void:
+	# 联机远程实体: 不跑 AI / 物理, 位置由 NetworkManager 直接设
+	if has_meta("is_remote"):
+		return
 	if _is_dying:
 		return
 	if _hit_flash > 0.0:

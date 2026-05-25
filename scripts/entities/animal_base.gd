@@ -72,6 +72,8 @@ func _is_in_water() -> bool:
 
 
 func _physics_process(delta: float) -> void:
+	if has_meta("is_remote"):
+		return
 	if _is_dying:
 		return
 	# auto-step tween 期间停物理 (let tween 接管 position, 不被重力/move_and_slide 干扰)

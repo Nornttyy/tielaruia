@@ -54,6 +54,8 @@ var minimap_data: Node
 var _remote_player: Node = null   # 联机时另一个玩家的 sprite (Phase C)
 var _mp_time_sync_timer: float = 0.0   # host 广播时间+天气计时 (Phase F)
 const _MP_TIME_SYNC_INTERVAL := 5.0
+var _mp_entity_sync_timer: float = 0.0  # host 广播实体位置计时 (Phase E)
+const _MP_ENTITY_SYNC_INTERVAL := 0.2
 var weather: Node
 var rain_layer: CanvasLayer
 var fireflies: Node2D
@@ -125,6 +127,95 @@ func _ready() -> void:
 			NetworkManager.remote_tile_received.connect(_on_remote_tile)
 		if not NetworkManager.remote_time_weather_received.is_connected(_on_remote_time_weather):
 			NetworkManager.remote_time_weather_received.connect(_on_remote_time_weather)
+		if not NetworkManager.initial_state_received.is_connected(_on_initial_state):
+			NetworkManager.initial_state_received.connect(_on_initial_state)
+		if not NetworkManager.remote_entity_pos_received.is_connected(_on_remote_entity_pos):
+			NetworkManager.remote_entity_pos_received.connect(_on_remote_entity_pos)
+		if not NetworkManager.remote_entity_die_received.is_connected(_on_remote_entity_die):
+			NetworkManager.remote_entity_die_received.connect(_on_remote_entity_die)
+		# host: 进 world 后立刻广播当前 chunk_deltas 给 client (Phase G)
+		if NetworkManager.is_host:
+			_mp_broadcast_initial_state.call_deferred()
+		# client: 如果 hello 之前 init_state 还没到, 先 hold; 到了就 _on_initial_state 应用
+		# 如果 init_state 早于 world _ready 到达, NetworkManager.pending_initial_deltas 有值, 这里立刻应用
+		elif not NetworkManager.pending_initial_deltas.is_empty():
+			_apply_initial_state(NetworkManager.pending_initial_deltas)
+			NetworkManager.pending_initial_deltas = {}
+
+
+func _mp_broadcast_initial_state() -> void:
+	# host 进 world 后调. 拿 chunk_manager._deltas 序列化广播
+	if chunk_manager == null:
+		return
+	NetworkManager.send_initial_state(chunk_manager._deltas)
+
+
+func _on_initial_state(deltas: Dictionary) -> void:
+	_apply_initial_state(deltas)
+
+
+func _apply_initial_state(deltas: Dictionary) -> void:
+	# deltas 是 String key (cx) → Array<int> (lx,y,tid,...). 应用到当前 chunk_manager
+	for cx_str in deltas.keys():
+		var cx: int = int(cx_str)
+		var arr: Array = deltas[cx_str]
+		# 写 _deltas (chunk 未加载时也保留, 加载时会自动应用)
+		if not chunk_manager._deltas.has(cx):
+			chunk_manager._deltas[cx] = {}
+		var inner: Dictionary = chunk_manager._deltas[cx]
+		var i: int = 0
+		while i + 2 < arr.size():
+			var lx: int = int(arr[i])
+			var y: int = int(arr[i + 1])
+			var tid: int = int(arr[i + 2])
+			inner[Vector2i(lx, y)] = tid
+			i += 3
+		# 如果 chunk 已加载, 立刻应用 + 刷新视觉
+		var ch = chunk_manager.get_chunk(cx)
+		if ch != null:
+			ch.apply_delta(inner)
+			_on_chunk_loaded(ch)
+
+
+# Phase E: 远程实体 (host 广播, client 接收). 用 dict ent_id → Node
+var _remote_entities: Dictionary = {}
+
+
+func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, _hp: int) -> void:
+	var ent: Node = _remote_entities.get(ent_id)
+	if ent == null:
+		# 第一次见这个实体: 生成视觉版本
+		ent = _spawn_remote_entity(kind)
+		if ent != null:
+			_remote_entities[ent_id] = ent
+	if ent != null:
+		ent.global_position = Vector2(x, y)
+
+
+func _on_remote_entity_die(ent_id: int) -> void:
+	var ent: Node = _remote_entities.get(ent_id)
+	if ent != null:
+		ent.queue_free()
+		_remote_entities.erase(ent_id)
+
+
+func _spawn_remote_entity(kind: String) -> Node:
+	# 用现成的 scene, 加入 entities_root, 但禁用 AI (slime 等会检测 _is_remote 跳过逻辑)
+	var scene: PackedScene = null
+	match kind:
+		"slime": scene = SlimeScene
+		"zombie": scene = ZombieScene
+		"cow": scene = CowScene
+		"sheep": scene = SheepScene
+		"pig": scene = PigScene
+		_: return null
+	if scene == null:
+		return null
+	var ent = scene.instantiate()
+	# 标记为远程, 实体 AI 应跳过
+	ent.set_meta("is_remote", true)
+	entities_root.add_child(ent)
+	return ent
 
 
 func _on_remote_tile(x: int, y: int, tile_id: int) -> void:
@@ -180,32 +271,64 @@ func _spawn_villagers() -> void:
 
 
 func _process(delta: float) -> void:
-	_slime_spawn_timer -= delta
-	if _slime_spawn_timer <= 0.0:
-		_slime_spawn_timer = SPAWN_INTERVAL
-		# 夜间刷僵尸, 白天刷史莱姆
-		if TimeOfDay.is_night():
-			_try_spawn_zombie()
-		else:
-			_try_spawn_slime()
-	# 动物只在白天刷新, 独立于怪物 timer
-	_animal_spawn_timer -= delta
-	if _animal_spawn_timer <= 0.0:
-		_animal_spawn_timer = ANIMAL_SPAWN_INTERVAL
-		if not TimeOfDay.is_night():
-			_try_spawn_animal()
+	# 联机 client (不是 host) 跳过怪物/动物刷新 (host 权威, client 只接受 ent_pos 同步)
+	var is_mp_client: bool = NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host
+	if not is_mp_client:
+		_slime_spawn_timer -= delta
+		if _slime_spawn_timer <= 0.0:
+			_slime_spawn_timer = SPAWN_INTERVAL
+			if TimeOfDay.is_night():
+				_try_spawn_zombie()
+			else:
+				_try_spawn_slime()
+		_animal_spawn_timer -= delta
+		if _animal_spawn_timer <= 0.0:
+			_animal_spawn_timer = ANIMAL_SPAWN_INTERVAL
+			if not TimeOfDay.is_night():
+				_try_spawn_animal()
 	# 玩家视野内 tile 标记为 minimap 可见
 	_minimap_mark_timer -= delta
 	if _minimap_mark_timer <= 0.0:
 		_minimap_mark_timer = MINIMAP_MARK_INTERVAL
 		_mark_explored_around_player()
-	# 联机 host: 每 5s 广播时间+天气给 client (Phase F)
+	# 联机 host: 每 5s 广播时间+天气 (Phase F) + 每 0.2s 广播实体位置 (Phase E)
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		_mp_time_sync_timer -= delta
 		if _mp_time_sync_timer <= 0.0:
 			_mp_time_sync_timer = _MP_TIME_SYNC_INTERVAL
 			var ws: String = weather.state if weather != null else "clear"
 			NetworkManager.send_time_weather(TimeOfDay.time, ws)
+		_mp_entity_sync_timer -= delta
+		if _mp_entity_sync_timer <= 0.0:
+			_mp_entity_sync_timer = _MP_ENTITY_SYNC_INTERVAL
+			_mp_broadcast_entities()
+
+
+func _mp_broadcast_entities() -> void:
+	# 给每个 slime/zombie/animal 一个稳定 id (用 get_instance_id), 广播位置.
+	# 实际游戏 ent_id 不需要是 instance_id, 但够用了 (host 范围内唯一).
+	for grp in ["slimes", "zombies", "animals"]:
+		for ent in get_tree().get_nodes_in_group(grp):
+			if not (ent is Node2D):
+				continue
+			var n2d: Node2D = ent
+			var kind: String = "slime"
+			if grp == "zombies":
+				kind = "zombie"
+			elif grp == "animals":
+				# animal 分 cow/sheep/pig - 用 scene 文件名猜
+				var scene_path: String = n2d.scene_file_path if n2d.scene_file_path != null else ""
+				if "cow" in scene_path:
+					kind = "cow"
+				elif "sheep" in scene_path:
+					kind = "sheep"
+				elif "pig" in scene_path:
+					kind = "pig"
+			NetworkManager.send_entity_pos(
+				int(n2d.get_instance_id()) & 0xFFFFFFF,
+				kind,
+				n2d.global_position.x, n2d.global_position.y, 0
+			)
 
 
 func _mark_explored_around_player() -> void:

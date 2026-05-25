@@ -26,6 +26,9 @@ signal hello_received(world_seed: int)         # host → client, 双方一致�
 signal remote_pos_received(x: float, y: float, facing: int, anim: String)
 signal remote_tile_received(x: int, y: int, tile_id: int)  # 对方挖/放方块
 signal remote_time_weather_received(time_val: float, weather_state: String)  # host 广播时间+天气
+signal initial_state_received(chunk_deltas: Dictionary)  # host 进游戏后广播现状, client 应用 (Phase G)
+signal remote_entity_pos_received(ent_id: int, kind: String, x: float, y: float, hp: int)  # 实体位置 (Phase E)
+signal remote_entity_die_received(ent_id: int)  # 实体死亡 (Phase E)
 
 const POLL_INTERVAL := 0.1  # 每 0.1s 拉一次 status + messages
 const POS_SEND_INTERVAL := 0.1  # 玩家位置每 0.1s 发一次 (10Hz)
@@ -35,6 +38,7 @@ var my_room_code: String = ""
 var is_host: bool = false
 var last_error: String = ""
 var shared_world_seed: int = 0  # host 创建房间时生成的种子, client 从 hello 拿
+var pending_initial_deltas: Dictionary = {}  # client 收 hello 时存入, world 加载后取走应用
 var _pos_send_timer: float = 0.0
 
 var _bridge = null   # JavaScriptObject ref, 仅 HTML5 有
@@ -106,6 +110,21 @@ func _route_message(raw: String) -> void:
 			var seed_val: int = int(data.get("seed", 0))
 			shared_world_seed = seed_val
 			hello_received.emit(seed_val)
+		"init_state":
+			# host 在自己 world 加载后发的现状. client world 准备好就 emit, world 接收应用.
+			var deltas: Dictionary = data.get("deltas", {})
+			pending_initial_deltas = deltas
+			initial_state_received.emit(deltas)
+		"ent_pos":
+			var eid: int = int(data.get("id", 0))
+			var ekind: String = String(data.get("k", "slime"))
+			var ex: float = float(data.get("x", 0.0))
+			var ey: float = float(data.get("y", 0.0))
+			var ehp: int = int(data.get("hp", 0))
+			remote_entity_pos_received.emit(eid, ekind, ex, ey, ehp)
+		"ent_die":
+			var did: int = int(data.get("id", 0))
+			remote_entity_die_received.emit(did)
 		"pos":
 			var x: float = float(data.get("x", 0.0))
 			var y: float = float(data.get("y", 0.0))
@@ -156,6 +175,33 @@ func send(data: String) -> bool:
 
 func send_hello(seed_val: int) -> void:
 	send(JSON.stringify({"type": "hello", "seed": seed_val}))
+
+
+func send_initial_state(chunk_deltas: Dictionary) -> void:
+	# Phase G: host 进游戏后, 把当前 chunk 改动广播给 client.
+	# Dict<int, PackedInt32Array> → JSON Dict<str(cx), [lx,y,tid,...]>
+	# 转 String key (JSON.stringify 不支持 int key)
+	var stringified: Dictionary = {}
+	for cx in chunk_deltas.keys():
+		var arr: PackedInt32Array = chunk_deltas[cx]
+		var plain: Array = []
+		for i in arr.size():
+			plain.append(arr[i])
+		stringified[str(cx)] = plain
+	send(JSON.stringify({"type": "init_state", "deltas": stringified}))
+
+
+# Phase E: host 广播单个实体当前位置 (slime/cow/zombie). client 用 id 同步.
+func send_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: int = 0) -> void:
+	send(JSON.stringify({
+		"type": "ent_pos", "id": ent_id, "k": kind,
+		"x": snappedf(x, 0.1), "y": snappedf(y, 0.1), "hp": hp,
+	}))
+
+
+# Phase E: host 广播实体死亡 (移除 id)
+func send_entity_die(ent_id: int) -> void:
+	send(JSON.stringify({"type": "ent_die", "id": ent_id}))
 
 
 func send_tile_change(x: int, y: int, tile_id: int) -> void:
