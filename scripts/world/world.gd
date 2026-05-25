@@ -366,9 +366,11 @@ func _spawn_player() -> void:
 
 
 func _spawn_world_pos() -> Vector2:
+	# 玩家从地表上方 1 格出生 (而不是脚切线贴草顶), 防止物理引擎边缘情况
+	# 下 is_on_floor() 不稳定. 落地只需 1 帧 (重力 900 → 0.5s 内稳).
 	return Vector2(
 		spawn_point.x * TILE_SIZE + TILE_SIZE / 2.0,
-		spawn_point.y * TILE_SIZE + TILE_SIZE
+		spawn_point.y * TILE_SIZE
 	)
 
 
