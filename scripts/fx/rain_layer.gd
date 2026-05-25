@@ -37,6 +37,7 @@ var _drops: Array = []
 # 每个涟漪 [Line2D, world_pos:Vector2, time:float]
 var _ripples: Array = []
 var _vp_size: Vector2
+var _cached_cm = null   # chunk_manager 缓存 (避免每滴每帧 get_parent.get)
 
 @onready var _darken_rect: ColorRect = ColorRect.new()
 @onready var _lightning_rect: ColorRect = ColorRect.new()
@@ -161,10 +162,13 @@ func _hits_solid(wpos: Vector2) -> bool:
 
 
 func _get_chunk_manager():
+	if _cached_cm != null:
+		return _cached_cm
 	var p: Node = get_parent()
 	if p == null:
 		return null
-	return p.get("chunk_manager")
+	_cached_cm = p.get("chunk_manager")
+	return _cached_cm
 
 
 # 涟漪 = 8 段折线圆

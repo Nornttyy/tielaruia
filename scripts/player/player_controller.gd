@@ -38,6 +38,12 @@ var _previous_vy: float = 0.0
 var _walk_step_timer: float = 0.0
 var _hurt_timer: float = 0.0
 var _shake_amount: float = 0.0
+# 节流: 音乐场景每 0.5s 检测一次, 日光每 0.1s 检测一次 (节省 chunk_manager 查询)
+const _MUSIC_INTERVAL := 0.5
+const _SUN_INTERVAL := 0.1
+var _music_timer: float = 0.0
+var _sun_timer: float = 0.0
+var _cached_chunk_manager = null   # 第一次 _process 查到后缓存, 避免反复 get_tree 查 group
 
 
 func _ready() -> void:
@@ -58,8 +64,14 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_update_sun_aura(delta)
-	_update_music_context()
+	_sun_timer -= delta
+	if _sun_timer <= 0.0:
+		_sun_timer = _SUN_INTERVAL
+		_update_sun_aura(_SUN_INTERVAL)  # 用 interval 当作 dt, lerp 系数等效
+	_music_timer -= delta
+	if _music_timer <= 0.0:
+		_music_timer = _MUSIC_INTERVAL
+		_update_music_context()
 
 
 # SunAura 跟随 SkyLightGrid: 玩家头顶有天空 → 启用大日光; 钻进洞穴 → 关掉。0.3s lerp 避免硬切。
@@ -91,15 +103,23 @@ func _update_music_context() -> void:
 	MusicBank.set_context(ctx)
 
 
-# 玩家身体所在 tile 是水吗 (脚下/腰部任一格是 WATER 就算)
-func _is_in_water() -> bool:
+# 缓存 chunk_manager 引用 (从 World 找一次, 避免每帧 get_tree 群组查询)
+func _get_chunk_manager():
+	if _cached_chunk_manager != null:
+		return _cached_chunk_manager
 	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
 	if terrain == null:
-		return false
+		return null
 	var world: Node = terrain.get_parent()
 	if world == null:
-		return false
-	var cm = world.get("chunk_manager")
+		return null
+	_cached_chunk_manager = world.get("chunk_manager")
+	return _cached_chunk_manager
+
+
+# 玩家身体所在 tile 是水吗 (脚下/腰部任一格是 WATER 就算)
+func _is_in_water() -> bool:
+	var cm = _get_chunk_manager()
 	if cm == null:
 		return false
 	# 玩家中心点 (脚在 global_position, 头在 global_position - 22)
@@ -110,14 +130,7 @@ func _is_in_water() -> bool:
 
 
 func _is_player_underground(tile_x: int, tile_y: int) -> bool:
-	# 找 World.chunk_manager (terrain_layer 在 group 里, 它父亲就是 World)
-	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
-	if terrain == null:
-		return false
-	var world: Node = terrain.get_parent()
-	if world == null:
-		return false
-	var cm = world.get("chunk_manager")
+	var cm = _get_chunk_manager()
 	if cm == null:
 		return false
 	# 条件 1: 自然矿洞 (有墙背景)

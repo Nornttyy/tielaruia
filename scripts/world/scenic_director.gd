@@ -71,9 +71,18 @@ func _ready() -> void:
 	_lava_drip = parent.get_node_or_null("LavaDripLayer")
 
 
-func _process(_delta: float) -> void:
+# 节流: 深度计算 + alpha 应用每 0.1s 一次 (够丝滑, 不必每帧).
+const _UPDATE_INTERVAL := 0.1
+var _update_timer: float = 0.0
+
+
+func _process(delta: float) -> void:
 	if _world == null:
 		return
+	_update_timer -= delta
+	if _update_timer > 0.0:
+		return
+	_update_timer = _UPDATE_INTERVAL
 	var depth_tiles: float = _player_depth_below_surface_tiles()
 	var shallow_t: float = compute_shallow_t_from_depth(depth_tiles)
 	var deep_t: float = compute_deep_t_from_depth(depth_tiles)
