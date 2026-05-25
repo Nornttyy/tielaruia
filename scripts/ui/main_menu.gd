@@ -54,6 +54,7 @@ func _ready() -> void:
 	_setup_buttons()
 	_setup_settings_panel()
 	_setup_new_game_panel()
+	_setup_world_select_panel()
 
 
 func _process(delta: float) -> void:
@@ -363,9 +364,25 @@ func _apply_button_style(btn: Button) -> void:
 
 
 func _on_new_game_pressed() -> void:
-	# 显示 "新游戏" 配置面板, 不直接开始. 用户填完点 "开始" 才真正进游戏
-	$NewGamePanel.visible = true
+	# 点 "开始游戏" → 显 WorldSelectPanel (创建新世界 / 继续存档)
+	# 继续按钮根据有没有存档决定是否禁用
+	$WorldSelectPanel.visible = true
 	$ButtonLayer/VBox.visible = false
+	var cont_btn: Button = $WorldSelectPanel/VBox/ContinueButton
+	if cont_btn != null:
+		cont_btn.disabled = not SaveManager.has_save()
+
+
+# 从 WorldSelectPanel 点 "创建新世界" → 显 NewGamePanel
+func _on_create_world_pressed() -> void:
+	$WorldSelectPanel.visible = false
+	$NewGamePanel.visible = true
+
+
+# 从 WorldSelectPanel 点 "返回" → 回主菜单
+func _on_world_select_back_pressed() -> void:
+	$WorldSelectPanel.visible = false
+	$ButtonLayer/VBox.visible = true
 
 
 # 配置完成 → 淡出 + 发 start_game(opts)
@@ -406,6 +423,8 @@ func reset_visuals() -> void:
 	# 关闭可能开着的子面板
 	if has_node("NewGamePanel"):
 		$NewGamePanel.visible = false
+	if has_node("WorldSelectPanel"):
+		$WorldSelectPanel.visible = false
 	if has_node("SettingsPanel"):
 		$SettingsPanel.visible = false
 	if has_node("MultiplayerPanel"):
@@ -429,6 +448,19 @@ func _on_quit_pressed() -> void:
 # ---- settings panel ----
 
 # ---- new game panel ----
+
+func _setup_world_select_panel() -> void:
+	var panel := $WorldSelectPanel
+	var new_btn: Button = panel.get_node("VBox/NewWorldButton")
+	var cont_btn: Button = panel.get_node("VBox/ContinueButton")
+	var back_btn: Button = panel.get_node("VBox/BackButton")
+	_apply_button_style(new_btn)
+	_apply_button_style(cont_btn)
+	_apply_button_style(back_btn)
+	new_btn.pressed.connect(_on_create_world_pressed)
+	cont_btn.pressed.connect(_on_continue_pressed)
+	back_btn.pressed.connect(_on_world_select_back_pressed)
+
 
 func _setup_new_game_panel() -> void:
 	var panel := $NewGamePanel
@@ -462,10 +494,10 @@ func _setup_new_game_panel() -> void:
 	random_btn.pressed.connect(func():
 		seed_edit.text = str(randi_range(1, 999999))
 	)
-	# 取消: 回主菜单按钮
+	# 取消: 回 WorldSelectPanel (而不是直接到主菜单)
 	cancel_btn.pressed.connect(func():
 		panel.visible = false
-		$ButtonLayer/VBox.visible = true
+		$WorldSelectPanel.visible = true
 	)
 	# 开始: 读输入 → opts → 淡出开始
 	start_btn.pressed.connect(func():
@@ -561,7 +593,7 @@ func _on_mp_room_code_ready(code: String) -> void:
 
 
 func _on_mp_error(msg: String) -> void:
-	$MultiplayerPanel/VBox/StatusLabel.text = "❌ " + msg
+	$MultiplayerPanel/VBox/StatusLabel.text = "出错: " + msg
 
 
 func _refresh_multiplayer_status() -> void:
@@ -577,11 +609,11 @@ func _refresh_multiplayer_status() -> void:
 		"joining":
 			lbl.text = "连接中..."
 		"connected":
-			lbl.text = "✅ 已连接! (待 Phase C 同步玩家)"
+			lbl.text = "已连接 (待 Phase C 同步玩家)"
 		"disconnected":
 			lbl.text = "对方断开了"
 		"error":
-			lbl.text = "❌ " + NetworkManager.last_error
+			lbl.text = "出错: " + NetworkManager.last_error
 
 
 func _setup_settings_panel() -> void:
