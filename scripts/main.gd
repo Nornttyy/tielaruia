@@ -16,6 +16,9 @@ const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
 
 var _state: String = "menu"
 var _game_nodes: Array[Node] = []
+# 自动存档: 每 AUTO_SAVE_INTERVAL 秒保存一次. 玩游戏时启动 Timer.
+const AUTO_SAVE_INTERVAL := 30.0
+var _autosave_timer: Timer = null
 
 var world: Node2D:
 	get:
@@ -95,6 +98,28 @@ func _start_game(seed_or_opts = 0) -> void:
 	_game_nodes.append(dialogue)
 
 	_wire_player.call_deferred()
+	_start_autosave()
+
+
+# 实时存档: 每 AUTO_SAVE_INTERVAL 秒自动保存. 进游戏时启动 Timer.
+func _start_autosave() -> void:
+	if _autosave_timer != null:
+		return
+	_autosave_timer = Timer.new()
+	_autosave_timer.wait_time = AUTO_SAVE_INTERVAL
+	_autosave_timer.one_shot = false
+	_autosave_timer.autostart = true
+	_autosave_timer.timeout.connect(func():
+		if _state == "game":
+			SaveManager.save(self)
+	)
+	add_child(_autosave_timer)
+
+
+func _stop_autosave() -> void:
+	if _autosave_timer != null:
+		_autosave_timer.queue_free()
+		_autosave_timer = null
 
 
 # 走"继续" 路径: 用存档 seed 启 world + 还原玩家/背包/方块改动
@@ -185,6 +210,10 @@ func _wire_player() -> void:
 
 
 func _return_to_menu() -> void:
+	# 退出前最后存一次档
+	if _state == "game":
+		SaveManager.save(self)
+	_stop_autosave()
 	_pause_menu.close()
 	for n in _game_nodes:
 		if is_instance_valid(n):
