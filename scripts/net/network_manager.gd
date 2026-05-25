@@ -21,12 +21,19 @@ signal room_code_ready(code: String)
 signal message_received(data: String)
 signal error_occurred(msg: String)
 
+# 高层协议事件 (parse 后):
+signal hello_received(world_seed: int)         # host → client, 双方一致的 seed
+signal remote_pos_received(x: float, y: float, facing: int, anim: String)
+
 const POLL_INTERVAL := 0.1  # 每 0.1s 拉一次 status + messages
+const POS_SEND_INTERVAL := 0.1  # 玩家位置每 0.1s 发一次 (10Hz)
 
 var status: String = "idle"
 var my_room_code: String = ""
 var is_host: bool = false
 var last_error: String = ""
+var shared_world_seed: int = 0  # host 创建房间时生成的种子, client 从 hello 拿
+var _pos_send_timer: float = 0.0
 
 var _bridge = null   # JavaScriptObject ref, 仅 HTML5 有
 var _poll_timer: float = 0.0
@@ -62,11 +69,15 @@ func _has_javascript_bridge() -> bool:
 func _poll_bridge() -> void:
 	var new_status: String = String(_bridge.get_status())
 	if new_status != status:
+		var old_status: String = status
 		status = new_status
 		status_changed.emit(status)
 		if status == "error":
 			last_error = String(_bridge.get_last_error())
 			error_occurred.emit(last_error)
+		# host 连上 client 后, 立刻发 hello (告诉对方 seed)
+		if status == "connected" and is_host and old_status != "connected":
+			send_hello(shared_world_seed)
 	# my_room_code (host 模式才有, 异步生成)
 	var rc: String = String(_bridge.get_my_id())
 	if rc != my_room_code and rc != "":
@@ -78,7 +89,27 @@ func _poll_bridge() -> void:
 		var msgs: Variant = JSON.parse_string(msgs_json)
 		if msgs is Array:
 			for m in msgs:
-				message_received.emit(String(m))
+				_route_message(String(m))
+
+
+# 解析收到的 JSON 消息, 分发到具体信号
+func _route_message(raw: String) -> void:
+	message_received.emit(raw)
+	var data: Variant = JSON.parse_string(raw)
+	if not (data is Dictionary):
+		return
+	var msg_type: String = String(data.get("type", ""))
+	match msg_type:
+		"hello":
+			var seed_val: int = int(data.get("seed", 0))
+			shared_world_seed = seed_val
+			hello_received.emit(seed_val)
+		"pos":
+			var x: float = float(data.get("x", 0.0))
+			var y: float = float(data.get("y", 0.0))
+			var facing: int = int(data.get("f", 1))
+			var anim: String = String(data.get("a", "idle"))
+			remote_pos_received.emit(x, y, facing, anim)
 
 
 func host() -> void:
@@ -89,6 +120,8 @@ func host() -> void:
 		return
 	is_host = true
 	my_room_code = ""
+	# 生成共享 seed (host 决定, 之后 send_hello 告诉 client)
+	shared_world_seed = randi_range(1, 999999)
 	_bridge.host()
 
 
@@ -106,6 +139,31 @@ func send(data: String) -> bool:
 	if _bridge == null or not connected():
 		return false
 	return bool(_bridge.send(data))
+
+
+# ===== 高层协议: 发 hello / 位置 =====
+
+func send_hello(seed_val: int) -> void:
+	send(JSON.stringify({"type": "hello", "seed": seed_val}))
+
+
+# 由 player_controller 每 _physics_process 末尾调.
+# 内部限速到 POS_SEND_INTERVAL.
+func tick_send_player_pos(delta: float, x: float, y: float, facing: int, anim: String) -> void:
+	if not connected():
+		return
+	_pos_send_timer -= delta
+	if _pos_send_timer > 0.0:
+		return
+	_pos_send_timer = POS_SEND_INTERVAL
+	# 紧凑 key (a/f/x/y) 省带宽
+	send(JSON.stringify({
+		"type": "pos",
+		"x": snappedf(x, 0.1),
+		"y": snappedf(y, 0.1),
+		"f": facing,
+		"a": anim,
+	}))
 
 
 func disconnect_room() -> void:

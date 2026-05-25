@@ -91,23 +91,23 @@ func test_multiplayer_button_shows_panel():
 	assert_true(panel.visible, "点联机后面板显示")
 
 
-func test_new_game_button_shows_new_game_panel():
+func test_new_game_button_shows_world_select_panel():
+	# 现在 "开始游戏" 先开 WorldSelectPanel (创建/继续二选一), 不直接进 NewGamePanel
 	var mm = _make()
-	var panel = mm.get_node_or_null("NewGamePanel")
-	assert_not_null(panel, "应有 NewGamePanel")
-	assert_false(panel.visible, "初始隐藏")
+	var ws_panel = mm.get_node_or_null("WorldSelectPanel")
+	assert_not_null(ws_panel, "应有 WorldSelectPanel")
+	assert_false(ws_panel.visible, "初始隐藏")
 	mm._on_new_game_pressed()
-	assert_true(panel.visible, "点新游戏后面板显示")
-	# 主按钮列表应隐藏
+	assert_true(ws_panel.visible, "点开始游戏后 WorldSelectPanel 显示")
 	assert_false(mm.get_node("ButtonLayer/VBox").visible)
 
 
 func test_new_game_panel_start_button_emits_start_game_with_opts():
 	var mm = _make()
-	mm._on_new_game_pressed()
+	# 直接显 NewGamePanel (跳过 WorldSelectPanel 这一步, 测试只关心 Start 按钮)
+	mm.get_node("NewGamePanel").visible = true
 	var captured: Array = []
 	mm.start_game.connect(func(opts: Dictionary): captured.append(opts))
-	# 模拟点击 "开始" 按钮
 	var start_btn: Button = mm.get_node("NewGamePanel/VBox/ButtonRow/StartButton")
 	start_btn.pressed.emit()
 	await get_tree().create_timer(0.5).timeout
@@ -118,15 +118,13 @@ func test_new_game_panel_start_button_emits_start_game_with_opts():
 	assert_true("difficulty" in opts)
 
 
-func test_new_game_panel_cancel_returns_to_menu():
+func test_new_game_panel_cancel_hides_panel():
 	var mm = _make()
-	mm._on_new_game_pressed()
+	mm.get_node("NewGamePanel").visible = true
 	var panel = mm.get_node("NewGamePanel")
-	assert_true(panel.visible)
 	var cancel_btn: Button = mm.get_node("NewGamePanel/VBox/ButtonRow/CancelButton")
 	cancel_btn.pressed.emit()
-	assert_false(panel.visible, "取消后面板隐藏")
-	assert_true(mm.get_node("ButtonLayer/VBox").visible)
+	assert_false(panel.visible, "取消后 NewGamePanel 隐藏")
 
 
 func test_hover_arrow_initially_invisible():

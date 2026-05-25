@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_remote_player"]
+
+[ext_resource type="Script" path="res://scripts/entities/remote_player.gd" id="1_rp"]
+
+[node name="RemotePlayer" type="Node2D"]
+script = ExtResource("1_rp")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -24)
+centered = false
+offset = Vector2(-6, 0)
+
+[node name="NameLabel" type="Label" parent="."]
+offset_left = -40.0
+offset_top = -56.0
+offset_right = 40.0
+offset_bottom = -40.0
+horizontal_alignment = 1
+text = "朋友"
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.85, 0.95, 1.0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4

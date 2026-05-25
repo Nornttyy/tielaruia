@@ -76,6 +76,11 @@ func _process(delta: float) -> void:
 	if _music_timer <= 0.0:
 		_music_timer = _MUSIC_INTERVAL
 		_update_music_context()
+	# 联机: 每 0.1s 把本地位置 broadcast 给对方
+	if NetworkManager != null and NetworkManager.connected():
+		var anim_name: String = sprite.animation if sprite != null else "idle"
+		var facing_int: int = 1 if _facing_right else -1
+		NetworkManager.tick_send_player_pos(delta, global_position.x, global_position.y, facing_int, anim_name)
 
 
 # SunAura 跟随 SkyLightGrid: 玩家头顶有天空 → 启用大日光; 钻进洞穴 → 关掉。0.3s lerp 避免硬切。

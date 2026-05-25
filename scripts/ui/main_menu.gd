@@ -364,13 +364,71 @@ func _apply_button_style(btn: Button) -> void:
 
 
 func _on_new_game_pressed() -> void:
-	# 点 "开始游戏" → 显 WorldSelectPanel (创建新世界 / 继续存档)
-	# 继续按钮根据有没有存档决定是否禁用
+	# 点 "开始游戏" → 显 WorldSelectPanel + 刷新存档列表
 	$WorldSelectPanel.visible = true
 	$ButtonLayer/VBox.visible = false
-	var cont_btn: Button = $WorldSelectPanel/VBox/ContinueButton
-	if cont_btn != null:
-		cont_btn.disabled = not SaveManager.has_save()
+	_refresh_saves_list()
+
+
+# 重新扫所有存档, 动态生成 UI 列表条目
+func _refresh_saves_list() -> void:
+	var list: VBoxContainer = $WorldSelectPanel/VBox/SavesScroll/SavesList
+	var empty_label: Label = $WorldSelectPanel/VBox/EmptyLabel
+	# 清旧条目
+	for child in list.get_children():
+		child.queue_free()
+	var saves: Array = SaveManager.list_saves()
+	empty_label.visible = saves.is_empty()
+	for entry in saves:
+		var save_name: String = entry["name"]
+		var data = entry["data"]
+		_make_save_row(list, save_name, data)
+
+
+# 创建一行存档: [世界名 难度]  [进入]  [删除]
+func _make_save_row(parent: VBoxContainer, save_name: String, data) -> void:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(0, 44)
+	row.size_flags_horizontal = 3
+	# 世界名 + 难度
+	var label := Label.new()
+	var diff_text: String = "简单" if data.difficulty == DIFF_EASY else ("困难" if data.difficulty == DIFF_HARD else "普通")
+	label.text = "%s   [%s]" % [save_name, diff_text]
+	label.size_flags_horizontal = 3
+	label.add_theme_color_override("font_color", Color(0.949, 0.761, 0.396, 1.0))
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(label)
+	# 进入按钮
+	var enter_btn := Button.new()
+	enter_btn.text = "进入"
+	enter_btn.custom_minimum_size = Vector2(70, 0)
+	_apply_button_style(enter_btn)
+	enter_btn.pressed.connect(func(): _on_load_save_pressed(save_name))
+	row.add_child(enter_btn)
+	# 删除按钮
+	var del_btn := Button.new()
+	del_btn.text = "删除"
+	del_btn.custom_minimum_size = Vector2(60, 0)
+	_apply_button_style(del_btn)
+	del_btn.pressed.connect(func():
+		SaveManager.delete_save_by_name(save_name)
+		_refresh_saves_list()
+	)
+	row.add_child(del_btn)
+	parent.add_child(row)
+
+
+# 点存档行的 "进入" → 用对应名字读存档进游戏
+func _on_load_save_pressed(save_name: String) -> void:
+	var data = SaveManager.load_save_by_name(save_name)
+	if data == null:
+		return
+	var fade: ColorRect = $ButtonLayer/FadeOverlay
+	var vbox: VBoxContainer = $ButtonLayer/VBox
+	var t := create_tween()
+	t.tween_property(vbox, "modulate:a", 0.0, 0.3)
+	t.parallel().tween_property(fade, "modulate:a", 1.0, 0.4)
+	t.tween_callback(func(): continue_game.emit(data))
 
 
 # 从 WorldSelectPanel 点 "创建新世界" → 显 NewGamePanel
@@ -452,13 +510,10 @@ func _on_quit_pressed() -> void:
 func _setup_world_select_panel() -> void:
 	var panel := $WorldSelectPanel
 	var new_btn: Button = panel.get_node("VBox/NewWorldButton")
-	var cont_btn: Button = panel.get_node("VBox/ContinueButton")
 	var back_btn: Button = panel.get_node("VBox/BackButton")
 	_apply_button_style(new_btn)
-	_apply_button_style(cont_btn)
 	_apply_button_style(back_btn)
 	new_btn.pressed.connect(_on_create_world_pressed)
-	cont_btn.pressed.connect(_on_continue_pressed)
 	back_btn.pressed.connect(_on_world_select_back_pressed)
 
 
@@ -556,6 +611,8 @@ func _setup_multiplayer_panel_once() -> void:
 			NetworkManager.room_code_ready.connect(_on_mp_room_code_ready)
 		if not NetworkManager.error_occurred.is_connected(_on_mp_error):
 			NetworkManager.error_occurred.connect(_on_mp_error)
+		if not NetworkManager.hello_received.is_connected(_on_mp_hello_received):
+			NetworkManager.hello_received.connect(_on_mp_hello_received)
 
 
 func _on_multiplayer_back_pressed() -> void:
@@ -585,6 +642,32 @@ func _on_join_pressed() -> void:
 
 func _on_mp_status_changed(s: String) -> void:
 	_refresh_multiplayer_status()
+	# host 一旦连上 → 立刻开始多人游戏 (用自己的 seed). client 等 hello 再启 (在 _on_mp_hello_received)
+	if s == "connected" and NetworkManager.is_host:
+		_start_multiplayer_game(NetworkManager.shared_world_seed)
+
+
+func _on_mp_hello_received(seed_val: int) -> void:
+	# client 收到 host 的 hello → 用同 seed 启游戏
+	if not NetworkManager.is_host:
+		_start_multiplayer_game(seed_val)
+
+
+func _start_multiplayer_game(seed_val: int) -> void:
+	# 淡出主菜单 → 发 start_game(opts), 进游戏. opts 带 multiplayer 标记.
+	var fade: ColorRect = $ButtonLayer/FadeOverlay
+	var vbox: VBoxContainer = $ButtonLayer/VBox
+	$MultiplayerPanel.visible = false
+	vbox.visible = true
+	var t := create_tween()
+	t.tween_property(vbox, "modulate:a", 0.0, 0.3)
+	t.parallel().tween_property(fade, "modulate:a", 1.0, 0.4)
+	t.tween_callback(func(): start_game.emit({
+		"world_seed": seed_val,
+		"world_name": "联机世界",
+		"difficulty": 1,
+		"multiplayer": true,
+	}))
 
 
 func _on_mp_room_code_ready(code: String) -> void:

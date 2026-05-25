@@ -23,6 +23,7 @@ const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
 const PigScene = preload("res://scenes/entities/pig.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
+const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
 
 const MAX_SLIMES := 4              # 白天上限 (slime)
 const MAX_ZOMBIES := 5             # 夜间上限 (zombie)
@@ -50,6 +51,7 @@ const MINIMAP_MARK_INTERVAL := 0.1  # 每 0.1s 标记一次玩家周围 (减少�
 var spawn_point: Vector2i
 var chunk_manager: ChunkManager
 var minimap_data: Node
+var _remote_player: Node = null   # 联机时另一个玩家的 sprite (Phase C)
 var weather: Node
 var rain_layer: CanvasLayer
 var fireflies: Node2D
@@ -112,6 +114,31 @@ func _ready() -> void:
 	var cursor_mgr := CursorManagerClass.new()
 	cursor_mgr.name = "CursorManager"
 	add_child(cursor_mgr)
+	# 联机: 已连上时生成 RemotePlayer 接收对方位置
+	if NetworkManager != null and NetworkManager.connected():
+		_spawn_remote_player()
+		if not NetworkManager.remote_pos_received.is_connected(_on_remote_pos):
+			NetworkManager.remote_pos_received.connect(_on_remote_pos)
+
+
+func _spawn_remote_player() -> void:
+	if _remote_player != null:
+		return
+	_remote_player = RemotePlayerScene.instantiate()
+	_remote_player.name = "RemotePlayer"
+	entities_root.add_child(_remote_player)
+	# 初始放在 spawn 点附近 (收到第一条 pos 后 snap 到真实位置)
+	_remote_player.global_position = Vector2(
+		spawn_point.x * TILE_SIZE + TILE_SIZE / 2.0,
+		spawn_point.y * TILE_SIZE + TILE_SIZE
+	)
+
+
+func _on_remote_pos(x: float, y: float, facing: int, anim: String) -> void:
+	if _remote_player == null:
+		_spawn_remote_player()
+	if _remote_player != null and _remote_player.has_method("apply_pos"):
+		_remote_player.apply_pos(x, y, facing, anim)
 
 
 func _place_village() -> void:
