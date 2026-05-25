@@ -78,7 +78,7 @@ func _build_ui() -> void:
 
 	# 配方列表用 ScrollContainer 包起来 (现在配方数 > 6 时会溢出, 加滚动条解决)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(290, 280)  # 高度上限 ~ 9 个配方行高 (宽 290 留给输出+名+配料图标)
+	scroll.custom_minimum_size = Vector2(200, 320)  # 窄宽不撑面板, 高 320 自动垂直滚
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	recipe_vbox.add_child(scroll)
@@ -109,48 +109,57 @@ func _build_recipe_buttons() -> void:
 
 
 func _make_recipe_row(recipe: Dictionary) -> Dictionary:
-	# 行布局: [输出图标 24×24] [输出名字 80px] ← [配料图标 16×16 ×N] [配料图标 ×M] ...
-	# 配料图标在右边一眼看清需要啥. 细节 (数量/工作台需求) 仍在 hover tooltip.
+	# 2 行高布局 (窄, 不撑面板宽度):
+	#   上行: [输出图标 24×24] [输出名字 expand]
+	#   下行: [配料图标 14×14 ×N] [配料图标 ×M] ...  (左缩进 ~28px 与输出图标对齐)
+	# 细节 (工作台需求) 仍在 hover tooltip.
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(260, 32)
+	btn.custom_minimum_size = Vector2(180, 54)  # 高度 54 = 上 24 + 下 16 + padding
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.tooltip_text = _recipe_tooltip(recipe)
 
-	var hb := HBoxContainer.new()
-	hb.add_theme_constant_override("separation", 4)
-	hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hb.set_anchors_preset(Control.PRESET_FULL_RECT)
-	hb.offset_left = 6.0
-	hb.offset_right = -6.0
-	btn.add_child(hb)
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 2)
+	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vb.offset_left = 6.0
+	vb.offset_right = -6.0
+	vb.offset_top = 4.0
+	vb.offset_bottom = -4.0
+	btn.add_child(vb)
 
-	# 输出图标 (24×24, 主体)
+	# 上行: 输出图标 + 名
+	var top_hb := HBoxContainer.new()
+	top_hb.add_theme_constant_override("separation", 6)
+	top_hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(top_hb)
+
 	var icon := TextureRect.new()
 	icon.texture = ArtCache.get_inventory_icon(recipe.output_id)
 	icon.custom_minimum_size = Vector2(24, 24)
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hb.add_child(icon)
+	top_hb.add_child(icon)
 
-	# 输出名 (固定宽度 78px, 不挤压右边的配料图标)
 	var name_lbl := Label.new()
 	name_lbl.text = _zh_name(recipe.output_id)
 	name_lbl.add_theme_font_size_override("font_size", 13)
 	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_lbl.custom_minimum_size = Vector2(78, 0)
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hb.add_child(name_lbl)
+	top_hb.add_child(name_lbl)
 
-	# 箭头分隔符
-	var arrow := Label.new()
-	arrow.text = "←"
-	arrow.add_theme_font_size_override("font_size", 12)
-	arrow.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hb.add_child(arrow)
+	# 下行: 配料图标 (左缩进与上行图标对齐)
+	var bot_hb := HBoxContainer.new()
+	bot_hb.add_theme_constant_override("separation", 4)
+	bot_hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(bot_hb)
 
-	# 配料图标列表 (每个 = 16×16 图标 + ×数量)
+	var indent := Control.new()
+	indent.custom_minimum_size = Vector2(2, 0)
+	indent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bot_hb.add_child(indent)
+
 	var req: Dictionary = _required_inputs(recipe)
 	for item_id in req:
 		var ing_hb := HBoxContainer.new()
@@ -159,20 +168,20 @@ func _make_recipe_row(recipe: Dictionary) -> Dictionary:
 
 		var ing_icon := TextureRect.new()
 		ing_icon.texture = ArtCache.get_inventory_icon(item_id)
-		ing_icon.custom_minimum_size = Vector2(16, 16)
+		ing_icon.custom_minimum_size = Vector2(14, 14)
 		ing_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 		ing_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		ing_hb.add_child(ing_icon)
 
 		var cnt_lbl := Label.new()
 		cnt_lbl.text = "×%d" % req[item_id]
-		cnt_lbl.add_theme_font_size_override("font_size", 11)
-		cnt_lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+		cnt_lbl.add_theme_font_size_override("font_size", 10)
+		cnt_lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 		cnt_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		cnt_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		ing_hb.add_child(cnt_lbl)
 
-		hb.add_child(ing_hb)
+		bot_hb.add_child(ing_hb)
 
 	btn.pressed.connect(_on_recipe_pressed.bind(recipe.id))
 	return {"recipe": recipe, "button": btn}
