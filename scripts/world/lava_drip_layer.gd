@@ -5,7 +5,7 @@ extends Node2D
 
 const VIEWPORT_W := 1280.0
 const VIEWPORT_H := 720.0
-const MAX_DRIPS := 12
+const MAX_DRIPS := 6   # perf: 12 → 6
 const SPAWN_INTERVAL_MIN := 1.5
 const SPAWN_INTERVAL_MAX := 3.5
 const GRAVITY := 380.0   # 匀加速

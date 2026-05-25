@@ -33,8 +33,8 @@ func _ready() -> void:
 	# 钟乳石 (motion_scale 0.18, 顶部下垂)
 	var stal_pl := _add_layer(0.18, CaveBgArt.stalactites(STAL_W, STAL_H, 14, 11), TOP_Y, STAL_W)
 	_collect_sprites(stal_pl, _stalactite_sprites)
-	# 水晶 (motion_scale 0.25)
-	var crystal_pl := _add_layer(0.25, CaveBgArt.crystals(CRYSTAL_W, CRYSTAL_H, 30, 23), 80, CRYSTAL_W)
+	# 水晶 (motion_scale 0.25), 数量 30 → 18 (perf)
+	var crystal_pl := _add_layer(0.25, CaveBgArt.crystals(CRYSTAL_W, CRYSTAL_H, 18, 23), 80, CRYSTAL_W)
 	_collect_sprites(crystal_pl, _crystal_sprites)
 	# 初始 alpha=0, 由 ScenicDirector 切换
 	_apply_alphas()

@@ -4,8 +4,11 @@ extends CanvasLayer
 
 const CelestialArt = preload("res://scripts/art/celestial_art.gd")
 
-const STAR_COUNT := 70
+const STAR_COUNT := 35    # 70 → 35 (perf, 视觉差别不大)
 const VIEWPORT_W := 1280.0
+# 节流: 天体更新每 0.05s (20Hz) 一次, 太阳/月亮弧走得慢, 星眨眼 sin 也不需要 60Hz
+const _UPDATE_INTERVAL := 0.05
+var _update_timer: float = 0.0
 const VIEWPORT_H := 720.0
 const HORIZON_Y := 420.0       # 跟 mountains_layer 同步
 const ARC_HEIGHT := 360.0      # 弧顶到 horizon 的高度
@@ -64,7 +67,13 @@ func _spawn_stars() -> void:
 
 
 func _process(delta: float) -> void:
-	update_celestial(delta)
+	_update_timer -= delta
+	if _update_timer > 0.0:
+		return
+	# 累积 dt 用作 update 的 delta (这样 sin twinkle 累计正确)
+	var step: float = _UPDATE_INTERVAL - _update_timer  # = 已过去的真实时间
+	_update_timer = _UPDATE_INTERVAL
+	update_celestial(step)
 
 
 # 把 sun/moon/star 的可见性 + 位置 + 透明度 全算出来.

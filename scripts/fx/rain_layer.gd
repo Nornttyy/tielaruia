@@ -7,7 +7,7 @@ extends CanvasLayer
 
 # Tiles 是 autoload 实例 (脚本 tile_data.gd 挂在 autoload 上), 不用 preload
 
-const RAIN_COUNT := 220         # 屏幕上同时存在的雨点数
+const RAIN_COUNT := 130         # 屏幕上同时存在的雨点数 (perf: 220 → 130)
 const RAIN_SPEED_MIN := 600.0   # 像素/秒
 const RAIN_SPEED_MAX := 900.0
 const RAIN_LENGTH_MIN := 14.0
