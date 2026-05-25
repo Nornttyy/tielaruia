@@ -126,16 +126,29 @@ func _get_chunk_manager():
 	return _cached_chunk_manager
 
 
-# 玩家身体所在 tile 是水吗 (脚下/腰部任一格是 WATER 就算)
+static func _is_water_tile(tid: int) -> bool:
+	return tid == Tiles.WATER or tid == Tiles.WATER_L1 \
+			or tid == Tiles.WATER_L2 or tid == Tiles.WATER_L3
+
+
+# 玩家腰部是否在水里 (= 在游泳)
 func _is_in_water() -> bool:
 	var cm = _get_chunk_manager()
 	if cm == null:
 		return false
-	# 玩家中心点 (脚在 global_position, 头在 global_position - 22)
 	var tx: int = int(floor(global_position.x / 16.0))
-	# 腰部高度 = 脚向上 11 (碰撞框中心)
 	var ty: int = int(floor((global_position.y - 11.0) / 16.0))
-	return cm.get_tile(tx, ty) == Tiles.WATER
+	return _is_water_tile(cm.get_tile(tx, ty))
+
+
+# 头部是否露出水面 (用于"跳上岸": 头出水可走普通跳跃, 强度够蹬上岸)
+func _is_head_above_water() -> bool:
+	var cm = _get_chunk_manager()
+	if cm == null:
+		return true
+	var tx: int = int(floor(global_position.x / 16.0))
+	var ty: int = int(floor((global_position.y - 22.0) / 16.0))
+	return not _is_water_tile(cm.get_tile(tx, ty))
 
 
 func _is_player_underground(tile_x: int, tile_y: int) -> bool:
@@ -203,7 +216,12 @@ func _physics_process(delta: float) -> void:
 		velocity.y += SWIM_GRAVITY * delta
 		if velocity.y > SWIM_MAX_SINK:
 			velocity.y = SWIM_MAX_SINK
-		if Input.is_action_pressed("jump"):
+		# 头出水时按 jump 走普通跳跃 (强力, 能蹬上岸); 头在水里持续按走弱上浮
+		if Input.is_action_just_pressed("jump") and _is_head_above_water():
+			velocity.y = JUMP_VELOCITY
+			did_jump = true
+			SfxBank.play("jump", 0.08)
+		elif Input.is_action_pressed("jump"):
 			velocity.y = SWIM_UP_SPEED
 	else:
 		if not on_floor_now:

@@ -83,19 +83,12 @@ func _physics_process(delta: float) -> void:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
 
-	# 水检测: 在水里用 SWIM 物理 + 横向慢一半 (跟玩家一样的逻辑)
-	var in_water: bool = _is_in_water()
-
-	# 重力: 水里弱, 空气中正常
-	if in_water:
-		velocity.y += SWIM_GRAVITY * delta
-		if velocity.y > SWIM_MAX_SINK:
-			velocity.y = SWIM_MAX_SINK
-	elif not is_on_floor():
+	# 动物不会游泳: 正常重力 (碰水继续下沉)
+	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 
-	# desired_dir = 本帧想去的方向 (move_and_slide 撞墙后会把 velocity.x 设为 0, 不能用它判断方向)
-	var speed_mul: float = WATER_SPEED_MUL if in_water else 1.0
+	# desired_dir = 本帧想去的方向
+	var speed_mul: float = 1.0
 	var desired_dir: float = 0.0
 	if _flee_timer > 0.0:
 		_flee_timer -= delta

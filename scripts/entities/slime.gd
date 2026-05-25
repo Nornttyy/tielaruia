@@ -80,13 +80,8 @@ func _physics_process(delta: float) -> void:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
 
-	# 水里: 弱重力 + 跳频率减半 (像浮力, 慢动)
-	var in_water: bool = _is_in_water()
-	if in_water:
-		velocity.y += SWIM_GRAVITY * delta
-		if velocity.y > SWIM_MAX_SINK:
-			velocity.y = SWIM_MAX_SINK
-	elif not is_on_floor():
+	# 史莱姆不会游泳: 碰到水继续正常重力下沉
+	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	else:
 		# 落地 → 摩擦 + 准备下次跳

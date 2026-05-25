@@ -41,12 +41,8 @@ func _physics_process(delta: float) -> void:
 	if _jump_cooldown > 0.0:
 		_jump_cooldown -= delta
 
-	var in_water: bool = _is_in_water()
-	if in_water:
-		velocity.y += SWIM_GRAVITY * delta
-		if velocity.y > SWIM_MAX_SINK:
-			velocity.y = SWIM_MAX_SINK
-	elif not is_on_floor():
+	# 僵尸不会游泳: 碰到水继续正常重力下沉
+	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 
 	var player := _find_player()

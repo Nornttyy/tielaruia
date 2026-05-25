@@ -5,16 +5,10 @@ extends Node
 const TICK_INTERVAL := 0.18         # 每 0.18s 跑一次 (流速看着不太慢)
 const MAX_TILES_PER_TICK := 2000    # 防卡, 单 tick 上限
 
-# 下雨累水
-const RAIN_TICK := 0.8              # 每 0.8s 处理一次雨水
-const RAIN_COLS_PER_TICK := 4       # 每 tick 在玩家附近 N 列尝试放水
-const RAIN_COL_RADIUS := 30         # 玩家 ±N 列范围内
-
 @export var world: Node2D            # 父 World (有 chunk_manager + _set_tile)
 
 var _dirty: Dictionary = {}          # Vector2i -> true
 var _t: float = 0.0
-var _rain_t: float = 0.0
 
 
 func _ready() -> void:
@@ -28,10 +22,6 @@ func _process(delta: float) -> void:
 	if _t >= TICK_INTERVAL:
 		_t = 0.0
 		_run_tick()
-	_rain_t += delta
-	if _rain_t >= RAIN_TICK:
-		_rain_t = 0.0
-		_run_rain()
 
 
 # 外部 API ----
@@ -85,41 +75,6 @@ func _tile_for_level(L: int) -> int:
 	if L == 2: return Tiles.WATER_L2
 	if L == 1: return Tiles.WATER_L1
 	return Tiles.AIR
-
-
-# 下雨累水: 在玩家 ±RAIN_COL_RADIUS 列内, 随机选 N 列, 在该列地表上方 1 格加 L1.
-# 已是水的格子直接 add_water (level + 1). 顶部找第一个非 AIR.
-func _run_rain() -> void:
-	if world == null:
-		return
-	var weather = world.get("weather")
-	if weather == null or not weather.is_raining():
-		return
-	var player = world.get_player()
-	if player == null:
-		return
-	var cm = world.get("chunk_manager")
-	if cm == null:
-		return
-	var pt: Vector2i = Vector2i(int(player.global_position.x / 16), int(player.global_position.y / 16))
-	for _i in RAIN_COLS_PER_TICK:
-		var rx: int = pt.x + randi_range(-RAIN_COL_RADIUS, RAIN_COL_RADIUS)
-		var top_y: int = 0
-		# 从 y=0 向下扫到第一个非 AIR (是表面或水面)
-		while top_y < 200:
-			var t: int = cm.get_tile(rx, top_y)
-			if t != Tiles.AIR:
-				break
-			top_y += 1
-		if top_y >= 200:
-			continue
-		var hit: int = cm.get_tile(rx, top_y)
-		if _level_of(hit) > 0:
-			# 表层是水 → 直接 level+1
-			add_water(rx, top_y)
-		elif top_y - 1 >= 0:
-			# 实心地面 → 在它上面那格 AIR 加 L1
-			add_water(rx, top_y - 1)
 
 
 func _run_tick() -> void:
