@@ -10,6 +10,7 @@ const RainLayerClass = preload("res://scripts/fx/rain_layer.gd")
 const FirefliesClass = preload("res://scripts/fx/fireflies.gd")
 const ShootingStarClass = preload("res://scripts/fx/shooting_star.gd")
 const FallingLeavesClass = preload("res://scripts/fx/falling_leaves.gd")
+const CursorManagerClass = preload("res://scripts/world/cursor_manager.gd")
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
@@ -107,6 +108,10 @@ func _ready() -> void:
 	# 函数保留供未来重启用; 也避免破坏 SaveManager / dialogue 等引用
 	SkyLightGrid.recompute_from([])
 	_spawn_player()
+	# 鼠标光标管理: 默认箭头, 鼠标在敌人/方块上切换样式
+	var cursor_mgr := CursorManagerClass.new()
+	cursor_mgr.name = "CursorManager"
+	add_child(cursor_mgr)
 
 
 func _place_village() -> void:
