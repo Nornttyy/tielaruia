@@ -13,8 +13,8 @@ extends Node
 const SAMPLE_RATE := 22050
 const TAU_F := TAU
 const BGM_FADE_SEC := 1.0
-const BGM_VOLUME_DB := 0.0        # BGM 跟 SFX 同响度
-const AMBIENT_VOLUME_DB := -8.0   # 环境声小一档, 衬底
+const BGM_VOLUME_DB := -30.0      # BGM ~3% 响度, 用户偏好背景音几乎听不到但有就好
+const AMBIENT_VOLUME_DB := -30.0  # 环境声跟 BGM 同档
 const DB_SILENT := -80.0
 
 # 五声音阶频率 (Hz)
@@ -201,30 +201,44 @@ func _build_night_track() -> AudioStreamWAV:
 	return _mix_two_tracks(bass_notes, lead_notes, beat, total_sec, 0.30, 0.18)
 
 
-# 地下: 60Hz drone + 偶发金属敲击, 60 BPM, ~10s
+# 地下: 柔和五度 drone (A2+E2, 协和) + 偶尔轻柔的高八度 chime, 16s 长循环.
+# 设计原则: 不刺耳 (无尖锐高频), 不压抑 (协和音程), 留白多 (chime 6s 一次).
 func _build_cave_track() -> AudioStreamWAV:
-	var duration: float = 10.0
+	var duration: float = 16.0
 	var samples := int(duration * SAMPLE_RATE)
 	var data := PackedByteArray()
 	data.resize(samples * 2)
-	var ph_drone := 0.0
-	var ph_drone2 := 0.0
+	var ph_root := 0.0   # A2 = 110Hz, 主音
+	var ph_fifth := 0.0  # E3 = 164.8Hz, 五度 (协和), 不用 90Hz 不和谐
+	var ph_lfo := 0.0    # 缓慢 LFO 让 drone 有呼吸感
+	# Chime 时间点: 6s 一次, 错开
+	var chime_times: PackedFloat32Array = [2.0, 8.0, 13.5]
+	# Chime 用 A4 (440Hz) 跟 drone 八度协和, sine 主导 + 慢 attack 不锐
+	var chime_freq: float = 440.0
+	var chime_dur: float = 2.0  # 2 秒 chime 长尾, 像水滴在洞里回响
 	for i in samples:
 		var t: float = float(i) / float(samples)
-		# 60Hz drone + 90Hz 略不和谐第二音 (空旷感)
-		ph_drone += 60.0 * TAU_F / SAMPLE_RATE
-		ph_drone2 += 90.0 * TAU_F / SAMPLE_RATE
-		var drone_s: float = sin(ph_drone) * 0.25 + sin(ph_drone2) * 0.12
-		# 大约 3 秒一次金属"叮"
-		var ping_amp: float = 0.0
-		var ping_phase: float = 0.0
-		var ping_time: float = fmod(t * duration, 3.0)
-		if ping_time < 0.5:
-			ping_amp = (1.0 - ping_time / 0.5)
-			ping_amp = ping_amp * ping_amp * 0.4
-			ping_phase = ping_time * 880.0 * TAU_F  # 880Hz ping
-		var raw: float = drone_s + sin(ping_phase) * ping_amp
-		# 轻微淡入淡出 (循环点不爆音)
+		var ts: float = t * duration
+		ph_root += 110.0 * TAU_F / SAMPLE_RATE
+		ph_fifth += 164.8 * TAU_F / SAMPLE_RATE
+		ph_lfo += 0.15 * TAU_F / SAMPLE_RATE  # 0.15 Hz 呼吸
+		var breath: float = 0.7 + 0.3 * sin(ph_lfo)  # 0.4..1.0 起伏
+		# 主 drone: A2 + 弱 E3, sine 干净
+		var drone_s: float = (sin(ph_root) * 0.30 + sin(ph_fifth) * 0.18) * breath
+		# Chime: 慢 attack (50ms) + 长 release (1.5s 衰减), 八度协和不刺耳
+		var chime_s: float = 0.0
+		for ct in chime_times:
+			var dt: float = ts - ct
+			if dt >= 0.0 and dt < chime_dur:
+				var env: float
+				if dt < 0.05:
+					env = dt / 0.05  # 50ms attack
+				else:
+					var n: float = (dt - 0.05) / (chime_dur - 0.05)
+					env = pow(1.0 - n, 2.0)  # 缓慢平方衰减
+				chime_s += sin(dt * chime_freq * TAU_F) * env * 0.18
+		var raw: float = drone_s + chime_s
+		# 循环边界淡入淡出
 		if t < 0.05:
 			raw *= t / 0.05
 		elif t > 0.95:

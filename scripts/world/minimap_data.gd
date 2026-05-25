@@ -1,0 +1,86 @@
+# 小地图探索记录: 玩家走过的 tile 缓存其 tile_id, minimap 即使 chunk 已卸载也能正确显示.
+# 按 chunk 存 PackedByteArray (每 tile 1 byte, 共 CHUNK_WIDTH*WORLD_HEIGHT byte).
+# 0xff = 未探索 (sentinel); 其他值 = 已见的 tile_id (Tiles 常量, 都 < 255).
+# 全局通过 group "minimap_data" 查找 (同 chunk_manager 模式).
+class_name MinimapData extends Node
+
+const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
+const Chunk = preload("res://scripts/world/chunk.gd")
+
+const BYTES_PER_CHUNK := ChunkConstants.CHUNK_WIDTH * ChunkConstants.WORLD_HEIGHT
+const UNEXPLORED := 0xff
+
+# chunk_x: int → PackedByteArray (idx = local_x * WORLD_HEIGHT + world_y)
+var _tiles: Dictionary = {}
+
+
+func _ready() -> void:
+	add_to_group("minimap_data")
+
+
+# 标记单个 tile 为已探索 + 缓存 tile_id
+func mark(world_x: int, world_y: int, tile_id: int) -> void:
+	if world_y < 0 or world_y >= ChunkConstants.WORLD_HEIGHT:
+		return
+	if tile_id < 0 or tile_id >= UNEXPLORED:
+		return
+	var cx: int = Chunk.chunk_x_of(world_x)
+	var lx: int = Chunk.local_x_of(world_x)
+	var bm: PackedByteArray = _ensure_buffer(cx)
+	bm[lx * ChunkConstants.WORLD_HEIGHT + world_y] = tile_id
+	_tiles[cx] = bm
+
+
+# 标记矩形范围 (玩家移动时一次刷一片). 用 chunk_mgr 查每格 tile_id 写入缓存.
+func mark_rect(chunk_mgr: Node, world_x0: int, world_y0: int, world_x1: int, world_y1: int) -> void:
+	for wx in range(world_x0, world_x1 + 1):
+		for wy in range(world_y0, world_y1 + 1):
+			var tid: int = chunk_mgr.get_tile(wx, wy)
+			mark(wx, wy, tid)
+
+
+# 查询: 此 tile 是否已探索 (不管当前 chunk 是否 loaded)
+func is_explored(world_x: int, world_y: int) -> bool:
+	if world_y < 0 or world_y >= ChunkConstants.WORLD_HEIGHT:
+		return false
+	var cx: int = Chunk.chunk_x_of(world_x)
+	if not _tiles.has(cx):
+		return false
+	var lx: int = Chunk.local_x_of(world_x)
+	var bm: PackedByteArray = _tiles[cx]
+	return bm[lx * ChunkConstants.WORLD_HEIGHT + world_y] != UNEXPLORED
+
+
+# 查询: 此 tile 最后一次被看见时的 tile_id. 未探索 → Tiles.AIR (fallback).
+func get_tile_at(world_x: int, world_y: int) -> int:
+	if world_y < 0 or world_y >= ChunkConstants.WORLD_HEIGHT:
+		return Tiles.AIR
+	var cx: int = Chunk.chunk_x_of(world_x)
+	if not _tiles.has(cx):
+		return Tiles.AIR
+	var lx: int = Chunk.local_x_of(world_x)
+	var bm: PackedByteArray = _tiles[cx]
+	var v: int = bm[lx * ChunkConstants.WORLD_HEIGHT + world_y]
+	return Tiles.AIR if v == UNEXPLORED else v
+
+
+func _ensure_buffer(cx: int) -> PackedByteArray:
+	if _tiles.has(cx):
+		return _tiles[cx]
+	var bm := PackedByteArray()
+	bm.resize(BYTES_PER_CHUNK)
+	bm.fill(UNEXPLORED)
+	_tiles[cx] = bm
+	return bm
+
+
+# 给 SaveData 序列化用: {chunk_x: int → PackedByteArray}
+func to_save_dict() -> Dictionary:
+	return _tiles.duplicate()
+
+
+# 从 SaveData 反序列化
+func from_save_dict(d: Dictionary) -> void:
+	_tiles.clear()
+	for cx in d:
+		_tiles[cx] = d[cx]
