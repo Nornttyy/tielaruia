@@ -24,6 +24,8 @@ signal error_occurred(msg: String)
 # 高层协议事件 (parse 后):
 signal hello_received(world_seed: int)         # host → client, 双方一致的 seed
 signal remote_pos_received(x: float, y: float, facing: int, anim: String)
+signal remote_tile_received(x: int, y: int, tile_id: int)  # 对方挖/放方块
+signal remote_time_weather_received(time_val: float, weather_state: String)  # host 广播时间+天气
 
 const POLL_INTERVAL := 0.1  # 每 0.1s 拉一次 status + messages
 const POS_SEND_INTERVAL := 0.1  # 玩家位置每 0.1s 发一次 (10Hz)
@@ -110,6 +112,15 @@ func _route_message(raw: String) -> void:
 			var facing: int = int(data.get("f", 1))
 			var anim: String = String(data.get("a", "idle"))
 			remote_pos_received.emit(x, y, facing, anim)
+		"tile":
+			var tx: int = int(data.get("x", 0))
+			var ty: int = int(data.get("y", 0))
+			var tid: int = int(data.get("id", 0))
+			remote_tile_received.emit(tx, ty, tid)
+		"time":
+			var t: float = float(data.get("t", 0.0))
+			var w: String = String(data.get("w", "clear"))
+			remote_time_weather_received.emit(t, w)
 
 
 func host() -> void:
@@ -145,6 +156,15 @@ func send(data: String) -> bool:
 
 func send_hello(seed_val: int) -> void:
 	send(JSON.stringify({"type": "hello", "seed": seed_val}))
+
+
+func send_tile_change(x: int, y: int, tile_id: int) -> void:
+	send(JSON.stringify({"type": "tile", "x": x, "y": y, "id": tile_id}))
+
+
+# host 调用: 把当前时间 + 天气广播给 client. world 周期触发 (5s 一次)
+func send_time_weather(time_val: float, weather_state: String) -> void:
+	send(JSON.stringify({"type": "time", "t": snappedf(time_val, 0.001), "w": weather_state}))
 
 
 # 由 player_controller 每 _physics_process 末尾调.

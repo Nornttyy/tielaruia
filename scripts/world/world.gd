@@ -52,6 +52,8 @@ var spawn_point: Vector2i
 var chunk_manager: ChunkManager
 var minimap_data: Node
 var _remote_player: Node = null   # 联机时另一个玩家的 sprite (Phase C)
+var _mp_time_sync_timer: float = 0.0   # host 广播时间+天气计时 (Phase F)
+const _MP_TIME_SYNC_INTERVAL := 5.0
 var weather: Node
 var rain_layer: CanvasLayer
 var fireflies: Node2D
@@ -114,11 +116,27 @@ func _ready() -> void:
 	var cursor_mgr := CursorManagerClass.new()
 	cursor_mgr.name = "CursorManager"
 	add_child(cursor_mgr)
-	# 联机: 已连上时生成 RemotePlayer 接收对方位置
+	# 联机: 已连上时生成 RemotePlayer 接收对方位置 + tile 同步
 	if NetworkManager != null and NetworkManager.connected():
 		_spawn_remote_player()
 		if not NetworkManager.remote_pos_received.is_connected(_on_remote_pos):
 			NetworkManager.remote_pos_received.connect(_on_remote_pos)
+		if not NetworkManager.remote_tile_received.is_connected(_on_remote_tile):
+			NetworkManager.remote_tile_received.connect(_on_remote_tile)
+		if not NetworkManager.remote_time_weather_received.is_connected(_on_remote_time_weather):
+			NetworkManager.remote_time_weather_received.connect(_on_remote_time_weather)
+
+
+func _on_remote_tile(x: int, y: int, tile_id: int) -> void:
+	# 对方挖/放方块 → 本地应用, 不再广播 (from_remote=true)
+	_set_tile(x, y, tile_id, true)
+
+
+func _on_remote_time_weather(time_val: float, weather_state: String) -> void:
+	# client 收到 host 广播: 同步时间 + 天气
+	TimeOfDay.time = time_val
+	if weather != null and weather.state != weather_state:
+		weather.force_state(weather_state)
 
 
 func _spawn_remote_player() -> void:
@@ -181,6 +199,13 @@ func _process(delta: float) -> void:
 	if _minimap_mark_timer <= 0.0:
 		_minimap_mark_timer = MINIMAP_MARK_INTERVAL
 		_mark_explored_around_player()
+	# 联机 host: 每 5s 广播时间+天气给 client (Phase F)
+	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		_mp_time_sync_timer -= delta
+		if _mp_time_sync_timer <= 0.0:
+			_mp_time_sync_timer = _MP_TIME_SYNC_INTERVAL
+			var ws: String = weather.state if weather != null else "clear"
+			NetworkManager.send_time_weather(TimeOfDay.time, ws)
 
 
 func _mark_explored_around_player() -> void:
@@ -461,7 +486,10 @@ func get_crack_overlay() -> Node:
 	return $CrackOverlay
 
 
-func _set_tile(x: int, y: int, tile_id: int) -> void:
+func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false) -> void:
+	# from_remote=true 时不再广播 (避免循环). 本地玩家挖/放 → 广播给联机对方
+	if not from_remote and NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_tile_change(x, y, tile_id)
 	const Autotile = preload("res://scripts/world/autotile.gd")
 	const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
