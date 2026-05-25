@@ -282,7 +282,7 @@ placeholder_text = "随机"
 
 [node name="RandomButton" type="Button" parent="NewGamePanel/VBox/SeedRow"]
 custom_minimum_size = Vector2(70, 0)
-text = "🎲 随机"
+text = "随机"
 
 [node name="DifficultyRow" type="HBoxContainer" parent="NewGamePanel/VBox"]
 theme_override_constants/separation = 8
