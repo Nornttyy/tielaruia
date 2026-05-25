@@ -10,7 +10,7 @@ const CursorArt = preload("res://scripts/art/cursor_art.gd")
 const MODE_DEFAULT := 0
 const MODE_SWORD := 1
 
-const ENEMY_HIT_RADIUS := 14.0   # 鼠标距敌人多近算"瞄准" (px)
+const ENEMY_HIT_RADIUS := 24.0   # 鼠标距敌人中心多近算"瞄准" (px) — 牛/羊比 slime 大
 
 var _arrow: ImageTexture
 var _sword: ImageTexture
