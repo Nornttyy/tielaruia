@@ -446,6 +446,16 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				else:
 					wall_layer.set_cell(wpos, wid, Vector2i.ZERO)
 		SkyLightGrid.invalidate_column(world_x)
+	# 流水: 把 chunk 里所有水都标 dirty, 让 water_sim 评估能否流
+	# (worldgen 放的 WATER 没经过 _set_tile hook, 默认是静态的)
+	if water_sim != null:
+		for lx in c.tiles.size():
+			var col: Array = c.tiles[lx]
+			for y in col.size():
+				var t: int = col[y]
+				if t == Tiles.WATER or t == Tiles.WATER_L1 \
+						or t == Tiles.WATER_L2 or t == Tiles.WATER_L3:
+					water_sim.mark_dirty(chunk_start + lx, y)
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
 	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)
 	# 黑暗层: chunk 加载时全列预算光值
