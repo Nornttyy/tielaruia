@@ -31,6 +31,7 @@ const GOLD_ORE := 24        # 金矿: 中深 (iron 镐才挖)
 const DIAMOND_ORE := 25     # 钻石矿: 深 (iron 镐才挖)
 const HELL_CRYSTAL := 26    # 地狱晶体: 接近基岩 (iron 镐才挖)
 const CACTUS_BODY := 27     # 仙人掌身体段 (堆叠时非顶端用, 无 top outline 衔接顶端 CACTUS)
+const WATER := 28           # 水 (非实心, 玩家穿过, 视觉半透明蓝)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -186,6 +187,12 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["cactus", 100, 1, 1]],
+	},
+	WATER: {
+		# 水: 非实心 (玩家穿过), 不可挖 (没法用工具收), 无掉落. 等以后加桶再说.
+		"solid": false, "mineable": false,
+		"tool_tiers": {},
+		"drops": [],
 	},
 }
 

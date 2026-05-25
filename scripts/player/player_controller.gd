@@ -91,6 +91,24 @@ func _update_music_context() -> void:
 	MusicBank.set_context(ctx)
 
 
+# 玩家身体所在 tile 是水吗 (脚下/腰部任一格是 WATER 就算)
+func _is_in_water() -> bool:
+	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
+	if terrain == null:
+		return false
+	var world: Node = terrain.get_parent()
+	if world == null:
+		return false
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return false
+	# 玩家中心点 (脚在 global_position, 头在 global_position - 22)
+	var tx: int = int(floor(global_position.x / 16.0))
+	# 腰部高度 = 脚向上 11 (碰撞框中心)
+	var ty: int = int(floor((global_position.y - 11.0) / 16.0))
+	return cm.get_tile(tx, ty) == Tiles.WATER
+
+
 func _is_player_underground(tile_x: int, tile_y: int) -> bool:
 	# 找 World.chunk_manager (terrain_layer 在 group 里, 它父亲就是 World)
 	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
@@ -147,7 +165,11 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var dir := Input.get_axis("move_left", "move_right")
-	velocity.x = dir * SPEED
+	# 泡水里走得慢一半 + sprite 偏蓝
+	var in_water: bool = _is_in_water()
+	var speed_mul: float = 0.5 if in_water else 1.0
+	velocity.x = dir * SPEED * speed_mul
+	sprite.modulate = Color(0.7, 0.85, 1.15) if in_water else Color.WHITE
 
 	var on_floor_now := is_on_floor()
 

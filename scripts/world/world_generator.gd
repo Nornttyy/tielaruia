@@ -89,6 +89,16 @@ const OPEN_WORM_RADIUS_SCALE := 1.4  # worm 半径系数 (实际 1.1-1.8)
 const OPEN_WORM_SURFACE_BUFFER := 3  # worm 距地表 ≥ 3, 不会再戳破地表
 const OPEN_WORM_PAD_CELLS := 100     # 邻 chunk 搜索 pad
 
+# 水池: 矿洞洼地随机填水. 沙漠列稀疏长绿洲.
+const WATER_MIN_DEPTH := 60           # 矿洞水池: surf 下 ≥60 格才算"深矿洞" (浅层不该有水)
+const WATER_POOL_CHANCE := 0.35       # 洼地填水概率
+const WATER_POOL_DEPTH := 3           # 水池填 1-3 格深 (从洼地底起)
+const WATER_MAX_BASIN_HEIGHT := 12    # AIR 段高度上限 (高于此不算洼地, 是大房间)
+const OASIS_CHANCE := 0.012           # 沙漠列 1.2% 概率长绿洲 (走几屏看到 1-2 个)
+const OASIS_WIDTH_MIN := 3            # 绿洲宽
+const OASIS_WIDTH_MAX := 6
+const OASIS_DEPTH := 2                # 绿洲深 (替沙挖空填水)
+
 # 树种枚举 (内部 idx)
 const _SPECIES_OAK := 0
 const _SPECIES_PINE := 1
@@ -274,6 +284,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# (在 pits 之后: pit 把 GRASS 挖空了 → 树就不会长在 pit 边缘)
 	_place_trees_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
+	# 水: 矿洞底部洼地填水 + 沙漠绿洲. 在墙之前, 这样墙会渲染在水后面.
+	_fill_water_pools_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+
 	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
 	_fill_walls_chunk(c, chunk_heights, chunk_width, height)
 	return c
@@ -328,6 +341,70 @@ static func _wall_for_depth(y: int, surf: int) -> int:
 	if y < surf + DIRT_DEPTH:
 		return Tiles.DIRT_WALL
 	return Tiles.STONE_WALL
+
+
+# ===== 水池 + 沙漠绿洲 =====
+# 矿洞底部洼地填水: 每列从下往上扫, 找 AIR 段 (高度 < 12), 35% 概率底部填 1-3 格水.
+# 沙漠列稀疏长绿洲: 1.2% 概率把沙地表挖空 + 填水.
+# 跨 chunk 一致: 用 _hash3(seed, x, y) 派生 RNG (位置决定, 跟邻 chunk 无关).
+static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
+		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
+	var chunk_start_x: int = chunk_x * chunk_width
+	for lx in range(chunk_width):
+		var world_x: int = chunk_start_x + lx
+		var surf: int = chunk_heights[world_x]
+		var col: Array = c.tiles[lx]
+
+		# 1) 沙漠绿洲: 沙地表稀疏长 (优先级高于矿洞水池, 因为更直观)
+		if col[surf] == Tiles.SAND:
+			var oasis_roll: float = float(_hash3(world_seed, world_x, 9001) & 0xffff) / 65535.0
+			if oasis_roll < OASIS_CHANCE:
+				# 长一个绿洲 (居中, 宽 3-6, 深 2)
+				var ow: int = (_hash3(world_seed, world_x, 9002) & 7) % (OASIS_WIDTH_MAX - OASIS_WIDTH_MIN + 1) + OASIS_WIDTH_MIN
+				var half: int = ow / 2
+				for dx in range(-half, half + 1):
+					var tx: int = lx + dx
+					if tx < 0 or tx >= chunk_width:
+						continue
+					# 仅在 SAND 列长绿洲 (避免跨 biome 突兀)
+					if c.tiles[tx][surf] != Tiles.SAND:
+						continue
+					# 把沙地表 + DIRT_DEPTH 内沙挖空 + 填水, 保留下面的沙
+					for dy in range(OASIS_DEPTH):
+						var ty: int = surf + dy
+						if ty < height - BEDROCK_ROWS:
+							c.tiles[tx][ty] = Tiles.WATER
+
+		# 2) 矿洞洼地填水: 从下往上扫 AIR 段
+		var y: int = height - BEDROCK_ROWS - 1
+		while y > surf + WATER_MIN_DEPTH:
+			if col[y] != Tiles.AIR:
+				y -= 1
+				continue
+			# y 是 AIR. 下面必须是 solid (洼地底)
+			if y + 1 >= col.size() or col[y + 1] == Tiles.AIR:
+				y -= 1
+				continue
+			# 向上数 AIR 高度
+			var basin_top: int = y
+			while basin_top - 1 >= 0 and col[basin_top - 1] == Tiles.AIR:
+				basin_top -= 1
+			var basin_h: int = y - basin_top + 1
+			if basin_h > WATER_MAX_BASIN_HEIGHT:
+				# AIR 段太高 不是洼地, 跳过整段
+				y = basin_top - 1
+				continue
+			# 概率填水
+			var pool_roll: float = float(_hash3(world_seed, world_x, y) & 0xffff) / 65535.0
+			if pool_roll < WATER_POOL_CHANCE:
+				var fill_h: int = mini(WATER_POOL_DEPTH, basin_h - 1)
+				if fill_h < 1:
+					fill_h = 1
+				for d in range(fill_h):
+					var ty: int = y - d
+					if col[ty] == Tiles.AIR:
+						col[ty] = Tiles.WATER
+			y = basin_top - 1
 
 
 # ===== Perlin Worms 洞穴 =====

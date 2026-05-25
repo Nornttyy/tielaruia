@@ -28,6 +28,7 @@ static func build() -> TileSet:
 		Tiles.CACTUS, Tiles.CACTUS_BODY,
 		Tiles.COPPER_ORE, Tiles.TIN_ORE, Tiles.GOLD_ORE,
 		Tiles.DIAMOND_ORE, Tiles.HELL_CRYSTAL,
+		Tiles.WATER,
 	]
 	for tile_id in tile_ids:
 		var source := TileSetAtlasSource.new()

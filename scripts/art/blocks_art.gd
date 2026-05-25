@@ -37,6 +37,7 @@ const TIN_ORE := 23         # 锡矿 (浅层, 银白)
 const GOLD_ORE := 24        # 金矿 (中深, 暖金黄)
 const DIAMOND_ORE := 25     # 钻石矿 (深层, 青蓝发光)
 const HELL_CRYSTAL := 26    # 地狱晶体 (接近基岩, 烈火红)
+const WATER := 28           # 水
 
 # --- 调色板 (每方块独立) ---
 
@@ -323,6 +324,15 @@ const _P_DIAMOND_ORE := {
 	"x": Color8(220, 250, 255), # 高光钻 (近白透)
 	"_o": Color8(40, 32, 28), "_e": Color8(95, 85, 78),
 	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
+}
+
+# 水: 半透明蓝, 不同深浅做波纹效果. 暗到亮 4 档蓝 + 透明.
+const _P_WATER := {
+	"a": Color8(50, 110, 200, 180),   # 深蓝半透 (波底)
+	"b": Color8(85, 145, 225, 175),   # 中蓝
+	"c": Color8(130, 180, 240, 170),  # 亮蓝
+	"d": Color8(180, 215, 250, 160),  # 高光浅蓝
+	"e": Color8(220, 235, 250, 150),  # 白沫
 }
 
 # 地狱晶体: DEEP_STONE 底 (更暗背景烘托) + h/H/y 烈火红
@@ -842,6 +852,28 @@ const _HELL_CRYSTAL := [
 ]
 
 
+# 水: 16×16 半透明波纹. 4 档蓝 + e 白沫 (高光). 横向波纹 + 偶发气泡.
+# 上下 1 行 + 中间几行做波纹效果, 看着像水面在动 (静态贴图但纹理 busy).
+const _WATER := [
+	"dcdcdcdcdcdcdcdc",
+	"cdcecdcedcdcecdc",
+	"bcbcbcbcbcbcbcbc",
+	"bcbcbcbcbcbcbcbc",
+	"bcbecbcbcbecbcbc",
+	"ababababababaaba",
+	"ababababababaaba",
+	"bababababababaab",
+	"ababecabababecab",
+	"bababababababaab",
+	"ababababababaaba",
+	"bababababababaab",
+	"abababecabababec",
+	"ababababababaaba",
+	"bababababababaab",
+	"abababababababab",
+]
+
+
 # 火把 tile: 中央木棍 + 顶部火苗 (4×3)
 const _TORCH := [
 	"................",
@@ -992,6 +1024,7 @@ const _PATTERN_MAP := {
 	GOLD_ORE: [_GOLD_ORE, _P_GOLD_ORE],
 	DIAMOND_ORE: [_DIAMOND_ORE, _P_DIAMOND_ORE],
 	HELL_CRYSTAL: [_HELL_CRYSTAL, _P_HELL_CRYSTAL],
+	WATER: [_WATER, _P_WATER],
 }
 
 

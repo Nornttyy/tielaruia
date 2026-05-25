@@ -82,6 +82,7 @@ func _build_blocks() -> void:
 		BlocksArt.CACTUS, BlocksArt.CACTUS_BODY,
 		BlocksArt.COPPER_ORE, BlocksArt.TIN_ORE, BlocksArt.GOLD_ORE,
 		BlocksArt.DIAMOND_ORE, BlocksArt.HELL_CRYSTAL,
+		BlocksArt.WATER,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
