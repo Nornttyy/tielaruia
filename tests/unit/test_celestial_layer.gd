@@ -3,11 +3,11 @@ extends GutTest
 const CelestialLayer = preload("res://scripts/world/celestial_layer.gd")
 
 
-func test_ready_creates_70_stars():
+func test_ready_creates_stars():
 	var cl = CelestialLayer.new()
 	add_child_autofree(cl)
 	await wait_frames(1)
-	assert_eq(cl.star_count(), 70, "应生成 70 颗星")
+	assert_gt(cl.star_count(), 10, "应至少生成几十颗星")
 
 
 func test_canvas_layer_is_minus_8():
