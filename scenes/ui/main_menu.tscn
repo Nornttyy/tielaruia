@@ -121,6 +121,21 @@ custom_minimum_size = Vector2(240, 44)
 text = "继续 (暂未开放)"
 disabled = true
 
+[node name="MultiplayerRow" type="HBoxContainer" parent="ButtonLayer/VBox"]
+theme_override_constants/separation = 6
+
+[node name="Arrow" type="Label" parent="ButtonLayer/VBox/MultiplayerRow"]
+custom_minimum_size = Vector2(20, 40)
+text = "▶"
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
+visible = false
+
+[node name="Button" type="Button" parent="ButtonLayer/VBox/MultiplayerRow"]
+custom_minimum_size = Vector2(240, 44)
+text = "联机"
+
 [node name="SettingsRow" type="HBoxContainer" parent="ButtonLayer/VBox"]
 theme_override_constants/separation = 6
 
@@ -304,3 +319,42 @@ text = "取消"
 [node name="StartButton" type="Button" parent="NewGamePanel/VBox/ButtonRow"]
 custom_minimum_size = Vector2(120, 36)
 text = "开始"
+
+[node name="MultiplayerPanel" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -160.0
+offset_right = 240.0
+offset_bottom = 160.0
+visible = false
+
+[node name="VBox" type="VBoxContainer" parent="MultiplayerPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+theme_override_constants/separation = 14
+
+[node name="TitleLabel" type="Label" parent="MultiplayerPanel/VBox"]
+text = "联 机"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
+
+[node name="ComingSoonLabel" type="Label" parent="MultiplayerPanel/VBox"]
+text = "联机功能开发中 🚧\n\n下次更新会加上:\n• 房间码创建/加入\n• 两人看到同一个世界\n• WebRTC P2P 不花钱\n\n敬请期待!"
+horizontal_alignment = 1
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="BackButton" type="Button" parent="MultiplayerPanel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+text = "返回"

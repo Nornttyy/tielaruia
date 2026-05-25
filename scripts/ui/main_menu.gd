@@ -300,6 +300,7 @@ func _setup_buttons() -> void:
 	var rows := [
 		{"row": "NewGameRow", "callback": _on_new_game_pressed},
 		{"row": "ContinueRow", "callback": _on_continue_pressed},
+		{"row": "MultiplayerRow", "callback": _on_multiplayer_pressed},
 		{"row": "SettingsRow", "callback": _on_settings_pressed},
 		{"row": "QuitRow", "callback": _on_quit_pressed},
 	]
@@ -412,6 +413,8 @@ func reset_visuals() -> void:
 		$NewGamePanel.visible = false
 	if has_node("SettingsPanel"):
 		$SettingsPanel.visible = false
+	if has_node("MultiplayerPanel"):
+		$MultiplayerPanel.visible = false
 	# 刷新继续按钮 disabled 状态 (回菜单后可能刚保存了)
 	var continue_btn: Button = $ButtonLayer/VBox/ContinueRow/Button
 	if continue_btn != null:
@@ -494,6 +497,27 @@ func _setup_new_game_panel() -> void:
 		opts["difficulty"] = diff
 		_emit_start_game_with(opts)
 	)
+
+
+# ---- multiplayer panel ----
+
+func _setup_new_game_panel_done():
+	pass
+
+
+func _on_multiplayer_pressed() -> void:
+	$MultiplayerPanel.visible = true
+	$ButtonLayer/VBox.visible = false
+	# 接 "返回" 按钮 (一次性, 在 _ready 已 setup 过就不重复)
+	var back_btn: Button = $MultiplayerPanel/VBox/BackButton
+	if back_btn != null and not back_btn.pressed.is_connected(_on_multiplayer_back_pressed):
+		_apply_button_style(back_btn)
+		back_btn.pressed.connect(_on_multiplayer_back_pressed)
+
+
+func _on_multiplayer_back_pressed() -> void:
+	$MultiplayerPanel.visible = false
+	$ButtonLayer/VBox.visible = true
 
 
 func _setup_settings_panel() -> void:
