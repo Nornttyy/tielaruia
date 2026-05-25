@@ -3,6 +3,8 @@
 class_name SaveData extends Resource
 
 @export var world_seed: int = 0
+@export var world_name: String = ""
+@export var difficulty: int = 1   # 0=简单 1=普通 2=困难
 @export var spawn_point: Vector2i = Vector2i.ZERO
 @export var player_position: Vector2 = Vector2.ZERO
 @export var player_hp: float = 6.0

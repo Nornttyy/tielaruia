@@ -30,9 +30,14 @@ func is_invulnerable() -> bool:
 func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 	if amount <= 0 or not is_alive() or is_invulnerable():
 		return false
-	current_health = max(0, current_health - amount)
+	# 难度乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x
+	var dm: float = 1.0
+	if GameSettings != null and GameSettings.has_method("damage_multiplier"):
+		dm = GameSettings.damage_multiplier()
+	var final_amount: int = max(1, int(round(float(amount) * dm)))
+	current_health = max(0, current_health - final_amount)
 	_iframe_timer = IFRAMES_SEC
-	damaged.emit(amount, source_pos)
+	damaged.emit(final_amount, source_pos)
 	SfxBank.play("hurt", 0.08)
 	health_changed.emit(current_health, MAX_HEALTH)
 	if current_health == 0:

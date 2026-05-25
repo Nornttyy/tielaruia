@@ -41,7 +41,25 @@ func _show_menu_state() -> void:
 	_death_screen.hide_death()
 
 
-func _start_game(world_seed: int = 0) -> void:
+func _start_game(seed_or_opts = 0) -> void:
+	# 兼容 2 种调用:
+	# - 老接口 (int seed): boot_to_game / 测试用; 走默认难度/名字
+	# - 新接口 (Dictionary opts): 主菜单 "新游戏" 配置面板传 {world_seed, world_name, difficulty}
+	var world_seed: int = 0
+	var world_name: String = ""
+	var difficulty: int = 1
+	if seed_or_opts is Dictionary:
+		var opts: Dictionary = seed_or_opts
+		world_seed = int(opts.get("world_seed", 0))
+		world_name = String(opts.get("world_name", ""))
+		difficulty = int(opts.get("difficulty", 1))
+	else:
+		world_seed = int(seed_or_opts)
+	# 把全局可读的设置写 GameSettings autoload
+	if "current_difficulty" in GameSettings:
+		GameSettings.current_difficulty = difficulty
+	if "current_world_name" in GameSettings:
+		GameSettings.current_world_name = world_name
 	_state = "game"
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.visible = false
@@ -83,8 +101,12 @@ func _start_game(world_seed: int = 0) -> void:
 func _continue_game(data: Resource) -> void:
 	if data == null:
 		return
-	_start_game(int(data.world_seed))
-	# world 已 add_child, 还原 chunk 改动 + 玩家状态 (deferred 给 world _ready 跑完)
+	# 走 opts 路径 → world_seed + 还原 world_name/difficulty 到 GameSettings
+	_start_game({
+		"world_seed": int(data.world_seed),
+		"world_name": String(data.world_name) if "world_name" in data else "",
+		"difficulty": int(data.difficulty) if "difficulty" in data else 1,
+	})
 	_apply_save_data.call_deferred(data)
 
 

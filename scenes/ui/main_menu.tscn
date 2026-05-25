@@ -210,3 +210,97 @@ theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
 [node name="BackButton" type="Button" parent="SettingsPanel/VBox"]
 custom_minimum_size = Vector2(0, 36)
 text = "返回"
+
+[node name="NewGamePanel" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -170.0
+offset_right = 220.0
+offset_bottom = 170.0
+visible = false
+
+[node name="VBox" type="VBoxContainer" parent="NewGamePanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+theme_override_constants/separation = 14
+
+[node name="TitleLabel" type="Label" parent="NewGamePanel/VBox"]
+text = "新 游 戏"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
+
+[node name="NameRow" type="HBoxContainer" parent="NewGamePanel/VBox"]
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="NewGamePanel/VBox/NameRow"]
+custom_minimum_size = Vector2(80, 0)
+text = "世界名"
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="LineEdit" type="LineEdit" parent="NewGamePanel/VBox/NameRow"]
+custom_minimum_size = Vector2(280, 0)
+max_length = 24
+placeholder_text = "我的世界"
+
+[node name="SeedRow" type="HBoxContainer" parent="NewGamePanel/VBox"]
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="NewGamePanel/VBox/SeedRow"]
+custom_minimum_size = Vector2(80, 0)
+text = "种子"
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="LineEdit" type="LineEdit" parent="NewGamePanel/VBox/SeedRow"]
+custom_minimum_size = Vector2(200, 0)
+max_length = 10
+placeholder_text = "随机"
+
+[node name="RandomButton" type="Button" parent="NewGamePanel/VBox/SeedRow"]
+custom_minimum_size = Vector2(70, 0)
+text = "🎲 随机"
+
+[node name="DifficultyRow" type="HBoxContainer" parent="NewGamePanel/VBox"]
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="NewGamePanel/VBox/DifficultyRow"]
+custom_minimum_size = Vector2(80, 0)
+text = "难度"
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="EasyButton" type="Button" parent="NewGamePanel/VBox/DifficultyRow"]
+custom_minimum_size = Vector2(82, 0)
+toggle_mode = true
+text = "简单"
+
+[node name="NormalButton" type="Button" parent="NewGamePanel/VBox/DifficultyRow"]
+custom_minimum_size = Vector2(82, 0)
+toggle_mode = true
+button_pressed = true
+text = "普通"
+
+[node name="HardButton" type="Button" parent="NewGamePanel/VBox/DifficultyRow"]
+custom_minimum_size = Vector2(82, 0)
+toggle_mode = true
+text = "困难"
+
+[node name="ButtonRow" type="HBoxContainer" parent="NewGamePanel/VBox"]
+alignment = 1
+theme_override_constants/separation = 16
+
+[node name="CancelButton" type="Button" parent="NewGamePanel/VBox/ButtonRow"]
+custom_minimum_size = Vector2(120, 36)
+text = "取消"
+
+[node name="StartButton" type="Button" parent="NewGamePanel/VBox/ButtonRow"]
+custom_minimum_size = Vector2(120, 36)
+text = "开始"

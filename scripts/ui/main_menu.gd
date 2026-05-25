@@ -3,8 +3,13 @@
 # 由 main.gd 实例化并监听 start_game 信号。
 extends CanvasLayer
 
-signal start_game
+signal start_game(opts: Dictionary)
 signal continue_game(save_data: Resource)
+
+# 难度枚举: 0 简单, 1 普通, 2 困难
+const DIFF_EASY := 0
+const DIFF_NORMAL := 1
+const DIFF_HARD := 2
 
 const MenuSceneArt = preload("res://scripts/art/menu_scene_art.gd")
 const LogoArt = preload("res://scripts/art/logo_art.gd")
@@ -48,6 +53,7 @@ func _ready() -> void:
 	_start_title_breathing()
 	_setup_buttons()
 	_setup_settings_panel()
+	_setup_new_game_panel()
 
 
 func _process(delta: float) -> void:
@@ -361,13 +367,21 @@ func _apply_button_style(btn: Button) -> void:
 
 
 func _on_new_game_pressed() -> void:
-	# 淡出按钮 0.3s + 黑场 0.4s → emit start_game
+	# 显示 "新游戏" 配置面板, 不直接开始. 用户填完点 "开始" 才真正进游戏
+	$NewGamePanel.visible = true
+	$ButtonLayer/VBox.visible = false
+
+
+# 配置完成 → 淡出 + 发 start_game(opts)
+func _emit_start_game_with(opts: Dictionary) -> void:
 	var fade: ColorRect = $ButtonLayer/FadeOverlay
 	var vbox: VBoxContainer = $ButtonLayer/VBox
+	$NewGamePanel.visible = false
+	vbox.visible = true  # vbox.modulate.a 还要 fade, 显示让淡出可见
 	var t := create_tween()
 	t.tween_property(vbox, "modulate:a", 0.0, 0.3)
 	t.parallel().tween_property(fade, "modulate:a", 1.0, 0.4)
-	t.tween_callback(func(): start_game.emit())
+	t.tween_callback(func(): start_game.emit(opts))
 
 
 func _on_continue_pressed() -> void:
@@ -392,6 +406,16 @@ func reset_visuals() -> void:
 		fade.modulate.a = 0.0
 	if vbox != null:
 		vbox.modulate.a = 1.0
+		vbox.visible = true
+	# 关闭可能开着的子面板
+	if has_node("NewGamePanel"):
+		$NewGamePanel.visible = false
+	if has_node("SettingsPanel"):
+		$SettingsPanel.visible = false
+	# 刷新继续按钮 disabled 状态 (回菜单后可能刚保存了)
+	var continue_btn: Button = $ButtonLayer/VBox/ContinueRow/Button
+	if continue_btn != null:
+		continue_btn.disabled = not SaveManager.has_save()
 
 
 func _on_settings_pressed() -> void:
@@ -409,6 +433,68 @@ func _on_quit_pressed() -> void:
 
 
 # ---- settings panel ----
+
+# ---- new game panel ----
+
+func _setup_new_game_panel() -> void:
+	var panel := $NewGamePanel
+	var name_edit: LineEdit = panel.get_node("VBox/NameRow/LineEdit")
+	var seed_edit: LineEdit = panel.get_node("VBox/SeedRow/LineEdit")
+	var random_btn: Button = panel.get_node("VBox/SeedRow/RandomButton")
+	var easy_btn: Button = panel.get_node("VBox/DifficultyRow/EasyButton")
+	var normal_btn: Button = panel.get_node("VBox/DifficultyRow/NormalButton")
+	var hard_btn: Button = panel.get_node("VBox/DifficultyRow/HardButton")
+	var cancel_btn: Button = panel.get_node("VBox/ButtonRow/CancelButton")
+	var start_btn: Button = panel.get_node("VBox/ButtonRow/StartButton")
+	_apply_button_style(random_btn)
+	_apply_button_style(easy_btn)
+	_apply_button_style(normal_btn)
+	_apply_button_style(hard_btn)
+	_apply_button_style(cancel_btn)
+	_apply_button_style(start_btn)
+	# 难度: 3 个互斥 toggle (像 radio button)
+	var diff_btns: Array = [easy_btn, normal_btn, hard_btn]
+	for i in diff_btns.size():
+		var btn: Button = diff_btns[i]
+		var idx: int = i
+		btn.toggled.connect(func(on: bool):
+			if not on:
+				return
+			for j in diff_btns.size():
+				if j != idx:
+					diff_btns[j].button_pressed = false
+		)
+	# 随机种子按钮
+	random_btn.pressed.connect(func():
+		seed_edit.text = str(randi_range(1, 999999))
+	)
+	# 取消: 回主菜单按钮
+	cancel_btn.pressed.connect(func():
+		panel.visible = false
+		$ButtonLayer/VBox.visible = true
+	)
+	# 开始: 读输入 → opts → 淡出开始
+	start_btn.pressed.connect(func():
+		var opts: Dictionary = {}
+		# 世界名 (空则默认)
+		var nm: String = name_edit.text.strip_edges()
+		opts["world_name"] = "我的世界" if nm.is_empty() else nm
+		# seed: 空 / 非数字 → 随机
+		var seed_text: String = seed_edit.text.strip_edges()
+		if seed_text.is_empty() or not seed_text.is_valid_int():
+			opts["world_seed"] = randi_range(1, 999999)
+		else:
+			opts["world_seed"] = int(seed_text)
+		# 难度
+		var diff: int = DIFF_NORMAL
+		if easy_btn.button_pressed:
+			diff = DIFF_EASY
+		elif hard_btn.button_pressed:
+			diff = DIFF_HARD
+		opts["difficulty"] = diff
+		_emit_start_game_with(opts)
+	)
+
 
 func _setup_settings_panel() -> void:
 	var slider: HSlider = $SettingsPanel/VBox/VolumeRow/Slider

@@ -21,6 +21,8 @@ func save(main: Node) -> bool:
 		return false
 	var data := SaveData.new()
 	data.world_seed = world.world_seed
+	data.world_name = GameSettings.current_world_name if GameSettings != null else ""
+	data.difficulty = GameSettings.current_difficulty if GameSettings != null else 1
 	data.spawn_point = world.spawn_point
 	data.chunk_deltas = _serialize_chunk_deltas(world.chunk_manager)
 	data.entities = _serialize_entities()

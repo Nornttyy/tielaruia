@@ -88,13 +88,42 @@ func test_continue_button_disabled():
 	assert_true(cont_btn.disabled)
 
 
-func test_new_game_button_emits_start_game():
+func test_new_game_button_shows_new_game_panel():
 	var mm = _make()
-	var emitted := [false]
-	mm.start_game.connect(func(): emitted[0] = true)
+	var panel = mm.get_node_or_null("NewGamePanel")
+	assert_not_null(panel, "应有 NewGamePanel")
+	assert_false(panel.visible, "初始隐藏")
 	mm._on_new_game_pressed()
+	assert_true(panel.visible, "点新游戏后面板显示")
+	# 主按钮列表应隐藏
+	assert_false(mm.get_node("ButtonLayer/VBox").visible)
+
+
+func test_new_game_panel_start_button_emits_start_game_with_opts():
+	var mm = _make()
+	mm._on_new_game_pressed()
+	var captured: Array = []
+	mm.start_game.connect(func(opts: Dictionary): captured.append(opts))
+	# 模拟点击 "开始" 按钮
+	var start_btn: Button = mm.get_node("NewGamePanel/VBox/ButtonRow/StartButton")
+	start_btn.pressed.emit()
 	await get_tree().create_timer(0.5).timeout
-	assert_true(emitted[0])
+	assert_eq(captured.size(), 1, "应发一次 start_game")
+	var opts: Dictionary = captured[0]
+	assert_true("world_seed" in opts)
+	assert_true("world_name" in opts)
+	assert_true("difficulty" in opts)
+
+
+func test_new_game_panel_cancel_returns_to_menu():
+	var mm = _make()
+	mm._on_new_game_pressed()
+	var panel = mm.get_node("NewGamePanel")
+	assert_true(panel.visible)
+	var cancel_btn: Button = mm.get_node("NewGamePanel/VBox/ButtonRow/CancelButton")
+	cancel_btn.pressed.emit()
+	assert_false(panel.visible, "取消后面板隐藏")
+	assert_true(mm.get_node("ButtonLayer/VBox").visible)
 
 
 func test_hover_arrow_initially_invisible():
