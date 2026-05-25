@@ -4,6 +4,7 @@
 extends CanvasLayer
 
 signal start_game
+signal continue_game(save_data: Resource)
 
 const MenuSceneArt = preload("res://scripts/art/menu_scene_art.gd")
 const LogoArt = preload("res://scripts/art/logo_art.gd")
@@ -292,7 +293,7 @@ func _start_title_breathing() -> void:
 func _setup_buttons() -> void:
 	var rows := [
 		{"row": "NewGameRow", "callback": _on_new_game_pressed},
-		{"row": "ContinueRow", "callback": Callable()},
+		{"row": "ContinueRow", "callback": _on_continue_pressed},
 		{"row": "SettingsRow", "callback": _on_settings_pressed},
 		{"row": "QuitRow", "callback": _on_quit_pressed},
 	]
@@ -316,6 +317,10 @@ func _setup_buttons() -> void:
 		var cb: Callable = entry["callback"]
 		if cb.is_valid():
 			btn.pressed.connect(cb)
+	# 继续按钮: 没存档就禁用 (灰显)
+	var continue_btn: Button = $ButtonLayer/VBox/ContinueRow/Button
+	if continue_btn != null:
+		continue_btn.disabled = not SaveManager.has_save()
 
 
 func _apply_button_style(btn: Button) -> void:
@@ -363,6 +368,19 @@ func _on_new_game_pressed() -> void:
 	t.tween_property(vbox, "modulate:a", 0.0, 0.3)
 	t.parallel().tween_property(fade, "modulate:a", 1.0, 0.4)
 	t.tween_callback(func(): start_game.emit())
+
+
+func _on_continue_pressed() -> void:
+	# 读存档, 用存档 seed + 状态启动. 没存档就 noop (按钮应已被禁用).
+	var data = SaveManager.load_save()
+	if data == null:
+		return
+	var fade: ColorRect = $ButtonLayer/FadeOverlay
+	var vbox: VBoxContainer = $ButtonLayer/VBox
+	var t := create_tween()
+	t.tween_property(vbox, "modulate:a", 0.0, 0.3)
+	t.parallel().tween_property(fade, "modulate:a", 1.0, 0.4)
+	t.tween_callback(func(): continue_game.emit(data))
 
 
 # 回主菜单时复位淡出状态: VBox 重新可见, FadeOverlay 透明.

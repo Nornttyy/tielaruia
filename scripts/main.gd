@@ -24,6 +24,7 @@ var world: Node2D:
 
 func _ready() -> void:
 	_main_menu.start_game.connect(_start_game)
+	_main_menu.continue_game.connect(_continue_game)
 	_pause_menu.return_to_menu.connect(_return_to_menu)
 	_death_screen.respawn.connect(_on_respawn)
 	_show_menu_state()
@@ -76,6 +77,56 @@ func _start_game(world_seed: int = 0) -> void:
 	_game_nodes.append(dialogue)
 
 	_wire_player.call_deferred()
+
+
+# 走"继续" 路径: 用存档 seed 启 world + 还原玩家/背包/方块改动
+func _continue_game(data: Resource) -> void:
+	if data == null:
+		return
+	_start_game(int(data.world_seed))
+	# world 已 add_child, 还原 chunk 改动 + 玩家状态 (deferred 给 world _ready 跑完)
+	_apply_save_data.call_deferred(data)
+
+
+func _apply_save_data(data: Resource) -> void:
+	const SaveManager = preload("res://scripts/save/save_manager.gd")
+	var w := world
+	if w == null:
+		return
+	# 恢复玩家挖/放的 chunk 改动 (写 _deltas, 之后 chunk 加载时会应用)
+	SaveManager.apply_chunk_deltas(w.chunk_manager, data.chunk_deltas)
+	# 把已经加载的 chunk 也重新刷一遍 tile 视觉 — 简单做法: 让 chunk_manager 重载
+	# 否则玩家挖过的方块在 load 时不会显示
+	for cx in data.chunk_deltas.keys():
+		var ch = w.chunk_manager.get_chunk(cx)
+		if ch != null:
+			# 应用 delta 到 chunk.tiles
+			var arr: PackedInt32Array = data.chunk_deltas[cx]
+			var i: int = 0
+			while i + 2 < arr.size():
+				ch.set_tile(arr[i], arr[i + 1], arr[i + 2])
+				i += 3
+			# 触发 chunk_loaded 重画视觉 (不然 TileMapLayer 还是旧的)
+			w._on_chunk_loaded(ch)
+	# 移玩家 + 还原血量/背包
+	var player: Node2D = w.get_player()
+	if player == null:
+		return
+	player.global_position = data.player_position
+	var hp: Node = player.get_node_or_null("PlayerHealth")
+	if hp != null and "current_health" in hp:
+		hp.current_health = int(data.player_hp)
+		if hp.has_signal("health_changed"):
+			hp.health_changed.emit(hp.current_health, hp.MAX_HEALTH)
+	var inv_node: Node = player.get_node_or_null("PlayerInventory")
+	if inv_node != null and inv_node.inventory != null:
+		inv_node.inventory.slots = data.inventory_slots.duplicate()
+		if "hotbar_selected" in inv_node:
+			inv_node.hotbar_selected = data.hotbar_selection
+		if inv_node.has_signal("inventory_changed"):
+			inv_node.inventory_changed.emit()
+		if inv_node.has_signal("hotbar_selection_changed"):
+			inv_node.hotbar_selection_changed.emit(data.hotbar_selection)
 
 
 # 测试用 helper: 同步切到 game 状态。等价于按"新游戏"。

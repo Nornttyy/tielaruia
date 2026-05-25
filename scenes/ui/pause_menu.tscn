@@ -35,6 +35,10 @@ theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
 custom_minimum_size = Vector2(240, 40)
 text = "继续游戏"
 
+[node name="SaveButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(240, 40)
+text = "存档 (F5)"
+
 [node name="ReturnToMenuButton" type="Button" parent="VBox"]
 custom_minimum_size = Vector2(240, 40)
 text = "回主菜单"
