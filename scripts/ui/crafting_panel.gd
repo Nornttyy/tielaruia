@@ -419,9 +419,10 @@ func _refresh_recipes() -> void:
 	for entry in _recipe_buttons:
 		var recipe: Dictionary = entry.recipe
 		var btn: Button = entry.button
-		# 模式过滤: 2x2 模式仅显示 2x2 配方; 3x3 模式仅显示 3x3 配方 (含 2×3 门)
+		# 模式过滤: 2x2 模式只显示 2x2 配方; 工作台 (3x3 模式) 显示 ≤ 3x3 的全部配方
+		# (= 工作台也能合 2x2 的徒手配方, 用户偏好)
 		var recipe_size: int = max(recipe.grid_size.x, recipe.grid_size.y)
-		btn.visible = (recipe_size == _mode)
+		btn.visible = (recipe_size <= _mode)
 		if not btn.visible:
 			continue
 		# 素材是否够 → 灰显
