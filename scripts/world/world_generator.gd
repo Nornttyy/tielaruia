@@ -22,6 +22,9 @@ const BIOME_FOREST := 0
 const BIOME_DESERT := 1
 const BIOME_NOISE_FREQ := 0.006        # 周期 ~167 列, 沙漠+森林交替更频繁
 const BIOME_DESERT_THRESHOLD := -0.05  # noise > -0.05 = 沙漠 (约占 ~50% 列, 走几步必遇)
+# Spawn 偏移: |wx| < SPAWN_FOREST_FALLOFF 时给 biome 噪声减一个负值 → 强制森林.
+# wx=0 减 1.0 (压到必低于阈值), wx=60 偏移 0 (恢复噪声决定). 渐变 → 边界无锐切.
+const SPAWN_FOREST_FALLOFF := 60
 
 const BEDROCK_ROWS := 2          # 基岩占最底几行
 const SAND_THRESHOLD := 0.4      # sand_noise 超过此阈值的列为沙列
@@ -211,7 +214,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 		var surf: int = chunk_heights[world_x]
 		c.surfaces[local_x] = surf  # 给 ScenicDirector 等查询用
 		# Biome: 沙漠列整列用 SAND, 森林列保留原本的零星沙窝逻辑
-		var is_desert: bool = biome_noise.get_noise_1d(float(world_x)) > BIOME_DESERT_THRESHOLD
+		# Spawn 附近压低 biome 噪声 → 强制 wx=0 在森林, 远处渐恢复原噪声.
+		var biome_value: float = biome_noise.get_noise_1d(float(world_x)) + _spawn_forest_bias(world_x)
+		var is_desert: bool = biome_value > BIOME_DESERT_THRESHOLD
 		var is_sand_col: bool = is_desert or (sand_noise.get_noise_1d(float(world_x)) > SAND_THRESHOLD)
 		var deep_threshold: int = surf + int((height - surf) * DEEP_STONE_RATIO)
 		for y in height:
@@ -505,6 +510,9 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 		var mtn: float = maxf(0.0, mountain_noise.get_noise_1d(float(spawn_x)))
 		if mtn > MOUNTAIN_PIT_THRESHOLD:
 			continue
+		# Spawn 附近也跳过 (玩家开局不能踩进露天洞)
+		if absi(spawn_x) < SPAWN_FOREST_FALLOFF:
+			continue
 
 		# === 找斜坡方向: 左/右哪边 surf 更高 (= 山坡上去的方向, 朝那里挖洞口) ===
 		var entrance_surf: int = chunk_heights.get(spawn_x, -1)
@@ -594,8 +602,21 @@ static func _biome_at(world_x: int, world_seed: int) -> int:
 	n.seed = world_seed + 6
 	n.noise_type = FastNoiseLite.TYPE_PERLIN
 	n.frequency = BIOME_NOISE_FREQ
-	var v: float = n.get_noise_1d(float(world_x))
+	var v: float = n.get_noise_1d(float(world_x)) + _spawn_forest_bias(world_x)
 	return BIOME_DESERT if v > BIOME_DESERT_THRESHOLD else BIOME_FOREST
+
+
+# Spawn 附近的森林偏移. 返回 ≤ 0 的值, 越靠近 wx=0 越负 → 加到 biome 噪声上压低到阈值以下.
+# wx=0: -1.0 (强制森林, 远低于任何噪声值)
+# wx=SPAWN_FOREST_FALLOFF (60): 0 (恢复噪声决定)
+# 线性渐变, 实现平滑过渡 (不是硬切).
+static func _spawn_forest_bias(world_x: int) -> float:
+	var d: int = absi(world_x)
+	if d >= SPAWN_FOREST_FALLOFF:
+		return 0.0
+	# 线性: 1.0 at wx=0, 0.0 at wx=SPAWN_FOREST_FALLOFF
+	var t: float = 1.0 - float(d) / float(SPAWN_FOREST_FALLOFF)
+	return -1.0 * t
 
 
 # 3 整数 → 64-bit 稳定 hash (worm RNG 种子). 不用内建 hash() 因为它对 int 输入返回值未指定.
