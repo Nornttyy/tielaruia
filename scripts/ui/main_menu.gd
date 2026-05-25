@@ -405,17 +405,31 @@ func _make_save_row(parent: VBoxContainer, save_name: String, data) -> void:
 	_apply_button_style(enter_btn)
 	enter_btn.pressed.connect(func(): _on_load_save_pressed(save_name))
 	row.add_child(enter_btn)
-	# 删除按钮
+	# 删除按钮 (点了弹确认对话框, 防误删)
 	var del_btn := Button.new()
 	del_btn.text = "删除"
 	del_btn.custom_minimum_size = Vector2(60, 0)
 	_apply_button_style(del_btn)
-	del_btn.pressed.connect(func():
-		SaveManager.delete_save_by_name(save_name)
-		_refresh_saves_list()
-	)
+	del_btn.pressed.connect(func(): _confirm_delete_save(save_name))
 	row.add_child(del_btn)
 	parent.add_child(row)
+
+
+# 弹 ConfirmationDialog: 真的删存档吗? OK → 删 + 刷新; 取消 → 啥也不做
+func _confirm_delete_save(save_name: String) -> void:
+	var dlg := ConfirmationDialog.new()
+	dlg.title = "删除存档"
+	dlg.dialog_text = "真的要删除存档 \"%s\" 吗? \n这个操作不能撤销!" % save_name
+	dlg.ok_button_text = "删除"
+	dlg.get_cancel_button().text = "取消"
+	dlg.confirmed.connect(func():
+		SaveManager.delete_save_by_name(save_name)
+		_refresh_saves_list()
+		dlg.queue_free()
+	)
+	dlg.canceled.connect(func(): dlg.queue_free())
+	add_child(dlg)
+	dlg.popup_centered()
 
 
 # 点存档行的 "进入" → 用对应名字读存档进游戏
