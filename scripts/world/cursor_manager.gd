@@ -32,8 +32,8 @@ func _detect_mode() -> int:
 	if world == null:
 		return MODE_DEFAULT
 	var mouse_world: Vector2 = world.get_global_mouse_position()
-	# 鼠标贴近 slime/zombie → 剑
-	for group_name in ["slimes", "zombies"]:
+	# 鼠标贴近任何生物 (slime/zombie/牛/羊/猪/村民) → 剑. 唯独玩家除外.
+	for group_name in ["slimes", "zombies", "animals", "villagers"]:
 		for e in get_tree().get_nodes_in_group(group_name):
 			if not is_instance_valid(e):
 				continue
