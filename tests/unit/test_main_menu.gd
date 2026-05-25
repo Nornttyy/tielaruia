@@ -74,11 +74,12 @@ func test_has_button_layer():
 	assert_not_null(mm.get_node_or_null("ButtonLayer"))
 
 
-func test_has_five_buttons():
+func test_has_four_buttons():
 	var mm = _make()
 	var vb = mm.get_node_or_null("ButtonLayer/VBox")
 	assert_not_null(vb)
-	assert_eq(vb.get_child_count(), 5, "5 个按钮容器 (NewGame, Continue, Multiplayer, Settings, Quit)")
+	# NewGame, Multiplayer, Settings, Quit — Continue 已删 (commit 4339af8)
+	assert_eq(vb.get_child_count(), 4, "4 个按钮容器")
 
 
 func test_multiplayer_button_shows_panel():

@@ -50,6 +50,8 @@ jobs:
         run: |
           mkdir -p build/web
           godot --headless --export-release "${EXPORT_NAME}" build/web/index.html
+          # 注入 PeerJS bridge (联机用) — 复制 peerjs_bridge.js + index.html 加 script tag
+          bash scripts/web/inject_bridge.sh
           # GitHub Pages 默认会跑 Jekyll, 加 .nojekyll 关掉它 (不然 Godot 的 _ 开头文件会被忽略)
           touch build/web/.nojekyll
 

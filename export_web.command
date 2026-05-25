@@ -16,6 +16,8 @@ fi
 mkdir -p build/web
 echo "🔨 导出 web 版本 (可能 10-30s)..."
 "$GODOT" --headless --path . --export-release "Web" build/web/index.html
+echo "🔗 注入 PeerJS bridge (联机用)..."
+bash scripts/web/inject_bridge.sh
 echo "✅ 导出完成: build/web/"
 echo ""
 echo "现在双击 play_web.command 就能在浏览器里玩"

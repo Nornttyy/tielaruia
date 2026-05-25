@@ -32,6 +32,7 @@ GameSettings="*res://scripts/autoload/game_settings.gd"
 SaveManager="*res://scripts/save/save_manager.gd"
 SfxBank="*res://scripts/audio/sfx_bank.gd"
 MusicBank="*res://scripts/audio/music_bank.gd"
+NetworkManager="*res://scripts/net/network_manager.gd"
 
 [display]
 

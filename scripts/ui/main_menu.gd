@@ -492,23 +492,96 @@ func _setup_new_game_panel() -> void:
 
 # ---- multiplayer panel ----
 
-func _setup_new_game_panel_done():
-	pass
+var _mp_wired: bool = false
 
 
 func _on_multiplayer_pressed() -> void:
 	$MultiplayerPanel.visible = true
 	$ButtonLayer/VBox.visible = false
-	# 接 "返回" 按钮 (一次性, 在 _ready 已 setup 过就不重复)
-	var back_btn: Button = $MultiplayerPanel/VBox/BackButton
-	if back_btn != null and not back_btn.pressed.is_connected(_on_multiplayer_back_pressed):
-		_apply_button_style(back_btn)
-		back_btn.pressed.connect(_on_multiplayer_back_pressed)
+	_setup_multiplayer_panel_once()
+	_refresh_multiplayer_status()
+
+
+func _setup_multiplayer_panel_once() -> void:
+	if _mp_wired:
+		return
+	_mp_wired = true
+	var panel: Panel = $MultiplayerPanel
+	var host_btn: Button = panel.get_node("VBox/HostButton")
+	var join_btn: Button = panel.get_node("VBox/JoinRow/JoinButton")
+	var back_btn: Button = panel.get_node("VBox/BackButton")
+	_apply_button_style(host_btn)
+	_apply_button_style(join_btn)
+	_apply_button_style(back_btn)
+	host_btn.pressed.connect(_on_host_pressed)
+	join_btn.pressed.connect(_on_join_pressed)
+	back_btn.pressed.connect(_on_multiplayer_back_pressed)
+	# 接 NetworkManager 信号 (autoload, 一直在)
+	if NetworkManager != null:
+		if not NetworkManager.status_changed.is_connected(_on_mp_status_changed):
+			NetworkManager.status_changed.connect(_on_mp_status_changed)
+		if not NetworkManager.room_code_ready.is_connected(_on_mp_room_code_ready):
+			NetworkManager.room_code_ready.connect(_on_mp_room_code_ready)
+		if not NetworkManager.error_occurred.is_connected(_on_mp_error):
+			NetworkManager.error_occurred.connect(_on_mp_error)
 
 
 func _on_multiplayer_back_pressed() -> void:
 	$MultiplayerPanel.visible = false
 	$ButtonLayer/VBox.visible = true
+	if NetworkManager != null and NetworkManager.status != "idle":
+		NetworkManager.disconnect_room()
+
+
+func _on_host_pressed() -> void:
+	$MultiplayerPanel/VBox/RoomCodeLabel.text = "生成房间码中..."
+	if NetworkManager != null:
+		NetworkManager.host()
+	_refresh_multiplayer_status()
+
+
+func _on_join_pressed() -> void:
+	var input: LineEdit = $MultiplayerPanel/VBox/JoinRow/JoinInput
+	var code: String = input.text.strip_edges().to_upper()
+	if code.length() != 6:
+		$MultiplayerPanel/VBox/StatusLabel.text = "房间码必须是 6 位字母数字"
+		return
+	if NetworkManager != null:
+		NetworkManager.join(code)
+	_refresh_multiplayer_status()
+
+
+func _on_mp_status_changed(s: String) -> void:
+	_refresh_multiplayer_status()
+
+
+func _on_mp_room_code_ready(code: String) -> void:
+	$MultiplayerPanel/VBox/RoomCodeLabel.text = code
+	$MultiplayerPanel/VBox/StatusLabel.text = "把这 6 位码发给朋友, 等他输入加入"
+
+
+func _on_mp_error(msg: String) -> void:
+	$MultiplayerPanel/VBox/StatusLabel.text = "❌ " + msg
+
+
+func _refresh_multiplayer_status() -> void:
+	var lbl: Label = $MultiplayerPanel/VBox/StatusLabel
+	if NetworkManager == null:
+		lbl.text = "联机模块未加载"
+		return
+	match NetworkManager.status:
+		"idle":
+			lbl.text = "选择 创建房间 或 加入房间"
+		"hosting":
+			lbl.text = "等待朋友加入..."
+		"joining":
+			lbl.text = "连接中..."
+		"connected":
+			lbl.text = "✅ 已连接! (待 Phase C 同步玩家)"
+		"disconnected":
+			lbl.text = "对方断开了"
+		"error":
+			lbl.text = "❌ " + NetworkManager.last_error
 
 
 func _setup_settings_panel() -> void:
