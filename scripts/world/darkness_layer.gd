@@ -9,10 +9,13 @@ extends Sprite2D
 const TileLightGrid = preload("res://scripts/world/tile_light_grid.gd")
 
 const TILE_SIZE := 16
-const W := 60                  # 纹理宽度 (tiles) — 略大于可见区域留 buffer
-const H := 40                  # 纹理高度
-const HALF_W := 30
-const HALF_H := 20
+# 纹理覆盖区域要够大: 1280×720 viewport @ zoom=1.0 = 80×45 tile 可见.
+# 留 buffer 防边缘闪烁 → 96×60. 玩家中心 ±48 ×30 tile.
+# 计算开销 O(W×H) = 5760 像素/更新, 10 Hz = 57600/s, 可接受.
+const W := 96                  # 纹理宽度 (tiles)
+const H := 60                  # 纹理高度
+const HALF_W := 48
+const HALF_H := 30
 const UPDATE_INTERVAL := 0.1   # 10 Hz, 玩家走 0.9 tile/帧, 够顺
 
 var _img: Image
