@@ -231,6 +231,18 @@ func _on_respawn() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# DEBUG: 按 V 在鼠标光标处放水 (测试流水用)
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_V \
+			and _state == "game":
+		var world: Node = get_node_or_null("World")
+		if world != null and world.water_sim != null:
+			var terrain: TileMapLayer = world.get_node("TerrainLayer")
+			var mp: Vector2 = terrain.get_global_mouse_position()
+			var t: Vector2i = terrain.local_to_map(terrain.to_local(mp))
+			world.water_sim.add_water(t.x, t.y)
+			print("[DEBUG] placed water at ", t)
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_save") and _state == "game":
 		SaveManager.save(self)
 		get_viewport().set_input_as_handled()
