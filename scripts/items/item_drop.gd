@@ -10,6 +10,9 @@ const TILE_SIZE := 16
 
 @export var item_id: String = ""
 @export var count: int = 1
+# 联机: client 端的 remote drop 用 host 给的 ent_id (跨实例稳定 id),
+# host 端不需要预设 (用 entity_id_for(self) 自动算).
+@export var ent_id: int = 0
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var lifetime: Timer = $Lifetime
@@ -82,9 +85,6 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if not _pickup_ready:
 		return
-	# 联机 client: 远程掉落物只看不能捡 (host 才是权威, client 捡会和主端不同步)
-	if has_meta("is_remote"):
-		return
 	if not body.has_node("PlayerInventory"):
 		return
 	var pi: Node = body.get_node("PlayerInventory")
@@ -92,8 +92,13 @@ func _on_body_entered(body: Node) -> void:
 		return
 	var leftover: int = pi.pickup(item_id, count)
 	if leftover < count:
-		SfxBank.play("pickup", 0.20)  # ±20% 变调, Minecraft 风
+		SfxBank.play("pickup", 0.20)
 	if leftover == 0:
+		# 是 remote drop (client 这边的 host 副本) → 通知 host 捡走它的真本
+		if has_meta("is_remote") \
+				and NetworkManager != null and NetworkManager.connected() \
+				and ent_id != 0:
+			NetworkManager.send_drop_pickup(ent_id)
 		queue_free()
 	else:
 		count = leftover

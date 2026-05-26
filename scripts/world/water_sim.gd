@@ -20,6 +20,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if world == null:
 		return
+	# 联机时只在 host 跑 simulation (client 收 host 的 tile_change 广播应用)
+	if NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host:
+		_dirty.clear()
+		return
 	_t += delta
 	if _t >= TICK_INTERVAL:
 		_t = 0.0
