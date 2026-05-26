@@ -7,8 +7,8 @@ extends Node
 signal weather_changed(state: String)
 signal lightning_flash
 
-const CLEAR_MIN_SEC := 90.0     # 晴天最短 1.5 分钟
-const CLEAR_MAX_SEC := 240.0    # 晴天最长 4 分钟
+const CLEAR_MIN_SEC := 30.0     # 晴天最短 30s (用户反馈"等 10 分钟都没下", 调短)
+const CLEAR_MAX_SEC := 90.0     # 晴天最长 1.5 分钟
 const RAIN_MIN_SEC := 30.0
 const RAIN_MAX_SEC := 90.0
 
