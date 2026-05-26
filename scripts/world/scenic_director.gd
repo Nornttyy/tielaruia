@@ -51,6 +51,19 @@ func setup(refs: Dictionary) -> void:
 	_lava_drip = refs.get("lava_drip", null)
 
 
+# 给 World._apply_graphics_settings 用 — 切远景视觉层的可见性.
+# ScenicDirector 本身 extends Node 无 .visible 属性, 不能直接 .visible = b.
+func set_layers_visible(b: bool) -> void:
+	if _mountains != null:
+		_mountains.visible = b
+	if _celestial != null:
+		_celestial.visible = b
+	if _cave_bg != null:
+		_cave_bg.visible = b
+	if _sky_bg != null:
+		_sky_bg.visible = b
+
+
 # 自动从父节点 (World) 找 sibling 节点 (按名称约定).
 # 这样可以直接把 ScenicDirector 挂到 world.tscn 里, 不用改 world.gd 代码.
 func _ready() -> void:

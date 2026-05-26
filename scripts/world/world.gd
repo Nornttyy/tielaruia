@@ -539,7 +539,7 @@ func _apply_graphics_settings() -> void:
 			child.visible = GameSettings.show_parallax
 	var scenic := get_node_or_null("ScenicDirector")
 	if scenic != null:
-		scenic.visible = GameSettings.show_parallax
+		scenic.set_layers_visible(GameSettings.show_parallax)
 	# 鸟/蝠群
 	var bird := get_node_or_null("BirdLayer")
 	if bird != null:
