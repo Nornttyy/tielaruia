@@ -72,8 +72,9 @@ func test_jump_clears_one_tile_block_in_front():
 	assert_true(ended_higher, "玩家应站到方块上 (y 上升 ~1 格). 实际 dy=%.1f" % (start_y - player.global_position.y))
 
 
-func test_auto_step_one_tile_no_jump():
-	# Auto-step: 玩家走着碰 1 格高台阶, 不按跳应该自动爬上去
+# 玩家不会自动爬台阶 (用户偏好需要按跳, 不要 Terraria 风 auto-step).
+# 测试: 撞 1 格台阶 + 不按跳 → 应该卡住不上去.
+func test_no_auto_step_one_tile_player_stuck():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
 	main.boot_to_game()
@@ -87,58 +88,21 @@ func test_auto_step_one_tile_no_jump():
 		await wait_frames(1)
 	var pt := Vector2i(int(floor(player.global_position.x / TILE_SIZE)),
 			int(floor(player.global_position.y / TILE_SIZE)))
-	# 1 格台阶: pt.y 是玩家"所在" tile (脚朝上 1 px), 在右一列同 y 放方块,
-	# 让右边列地面高 1 格 (vs pt.y-1 是头顶, 那是 2 格高 = 跳不上去的墙).
 	var btile := Vector2i(pt.x + 1, pt.y)
 	world._set_tile(btile.x, btile.y, Tiles.STONE)
 	terrain.set_cell(btile, Tiles.STONE, Vector2i.ZERO)
 	await wait_frames(2)
 	var start_y: float = player.global_position.y
-	var start_x: float = player.global_position.x
-	var min_y: float = start_y   # 跟踪过程中的最高点 (y 越小 = 越高)
-	# 只按 right, 不按 jump
+	var min_y: float = start_y
 	Input.action_press("move_right")
-	for f in 30:
+	for _f in 30:
 		await wait_frames(1)
 		min_y = min(min_y, player.global_position.y)
-		if f % 3 == 0:
-			print("  F%d: pos=%s on_wall=%s on_floor=%s" % [f, player.global_position, player.is_on_wall(), player.is_on_floor()])
 	Input.action_release("move_right")
-	# dy 算 "过程中最高升了多少", 不是最终位置 (因为单块台阶爬上去后会继续走过去掉下来)
 	var dy: float = start_y - min_y
-	var dx: float = player.global_position.x - start_x
-	print("[auto-step] start=(", start_x, ",", start_y, ") end=", player.global_position, " dx=", dx, " peak_dy=", dy)
-	assert_gt(dy, float(TILE_SIZE) * 0.5, "auto-step 应让玩家爬过 1 格台阶 (峰值 dy >= 8). 实际 %.1f" % dy)
+	assert_lt(dy, float(TILE_SIZE) * 0.5, "玩家不该自动爬台阶 (峰值 dy < 8). 实际 %.1f" % dy)
 
 
-func test_jump_clears_two_tile_block():
-	# 2 格高墙 (玩家右 +2 距离): 边按方向边跳, 应能站到墙顶 (dy >= 32)
-	var main = MainScene.instantiate()
-	add_child_autofree(main)
-	main.boot_to_game()
-	await wait_frames(10)
-	var player: CharacterBody2D = main.get_node("World").get_player()
-	var world: Node2D = main.get_node("World")
-	var terrain: TileMapLayer = world.get_node("TerrainLayer")
-	for _i in 120:
-		if player.is_on_floor():
-			break
-		await wait_frames(1)
-	var pt := Vector2i(int(floor(player.global_position.x / TILE_SIZE)),
-			int(floor(player.global_position.y / TILE_SIZE)))
-	for dy_off in [0, 1]:
-		var btile := Vector2i(pt.x + 2, pt.y - dy_off)
-		world._set_tile(btile.x, btile.y, Tiles.STONE)
-		terrain.set_cell(btile, Tiles.STONE, Vector2i.ZERO)
-	await wait_frames(2)
-	var start_y: float = player.global_position.y
-	Input.action_press("move_right")
-	Input.action_press("jump")
-	await wait_frames(1)
-	Input.action_release("jump")
-	for _i in 90:
-		await wait_frames(1)
-	Input.action_release("move_right")
-	var dy: float = start_y - player.global_position.y
-	print("[jump-2tile test] start_y=", start_y, " end_y=", player.global_position.y, " dy=", dy)
-	assert_gte(dy, float(TILE_SIZE) * 1.5, "跳 + auto-step 应能上 2 格墙 (dy >= 24). 实际 %.1f" % dy)
+# 2 格墙跳跃测试已删: 之前要求 dy>=24 是依赖 auto-step + jump 合作.
+# 用户关闭了 auto-step, 跳+水平在 2 格距离能否上 2 格墙取决于精准 timing, 不稳定.
+# 单纯跳跃 1 格墙的能力由 test_jump_clears_one_tile_block_in_front 覆盖了.
