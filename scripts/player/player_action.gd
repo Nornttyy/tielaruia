@@ -248,16 +248,17 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 			_spawn_drop(item_id, tile)
 
 
-# 是树底 = 下面那格不是空气/树/叶子, 而是 grass/dirt/sand 等
+# 树底 = 下面那格不属于树自身的部件. 其他都算 (grass/dirt/AIR/stone/glass 等).
+# AIR 也允许 (玩家挖掉了树下方的地基 → 树悬空, 仍是树底可整棵砍).
 func _is_tree_base(world: Node, x: int, y: int) -> bool:
 	var cm = world.get("chunk_manager")
 	if cm == null:
 		return false
 	var below: int = cm.get_tile(x, y + 1)
-	if below == Tiles.AIR or below == Tiles.LEAVES:
-		return false
 	if _TREE_PARTS.has(below):
 		return false
+	if below == Tiles.LEAVES:
+		return false   # 叶子在底下太怪 (玩家自建除外), 暂不视为底
 	return true
 
 
