@@ -12,6 +12,12 @@ const PixelArt = preload("res://scripts/art/pixel_art.gd")
 const AIR := 0
 const GRASS := 1
 const DIRT := 2
+# 新群系常量 (跟 Tiles.gd 一致)
+const SNOW := 39
+const ICE := 40
+const JUNGLE_GRASS := 41
+const MUD := 42
+const SWAMP_GRASS := 43
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -1273,6 +1279,12 @@ const _PATTERN_MAP := {
 	WATER_L3: [_WATER, _P_WATER],
 	CHEST: [_CHEST, _P_CHEST],
 	DOOR_TOP: [_DOOR_TOP_CLOSED, _P_DOOR],
+	# 新群系 tile: 暂复用现有 pattern (后续可以做专属调色板)
+	SNOW: [_GRASS, _P_GRASS],
+	ICE: [_STONE, _P_STONE],
+	JUNGLE_GRASS: [_GRASS, _P_GRASS],
+	MUD: [_DIRT, _P_DIRT],
+	SWAMP_GRASS: [_GRASS, _P_GRASS],
 }
 
 

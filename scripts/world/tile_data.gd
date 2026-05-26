@@ -43,6 +43,12 @@ const WATER_L3 := 36        # 3/4 水位 (流水 level 3)
 # WATER (=28) 表示满水 level 4
 const CHEST := 37           # 箱子: 右键打开 24 格存储, 内容跟存档持久化
 const DOOR_TOP := 38        # 门上半截 (DOOR 始终是底部, DOOR_TOP 顶部). 配对成 2 格高门.
+# 新群系 tile (雪原 / 丛林 / 沼泽)
+const SNOW := 39            # 雪原地表 (替代 GRASS), 偏白带浅蓝阴影
+const ICE := 40             # 冰块 (雪原零星), 半透明蓝
+const JUNGLE_GRASS := 41    # 丛林地表, 深绿带湿气黄绿斑
+const MUD := 42             # 沼泽泥土 (替代 DIRT 在沼泽), 棕黑色
+const SWAMP_GRASS := 43     # 沼泽地表, 深灰绿带泥点
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -257,6 +263,32 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["chest", 100, 1, 1]],
+	},
+	# === 新群系地表 (像 GRASS / DIRT / SAND 一样可挖, 徒手即可) ===
+	SNOW: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["snow", 100, 1, 1]],
+	},
+	ICE: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": -1, "sword": -1},
+		"drops": [["ice", 100, 1, 1]],
+	},
+	JUNGLE_GRASS: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["dirt", 100, 1, 1]],
+	},
+	MUD: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["mud", 100, 1, 1]],
+	},
+	SWAMP_GRASS: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["mud", 100, 1, 1]],
 	},
 }
 

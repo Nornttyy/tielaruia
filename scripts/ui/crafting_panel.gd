@@ -304,6 +304,11 @@ const _ZH_NAMES := {
 	"chest": "箱子",
 	"grappling_hook": "钩爪",
 	"bone": "骨头",
+	"snow": "雪块",
+	"ice": "冰块",
+	"jungle_grass": "丛林草",
+	"mud": "泥",
+	"swamp_grass": "沼泽草",
 }
 
 
