@@ -1,10 +1,10 @@
 name: Deploy to GitHub Pages
 
-# 触发: 推到 main 分支
+# 触发: 推到 main / master + 手动 dispatch
 on:
   push:
     branches: [main, master]
-  workflow_dispatch:  # 也可以手动触发
+  workflow_dispatch:
 
 # 给 GITHUB_TOKEN 写 pages 的权限
 permissions:
