@@ -76,6 +76,7 @@ func _ready() -> void:
 	wall_layer.tile_set = ts  # 跟前景共享同一个 TileSet (墙 tile 也在里面注册过了)
 	terrain_layer.add_to_group("terrain_layer")
 	$EffectsRoot.add_to_group("effects_root")
+	add_to_group("world")   # 调试面板等系统用 get_first_node_in_group("world") 找到入口
 	if world_seed == 0:
 		world_seed = randi()
 	chunk_manager = ChunkManagerClass.new()
