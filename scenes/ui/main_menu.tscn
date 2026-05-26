@@ -191,27 +191,27 @@ custom_minimum_size = Vector2(40, 0)
 text = "100"
 theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
 
-[node name="GraphicsLabel" type="Label" parent="SettingsPanel/VBox"]
-text = "图形 (帧率不稳时可关)"
-horizontal_alignment = 1
+[node name="ZoomRow" type="HBoxContainer" parent="SettingsPanel/VBox"]
+
+[node name="Label" type="Label" parent="SettingsPanel/VBox/ZoomRow"]
+custom_minimum_size = Vector2(140, 0)
+text = "摄像机大小"
 theme_override_font_sizes/font_size = 16
-theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
 
-[node name="RainCheck" type="CheckButton" parent="SettingsPanel/VBox"]
-text = "下雨粒子"
-button_pressed = true
+[node name="Slider" type="HSlider" parent="SettingsPanel/VBox/ZoomRow"]
+custom_minimum_size = Vector2(220, 0)
+min_value = 0.5
+max_value = 2.5
+step = 0.1
+value = 1.2
 
-[node name="ParallaxCheck" type="CheckButton" parent="SettingsPanel/VBox"]
-text = "远景视差 (云 / 远山 / 矿洞)"
-button_pressed = true
-
-[node name="FlocksCheck" type="CheckButton" parent="SettingsPanel/VBox"]
-text = "鸟群 / 蝠群"
-button_pressed = true
-
-[node name="WaterSimCheck" type="CheckButton" parent="SettingsPanel/VBox"]
-text = "流水模拟 (关掉水不流)"
-button_pressed = true
+[node name="ValueLabel" type="Label" parent="SettingsPanel/VBox/ZoomRow"]
+custom_minimum_size = Vector2(50, 0)
+text = "1.2"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
 
 [node name="BackButton" type="Button" parent="SettingsPanel/VBox"]
 custom_minimum_size = Vector2(0, 36)

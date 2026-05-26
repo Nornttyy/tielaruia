@@ -47,6 +47,15 @@ var water_sim_enabled: bool = true:
 		water_sim_enabled = v
 		_save_and_emit()
 
+# camera_zoom: 摄像机大小 (越小看得越远, 越大看得越近). World 的 Camera2D 同步.
+# 默认 1.2 (跟 world.tscn 原值一致). 范围 0.5 (远视野) ~ 2.5 (近距离)
+var camera_zoom: float = 1.2:
+	set(v):
+		var clamped: float = clampf(v, 0.5, 2.5)
+		if camera_zoom == clamped: return
+		camera_zoom = clamped
+		_save_and_emit()
+
 
 # 难度对玩家受伤的乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x
 func damage_multiplier() -> float:
@@ -78,6 +87,7 @@ func _save() -> void:
 	cfg.set_value("graphics", "show_parallax", show_parallax)
 	cfg.set_value("graphics", "show_flocks", show_flocks)
 	cfg.set_value("graphics", "water_sim_enabled", water_sim_enabled)
+	cfg.set_value("camera", "zoom", camera_zoom)
 	cfg.save(SETTINGS_PATH)
 
 
@@ -91,3 +101,4 @@ func _load() -> void:
 	show_parallax = bool(cfg.get_value("graphics", "show_parallax", true))
 	show_flocks = bool(cfg.get_value("graphics", "show_flocks", true))
 	water_sim_enabled = bool(cfg.get_value("graphics", "water_sim_enabled", true))
+	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 1.2)), 0.5, 2.5)
