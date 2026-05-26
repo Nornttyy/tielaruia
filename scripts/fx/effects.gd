@@ -63,6 +63,29 @@ func spawn_land_dust(world_pos: Vector2) -> void:
 			randf_range(1.0, 1.4))
 
 
+func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1, 0.9, 0.5)) -> void:
+	# 砍怪 / 玩家受伤时, 头上飘一个 "-N" 数字, 0.7s 上升 + 渐隐.
+	# color: 默认暖黄 (打怪); 玩家受伤可传 Color(1, 0.4, 0.4) 暗红.
+	var lbl := Label.new()
+	lbl.text = "-%d" % amount
+	lbl.add_theme_color_override("font_color", color)
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	lbl.add_theme_constant_override("outline_size", 4)
+	lbl.add_theme_font_size_override("font_size", 14)
+	# 随机水平偏移避免数字叠在一起 (连续多发命中)
+	var jitter_x: float = randf_range(-6.0, 6.0)
+	lbl.position = world_pos + Vector2(-8.0 + jitter_x, -16.0)
+	lbl.z_index = 100
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root().add_child(lbl)
+	# Tween: 向上飘 18 px, alpha 1 → 0, 0.7s
+	var tw := lbl.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(lbl, "position:y", lbl.position.y - 18.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(lbl, "modulate:a", 0.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.chain().tween_callback(lbl.queue_free)
+
+
 func spawn_walk_puff(world_pos: Vector2) -> void:
 	var parent: Node = _root()
 	var d = DustParticleScene.instantiate()

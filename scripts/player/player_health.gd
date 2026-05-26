@@ -38,6 +38,11 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 	current_health = max(0, current_health - final_amount)
 	_iframe_timer = IFRAMES_SEC
 	damaged.emit(final_amount, source_pos)
+	# 玩家受伤飘暗红字 (跟打怪暖黄字区分)
+	var player_node: Node = get_parent()
+	if player_node is Node2D:
+		var pos: Vector2 = (player_node as Node2D).global_position + Vector2(0, -12)
+		Effects.spawn_damage_number(pos, final_amount, Color(1, 0.35, 0.35))
 	SfxBank.play("hurt", 0.08)
 	health_changed.emit(current_health, MAX_HEALTH)
 	if current_health == 0:

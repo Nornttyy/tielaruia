@@ -195,6 +195,8 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
 	current_health = max(0, current_health - amount)
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
+	# 飘字 -N (暖黄, 打怪反馈)
+	Effects.spawn_damage_number(global_position + Vector2(0, -8), amount)
 	# 击退: 远离 source (轻度, 不要弹太远)
 	if source_pos != Vector2.ZERO:
 		var dx: float = global_position.x - source_pos.x
