@@ -16,7 +16,8 @@ const W := 96                  # 纹理宽度 (tiles)
 const H := 60                  # 纹理高度
 const HALF_W := 48
 const HALF_H := 30
-const UPDATE_INTERVAL := 0.1   # 10 Hz, 玩家走 0.9 tile/帧, 够顺
+const UPDATE_INTERVAL := 0.25  # 4 Hz. 0.1 → 0.25 节省 60%+ 光照 BFS 算量,
+                               # 玩家 0.25s 走 ~1 tile, 在 96x60 视野里看不出延迟
 
 var _img: Image
 var _last_update: float = 0.0

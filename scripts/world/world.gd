@@ -38,7 +38,8 @@ const TILE_SIZE := 16
 
 const MINIMAP_VIEW_TILES_X := 18  # 玩家屏幕能看到的横向 tile (略大于实际视野)
 const MINIMAP_VIEW_TILES_Y := 14  # 纵向
-const MINIMAP_MARK_INTERVAL := 0.1  # 每 0.1s 标记一次玩家周围 (减少开销)
+const MINIMAP_MARK_INTERVAL := 0.25  # 每 0.25s 标记一次玩家周围. 玩家 0.25s 走 ~1 tile,
+                                     # minimap 也跟得上, 但循环 18x14 tile 的成本省 60%
 
 @export var world_seed: int = 0   # 0 表示 _ready 内随机化
 
