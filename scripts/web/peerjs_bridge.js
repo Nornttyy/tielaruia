@@ -53,14 +53,20 @@
         });
     }
 
+    bridge._hostRetries = 0;
+
     bridge.host = function() {
         bridge.disconnect();
         bridge._isHost = true;
         bridge._status = 'hosting';
         bridge._lastError = '';
+        bridge._hostRetries = 0;
+        _hostAttempt();
+    };
+
+    function _hostAttempt() {
         // PeerJS 公共 broker. 自定义 id = 房间码 (用户分享给朋友的代码)
         var code = _genRoomCode();
-        // teilaruia- 前缀避免跟其他 PeerJS 项目撞 id
         var fullId = 'teilaruia-' + code;
         try {
             bridge._peer = new Peer(fullId, { debug: 1 });
@@ -70,18 +76,24 @@
             return;
         }
         bridge._peer.on('open', function(id) {
-            // id 是 broker 给的实际 id (= fullId)
-            bridge._myId = code;  // 展示给用户的是 6 位
+            bridge._myId = code;
         });
         bridge._peer.on('connection', function(conn) {
             _setupConn(conn);
         });
         bridge._peer.on('error', function(err) {
-            // id 冲突或 broker 失败. 重试一次用不同 code.
-            bridge._lastError = 'peer error: ' + (err.type || err.message || err);
+            var et = err.type || err.message || err;
+            // id 冲突: 换 code 重试 (最多 5 次)
+            if (et === 'unavailable-id' && bridge._hostRetries < 5) {
+                bridge._hostRetries++;
+                try { bridge._peer.destroy(); } catch (e) {}
+                _hostAttempt();
+                return;
+            }
+            bridge._lastError = 'peer error: ' + et;
             bridge._status = 'error';
         });
-    };
+    }
 
     bridge.join = function(code) {
         if (!code || code.length !== 6) {

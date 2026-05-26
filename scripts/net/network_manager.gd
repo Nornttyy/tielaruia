@@ -48,6 +48,10 @@ var _poll_timer: float = 0.0
 
 
 func _ready() -> void:
+	# 暂停菜单会 set_tree().paused = true. NetworkManager 是 autoload, 默认会被
+	# 暂停影响 (_process 不跑). 设 ALWAYS 让它在暂停时也能 poll JS bridge,
+	# 不然 host 在暂停菜单里点"开房间" 永远拿不到 PeerJS 返回的房间码.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	# 只在 HTML5 export 启用. 桌面 (gut 测试) 直接放着不动.
 	if not _has_javascript_bridge():
 		print("[NetworkManager] 非 HTML5 平台, 联机功能禁用")
