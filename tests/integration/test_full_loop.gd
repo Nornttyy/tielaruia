@@ -55,10 +55,14 @@ func test_full_survival_loop():
 	inv.inventory.swap(0, wb_idx)
 	inv.set_hotbar_selection(0)
 
-	# 5. 放工作台
+	# 5. 放工作台 — try_place 需要 wb_target 至少有 1 个相邻方块支撑
 	var wb_target: Vector2i = pt + Vector2i(2, -1)
 	terrain.set_cell(wb_target, -1)
 	world._set_tile(wb_target.x, wb_target.y, Tiles.AIR)
+	# 在 wb_target 正下方放石头当支撑 (= pt + (2, 0))
+	var support_t: Vector2i = pt + Vector2i(2, 0)
+	world._set_tile(support_t.x, support_t.y, Tiles.STONE)
+	terrain.set_cell(support_t, Tiles.STONE, Vector2i.ZERO)
 	action.aim_override = wb_target
 	action.place_override = true
 	await wait_frames(3)
