@@ -480,15 +480,36 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				else:
 					wall_layer.set_cell(wpos, wid, Vector2i.ZERO)
 		SkyLightGrid.invalidate_column(world_x)
-	# 流水: 把 chunk 里所有水都标 dirty, 让 water_sim 评估能否流
-	# (worldgen 放的 WATER 没经过 _set_tile hook, 默认是静态的)
+	# 流水: 只标"边界水" dirty (相邻有 AIR 或低水位才可能流) — 避免 worldgen
+	# 大海/大水池整片几千格全 dirty 卡帧.
 	if water_sim != null:
-		for lx in c.tiles.size():
+		var w: int = c.tiles.size()
+		var h: int = c.tiles[0].size() if w > 0 else 0
+		for lx in w:
 			var col: Array = c.tiles[lx]
 			for y in col.size():
 				var t: int = col[y]
-				if t == Tiles.WATER or t == Tiles.WATER_L1 \
-						or t == Tiles.WATER_L2 or t == Tiles.WATER_L3:
+				if t != Tiles.WATER and t != Tiles.WATER_L1 \
+						and t != Tiles.WATER_L2 and t != Tiles.WATER_L3:
+					continue
+				# 检 4 个邻居, 全是水(同 level)/实心 -> 内部水, 跳过
+				var has_flow: bool = false
+				for nb in [Vector2i(0, 1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(1, 0)]:
+					var nx_local: int = lx + nb.x
+					var ny: int = y + nb.y
+					if nx_local < 0 or nx_local >= w or ny < 0 or ny >= h:
+						has_flow = true
+						break
+					var nt: int = col[ny] if nb.x == 0 else c.tiles[nx_local][ny]
+					if nt == Tiles.AIR:
+						has_flow = true
+						break
+					# 邻居是更低水位 -> 可流
+					if nt == Tiles.WATER_L1 or nt == Tiles.WATER_L2 or nt == Tiles.WATER_L3:
+						if t == Tiles.WATER:
+							has_flow = true
+							break
+				if has_flow:
 					water_sim.mark_dirty(chunk_start + lx, y)
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
 	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)
@@ -762,3 +783,18 @@ func _fix_cactus_at(x: int, y: int) -> void:
 	# 切换类型: 同步 chunk_manager + TileMapLayer (没 autotile family, 直接 set_cell)
 	chunk_manager.set_tile(x, y, want_tid)
 	terrain_layer.set_cell(Vector2i(x, y), want_tid, Vector2i.ZERO)
+
+
+# 水专用 fast path: 跳过 autotile/darkness/lighting/cactus/sky 等水改不影响的子系统.
+# water_sim 每 tick 调几百次, 走完整 _set_tile 会卡帧 (darkness recompute 17x17 × 数百次).
+func _set_water_tile_fast(x: int, y: int, tile_id: int) -> void:
+	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
+		return
+	chunk_manager.set_tile(x, y, tile_id)
+	var pos := Vector2i(x, y)
+	if tile_id == Tiles.AIR:
+		terrain_layer.set_cell(pos, -1)
+	else:
+		terrain_layer.set_cell(pos, tile_id, Vector2i.ZERO)
+	if water_sim != null:
+		water_sim.notify_tile_changed(x, y)

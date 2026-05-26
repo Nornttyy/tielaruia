@@ -50,12 +50,12 @@ func add_water(x: int, y: int) -> bool:
 		return false
 	var tid: int = cm.get_tile(x, y)
 	if tid == Tiles.AIR:
-		world._set_tile(x, y, Tiles.WATER_L1)
+		world._set_water_tile_fast(x, y, Tiles.WATER_L1)
 		notify_tile_changed(x, y)
 		return true
 	var L: int = _level_of(tid)
 	if L > 0 and L < 4:
-		world._set_tile(x, y, _tile_for_level(L + 1))
+		world._set_water_tile_fast(x, y, _tile_for_level(L + 1))
 		notify_tile_changed(x, y)
 		return true
 	return false
@@ -104,21 +104,21 @@ func _step_tile(cm, x: int, y: int) -> void:
 	var below_tid: int = cm.get_tile(x, y + 1)
 	if below_tid == Tiles.AIR:
 		# 全水下流
-		world._set_tile(x, y + 1, _tile_for_level(L))
-		world._set_tile(x, y, Tiles.AIR)
+		world._set_water_tile_fast(x, y + 1, _tile_for_level(L))
+		world._set_water_tile_fast(x, y, Tiles.AIR)
 		notify_tile_changed(x, y + 1)
 		return
 	var below_L: int = _level_of(below_tid)
 	if below_L > 0 and below_L < 4:
 		# 转给下面
 		var xfer: int = mini(L, 4 - below_L)
-		world._set_tile(x, y + 1, _tile_for_level(below_L + xfer))
+		world._set_water_tile_fast(x, y + 1, _tile_for_level(below_L + xfer))
 		var new_L: int = L - xfer
 		if new_L > 0:
-			world._set_tile(x, y, _tile_for_level(new_L))
+			world._set_water_tile_fast(x, y, _tile_for_level(new_L))
 			mark_dirty(x, y)
 		else:
-			world._set_tile(x, y, Tiles.AIR)
+			world._set_water_tile_fast(x, y, Tiles.AIR)
 		notify_tile_changed(x, y + 1)
 		return
 	# 下方堵 → 横向均衡 (L >= 2 才溢, L=1 当残留)
@@ -142,11 +142,11 @@ func _step_tile(cm, x: int, y: int) -> void:
 	var target: Array = candidates[0]
 	var tx: int = int(target[0])
 	var tL: int = int(target[1])
-	world._set_tile(tx, y, _tile_for_level(tL + 1))
+	world._set_water_tile_fast(tx, y, _tile_for_level(tL + 1))
 	var new_L: int = L - 1
 	if new_L > 0:
-		world._set_tile(x, y, _tile_for_level(new_L))
+		world._set_water_tile_fast(x, y, _tile_for_level(new_L))
 		mark_dirty(x, y)
 	else:
-		world._set_tile(x, y, Tiles.AIR)
+		world._set_water_tile_fast(x, y, Tiles.AIR)
 	notify_tile_changed(tx, y)
