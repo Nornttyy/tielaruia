@@ -179,6 +179,19 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# === 钩爪 (用铁锭做钩头 + 木板做柄 + leather 当绳子) ===
+	{
+		"id": "grappling_hook",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["iron_ore", "iron_ore", ""],
+			["",         "iron_ore", ""],
+			["leather",  "",         ""],
+		],
+		"output_id": "grappling_hook",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
 	# === 金工具 (tier 4, 用 gold_ore + planks) ===
 	{
 		"id": "gold_sword",

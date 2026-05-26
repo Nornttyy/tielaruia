@@ -503,7 +503,30 @@ const _ICONS := {
 	"raw_meat": _RAW_MEAT,
 	"leather": _LEATHER,
 	"wool": _WOOL,
+	"grappling_hook": _GRAPPLING_HOOK,
 }
+
+
+# 钩爪 icon: 钩头朝上, 麻绳垂直挂下, 像泰拉瑞亚那种.
+# n=黑边, B=金属基, b=高光, K=阴影, r=麻绳棕.
+const _GRAPPLING_HOOK := [
+	"................",
+	".....nnnn.......",
+	"....nbBBKn......",
+	"....n.nKBn......",
+	"...n...nBn......",
+	"...nB..nBn......",
+	"...nK.nBn.......",
+	"....nKBn........",
+	".....nrn........",
+	".....nrn........",
+	".....nrn........",
+	".....nrn........",
+	".....nrn........",
+	".....nrn........",
+	".....nrn........",
+	"................",
+]
 
 
 static func get_icon(item_id: String) -> ImageTexture:

@@ -471,6 +471,13 @@ func _update_eat_or_place(delta: float) -> void:
 	var holding_food: bool = slot != null and ItemDB.is_food(slot.item_id)
 	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
 
+	# 持钩爪 + 右键刚按下 → 朝鼠标发射钩爪 (玩家拉过去)
+	if slot != null and slot.item_id == "grappling_hook" and just:
+		var player_node: Node = get_parent()
+		if player_node != null and player_node.has_method("fire_grappling_hook"):
+			player_node.fire_grappling_hook(player_node.get_global_mouse_position())
+		return
+
 	# 持食物 + 按住 + 没吃饱 → 进入/保持 eating
 	if holding_food and held and hunger != null and int(hunger.current) < hunger.MAX:
 		if _eat_item_id != slot.item_id:

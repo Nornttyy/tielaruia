@@ -128,7 +128,8 @@ func _build_items() -> void:
 			"iron_sword", "iron_axe",
 			"gold_sword", "gold_pickaxe", "gold_axe",
 			"diamond_sword", "diamond_pickaxe", "diamond_axe",
-			"raw_meat", "leather", "wool"]:
+			"raw_meat", "leather", "wool",
+			"grappling_hook"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 
 
