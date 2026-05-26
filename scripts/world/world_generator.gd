@@ -856,7 +856,12 @@ static func _place_branches(c: Chunk, lx: int, trunk_top: int, surf: int, rng: R
 	var candidates: Array = []
 	for ty in range(min_y, max_y + 1):
 		candidates.append(ty)
-	candidates.shuffle()
+	# Fisher-Yates with 传入的 rng — Array.shuffle() 用全局 RNG, 不 deterministic
+	for i in range(candidates.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = candidates[i]
+		candidates[i] = candidates[j]
+		candidates[j] = tmp
 	var n_branches: int = rng.randi_range(1, mini(3, candidates.size()))
 	var placed_ys: Array = []
 	for i in n_branches:
