@@ -3,7 +3,9 @@
 extends Node
 
 const TICK_INTERVAL := 0.18         # 每 0.18s 跑一次 (流速看着不太慢)
-const MAX_TILES_PER_TICK := 2000    # 防卡, 单 tick 上限
+# 单 tick 上限 (吃帧的关键参数). 500 已经足够: 玩家放一桶水 (覆盖 ~30 tile) 一拍处理完;
+# 大坝/瀑布慢一两拍流不死人, 但 2000 时一次 tick 占 GPU 一帧, FPS 抖动明显.
+const MAX_TILES_PER_TICK := 500
 
 @export var world: Node2D            # 父 World (有 chunk_manager + _set_tile)
 
