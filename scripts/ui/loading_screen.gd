@@ -13,6 +13,7 @@ const BAR_FILL_COLOR := Color8(255, 180, 110)
 const TEXT_WARM := Color8(242, 194, 101)
 const TIP_AUTO_INTERVAL := 4.0
 const TIP_HINT_SUFFIX := "    (点击换一条)"
+const FADE_DURATION := 0.5
 const TIPS: PackedStringArray = [
 	"小贴士: 按 A / D 左右移动",
 	"小贴士: 按 空格 跳跃",
@@ -46,6 +47,7 @@ var _tip_label: Label
 var _tips_shuffled: Array[String] = []
 var _tip_idx: int = 0
 var _tip_timer: Timer
+var _fade_overlay: ColorRect
 
 
 func _ready() -> void:
@@ -55,6 +57,7 @@ func _ready() -> void:
 	_setup_progress_bar()
 	_setup_labels()
 	_setup_tip()
+	_setup_fade_overlay()
 
 
 # 暮色渐变, 复用 main_menu 的色板 (顶深紫 → 暮色橙红 → 金橙 → 暖肉粉)
@@ -238,3 +241,21 @@ func _on_tip_pressed() -> void:
 	_show_current_tip()
 	if _tip_timer != null:
 		_tip_timer.start()  # 重置 4 秒自动计时
+
+
+# 顶层黑色 ColorRect, 初始透明. finish_and_fade 时 tween 到不透明
+func _setup_fade_overlay() -> void:
+	_fade_overlay = ColorRect.new()
+	_fade_overlay.name = "FadeOverlay"
+	_fade_overlay.color = Color(0, 0, 0, 0)
+	_fade_overlay.anchor_right = 1.0
+	_fade_overlay.anchor_bottom = 1.0
+	_fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_fade_overlay)
+
+
+# 加载完成调: 0.5s 黑屏淡出 → emit finished. main.gd 接到信号后 queue_free
+func finish_and_fade() -> void:
+	var t := create_tween()
+	t.tween_property(_fade_overlay, "color:a", 1.0, FADE_DURATION).set_trans(Tween.TRANS_SINE)
+	t.tween_callback(func(): finished.emit())

@@ -105,3 +105,22 @@ func test_tips_pool_has_20_entries():
 	var ls = _make()
 	await get_tree().process_frame
 	assert_eq(ls.TIPS.size(), 20, "贴士池应 20 条")
+
+
+func test_finish_and_fade_emits_finished_signal():
+	var ls = _make()
+	await get_tree().process_frame
+	ls.set_progress(1.0, "进入世界!")
+	ls.finish_and_fade()
+	await ls.finished
+	assert_true(true, "finished signal 已触发")
+
+
+func test_fade_overlay_alpha_animates_to_1():
+	var ls = _make()
+	await get_tree().process_frame
+	var fade: ColorRect = ls.get_node("FadeOverlay")
+	assert_almost_eq(fade.color.a, 0.0, 0.01, "初始 alpha 应为 0")
+	ls.finish_and_fade()
+	await ls.finished
+	assert_almost_eq(fade.color.a, 1.0, 0.01, "fade 完成后 alpha 应为 1")
