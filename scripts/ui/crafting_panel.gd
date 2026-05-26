@@ -299,6 +299,9 @@ const _ZH_NAMES := {
 	"raw_meat": "生肉",
 	"leather": "皮革",
 	"wool": "羊毛",
+	"chest": "箱子",
+	"grappling_hook": "钩爪",
+	"bone": "骨头",
 }
 
 
