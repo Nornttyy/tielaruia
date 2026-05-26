@@ -10,9 +10,9 @@ func before_each():
 	add_child_autofree(db)
 
 
-func test_has_20_recipes():
-	# 10 原始 + torch + iron_pickaxe + (iron_sword/axe) + (gold sword/pickaxe/axe) + (diamond sword/pickaxe/axe) = 20
-	assert_eq(db.all_recipes().size(), 20)
+func test_has_22_recipes():
+	# 20 原始 + chest + grappling_hook = 22
+	assert_eq(db.all_recipes().size(), 22)
 
 
 func test_planks_recipe():
