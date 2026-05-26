@@ -9,6 +9,7 @@ const CONTACT_DAMAGE := 3
 const GRAVITY := 900.0
 const SWIM_GRAVITY := 200.0
 const SWIM_MAX_SINK := 70.0
+const SWIM_UP_SPEED := -45.0   # 头还在水里时向上漂的最大速度
 const WALK_SPEED := 38.0
 const AGGRO_RANGE_PX := 240.0   # 15 tiles
 const JUMP_VY := -260.0         # 撞墙时小跳避障 (1 格)
@@ -41,8 +42,16 @@ func _physics_process(delta: float) -> void:
 	if _jump_cooldown > 0.0:
 		_jump_cooldown -= delta
 
-	# 僵尸不会游泳: 碰到水继续正常重力下沉
-	if not is_on_floor():
+	# 僵尸会游泳: 水里弱重力 + 慢慢上浮追玩家
+	var in_water: bool = _is_in_water()
+	if in_water:
+		velocity.y += SWIM_GRAVITY * delta
+		if velocity.y > SWIM_MAX_SINK:
+			velocity.y = SWIM_MAX_SINK
+		# 想往上游 (头出水时停止上浮, 不然飞天)
+		if not _is_head_above_water():
+			velocity.y = min(velocity.y, SWIM_UP_SPEED)
+	elif not is_on_floor():
 		velocity.y += GRAVITY * delta
 
 	var player := _find_player()
@@ -66,19 +75,38 @@ func _physics_process(delta: float) -> void:
 	_check_player_contact()
 
 
-func _is_in_water() -> bool:
+func _get_cm():
 	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
 	if terrain == null:
-		return false
+		return null
 	var world: Node = terrain.get_parent()
 	if world == null:
-		return false
-	var cm = world.get("chunk_manager")
+		return null
+	return world.get("chunk_manager")
+
+
+static func _is_water_tile(tid: int) -> bool:
+	return tid == Tiles.WATER or tid == Tiles.WATER_L1 \
+			or tid == Tiles.WATER_L2 or tid == Tiles.WATER_L3
+
+
+func _is_in_water() -> bool:
+	var cm = _get_cm()
 	if cm == null:
 		return false
 	var tx: int = int(floor(global_position.x / 16.0))
 	var ty: int = int(floor((global_position.y - 11.0) / 16.0))
-	return cm.get_tile(tx, ty) == Tiles.WATER
+	return _is_water_tile(cm.get_tile(tx, ty))
+
+
+# 头是否露出水面 (上浮上到水面就停, 不要无限往天上飞)
+func _is_head_above_water() -> bool:
+	var cm = _get_cm()
+	if cm == null:
+		return true
+	var tx: int = int(floor(global_position.x / 16.0))
+	var ty: int = int(floor((global_position.y - 22.0) / 16.0))
+	return not _is_water_tile(cm.get_tile(tx, ty))
 
 
 func _find_player() -> Node2D:

@@ -23,6 +23,7 @@ const TILE_SIZE := 16
 var current_health: int = MAX_HEALTH
 var _hop_timer: float = 0.5
 var _hit_flash: float = 0.0
+var _water_dmg_timer: float = 0.0   # 水里持续扣血计时
 var _is_dying: bool = false
 var _current_hop_vx: float = 0.0  # 本次跳跃的目标横速 (空中维持用, 含方向符号)
 # 中立/敌对状态: 白天默认中立 (闲逛, 接触不伤害). 晚上自动敌对.
@@ -54,7 +55,7 @@ func _add_player_exception() -> void:
 		add_collision_exception_with(player)
 
 
-# slime 身体在水里吗
+# slime 身体在水里吗 (识别 4 个水位)
 func _is_in_water() -> bool:
 	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
 	if terrain == null:
@@ -67,7 +68,9 @@ func _is_in_water() -> bool:
 		return false
 	var tx: int = int(floor(global_position.x / 16.0))
 	var ty: int = int(floor((global_position.y - 5.0) / 16.0))
-	return cm.get_tile(tx, ty) == Tiles.WATER
+	var t: int = cm.get_tile(tx, ty)
+	return t == Tiles.WATER or t == Tiles.WATER_L1 \
+			or t == Tiles.WATER_L2 or t == Tiles.WATER_L3
 
 
 func _physics_process(delta: float) -> void:
@@ -80,7 +83,15 @@ func _physics_process(delta: float) -> void:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
 
-	# 史莱姆不会游泳: 碰到水继续正常重力下沉
+	# 史莱姆怕水: 碰到水继续正常重力下沉 + 每 0.5s 扣 1 HP (玩家可用水陷阱杀)
+	var in_water: bool = _is_in_water()
+	if in_water:
+		_water_dmg_timer -= delta
+		if _water_dmg_timer <= 0.0:
+			_water_dmg_timer = 0.5
+			take_damage(1, global_position)
+	else:
+		_water_dmg_timer = 0.0
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	else:
