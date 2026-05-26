@@ -16,6 +16,10 @@ const TILE_SIZE := 16
 const SWIM_GRAVITY := 200.0         # 水里重力 (vs GRAVITY 900 → 慢慢沉)
 const SWIM_UP_SPEED := -110.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -320 → 弱跳)
 const SWIM_MAX_SINK := 180.0        # 最大下沉速度 (浮力封顶)
+# Auto-step: 走着碰 1 格高台阶, 不按跳自动爬上去 (Terraria 风).
+# 17 = TILE_SIZE+1 (Godot test_move 有 0.08px safe_margin, 多抬 1 px 避免误判).
+const AUTO_STEP_LIFT := TILE_SIZE + 1
+const AUTO_STEP_DURATION := 0.08    # tween 时长; 比动物快 (玩家反应需要)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _player_aura: PointLight2D = $PlayerAura
@@ -42,6 +46,7 @@ var _previous_vy: float = 0.0
 var _walk_step_timer: float = 0.0
 var _hurt_timer: float = 0.0
 var _shake_amount: float = 0.0
+var _stepping: bool = false   # auto-step tween 进行中, 物理暂停
 # 节流: 音乐场景每 0.5s 检测一次, 日光每 0.1s 检测一次 (节省 chunk_manager 查询)
 const _MUSIC_INTERVAL := 0.5
 const _SUN_INTERVAL := 0.1
@@ -183,6 +188,33 @@ func facing_dir() -> int:
 	return 1 if _facing_right else -1
 
 
+# Auto-step: 撞 1 格台阶时 tween 上去, 不需要按跳. 返回 true 表示触发了 step.
+# 跟 animal_base._try_auto_step 同套路: probe 上方空气 + 下方有平台 → tween 上去.
+func _try_auto_step(dir: float) -> bool:
+	var step_x: float = signf(dir) * float(TILE_SIZE)
+	var lift: float = float(AUTO_STEP_LIFT)
+	var probe := global_transform.translated(Vector2(step_x, -lift))
+	# probe 位置不该有碰撞 (头顶 1 格空气)
+	if test_move(probe, Vector2.ZERO):
+		return false
+	# probe 往下 lift 距离应该被挡住 (台阶顶有平台落脚)
+	if not test_move(probe, Vector2(0, lift)):
+		return false
+	var target := global_position + Vector2(step_x, -float(TILE_SIZE))
+	_stepping = true
+	velocity = Vector2.ZERO
+	var tw := create_tween()
+	tw.set_trans(Tween.TRANS_QUAD)
+	tw.set_ease(Tween.EASE_OUT)
+	tw.tween_property(self, "global_position", target, AUTO_STEP_DURATION)
+	tw.tween_callback(_on_auto_step_done)
+	return true
+
+
+func _on_auto_step_done() -> void:
+	_stepping = false
+
+
 func _on_damaged(_amount: int, source_pos: Vector2) -> void:
 	_hurt_timer = HURT_DURATION
 	# 击退: 远离 source
@@ -193,6 +225,9 @@ func _on_damaged(_amount: int, source_pos: Vector2) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# auto-step tween 期间: 暂停物理 (tween 接管 position)
+	if _stepping:
+		return
 	# 钩爪拉拽中: 跳过普通物理, 直接朝锚点匀速冲过去
 	if _hook_active:
 		_update_hook_pull(delta)
@@ -252,6 +287,12 @@ func _physics_process(delta: float) -> void:
 	var pre_move_vy := velocity.y
 
 	move_and_slide()
+
+	# Auto-step: 走墙 + 在地 + 有方向 → 试爬 1 格台阶
+	# 不在水里 (水里有上浮代替), 不在跳起的瞬间 (会跟跳跃冲突)
+	if not in_water and not did_jump \
+			and is_on_wall() and is_on_floor() and abs(dir) > 0.01:
+		_try_auto_step(dir)
 
 	var on_floor_after := is_on_floor()
 

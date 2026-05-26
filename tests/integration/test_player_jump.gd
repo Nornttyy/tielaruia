@@ -51,8 +51,8 @@ func test_jump_clears_one_tile_block_in_front():
 	assert_true(player.is_on_floor())
 	var pt := Vector2i(int(floor(player.global_position.x / TILE_SIZE)),
 			int(floor(player.global_position.y / TILE_SIZE)))
-	# 在玩家正右 +2 格地表上方 放 1 格 STONE (玩家脚 y = pt.y, 方块 = pt.y - 1)
-	var block_tile := Vector2i(pt.x + 2, pt.y - 1)
+	# 在玩家正右 +2 格放 1 格 STONE (pt.y = 1 格台阶, 不是头顶)
+	var block_tile := Vector2i(pt.x + 2, pt.y)
 	world._set_tile(block_tile.x, block_tile.y, Tiles.STONE)
 	terrain.set_cell(block_tile, Tiles.STONE, Vector2i.ZERO)
 	await wait_frames(2)
@@ -87,8 +87,9 @@ func test_auto_step_one_tile_no_jump():
 		await wait_frames(1)
 	var pt := Vector2i(int(floor(player.global_position.x / TILE_SIZE)),
 			int(floor(player.global_position.y / TILE_SIZE)))
-	# 1 格台阶: 紧贴玩家右侧 (pt.x+1), 高 1 格
-	var btile := Vector2i(pt.x + 1, pt.y - 1)
+	# 1 格台阶: pt.y 是玩家"所在" tile (脚朝上 1 px), 在右一列同 y 放方块,
+	# 让右边列地面高 1 格 (vs pt.y-1 是头顶, 那是 2 格高 = 跳不上去的墙).
+	var btile := Vector2i(pt.x + 1, pt.y)
 	world._set_tile(btile.x, btile.y, Tiles.STONE)
 	terrain.set_cell(btile, Tiles.STONE, Vector2i.ZERO)
 	await wait_frames(2)
@@ -122,7 +123,7 @@ func test_jump_clears_two_tile_block():
 		await wait_frames(1)
 	var pt := Vector2i(int(floor(player.global_position.x / TILE_SIZE)),
 			int(floor(player.global_position.y / TILE_SIZE)))
-	for dy_off in [1, 2]:
+	for dy_off in [0, 1]:
 		var btile := Vector2i(pt.x + 2, pt.y - dy_off)
 		world._set_tile(btile.x, btile.y, Tiles.STONE)
 		terrain.set_cell(btile, Tiles.STONE, Vector2i.ZERO)

@@ -28,7 +28,11 @@ func test_cow_climbs_one_tile_step():
 	var cow = CowScene.instantiate()
 	cow.global_position = Vector2((pt.x + 3) * TILE_SIZE + 8, pt.y * TILE_SIZE)
 	world.entities_root.add_child(cow)
-	await wait_frames(5)
+	# 等牛真正落地 (不能只靠固定帧数 — gravity 把它沉到地面要 ~10 帧).
+	for _i in 60:
+		if cow.is_on_floor():
+			break
+		await wait_frames(1)
 	# 强制 wander_dir 朝右 (>0) + 重置 wander timer 让它一直朝右走 (避免随机选 idle/左)
 	cow._wander_dir = 1.0
 	cow._wander_timer = 10.0
@@ -72,7 +76,10 @@ func test_cow_does_not_climb_two_tile_wall():
 	var cow = CowScene.instantiate()
 	cow.global_position = Vector2((pt.x + 3) * TILE_SIZE + 8, pt.y * TILE_SIZE)
 	world.entities_root.add_child(cow)
-	await wait_frames(5)
+	for _i in 60:
+		if cow.is_on_floor():
+			break
+		await wait_frames(1)
 	cow._wander_dir = 1.0
 	cow._wander_timer = 10.0
 	var start_y: float = cow.global_position.y
