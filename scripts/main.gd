@@ -10,6 +10,7 @@ const HudScene = preload("res://scenes/ui/hud.tscn")
 const CraftingPanelScene = preload("res://scenes/ui/crafting_panel.tscn")
 const ChestPanelScene = preload("res://scenes/ui/chest_panel.tscn")
 const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
+const LoadingScreenScene = preload("res://scenes/ui/loading_screen.tscn")
 
 @onready var _main_menu: CanvasLayer = $MainMenu
 @onready var _pause_menu: CanvasLayer = $PauseMenu
@@ -46,9 +47,9 @@ func _show_menu_state() -> void:
 
 
 func _start_game(seed_or_opts = 0) -> void:
-	# 兼容 2 种调用:
-	# - 老接口 (int seed): boot_to_game / 测试用; 走默认难度/名字
-	# - 新接口 (Dictionary opts): 主菜单 "新游戏" 配置面板传 {world_seed, world_name, difficulty}
+	# 主菜单 "开始游戏" → 走 LoadingScreen 异步加载流程.
+	# - opts (Dictionary): 主菜单新游戏面板传 {world_seed, world_name, difficulty}
+	# - seed (int): 仅老 API 兼容 (boot_to_game 不走这里; 走 _start_game_sync)
 	var world_seed: int = 0
 	var world_name: String = ""
 	var difficulty: int = 1
@@ -59,7 +60,6 @@ func _start_game(seed_or_opts = 0) -> void:
 		difficulty = int(opts.get("difficulty", 1))
 	else:
 		world_seed = int(seed_or_opts)
-	# 把全局可读的设置写 GameSettings autoload
 	if "current_difficulty" in GameSettings:
 		GameSettings.current_difficulty = difficulty
 	if "current_world_name" in GameSettings:
@@ -67,42 +67,103 @@ func _start_game(seed_or_opts = 0) -> void:
 	_state = "game"
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.visible = false
+	_run_async_load(world_seed)
+
+
+# 异步加载: instantiate LoadingScreen → 一步步推进 7 个阶段 → 淡出.
+# 每步之间 await process_frame 让 UI 渲染 + 进度条 tween + 小人跑动 + 贴士切换
+func _run_async_load(world_seed: int) -> void:
+	var loading: CanvasLayer = LoadingScreenScene.instantiate()
+	loading.name = "LoadingScreen"
+	add_child(loading)
+	await get_tree().process_frame  # 让 LoadingScreen 渲染一帧
+
+	# Step A (5%): World instantiate (defer_init=true, _ready 不跑初始化)
+	loading.set_progress(0.05, "正在准备世界...")
+	var w = WorldScene.instantiate()
+	w.name = "World"
+	w.defer_init = true
+	if world_seed != 0:
+		w.world_seed = world_seed
+	add_child(w)
+	_game_nodes.append(w)
+	await get_tree().process_frame
+
+	# Step B-E (20% / 40% / 60% / 75%): world.run_init_step(0..3)
+	var step_count: int = w.get_init_step_count()
+	var step_pcts: PackedFloat32Array = [0.20, 0.40, 0.60, 0.75]
+	for i in step_count:
+		loading.set_progress(step_pcts[i], w.get_init_step_label(i))
+		w.run_init_step(i)
+		await get_tree().process_frame
+
+	# Step F (90%): HUD + 其他 UI 面板
+	loading.set_progress(0.90, "正在准备界面...")
+	var hud = HudScene.instantiate()
+	hud.name = "HUD"
+	add_child(hud)
+	_game_nodes.append(hud)
+	var crafting = CraftingPanelScene.instantiate()
+	crafting.name = "CraftingPanel"
+	crafting.add_to_group("crafting_panel")
+	add_child(crafting)
+	_game_nodes.append(crafting)
+	var chest = ChestPanelScene.instantiate()
+	chest.name = "ChestPanel"
+	add_child(chest)
+	_game_nodes.append(chest)
+	var floating = FloatingPromptScene.instantiate()
+	floating.add_to_group("floating_prompt")
+	add_child(floating)
+	_game_nodes.append(floating)
+	var debug = DebugHudScene.instantiate()
+	add_child(debug)
+	_game_nodes.append(debug)
+	var dialogue = DialogueBoxScene.instantiate()
+	add_child(dialogue)
+	_game_nodes.append(dialogue)
+	_wire_player.call_deferred()
+	_start_autosave()
+	await get_tree().process_frame
+
+	# 100%: 完成 + 0.5s 淡出 → queue_free LoadingScreen
+	loading.set_progress(1.0, "进入世界!")
+	loading.finish_and_fade()
+	await loading.finished
+	loading.queue_free()
+
+
+# 同步路径: 测试 + boot_to_game 用. 不走 LoadingScreen, World defer_init=false 自动跑完
+func _start_game_sync(world_seed: int) -> void:
 	var w = WorldScene.instantiate()
 	w.name = "World"
 	if world_seed != 0:
 		w.world_seed = world_seed
 	add_child(w)
 	_game_nodes.append(w)
-
 	var hud = HudScene.instantiate()
 	hud.name = "HUD"
 	add_child(hud)
 	_game_nodes.append(hud)
-
 	var crafting = CraftingPanelScene.instantiate()
 	crafting.name = "CraftingPanel"
 	crafting.add_to_group("crafting_panel")
 	add_child(crafting)
 	_game_nodes.append(crafting)
-
 	var chest = ChestPanelScene.instantiate()
 	chest.name = "ChestPanel"
 	add_child(chest)
 	_game_nodes.append(chest)
-
 	var floating = FloatingPromptScene.instantiate()
 	floating.add_to_group("floating_prompt")
 	add_child(floating)
 	_game_nodes.append(floating)
-
 	var debug = DebugHudScene.instantiate()
 	add_child(debug)
 	_game_nodes.append(debug)
-
 	var dialogue = DialogueBoxScene.instantiate()
 	add_child(dialogue)
 	_game_nodes.append(dialogue)
-
 	_wire_player.call_deferred()
 	_start_autosave()
 
@@ -185,16 +246,17 @@ func _apply_save_data(data: Resource) -> void:
 			inv_node.hotbar_selection_changed.emit(data.hotbar_selection)
 
 
-# 测试用 helper: 同步切到 game 状态。等价于按"新游戏"。
-# 顺便 queue_free MainMenu (测试不需要主菜单的 tween/动画副作用)。
-# 默认固定 seed=42 让测试结果可重复; 生产路径走 _main_menu.start_game 信号 → _start_game() 走随机.
+# 测试用 helper: 同步切到 game 状态, 不走 LoadingScreen.
+# 顺便 queue_free MainMenu. 默认固定 seed=42 让测试可重复.
+# 生产路径走 _main_menu.start_game 信号 → _start_game() async 流程.
 func boot_to_game(world_seed: int = 42) -> void:
 	if _state == "game":
 		return
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.queue_free()
 		_main_menu = null
-	_start_game(world_seed)
+	_state = "game"
+	_start_game_sync(world_seed)
 
 
 func _wire_player() -> void:
