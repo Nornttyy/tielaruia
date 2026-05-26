@@ -105,7 +105,8 @@ func play_swing_directional(target_angle: float) -> void:
 	var mouse_on_right: bool = cos(target_angle) >= 0.0
 	set_facing(mouse_on_right)  # 跟鼠标走, 不跟玩家走路方向
 	var s: float = 1.0 if _facing_right else -1.0
-	var base: float = s * (target_angle + PI / 2.0)
+	# wrapf 把 base 归一到 [-PI, PI), 防止 facing_left + target_left 的 -7PI/4 那种值
+	var base: float = wrapf(s * (target_angle + PI / 2.0), -PI, PI)
 	var start_a: float = base - deg_to_rad(45.0)
 	var end_a:   float = base + deg_to_rad(45.0)
 	rotation = start_a
