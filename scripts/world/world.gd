@@ -42,6 +42,14 @@ const MINIMAP_MARK_INTERVAL := 0.25  # 每 0.25s 标记一次玩家周围. 玩�
                                      # minimap 也跟得上, 但循环 18x14 tile 的成本省 60%
 
 @export var world_seed: int = 0   # 0 表示 _ready 内随机化
+@export var defer_init: bool = false   # true 时 _ready 跳过自动初始化, 由外部调 run_init_step
+
+const STEP_LABELS := [
+	"正在构建方块...",
+	"正在生成地形...",
+	"正在召唤天气...",
+	"正在召唤玩家...",
+]
 
 @onready var terrain_layer: TileMapLayer = $TerrainLayer
 @onready var wall_layer: TileMapLayer = $WallLayer  # 背景墙 (在 TerrainLayer 之后, 渲染在前景方块后面)
@@ -72,12 +80,10 @@ var _minimap_mark_timer: float = 0.0
 
 
 func _ready() -> void:
-	var ts := TileSetBuilder.build()
-	terrain_layer.tile_set = ts
-	wall_layer.tile_set = ts  # 跟前景共享同一个 TileSet (墙 tile 也在里面注册过了)
+	# 这些 group 注册 + EffectsRoot 早期就要好 (被其他系统在 _ready 阶段 find).
+	add_to_group("world")
 	terrain_layer.add_to_group("terrain_layer")
 	$EffectsRoot.add_to_group("effects_root")
-	add_to_group("world")   # 调试面板等系统用 get_first_node_in_group("world") 找到入口
 	# 火花对象池: 预分配 80 个 spark, 复用减 alloc
 	var SparkPoolClass = preload("res://scripts/fx/spark_pool.gd")
 	var sp = SparkPoolClass.new()
@@ -85,12 +91,47 @@ func _ready() -> void:
 	$EffectsRoot.add_child(sp)
 	if world_seed == 0:
 		world_seed = randi()
+	if defer_init:
+		return
+	# 默认: 顺序跑所有 step (兼容 boot_to_game / 直接 add_child World)
+	for i in STEP_LABELS.size():
+		run_init_step(i)
+
+
+func get_init_step_count() -> int:
+	return STEP_LABELS.size()
+
+
+func get_init_step_label(idx: int) -> String:
+	return STEP_LABELS[idx]
+
+
+func run_init_step(idx: int) -> void:
+	match idx:
+		0: _step_build_tileset()
+		1: _step_chunks()
+		2: _step_fx_layers()
+		3: _step_spawn_player()
+
+
+func _step_build_tileset() -> void:
+	var ts := TileSetBuilder.build()
+	terrain_layer.tile_set = ts
+	wall_layer.tile_set = ts  # 跟前景共享同一个 TileSet
+
+
+func _step_chunks() -> void:
 	chunk_manager = ChunkManagerClass.new()
 	chunk_manager.name = "ChunkManager"
 	add_child(chunk_manager)
 	chunk_manager.setup(world_seed)
 	chunk_manager.chunk_loaded.connect(_on_chunk_loaded)
 	chunk_manager.chunk_unloaded.connect(_on_chunk_unloaded)
+	# 初始加载中心 ±VIEW_RADIUS
+	chunk_manager.ensure_loaded(0)
+
+
+func _step_fx_layers() -> void:
 	# 流水模拟: dirty 列表驱动, 接 chunk_manager + _set_tile
 	water_sim = WaterSimClass.new()
 	water_sim.name = "WaterSim"
@@ -99,7 +140,6 @@ func _ready() -> void:
 	minimap_data = MinimapDataClass.new()
 	minimap_data.name = "MinimapData"
 	add_child(minimap_data)
-	# 天气 + 雨视觉
 	# 注意顺序: rain_layer 先 add_child + 信号先 connect, 再 add_child(weather)
 	# 不然 weather._ready 触发 weather_changed 时 rain_layer 还没接信号, 初始状态丢失
 	rain_layer = RainLayerClass.new()
@@ -120,23 +160,22 @@ func _ready() -> void:
 	falling_leaves = FallingLeavesClass.new()
 	falling_leaves.name = "FallingLeaves"
 	add_child(falling_leaves)
-	# 图形开关: 把 GameSettings 应用到所有装饰节点 (rain/parallax/flocks/water_sim)
-	_apply_graphics_settings.call_deferred()  # call_deferred 让所有 child 先 _ready
+	# 图形开关: 把 GameSettings 应用到所有装饰节点
+	_apply_graphics_settings.call_deferred()  # 让所有 child 先 _ready
 	if not GameSettings.settings_changed.is_connected(_apply_graphics_settings):
 		GameSettings.settings_changed.connect(_apply_graphics_settings)
-	# 初始加载中心 ±VIEW_RADIUS
-	chunk_manager.ensure_loaded(0)
+
+
+func _step_spawn_player() -> void:
 	# 找出生点 (chunk 0 内)
 	spawn_point = _find_spawn_in_loaded()
-	# 村庄 + 村民已停用 (用户要求): 不再调用 _place_village() / _spawn_villagers()
-	# 函数保留供未来重启用; 也避免破坏 SaveManager / dialogue 等引用
 	SkyLightGrid.recompute_from([])
 	_spawn_player()
 	# 鼠标光标管理: 默认箭头, 鼠标在敌人/方块上切换样式
 	var cursor_mgr := CursorManagerClass.new()
 	cursor_mgr.name = "CursorManager"
 	add_child(cursor_mgr)
-	# 联机: _ready 时已连上立刻接; 否则订阅 status_changed, 后续 host (游戏内) 也能触发.
+	# 联机: _ready 时已连上立刻接; 否则订阅 status_changed, 后续 host (游戏内) 也能触发
 	if NetworkManager != null:
 		if not NetworkManager.status_changed.is_connected(_on_mp_status_changed):
 			NetworkManager.status_changed.connect(_on_mp_status_changed)
