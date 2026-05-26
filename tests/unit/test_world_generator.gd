@@ -59,10 +59,14 @@ func test_grass_on_surface_dirt_below():
 	for x in [10, 50, 100, 150, 200]:
 		for y in 128:
 			var t = w.tiles[x][y]
-			# 跳过空气和树（LOG/各种 LEAVES），找首个地面 tile
-			if t == Tiles.AIR or t == Tiles.LOG \
+			# 跳过空气、树身/树叶/树枝/树顶/树根、仙人掌, 找首个地面 tile
+			if t == Tiles.AIR \
+					or t == Tiles.LOG or t == Tiles.LOG_TOP \
+					or t == Tiles.LOG_ROOT_L or t == Tiles.LOG_ROOT_R \
+					or t == Tiles.BRANCH_L or t == Tiles.BRANCH_R \
 					or t == Tiles.LEAVES or t == Tiles.LEAVES_PINE \
-					or t == Tiles.LEAVES_AUTUMN:
+					or t == Tiles.LEAVES_AUTUMN \
+					or t == Tiles.CACTUS or t == Tiles.CACTUS_BODY:
 				continue
 			assert_true(
 				t == Tiles.GRASS or t == Tiles.SAND,
