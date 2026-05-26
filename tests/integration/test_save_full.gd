@@ -2,16 +2,30 @@ extends GutTest
 
 const MainScene = preload("res://scenes/main.tscn")
 const SAVE_PATH := "user://save.tres"
+const SAVES_DIR := "user://saves/"
+
+
+func _clean_saves() -> void:
+	if FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	if DirAccess.dir_exists_absolute(SAVES_DIR):
+		var dir := DirAccess.open(SAVES_DIR)
+		if dir != null:
+			dir.list_dir_begin()
+			var fname: String = dir.get_next()
+			while fname != "":
+				if not dir.current_is_dir() and fname.ends_with(".tres"):
+					dir.remove(fname)
+				fname = dir.get_next()
+			dir.list_dir_end()
 
 
 func before_each():
-	if FileAccess.file_exists(SAVE_PATH):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	_clean_saves()
 
 
 func after_each():
-	if FileAccess.file_exists(SAVE_PATH):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	_clean_saves()
 
 
 func test_save_captures_entities():

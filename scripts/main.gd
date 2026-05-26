@@ -314,7 +314,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			print("[DEBUG] placed water at ", t)
 		get_viewport().set_input_as_handled()
 		return
-	if event.is_action_pressed("ui_save") and _state == "game":
+	# ui_save (默认 F5) 触发存档. 同时认 raw KEY_F5 让程序化测试用 InputEventKey 也能触发.
+	var is_f5_save: bool = event.is_action_pressed("ui_save") \
+			or (event is InputEventKey and event.pressed and not event.echo \
+					and event.keycode == KEY_F5)
+	if is_f5_save and _state == "game":
 		SaveManager.save(self)
 		get_viewport().set_input_as_handled()
 		return
