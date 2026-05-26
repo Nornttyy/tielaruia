@@ -116,7 +116,11 @@ func test_place_dirt_consumes_slot_and_creates_tile():
 	inv.inventory.add("dirt", 5)
 	inv.set_hotbar_selection(0)
 	var pt: Vector2i = action.player_tile()
-	# 紧贴地面上方一格 (下方草地是邻接 anchor)
+	# pt 是玩家所在 AIR tile (脚朝上 1 px). 想在 pt+(2,-1) 放 dirt,
+	# try_place 要求 4 邻居至少 1 个有方块 → 在 pt+(2, 0) 加石头当 anchor.
+	var anchor: Vector2i = pt + Vector2i(2, 0)
+	world._set_tile(anchor.x, anchor.y, Tiles.STONE)
+	terrain.set_cell(anchor, Tiles.STONE, Vector2i.ZERO)
 	var target: Vector2i = pt + Vector2i(2, -1)
 	action.aim_override = target
 	action.place_override = true

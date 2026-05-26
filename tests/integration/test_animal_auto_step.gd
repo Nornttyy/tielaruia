@@ -20,8 +20,8 @@ func test_cow_climbs_one_tile_step():
 		await wait_frames(1)
 	var pt := Vector2i(int(floor(player.global_position.x / TILE_SIZE)),
 			int(floor(player.global_position.y / TILE_SIZE)))
-	# 玩家右 +5 放 1 格台阶
-	var btile := Vector2i(pt.x + 5, pt.y - 1)
+	# 玩家右 +5 放 1 格台阶 (pt.y 是站立面上方一格, pt.y-1 是头顶 = 2 格台阶)
+	var btile := Vector2i(pt.x + 5, pt.y)
 	world._set_tile(btile.x, btile.y, Tiles.STONE)
 	terrain.set_cell(btile, Tiles.STONE, Vector2i.ZERO)
 	# 放一只牛在玩家右 +3, 强制让它朝右走 (碰到台阶)
@@ -68,8 +68,8 @@ func test_cow_does_not_climb_two_tile_wall():
 		await wait_frames(1)
 	var pt := Vector2i(int(floor(player.global_position.x / TILE_SIZE)),
 			int(floor(player.global_position.y / TILE_SIZE)))
-	# 玩家右 +5 放 2 格高墙
-	for dy_off in [1, 2]:
+	# 玩家右 +5 放 2 格高墙 (贴地, 不悬空 — pt.y 是 1 格台阶, pt.y-1 是 2 格台阶)
+	for dy_off in [0, 1]:
 		var btile := Vector2i(pt.x + 5, pt.y - dy_off)
 		world._set_tile(btile.x, btile.y, Tiles.STONE)
 		terrain.set_cell(btile, Tiles.STONE, Vector2i.ZERO)

@@ -95,17 +95,20 @@ func test_auto_step_one_tile_no_jump():
 	await wait_frames(2)
 	var start_y: float = player.global_position.y
 	var start_x: float = player.global_position.x
+	var min_y: float = start_y   # 跟踪过程中的最高点 (y 越小 = 越高)
 	# 只按 right, 不按 jump
 	Input.action_press("move_right")
 	for f in 30:
 		await wait_frames(1)
+		min_y = min(min_y, player.global_position.y)
 		if f % 3 == 0:
 			print("  F%d: pos=%s on_wall=%s on_floor=%s" % [f, player.global_position, player.is_on_wall(), player.is_on_floor()])
 	Input.action_release("move_right")
-	var dy: float = start_y - player.global_position.y
+	# dy 算 "过程中最高升了多少", 不是最终位置 (因为单块台阶爬上去后会继续走过去掉下来)
+	var dy: float = start_y - min_y
 	var dx: float = player.global_position.x - start_x
-	print("[auto-step] start=(", start_x, ",", start_y, ") end=", player.global_position, " dx=", dx, " dy=", dy)
-	assert_gt(dy, float(TILE_SIZE) * 0.5, "auto-step 应让玩家在不跳的情况下爬上 1 格台阶 (dy >= 8). 实际 %.1f" % dy)
+	print("[auto-step] start=(", start_x, ",", start_y, ") end=", player.global_position, " dx=", dx, " peak_dy=", dy)
+	assert_gt(dy, float(TILE_SIZE) * 0.5, "auto-step 应让玩家爬过 1 格台阶 (峰值 dy >= 8). 实际 %.1f" % dy)
 
 
 func test_jump_clears_two_tile_block():
