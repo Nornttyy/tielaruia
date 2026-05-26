@@ -69,8 +69,9 @@ func test_grass_on_surface_dirt_below():
 					or t == Tiles.CACTUS or t == Tiles.CACTUS_BODY:
 				continue
 			assert_true(
-				t == Tiles.GRASS or t == Tiles.SAND,
-				"列 %d 的地表 tile 应是 grass/sand，实际 %d" % [x, t]
+				t == Tiles.GRASS or t == Tiles.SAND \
+					or t == Tiles.SNOW or t == Tiles.JUNGLE_GRASS or t == Tiles.SWAMP_GRASS,
+				"列 %d 的地表 tile 应是 grass/sand/snow/jungle_grass/swamp_grass，实际 %d" % [x, t]
 			)
 			break
 

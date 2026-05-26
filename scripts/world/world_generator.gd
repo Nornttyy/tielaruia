@@ -17,13 +17,24 @@ const MOUNTAIN_BOOST := 0.40
 const MOUNTAIN_PIT_THRESHOLD := 0.12  # mountain_factor > 0.12 = 山区 (实测约占 16% 列)
 
 # Biome (生态群系) — 低频 noise 把世界分成大片区域 (100-300 列宽)
-# noise > BIOME_DESERT_THRESHOLD 整列变沙漠 (黄沙地表/沙土层/无树/长仙人掌)
+# 5 种 biome 用单 noise + 阈值分段 (Spawn 附近偏移压到 FOREST 区间).
+# noise ∈ [-1, 1]:
+#   < -0.5         SNOW    雪原 (extremely cold)
+#   -0.5 ~ -0.20   JUNGLE  丛林
+#   -0.20 ~ 0.20   FOREST  森林 (默认, spawn 在此)
+#   0.20 ~ 0.50    SWAMP   沼泽
+#   > 0.50         DESERT  沙漠
 const BIOME_FOREST := 0
 const BIOME_DESERT := 1
-const BIOME_NOISE_FREQ := 0.006        # 周期 ~167 列, 沙漠+森林交替更频繁
-const BIOME_DESERT_THRESHOLD := -0.05  # noise > -0.05 = 沙漠 (约占 ~50% 列, 走几步必遇)
-# Spawn 偏移: |wx| < SPAWN_FOREST_FALLOFF 时给 biome 噪声减一个负值 → 强制森林.
-# wx=0 减 1.0 (压到必低于阈值), wx=60 偏移 0 (恢复噪声决定). 渐变 → 边界无锐切.
+const BIOME_SNOW := 2
+const BIOME_JUNGLE := 3
+const BIOME_SWAMP := 4
+const BIOME_NOISE_FREQ := 0.006        # 周期 ~167 列
+const BIOME_T_JUNGLE := -0.5           # noise < 此 → SNOW
+const BIOME_T_FOREST := -0.20          # noise [BIOME_T_JUNGLE, 此) → JUNGLE
+const BIOME_T_SWAMP := 0.20            # noise [BIOME_T_FOREST, 此) → FOREST
+const BIOME_T_DESERT := 0.50           # noise [BIOME_T_SWAMP, 此) → SWAMP; >= 此 → DESERT
+# Spawn 偏移: |wx| < SPAWN_FOREST_FALLOFF 时给 biome 噪声减一个值压到 FOREST 范围.
 const SPAWN_FOREST_FALLOFF := 60
 
 const BEDROCK_ROWS := 2          # 基岩占最底几行
@@ -205,20 +216,24 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
 		c.surfaces[local_x] = surf  # 给 ScenicDirector 等查询用
-		# Biome: 沙漠列整列用 SAND, 森林列保留原本的零星沙窝逻辑
-		# Spawn 附近压低 biome 噪声 → 强制 wx=0 在森林, 远处渐恢复原噪声.
+		# Biome (5 种): SNOW / JUNGLE / FOREST / SWAMP / DESERT. Spawn 附近偏到 FOREST.
 		var biome_value: float = biome_noise.get_noise_1d(float(world_x)) + _spawn_forest_bias(world_x)
-		var is_desert: bool = biome_value > BIOME_DESERT_THRESHOLD
-		var is_sand_col: bool = is_desert or (sand_noise.get_noise_1d(float(world_x)) > SAND_THRESHOLD)
+		var biome_id: int = _biome_from_noise(biome_value)
+		var is_desert: bool = biome_id == BIOME_DESERT
+		# is_sand_col: 沙漠列整列沙, 或 forest 偶发零星沙窝
+		var is_sand_col: bool = is_desert or (biome_id == BIOME_FOREST and sand_noise.get_noise_1d(float(world_x)) > SAND_THRESHOLD)
 		var deep_threshold: int = surf + int((height - surf) * DEEP_STONE_RATIO)
+		# 各 biome 地表 / 浅地下 tile
+		var surf_tile: int = _biome_surface_tile(biome_id, is_sand_col)
+		var sub_tile: int = _biome_subsurface_tile(biome_id, is_sand_col)
 		for y in height:
 			var tid: int
 			if y < surf:
 				tid = Tiles.AIR
 			elif y == surf:
-				tid = Tiles.SAND if is_sand_col else Tiles.GRASS
+				tid = surf_tile
 			elif y < surf + DIRT_DEPTH:
-				tid = Tiles.SAND if is_sand_col else Tiles.DIRT
+				tid = sub_tile
 			elif y >= height - BEDROCK_ROWS:
 				tid = Tiles.BEDROCK
 			else:
@@ -729,15 +744,48 @@ static func _mountain_factor(world_x: int, world_seed: int) -> float:
 	return maxf(0.0, n.get_noise_1d(float(world_x)))
 
 
-# 返回该列的 biome: BIOME_FOREST 或 BIOME_DESERT.
-# 用单独的低频 noise (seed+6), 跟山区独立. 沙漠是大片连续区域 (~250 列周期).
+# 返回该列的 biome (5 种之一: BIOME_SNOW/JUNGLE/FOREST/SWAMP/DESERT).
+# 用单独的低频 noise (seed+6), 跟山区独立.
 static func _biome_at(world_x: int, world_seed: int) -> int:
 	var n := FastNoiseLite.new()
 	n.seed = world_seed + 6
 	n.noise_type = FastNoiseLite.TYPE_PERLIN
 	n.frequency = BIOME_NOISE_FREQ
 	var v: float = n.get_noise_1d(float(world_x)) + _spawn_forest_bias(world_x)
-	return BIOME_DESERT if v > BIOME_DESERT_THRESHOLD else BIOME_FOREST
+	return _biome_from_noise(v)
+
+
+# Noise 值 → biome id 分段. (公开给 chunk gen 内联用, 不再重建 noise 对象)
+static func _biome_from_noise(v: float) -> int:
+	if v < BIOME_T_JUNGLE:
+		return BIOME_SNOW
+	if v < BIOME_T_FOREST:
+		return BIOME_JUNGLE
+	if v < BIOME_T_SWAMP:
+		return BIOME_FOREST
+	if v < BIOME_T_DESERT:
+		return BIOME_SWAMP
+	return BIOME_DESERT
+
+
+# Biome → 地表 tile (y == surf 那行).
+static func _biome_surface_tile(biome_id: int, is_sand_col: bool) -> int:
+	if is_sand_col:
+		return Tiles.SAND  # 沙漠列 or forest 零星沙窝
+	match biome_id:
+		BIOME_SNOW: return Tiles.SNOW
+		BIOME_JUNGLE: return Tiles.JUNGLE_GRASS
+		BIOME_SWAMP: return Tiles.SWAMP_GRASS
+		_: return Tiles.GRASS  # FOREST 默认
+
+
+# Biome → 浅地下 tile (y < surf + DIRT_DEPTH).
+static func _biome_subsurface_tile(biome_id: int, is_sand_col: bool) -> int:
+	if is_sand_col:
+		return Tiles.SAND
+	match biome_id:
+		BIOME_SWAMP: return Tiles.MUD  # 沼泽底下是泥
+		_: return Tiles.DIRT
 
 
 # Spawn 附近的森林偏移. 返回 ≤ 0 的值, 越靠近 wx=0 越负 → 加到 biome 噪声上压低到阈值以下.
@@ -804,15 +852,25 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 				c.tiles[lx][ty] = Tiles.CACTUS if is_top else Tiles.CACTUS_BODY
 			last_tree_x = world_x
 			continue
-		# 非草地表 (沙/挖空/etc) 跳过
-		if top_tile != Tiles.GRASS:
-			continue
+		# 允许在 GRASS / JUNGLE_GRASS / SWAMP_GRASS / SNOW 长树 (各自树叶不同)
+		var leaves_for_biome: int = -1  # -1 = 跳过这列 (不长树)
+		match top_tile:
+			Tiles.GRASS:
+				leaves_for_biome = Tiles.LEAVES
+			Tiles.JUNGLE_GRASS:
+				leaves_for_biome = Tiles.LEAVES  # TODO: 后续可换 JUNGLE_LEAVES
+			Tiles.SWAMP_GRASS:
+				leaves_for_biome = Tiles.LEAVES_AUTUMN  # 沼泽用秋叶感觉死气
+			Tiles.SNOW:
+				leaves_for_biome = Tiles.LEAVES_PINE  # 雪原长松针
+			_:
+				continue
 		if rng.randf() > TREE_CHANCE:
 			continue
 		# 只剩 OAK
 		var params: Dictionary = _SPECIES_PARAMS[_SPECIES_OAK]
 		var trunk_range: Array = params["trunk_range"]
-		var leaves_tile: int = params["leaves"]
+		var leaves_tile: int = leaves_for_biome  # 用 biome-specific 叶子覆盖 params 里的
 		var canopies: Array = params["canopies"]
 		var canopy_kind: String = canopies[rng.randi() % canopies.size()]
 		var trunk_height: int = rng.randi_range(trunk_range[0], trunk_range[1])
