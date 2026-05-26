@@ -47,3 +47,34 @@ func test_setup_creates_player_runner_playing_walk():
 	assert_not_null(runner, "PlayerRunner AnimatedSprite2D 应存在")
 	assert_eq(runner.animation, "walk", "应播 walk 动画")
 	assert_true(runner.is_playing(), "动画应在播")
+
+
+func test_progress_nodes_exist():
+	var ls = _make()
+	await get_tree().process_frame
+	assert_not_null(ls.get_node_or_null("ProgressBg"), "ProgressBg 应存在")
+	assert_not_null(ls.get_node_or_null("ProgressBg/ProgressFill"), "ProgressFill 应存在")
+	assert_not_null(ls.get_node_or_null("StageLabel"), "StageLabel 应存在")
+	assert_not_null(ls.get_node_or_null("PercentLabel"), "PercentLabel 应存在")
+
+
+func test_set_progress_updates_text():
+	var ls = _make()
+	await get_tree().process_frame
+	ls.set_progress(0.37, "正在生成地形...")
+	await get_tree().create_timer(0.3).timeout
+	var stage_label: Label = ls.get_node("StageLabel")
+	var percent_label: Label = ls.get_node("PercentLabel")
+	assert_eq(stage_label.text, "正在生成地形...")
+	assert_eq(percent_label.text, "37%")
+
+
+func test_set_progress_fill_width_proportional():
+	var ls = _make()
+	await get_tree().process_frame
+	ls.set_progress(0.5, "x")
+	await get_tree().create_timer(0.3).timeout
+	var bg: Panel = ls.get_node("ProgressBg")
+	var fill: ColorRect = ls.get_node("ProgressBg/ProgressFill")
+	# fill.size.x ≈ (bg.size.x - 4) * 0.5 (留 2px 内边距, 允许 1px 误差)
+	assert_almost_eq(fill.size.x, (bg.size.x - 4.0) * 0.5, 1.0)
