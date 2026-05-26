@@ -723,5 +723,18 @@ func _setup_settings_panel() -> void:
 		GameSettings.master_volume = v / 100.0
 		value_label.text = "%d" % int(v)
 	)
+	# 图形开关: CheckButton 初始状态从 GameSettings 同步, 切换时写回
+	var rain_check: CheckButton = $SettingsPanel/VBox/RainCheck
+	var parallax_check: CheckButton = $SettingsPanel/VBox/ParallaxCheck
+	var flocks_check: CheckButton = $SettingsPanel/VBox/FlocksCheck
+	var water_check: CheckButton = $SettingsPanel/VBox/WaterSimCheck
+	rain_check.button_pressed = GameSettings.show_rain
+	parallax_check.button_pressed = GameSettings.show_parallax
+	flocks_check.button_pressed = GameSettings.show_flocks
+	water_check.button_pressed = GameSettings.water_sim_enabled
+	rain_check.toggled.connect(func(v: bool): GameSettings.show_rain = v)
+	parallax_check.toggled.connect(func(v: bool): GameSettings.show_parallax = v)
+	flocks_check.toggled.connect(func(v: bool): GameSettings.show_flocks = v)
+	water_check.toggled.connect(func(v: bool): GameSettings.water_sim_enabled = v)
 	_apply_button_style(back_btn)
 	back_btn.pressed.connect(_on_settings_back_pressed)

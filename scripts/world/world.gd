@@ -114,6 +114,10 @@ func _ready() -> void:
 	falling_leaves = FallingLeavesClass.new()
 	falling_leaves.name = "FallingLeaves"
 	add_child(falling_leaves)
+	# 图形开关: 把 GameSettings 应用到所有装饰节点 (rain/parallax/flocks/water_sim)
+	_apply_graphics_settings.call_deferred()  # call_deferred 让所有 child 先 _ready
+	if not GameSettings.settings_changed.is_connected(_apply_graphics_settings):
+		GameSettings.settings_changed.connect(_apply_graphics_settings)
 	# 初始加载中心 ±VIEW_RADIUS
 	chunk_manager.ensure_loaded(0)
 	# 找出生点 (chunk 0 内)
@@ -396,7 +400,36 @@ func _physics_process(_delta: float) -> void:
 
 func _on_weather_changed(state: String) -> void:
 	if rain_layer != null:
-		rain_layer.set_enabled(state == "rainy")
+		# show_rain=false 时永远不下, 防止设置中途切换被天气覆盖
+		rain_layer.set_enabled(state == "rainy" and GameSettings.show_rain)
+
+
+# 把当前 GameSettings 应用到所有视觉节点. _ready 末尾 + settings_changed 信号都会调.
+func _apply_graphics_settings() -> void:
+	# 雨: visible 关掉省 GPU, set_enabled(false) 阻止新雨点
+	if rain_layer != null:
+		var rainy: bool = weather != null and weather.state == "rainy"
+		rain_layer.visible = GameSettings.show_rain
+		rain_layer.set_enabled(rainy and GameSettings.show_rain)
+	# 视差远景: ParallaxBackground + ScenicDirector 一起切
+	for child in get_children():
+		if child is ParallaxBackground:
+			child.visible = GameSettings.show_parallax
+	var scenic := get_node_or_null("ScenicDirector")
+	if scenic != null:
+		scenic.visible = GameSettings.show_parallax
+	# 鸟/蝠群
+	var bird := get_node_or_null("BirdLayer")
+	if bird != null:
+		bird.visible = GameSettings.show_flocks
+		bird.set_process(GameSettings.show_flocks)
+	var bat := get_node_or_null("BatLayer")
+	if bat != null:
+		bat.visible = GameSettings.show_flocks
+		bat.set_process(GameSettings.show_flocks)
+	# 流水模拟: 关掉 _process 就够了 (水方块还在, 但不流)
+	if water_sim != null:
+		water_sim.set_process(GameSettings.water_sim_enabled)
 
 
 func _on_lightning_flash() -> void:
