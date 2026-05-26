@@ -41,6 +41,7 @@ const WATER_L1 := 34        # 1/4 水位 (流水 level 1)
 const WATER_L2 := 35        # 2/4 水位 (流水 level 2)
 const WATER_L3 := 36        # 3/4 水位 (流水 level 3)
 # WATER (=28) 表示满水 level 4
+const CHEST := 37           # 箱子: 右键打开 24 格存储, 内容跟存档持久化
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -241,6 +242,12 @@ const _PROPS := {
 	WATER_L3: {
 		"solid": false, "mineable": false,
 		"tool_tiers": {}, "drops": [],
+	},
+	CHEST: {
+		# 非实心 (玩家能站箱子里), 可挖 (任何工具都行), 砍掉 1 个 chest item
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["chest", 100, 1, 1]],
 	},
 }
 

@@ -46,6 +46,7 @@ const BRANCH_R := 33        # 侧枝 向右
 const WATER_L1 := 34        # 1/4 水位
 const WATER_L2 := 35        # 2/4 水位
 const WATER_L3 := 36        # 3/4 水位
+const CHEST := 37           # 箱子
 
 # --- 调色板 (每方块独立) ---
 
@@ -202,6 +203,16 @@ const _P_WORKBENCH := {
 	"o": Color8(191, 111, 58),  # 工具痕
 	"k": Color8(67, 40, 24),
 	"l": Color8(208, 158, 110),
+}
+
+const _P_CHEST := {
+	"w": Color8(168, 116, 69),  # 木板主色 (planks 同款)
+	"W": Color8(141, 93, 53),   # 木板阴影
+	"l": Color8(208, 158, 110), # 木板高光
+	"k": Color8(40, 25, 15),    # 黑描边
+	"m": Color8(218, 165, 80),  # 金属包角 (黄铜色)
+	"M": Color8(150, 105, 40),  # 金属阴影
+	"o": Color8(60, 35, 20),    # 锁孔黑
 }
 
 const _P_DOOR := {

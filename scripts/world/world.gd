@@ -167,6 +167,8 @@ func _setup_multiplayer_callbacks() -> void:
 		NetworkManager.remote_drop_pos_received.connect(_on_remote_drop_pos)
 	if not NetworkManager.remote_drop_pickup_received.is_connected(_on_remote_drop_pickup):
 		NetworkManager.remote_drop_pickup_received.connect(_on_remote_drop_pickup)
+	if not NetworkManager.remote_tile_batch_received.is_connected(_on_remote_tile_batch):
+		NetworkManager.remote_tile_batch_received.connect(_on_remote_tile_batch)
 	# host: 立刻广播 chunk_deltas (新 join 的 client 拿到这份现状)
 	if NetworkManager.is_host:
 		_mp_broadcast_initial_state.call_deferred()
@@ -217,6 +219,9 @@ func _apply_initial_state(deltas: Dictionary) -> void:
 
 # Phase E: 远程实体 (host 广播, client 接收). 用 dict ent_id → Node
 var _remote_entities: Dictionary = {}
+var _picked_up_drop_ids: Dictionary = {}   # client 已捡 ent_id (防 host 0.2s 广播复活)
+var _tile_batch: PackedInt32Array = PackedInt32Array()  # 批量广播 buf
+var _tile_batching: bool = false
 
 
 # 取字典里的 remote 实体, 自动清理 freed 引用 (queue_free 后 Node 引用不变 null,
@@ -271,6 +276,8 @@ func _spawn_remote_entity(kind: String) -> Node:
 
 # 掉落物同步: client 收到 drop_pos → 拿 id 找/建一个 ItemDrop
 func _on_remote_drop_pos(ent_id: int, item_id: String, count: int, x: float, y: float) -> void:
+	if _picked_up_drop_ids.has(ent_id):
+		return   # 已捡过, 别复活
 	var ent: Node = _get_valid_remote(ent_id)
 	if ent == null:
 		# 第一次 (或旧引用已失效): 生成 ItemDropScene + 设 item_id/count
@@ -290,13 +297,47 @@ func _on_remote_drop_pos(ent_id: int, item_id: String, count: int, x: float, y: 
 
 # 对端 (client) 捡了一个 drop → 在本端找同 id 的 drop, queue_free
 func _on_remote_drop_pickup(ent_id: int) -> void:
-	# host 这边: 找 item_drops 组里 entity_id_for(d) == ent_id 的, 删
+	_picked_up_drop_ids[ent_id] = true
 	for d in get_tree().get_nodes_in_group("item_drops"):
 		if d.has_meta("is_remote"):
 			continue
 		if NetworkManager.entity_id_for(d) == ent_id:
 			d.queue_free()
 			return
+
+
+# client 自己捡了 is_remote drop, 也标记防 host 广播复活
+func mark_drop_picked_up(ent_id: int) -> void:
+	_picked_up_drop_ids[ent_id] = true
+
+
+# 批量广播: host 水流/级联砍树时开 batching, 期间 _set_tile / _set_water_tile_fast
+# 把变化记到 _tile_batch, end_tile_batch 一条消息发完 (防 PeerJS 一帧几百小消息丢)
+func begin_tile_batch() -> void:
+	_tile_batching = true
+	_tile_batch.clear()
+
+
+func end_tile_batch() -> void:
+	if _tile_batching and not _tile_batch.is_empty() \
+			and NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_tile_batch(_tile_batch)
+	_tile_batching = false
+	_tile_batch.clear()
+
+
+func _on_remote_tile_batch(changes: PackedInt32Array) -> void:
+	var i: int = 0
+	while i + 2 < changes.size():
+		var x: int = changes[i]
+		var y: int = changes[i + 1]
+		var tid: int = changes[i + 2]
+		if tid == Tiles.WATER or tid == Tiles.WATER_L1 \
+				or tid == Tiles.WATER_L2 or tid == Tiles.WATER_L3:
+			_set_water_tile_fast(x, y, tid, true)
+		else:
+			_set_tile(x, y, tid, true)
+		i += 3
 
 
 func _on_remote_tile(x: int, y: int, tile_id: int) -> void:
@@ -766,7 +807,10 @@ func get_crack_overlay() -> Node:
 func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false) -> void:
 	# from_remote=true 时不再广播 (避免循环). 本地玩家挖/放 → 广播给联机对方
 	if not from_remote and NetworkManager != null and NetworkManager.connected():
-		NetworkManager.send_tile_change(x, y, tile_id)
+		if _tile_batching:
+			_tile_batch.append(x); _tile_batch.append(y); _tile_batch.append(tile_id)
+		else:
+			NetworkManager.send_tile_change(x, y, tile_id)
 	const Autotile = preload("res://scripts/world/autotile.gd")
 	const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
@@ -839,8 +883,11 @@ func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = fals
 		terrain_layer.set_cell(pos, -1)
 	else:
 		terrain_layer.set_cell(pos, tile_id, Vector2i.ZERO)
-	# host 广播给 client (但不接收方再回播, 避免回声)
+	# host 广播给 client (但不接收方再回播, 避免回声). 批量模式累积到 buf
 	if not from_remote and NetworkManager != null and NetworkManager.connected():
-		NetworkManager.send_tile_change(x, y, tile_id)
+		if _tile_batching:
+			_tile_batch.append(x); _tile_batch.append(y); _tile_batch.append(tile_id)
+		else:
+			NetworkManager.send_tile_change(x, y, tile_id)
 	if water_sim != null:
 		water_sim.notify_tile_changed(x, y)

@@ -267,6 +267,15 @@ func _cascade_chop_tree(world: Node, base: Vector2i, tool_kind: String) -> void:
 	var cm = world.get("chunk_manager")
 	if cm == null:
 		return
+	# 联机: 把 30+ tile 变化打包一条消息 (防小消息冲爆 PeerJS buffer)
+	if world.has_method("begin_tile_batch"):
+		world.begin_tile_batch()
+	_do_cascade_chop(world, cm, base, tool_kind)
+	if world.has_method("end_tile_batch"):
+		world.end_tile_batch()
+
+
+func _do_cascade_chop(world: Node, cm, base: Vector2i, tool_kind: String) -> void:
 	# 沿 x 列向上走树干 (LOG → LOG_TOP)
 	var trunk_top_y: int = base.y
 	var ty: int = base.y

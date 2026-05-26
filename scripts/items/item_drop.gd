@@ -95,10 +95,14 @@ func _on_body_entered(body: Node) -> void:
 		SfxBank.play("pickup", 0.20)
 	if leftover == 0:
 		# 是 remote drop (client 这边的 host 副本) → 通知 host 捡走它的真本
+		# + 标 picked_up 防 host 0.2s 广播 又把它复活
 		if has_meta("is_remote") \
 				and NetworkManager != null and NetworkManager.connected() \
 				and ent_id != 0:
 			NetworkManager.send_drop_pickup(ent_id)
+			var w: Node = get_tree().get_first_node_in_group("world")
+			if w != null and w.has_method("mark_drop_picked_up"):
+				w.mark_drop_picked_up(ent_id)
 		queue_free()
 	else:
 		count = leftover

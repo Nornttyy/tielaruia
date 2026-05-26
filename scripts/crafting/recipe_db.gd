@@ -179,6 +179,19 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# === 箱子 (8 个 planks 围一圈, 中空) ===
+	{
+		"id": "chest",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["planks", "planks", "planks"],
+			["planks", "",       "planks"],
+			["planks", "planks", "planks"],
+		],
+		"output_id": "chest",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
 	# === 钩爪 (用铁锭做钩头 + 木板做柄 + leather 当绳子) ===
 	{
 		"id": "grappling_hook",

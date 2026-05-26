@@ -31,6 +31,7 @@ signal remote_entity_pos_received(ent_id: int, kind: String, x: float, y: float,
 signal remote_entity_die_received(ent_id: int)  # 实体死亡 (Phase E)
 signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
 signal remote_drop_pickup_received(ent_id: int)  # 对端捡了某个 drop → 本端删
+signal remote_tile_batch_received(changes: PackedInt32Array)  # 批量 tile [x,y,id]*N
 
 const POLL_INTERVAL := 0.1  # 每 0.1s 拉一次 status + messages
 const POS_SEND_INTERVAL := 0.1  # 玩家位置每 0.1s 发一次 (10Hz)
@@ -142,6 +143,13 @@ func _route_message(raw: String) -> void:
 			# 对端捡了 ent_id, 本端删本地副本
 			var pid: int = int(data.get("id", 0))
 			remote_drop_pickup_received.emit(pid)
+		"tile_batch":
+			var arr_v: Variant = data.get("c", [])
+			if arr_v is Array:
+				var pia := PackedInt32Array()
+				for v in arr_v:
+					pia.append(int(v))
+				remote_tile_batch_received.emit(pia)
 		"pos":
 			var x: float = float(data.get("x", 0.0))
 			var y: float = float(data.get("y", 0.0))
@@ -238,6 +246,16 @@ static func entity_id_for(node: Object) -> int:
 
 func send_drop_pickup(ent_id: int) -> void:
 	send(JSON.stringify({"type": "drop_pick", "id": ent_id}))
+
+
+# 批量 tile 变化 (水流 tick / 级联砍树): PackedInt32Array [x1,y1,id1,...]
+func send_tile_batch(changes: PackedInt32Array) -> void:
+	if changes.is_empty():
+		return
+	var arr: Array = []
+	for v in changes:
+		arr.append(v)
+	send(JSON.stringify({"type": "tile_batch", "c": arr}))
 
 
 func send_tile_change(x: int, y: int, tile_id: int) -> void:

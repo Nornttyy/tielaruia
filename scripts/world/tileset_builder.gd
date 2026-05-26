@@ -32,6 +32,7 @@ static func build() -> TileSet:
 		Tiles.LOG_TOP, Tiles.LOG_ROOT_L, Tiles.LOG_ROOT_R,
 		Tiles.BRANCH_L, Tiles.BRANCH_R,
 		Tiles.WATER_L1, Tiles.WATER_L2, Tiles.WATER_L3,
+		Tiles.CHEST,
 	]
 	for tile_id in tile_ids:
 		var source := TileSetAtlasSource.new()

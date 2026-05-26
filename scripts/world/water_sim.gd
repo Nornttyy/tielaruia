@@ -89,6 +89,9 @@ func _run_tick() -> void:
 		return
 	var working: Array = _dirty.keys()
 	_dirty.clear()
+	# 联机: 本 tick 所有 tile 变化打包一条消息发, 防 PeerJS data channel 一帧几百小消息丢
+	if world.has_method("begin_tile_batch"):
+		world.begin_tile_batch()
 	var count: int = 0
 	for p in working:
 		if count >= MAX_TILES_PER_TICK:
@@ -96,6 +99,8 @@ func _run_tick() -> void:
 			continue
 		_step_tile(cm, p.x, p.y)
 		count += 1
+	if world.has_method("end_tile_batch"):
+		world.end_tile_batch()
 
 
 # 单 tile 一步: 优先重力下流, 否则横向往低 level 邻居均衡
