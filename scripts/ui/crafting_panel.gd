@@ -3,6 +3,7 @@
 extends CanvasLayer
 
 const RecipeMatcher = preload("res://scripts/crafting/recipe_matcher.gd")
+const InventoryCursor = preload("res://scripts/items/inventory_cursor.gd")
 
 const CELL_SIZE := 40
 const SLOT_SIZE := 36
@@ -197,8 +198,9 @@ func _build_inv_slots() -> void:
 func _make_inv_slot(idx: int) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP   # 接受点击
 	panel.clip_contents = true
+	panel.gui_input.connect(_on_inv_slot_input.bind(idx))
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0, 0, 0, 0.4)
 	style.border_color = Color(0.4, 0.4, 0.4, 1)
@@ -345,7 +347,6 @@ func open(grid_n: int) -> void:
 
 
 func close() -> void:
-	# 内部 cells 的物品退回 (测试可能放置)
 	if _player_inv != null:
 		for r in 3:
 			for c in 3:
@@ -355,12 +356,30 @@ func close() -> void:
 					_cells[r][c] = null
 		if _cursor_item != null:
 			_player_inv.pickup(_cursor_item.item_id, _cursor_item.count)
+		# 鼠标手持 (拖动用) slot → 回 inv
+		if _player_inv.inventory != null:
+			InventoryCursor.return_cursor_to_inv(_player_inv, _player_inv.inventory.slots)
+			if _player_inv.has_signal("inventory_changed"):
+				_player_inv.inventory_changed.emit()
 	_cursor_item = null
 	_output_preview = null
 	cursor.visible = false
 	visible = false
 	_mode = 0
 	closed.emit()
+
+
+# 36 个背包格子左键: 拿起/放下/合并/交换
+func _on_inv_slot_input(event: InputEvent, idx: int) -> void:
+	if not (event is InputEventMouseButton) or not event.pressed:
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if _player_inv == null or _player_inv.inventory == null:
+		return
+	InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, idx)
+	if _player_inv.has_signal("inventory_changed"):
+		_player_inv.inventory_changed.emit()
 
 
 func is_open() -> bool:
@@ -531,6 +550,42 @@ func _make_cell(r: int, c: int) -> PanelContainer:
 func _process(_delta: float) -> void:
 	if cursor.visible:
 		cursor.position = cursor.get_viewport().get_mouse_position() - Vector2(CELL_SIZE / 2, CELL_SIZE / 2)
+	_update_drag_cursor()
+
+
+# 鼠标手持 slot 的 floating icon (reuse cursor 节点显示 inv 物品图标)
+func _update_drag_cursor() -> void:
+	if _player_inv == null:
+		return
+	var cs = _player_inv.cursor_slot
+	if cs == null:
+		return  # 不接管 cursor (留给老逻辑)
+	# 确保子节点存在
+	var icon: TextureRect = cursor.get_node_or_null("DragIcon")
+	if icon == null:
+		icon = TextureRect.new()
+		icon.name = "DragIcon"
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+		cursor.add_child(icon)
+	var lbl: Label = cursor.get_node_or_null("DragCount")
+	if lbl == null:
+		lbl = Label.new()
+		lbl.name = "DragCount"
+		lbl.add_theme_font_size_override("font_size", 12)
+		lbl.add_theme_color_override("font_color", Color.WHITE)
+		lbl.add_theme_color_override("font_outline_color", Color.BLACK)
+		lbl.add_theme_constant_override("outline_size", 2)
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lbl.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+		lbl.position = Vector2(-18, -16)
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		cursor.add_child(lbl)
+	cursor.visible = true
+	cursor.position = cursor.get_viewport().get_mouse_position() - Vector2(CELL_SIZE / 2, CELL_SIZE / 2)
+	icon.texture = ArtCache.get_inventory_icon(String(cs.item_id))
+	lbl.text = str(int(cs.count)) if int(cs.count) > 1 else ""
 
 
 func _on_cell_clicked(event: InputEvent, r: int, c: int) -> void:

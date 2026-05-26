@@ -6,6 +6,8 @@ signal hotbar_selection_changed(index: int)
 
 var inventory: Inventory
 var hotbar_selected: int = 0  # 0..8
+# 鼠标手持物品 (Terraria 风背包拖动用). null = 空; { item_id, count } = 持有
+var cursor_slot: Variant = null
 
 
 func _ready() -> void:

@@ -4,6 +4,8 @@
 # UI 全在代码里建, 没有专门 tscn.
 extends CanvasLayer
 
+const InventoryCursor = preload("res://scripts/items/inventory_cursor.gd")
+
 const SLOT_SIZE := 40
 const COLS_CHEST := 8
 const ROWS_CHEST := 3
@@ -17,6 +19,8 @@ var _player_slots_ui: Array = []         # 27 个 PanelContainer
 var _chest_tile: Vector2i = Vector2i.ZERO
 var _is_open: bool = false
 var _player_inv: Node = null    # 玩家 PlayerInventory
+var _cursor_icon: TextureRect = null
+var _cursor_count: Label = null
 
 
 func _ready() -> void:
@@ -94,6 +98,22 @@ func _build_ui() -> void:
 	close_btn.custom_minimum_size = Vector2(0, 32)
 	close_btn.pressed.connect(close)
 	vbox.add_child(close_btn)
+	# Cursor icon: 跟鼠标飘的物品
+	_cursor_icon = TextureRect.new()
+	_cursor_icon.custom_minimum_size = Vector2(32, 32)
+	_cursor_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	_cursor_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cursor_icon.z_index = 100
+	_cursor_icon.visible = false
+	add_child(_cursor_icon)
+	_cursor_count = Label.new()
+	_cursor_count.add_theme_font_size_override("font_size", 12)
+	_cursor_count.add_theme_color_override("font_color", Color.WHITE)
+	_cursor_count.add_theme_color_override("font_outline_color", Color.BLACK)
+	_cursor_count.add_theme_constant_override("outline_size", 2)
+	_cursor_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cursor_count.z_index = 101
+	add_child(_cursor_count)
 
 
 func _make_slot(idx: int, is_chest: bool) -> PanelContainer:
@@ -156,35 +176,17 @@ func _refresh_all() -> void:
 			_refresh_slot(_player_slots_ui[i], data)
 
 
-# 点击格子 → 把这堆转到另一边的第一个空格
+# 点击格子: Terraria 风 - 拿起/放下/合并/交换
 func _on_slot_pressed(idx: int, is_chest: bool) -> void:
 	if _player_inv == null or _player_inv.inventory == null:
 		return
-	var chest_arr: Array = ChestStorage.get_slots(_chest_tile)
-	var p_slots: Array = _player_inv.inventory.slots
 	if is_chest:
-		var src = chest_arr[idx]
-		if src == null:
-			return
-		# 找玩家主背包 (idx 9..35) 第一个空槽
-		var dst_idx: int = _find_first_empty(p_slots, 9, p_slots.size())
-		if dst_idx == -1:
-			return
-		p_slots[dst_idx] = src
-		chest_arr[idx] = null
-		if _player_inv.has_signal("inventory_changed"):
-			_player_inv.inventory_changed.emit()
+		InventoryCursor.click_slot(_player_inv, ChestStorage.get_slots(_chest_tile), idx)
 	else:
-		var src2 = p_slots[9 + idx]
-		if src2 == null:
-			return
-		var dst_idx2: int = _find_first_empty(chest_arr, 0, chest_arr.size())
-		if dst_idx2 == -1:
-			return
-		chest_arr[dst_idx2] = src2
-		p_slots[9 + idx] = null
-		if _player_inv.has_signal("inventory_changed"):
-			_player_inv.inventory_changed.emit()
+		# 主背包格 = inv.slots[9..35]
+		InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, 9 + idx)
+	if _player_inv.has_signal("inventory_changed"):
+		_player_inv.inventory_changed.emit()
 	_refresh_all()
 
 
@@ -205,8 +207,31 @@ func open(tile_coord: Vector2i, player_inv: Node) -> void:
 
 
 func close() -> void:
+	# 关时鼠标剩物品回 inv (空格 / 合并)
+	if _player_inv != null and _player_inv.inventory != null:
+		InventoryCursor.return_cursor_to_inv(_player_inv, _player_inv.inventory.slots)
+		if _player_inv.has_signal("inventory_changed"):
+			_player_inv.inventory_changed.emit()
 	visible = false
 	_is_open = false
+
+
+func _process(_delta: float) -> void:
+	# Cursor icon 跟鼠标
+	if not _is_open or _cursor_icon == null or _player_inv == null:
+		return
+	var cs = _player_inv.cursor_slot
+	if cs == null:
+		_cursor_icon.visible = false
+		if _cursor_count != null:
+			_cursor_count.text = ""
+		return
+	_cursor_icon.visible = true
+	_cursor_icon.texture = ArtCache.get_inventory_icon(String(cs.item_id))
+	_cursor_icon.global_position = get_viewport().get_mouse_position() - Vector2(16, 16)
+	if _cursor_count != null:
+		_cursor_count.text = str(int(cs.count)) if int(cs.count) > 1 else ""
+		_cursor_count.global_position = _cursor_icon.global_position + Vector2(16, 14)
 
 
 func is_open() -> bool:
