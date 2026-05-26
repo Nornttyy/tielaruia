@@ -16,6 +16,8 @@ const TILE_SIZE := 16
 const SWIM_GRAVITY := 200.0         # 水里重力 (vs GRAVITY 900 → 慢慢沉)
 const SWIM_UP_SPEED := -110.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -320 → 弱跳)
 const SWIM_MAX_SINK := 180.0        # 最大下沉速度 (浮力封顶)
+const ROPE_CLIMB_SPEED := 110.0     # 绳子上下爬速度 (vs SPEED 140 — 慢点)
+const ROPE_HOLD_GRAVITY := 0.0      # 抓绳子时无重力 (松手才掉)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _player_aura: PointLight2D = $PlayerAura
@@ -149,6 +151,20 @@ func _is_in_water() -> bool:
 	return _is_water_tile(cm.get_tile(tx, ty))
 
 
+# 玩家身体 (腰或胸) 是否在绳子 tile 内
+func _is_on_rope() -> bool:
+	var cm = _get_chunk_manager()
+	if cm == null:
+		return false
+	var tx: int = int(floor(global_position.x / 16.0))
+	# 检查脚 + 胸 + 头 3 个 y 是否有 rope, 给攀爬更宽容的判定
+	for off_y in [-2.0, -12.0, -22.0]:
+		var ty: int = int(floor((global_position.y + off_y) / 16.0))
+		if cm.get_tile(tx, ty) == Tiles.ROPE:
+			return true
+	return false
+
+
 # 头部是否露出水面 (用于"跳上岸": 头出水可走普通跳跃, 强度够蹬上岸)
 func _is_head_above_water() -> bool:
 	var cm = _get_chunk_manager()
@@ -214,16 +230,26 @@ func _physics_process(delta: float) -> void:
 	var dir := Input.get_axis("move_left", "move_right")
 	# 泡水里走得慢一半 + sprite 偏蓝
 	var in_water: bool = _is_in_water()
+	var on_rope: bool = _is_on_rope() and not is_on_floor()
 	var speed_mul: float = 0.5 if in_water else 1.0
 	velocity.x = dir * SPEED * speed_mul
 	sprite.modulate = Color(0.7, 0.85, 1.15) if in_water else Color.WHITE
 
 	var on_floor_now := is_on_floor()
 
-	# 重力 + 游泳: 在水里用 SWIM_GRAVITY (弱), 按 jump 持续上浮.
-	# 不在水里则正常重力 + 单次跳跃.
+	# 重力 + 游泳 + 绳子. 绳子优先于普通重力.
 	var did_jump := false
-	if in_water:
+	if on_rope:
+		# 抓绳子: 无重力, jump(W/space) 上爬, S 下爬, 否则悬停
+		var up: bool = Input.is_action_pressed("jump")
+		var down: bool = Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)
+		if up and not down:
+			velocity.y = -ROPE_CLIMB_SPEED
+		elif down and not up:
+			velocity.y = ROPE_CLIMB_SPEED
+		else:
+			velocity.y = 0.0
+	elif in_water:
 		# 水里物理: 慢慢沉, 按 jump 上浮 (持续按住能游上去)
 		velocity.y += SWIM_GRAVITY * delta
 		if velocity.y > SWIM_MAX_SINK:

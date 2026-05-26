@@ -19,6 +19,7 @@ const JUNGLE_GRASS := 41
 const MUD := 42
 const SWAMP_GRASS := 43
 const WOOD_PLATFORM := 44
+const ROPE := 45
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -1287,6 +1288,7 @@ const _PATTERN_MAP := {
 	MUD: [_DIRT, _P_DIRT],
 	SWAMP_GRASS: [_GRASS, _P_GRASS],
 	WOOD_PLATFORM: [_PLANKS, _P_PLANKS],  # 长得像 planks 但只 top 一条 (后续可做专属)
+	ROPE: [_LOG, _P_LOG],                 # 复用 log 颜色 (棕), 后续可做专属麻绳
 }
 
 

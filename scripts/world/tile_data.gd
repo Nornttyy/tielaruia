@@ -51,6 +51,8 @@ const MUD := 42             # 沼泽泥土 (替代 DIRT 在沼泽), 棕黑色
 const SWAMP_GRASS := 43     # 沼泽地表, 深灰绿带泥点
 # 平台: 站上面 + 下方能穿过 (单向碰撞). Terraria 风
 const WOOD_PLATFORM := 44
+# 绳子: 垂直挂着, 玩家碰到可爬上爬下 (W/S). 不阻挡走路.
+const ROPE := 45
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -297,6 +299,12 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["wood_platform", 100, 1, 1]],
+	},
+	# 绳子: solid=false (玩家穿过), 但 player_controller 检测到会切换爬绳模式
+	ROPE: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["rope", 100, 1, 1]],
 	},
 }
 

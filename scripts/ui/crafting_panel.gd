@@ -312,6 +312,7 @@ const _ZH_NAMES := {
 	"wood_platform": "木平台",
 	"wood_wall": "木墙",
 	"stone_wall": "石墙",
+	"rope": "绳子",
 }
 
 

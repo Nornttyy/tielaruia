@@ -89,7 +89,7 @@ func _build_blocks() -> void:
 		BlocksArt.CHEST,
 		BlocksArt.DOOR_TOP,
 		BlocksArt.SNOW, BlocksArt.ICE, BlocksArt.JUNGLE_GRASS, BlocksArt.MUD, BlocksArt.SWAMP_GRASS,
-		BlocksArt.WOOD_PLATFORM,
+		BlocksArt.WOOD_PLATFORM, BlocksArt.ROPE,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):

@@ -313,6 +313,17 @@ const _RECIPES := [
 		"output_count": 4,
 		"mirror_ok": true,
 	},
+	# 绳子: 1 leather → 6 rope
+	{
+		"id": "rope",
+		"grid_size": Vector2i(1, 1),
+		"pattern": [
+			["leather"],
+		],
+		"output_id": "rope",
+		"output_count": 6,
+		"mirror_ok": true,
+	},
 ]
 
 
