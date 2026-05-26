@@ -23,6 +23,9 @@ const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
 const PigScene = preload("res://scenes/entities/pig.tscn")
+const PenguinScene = preload("res://scenes/entities/penguin.tscn")
+const JaguarScene = preload("res://scenes/entities/jaguar.tscn")
+const FrogScene = preload("res://scenes/entities/frog.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
 
@@ -302,6 +305,9 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"cow": scene = CowScene
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
+		"penguin": scene = PenguinScene
+		"jaguar": scene = JaguarScene
+		"frog": scene = FrogScene
 		"villager": scene = VillagerScene
 		_: return null
 	if scene == null:
@@ -489,6 +495,12 @@ func _mp_broadcast_entities() -> void:
 						kind = "sheep"
 					elif "pig" in scene_path:
 						kind = "pig"
+					elif "penguin" in scene_path:
+						kind = "penguin"
+					elif "jaguar" in scene_path:
+						kind = "jaguar"
+					elif "frog" in scene_path:
+						kind = "frog"
 			NetworkManager.send_entity_pos(
 				NetworkManager.entity_id_for(n2d),
 				kind,
@@ -723,19 +735,70 @@ func _try_spawn_zombie() -> void:
 
 
 func _try_spawn_animal() -> void:
-	# 牛/羊/猪 共享上限. 随机挑一种刷.
+	# 按 spawn 列的 biome 选怪.
+	# forest(GRASS): 牛/羊/猪
+	# snow(SNOW): 企鹅 + 牛 (混)
+	# jungle(JUNGLE_GRASS): 美洲豹 (敌对快) + 猪
+	# swamp(SWAMP_GRASS): 青蛙 (跳)
+	# desert(SAND): 不刷动物 (现在还没沙漠动物)
 	var animals := get_tree().get_nodes_in_group("animals")
 	if animals.size() >= MAX_ANIMALS:
 		return
-	var r: float = randf()
+	# 探测玩家附近一列的 biome (按地表 tile 决定)
+	var player := get_player()
+	if player == null:
+		return
+	var px: int = int(floor(player.global_position.x / TILE_SIZE))
+	var sign_x: int = 1 if randf() < 0.5 else -1
+	var dx: int = sign_x * randi_range(SPAWN_RANGE_MIN, SPAWN_RANGE_MAX)
+	var cand_x: int = px + dx
+	# 找该列地表 tile
+	var surf_tile: int = Tiles.AIR
+	for y in ChunkConstants.WORLD_HEIGHT:
+		var t: int = chunk_manager.get_tile(cand_x, y)
+		if t != Tiles.AIR:
+			surf_tile = t
+			break
 	var scene: PackedScene
-	if r < 0.33:
-		scene = CowScene
-	elif r < 0.66:
-		scene = SheepScene
-	else:
-		scene = PigScene
-	_spawn_surface_creature(scene)
+	var r: float = randf()
+	match surf_tile:
+		Tiles.SNOW:
+			scene = PenguinScene if r < 0.7 else CowScene
+		Tiles.JUNGLE_GRASS:
+			scene = JaguarScene if r < 0.5 else PigScene
+		Tiles.SWAMP_GRASS, Tiles.MUD:
+			scene = FrogScene
+		Tiles.SAND:
+			return  # 沙漠不刷
+		_:  # GRASS or fallback
+			if r < 0.33:
+				scene = CowScene
+			elif r < 0.66:
+				scene = SheepScene
+			else:
+				scene = PigScene
+	_spawn_at_column(scene, cand_x)
+
+
+# spawn 在指定列地表上, 不再随机选 column
+func _spawn_at_column(scene: PackedScene, cand_x: int) -> void:
+	var surf_y: int = -1
+	for y in ChunkConstants.WORLD_HEIGHT:
+		if chunk_manager.get_tile(cand_x, y) != Tiles.AIR:
+			surf_y = y
+			break
+	if surf_y <= 0:
+		return
+	if chunk_manager.get_tile(cand_x, surf_y - 1) != Tiles.AIR:
+		return  # 头顶被堵 (树或方块)
+	if chunk_manager.get_tile(cand_x, surf_y) == Tiles.BEDROCK:
+		return
+	var creature := scene.instantiate()
+	creature.global_position = Vector2(
+		cand_x * TILE_SIZE + TILE_SIZE / 2.0,
+		(surf_y - 1) * TILE_SIZE + TILE_SIZE
+	)
+	entities_root.add_child(creature)
 
 
 # 在玩家附近地表随机刷一个 creature (slime/zombie 共用站位逻辑)

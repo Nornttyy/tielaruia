@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/jaguar.gd" id="1_jaguar"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jaguar"]
+size = Vector2(20, 12)
+
+[node name="Jaguar" type="CharacterBody2D"]
+script = ExtResource("1_jaguar")
+collision_layer = 0
+collision_mask = 3
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -24)
+centered = false
+offset = Vector2(-21, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -6)
+shape = SubResource("RectangleShape2D_jaguar")

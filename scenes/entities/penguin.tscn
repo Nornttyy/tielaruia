@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/penguin.gd" id="1_penguin"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_penguin"]
+size = Vector2(16, 14)
+
+[node name="Penguin" type="CharacterBody2D"]
+script = ExtResource("1_penguin")
+collision_layer = 0
+collision_mask = 3
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -22)
+centered = false
+offset = Vector2(-18, 0)
+scale = Vector2(0.85, 0.85)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -7)
+shape = SubResource("RectangleShape2D_penguin")
