@@ -109,8 +109,33 @@ func _build_blocks() -> void:
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		else:
 			var single: ImageTexture = BlocksArt.get_texture(tile_id)
+			# 新群系 tile 暂复用现有 pattern, 这里 tint 一下让视觉上能区分
+			if tile_id == BlocksArt.SNOW:
+				single = _tint_texture(single, Color(0.55, 0.7, 1.6), 0.55)   # 蓝白冷
+			elif tile_id == BlocksArt.ICE:
+				single = _tint_texture(single, Color(0.5, 1.1, 1.8), 0.6)
+			elif tile_id == BlocksArt.JUNGLE_GRASS:
+				single = _tint_texture(single, Color(0.35, 1.4, 0.4), 0.5)   # 深绿
+			elif tile_id == BlocksArt.SWAMP_GRASS:
+				single = _tint_texture(single, Color(0.55, 0.85, 0.45), 0.5) # 灰绿
+			elif tile_id == BlocksArt.MUD:
+				single = _tint_texture(single, Color(0.6, 0.45, 0.3), 0.55)  # 暗棕
 			block_textures[tile_id] = single
 			block_icons[tile_id] = single
+
+
+# 染色 helper: 把图像每个非透明像素 * lerp(原色, tint, strength).
+static func _tint_texture(src: ImageTexture, tint: Color, strength: float) -> ImageTexture:
+	var img: Image = src.get_image().duplicate()
+	for y in img.get_height():
+		for x in img.get_width():
+			var c: Color = img.get_pixel(x, y)
+			if c.a < 0.01:
+				continue
+			# 乘色相当于"染色 + 保持明暗结构"
+			var tinted := Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a)
+			img.set_pixel(x, y, c.lerp(tinted, strength))
+	return ImageTexture.create_from_image(img)
 
 
 # 从 atlas 抽 mask=255 (CCCCIIII, 全包围) 那一格做 UI 图标. 16×16.

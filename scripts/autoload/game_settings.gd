@@ -97,8 +97,10 @@ func _load() -> void:
 		return  # 文件不存在 → 用默认值
 	# 直接赋字段, 绕开 setter 避免 _ready 阶段多次重存盘
 	master_volume = clamp(float(cfg.get_value("audio", "master_volume", 1.0)), 0.0, 1.0)
-	show_rain = bool(cfg.get_value("graphics", "show_rain", true))
-	show_parallax = bool(cfg.get_value("graphics", "show_parallax", true))
-	show_flocks = bool(cfg.get_value("graphics", "show_flocks", true))
-	water_sim_enabled = bool(cfg.get_value("graphics", "water_sim_enabled", true))
+	# 图形开关: UI 已删, 强制默认 true (忽略旧 cfg 里可能存的 false).
+	# 用户之前点过关掉 → 现在没 UI 改回来, 这里硬覆盖防止"灰背景/不下雨"等死锁.
+	show_rain = true
+	show_parallax = true
+	show_flocks = true
+	water_sim_enabled = true
 	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 1.2)), 0.5, 2.5)
