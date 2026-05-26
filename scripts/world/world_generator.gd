@@ -28,8 +28,8 @@ const SPAWN_FOREST_FALLOFF := 60
 
 const BEDROCK_ROWS := 2          # 基岩占最底几行
 const SAND_THRESHOLD := 0.4      # sand_noise 超过此阈值的列为沙列
-const TREE_MIN_SPACING := 5      # 相邻两棵树/仙人掌之间最少 N 列间距
-const TREE_CHANCE := 0.45        # 候选格子里实际长树的概率
+const TREE_MIN_SPACING := 8      # 相邻两棵树/仙人掌之间最少 N 列间距 (越大越稀)
+const TREE_CHANCE := 0.30        # 候选格子里实际长树的概率 (越小越稀)
 const CACTUS_CHANCE := 0.30      # 沙漠候选格子里实际长仙人掌的概率
 const CACTUS_HEIGHT_MIN := 1     # 仙人掌最矮 1 格
 const CACTUS_HEIGHT_MAX := 3     # 最高 3 格
@@ -117,7 +117,7 @@ const _SPECIES_PARAMS := {
 	_SPECIES_OAK: {
 		"trunk_range": [6, 12],  # 树更高 (4-8 → 6-12, 加分支空间)
 		"leaves": Tiles.LEAVES,
-		"canopies": ["oak_cloud_med", "oak_cloud_large", "oak_cloud_large", "oak_cloud_huge", "oak_cloud_huge"],
+		"canopies": ["oak_cloud_small", "oak_cloud_med", "oak_cloud_med", "oak_cloud_large", "oak_cloud_huge"],
 	},
 }
 
