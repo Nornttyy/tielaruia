@@ -79,6 +79,14 @@ func _physics_process(delta: float) -> void:
 	# auto-step tween 期间停物理 (let tween 接管 position, 不被重力/move_and_slide 干扰)
 	if _stepping:
 		return
+	# 性能: 距玩家 > 50 tile (800 px) 且站地板 → skip 整帧 (动物只是闲逛, 远了看不见)
+	var _p: Node2D = get_tree().get_first_node_in_group("player")
+	if _p != null and is_on_floor():
+		var _dx: float = _p.global_position.x - global_position.x
+		var _dy: float = _p.global_position.y - global_position.y
+		if _dx * _dx + _dy * _dy > 640000.0:
+			velocity = Vector2.ZERO
+			return
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
