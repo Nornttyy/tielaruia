@@ -202,6 +202,17 @@ const _ITEM_TO_TILE := {
 	"diamond": BlocksArt.DIAMOND_ORE,
 	"hell_crystal": BlocksArt.HELL_CRYSTAL,
 	"chest": BlocksArt.CHEST,
+	# 新群系
+	"snow": BlocksArt.SNOW,
+	"ice": BlocksArt.ICE,
+	"jungle_grass": BlocksArt.JUNGLE_GRASS,
+	"mud": BlocksArt.MUD,
+	"swamp_grass": BlocksArt.SWAMP_GRASS,
+	# 平台 + 墙 + 绳
+	"wood_platform": BlocksArt.WOOD_PLATFORM,
+	"wood_wall": BlocksArt.DIRT_WALL,    # 复用 dirt_wall 视觉
+	"stone_wall": BlocksArt.STONE_WALL,
+	"rope": BlocksArt.ROPE,
 }
 
 
