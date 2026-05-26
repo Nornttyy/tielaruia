@@ -42,6 +42,7 @@ const WATER_L2 := 35        # 2/4 水位 (流水 level 2)
 const WATER_L3 := 36        # 3/4 水位 (流水 level 3)
 # WATER (=28) 表示满水 level 4
 const CHEST := 37           # 箱子: 右键打开 24 格存储, 内容跟存档持久化
+const DOOR_TOP := 38        # 门上半截 (DOOR 始终是底部, DOOR_TOP 顶部). 配对成 2 格高门.
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -96,11 +97,19 @@ const _PROPS := {
 		"drops": [["workbench", 100, 1, 1]],
 	},
 	DOOR: {
-		# M1 简化: 视为始终开启 (非实心), 玩家可穿过
-		# M2 加 Door 单独场景做开/关碰撞切换
+		# 门底部: 视觉占 1 格, 但和 DOOR_TOP (上一格) 配对成 2 格高门.
+		# solid=false → tileset_builder 不会在物理层 0 加碰撞;
+		# tileset_builder 单独在物理层 1 (门层, bit 1) 加碰撞, 怪挡住, 玩家放行.
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["door", 100, 1, 1]],
+	},
+	DOOR_TOP: {
+		# 门顶部: 跟 DOOR 一起 2 格高. 物理同 DOOR (单独物理层挡怪不挡玩家).
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		# 不掉东西 — 砍 DOOR 顶部时, 联动把底也消, 由底掉 1 个 door item.
+		"drops": [],
 	},
 	BEDROCK: {
 		"solid": true, "mineable": false,

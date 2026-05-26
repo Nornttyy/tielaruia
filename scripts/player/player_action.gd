@@ -236,6 +236,15 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	if tid == Tiles.LOG and _is_tree_base(world, tile.x, tile.y):
 		_cascade_chop_tree(world, tile, tool_kind)
 		return
+	# 砍门: 联动消除另一半 (DOOR↔DOOR_TOP)
+	if tid == Tiles.DOOR:
+		if world.has_method("_set_tile"):
+			world._set_tile(tile.x, tile.y - 1, Tiles.AIR)   # 同时消顶部
+	elif tid == Tiles.DOOR_TOP:
+		if world.has_method("_set_tile"):
+			world._set_tile(tile.x, tile.y + 1, Tiles.AIR)   # 同时消底部
+			# 由底部 (Tiles.DOOR) 的 drops 出 door item, 这里改 tid 让正常流程走底的掉落
+			tid = Tiles.DOOR
 	# 砍 chest: 内容物先撒出来 (不丢)
 	if tid == Tiles.CHEST:
 		var contents: Array = ChestStorage.clear(tile)
@@ -380,8 +389,21 @@ func try_place() -> bool:
 	if not has_support:
 		return false
 	var def = ItemDB.get_def(slot.item_id)
-	# (移除 terrain.set_cell; world._set_tile 内部刷视觉 + 邻居)
 	var world: Node = terrain.get_parent()
+	# 门: 2 格高, 占当前 tile + 上一格. 上面必须空气, 否则放不了.
+	if def.placeable_tile_id == Tiles.DOOR:
+		var above: Vector2i = tile + Vector2i(0, -1)
+		if terrain.get_cell_source_id(above) != -1:
+			return false
+		if world.has_method("_set_tile"):
+			world._set_tile(tile.x, tile.y, Tiles.DOOR)
+			world._set_tile(above.x, above.y, Tiles.DOOR_TOP)
+		inv.consume_current(1)
+		SkyLightGrid.invalidate_column(tile.x)
+		Effects.spawn_place_bounce(tile, Tiles.DOOR)
+		SfxBank.play("place", 0.10)
+		return true
+	# (移除 terrain.set_cell; world._set_tile 内部刷视觉 + 邻居)
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, def.placeable_tile_id)
 	inv.consume_current(1)

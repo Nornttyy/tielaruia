@@ -8,7 +8,7 @@ size = Vector2(16, 14)
 [node name="Sheep" type="CharacterBody2D"]
 script = ExtResource("1_sheep")
 collision_layer = 0
-collision_mask = 1
+collision_mask = 3
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -23)

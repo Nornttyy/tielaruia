@@ -47,6 +47,7 @@ const WATER_L1 := 34        # 1/4 水位
 const WATER_L2 := 35        # 2/4 水位
 const WATER_L3 := 36        # 3/4 水位
 const CHEST := 37           # 箱子
+const DOOR_TOP := 38        # 门上半截 (跟 DOOR=9 配对成 2 格高门)
 
 # --- 调色板 (每方块独立) ---
 
@@ -806,6 +807,26 @@ const _DOOR_CLOSED := [
 	"DDDDDDDDDDDDDDDD",
 ]
 
+# 门上半截 (DOOR_TOP): 顶端 + 小窗 + 木板. 跟 DOOR 接缝, 整体 2 格高门.
+const _DOOR_TOP_CLOSED := [
+	"DDDDDDDDDDDDDDDD",
+	"DllllllllllllllD",
+	"DlDDDDDDDDDDDDlD",
+	"DlDddddddddddDlD",
+	"DlDdwwwwwwwwdDlD",
+	"DlDdwddddddwdDlD",
+	"DlDdwddddddwdDlD",
+	"DlDdwwwwwwwwdDlD",
+	"DlDddddddddddDlD",
+	"DlDddddddddddDlD",
+	"DlDddddddddddDlD",
+	"DlDddddddddddDlD",
+	"DlDddddddddddDlD",
+	"DlDddddddddddDlD",
+	"DllllllllllllllD",
+	"DDDDDDDDDDDDDDDD",
+]
+
 # 门 (开) — 显示为侧面窄条
 const _DOOR_OPEN := [
 	"DDDDDDDDDDDD....",
@@ -1251,6 +1272,7 @@ const _PATTERN_MAP := {
 	WATER_L2: [_WATER, _P_WATER],
 	WATER_L3: [_WATER, _P_WATER],
 	CHEST: [_CHEST, _P_CHEST],
+	DOOR_TOP: [_DOOR_TOP_CLOSED, _P_DOOR],
 }
 
 

@@ -15,8 +15,12 @@ const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
 static func build() -> TileSet:
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(16, 16)
-	# 先建物理层 (索引 0), 后续给实心 tile 加碰撞 polygon 才能引用
+	# 物理层 0: 世界默认 (bit 0). 普通实心方块用.
 	ts.add_physics_layer()
+	# 物理层 1: 门专用 (bit 1). 门挡怪不挡玩家 — 玩家 collision_mask=1 跳过, 怪 mask=3 阻挡.
+	ts.add_physics_layer()
+	ts.set_physics_layer_collision_layer(1, 2)  # 门碰撞放 bit 1
+	ts.set_physics_layer_collision_mask(1, 0)
 
 	var tile_ids: Array[int] = [
 		Tiles.GRASS, Tiles.DIRT, Tiles.STONE, Tiles.SAND,
@@ -33,12 +37,16 @@ static func build() -> TileSet:
 		Tiles.BRANCH_L, Tiles.BRANCH_R,
 		Tiles.WATER_L1, Tiles.WATER_L2, Tiles.WATER_L3,
 		Tiles.CHEST,
+		Tiles.DOOR_TOP,
 	]
 	for tile_id in tile_ids:
 		var source := TileSetAtlasSource.new()
 		source.texture = ArtCache.block_textures[tile_id]
 		source.texture_region_size = Vector2i(16, 16)
 		ts.add_source(source, tile_id)
+
+		# 门 (上+下) 走物理层 1, 跟普通 solid 不同; 在下面专门处理
+		var is_door: bool = tile_id == Tiles.DOOR or tile_id == Tiles.DOOR_TOP
 
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
 			# Autotile 方块: 47 cell
@@ -58,6 +66,13 @@ static func build() -> TileSet:
 				var props = source.get_tile_data(Vector2i.ZERO, 0)
 				props.add_collision_polygon(0)
 				props.set_collision_polygon_points(0, 0, PackedVector2Array([
+					Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8),
+				]))
+			elif is_door:
+				# 门: 加碰撞但用物理层 1 (门层 bit 1, 玩家不 mask)
+				var dprops = source.get_tile_data(Vector2i.ZERO, 0)
+				dprops.add_collision_polygon(1)
+				dprops.set_collision_polygon_points(1, 0, PackedVector2Array([
 					Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8),
 				]))
 			# 水 (4 个水位) 都启用 4 帧动画
