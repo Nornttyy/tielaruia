@@ -87,6 +87,34 @@ func test_world_has_trees():
 	assert_gt(leaves_total, 10, "应有至少 10 个树叶 (任意品种)")
 
 
+# 锁住 "树要密" — 256 宽下 LOG 总数应远超 100 (TREE_MIN_SPACING=3 + TREE_CHANCE=0.65).
+# 若有人把参数改回 spacing=5 / chance=0.45 此断言会挂.
+func test_world_trees_are_dense():
+	var w = WorldGenerator.generate(42, 256, 128)
+	var log_count := 0
+	for x in 256:
+		for y in 128:
+			if w.tiles[x][y] == Tiles.LOG:
+				log_count += 1
+	assert_gt(log_count, 100, "树木密度: 256 宽世界应 >100 个 LOG. 实际 %d" % log_count)
+
+
+# 锁住 "树要高" — 至少一棵树的连续 LOG 柱 >= 6 格 (trunk_range[0]=6).
+func test_world_trees_are_tall():
+	var w = WorldGenerator.generate(42, 256, 128)
+	var max_trunk := 0
+	for x in 256:
+		var run := 0
+		for y in 128:
+			if w.tiles[x][y] == Tiles.LOG:
+				run += 1
+				if run > max_trunk:
+					max_trunk = run
+			else:
+				run = 0
+	assert_gte(max_trunk, 6, "最高树干应 >=6 格 (trunk_range[0]=6). 实际 %d" % max_trunk)
+
+
 func test_generate_chunk_returns_64_wide():
 	var c = WorldGenerator.generate_chunk(42, 0, 128)
 	assert_eq(c.tiles.size(), 64, "chunk 宽 64 列")
