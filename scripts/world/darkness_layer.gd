@@ -9,23 +9,22 @@ extends Sprite2D
 const TileLightGrid = preload("res://scripts/world/tile_light_grid.gd")
 
 const TILE_SIZE := 16
-# 纹理覆盖区域要够大: 1280×720 viewport @ zoom=1.0 = 80×45 tile 可见.
-# 留 buffer 防边缘闪烁 → 96×60. 玩家中心 ±48 ×30 tile.
-# 计算开销 O(W×H) = 5760 像素/更新, 10 Hz = 57600/s, 可接受.
-const W := 96                  # 纹理宽度 (tiles)
-const H := 60                  # 纹理高度
-const HALF_W := 48
-const HALF_H := 30
-const UPDATE_INTERVAL := 0.25  # 4 Hz. 0.1 → 0.25 节省 60%+ 光照 BFS 算量,
-                               # 玩家 0.25s 走 ~1 tile, 在 96x60 视野里看不出延迟
+# 纹理大小动态算: viewport_size / (camera_zoom * TILE_SIZE) + buffer.
+# 最小 zoom 0.5 (摄像机调小看更远) → 视野 ~160×90 tiles, 我们准备 200×120 上限.
+const MAX_W := 200
+const MAX_H := 120
+const BUFFER_TILES := 8        # 边缘 buffer 防过渡时露背
+const UPDATE_INTERVAL := 0.25  # 4 Hz
 
 var _img: Image
 var _last_update: float = 0.0
+var _cur_w: int = MAX_W        # 当前实际用的纹理宽 (按 zoom 算)
+var _cur_h: int = MAX_H
 
 
 func _ready() -> void:
-	# 用 LA8 (luminance + alpha) 反而麻烦, 直接用 RGBA8 但 RGB 始终 0, 只填 alpha
-	_img = Image.create(W, H, false, Image.FORMAT_RGBA8)
+	# 用 MAX 大小创建一次, 后续按 zoom 算 _cur_w/_cur_h 只填那部分
+	_img = Image.create(MAX_W, MAX_H, false, Image.FORMAT_RGBA8)
 	_img.fill(Color(0, 0, 0, 1))
 	texture = ImageTexture.create_from_image(_img)
 	scale = Vector2(TILE_SIZE, TILE_SIZE)
@@ -48,31 +47,41 @@ func _update_viewport() -> void:
 	var cm: Node = get_tree().get_first_node_in_group("chunk_manager")
 	if cm == null:
 		return
+	# 按当前 viewport_size + camera_zoom 算需要多少 tile 才能盖满屏
+	var vp_size: Vector2 = get_viewport_rect().size
+	var zoom: float = max(0.1, GameSettings.camera_zoom)
+	var need_w: int = int(ceil(vp_size.x / (zoom * float(TILE_SIZE)))) + BUFFER_TILES * 2
+	var need_h: int = int(ceil(vp_size.y / (zoom * float(TILE_SIZE)))) + BUFFER_TILES * 2
+	_cur_w = clampi(need_w, 32, MAX_W)
+	_cur_h = clampi(need_h, 32, MAX_H)
+	var half_w: int = _cur_w / 2
+	var half_h: int = _cur_h / 2
 	var px: int = int(floor(player.global_position.x / TILE_SIZE))
 	var py: int = int(floor(player.global_position.y / TILE_SIZE))
-	var x0: int = px - HALF_W
-	var y0: int = py - HALF_H
+	var x0: int = px - half_w
+	var y0: int = py - half_h
 	var torches: Array = _collect_torches()
-	var grid: Dictionary = TileLightGrid.compute_region(cm, x0, y0, x0 + W, y0 + H,
+	var grid: Dictionary = TileLightGrid.compute_region(cm, x0, y0, x0 + _cur_w, y0 + _cur_h,
 			Vector2i(px, py), torches)
 	global_position = Vector2(x0 * TILE_SIZE, y0 * TILE_SIZE)
-	# 批量构造像素字节 (RGBA): R=G=B=0, alpha 反映暗度
+	# 批量构造像素字节 — 用 MAX_W × MAX_H buffer, 但只填 _cur_w × _cur_h 区域
+	# (没填的边缘像素仍是 alpha=255 即全黑, 没关系因为 sprite 不会渲染超出 _cur_*)
 	var bytes := PackedByteArray()
-	bytes.resize(W * H * 4)
+	bytes.resize(MAX_W * MAX_H * 4)
+	# 先全 alpha=255 (黑) 再覆盖
+	for k in range(MAX_W * MAX_H):
+		bytes[k * 4 + 3] = 255
 	var max_l: float = float(TileLightGrid.MAX_LIGHT)
-	var i: int = 0
-	for y in range(H):
-		for x in range(W):
+	for y in range(_cur_h):
+		for x in range(_cur_w):
 			var light: int = int(grid.get(Vector2i(x0 + x, y0 + y), 0))
-			# alpha 0..255: 暗 = 1.0, 全亮 = 0.0
 			var a: int = clampi(int((1.0 - float(light) / max_l) * 255.0), 0, 255)
-			bytes[i] = 0       # R
-			bytes[i + 1] = 0   # G
-			bytes[i + 2] = 0   # B
-			bytes[i + 3] = a   # A
-			i += 4
-	# 一次性上传整个图像 (比 set_pixel 循环快 1-2 个数量级)
-	_img.set_data(W, H, false, Image.FORMAT_RGBA8, bytes)
+			var bi: int = (y * MAX_W + x) * 4
+			bytes[bi] = 0
+			bytes[bi + 1] = 0
+			bytes[bi + 2] = 0
+			bytes[bi + 3] = a
+	_img.set_data(MAX_W, MAX_H, false, Image.FORMAT_RGBA8, bytes)
 	texture.update(_img)
 
 
