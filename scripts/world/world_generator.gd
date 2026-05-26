@@ -16,26 +16,19 @@ const MOUNTAIN_NOISE_FREQ := 0.008
 const MOUNTAIN_BOOST := 0.40
 const MOUNTAIN_PIT_THRESHOLD := 0.12  # mountain_factor > 0.12 = 山区 (实测约占 16% 列)
 
-# Biome (生态群系) — 低频 noise 把世界分成大片区域 (100-300 列宽)
-# 5 种 biome 用单 noise + 阈值分段 (Spawn 附近偏移压到 FOREST 区间).
-# noise ∈ [-1, 1]:
-#   < -0.5         SNOW    雪原 (extremely cold)
-#   -0.5 ~ -0.20   JUNGLE  丛林
-#   -0.20 ~ 0.20   FOREST  森林 (默认, spawn 在此)
-#   0.20 ~ 0.50    SWAMP   沼泽
-#   > 0.50         DESERT  沙漠
+# Biome (生态群系) — 泰拉瑞亚风: 每种 biome 全世界只有一块, 固定方位.
+# 雪原+沙漠 在左远处, 丛林+沼泽 在右远处, spawn 周围是森林.
+# 各 biome 中心 X + 半宽 (世界坐标 tile). 中心位置加 seed jitter.
 const BIOME_FOREST := 0
 const BIOME_DESERT := 1
 const BIOME_SNOW := 2
 const BIOME_JUNGLE := 3
 const BIOME_SWAMP := 4
-const BIOME_NOISE_FREQ := 0.006        # 周期 ~167 列
-const BIOME_T_JUNGLE := -0.5           # noise < 此 → SNOW
-const BIOME_T_FOREST := -0.20          # noise [BIOME_T_JUNGLE, 此) → JUNGLE
-const BIOME_T_SWAMP := 0.20            # noise [BIOME_T_FOREST, 此) → FOREST
-const BIOME_T_DESERT := 0.50           # noise [BIOME_T_SWAMP, 此) → SWAMP; >= 此 → DESERT
-# Spawn 偏移: |wx| < SPAWN_FOREST_FALLOFF 时给 biome 噪声减一个值压到 FOREST 范围.
-const SPAWN_FOREST_FALLOFF := 60
+# 4 个固定 "槽位" (中心 X), 4 个 biome 用 seed shuffle 分到槽位.
+# 槽位都距 spawn>=300 列, 保证 spawn 周围是 forest. 槽位间距 600 防重叠.
+const _BIOME_SLOTS := [-1200, -600, 600, 1200]
+const _BIOME_SLOT_HALF_WIDTH := 175  # 每个 biome 半宽 (= 350 列宽)
+const _BIOME_CENTER_JITTER := 80     # 中心额外随机 ±80 列
 
 const BEDROCK_ROWS := 2          # 基岩占最底几行
 const SAND_THRESHOLD := 0.4      # sand_noise 超过此阈值的列为沙列
@@ -193,11 +186,8 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	mountain_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	mountain_noise.frequency = MOUNTAIN_NOISE_FREQ
 
-	# Biome noise: 决定列是森林还是沙漠 (大片连续区域)
-	var biome_noise := FastNoiseLite.new()
-	biome_noise.seed = world_seed + 6
-	biome_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	biome_noise.frequency = BIOME_NOISE_FREQ
+	# Biome centers: 4 个 biome 用 seed shuffle 分到 _BIOME_SLOTS, 每个 +- jitter
+	var biome_centers: Dictionary = _build_biome_centers(world_seed)
 
 	# 计算本 chunk 范围内每列的 heights (供地形 + 树木使用)
 	var chunk_start_x := chunk_x * chunk_width
@@ -216,9 +206,8 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
 		c.surfaces[local_x] = surf  # 给 ScenicDirector 等查询用
-		# Biome (5 种): SNOW / JUNGLE / FOREST / SWAMP / DESERT. Spawn 附近偏到 FOREST.
-		var biome_value: float = biome_noise.get_noise_1d(float(world_x)) + _spawn_forest_bias(world_x)
-		var biome_id: int = _biome_from_noise(biome_value)
+		# Biome (5 种): 走到固定区块就变, 否则默认 FOREST.
+		var biome_id: int = _biome_at_x(world_x, biome_centers)
 		var is_desert: bool = biome_id == BIOME_DESERT
 		# is_sand_col: 沙漠列整列沙, 或 forest 偶发零星沙窝
 		var is_sand_col: bool = is_desert or (biome_id == BIOME_FOREST and sand_noise.get_noise_1d(float(world_x)) > SAND_THRESHOLD)
@@ -659,8 +648,8 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 		var mtn: float = maxf(0.0, mountain_noise.get_noise_1d(float(spawn_x)))
 		if mtn > MOUNTAIN_PIT_THRESHOLD:
 			continue
-		# Spawn 附近也跳过 (玩家开局不能踩进露天洞)
-		if absi(spawn_x) < SPAWN_FOREST_FALLOFF:
+		# Spawn 附近也跳过 (玩家开局不能踩进露天洞). 距 0 < 60 列.
+		if absi(spawn_x) < 60:
 			continue
 
 		# === 找斜坡方向: 左/右哪边 surf 更高 (= 山坡上去的方向, 朝那里挖洞口) ===
@@ -745,27 +734,38 @@ static func _mountain_factor(world_x: int, world_seed: int) -> float:
 
 
 # 返回该列的 biome (5 种之一: BIOME_SNOW/JUNGLE/FOREST/SWAMP/DESERT).
-# 用单独的低频 noise (seed+6), 跟山区独立.
+# 4 个特殊 biome 每个全世界只有 1 块, 其余地方都是 FOREST.
 static func _biome_at(world_x: int, world_seed: int) -> int:
-	var n := FastNoiseLite.new()
-	n.seed = world_seed + 6
-	n.noise_type = FastNoiseLite.TYPE_PERLIN
-	n.frequency = BIOME_NOISE_FREQ
-	var v: float = n.get_noise_1d(float(world_x)) + _spawn_forest_bias(world_x)
-	return _biome_from_noise(v)
+	return _biome_at_x(world_x, _build_biome_centers(world_seed))
 
 
-# Noise 值 → biome id 分段. (公开给 chunk gen 内联用, 不再重建 noise 对象)
-static func _biome_from_noise(v: float) -> int:
-	if v < BIOME_T_JUNGLE:
-		return BIOME_SNOW
-	if v < BIOME_T_FOREST:
-		return BIOME_JUNGLE
-	if v < BIOME_T_SWAMP:
-		return BIOME_FOREST
-	if v < BIOME_T_DESERT:
-		return BIOME_SWAMP
-	return BIOME_DESERT
+# 内联版: chunk_gen 提前算好 centers 不再每列重建
+static func _biome_at_x(world_x: int, biome_centers: Dictionary) -> int:
+	for biome_id in biome_centers.keys():
+		var cx: int = biome_centers[biome_id]
+		if absi(world_x - cx) <= _BIOME_SLOT_HALF_WIDTH:
+			return biome_id
+	return BIOME_FOREST
+
+
+# 用 seed shuffle 4 个槽位给 4 个 biome, 每个加 jitter
+static func _build_biome_centers(world_seed: int) -> Dictionary:
+	# Fisher-Yates shuffle slots
+	var slots: Array = _BIOME_SLOTS.duplicate()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = world_seed * 1000003 + 7
+	for i in range(slots.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = slots[i]
+		slots[i] = slots[j]
+		slots[j] = tmp
+	# 分给 4 个 biome (顺序固定, 槽位 shuffle 决定每个 biome 落哪)
+	var biomes: Array = [BIOME_SNOW, BIOME_DESERT, BIOME_JUNGLE, BIOME_SWAMP]
+	var centers: Dictionary = {}
+	for k in biomes.size():
+		var jitter: int = rng.randi_range(-_BIOME_CENTER_JITTER, _BIOME_CENTER_JITTER)
+		centers[biomes[k]] = slots[k] + jitter
+	return centers
 
 
 # Biome → 地表 tile (y == surf 那行).
@@ -786,19 +786,6 @@ static func _biome_subsurface_tile(biome_id: int, is_sand_col: bool) -> int:
 	match biome_id:
 		BIOME_SWAMP: return Tiles.MUD  # 沼泽底下是泥
 		_: return Tiles.DIRT
-
-
-# Spawn 附近的森林偏移. 返回 ≤ 0 的值, 越靠近 wx=0 越负 → 加到 biome 噪声上压低到阈值以下.
-# wx=0: -1.0 (强制森林, 远低于任何噪声值)
-# wx=SPAWN_FOREST_FALLOFF (60): 0 (恢复噪声决定)
-# 线性渐变, 实现平滑过渡 (不是硬切).
-static func _spawn_forest_bias(world_x: int) -> float:
-	var d: int = absi(world_x)
-	if d >= SPAWN_FOREST_FALLOFF:
-		return 0.0
-	# 线性: 1.0 at wx=0, 0.0 at wx=SPAWN_FOREST_FALLOFF
-	var t: float = 1.0 - float(d) / float(SPAWN_FOREST_FALLOFF)
-	return -1.0 * t
 
 
 # 3 整数 → 64-bit 稳定 hash (worm RNG 种子). 不用内建 hash() 因为它对 int 输入返回值未指定.
