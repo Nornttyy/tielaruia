@@ -53,13 +53,19 @@ func _process(delta: float) -> void:
 
 
 func _on_spark() -> void:
-	var s = TorchSparkScene.instantiate()
-	var root: Node = get_tree().get_first_node_in_group("effects_root")
-	if root == null:
-		root = get_tree().current_scene
-	if root != null:
-		root.add_child(s)
-		s.setup(global_position + Vector2(randf_range(-1, 1), -7))
+	var spawn_pos: Vector2 = global_position + Vector2(randf_range(-1, 1), -7)
+	# 优先用 SparkPool (effects_root 下), 池满或没池 fallback 老 instantiate
+	var pool: Node = get_tree().get_first_node_in_group("spark_pool")
+	if pool != null and pool.has_method("request_spark"):
+		pool.request_spark(spawn_pos)
+	else:
+		var s = TorchSparkScene.instantiate()
+		var root: Node = get_tree().get_first_node_in_group("effects_root")
+		if root == null:
+			root = get_tree().current_scene
+		if root != null:
+			root.add_child(s)
+			s.setup(spawn_pos)
 	# 下一次 timer 随机
 	spark_timer.wait_time = randf_range(0.12, 0.20)
 	spark_timer.start()

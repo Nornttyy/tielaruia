@@ -78,6 +78,11 @@ func _ready() -> void:
 	terrain_layer.add_to_group("terrain_layer")
 	$EffectsRoot.add_to_group("effects_root")
 	add_to_group("world")   # 调试面板等系统用 get_first_node_in_group("world") 找到入口
+	# 火花对象池: 预分配 80 个 spark, 复用减 alloc
+	var SparkPoolClass = preload("res://scripts/fx/spark_pool.gd")
+	var sp = SparkPoolClass.new()
+	sp.name = "SparkPool"
+	$EffectsRoot.add_child(sp)
 	if world_seed == 0:
 		world_seed = randi()
 	chunk_manager = ChunkManagerClass.new()

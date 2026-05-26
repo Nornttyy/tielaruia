@@ -7,6 +7,7 @@ const LIFETIME := 0.8
 
 var velocity: Vector2 = Vector2.ZERO
 var _age: float = 0.0
+var _pool: Node = null   # 池实例化时设, 自己死时 pool.recycle(self) 回池. null 时 fallback queue_free
 
 
 # 入参:
@@ -14,6 +15,8 @@ var _age: float = 0.0
 # 颜色: 90% 在亮黄 → 暖橙间随机, 5% 红 (剩 5% 偏黄端 = lerp 接近 0)
 func setup(start_pos: Vector2) -> void:
 	global_position = start_pos
+	_age = 0.0   # 重置 (池复用时必须归零)
+	modulate.a = 1.0
 	var color: Color
 	var roll: float = randf()
 	if roll < 0.05:
@@ -34,4 +37,7 @@ func _physics_process(delta: float) -> void:
 		var t: float = (_age - LIFETIME * 0.5) / (LIFETIME * 0.5)
 		modulate.a = clamp(1.0 - t, 0.0, 1.0)
 	if _age >= LIFETIME:
-		queue_free()
+		if _pool != null and is_instance_valid(_pool):
+			_pool.recycle(self)
+		else:
+			queue_free()
