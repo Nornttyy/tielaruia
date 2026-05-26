@@ -136,31 +136,49 @@ func _ready() -> void:
 	var cursor_mgr := CursorManagerClass.new()
 	cursor_mgr.name = "CursorManager"
 	add_child(cursor_mgr)
-	# 联机: 已连上时生成 RemotePlayer 接收对方位置 + tile 同步
-	if NetworkManager != null and NetworkManager.connected():
+	# 联机: _ready 时已连上立刻接; 否则订阅 status_changed, 后续 host (游戏内) 也能触发.
+	if NetworkManager != null:
+		if not NetworkManager.status_changed.is_connected(_on_mp_status_changed):
+			NetworkManager.status_changed.connect(_on_mp_status_changed)
+		if NetworkManager.connected():
+			_setup_multiplayer_callbacks()
+
+
+# 进 connected 状态时调: 注册 remote_* 信号 + spawn RemotePlayer + host 广播 initial_state.
+# 幂等: is_connected 检查保证多次调不重复 connect.
+func _setup_multiplayer_callbacks() -> void:
+	if NetworkManager == null or not NetworkManager.connected():
+		return
+	if _remote_player == null:
 		_spawn_remote_player()
-		if not NetworkManager.remote_pos_received.is_connected(_on_remote_pos):
-			NetworkManager.remote_pos_received.connect(_on_remote_pos)
-		if not NetworkManager.remote_tile_received.is_connected(_on_remote_tile):
-			NetworkManager.remote_tile_received.connect(_on_remote_tile)
-		if not NetworkManager.remote_time_weather_received.is_connected(_on_remote_time_weather):
-			NetworkManager.remote_time_weather_received.connect(_on_remote_time_weather)
-		if not NetworkManager.initial_state_received.is_connected(_on_initial_state):
-			NetworkManager.initial_state_received.connect(_on_initial_state)
-		if not NetworkManager.remote_entity_pos_received.is_connected(_on_remote_entity_pos):
-			NetworkManager.remote_entity_pos_received.connect(_on_remote_entity_pos)
-		if not NetworkManager.remote_entity_die_received.is_connected(_on_remote_entity_die):
-			NetworkManager.remote_entity_die_received.connect(_on_remote_entity_die)
-		if not NetworkManager.remote_drop_pos_received.is_connected(_on_remote_drop_pos):
-			NetworkManager.remote_drop_pos_received.connect(_on_remote_drop_pos)
-		# host: 进 world 后立刻广播当前 chunk_deltas 给 client (Phase G)
-		if NetworkManager.is_host:
-			_mp_broadcast_initial_state.call_deferred()
-		# client: 如果 hello 之前 init_state 还没到, 先 hold; 到了就 _on_initial_state 应用
-		# 如果 init_state 早于 world _ready 到达, NetworkManager.pending_initial_deltas 有值, 这里立刻应用
-		elif not NetworkManager.pending_initial_deltas.is_empty():
-			_apply_initial_state(NetworkManager.pending_initial_deltas)
-			NetworkManager.pending_initial_deltas = {}
+	if not NetworkManager.remote_pos_received.is_connected(_on_remote_pos):
+		NetworkManager.remote_pos_received.connect(_on_remote_pos)
+	if not NetworkManager.remote_tile_received.is_connected(_on_remote_tile):
+		NetworkManager.remote_tile_received.connect(_on_remote_tile)
+	if not NetworkManager.remote_time_weather_received.is_connected(_on_remote_time_weather):
+		NetworkManager.remote_time_weather_received.connect(_on_remote_time_weather)
+	if not NetworkManager.initial_state_received.is_connected(_on_initial_state):
+		NetworkManager.initial_state_received.connect(_on_initial_state)
+	if not NetworkManager.remote_entity_pos_received.is_connected(_on_remote_entity_pos):
+		NetworkManager.remote_entity_pos_received.connect(_on_remote_entity_pos)
+	if not NetworkManager.remote_entity_die_received.is_connected(_on_remote_entity_die):
+		NetworkManager.remote_entity_die_received.connect(_on_remote_entity_die)
+	if not NetworkManager.remote_drop_pos_received.is_connected(_on_remote_drop_pos):
+		NetworkManager.remote_drop_pos_received.connect(_on_remote_drop_pos)
+	if not NetworkManager.remote_drop_pickup_received.is_connected(_on_remote_drop_pickup):
+		NetworkManager.remote_drop_pickup_received.connect(_on_remote_drop_pickup)
+	# host: 立刻广播 chunk_deltas (新 join 的 client 拿到这份现状)
+	if NetworkManager.is_host:
+		_mp_broadcast_initial_state.call_deferred()
+	# client: hello/init_state 若在 _ready 前到, 应用 pending
+	elif not NetworkManager.pending_initial_deltas.is_empty():
+		_apply_initial_state(NetworkManager.pending_initial_deltas)
+		NetworkManager.pending_initial_deltas = {}
+
+
+func _on_mp_status_changed(s: String) -> void:
+	if s == "connected":
+		_setup_multiplayer_callbacks()
 
 
 func _mp_broadcast_initial_state() -> void:
@@ -261,6 +279,8 @@ func _on_remote_drop_pos(ent_id: int, item_id: String, count: int, x: float, y: 
 			ent.item_id = item_id
 		if "count" in ent:
 			ent.count = count
+		if "ent_id" in ent:
+			ent.ent_id = ent_id   # client 端记 host 的 id, 捡时报回去
 		ent.set_meta("is_remote", true)
 		entities_root.add_child(ent)
 		_remote_entities[ent_id] = ent
@@ -268,8 +288,24 @@ func _on_remote_drop_pos(ent_id: int, item_id: String, count: int, x: float, y: 
 		(ent as Node2D).global_position = Vector2(x, y)
 
 
+# 对端 (client) 捡了一个 drop → 在本端找同 id 的 drop, queue_free
+func _on_remote_drop_pickup(ent_id: int) -> void:
+	# host 这边: 找 item_drops 组里 entity_id_for(d) == ent_id 的, 删
+	for d in get_tree().get_nodes_in_group("item_drops"):
+		if d.has_meta("is_remote"):
+			continue
+		if NetworkManager.entity_id_for(d) == ent_id:
+			d.queue_free()
+			return
+
+
 func _on_remote_tile(x: int, y: int, tile_id: int) -> void:
 	# 对方挖/放方块 → 本地应用, 不再广播 (from_remote=true)
+	# 水类 tile 走 fast path (跳过 darkness/lighting 防卡帧)
+	if tile_id == Tiles.WATER or tile_id == Tiles.WATER_L1 \
+			or tile_id == Tiles.WATER_L2 or tile_id == Tiles.WATER_L3:
+		_set_water_tile_fast(x, y, tile_id, true)
+		return
 	_set_tile(x, y, tile_id, true)
 
 
@@ -793,7 +829,8 @@ func _fix_cactus_at(x: int, y: int) -> void:
 
 # 水专用 fast path: 跳过 autotile/darkness/lighting/cactus/sky 等水改不影响的子系统.
 # water_sim 每 tick 调几百次, 走完整 _set_tile 会卡帧 (darkness recompute 17x17 × 数百次).
-func _set_water_tile_fast(x: int, y: int, tile_id: int) -> void:
+# 联机: host 改水时广播给 client; client 收到通过 _on_remote_tile 走完整 _set_tile.
+func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = false) -> void:
 	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
 		return
 	chunk_manager.set_tile(x, y, tile_id)
@@ -802,5 +839,8 @@ func _set_water_tile_fast(x: int, y: int, tile_id: int) -> void:
 		terrain_layer.set_cell(pos, -1)
 	else:
 		terrain_layer.set_cell(pos, tile_id, Vector2i.ZERO)
+	# host 广播给 client (但不接收方再回播, 避免回声)
+	if not from_remote and NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_tile_change(x, y, tile_id)
 	if water_sim != null:
 		water_sim.notify_tile_changed(x, y)

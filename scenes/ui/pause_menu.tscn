@@ -20,9 +20,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -120.0
-offset_top = -100.0
+offset_top = -140.0
 offset_right = 120.0
-offset_bottom = 100.0
+offset_bottom = 140.0
 theme_override_constants/separation = 16
 
 [node name="TitleLabel" type="Label" parent="VBox"]
@@ -35,6 +35,10 @@ theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
 custom_minimum_size = Vector2(240, 40)
 text = "继续游戏"
 
+[node name="MultiplayerButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(240, 40)
+text = "多人游戏"
+
 [node name="ReturnToMenuButton" type="Button" parent="VBox"]
 custom_minimum_size = Vector2(240, 40)
 text = "回主菜单"
@@ -42,3 +46,54 @@ text = "回主菜单"
 [node name="QuitButton" type="Button" parent="VBox"]
 custom_minimum_size = Vector2(240, 40)
 text = "退出游戏"
+
+[node name="HostPanel" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -160.0
+offset_right = 200.0
+offset_bottom = 160.0
+visible = false
+
+[node name="VBox" type="VBoxContainer" parent="HostPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+theme_override_constants/separation = 14
+
+[node name="TitleLabel" type="Label" parent="HostPanel/VBox"]
+text = "多人游戏"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
+
+[node name="HintLabel" type="Label" parent="HostPanel/VBox"]
+text = "把房间码发给朋友, 他在主菜单 加入房间 输入即可"
+horizontal_alignment = 1
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="RoomCodeLabel" type="Label" parent="HostPanel/VBox"]
+text = "------"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
+
+[node name="StatusLabel" type="Label" parent="HostPanel/VBox"]
+text = "正在生成房间码..."
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="CloseButton" type="Button" parent="HostPanel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+text = "返回"

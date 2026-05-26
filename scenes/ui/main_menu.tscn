@@ -118,7 +118,7 @@ visible = false
 
 [node name="Button" type="Button" parent="ButtonLayer/VBox/MultiplayerRow"]
 custom_minimum_size = Vector2(240, 44)
-text = "联机"
+text = "加入房间"
 
 [node name="SettingsRow" type="HBoxContainer" parent="ButtonLayer/VBox"]
 theme_override_constants/separation = 6
@@ -400,27 +400,17 @@ offset_bottom = -24.0
 theme_override_constants/separation = 14
 
 [node name="TitleLabel" type="Label" parent="MultiplayerPanel/VBox"]
-text = "联 机"
+text = "加入房间"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
 
 [node name="StatusLabel" type="Label" parent="MultiplayerPanel/VBox"]
-text = "选择 创建房间 或 加入房间"
+text = "输入朋友给的 6 位房间码"
 horizontal_alignment = 1
 autowrap_mode = 2
 theme_override_font_sizes/font_size = 13
 theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
-
-[node name="HostButton" type="Button" parent="MultiplayerPanel/VBox"]
-custom_minimum_size = Vector2(0, 36)
-text = "创建房间"
-
-[node name="RoomCodeLabel" type="Label" parent="MultiplayerPanel/VBox"]
-text = ""
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 28
-theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
 
 [node name="JoinRow" type="HBoxContainer" parent="MultiplayerPanel/VBox"]
 theme_override_constants/separation = 8

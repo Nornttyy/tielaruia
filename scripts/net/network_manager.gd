@@ -30,6 +30,7 @@ signal initial_state_received(chunk_deltas: Dictionary)  # host 进游戏后广�
 signal remote_entity_pos_received(ent_id: int, kind: String, x: float, y: float, hp: int)  # 实体位置 (Phase E)
 signal remote_entity_die_received(ent_id: int)  # 实体死亡 (Phase E)
 signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
+signal remote_drop_pickup_received(ent_id: int)  # 对端捡了某个 drop → 本端删
 
 const POLL_INTERVAL := 0.1  # 每 0.1s 拉一次 status + messages
 const POS_SEND_INTERVAL := 0.1  # 玩家位置每 0.1s 发一次 (10Hz)
@@ -133,6 +134,10 @@ func _route_message(raw: String) -> void:
 			var dx: float = float(data.get("x", 0.0))
 			var dy: float = float(data.get("y", 0.0))
 			remote_drop_pos_received.emit(did2, iid, cnt, dx, dy)
+		"drop_pick":
+			# 对端捡了 ent_id, 本端删本地副本
+			var pid: int = int(data.get("id", 0))
+			remote_drop_pickup_received.emit(pid)
 		"pos":
 			var x: float = float(data.get("x", 0.0))
 			var y: float = float(data.get("y", 0.0))
@@ -150,7 +155,7 @@ func _route_message(raw: String) -> void:
 			remote_time_weather_received.emit(t, w)
 
 
-func host() -> void:
+func host(p_seed: int = 0) -> void:
 	if _bridge == null:
 		_try_reload_bridge()
 	if _bridge == null:
@@ -158,8 +163,8 @@ func host() -> void:
 		return
 	is_host = true
 	my_room_code = ""
-	# 生成共享 seed (host 决定, 之后 send_hello 告诉 client)
-	shared_world_seed = randi_range(1, 999999)
+	# 共享 seed: 由调用方传 (游戏内 host 用当前世界 seed); 0 = 让 NM 随机生
+	shared_world_seed = p_seed if p_seed != 0 else randi_range(1, 999999)
 	_bridge.host()
 
 
@@ -225,6 +230,10 @@ func send_drop_pos(ent_id: int, item_id: String, count: int, x: float, y: float)
 # get_instance_id() 是 int64, 取低 28 位避免 JSON 大数精度问题.
 static func entity_id_for(node: Object) -> int:
 	return int(node.get_instance_id()) & 0xFFFFFFF
+
+
+func send_drop_pickup(ent_id: int) -> void:
+	send(JSON.stringify({"type": "drop_pick", "id": ent_id}))
 
 
 func send_tile_change(x: int, y: int, tile_id: int) -> void:
