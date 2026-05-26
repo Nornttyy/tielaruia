@@ -309,6 +309,9 @@ const _ZH_NAMES := {
 	"jungle_grass": "丛林草",
 	"mud": "泥",
 	"swamp_grass": "沼泽草",
+	"wood_platform": "木平台",
+	"wood_wall": "木墙",
+	"stone_wall": "石墙",
 }
 
 

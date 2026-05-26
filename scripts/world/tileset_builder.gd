@@ -38,8 +38,9 @@ static func build() -> TileSet:
 		Tiles.WATER_L1, Tiles.WATER_L2, Tiles.WATER_L3,
 		Tiles.CHEST,
 		Tiles.DOOR_TOP,
-		# 新群系 tile
+		# 新群系 tile + 平台
 		Tiles.SNOW, Tiles.ICE, Tiles.JUNGLE_GRASS, Tiles.MUD, Tiles.SWAMP_GRASS,
+		Tiles.WOOD_PLATFORM,
 	]
 	for tile_id in tile_ids:
 		var source := TileSetAtlasSource.new()
@@ -77,6 +78,17 @@ static func build() -> TileSet:
 				dprops.set_collision_polygon_points(1, 0, PackedVector2Array([
 					Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8),
 				]))
+			elif tile_id == Tiles.WOOD_PLATFORM:
+				# 平台: 顶端一条薄碰撞 + one_way=true → 只能从上面落下来站住,
+				# 下面跳不上来 (从下穿过). Terraria 风
+				var pprops = source.get_tile_data(Vector2i.ZERO, 0)
+				pprops.add_collision_polygon(0)
+				# Polygon 在 tile 顶端 y=-8 处一条薄条带 (高 3 px), 给玩家落脚.
+				# one_way: polygon 法线方向只有"顶 → 底"方向算碰撞 (从上落下被挡)
+				pprops.set_collision_polygon_points(0, 0, PackedVector2Array([
+					Vector2(-8, -8), Vector2(8, -8), Vector2(8, -5), Vector2(-8, -5),
+				]))
+				pprops.set_collision_polygon_one_way(0, 0, true)
 			# 水 (4 个水位) 都启用 4 帧动画
 			if tile_id == Tiles.WATER or tile_id == Tiles.WATER_L1 \
 					or tile_id == Tiles.WATER_L2 or tile_id == Tiles.WATER_L3:

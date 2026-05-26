@@ -364,6 +364,21 @@ func try_place() -> bool:
 	var tile: Vector2i = aim_tile_coord()
 	if not in_reach(tile):
 		return false
+	# === 墙 (wall item): 放进 wall_layer, 不挡走路. 跟方块独立放置规则 ===
+	if ItemDB.is_wall(slot.item_id):
+		var w_node: Node = terrain.get_parent()
+		var wall_layer: TileMapLayer = w_node.get_node_or_null("WallLayer") if w_node != null else null
+		if wall_layer == null:
+			return false
+		# 已经有墙 → 不重叠放
+		if wall_layer.get_cell_source_id(tile) != -1:
+			return false
+		var w_def = ItemDB.get_def(slot.item_id)
+		wall_layer.set_cell(tile, w_def.placeable_tile_id, Vector2i.ZERO)
+		inv.consume_current(1)
+		Effects.spawn_place_bounce(tile, w_def.placeable_tile_id)
+		SfxBank.play("place", 0.10)
+		return true
 	# 目标必须为空气 (或水, 水可以被填掉 — 玩家用方块塞水)
 	var target_src: int = terrain.get_cell_source_id(tile)
 	var is_water: bool = target_src == Tiles.WATER or target_src == Tiles.WATER_L1 \

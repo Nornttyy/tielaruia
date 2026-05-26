@@ -279,6 +279,40 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# === 平台 + 墙 ===
+	# 木平台: 2 planks 横排 → 4 个平台
+	{
+		"id": "wood_platform",
+		"grid_size": Vector2i(2, 1),
+		"pattern": [
+			["planks", "planks"],
+		],
+		"output_id": "wood_platform",
+		"output_count": 4,
+		"mirror_ok": true,
+	},
+	# 木墙: 1 planks → 4 木墙
+	{
+		"id": "wood_wall",
+		"grid_size": Vector2i(1, 1),
+		"pattern": [
+			["planks"],
+		],
+		"output_id": "wood_wall",
+		"output_count": 4,
+		"mirror_ok": true,
+	},
+	# 石墙: 1 stone → 4 石墙
+	{
+		"id": "stone_wall",
+		"grid_size": Vector2i(1, 1),
+		"pattern": [
+			["stone"],
+		],
+		"output_id": "stone_wall",
+		"output_count": 4,
+		"mirror_ok": true,
+	},
 ]
 
 

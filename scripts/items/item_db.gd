@@ -52,6 +52,10 @@ const _DEFS := {
 	"jungle_grass":  {"placeable_tile_id": Tiles.JUNGLE_GRASS,     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"mud":           {"placeable_tile_id": Tiles.MUD,              "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"swamp_grass":   {"placeable_tile_id": Tiles.SWAMP_GRASS,      "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
+	# 平台 + 墙. is_wall=true 时 try_place 放到 wall_layer 而不是 terrain_layer.
+	"wood_platform": {"placeable_tile_id": Tiles.WOOD_PLATFORM,    "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
+	"wood_wall":     {"placeable_tile_id": Tiles.DIRT_WALL,        "tool_kind": "",        "tool_tier": 0, "max_stack": 99, "is_wall": true},
+	"stone_wall":    {"placeable_tile_id": Tiles.STONE_WALL,       "tool_kind": "",        "tool_tier": 0, "max_stack": 99, "is_wall": true},
 }
 
 
@@ -77,3 +81,9 @@ func is_food(item_id: String) -> bool:
 func food_fill(item_id: String) -> int:
 	var def = get_def(item_id)
 	return 0 if def == null else def.get("food_fill", 0)
+
+
+# 是否墙类物品 (放进 wall_layer, 不阻挡走路, 但能给方块"支撑"靠它)
+func is_wall(item_id: String) -> bool:
+	var def = get_def(item_id)
+	return def != null and def.get("is_wall", false)

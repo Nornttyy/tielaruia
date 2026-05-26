@@ -49,6 +49,8 @@ const ICE := 40             # 冰块 (雪原零星), 半透明蓝
 const JUNGLE_GRASS := 41    # 丛林地表, 深绿带湿气黄绿斑
 const MUD := 42             # 沼泽泥土 (替代 DIRT 在沼泽), 棕黑色
 const SWAMP_GRASS := 43     # 沼泽地表, 深灰绿带泥点
+# 平台: 站上面 + 下方能穿过 (单向碰撞). Terraria 风
+const WOOD_PLATFORM := 44
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -289,6 +291,12 @@ const _PROPS := {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["mud", 100, 1, 1]],
+	},
+	# 平台: solid=false (走路不阻挡), tileset_builder 单独加 one_way 碰撞
+	WOOD_PLATFORM: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["wood_platform", 100, 1, 1]],
 	},
 }
 
