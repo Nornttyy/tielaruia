@@ -19,7 +19,7 @@ const LoadingScreenScene = preload("res://scenes/ui/loading_screen.tscn")
 var _state: String = "menu"
 var _game_nodes: Array[Node] = []
 # 自动存档: 每 AUTO_SAVE_INTERVAL 秒保存一次. 玩游戏时启动 Timer.
-const AUTO_SAVE_INTERVAL := 30.0
+const AUTO_SAVE_INTERVAL := 1.0   # 每秒自动存档 (用户要求实时, 不再 30s)
 var _autosave_timer: Timer = null
 
 var world: Node2D:
