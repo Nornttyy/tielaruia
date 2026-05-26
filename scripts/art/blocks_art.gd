@@ -766,6 +766,26 @@ const _WORKBENCH := [
 	"kkkkkkkkkkkkkkkk",
 ]
 
+# 箱子 (CHEST): 16x16, 上盖 + 金属包带 + 锁孔
+const _CHEST := [
+	"................",
+	".kkkkkkkkkkkkkk.",
+	".kmmwwwwwwwwmmk.",
+	".kmwlwwwwwwlwmk.",
+	".kmwwwwwwwwwwmk.",
+	".kkkkkkkkkkkkkk.",
+	".kwwwwwmmwwwwwk.",
+	".kwlwwwmomwwwlk.",
+	".kwwwwwmmwwwwwk.",
+	".kwwwwwwwwwwwwk.",
+	".kwlwwwWWwwwlwk.",
+	".kwwwwwwwwwwwwk.",
+	".kWWwwwwwwwwWWk.",
+	".kmmwwwwwwwwmmk.",
+	".kkkkkkkkkkkkkk.",
+	"................",
+]
+
 # 门 (关) — 占 1 tile，门顶用 Door scene 上方延伸
 const _DOOR_CLOSED := [
 	"DDDDDDDDDDDDDDDD",
@@ -1230,6 +1250,7 @@ const _PATTERN_MAP := {
 	WATER_L1: [_WATER, _P_WATER],
 	WATER_L2: [_WATER, _P_WATER],
 	WATER_L3: [_WATER, _P_WATER],
+	CHEST: [_CHEST, _P_CHEST],
 }
 
 

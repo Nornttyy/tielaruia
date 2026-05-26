@@ -302,7 +302,6 @@ func _setup_buttons() -> void:
 		{"row": "NewGameRow", "callback": _on_new_game_pressed},
 		{"row": "MultiplayerRow", "callback": _on_multiplayer_pressed},
 		{"row": "SettingsRow", "callback": _on_settings_pressed},
-		{"row": "QuitRow", "callback": _on_quit_pressed},
 	]
 	for entry in rows:
 		var row_name: String = entry["row"]
@@ -511,10 +510,6 @@ func _on_settings_pressed() -> void:
 func _on_settings_back_pressed() -> void:
 	$SettingsPanel.visible = false
 	$ButtonLayer/VBox.visible = true
-
-
-func _on_quit_pressed() -> void:
-	get_tree().quit()
 
 
 # ---- settings panel ----

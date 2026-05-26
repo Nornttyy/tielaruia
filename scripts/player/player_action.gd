@@ -236,6 +236,13 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	if tid == Tiles.LOG and _is_tree_base(world, tile.x, tile.y):
 		_cascade_chop_tree(world, tile, tool_kind)
 		return
+	# 砍 chest: 内容物先撒出来 (不丢)
+	if tid == Tiles.CHEST:
+		var contents: Array = ChestStorage.clear(tile)
+		for s in contents:
+			if s != null:
+				for _i in s.count:
+					_spawn_drop(s.item_id, tile)
 	# 普通破: 单格
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, Tiles.AIR)
@@ -486,6 +493,19 @@ func _update_eat_or_place(delta: float) -> void:
 		if player_node != null and player_node.has_method("fire_grappling_hook"):
 			player_node.fire_grappling_hook(player_node.get_global_mouse_position())
 		return
+
+	# 右键刚按下 + 鼠标对准的 tile 是 CHEST → 打开箱子面板 (优先级高于放置/吃)
+	if just:
+		var aim_tile: Vector2i = aim_tile_coord()
+		if in_reach(aim_tile):
+			var terrain := _terrain()
+			if terrain != null and terrain.get_cell_source_id(aim_tile) == Tiles.CHEST:
+				var cp: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
+				if cp == null:
+					cp = get_tree().root.find_child("ChestPanel", true, false)
+				if cp != null and cp.has_method("open"):
+					cp.open(aim_tile, inv)
+				return
 
 	# 持食物 + 按住 + 没吃饱 → 进入/保持 eating
 	if holding_food and held and hunger != null and int(hunger.current) < hunger.MAX:

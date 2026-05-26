@@ -49,6 +49,7 @@ func save(main: Node) -> bool:
 	data.spawn_point = world.spawn_point
 	data.chunk_deltas = _serialize_chunk_deltas(world.chunk_manager)
 	data.entities = _serialize_entities()
+	data.chest_contents = ChestStorage.dump()
 	var player: Node2D = world.get_player()
 	if player != null:
 		data.player_position = player.global_position

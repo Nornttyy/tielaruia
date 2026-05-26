@@ -33,6 +33,7 @@ SaveManager="*res://scripts/save/save_manager.gd"
 SfxBank="*res://scripts/audio/sfx_bank.gd"
 MusicBank="*res://scripts/audio/music_bank.gd"
 NetworkManager="*res://scripts/net/network_manager.gd"
+ChestStorage="*res://scripts/autoload/chest_storage.gd"
 
 [display]
 

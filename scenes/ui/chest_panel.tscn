@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://b6teilaruiachestp"]
+
+[ext_resource type="Script" path="res://scripts/ui/chest_panel.gd" id="1_cp"]
+
+[node name="ChestPanel" type="CanvasLayer"]
+layer = 50
+process_mode = 3
+script = ExtResource("1_cp")

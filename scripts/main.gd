@@ -8,6 +8,7 @@ const DebugHudScene = preload("res://scenes/ui/debug_hud.tscn")
 const FloatingPromptScene = preload("res://scenes/ui/floating_prompt.tscn")
 const HudScene = preload("res://scenes/ui/hud.tscn")
 const CraftingPanelScene = preload("res://scenes/ui/crafting_panel.tscn")
+const ChestPanelScene = preload("res://scenes/ui/chest_panel.tscn")
 const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
 
 @onready var _main_menu: CanvasLayer = $MainMenu
@@ -84,6 +85,11 @@ func _start_game(seed_or_opts = 0) -> void:
 	add_child(crafting)
 	_game_nodes.append(crafting)
 
+	var chest = ChestPanelScene.instantiate()
+	chest.name = "ChestPanel"
+	add_child(chest)
+	_game_nodes.append(chest)
+
 	var floating = FloatingPromptScene.instantiate()
 	floating.add_to_group("floating_prompt")
 	add_child(floating)
@@ -142,6 +148,9 @@ func _apply_save_data(data: Resource) -> void:
 		return
 	# 恢复玩家挖/放的 chunk 改动 (写 _deltas, 之后 chunk 加载时会应用)
 	SaveManager.apply_chunk_deltas(w.chunk_manager, data.chunk_deltas)
+	# 恢复箱子内容 (24 格 × 每个 chest tile)
+	if "chest_contents" in data:
+		ChestStorage.restore(data.chest_contents)
 	# 把已经加载的 chunk 也重新刷一遍 tile 视觉 — 简单做法: 让 chunk_manager 重载
 	# 否则玩家挖过的方块在 load 时不会显示
 	for cx in data.chunk_deltas.keys():

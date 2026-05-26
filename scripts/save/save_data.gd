@@ -15,3 +15,5 @@ class_name SaveData extends Resource
 @export var chunk_deltas: Dictionary = {}
 # 实体快照: [{"type": "slime"|"villager"|"item_drop", "position": Vector2, ...}]
 @export var entities: Array = []
+# 箱子内容: "x,y" (tile world coord) → Array<24>{item_id, count} or null
+@export var chest_contents: Dictionary = {}
