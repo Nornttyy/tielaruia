@@ -1,4 +1,4 @@
-# 暂停菜单: ESC 切换, 主面板 4 按钮 (继续 / 多人游戏 / 回主菜单 / 退出).
+# 暂停菜单: ESC 切换, 主面板 3 按钮 (继续 / 多人游戏 / 回主菜单).
 # 多人游戏 → 子面板 HostPanel: 自动 host 当前世界, 显示 6 位房间码给朋友.
 # CanvasLayer process_mode = ALWAYS, 暂停时仍响应输入.
 # 由 main.gd 监听 ui_pause action 调 toggle.
@@ -9,7 +9,6 @@ signal return_to_menu
 @onready var _resume_button: Button = $VBox/ResumeButton
 @onready var _multiplayer_button: Button = $VBox/MultiplayerButton
 @onready var _return_button: Button = $VBox/ReturnToMenuButton
-@onready var _quit_button: Button = $VBox/QuitButton
 @onready var _vbox: VBoxContainer = $VBox
 @onready var _host_panel: Panel = $HostPanel
 @onready var _room_code_label: Label = $HostPanel/VBox/RoomCodeLabel
@@ -22,7 +21,6 @@ func _ready() -> void:
 	_resume_button.pressed.connect(_on_resume_pressed)
 	_multiplayer_button.pressed.connect(_on_multiplayer_pressed)
 	_return_button.pressed.connect(_on_return_to_menu_pressed)
-	_quit_button.pressed.connect(_on_quit_pressed)
 	_close_button.pressed.connect(_on_host_close_pressed)
 	# NetworkManager 信号 (autoload, 一直在). 用 host 反馈房间码 + 状态.
 	if NetworkManager != null:
@@ -63,10 +61,6 @@ func _on_return_to_menu_pressed() -> void:
 	if NetworkManager != null and NetworkManager.status != "idle":
 		NetworkManager.disconnect_room()
 	return_to_menu.emit()
-
-
-func _on_quit_pressed() -> void:
-	get_tree().quit()
 
 
 # ----- 多人游戏 (host 模式) -----
