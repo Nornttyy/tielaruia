@@ -78,3 +78,30 @@ func test_set_progress_fill_width_proportional():
 	var fill: ColorRect = ls.get_node("ProgressBg/ProgressFill")
 	# fill.size.x ≈ (bg.size.x - 4) * 0.5 (留 2px 内边距, 允许 1px 误差)
 	assert_almost_eq(fill.size.x, (bg.size.x - 4.0) * 0.5, 1.0)
+
+
+func test_tip_button_exists_with_label():
+	var ls = _make()
+	await get_tree().process_frame
+	var btn: Button = ls.get_node_or_null("TipButton")
+	assert_not_null(btn, "TipButton 应存在")
+	var tip_label: Label = btn.get_node_or_null("TipLabel")
+	assert_not_null(tip_label, "TipLabel 应存在")
+	assert_true(tip_label.text.length() > 0, "初始就应有一条贴士")
+
+
+func test_clicking_tip_button_advances_to_next_tip():
+	var ls = _make()
+	await get_tree().process_frame
+	var tip_label: Label = ls.get_node("TipButton/TipLabel")
+	var first: String = tip_label.text
+	ls._on_tip_pressed()
+	await get_tree().process_frame
+	var second: String = tip_label.text
+	assert_ne(first, second, "点击后应换贴士")
+
+
+func test_tips_pool_has_20_entries():
+	var ls = _make()
+	await get_tree().process_frame
+	assert_eq(ls.TIPS.size(), 20, "贴士池应 20 条")

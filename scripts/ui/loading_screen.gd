@@ -11,12 +11,41 @@ const BAR_BG_COLOR := Color8(58, 42, 26)
 const BAR_BORDER := Color8(212, 181, 138)
 const BAR_FILL_COLOR := Color8(255, 180, 110)
 const TEXT_WARM := Color8(242, 194, 101)
+const TIP_AUTO_INTERVAL := 4.0
+const TIP_HINT_SUFFIX := "    (点击换一条)"
+const TIPS: PackedStringArray = [
+	"小贴士: 按 A / D 左右移动",
+	"小贴士: 按 空格 跳跃",
+	"小贴士: 按住 鼠标左键 挖方块",
+	"小贴士: 鼠标右键 (或 F) 放方块 / 吃食物",
+	"小贴士: 按 E 和村民聊天",
+	"小贴士: 按 数字 1-9 切换热键栏",
+	"小贴士: 走到工作台前点一下打开合成",
+	"小贴士: 砍树就能拿到木头",
+	"小贴士: 挖矿要用更好的镐子",
+	"小贴士: 火把可以照亮山洞",
+	"小贴士: 晚上小心僵尸出没!",
+	"小贴士: slime 弱, 适合新手练习",
+	"小贴士: 牛 / 羊 / 猪 可以打掉拿肉",
+	"小贴士: 肚子饿了记得吃东西",
+	"小贴士: 按 Esc 暂停游戏",
+	"小贴士: 下雨天会让水变多",
+	"小贴士: 闪电过后空气会更清新",
+	"小贴士: 萤火虫只在晚上出来",
+	"小贴士: 死了会在出生点复活, 掉的东西在原地",
+	"小贴士: 看到流星记得许愿",
+]
 
 var _progress_bg: Panel
 var _progress_fill: ColorRect
 var _stage_label: Label
 var _percent_label: Label
 var _progress_tween: Tween
+var _tip_button: Button
+var _tip_label: Label
+var _tips_shuffled: Array[String] = []
+var _tip_idx: int = 0
+var _tip_timer: Timer
 
 
 func _ready() -> void:
@@ -25,6 +54,7 @@ func _ready() -> void:
 	_setup_player_runner()
 	_setup_progress_bar()
 	_setup_labels()
+	_setup_tip()
 
 
 # 暮色渐变, 复用 main_menu 的色板 (顶深紫 → 暮色橙红 → 金橙 → 暖肉粉)
@@ -161,3 +191,50 @@ func set_progress(percent: float, stage_text: String) -> void:
 	_progress_tween.tween_property(
 		_progress_fill, "size:x", target_w, 0.2
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+# 小贴士: 启动 shuffle 一次顺序, 每 4s 自动切下一条, 点击也切 (+ 重置 timer)
+func _setup_tip() -> void:
+	_tips_shuffled.clear()
+	for t in TIPS:
+		_tips_shuffled.append(t)
+	_tips_shuffled.shuffle()
+
+	_tip_button = Button.new()
+	_tip_button.name = "TipButton"
+	_tip_button.flat = true
+	_tip_button.focus_mode = Control.FOCUS_NONE
+	_tip_button.size = Vector2(VIEWPORT_SIZE.x, 40)
+	_tip_button.position = Vector2(0, VIEWPORT_SIZE.y * 0.85)
+	add_child(_tip_button)
+
+	_tip_label = Label.new()
+	_tip_label.name = "TipLabel"
+	_tip_label.add_theme_color_override("font_color", TEXT_WARM)
+	_tip_label.add_theme_font_size_override("font_size", 18)
+	_tip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_tip_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_tip_label.size = _tip_button.size
+	_tip_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tip_button.add_child(_tip_label)
+	_show_current_tip()
+
+	_tip_button.pressed.connect(_on_tip_pressed)
+
+	_tip_timer = Timer.new()
+	_tip_timer.wait_time = TIP_AUTO_INTERVAL
+	_tip_timer.one_shot = false
+	_tip_timer.autostart = true
+	add_child(_tip_timer)
+	_tip_timer.timeout.connect(_on_tip_pressed)
+
+
+func _show_current_tip() -> void:
+	_tip_label.text = _tips_shuffled[_tip_idx] + TIP_HINT_SUFFIX
+
+
+func _on_tip_pressed() -> void:
+	_tip_idx = (_tip_idx + 1) % _tips_shuffled.size()
+	_show_current_tip()
+	if _tip_timer != null:
+		_tip_timer.start()  # 重置 4 秒自动计时
