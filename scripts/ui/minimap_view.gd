@@ -40,6 +40,31 @@ const _TILE_COLORS := {
 	Tiles.SLIME_TORCH:   Color8(160, 230, 110),  # 史莱姆灯黄绿
 	Tiles.COAL_ORE:      Color8(45, 40, 38),     # 煤近黑
 	Tiles.IRON_ORE:      Color8(210, 140, 80),   # 铁锈橙
+	# 新矿
+	Tiles.COPPER_ORE:    Color8(195, 110, 60),   # 铜橙红
+	Tiles.TIN_ORE:       Color8(195, 195, 175),  # 锡浅灰
+	Tiles.GOLD_ORE:      Color8(230, 200, 60),   # 金黄
+	Tiles.DIAMOND_ORE:   Color8(140, 220, 235),  # 钻石冰蓝
+	Tiles.HELL_CRYSTAL:  Color8(200, 60, 90),    # 地狱晶体血红
+	Tiles.WATER:         Color8(60, 100, 170),   # 水蓝
+	Tiles.CHEST:         Color8(180, 120, 60),   # 箱子棕黄
+	# 群系
+	Tiles.SNOW:          Color8(230, 240, 250),  # 雪白蓝
+	Tiles.ICE:           Color8(150, 200, 230),  # 冰蓝
+	Tiles.JUNGLE_GRASS:  Color8(50, 130, 50),    # 丛林深绿
+	Tiles.JUNGLE_DIRT:   Color8(95, 90, 50),     # 丛林泥
+	Tiles.JUNGLE_LEAVES: Color8(35, 110, 45),    # 丛林叶
+	Tiles.SWAMP_GRASS:   Color8(90, 110, 80),    # 沼泽灰绿
+	Tiles.MUD:           Color8(75, 55, 40),     # 泥
+	Tiles.SNOW_DIRT:     Color8(140, 145, 160),  # 冻土灰蓝
+	# 平台 + 墙 + 绳
+	Tiles.WOOD_PLATFORM: Color8(170, 130, 80),   # 木平台
+	Tiles.GRASS_WALL:    Color8(45, 75, 35),     # 草墙
+	Tiles.DIRT_WALL:     Color8(60, 45, 30),     # 土墙
+	Tiles.STONE_WALL:    Color8(60, 60, 60),     # 石墙
+	Tiles.ROPE:          Color8(130, 95, 60),    # 绳子
+	Tiles.CACTUS:        Color8(80, 140, 70),    # 仙人掌
+	Tiles.CACTUS_BODY:   Color8(70, 125, 60),
 }
 
 const _UNEXPLORED_COLOR := Color8(0, 0, 0, 200)
