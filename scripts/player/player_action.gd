@@ -95,9 +95,10 @@ func _physics_process(delta: float) -> void:
 	if _crafting_open():
 		return
 	_attack_cooldown = max(0.0, _attack_cooldown - delta)
-	# 持剑 LMB → 攻击, 否则 LMB → 挖
-	if _current_tool_kind() == "sword":
-		_reset_mining()  # 切到剑时清挖进度
+	# 持剑 LMB → 戳/挥交替; 持镐 → 鼠标对方块挖矿, 否则附近有怪就攻击; 其他 → 挖
+	var kind: String = _current_tool_kind()
+	if kind == "sword":
+		_reset_mining()
 		var primary_pressed: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed and _attack_cooldown <= 0.0:
 			# combo: 0 = 下一击戳, 1 = 下一击挥, 然后翻转
@@ -107,6 +108,15 @@ func _physics_process(delta: float) -> void:
 			else:
 				_sweep_sword()
 				_attack_combo_step = 0
+	elif kind == "pickaxe":
+		# 优先级: 鼠标对方块 → 挖矿; 否则 鼠标附近有怪 → 攻击
+		if _mouse_on_mineable_tile():
+			_update_mining(delta)
+		else:
+			_reset_mining()
+			var primary_pressed_p: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
+			if primary_pressed_p and _attack_cooldown <= 0.0 and _mouse_has_enemy_nearby():
+				_pickaxe_attack()
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
@@ -677,6 +687,40 @@ func _held_item_node() -> Node:
 
 # 挥的弧度: 前方 ±45° = 总 90° 弧
 const SWEEP_ARC_HALF_DEG := 45.0
+# 镐攻击的常量
+const PICKAXE_ATTACK_COOLDOWN := 0.35
+const PICKAXE_AOE_RADIUS_MULT := 1.5         # 伤害判定圆心 = 玩家, 半径 = SWORD_RANGE_PX * 1.5
+const PICKAXE_MOUSE_NEAR_RADIUS_MULT := 1.5  # 触发判定圆心 = 鼠标位置
+
+
+# 鼠标对准的 tile 是否可挖 (用来决定镐走挖矿模式还是攻击模式)
+func _mouse_on_mineable_tile() -> bool:
+	var tile: Vector2i = aim_tile_coord()
+	var terrain := _terrain()
+	if terrain == null:
+		return false
+	var tid: int = terrain.get_cell_source_id(tile)
+	return tid != -1 and Tiles.is_mineable(tid)
+
+
+# 鼠标位置周围 SWORD_RANGE_PX * 1.5 半径内是否有可攻击目标
+func _mouse_has_enemy_nearby() -> bool:
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return false
+	var mouse_world: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
+	var radius: float = SWORD_RANGE_PX * PICKAXE_MOUSE_NEAR_RADIUS_MULT
+	for group in ["slimes", "animals"]:
+		for s in get_tree().get_nodes_in_group(group):
+			var sn := s as Node2D
+			if sn != null and mouse_world.distance_to(sn.global_position) <= radius:
+				return true
+	return false
+
+
+# 镐攻击 stub: 只设 cooldown, T9 加真实伤害逻辑
+func _pickaxe_attack() -> void:
+	_attack_cooldown = PICKAXE_ATTACK_COOLDOWN
 
 
 # 弧形判定: 目标在 origin → dir 弧内 (距 ≤ SWORD_RANGE_PX 且夹角 ≤ ±45°)

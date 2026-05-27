@@ -53,6 +53,39 @@ func test_axe_zero_damage_on_enemies() -> void:
 	assert_eq(slime.current_health, hp_before, "斧打 slime 不应该扣血")
 
 
+# T8: 拿镐对石头 tile, 优先挖矿 (不攻击附近的怪)
+func test_pickaxe_prefers_mining_over_attack() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "wood_pickaxe")
+	var pt: Vector2i = ctx["action"].player_tile()
+	var target: Vector2i = pt + Vector2i(2, 0)
+	var terrain: TileMapLayer = ctx["world"].get_node("TerrainLayer")
+	terrain.set_cell(target, Tiles.STONE, Vector2i.ZERO)
+	ctx["world"]._set_tile(target.x, target.y, Tiles.STONE)
+	var slime = _spawn_slime_near(ctx, Vector2(24, 0))
+	var slime_hp = slime.current_health
+	ctx["action"].aim_override = target
+	ctx["action"].mouse_world_override = Vector2(target.x * 16 + 8, target.y * 16 + 8)
+	ctx["action"].primary_override = true
+	await wait_frames(15)
+	ctx["action"].primary_override = false
+	assert_eq(slime.current_health, slime_hp, "镐对石头时不该攻击 slime")
+
+
+# T8: 拿镐对空 (鼠标不在 tile 上) 但附近有怪 → 触发攻击 cooldown
+func test_pickaxe_attacks_when_no_block_at_mouse() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "wood_pickaxe")
+	var slime = _spawn_slime_near(ctx, Vector2(24, 0))
+	ctx["action"].mouse_world_override = slime.global_position
+	# 不设 aim_override, 让 aim_tile_coord 走鼠标 → 那里是空气
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(3)
+	ctx["action"].primary_override = false
+	assert_gt(ctx["action"]._attack_cooldown, 0.0, "镐对空 + 附近有怪 → 攻击 cooldown 应被设")
+
+
 # T7: 挥剑朝前, 身后的 slime 不该扣血 (90° 弧)
 func test_sweep_misses_behind() -> void:
 	var ctx: Dictionary = await _setup_game()
