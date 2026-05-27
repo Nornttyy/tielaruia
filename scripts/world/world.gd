@@ -7,7 +7,7 @@ const ChunkManagerClass = preload("res://scripts/world/chunk_manager.gd")
 const WaterSimClass = preload("res://scripts/world/water_sim.gd")
 const MinimapDataClass = preload("res://scripts/world/minimap_data.gd")
 const WeatherClass = preload("res://scripts/world/weather.gd")
-const RainLayerClass = preload("res://scripts/fx/rain_layer.gd")
+# RainLayer 已删 (用户要求, commit 后此行可全删)
 const FirefliesClass = preload("res://scripts/fx/fireflies.gd")
 const ShootingStarClass = preload("res://scripts/fx/shooting_star.gd")
 const FallingLeavesClass = preload("res://scripts/fx/falling_leaves.gd")
@@ -71,7 +71,7 @@ const _MP_TIME_SYNC_INTERVAL := 5.0
 var _mp_entity_sync_timer: float = 0.0  # host 广播实体位置计时 (Phase E)
 const _MP_ENTITY_SYNC_INTERVAL := 0.2
 var weather: Node
-var rain_layer: CanvasLayer
+# var rain_layer: CanvasLayer  # 已删
 var fireflies: Node2D
 var shooting_star: Node2D
 var falling_leaves: Node2D
@@ -143,15 +143,10 @@ func _step_fx_layers() -> void:
 	minimap_data = MinimapDataClass.new()
 	minimap_data.name = "MinimapData"
 	add_child(minimap_data)
-	# 注意顺序: rain_layer 先 add_child + 信号先 connect, 再 add_child(weather)
-	# 不然 weather._ready 触发 weather_changed 时 rain_layer 还没接信号, 初始状态丢失
-	rain_layer = RainLayerClass.new()
-	rain_layer.name = "RainLayer"
-	add_child(rain_layer)
+	# 雨/天气已删 (用户要求). rain_layer 不再实例化, weather 仅作"晴天" stub
+	# 保留 weather 节点 (其他系统通过它查 is_raining() 之类)
 	weather = WeatherClass.new()
 	weather.name = "Weather"
-	weather.weather_changed.connect(_on_weather_changed)
-	weather.lightning_flash.connect(_on_lightning_flash)
 	add_child(weather)
 	# 夜晚气氛: 萤火虫 / 流星 / 树下飘叶子
 	fireflies = FirefliesClass.new()
@@ -532,19 +527,9 @@ func _physics_process(_delta: float) -> void:
 	_check_chunk_load()
 
 
-func _on_weather_changed(state: String) -> void:
-	if rain_layer != null:
-		# show_rain=false 时永远不下, 防止设置中途切换被天气覆盖
-		rain_layer.set_enabled(state == "rainy" and GameSettings.show_rain)
-
-
 # 把当前 GameSettings 应用到所有视觉节点. _ready 末尾 + settings_changed 信号都会调.
 func _apply_graphics_settings() -> void:
-	# 雨: visible 关掉省 GPU, set_enabled(false) 阻止新雨点
-	if rain_layer != null:
-		var rainy: bool = weather != null and weather.state == "rainy"
-		rain_layer.visible = GameSettings.show_rain
-		rain_layer.set_enabled(rainy and GameSettings.show_rain)
+	# 雨已删 (用户要求), 这里跳过
 	# 视差远景: ParallaxBackground + ScenicDirector 一起切
 	for child in get_children():
 		if child is ParallaxBackground:

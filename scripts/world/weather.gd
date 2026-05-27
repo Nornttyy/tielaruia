@@ -22,26 +22,13 @@ var _lightning_t: float = 0.0
 
 
 func _ready() -> void:
-	# 开局: 晴天随机时长 (用户不喜欢一进游戏就下雨)
+	# 用户要求删雨, 永远晴天 (天气切换关掉)
 	_enter_state("clear")
 
 
-func _process(delta: float) -> void:
-	_time_left -= delta
-	if _time_left <= 0.0:
-		if state == "clear":
-			_enter_state("rainy")
-		else:
-			_enter_state("clear")
-	if state == "rainy":
-		_lightning_t -= delta
-		if _lightning_t <= 0.0:
-			_lightning_t = randf_range(LIGHTNING_MIN_INTERVAL, LIGHTNING_MAX_INTERVAL)
-			lightning_flash.emit()
-	# Y / F10 强制切换 (debug)
-	if Input.is_action_just_pressed("toggle_weather"):
-		print("[Weather] Y/F10 pressed — toggle from ", state)
-		toggle()
+func _process(_delta: float) -> void:
+	# 雨已删, _process 不再切换天气 (state 一直 "clear")
+	pass
 
 
 func _enter_state(s: String) -> void:
