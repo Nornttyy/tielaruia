@@ -374,9 +374,31 @@ func try_place() -> bool:
 		if wall_layer.get_cell_source_id(tile) != -1:
 			return false
 		var w_def = ItemDB.get_def(slot.item_id)
-		wall_layer.set_cell(tile, w_def.placeable_tile_id, Vector2i.ZERO)
+		var wid: int = w_def.placeable_tile_id
+		# autotile 接邻居: 让墙跟相邻墙连接边缘
+		const Autotile = preload("res://scripts/world/autotile.gd")
+		const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
+		var w_node2: Node = terrain.get_parent()
+		var cm = w_node2.get("chunk_manager") if w_node2 != null else null
+		if EdgeTemplates.FAMILY_OF.has(wid) and cm != null:
+			var wq := Autotile.make_wall_query(wid, cm)
+			Autotile.refresh_tile(wall_layer, tile, wid, wq)
+			# 刷邻居 8 个 (它们 mask 变了)
+			for dy in [-1, 0, 1]:
+				for dx in [-1, 0, 1]:
+					if dx == 0 and dy == 0:
+						continue
+					var npos: Vector2i = tile + Vector2i(dx, dy)
+					var nsid: int = wall_layer.get_cell_source_id(npos)
+					if nsid == -1:
+						continue
+					if EdgeTemplates.FAMILY_OF.has(nsid):
+						var nq := Autotile.make_wall_query(nsid, cm)
+						Autotile.refresh_tile(wall_layer, npos, nsid, nq)
+		else:
+			wall_layer.set_cell(tile, wid, Vector2i.ZERO)
 		inv.consume_current(1)
-		Effects.spawn_place_bounce(tile, w_def.placeable_tile_id)
+		Effects.spawn_place_bounce(tile, wid)
 		SfxBank.play("place", 0.10)
 		return true
 	# 目标必须为空气 (或水, 水可以被填掉 — 玩家用方块塞水)

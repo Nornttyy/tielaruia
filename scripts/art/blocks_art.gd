@@ -739,6 +739,26 @@ const _SLIME_TORCH := [
 	"................",
 ]
 
+# 木平台: 上 4 行木梁 (顶高光 / 中木板 / 阴影下沿), 下面全透明 = 玩家从下穿过
+const _WOOD_PLATFORM := [
+	"llllllllllllllll",
+	"pppppppppppppppp",
+	"pPpppllpppppPppp",
+	"kkkkkkkkkkkkkkkk",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
 const _PLANKS := [
 	"pppppppppppppppp",
 	"ppPpppppllpppPpp",
@@ -1290,7 +1310,7 @@ const _PATTERN_MAP := {
 	JUNGLE_GRASS: [_GRASS, _P_GRASS],
 	MUD: [_DIRT, _P_DIRT],
 	SWAMP_GRASS: [_GRASS, _P_GRASS],
-	WOOD_PLATFORM: [_PLANKS, _P_PLANKS],  # 长得像 planks 但只 top 一条 (后续可做专属)
+	WOOD_PLATFORM: [_WOOD_PLATFORM, _P_PLANKS],  # 上 4 行木梁 + 下面透明
 	ROPE: [_LOG, _P_LOG],                 # 复用 log 颜色 (棕), 后续可做专属麻绳
 	JUNGLE_DIRT: [_DIRT, _P_DIRT],        # 后面 ArtCache tint 深绿
 	SNOW_DIRT: [_DIRT, _P_DIRT],          # 后面 ArtCache tint 灰蓝

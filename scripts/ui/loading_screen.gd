@@ -66,14 +66,14 @@ func _setup_sky() -> void:
 	sky.name = "Sky"
 	sky.anchor_right = 1.0
 	sky.anchor_bottom = 1.0
-	sky.color = Color8(80, 50, 90)
+	sky.color = Color8(95, 150, 220)   # 白天底色
 	sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(sky)
+	# 白天渐变 (跟主菜单一致)
 	var gradient := Gradient.new()
-	gradient.set_color(0, Color8(80, 50, 90))
-	gradient.add_point(0.35, Color8(220, 110, 90))
-	gradient.add_point(0.65, Color8(255, 180, 110))
-	gradient.set_color(gradient.get_point_count() - 1, Color8(255, 210, 150))
+	gradient.set_color(0, Color8(95, 150, 220))         # 顶: 深天蓝
+	gradient.add_point(0.5, Color8(140, 195, 240))      # 中: 中天蓝
+	gradient.set_color(gradient.get_point_count() - 1, Color8(200, 225, 245))  # 底: 浅蓝
 	var grad_tex := GradientTexture2D.new()
 	grad_tex.gradient = gradient
 	grad_tex.fill_from = Vector2(0, 0)
