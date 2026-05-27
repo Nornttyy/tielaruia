@@ -265,6 +265,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 露天矿洞: 漏斗坑 (pit) 或 窄缝 (crack) 直通地表, 玩家能跳下去
 	_carve_open_pits_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
+	# 沙漠地下保护: 把 SAND 邻 AIR 的 tile 改 STONE (防沙崩塌填满矿洞)
+	_protect_sand_caves(c, chunk_heights, chunk_width, height)
+
 	# 水: 矿洞洼地 + 沙漠绿洲 + 地下海洋. 先于树, 这样:
 	# - 树 _place_trees_chunk 检测 surf 是 WATER 时自动跳过 (既不是 GRASS 也不是 SAND)
 	# - 仙人掌不会长在绿洲水里
@@ -277,6 +280,34 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
 	_fill_walls_chunk(c, chunk_heights, chunk_width, height)
 	return c
+
+
+# 沙漠地下: 矿洞被 SAND 包着的话, 沙子物理崩塌会立刻填回去 → 把 SAND
+# 邻 AIR 那些 tile 改成 STONE, 给沙漠矿洞砌一圈石头墙.
+# 只处理地表下 2+ 格的 SAND (避免动到地表沙地).
+static func _protect_sand_caves(c: Chunk, chunk_heights: Dictionary,
+		chunk_width: int, height: int) -> void:
+	var chunk_start: int = c.chunk_x * chunk_width
+	for lx in range(chunk_width):
+		var world_x: int = chunk_start + lx
+		var surf: int = chunk_heights.get(world_x, -1)
+		if surf < 0:
+			continue
+		for y in range(surf + 2, height - BEDROCK_ROWS):  # 地表下 2 格起
+			if c.tiles[lx][y] != Tiles.SAND:
+				continue
+			# 检查 4 邻是否有 AIR (本 chunk 内的就够 — 跨 chunk 边界粗略, 可接受)
+			var touches_air: bool = false
+			for d in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
+				var nx: int = lx + d.x
+				var ny: int = y + d.y
+				if nx < 0 or nx >= chunk_width or ny < 0 or ny >= height:
+					continue
+				if c.tiles[nx][ny] == Tiles.AIR:
+					touches_air = true
+					break
+			if touches_air:
+				c.tiles[lx][y] = Tiles.STONE
 
 
 # 按深度给本 chunk 每列填背景墙. 只在"自然矿洞"里 (含周围的岩石) 填墙.

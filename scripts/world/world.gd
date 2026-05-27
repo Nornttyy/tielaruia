@@ -895,7 +895,8 @@ func get_crack_overlay() -> Node:
 	return $CrackOverlay
 
 
-func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false) -> void:
+func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_sand: bool = false) -> void:
+	# skip_sand=true 防止沙子物理递归 (沙下落时不再触发它自己)
 	# from_remote=true 时不再广播 (避免循环). 本地玩家挖/放 → 广播给联机对方
 	if not from_remote and NetworkManager != null and NetworkManager.connected():
 		if _tile_batching:
@@ -942,6 +943,26 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false) -> void:
 	# 流水: 通知 water_sim, 让它评估 (x,y) 和 4 邻居是否要流
 	if water_sim != null:
 		water_sim.notify_tile_changed(x, y)
+	# 沙子物理: 这格变 AIR → 上方 SAND 整柱下落
+	if tile_id == Tiles.AIR and not skip_sand:
+		_apply_sand_fall(x, y)
+
+
+# 沙子物理: (x, y_air) 这格变 AIR 后, 上方第一格如果是 SAND 就下落 1 格,
+# 然后新空出来的格继续找 SAND, 链式直到上方没沙了.
+func _apply_sand_fall(x: int, y_air: int) -> void:
+	var cur_y: int = y_air
+	for _i in 100:   # 防爆: 最多链 100 格
+		var above_y: int = cur_y - 1
+		if above_y < 0:
+			return
+		var above_tid: int = chunk_manager.get_tile(x, above_y)
+		if above_tid != Tiles.SAND:
+			return
+		# 移动: above → cur_y, above 变 AIR. skip_sand=true 防止递归触发
+		_set_tile(x, cur_y, Tiles.SAND, false, true)
+		_set_tile(x, above_y, Tiles.AIR, false, true)
+		cur_y = above_y
 
 
 # 仙人掌连接: 单格修正 — 上方是仙人掌 → 当前应 = BODY (无头), 否则 = TOP (有头).
