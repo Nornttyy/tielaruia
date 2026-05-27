@@ -8,9 +8,7 @@ const WaterSimClass = preload("res://scripts/world/water_sim.gd")
 const MinimapDataClass = preload("res://scripts/world/minimap_data.gd")
 const WeatherClass = preload("res://scripts/world/weather.gd")
 # RainLayer 已删 (用户要求, commit 后此行可全删)
-const FirefliesClass = preload("res://scripts/fx/fireflies.gd")
-const ShootingStarClass = preload("res://scripts/fx/shooting_star.gd")
-const FallingLeavesClass = preload("res://scripts/fx/falling_leaves.gd")
+# 萤火虫/流星/飘叶 fx 已删 (用户要求, perf)
 const CursorManagerClass = preload("res://scripts/world/cursor_manager.gd")
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
@@ -72,9 +70,7 @@ var _mp_entity_sync_timer: float = 0.0  # host 广播实体位置计时 (Phase E
 const _MP_ENTITY_SYNC_INTERVAL := 0.2
 var weather: Node
 # var rain_layer: CanvasLayer  # 已删
-var fireflies: Node2D
-var shooting_star: Node2D
-var falling_leaves: Node2D
+# fireflies/shooting_star/falling_leaves vars 已删
 var village_villager_spawns: Array = []
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
@@ -148,16 +144,7 @@ func _step_fx_layers() -> void:
 	weather = WeatherClass.new()
 	weather.name = "Weather"
 	add_child(weather)
-	# 夜晚气氛: 萤火虫 / 流星 / 树下飘叶子
-	fireflies = FirefliesClass.new()
-	fireflies.name = "Fireflies"
-	add_child(fireflies)
-	shooting_star = ShootingStarClass.new()
-	shooting_star.name = "ShootingStar"
-	add_child(shooting_star)
-	falling_leaves = FallingLeavesClass.new()
-	falling_leaves.name = "FallingLeaves"
-	add_child(falling_leaves)
+	# 夜晚气氛 (萤火虫 / 流星 / 飘叶) 已删 (用户要求, perf)
 	# 图形开关: 把 GameSettings 应用到所有装饰节点
 	_apply_graphics_settings.call_deferred()  # 让所有 child 先 _ready
 	if not GameSettings.settings_changed.is_connected(_apply_graphics_settings):
@@ -817,13 +804,7 @@ func _spawn_player() -> void:
 	entities_root.add_child(player)
 	camera.reparent(player)
 	camera.position = Vector2.ZERO
-	# 把 player 引用给气氛效果, 让它们知道在哪里生成
-	if fireflies != null:
-		fireflies.bind_player(player)
-	if shooting_star != null:
-		shooting_star.bind_player(player)
-	if falling_leaves != null:
-		falling_leaves.bind_player(player)
+	# 气氛效果 (萤火虫/流星/飘叶) 已删
 
 
 func _spawn_world_pos() -> Vector2:
