@@ -131,7 +131,6 @@ static func _apply_biome_tint(tile_id: int, tex: ImageTexture) -> ImageTexture:
 		BlocksArt.JUNGLE_DIRT:   return _tint_texture(tex, Color(0.65, 1.1, 0.5), 0.55)
 		BlocksArt.SNOW_DIRT:     return _tint_texture(tex, Color(0.7, 0.85, 1.3), 0.55)
 		BlocksArt.JUNGLE_LEAVES: return _tint_texture(tex, Color(0.4, 1.4, 0.55), 0.55)
-		BlocksArt.SILVER_ORE:   return _tint_texture(tex, Color(1.3, 1.4, 1.55), 0.55)  # 亮银
 	return tex
 
 

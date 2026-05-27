@@ -294,9 +294,9 @@ const _P_IRON_ORE := {
 	"m": Color8(138, 125, 116),
 	"b": Color8(110, 98, 90),
 	"o": Color8(184, 154, 130),
-	"r": Color8(168, 100, 60),
-	"R": Color8(130, 70, 40),
-	"H": Color8(200, 140, 90),
+	"r": Color8(195, 90, 35),    # 铁锈 加深红色 (跟铜的橙色区分: 铜=橙黄, 铁=红棕)
+	"R": Color8(145, 55, 20),
+	"H": Color8(225, 130, 75),
 	# 新增 (T3): 边缘语义槽 (与 STONE 同结构, 同色)
 	"_o": Color8(40, 32, 28),    # 极暗轮廓
 	"_e": Color8(95, 85, 78),    # 边缘暗影
@@ -312,9 +312,9 @@ const _P_COPPER_ORE := {
 	"l": Color8(182, 168, 158), "k": Color8(92, 80, 72),
 	"L": Color8(204, 191, 181), "m": Color8(138, 125, 116),
 	"b": Color8(110, 98, 90),   "o": Color8(184, 154, 130),
-	"u": Color8(192, 110, 60),  # 暖橙铜
-	"U": Color8(150, 75, 35),   # 深铜
-	"p": Color8(230, 150, 90),  # 高光铜
+	"u": Color8(230, 115, 40),  # 暖橙铜 (加饱和: 跟其它矿区分)
+	"U": Color8(175, 60, 15),   # 深铜
+	"p": Color8(255, 165, 80),  # 高光铜
 	"_o": Color8(40, 32, 28), "_e": Color8(95, 85, 78),
 	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
 }
@@ -325,9 +325,9 @@ const _P_TIN_ORE := {
 	"l": Color8(182, 168, 158), "k": Color8(92, 80, 72),
 	"L": Color8(204, 191, 181), "m": Color8(138, 125, 116),
 	"b": Color8(110, 98, 90),   "o": Color8(184, 154, 130),
-	"n": Color8(195, 200, 210), # 银白锡
-	"N": Color8(140, 150, 160), # 深锡灰
-	"x": Color8(235, 240, 248), # 高光锡 (近白)
+	"n": Color8(170, 220, 235), # 蓝白锡 (跟银区分 — 银偏白, 锡偏蓝)
+	"N": Color8(95, 145, 175),  # 深锡蓝
+	"x": Color8(220, 250, 255), # 高光锡 (浅蓝白)
 	"_o": Color8(40, 32, 28), "_e": Color8(95, 85, 78),
 	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
 }
@@ -1040,6 +1040,38 @@ const _DIAMOND_ORE := [
 	"sSsbsSsSsbsSsSss",
 ]
 
+# 银矿: STONE 底 + 散落 5-6 颗亮闪 sparkle (跟其它矿不同形状 — 稀疏点而非团块)
+const _SILVER_ORE := [
+	"SbsSsbsSsbsSsbsS",
+	"sssssvssssssssss",
+	"sssvVvsssssssvss",
+	"sssVVVssssssvVvs",
+	"ssssvssssssssvss",
+	"sssssssksbkssss",
+	"sslkkkkbsskkkssl",
+	"somsLLLsssLLLmss",
+	"sssvssolksLLLkbs",
+	"ssvVvslkkbskvsss",
+	"sssVVVssolsvVvss",
+	"sssvvssolssssvss",
+	"sslLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"sssvsklllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+# 银矿 palette: STONE 灰 + v 银白 sparkle
+const _P_SILVER_ORE := {
+	"s": Color8(156, 144, 136), "S": Color8(122, 110, 102),
+	"l": Color8(182, 168, 158), "k": Color8(92, 80, 72),
+	"L": Color8(204, 191, 181), "m": Color8(138, 125, 116),
+	"b": Color8(110, 98, 90),   "o": Color8(184, 154, 130),
+	"v": Color8(240, 248, 255),  # 亮银光点
+	"V": Color8(190, 205, 225),  # 中银 sparkle
+	"_o": Color8(40, 32, 28), "_e": Color8(95, 85, 78),
+	"_h": Color8(195, 180, 170), "_H": Color8(222, 205, 188),
+}
+
 # 地狱晶体: DEEP_STONE 骨架更暗 + h 烈火红 + H 深岩浆 + y 黄红发光
 const _HELL_CRYSTAL := [
 	"SbsSsbsSsbsSsbsS",
@@ -1316,7 +1348,7 @@ const _PATTERN_MAP := {
 	JUNGLE_DIRT: [_DIRT, _P_DIRT],        # 后面 ArtCache tint 深绿
 	SNOW_DIRT: [_DIRT, _P_DIRT],          # 后面 ArtCache tint 灰蓝
 	JUNGLE_LEAVES: [_LEAVES, _P_LEAVES],  # 后面 ArtCache tint 深湿绿
-	SILVER_ORE: [_IRON_ORE, _P_IRON_ORE],  # 银矿暂复用铁矿 pattern (后面 tint 银色)
+	SILVER_ORE: [_SILVER_ORE, _P_SILVER_ORE],   # 专属 sparkle 形 + 亮银调色
 }
 
 
