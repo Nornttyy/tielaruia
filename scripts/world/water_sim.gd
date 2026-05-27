@@ -2,8 +2,8 @@
 # 外部 (挖方块/放水/下雨) 标 dirty, 下次 tick 重新计算重力 + 横向均衡. 体积守恒.
 extends Node
 
-const TICK_INTERVAL := 0.35         # perf: 0.18→0.35 (web 卡, 流水还能看)
-const MAX_TILES_PER_TICK := 300     # perf: 500→300 (web 单 tick 上限更小)
+const TICK_INTERVAL := 0.12         # 用户要求流速快 (0.35→0.12 = 3x 更快)
+const MAX_TILES_PER_TICK := 300     # 保留 300/tick 上限防 web 单帧爆
 
 @export var world: Node2D            # 父 World (有 chunk_manager + _set_tile)
 
