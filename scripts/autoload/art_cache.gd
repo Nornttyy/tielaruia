@@ -159,22 +159,23 @@ static func _extract_interior_icon(atlas: ImageTexture) -> ImageTexture:
 
 
 func _build_items() -> void:
-	for item_id in ["wood_pickaxe", "wood_axe", "slime_jelly", "apple",
-			"stone_pickaxe", "stone_axe",
-			"coal", "iron_ore", "iron_pickaxe",
+	for item_id in ["wood_axe", "slime_jelly", "apple",
+			"stone_axe",
+			"coal", "iron_ore",
 			"iron_axe",
-			"gold_pickaxe", "gold_axe",
-			"diamond_pickaxe", "diamond_axe",
+			"gold_axe",
+			"diamond_axe",
+			"copper_axe",
 			"raw_meat", "leather", "wool",
 			"grappling_hook"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
-	# 剑: 共享 base PNG, 按 tier 染色 (CC-BY 3.0, opengameart pixel-sword-1)
-	const SwordLoader = preload("res://scripts/art/sword_loader.gd")
-	item_icons["wood_sword"]    = SwordLoader.build_icon("wood")
-	item_icons["stone_sword"]   = SwordLoader.build_icon("stone")
-	item_icons["iron_sword"]    = SwordLoader.build_icon("iron")
-	item_icons["gold_sword"]    = SwordLoader.build_icon("gold")
-	item_icons["diamond_sword"] = SwordLoader.build_icon("diamond")
+	# 剑 + 镐: 共享 base PNG, 按 tier 染色
+	# sword: opengameart pixel-sword-1 (CC-BY 3.0)
+	# pickaxe: opengameart tools-icons-0 (CC0)
+	const ToolLoader = preload("res://scripts/art/tool_loader.gd")
+	for tier in ["wood", "stone", "copper", "iron", "gold", "diamond"]:
+		item_icons["%s_sword" % tier] = ToolLoader.build_icon("sword", tier)
+		item_icons["%s_pickaxe" % tier] = ToolLoader.build_icon("pickaxe", tier)
 
 
 func _build_doors() -> void:

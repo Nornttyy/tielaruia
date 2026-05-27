@@ -179,6 +179,43 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# === 铜工具 (tier 3, 跟铁同形状但用 copper_ore) ===
+	{
+		"id": "copper_pickaxe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["copper_ore", "copper_ore", "copper_ore"],
+			["",           "planks",     ""],
+			["",           "planks",     ""],
+		],
+		"output_id": "copper_pickaxe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "copper_sword",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["", "copper_ore", ""],
+			["", "copper_ore", ""],
+			["", "planks",     ""],
+		],
+		"output_id": "copper_sword",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "copper_axe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["copper_ore", "copper_ore", ""],
+			["copper_ore", "planks",     ""],
+			["",           "planks",     ""],
+		],
+		"output_id": "copper_axe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
 	# === 箱子 (8 个 planks 围一圈, 中空) ===
 	{
 		"id": "chest",
