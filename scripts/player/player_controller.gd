@@ -18,6 +18,10 @@ const SWIM_UP_SPEED := -110.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -3
 const SWIM_MAX_SINK := 180.0        # 最大下沉速度 (浮力封顶)
 const ROPE_CLIMB_SPEED := 110.0     # 绳子上下爬速度 (vs SPEED 140 — 慢点)
 const ROPE_HOLD_GRAVITY := 0.0      # 抓绳子时无重力 (松手才掉)
+# 玩家碰撞框高度 (跟 player.tscn 同步, 用于水/绳/头检测)
+const PLAYER_BODY_HEIGHT := 30      # collider y 尺寸 (1.3x 之后)
+const PLAYER_HEAD_OFFSET := -30     # 头部 y 偏移 (脚到头)
+const PLAYER_WAIST_OFFSET := -15    # 腰部 y 偏移
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _player_aura: PointLight2D = $PlayerAura
@@ -147,7 +151,7 @@ func _is_in_water() -> bool:
 	if cm == null:
 		return false
 	var tx: int = int(floor(global_position.x / 16.0))
-	var ty: int = int(floor((global_position.y - 11.0) / 16.0))
+	var ty: int = int(floor((global_position.y + float(PLAYER_WAIST_OFFSET)) / 16.0))
 	return _is_water_tile(cm.get_tile(tx, ty))
 
 
@@ -157,8 +161,8 @@ func _is_on_rope() -> bool:
 	if cm == null:
 		return false
 	var tx: int = int(floor(global_position.x / 16.0))
-	# 检查脚 + 胸 + 头 3 个 y 是否有 rope, 给攀爬更宽容的判定
-	for off_y in [-2.0, -12.0, -22.0]:
+	# 脚 + 腰 + 头 3 个 y 任何一个在 rope tile 上就算抓住
+	for off_y in [-2.0, float(PLAYER_WAIST_OFFSET), float(PLAYER_HEAD_OFFSET)]:
 		var ty: int = int(floor((global_position.y + off_y) / 16.0))
 		if cm.get_tile(tx, ty) == Tiles.ROPE:
 			return true
@@ -171,7 +175,7 @@ func _is_head_above_water() -> bool:
 	if cm == null:
 		return true
 	var tx: int = int(floor(global_position.x / 16.0))
-	var ty: int = int(floor((global_position.y - 22.0) / 16.0))
+	var ty: int = int(floor((global_position.y + float(PLAYER_HEAD_OFFSET)) / 16.0))
 	return not _is_water_tile(cm.get_tile(tx, ty))
 
 
