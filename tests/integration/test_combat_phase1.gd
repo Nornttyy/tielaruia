@@ -53,6 +53,24 @@ func test_axe_zero_damage_on_enemies() -> void:
 	assert_eq(slime.current_health, hp_before, "斧打 slime 不应该扣血")
 
 
+# T6: 戳前方两只 slime 排成线, 只有近的扣血 (戳只命中 1 个)
+func test_thrust_hits_only_nearest() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "wood_sword")
+	ctx["action"]._attack_combo_step = 0   # 下一击戳
+	var near = _spawn_slime_near(ctx, Vector2(20, 0))
+	var far  = _spawn_slime_near(ctx, Vector2(40, 0))
+	var near_hp = near.current_health
+	var far_hp = far.current_health
+	ctx["action"].mouse_world_override = near.global_position
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(2)
+	ctx["action"].primary_override = false
+	assert_lt(near.current_health, near_hp, "近的 slime 应扣血")
+	assert_eq(far.current_health, far_hp, "远的 slime 不应扣血 (戳只命中 1)")
+
+
 # T5: 连按 3 次左键, combo_step 序列 = 0 → 1 → 0 (戳挥交替)
 func test_sword_combo_alternates() -> void:
 	var ctx: Dictionary = await _setup_game()

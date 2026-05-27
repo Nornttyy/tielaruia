@@ -95,6 +95,30 @@ func play_swing() -> void:
 	_tween.tween_property(self, "rotation", 0.0, SWING_DURATION * 0.40)
 
 
+const THRUST_DURATION := 0.15
+const THRUST_OFFSET_PX := 14.0   # 工具向前突进的距离
+
+
+# 戳 (剑): 朝鼠标方向向前突再收回, 不旋转 (跟挥不同, 挥是转圈弧)
+func play_thrust(target_angle: float) -> void:
+	if not visible:
+		return
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	var mouse_on_right: bool = cos(target_angle) >= 0.0
+	set_facing(mouse_on_right)
+	var dir_vec := Vector2(cos(target_angle), sin(target_angle))
+	var base_pos := Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
+	var thrust_pos := base_pos + dir_vec * THRUST_OFFSET_PX
+	# 工具锋朝鼠标 (突刺感)
+	rotation = target_angle
+	position = base_pos
+	_tween = create_tween()
+	_tween.tween_property(self, "position", thrust_pos, THRUST_DURATION * 0.4).set_ease(Tween.EASE_OUT)
+	_tween.tween_property(self, "position", base_pos, THRUST_DURATION * 0.6).set_ease(Tween.EASE_IN)
+	_tween.tween_callback(func(): rotation = 0.0)
+
+
 func play_swing_directional(target_angle: float) -> void:
 	# 定向挥击 (挥剑用): 沿 target_angle 方向划 90° 弧.
 	# 攻击时把 sprite 朝向锁到鼠标方向, 避免移动中翻面让剑乱飞.

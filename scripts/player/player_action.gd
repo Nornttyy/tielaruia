@@ -675,9 +675,66 @@ func _held_item_node() -> Node:
 	return player_node.get_node_or_null("HeldItem")
 
 
-# 戳: 占位实现 (T5 复用 sweep 逻辑保持 combo 流程跑通), T6 改成矩形判定 + 0.8x + 只命中最近.
+# 戳的常量
+const THRUST_COOLDOWN := 0.18
+const THRUST_LENGTH_MULT := 1.2      # 戳长 = SWORD_RANGE_PX * 1.2 ≈ 43px (比挥更远)
+const THRUST_HALF_WIDTH := 6.0       # 戳带半宽 6px (总宽 12), 鼠标偏一点也命中
+const THRUST_DAMAGE_MULT := 0.8
+
+
+# 戳: 直线突刺, 范围远 / 伤害 0.8x / 只命中最近 1 个目标
 func _thrust_sword() -> void:
-	_sweep_sword()
+	_attack_cooldown = THRUST_COOLDOWN
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	var mouse_world: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
+	var to_mouse: Vector2 = mouse_world - player.global_position
+	if to_mouse.length() < 0.001:
+		to_mouse = Vector2(1.0 if player.has_method("facing_dir") and player.facing_dir() > 0 else -1.0, 0)
+	var swing_dir: Vector2 = to_mouse.normalized()
+	var max_len: float = SWORD_RANGE_PX * THRUST_LENGTH_MULT
+	last_swing_center = player.global_position + swing_dir * max_len * 0.5
+	# 动画: 工具沿 swing_dir 突刺再收回
+	var held: Node = player.get_node_or_null("HeldItem")
+	if held != null and held.has_method("play_thrust"):
+		held.play_thrust(swing_dir.angle())
+	elif held != null and held.has_method("play_swing"):
+		held.play_swing()
+	SfxBank.play("swing", 0.10)
+	# 伤害 = sword_damage * hunger_mult * damage_mult * 0.8
+	var base: int = _sword_damage()
+	if base <= 0:
+		return
+	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
+	var hunger_mult: float = 1.0 if hunger == null else hunger.get_attack_multiplier()
+	var dmg_mult: float = _tool_damage_mult()
+	if dmg_mult <= 0.0:
+		return
+	var damage: int = max(1, int(round(float(base) * hunger_mult * dmg_mult * THRUST_DAMAGE_MULT)))
+	# 矩形判定: 沿 swing_dir 长 max_len, 半宽 THRUST_HALF_WIDTH; 找最近的目标
+	var best: Node2D = null
+	var best_dist: float = INF
+	var perp_axis: Vector2 = Vector2(-swing_dir.y, swing_dir.x)
+	for group in ["slimes", "animals"]:
+		for s in get_tree().get_nodes_in_group(group):
+			var sn := s as Node2D
+			if sn == null:
+				continue
+			var local: Vector2 = sn.global_position - player.global_position
+			var along: float = local.dot(swing_dir)
+			if along < 0.0 or along > max_len:
+				continue
+			var perp: float = abs(local.dot(perp_axis))
+			if perp > THRUST_HALF_WIDTH:
+				continue
+			if along < best_dist:
+				best_dist = along
+				best = sn
+	if best != null and best.has_method("take_damage"):
+		best.take_damage(damage, player.global_position)
+	if player.has_method("shake"):
+		player.shake(2.0)
 
 
 func _sweep_sword() -> void:
