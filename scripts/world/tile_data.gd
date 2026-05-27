@@ -53,6 +53,10 @@ const SWAMP_GRASS := 43     # 沼泽地表, 深灰绿带泥点
 const WOOD_PLATFORM := 44
 # 绳子: 垂直挂着, 玩家碰到可爬上爬下 (W/S). 不阻挡走路.
 const ROPE := 45
+# 群系专属泥土 + 树叶
+const JUNGLE_DIRT := 46     # 丛林泥土 (深泥黄, 比普通 DIRT 偏绿/棕黑)
+const SNOW_DIRT := 47       # 雪原冻土 (灰白带蓝, 比 SNOW 暗)
+const JUNGLE_LEAVES := 48   # 丛林树叶 (深湿绿, 比 LEAVES 暗)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -305,6 +309,22 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["rope", 100, 1, 1]],
+	},
+	# 群系泥土 / 树叶 (跟基础 DIRT/LEAVES 类似行为, 只颜色不同)
+	JUNGLE_DIRT: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["jungle_dirt", 100, 1, 1]],
+	},
+	SNOW_DIRT: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["snow_dirt", 100, 1, 1]],
+	},
+	JUNGLE_LEAVES: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["apple", 20, 1, 1]],
 	},
 }
 

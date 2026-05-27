@@ -57,6 +57,9 @@ const _DEFS := {
 	"wood_wall":     {"placeable_tile_id": Tiles.DIRT_WALL,        "tool_kind": "",        "tool_tier": 0, "max_stack": 99, "is_wall": true},
 	"stone_wall":    {"placeable_tile_id": Tiles.STONE_WALL,       "tool_kind": "",        "tool_tier": 0, "max_stack": 99, "is_wall": true},
 	"rope":          {"placeable_tile_id": Tiles.ROPE,             "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
+	"jungle_dirt":   {"placeable_tile_id": Tiles.JUNGLE_DIRT,      "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
+	"snow_dirt":     {"placeable_tile_id": Tiles.SNOW_DIRT,        "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
+	"jungle_leaves": {"placeable_tile_id": Tiles.JUNGLE_LEAVES,    "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 }
 
 

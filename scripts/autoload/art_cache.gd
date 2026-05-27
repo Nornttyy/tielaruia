@@ -90,6 +90,7 @@ func _build_blocks() -> void:
 		BlocksArt.DOOR_TOP,
 		BlocksArt.SNOW, BlocksArt.ICE, BlocksArt.JUNGLE_GRASS, BlocksArt.MUD, BlocksArt.SWAMP_GRASS,
 		BlocksArt.WOOD_PLATFORM, BlocksArt.ROPE,
+		BlocksArt.JUNGLE_DIRT, BlocksArt.SNOW_DIRT, BlocksArt.JUNGLE_LEAVES,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -121,6 +122,12 @@ func _build_blocks() -> void:
 				single = _tint_texture(single, Color(0.55, 0.85, 0.45), 0.5) # 灰绿
 			elif tile_id == BlocksArt.MUD:
 				single = _tint_texture(single, Color(0.6, 0.45, 0.3), 0.55)  # 暗棕
+			elif tile_id == BlocksArt.JUNGLE_DIRT:
+				single = _tint_texture(single, Color(0.65, 1.1, 0.5), 0.55)  # 偏绿泥
+			elif tile_id == BlocksArt.SNOW_DIRT:
+				single = _tint_texture(single, Color(0.7, 0.85, 1.3), 0.55)  # 灰蓝冻土
+			elif tile_id == BlocksArt.JUNGLE_LEAVES:
+				single = _tint_texture(single, Color(0.4, 1.4, 0.55), 0.55) # 深湿绿
 			block_textures[tile_id] = single
 			block_icons[tile_id] = single
 
@@ -213,6 +220,9 @@ const _ITEM_TO_TILE := {
 	"wood_wall": BlocksArt.DIRT_WALL,    # 复用 dirt_wall 视觉
 	"stone_wall": BlocksArt.STONE_WALL,
 	"rope": BlocksArt.ROPE,
+	"jungle_dirt": BlocksArt.JUNGLE_DIRT,
+	"snow_dirt": BlocksArt.SNOW_DIRT,
+	"jungle_leaves": BlocksArt.JUNGLE_LEAVES,
 }
 
 

@@ -815,7 +815,9 @@ static func _biome_subsurface_tile(biome_id: int, is_sand_col: bool) -> int:
 	if is_sand_col:
 		return Tiles.SAND
 	match biome_id:
-		BIOME_SWAMP: return Tiles.MUD  # 沼泽底下是泥
+		BIOME_SWAMP: return Tiles.MUD
+		BIOME_JUNGLE: return Tiles.JUNGLE_DIRT  # 丛林深色泥
+		BIOME_SNOW: return Tiles.SNOW_DIRT      # 雪原冻土
 		_: return Tiles.DIRT
 
 
@@ -876,11 +878,11 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 			Tiles.GRASS:
 				leaves_for_biome = Tiles.LEAVES
 			Tiles.JUNGLE_GRASS:
-				leaves_for_biome = Tiles.LEAVES  # TODO: 后续可换 JUNGLE_LEAVES
+				leaves_for_biome = Tiles.JUNGLE_LEAVES  # 深湿绿
 			Tiles.SWAMP_GRASS:
 				leaves_for_biome = Tiles.LEAVES_AUTUMN  # 沼泽用秋叶感觉死气
 			Tiles.SNOW:
-				leaves_for_biome = Tiles.LEAVES_PINE  # 雪原长松针
+				leaves_for_biome = Tiles.LEAVES_PINE    # 雪原长松针
 			_:
 				continue
 		if rng.randf() > TREE_CHANCE:
