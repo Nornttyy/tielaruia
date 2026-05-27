@@ -14,7 +14,7 @@ const TILE_SIZE := 16
 const MAX_W := 160             # 默认 zoom 0.8 视野 100 tile, 再留余地到 zoom 0.5
 const MAX_H := 100              # 同上 (720/(0.5*16)=90)
 const BUFFER_TILES := 6
-const UPDATE_INTERVAL := 1.0   # perf: 0.5→1.0 (1Hz, GPU 上传频率减半)
+const UPDATE_INTERVAL := 0.25   # 原值 (用户要求调回 4Hz)
 
 var _img: Image
 var _last_update: float = 0.0

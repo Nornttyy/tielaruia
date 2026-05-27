@@ -27,7 +27,7 @@ var _time_accum: float = 0.0
 func _ready() -> void:
 	# 矿洞用 layer = -9 (在天空 -10 之上, 默认 0 之下)
 	layer = -9
-	scroll_ignore_camera_zoom = true   # 不让 camera zoom 影响位置 (zoom 变化时不歪)
+	# (撤掉 scroll_ignore_camera_zoom = true)
 	# 远岩壁 (motion_scale 0.10)
 	var rock_pl := _add_layer(0.10, CaveBgArt.rocks(ROCKS_W, ROCKS_H, 7), TOP_Y, ROCKS_W)
 	_collect_sprites(rock_pl, _rock_sprites)
