@@ -166,15 +166,12 @@ func _build_items() -> void:
 			"raw_meat", "leather", "wool",
 			"grappling_hook"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
-	# 剑 + 镐 + 斧: 共享 base PNG, 按 tier 染色
-	# sword: pixel-sword-1 (CC-BY 3.0)
-	# pickaxe: tools-icons-0 (CC0)
-	# axe: pixel-pickaxe-and-axe (CC0, 取左半)
-	const ToolLoader = preload("res://scripts/art/tool_loader.gd")
+	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
+	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画
 	for tier in ["wood", "stone", "copper", "iron", "silver", "gold", "diamond"]:
-		item_icons["%s_sword" % tier] = ToolLoader.build_icon("sword", tier)
-		item_icons["%s_pickaxe" % tier] = ToolLoader.build_icon("pickaxe", tier)
-		item_icons["%s_axe" % tier] = ToolLoader.build_icon("axe", tier)
+		item_icons["%s_sword" % tier] = ItemsArt.get_icon("%s_sword" % tier)
+		item_icons["%s_pickaxe" % tier] = ItemsArt.get_icon("%s_pickaxe" % tier)
+		item_icons["%s_axe" % tier] = ItemsArt.get_icon("%s_axe" % tier)
 	# 银矿物 (跟 iron_ore 一个画风, 暂复用 IRON_ORE pattern)
 	item_icons["silver_ore"] = ItemsArt.get_icon("iron_ore")  # TODO: 专属银矿石 ASCII
 
