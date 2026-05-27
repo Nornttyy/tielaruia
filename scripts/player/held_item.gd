@@ -97,6 +97,20 @@ func play_swing() -> void:
 
 const THRUST_DURATION := 0.15
 const THRUST_OFFSET_PX := 14.0   # 工具向前突进的距离
+const PICKAXE_ATTACK_DURATION := 0.4   # 转一圈用时
+
+
+# 镐攻击: 工具全周转 360° (区别于挖矿的 ±75° 来回摆)
+func play_pickaxe_attack() -> void:
+	if not visible:
+		return
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	rotation = 0.0
+	_tween = create_tween()
+	var dir: float = 1.0 if _facing_right else -1.0
+	_tween.tween_property(self, "rotation", deg_to_rad(360.0 * dir), PICKAXE_ATTACK_DURATION)
+	_tween.tween_callback(func(): rotation = 0.0)
 
 
 # 戳 (剑): 朝鼠标方向向前突再收回, 不旋转 (跟挥不同, 挥是转圈弧)

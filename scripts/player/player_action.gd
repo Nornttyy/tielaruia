@@ -718,9 +718,56 @@ func _mouse_has_enemy_nearby() -> bool:
 	return false
 
 
-# 镐攻击 stub: 只设 cooldown, T9 加真实伤害逻辑
+# 镐基础伤害: 跟 _sword_damage 同公式 (tier ≥ 2 → 5, else 3),
+# 复制一份避免 _sword_damage 内的 tool_kind 检查 (它只对 sword 返回非 0)
+func _pickaxe_base_damage() -> int:
+	var def = _current_tool_def()
+	if def == null:
+		return 0
+	if def.tool_kind != "pickaxe":
+		return 0
+	return 5 if def.tool_tier >= 2 else 3
+
+
+# 镐攻击: 玩家中心 360° AoE, 半径 SWORD_RANGE_PX * 1.5, 伤害 = base * hunger * damage_mult (0.5)
 func _pickaxe_attack() -> void:
 	_attack_cooldown = PICKAXE_ATTACK_COOLDOWN
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	# 动画 (转圈)
+	var held: Node = player.get_node_or_null("HeldItem")
+	if held != null and held.has_method("play_pickaxe_attack"):
+		held.play_pickaxe_attack()
+	elif held != null and held.has_method("play_swing"):
+		held.play_swing()
+	SfxBank.play("swing", 0.10)
+	# 伤害
+	var base: int = _pickaxe_base_damage()
+	if base <= 0:
+		return
+	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
+	var hunger_mult: float = 1.0 if hunger == null else hunger.get_attack_multiplier()
+	var dmg_mult: float = _tool_damage_mult()
+	if dmg_mult <= 0.0:
+		return
+	var damage: int = max(1, int(round(float(base) * hunger_mult * dmg_mult)))
+	# AoE 判定: 玩家位置为圆心 (不是鼠标), 360°
+	var radius: float = SWORD_RANGE_PX * PICKAXE_AOE_RADIUS_MULT
+	var origin: Vector2 = player.global_position
+	var hit_targets: Dictionary = {}
+	for group in ["slimes", "animals"]:
+		for s in get_tree().get_nodes_in_group(group):
+			hit_targets[s.get_instance_id()] = s
+	for target in hit_targets.values():
+		var sn := target as Node2D
+		if sn == null:
+			continue
+		if origin.distance_to(sn.global_position) <= radius:
+			if target.has_method("take_damage"):
+				target.take_damage(damage, origin)
+	if player.has_method("shake"):
+		player.shake(2.0)
 
 
 # 弧形判定: 目标在 origin → dir 弧内 (距 ≤ SWORD_RANGE_PX 且夹角 ≤ ±45°)

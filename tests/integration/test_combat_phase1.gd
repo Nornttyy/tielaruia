@@ -53,6 +53,61 @@ func test_axe_zero_damage_on_enemies() -> void:
 	assert_eq(slime.current_health, hp_before, "斧打 slime 不应该扣血")
 
 
+# T9: 镐 360° AoE — 玩家四周 4 方向各放 1 只 slime 都扣血
+func test_pickaxe_aoe_360() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "wood_pickaxe")
+	# SWORD_RANGE_PX = 36, AoE 半径 = 36*1.5 = 54. 用 36*1.4 = 50.4 < 54, 安全在内
+	var r: float = 36.0 * 1.4
+	var slimes: Array = []
+	for offset in [Vector2(r, 0), Vector2(-r, 0), Vector2(0, r), Vector2(0, -r)]:
+		slimes.append(_spawn_slime_near(ctx, offset))
+	var hps_before: Array = []
+	for s in slimes:
+		hps_before.append(s.current_health)
+	ctx["action"].mouse_world_override = slimes[0].global_position
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(3)
+	ctx["action"].primary_override = false
+	for i in range(slimes.size()):
+		assert_lt(slimes[i].current_health, hps_before[i], "方向 %d slime 应扣血 (360° AoE)" % i)
+
+
+# T9: 镐伤害 = 同 tier 剑伤害的 50% (向下取整)
+func test_pickaxe_damage_is_half_of_sword() -> void:
+	var ctx: Dictionary = await _setup_game()
+	# 铜剑 (tier 3) 打 slime 一次 = 5 伤害 (tier>=2)
+	_equip_tool(ctx, "copper_sword")
+	ctx["action"]._attack_combo_step = 1   # 挥 (100%)
+	var slime_a = _spawn_slime_near(ctx, Vector2(24, 0))
+	var hp_a = slime_a.current_health
+	ctx["action"].mouse_world_override = slime_a.global_position
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(2)
+	ctx["action"].primary_override = false
+	var sword_dmg: int = hp_a - slime_a.current_health
+	# 切到铜镐
+	var inv = ctx["inv"]
+	inv.pickup("copper_pickaxe", 1)
+	for i in inv.inventory.slots.size():
+		if inv.inventory.slots[i] != null and inv.inventory.slots[i].item_id == "copper_pickaxe":
+			inv.set_hotbar_selection(i)
+			break
+	await wait_frames(2)
+	var slime_b = _spawn_slime_near(ctx, Vector2(36, 0))   # 鼠标 near 范围内, 不挡在 tile 上
+	var hp_b = slime_b.current_health
+	ctx["action"].mouse_world_override = slime_b.global_position
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(3)
+	ctx["action"].primary_override = false
+	var pickaxe_dmg: int = hp_b - slime_b.current_health
+	var expected: int = max(1, int(round(float(sword_dmg) * 0.5)))
+	assert_eq(pickaxe_dmg, expected, "镐伤害应 = 剑伤害的 50% (round). sword=%d pickaxe=%d" % [sword_dmg, pickaxe_dmg])
+
+
 # T8: 拿镐对石头 tile, 优先挖矿 (不攻击附近的怪)
 func test_pickaxe_prefers_mining_over_attack() -> void:
 	var ctx: Dictionary = await _setup_game()
