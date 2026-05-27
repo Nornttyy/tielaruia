@@ -675,6 +675,22 @@ func _held_item_node() -> Node:
 	return player_node.get_node_or_null("HeldItem")
 
 
+# 挥的弧度: 前方 ±45° = 总 90° 弧
+const SWEEP_ARC_HALF_DEG := 45.0
+
+
+# 弧形判定: 目标在 origin → dir 弧内 (距 ≤ SWORD_RANGE_PX 且夹角 ≤ ±45°)
+func _is_in_swing_arc(target_pos: Vector2, origin: Vector2, dir: Vector2) -> bool:
+	var to_target := target_pos - origin
+	var dist := to_target.length()
+	if dist > SWORD_RANGE_PX:
+		return false
+	if dist < 4.0:
+		return true   # 贴脸总命中
+	var diff: float = wrapf(to_target.angle() - dir.angle(), -PI, PI)
+	return abs(diff) <= deg_to_rad(SWEEP_ARC_HALF_DEG)
+
+
 # 戳的常量
 const THRUST_COOLDOWN := 0.18
 const THRUST_LENGTH_MULT := 1.2      # 戳长 = SWORD_RANGE_PX * 1.2 ≈ 43px (比挥更远)
@@ -773,7 +789,8 @@ func _sweep_sword() -> void:
 		var sn := target as Node2D
 		if sn == null:
 			continue
-		if center.distance_to(sn.global_position) <= SWORD_RANGE_PX * 0.7:
+		# T7: 弧形 90° 判定 (前方 ±45°) 替换原圆形, 避免身后误伤
+		if _is_in_swing_arc(sn.global_position, player.global_position, swing_dir):
 			if target.has_method("take_damage"):
 				target.take_damage(damage, player.global_position)
 	# 月牙挥击拖尾 (Task 3 重写)

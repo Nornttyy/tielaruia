@@ -53,6 +53,45 @@ func test_axe_zero_damage_on_enemies() -> void:
 	assert_eq(slime.current_health, hp_before, "斧打 slime 不应该扣血")
 
 
+# T7: 挥剑朝前, 身后的 slime 不该扣血 (90° 弧)
+func test_sweep_misses_behind() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "wood_sword")
+	ctx["action"]._attack_combo_step = 1   # 下一击挥
+	var front = _spawn_slime_near(ctx, Vector2(24, 0))
+	var back = _spawn_slime_near(ctx, Vector2(-24, 0))
+	var front_hp = front.current_health
+	var back_hp = back.current_health
+	ctx["action"].mouse_world_override = front.global_position
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(2)
+	ctx["action"].primary_override = false
+	assert_lt(front.current_health, front_hp, "正前 slime 应扣血")
+	assert_eq(back.current_health, back_hp, "身后 slime 不该扣血 (弧 90°)")
+
+
+# T7: 挥剑弧内 (±30° + 正前) 3 只 slime 都扣血
+func test_sweep_hits_all_in_arc() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "wood_sword")
+	ctx["action"]._attack_combo_step = 1
+	var center = _spawn_slime_near(ctx, Vector2(24, 0))
+	var up = _spawn_slime_near(ctx, Vector2(20, -12))
+	var down = _spawn_slime_near(ctx, Vector2(20, 12))
+	var hp0 = center.current_health
+	var hp1 = up.current_health
+	var hp2 = down.current_health
+	ctx["action"].mouse_world_override = center.global_position
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(2)
+	ctx["action"].primary_override = false
+	assert_lt(center.current_health, hp0)
+	assert_lt(up.current_health, hp1, "弧内上方应扣血")
+	assert_lt(down.current_health, hp2, "弧内下方应扣血")
+
+
 # T6: 戳前方两只 slime 排成线, 只有近的扣血 (戳只命中 1 个)
 func test_thrust_hits_only_nearest() -> void:
 	var ctx: Dictionary = await _setup_game()
