@@ -153,13 +153,15 @@ const _PROPS := {
 		"drops": [["torch", 100, 1, 1]],
 	},
 	COAL_ORE: {
+		# 煤: 木镐就能挖 (最浅 + 最早期)
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
 		"drops": [["coal", 100, 1, 1]],
 	},
 	IRON_ORE: {
+		# 铁: 铜镐 (tier 3) 才能挖 — 进阶, 用铜→挖铁→升铁工具
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 2, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
 		"drops": [["iron_ore", 100, 1, 1]],
 	},
 	DEEP_STONE: {
@@ -183,28 +185,31 @@ const _PROPS := {
 		"drops": [],
 	},
 	COPPER_ORE: {
+		# 铜: 石镐 (tier 2) 才能挖 — 第一金属, 升级路线起点
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 2, "axe": -1, "sword": -1},
 		"drops": [["copper_ore", 100, 1, 1]],
 	},
 	TIN_ORE: {
+		# 锡: 石镐 — 跟铜并列, 可代替铜也可单独装备
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 2, "axe": -1, "sword": -1},
 		"drops": [["tin_ore", 100, 1, 1]],
 	},
 	GOLD_ORE: {
+		# 金: 铜/铁镐 (tier 3) — 中期
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
 		"drops": [["gold_ore", 100, 1, 1]],
 	},
 	DIAMOND_ORE: {
-		# 钻石: 金镐 (tier 4) 才能挖 — 进阶门槛
+		# 钻石: 金镐 (tier 4) — 后期门槛
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 4, "axe": -1, "sword": -1},
 		"drops": [["diamond", 100, 1, 1]],
 	},
 	HELL_CRYSTAL: {
-		# 地狱晶体: 钻石镐 (tier 5) 才能挖 — 终局装备
+		# 地狱晶体: 钻石镐 (tier 5) — 终局
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 5, "axe": -1, "sword": -1},
 		"drops": [["hell_crystal", 100, 1, 1]],
