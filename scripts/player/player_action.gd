@@ -558,6 +558,27 @@ func _tool_damage_mult() -> float:
 	return def.get("damage_mult", 0.0)
 
 
+# 击退强度 (阶段 2): 按工具 + tier 缩放
+const KB_THRUST_BASE := 60.0
+const KB_THRUST_TIER := 15.0
+const KB_SWEEP_BASE := 80.0
+const KB_SWEEP_TIER := 20.0
+const KB_PICKAXE_BASE := 30.0
+const KB_PICKAXE_TIER := 8.0
+
+
+func _thrust_knockback() -> float:
+	return KB_THRUST_BASE + KB_THRUST_TIER * float(_current_tool_tier())
+
+
+func _sweep_knockback() -> float:
+	return KB_SWEEP_BASE + KB_SWEEP_TIER * float(_current_tool_tier())
+
+
+func _pickaxe_knockback() -> float:
+	return KB_PICKAXE_BASE + KB_PICKAXE_TIER * float(_current_tool_tier())
+
+
 func _sword_damage() -> int:
 	var inv: Node = _inventory_node()
 	if inv == null:
@@ -765,7 +786,7 @@ func _pickaxe_attack() -> void:
 			continue
 		if origin.distance_to(sn.global_position) <= radius:
 			if target.has_method("take_damage"):
-				target.take_damage(damage, origin)
+				target.take_damage(damage, origin, _pickaxe_knockback())
 	if player.has_method("shake"):
 		player.shake(2.0)
 
@@ -839,7 +860,7 @@ func _thrust_sword() -> void:
 				best_dist = along
 				best = sn
 	if best != null and best.has_method("take_damage"):
-		best.take_damage(damage, player.global_position)
+		best.take_damage(damage, player.global_position, _thrust_knockback())
 	if player.has_method("shake"):
 		player.shake(2.0)
 
@@ -883,7 +904,7 @@ func _sweep_sword() -> void:
 		# T7: 弧形 90° 判定 (前方 ±45°) 替换原圆形, 避免身后误伤
 		if _is_in_swing_arc(sn.global_position, player.global_position, swing_dir):
 			if target.has_method("take_damage"):
-				target.take_damage(damage, player.global_position)
+				target.take_damage(damage, player.global_position, _sweep_knockback())
 	# 月牙挥击拖尾 (Task 3 重写)
 	_spawn_swing_arc(player.global_position, swing_dir)
 	if player.has_method("shake"):
