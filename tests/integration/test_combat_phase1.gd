@@ -2,7 +2,7 @@
 extends GutTest
 
 const MainScene = preload("res://scenes/main.tscn")
-const SlimeScene = preload("res://scenes/slime.tscn")
+const SlimeScene = preload("res://scenes/entities/slime.tscn")
 
 
 # 启动 main + 返回 player/action/inv 等节点引用
@@ -45,9 +45,25 @@ func test_axe_zero_damage_on_enemies() -> void:
 	var ctx: Dictionary = await _setup_game()
 	_equip_tool(ctx, "wood_axe")
 	var slime = _spawn_slime_near(ctx, Vector2(16, 0))
-	var hp_before: int = slime.hp
+	var hp_before: int = slime.current_health
 	ctx["action"].mouse_world_override = slime.global_position
 	ctx["action"].primary_override = true
 	await wait_frames(20)
 	ctx["action"].primary_override = false
-	assert_eq(slime.hp, hp_before, "斧打 slime 不应该扣血")
+	assert_eq(slime.current_health, hp_before, "斧打 slime 不应该扣血")
+
+
+# T3: 斧拿在手对非 LOG tile 不应进入挖矿进度 (避免动画播放)
+func test_axe_on_stone_no_mining_anim() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "wood_axe")
+	var pt: Vector2i = ctx["action"].player_tile()
+	var target: Vector2i = pt + Vector2i(2, 0)
+	var terrain: TileMapLayer = ctx["world"].get_node("TerrainLayer")
+	terrain.set_cell(target, Tiles.STONE, Vector2i.ZERO)
+	ctx["world"]._set_tile(target.x, target.y, Tiles.STONE)
+	ctx["action"].aim_override = target
+	ctx["action"].primary_override = true
+	await wait_frames(20)
+	ctx["action"].primary_override = false
+	assert_eq(ctx["action"]._mining_progress, 0.0, "斧对非 LOG 不应累计挖矿进度")

@@ -151,6 +151,17 @@ func _update_mining(delta: float) -> void:
 	if not pressed:
 		_reset_mining()
 		return
+	# 斧只能砍 LOG, 别的 tile 早 return 不播挖矿摆动 (防 "斧对空气挥" 的视觉 bug)
+	if _current_tool_kind() == "axe":
+		var ax_tile: Vector2i = aim_tile_coord()
+		var ax_terrain := _terrain()
+		if ax_terrain == null:
+			_reset_mining()
+			return
+		var ax_tid: int = ax_terrain.get_cell_source_id(ax_tile)
+		if ax_tid != Tiles.LOG:
+			_reset_mining()
+			return
 	var tile: Vector2i = aim_tile_coord()
 	if not in_reach(tile):
 		_reset_mining()
