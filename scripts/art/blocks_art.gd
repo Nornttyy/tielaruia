@@ -23,6 +23,7 @@ const ROPE := 45
 const JUNGLE_DIRT := 46
 const SNOW_DIRT := 47
 const JUNGLE_LEAVES := 48
+const SILVER_ORE := 49
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -1315,6 +1316,7 @@ const _PATTERN_MAP := {
 	JUNGLE_DIRT: [_DIRT, _P_DIRT],        # 后面 ArtCache tint 深绿
 	SNOW_DIRT: [_DIRT, _P_DIRT],          # 后面 ArtCache tint 灰蓝
 	JUNGLE_LEAVES: [_LEAVES, _P_LEAVES],  # 后面 ArtCache tint 深湿绿
+	SILVER_ORE: [_IRON_ORE, _P_IRON_ORE],  # 银矿暂复用铁矿 pattern (后面 tint 银色)
 }
 
 

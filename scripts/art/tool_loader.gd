@@ -13,8 +13,9 @@ const AXE_PATH := "res://assets/items/axe_and_pickaxe.png"   # 64x64, 左半=斧
 const TIER_COLORS := {
 	"wood":    Color8(170, 120, 75),
 	"stone":   Color8(155, 155, 155),
-	"copper":  Color8(210, 120, 60),   # 铜橙红
-	"iron":    Color8(210, 215, 225),
+	"copper":  Color8(210, 120, 60),
+	"iron":    Color8(190, 195, 205),    # 铁: 偏暗银灰 (跟 silver 区分)
+	"silver":  Color8(240, 245, 255),    # 银: 亮银白 (比铁亮一档)
 	"gold":    Color8(240, 215, 90),
 	"diamond": Color8(140, 230, 255),
 }

@@ -92,6 +92,7 @@ func _build_blocks() -> void:
 		BlocksArt.SNOW, BlocksArt.ICE, BlocksArt.JUNGLE_GRASS, BlocksArt.MUD, BlocksArt.SWAMP_GRASS,
 		BlocksArt.WOOD_PLATFORM, BlocksArt.ROPE,
 		BlocksArt.JUNGLE_DIRT, BlocksArt.SNOW_DIRT, BlocksArt.JUNGLE_LEAVES,
+		BlocksArt.SILVER_ORE,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -130,6 +131,7 @@ static func _apply_biome_tint(tile_id: int, tex: ImageTexture) -> ImageTexture:
 		BlocksArt.JUNGLE_DIRT:   return _tint_texture(tex, Color(0.65, 1.1, 0.5), 0.55)
 		BlocksArt.SNOW_DIRT:     return _tint_texture(tex, Color(0.7, 0.85, 1.3), 0.55)
 		BlocksArt.JUNGLE_LEAVES: return _tint_texture(tex, Color(0.4, 1.4, 0.55), 0.55)
+		BlocksArt.SILVER_ORE:   return _tint_texture(tex, Color(1.3, 1.4, 1.55), 0.55)  # 亮银
 	return tex
 
 
@@ -170,10 +172,12 @@ func _build_items() -> void:
 	# pickaxe: tools-icons-0 (CC0)
 	# axe: pixel-pickaxe-and-axe (CC0, 取左半)
 	const ToolLoader = preload("res://scripts/art/tool_loader.gd")
-	for tier in ["wood", "stone", "copper", "iron", "gold", "diamond"]:
+	for tier in ["wood", "stone", "copper", "iron", "silver", "gold", "diamond"]:
 		item_icons["%s_sword" % tier] = ToolLoader.build_icon("sword", tier)
 		item_icons["%s_pickaxe" % tier] = ToolLoader.build_icon("pickaxe", tier)
 		item_icons["%s_axe" % tier] = ToolLoader.build_icon("axe", tier)
+	# 银矿物 (跟 iron_ore 一个画风, 暂复用 IRON_ORE pattern)
+	item_icons["silver_ore"] = ItemsArt.get_icon("iron_ore")  # TODO: 专属银矿石 ASCII
 
 
 func _build_doors() -> void:

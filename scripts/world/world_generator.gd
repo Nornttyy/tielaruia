@@ -154,6 +154,12 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	iron_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	iron_noise.frequency = 0.10
 
+	# 银矿 noise (跟 gold 一档深, 但用独立 seed → 不跟 gold 重叠)
+	var silver_noise := FastNoiseLite.new()
+	silver_noise.seed = world_seed + 15
+	silver_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	silver_noise.frequency = 0.09
+
 	# 新矿噪声 (T26): 每种独立 seed, 不同 frequency 让斑块大小有差异
 	var copper_noise := FastNoiseLite.new()
 	copper_noise.seed = world_seed + 10
@@ -240,12 +246,15 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 				var gn: float = gold_noise.get_noise_2d(float(world_x), float(y))
 				var un: float = copper_noise.get_noise_2d(float(world_x), float(y))
 				var tn: float = tin_noise.get_noise_2d(float(world_x), float(y))
+				var sn: float = silver_noise.get_noise_2d(float(world_x), float(y))
 				if depth >= ORE_DEPTH_HELL_MIN and hn > HELL_THRESHOLD:
 					tid = Tiles.HELL_CRYSTAL
 				elif depth >= ORE_DEPTH_DEEP_MIN and dn > DIAMOND_THRESHOLD:
 					tid = Tiles.DIAMOND_ORE
 				elif depth >= ORE_DEPTH_MID_MIN and gn > GOLD_THRESHOLD:
 					tid = Tiles.GOLD_ORE
+				elif depth >= ORE_DEPTH_MID_MIN and sn > 0.38:   # 银: 跟金同深, 稍稀
+					tid = Tiles.SILVER_ORE
 				elif tid == Tiles.DEEP_STONE and inn > IRON_THRESHOLD:
 					tid = Tiles.IRON_ORE
 				elif tid == Tiles.STONE and inn > IRON_SHALLOW_THRESHOLD:

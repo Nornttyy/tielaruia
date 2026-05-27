@@ -57,6 +57,7 @@ const ROPE := 45
 const JUNGLE_DIRT := 46     # 丛林泥土 (深泥黄, 比普通 DIRT 偏绿/棕黑)
 const SNOW_DIRT := 47       # 雪原冻土 (灰白带蓝, 比 SNOW 暗)
 const JUNGLE_LEAVES := 48   # 丛林树叶 (深湿绿, 比 LEAVES 暗)
+const SILVER_ORE := 49      # 银矿 (铁和金之间, tier 3 用 iron 镐挖)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -330,6 +331,12 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["apple", 20, 1, 1]],
+	},
+	SILVER_ORE: {
+		# 银: 铁镐 (tier 3) 才能挖 — 跟铁同档但更深
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
+		"drops": [["silver_ore", 100, 1, 1]],
 	},
 }
 

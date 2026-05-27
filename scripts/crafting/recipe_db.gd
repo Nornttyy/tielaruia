@@ -216,6 +216,43 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# === 银工具 (tier 4, 同形状用 silver_ore) ===
+	{
+		"id": "silver_pickaxe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["silver_ore", "silver_ore", "silver_ore"],
+			["",           "planks",     ""],
+			["",           "planks",     ""],
+		],
+		"output_id": "silver_pickaxe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "silver_sword",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["", "silver_ore", ""],
+			["", "silver_ore", ""],
+			["", "planks",     ""],
+		],
+		"output_id": "silver_sword",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	{
+		"id": "silver_axe",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["silver_ore", "silver_ore", ""],
+			["silver_ore", "planks",     ""],
+			["",           "planks",     ""],
+		],
+		"output_id": "silver_axe",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
 	# === 箱子 (8 个 planks 围一圈, 中空) ===
 	{
 		"id": "chest",
