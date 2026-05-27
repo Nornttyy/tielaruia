@@ -11,15 +11,17 @@ const TileLightGrid = preload("res://scripts/world/tile_light_grid.gd")
 const TILE_SIZE := 16
 # 纹理大小动态算: viewport_size / (camera_zoom * TILE_SIZE) + buffer.
 # 最小 zoom 0.5 (摄像机调小看更远) → 视野 ~160×90 tiles, 我们准备 200×120 上限.
-const MAX_W := 128             # perf: 200→128. zoom>=0.6 时够盖 1280×720
-const MAX_H := 80              # 同上 (720/(0.6*16)=75 + buf)
-const BUFFER_TILES := 6        # 边缘 buffer 防过渡时露背 (perf: 8→6)
-const UPDATE_INTERVAL := 0.5   # 2 Hz (perf: 0.25→0.5, web 卡)
+const MAX_W := 96              # perf: 128→96 (zoom>=0.8 够盖 1280×720)
+const MAX_H := 60               # 同上
+const BUFFER_TILES := 4
+const UPDATE_INTERVAL := 1.0   # perf: 0.5→1.0 (1Hz, GPU 上传频率减半)
 
 var _img: Image
 var _last_update: float = 0.0
 var _cur_w: int = MAX_W        # 当前实际用的纹理宽 (按 zoom 算)
 var _cur_h: int = MAX_H
+var _cached_player: Node2D = null   # 缓存 player ref, 避免每帧 get_tree() 查
+var _cached_cm: Node = null         # 缓存 chunk_manager ref
 
 
 func _ready() -> void:
@@ -41,12 +43,18 @@ func _process(delta: float) -> void:
 
 
 func _update_viewport() -> void:
-	var player: Node2D = get_tree().get_first_node_in_group("player")
-	if player == null:
-		return
-	var cm: Node = get_tree().get_first_node_in_group("chunk_manager")
-	if cm == null:
-		return
+	# 缓存 player + chunk_manager 引用 (web 端 get_tree 查询很慢)
+	if _cached_player == null or not is_instance_valid(_cached_player):
+		_cached_player = get_tree().get_first_node_in_group("player")
+		if _cached_player == null:
+			return
+	if _cached_cm == null or not is_instance_valid(_cached_cm):
+		_cached_cm = get_tree().get_first_node_in_group("chunk_manager")
+		if _cached_cm == null:
+			return
+	var player: Node2D = _cached_player
+	var cm: Node = _cached_cm
+	# 注: 不加"玩家没动就跳过", 否则挖墙看不到光变化
 	# 按当前 viewport_size + camera_zoom 算需要多少 tile 才能盖满屏
 	var vp_size: Vector2 = get_viewport_rect().size
 	var zoom: float = max(0.1, GameSettings.camera_zoom)
