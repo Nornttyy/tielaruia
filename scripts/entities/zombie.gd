@@ -143,7 +143,7 @@ func _check_player_contact() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
 		return
-	hp.take_damage(contact_damage, global_position)
+	hp.take_damage(contact_damage, global_position, 130.0)
 
 
 # 跟 slime 同接口 (玩家挥剑统一调 take_damage)

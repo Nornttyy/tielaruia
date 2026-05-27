@@ -186,7 +186,7 @@ func _check_player_contact() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
 		return
-	hp.take_damage(CONTACT_DAMAGE, global_position)
+	hp.take_damage(CONTACT_DAMAGE, global_position, 100.0)
 
 
 # 返回 true 表示本次造成有效伤害
