@@ -123,6 +123,7 @@ func _run_async_load(world_seed: int) -> void:
 	add_child(dialogue)
 	_game_nodes.append(dialogue)
 	_wire_player.call_deferred()
+	_grant_starter_on_new_game.call_deferred()
 	_start_autosave()
 	await get_tree().process_frame
 
@@ -278,6 +279,32 @@ func _wire_player() -> void:
 	if hp != null and hp.has_signal("died"):
 		if not hp.died.is_connected(_death_screen.show_death):
 			hp.died.connect(_death_screen.show_death)
+
+
+# 真实新游戏 + continue 路径 (_run_async_load) 会调用这个;
+# 测试 helper boot_to_game / _start_game_sync 跳过, 让测试用空背包独立 setup.
+# continue 路径靠 _apply_save_data.call_deferred 在更后一帧覆盖背包, 不会留下重复.
+func _grant_starter_on_new_game() -> void:
+	var w := world
+	if w == null:
+		return
+	var player: Node2D = w.get_player()
+	if player == null:
+		return
+	_grant_starter_inventory(player)
+
+
+func _grant_starter_inventory(player: Node) -> void:
+	var inv_node: Node = player.get_node_or_null("PlayerInventory")
+	if inv_node == null or inv_node.inventory == null:
+		return
+	# 任一槽已有东西就跳过 (防 _wire_player 因 deferred 跑两次叠 buff)
+	for s in inv_node.inventory.slots:
+		if s != null:
+			return
+	inv_node.pickup("wood_pickaxe", 1)
+	inv_node.pickup("wood_axe", 1)
+	inv_node.pickup("wood_sword", 1)
 
 
 func _return_to_menu() -> void:

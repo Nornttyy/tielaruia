@@ -70,13 +70,13 @@ const _PROPS := {
 	},
 	GRASS: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		# dirt 必掉 + 20% 概率额外掉 grass (稀有种子)
 		"drops": [["dirt", 100, 1, 1], ["grass", 20, 1, 1]],
 	},
 	DIRT: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["dirt", 100, 1, 1]],
 	},
 	STONE: {
@@ -86,29 +86,29 @@ const _PROPS := {
 	},
 	SAND: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["sand", 100, 1, 1]],
 	},
 	LOG: {
 		# 原木不实心 — 玩家可穿过树干 (像 Terraria)
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["log", 100, 1, 1]],
 	},
 	LEAVES: {
 		# 不实心. 不掉 leaves 物品 (砍树或单独砍都直接消失), 仅 20% 掉 apple
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["apple", 20, 1, 1]],
 	},
 	PLANKS: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["planks", 100, 1, 1]],
 	},
 	WORKBENCH: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["workbench", 100, 1, 1]],
 	},
 	DOOR: {
@@ -116,13 +116,13 @@ const _PROPS := {
 		# solid=false → tileset_builder 不会在物理层 0 加碰撞;
 		# tileset_builder 单独在物理层 1 (门层, bit 1) 加碰撞, 怪挡住, 玩家放行.
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["door", 100, 1, 1]],
 	},
 	DOOR_TOP: {
 		# 门顶部: 跟 DOOR 一起 2 格高. 物理同 DOOR (单独物理层挡怪不挡玩家).
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		# 不掉东西 — 砍 DOOR 顶部时, 联动把底也消, 由底掉 1 个 door item.
 		"drops": [],
 	},
@@ -134,23 +134,23 @@ const _PROPS := {
 	LEAVES_PINE: {
 		# 松针 (老存档): 不实心, 不掉变种 leaves 物品, 仅 20% 掉 apple
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["apple", 20, 1, 1]],
 	},
 	LEAVES_AUTUMN: {
 		# 秋叶 (老存档): 同上
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["apple", 20, 1, 1]],
 	},
 	SLIME_TORCH: {
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["slime_torch", 100, 1, 1]],
 	},
 	TORCH: {
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["torch", 100, 1, 1]],
 	},
 	COAL_ORE: {
@@ -218,13 +218,13 @@ const _PROPS := {
 	CACTUS: {
 		# 仙人掌: 不实心 (玩家穿过, 像 LOG), 任何工具都能砍, 掉 cactus 物品
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["cactus", 100, 1, 1]],
 	},
 	CACTUS_BODY: {
 		# 仙人掌身体段: 行为同 CACTUS, 砍了也掉 cactus 物品
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["cactus", 100, 1, 1]],
 	},
 	WATER: {
@@ -236,27 +236,27 @@ const _PROPS := {
 	LOG_TOP: {
 		# 树干顶帽: 行为同 LOG, 砍了掉 log
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["log", 100, 1, 1]],
 	},
 	LOG_ROOT_L: {
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["log", 100, 1, 1]],
 	},
 	LOG_ROOT_R: {
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["log", 100, 1, 1]],
 	},
 	BRANCH_L: {
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["log", 100, 1, 1]],
 	},
 	BRANCH_R: {
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["log", 100, 1, 1]],
 	},
 	# 流水 3 个低水位 tile. 行为同 WATER: 不实心 + 不可挖
@@ -275,13 +275,13 @@ const _PROPS := {
 	CHEST: {
 		# 非实心 (玩家能站箱子里), 可挖 (任何工具都行), 砍掉 1 个 chest item
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["chest", 100, 1, 1]],
 	},
 	# === 新群系地表 (像 GRASS / DIRT / SAND 一样可挖, 徒手即可) ===
 	SNOW: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["snow", 100, 1, 1]],
 	},
 	ICE: {
@@ -291,45 +291,45 @@ const _PROPS := {
 	},
 	JUNGLE_GRASS: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["dirt", 100, 1, 1]],
 	},
 	MUD: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["mud", 100, 1, 1]],
 	},
 	SWAMP_GRASS: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["mud", 100, 1, 1]],
 	},
 	# 平台: solid=false (走路不阻挡), tileset_builder 单独加 one_way 碰撞
 	WOOD_PLATFORM: {
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["wood_platform", 100, 1, 1]],
 	},
 	# 绳子: solid=false (玩家穿过), 但 player_controller 检测到会切换爬绳模式
 	ROPE: {
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["rope", 100, 1, 1]],
 	},
 	# 群系泥土 / 树叶 (跟基础 DIRT/LEAVES 类似行为, 只颜色不同)
 	JUNGLE_DIRT: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["jungle_dirt", 100, 1, 1]],
 	},
 	SNOW_DIRT: {
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["snow_dirt", 100, 1, 1]],
 	},
 	JUNGLE_LEAVES: {
 		"solid": false, "mineable": true,
-		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["apple", 20, 1, 1]],
 	},
 	SILVER_ORE: {

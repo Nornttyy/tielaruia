@@ -177,6 +177,11 @@ func _update_mining(delta: float) -> void:
 		_reset_mining()
 		_mining_target = tile
 		return
+	# 工具 tier 不够 → 也不行 (例如木镐挖铁矿)
+	if _current_tool_tier() < required:
+		_reset_mining()
+		_mining_target = tile
+		return
 	if tile != _mining_target:
 		_clear_crack(_mining_target)
 		_mining_target = tile

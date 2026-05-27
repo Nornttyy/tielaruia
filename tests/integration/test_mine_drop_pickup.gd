@@ -13,6 +13,9 @@ func test_mine_grass_then_pick_up():
 	var action: Node2D = player.get_node("PlayerAction")
 	var inv: Node = player.get_node("PlayerInventory")
 	var terrain: TileMapLayer = world.get_node("TerrainLayer")
+	# 空手挖不动, 给个木镐 + 选中
+	inv.pickup("wood_pickaxe", 1)
+	inv.set_hotbar_selection(0)
 	var pt: Vector2i = action.player_tile()
 	var target: Vector2i = pt + Vector2i(2, 0)
 	terrain.set_cell(target, Tiles.GRASS, Vector2i.ZERO)
