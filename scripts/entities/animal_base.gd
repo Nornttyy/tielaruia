@@ -191,11 +191,12 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	if source_pos != Vector2.ZERO:
 		_flee_from = source_pos
 	# 击退 + 弹动
-	if source_pos != Vector2.ZERO:
-		var dx: float = global_position.x - source_pos.x
-		var kb_dir: float = signf(dx) if abs(dx) > 0.1 else 1.0
-		velocity.x = kb_dir * 120.0
-		velocity.y = -100.0
+	if knockback > 0.0 and source_pos != Vector2.ZERO:
+		var to_self: Vector2 = global_position - source_pos
+		var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
+		dir.y -= 0.4
+		dir = dir.normalized()
+		velocity = dir * knockback
 	var tween := create_tween()
 	tween.tween_property(sprite, "scale", Vector2(1.15, 0.85), 0.06)
 	tween.tween_property(sprite, "scale", Vector2.ONE, 0.12)

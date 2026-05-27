@@ -157,11 +157,12 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
 	Effects.spawn_damage_number(global_position + Vector2(0, -10), amount)
-	if source_pos != Vector2.ZERO:
-		var dx: float = global_position.x - source_pos.x
-		var kb_dir: float = signf(dx) if abs(dx) > 0.1 else 1.0
-		velocity.x = kb_dir * 80.0
-		velocity.y = -100.0
+	if knockback > 0.0 and source_pos != Vector2.ZERO:
+		var to_self: Vector2 = global_position - source_pos
+		var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
+		dir.y -= 0.4
+		dir = dir.normalized()
+		velocity = dir * knockback
 	if current_health == 0:
 		_die()
 	return true

@@ -38,6 +38,28 @@ func _spawn_slime_near(ctx: Dictionary, offset: Vector2) -> Node2D:
 	return slime
 
 
+# T3: 击退方向远离 source + y 向上分量
+func test_enemy_knockback_pushes_away() -> void:
+	var ctx: Dictionary = await _setup_game()
+	# slime 在玩家右侧, 玩家位置当 source → slime 应被推向右 (vx > 0)
+	var slime = _spawn_slime_near(ctx, Vector2(24, 0))
+	var player_pos: Vector2 = ctx["player"].global_position
+	slime.take_damage(5, player_pos, 100.0)
+	# dir = ((24,0) → normalize 后 (1,0)) , y -= 0.4 → (1, -0.4) → normalize
+	# 乘 100 → vx ≈ 92.8, vy ≈ -37.1
+	assert_gt(slime.velocity.x, 50.0, "slime 应被向右推 (远离左侧玩家)")
+	assert_lt(slime.velocity.y, 0.0, "slime 应被向上推 (y 分量)")
+
+
+# T3: knockback = 0 时不击退 (兼容旧调用)
+func test_enemy_no_knockback_when_zero() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var slime = _spawn_slime_near(ctx, Vector2(24, 0))
+	var vel_before: Vector2 = slime.velocity
+	slime.take_damage(5, ctx["player"].global_position)   # 不传 knockback → 默认 0
+	assert_eq(slime.velocity, vel_before, "knockback=0 时 velocity 不应被设")
+
+
 # T2: 0.2s i-frame 内的第 2 次伤害应被拒
 func test_enemy_iframe_blocks_multi_hit() -> void:
 	var ctx: Dictionary = await _setup_game()

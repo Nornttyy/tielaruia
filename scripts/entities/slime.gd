@@ -203,13 +203,14 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	sprite.modulate = Color(1.6, 1.0, 1.0)
 	# 飘字 -N (暖黄, 打怪反馈)
 	Effects.spawn_damage_number(global_position + Vector2(0, -8), amount)
-	# 击退: 远离 source (轻度, 不要弹太远)
-	if source_pos != Vector2.ZERO:
-		var dx: float = global_position.x - source_pos.x
-		var kb_dir: float = signf(dx) if abs(dx) > 0.1 else 1.0
-		velocity.x = kb_dir * 90.0
-		velocity.y = -80.0
-		_hop_timer = 0.5  # 击退后冷却再跳
+	# 击退: 2D 方向 (target - source) + 向上 0.4 分量; 强度按 knockback 参数 (0 → 不推)
+	if knockback > 0.0 and source_pos != Vector2.ZERO:
+		var to_self: Vector2 = global_position - source_pos
+		var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
+		dir.y -= 0.4
+		dir = dir.normalized()
+		velocity = dir * knockback
+		_hop_timer = 0.5   # 击退后冷却再跳
 	# 压缩弹动: sprite scale Y 压扁
 	var tween := create_tween()
 	tween.tween_property(sprite, "scale", Vector2(1.25, 0.75), 0.06)
