@@ -100,7 +100,13 @@ func _physics_process(delta: float) -> void:
 		_reset_mining()  # 切到剑时清挖进度
 		var primary_pressed: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed and _attack_cooldown <= 0.0:
-			_swing_sword()
+			# combo: 0 = 下一击戳, 1 = 下一击挥, 然后翻转
+			if _attack_combo_step == 0:
+				_thrust_sword()
+				_attack_combo_step = 1
+			else:
+				_sweep_sword()
+				_attack_combo_step = 0
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
@@ -669,7 +675,12 @@ func _held_item_node() -> Node:
 	return player_node.get_node_or_null("HeldItem")
 
 
-func _swing_sword() -> void:
+# 戳: 占位实现 (T5 复用 sweep 逻辑保持 combo 流程跑通), T6 改成矩形判定 + 0.8x + 只命中最近.
+func _thrust_sword() -> void:
+	_sweep_sword()
+
+
+func _sweep_sword() -> void:
 	_attack_cooldown = SWORD_COOLDOWN
 	var player: Node2D = get_parent() as Node2D
 	if player == null:

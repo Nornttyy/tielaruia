@@ -53,6 +53,23 @@ func test_axe_zero_damage_on_enemies() -> void:
 	assert_eq(slime.current_health, hp_before, "斧打 slime 不应该扣血")
 
 
+# T5: 连按 3 次左键, combo_step 序列 = 0 → 1 → 0 (戳挥交替)
+func test_sword_combo_alternates() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "wood_sword")
+	var action = ctx["action"]
+	action._attack_combo_step = 0
+	var steps: Array = []
+	for i in range(3):
+		action._attack_cooldown = 0.0
+		steps.append(action._attack_combo_step)
+		action.primary_override = true
+		await wait_frames(2)
+		action.primary_override = false
+		await wait_frames(1)
+	assert_eq(steps, [0, 1, 0], "戳挥应交替")
+
+
 # T4: 切 hotbar (剑→镐→剑) 后 combo_step 应回 0 (下一击是戳, 不延续上次挥)
 func test_combo_resets_on_hotbar_switch() -> void:
 	var ctx: Dictionary = await _setup_game()
