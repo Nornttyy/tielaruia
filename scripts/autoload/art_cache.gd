@@ -183,8 +183,8 @@ func _build_entities() -> void:
 	cow_frames = CowArt.build_sprite_frames()
 	sheep_frames = SheepArt.build_sprite_frames()
 	pig_frames = PigArt.build_sprite_frames()
-	# Jaguar: 用 Cat Fighter sprite (CC-BY 3.0, dogchicken). 见 LICENSES.md
-	jaguar_frames = preload("res://scripts/art/cat_fighter_loader.gd").build_sprite_frames(0.4)
+	# Jaguar: LPC lioness (Sevarihk CC-BY 4.0). 见 LICENSES.md
+	jaguar_frames = preload("res://scripts/art/jaguar_art.gd").build_sprite_frames()
 
 
 # 统一的"取背包/热键栏图标"接口。

@@ -11,6 +11,39 @@
 extends RefCounted
 
 
+# 通用 LPC 行加载: 任意 cell_size + 任意 row + 任意 frame 数.
+# 用于非标准 LPC sheet (如 lpc_animals 包 64x64 5×4 布局).
+static func load_lpc_row(sheet_path: String, cell_size: int, row: int, num_frames: int, scale: float = 1.0) -> Array:
+	var tex: Texture2D = load(sheet_path)
+	if tex == null:
+		push_error("LPC load failed: %s" % sheet_path)
+		return []
+	var img: Image = tex.get_image()
+	if img == null:
+		return []
+	var cropped: Array = []
+	for i in num_frames:
+		var cell := img.get_region(Rect2i(i * cell_size, row * cell_size, cell_size, cell_size))
+		cropped.append(_autocrop(cell))
+	var max_w := 0
+	var max_h := 0
+	for c in cropped:
+		max_w = max(max_w, c.get_width())
+		max_h = max(max_h, c.get_height())
+	var frames: Array = []
+	for c in cropped:
+		var canvas := Image.create(max_w, max_h, false, Image.FORMAT_RGBA8)
+		var dx: int = (max_w - c.get_width()) / 2
+		var dy: int = max_h - c.get_height()
+		canvas.blit_rect(c, Rect2i(0, 0, c.get_width(), c.get_height()), Vector2i(dx, dy))
+		if scale != 1.0:
+			var nw: int = max(1, int(round(float(max_w) * scale)))
+			var nh: int = max(1, int(round(float(max_h) * scale)))
+			canvas.resize(nw, nh, Image.INTERPOLATE_NEAREST)
+		frames.append(ImageTexture.create_from_image(canvas))
+	return frames
+
+
 # 加载某 LPC sheet 的右朝向 4 帧, 返回 Array[ImageTexture] (4 帧大小一致).
 # scale: 1.0 = 原大 (~70 px), 0.7 = 缩到 ~50 px (适合游戏 tile 16 px 比例).
 static func load_side_frames(sheet_path: String, scale: float = 1.0) -> Array:

@@ -7,9 +7,15 @@
 - 许可: CC-BY 3.0 / GPL 2.0+
 - 署名: Animal sprites by Daniel Eddeland (opengameart.org)
 
-## Cat Fighter (jaguar 视觉)
-- 文件: `assets/animals/cat_fighter.png`
+## Cat Fighter (旧 jaguar 视觉, 现已替换)
+- 文件: `assets/animals/cat_fighter.png` (可删, 暂留)
 - 作者: dogchicken
 - 来源: https://opengameart.org/content/cat-fighter-sprite-sheet
 - 许可: CC-BY 3.0
-- 署名: Cat Fighter sprite by dogchicken (opengameart.org)
+
+## LPC Animals 2022 (jaguar = lioness)
+- 文件: `assets/animals/lioness_lpc.png`
+- 作者: Sevarihk
+- 来源: https://opengameart.org/content/lpc-bears-deer-lions-and-more
+- 许可: CC-BY 4.0
+- 署名: Lioness sprite by Sevarihk (opengameart.org)
