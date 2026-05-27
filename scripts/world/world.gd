@@ -945,19 +945,38 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 
 # 沙子物理: (x, y_air) 这格变 AIR 后, 上方第一格如果是 SAND 就下落 1 格,
 # 然后新空出来的格继续找 SAND, 链式直到上方没沙了.
+# 每次落, 生成一个 0.15s 的下落动画 (沙色方块从原位 tween 到新位).
 func _apply_sand_fall(x: int, y_air: int) -> void:
 	var cur_y: int = y_air
-	for _i in 100:   # 防爆: 最多链 100 格
+	for _i in 100:
 		var above_y: int = cur_y - 1
 		if above_y < 0:
 			return
 		var above_tid: int = chunk_manager.get_tile(x, above_y)
 		if above_tid != Tiles.SAND:
 			return
-		# 移动: above → cur_y, above 变 AIR. skip_sand=true 防止递归触发
+		_spawn_sand_fall_anim(x, above_y, cur_y)
 		_set_tile(x, cur_y, Tiles.SAND, false, true)
 		_set_tile(x, above_y, Tiles.AIR, false, true)
 		cur_y = above_y
+
+
+# 沙下落动画: 在 from_y → to_y 之间 tween 一个沙色 sprite, 0.15s.
+const _SAND_FALL_DURATION := 0.15
+func _spawn_sand_fall_anim(x: int, from_y: int, to_y: int) -> void:
+	var s := Sprite2D.new()
+	# 用 ArtCache 里的沙子贴图 (跟方块一致)
+	if "block_icons" in ArtCache and ArtCache.block_icons.has(Tiles.SAND):
+		s.texture = ArtCache.block_icons[Tiles.SAND]
+	s.centered = false
+	s.global_position = Vector2(x * TILE_SIZE, from_y * TILE_SIZE)
+	s.z_index = 5
+	add_child(s)
+	var tw := create_tween()
+	tw.set_trans(Tween.TRANS_QUAD)
+	tw.set_ease(Tween.EASE_IN)
+	tw.tween_property(s, "global_position:y", to_y * TILE_SIZE, _SAND_FALL_DURATION)
+	tw.tween_callback(s.queue_free)
 
 
 # 仙人掌连接: 单格修正 — 上方是仙人掌 → 当前应 = BODY (无头), 否则 = TOP (有头).
