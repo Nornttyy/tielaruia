@@ -97,10 +97,9 @@ func _load() -> void:
 		return  # 文件不存在 → 用默认值
 	# 直接赋字段, 绕开 setter 避免 _ready 阶段多次重存盘
 	master_volume = clamp(float(cfg.get_value("audio", "master_volume", 1.0)), 0.0, 1.0)
-	# 图形开关: UI 已删, 强制默认 true (忽略旧 cfg 里可能存的 false).
-	# 用户之前点过关掉 → 现在没 UI 改回来, 这里硬覆盖防止"灰背景/不下雨"等死锁.
-	show_rain = true
-	show_parallax = true
-	show_flocks = true
+	# 图形开关: UI 已删, perf 优化默认: 远景/水开, 鸟蝠/雨关
+	show_rain = true       # 雨已彻底删, 这个 flag 没意义
+	show_parallax = true   # 远山+矿洞背景, 不卡
+	show_flocks = false    # 鸟蝠 perf: 36 sprite × 2 每帧 sin 扑翼, 默认关
 	water_sim_enabled = true
 	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 1.2)), 0.5, 2.5)

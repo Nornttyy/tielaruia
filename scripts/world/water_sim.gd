@@ -2,10 +2,8 @@
 # 外部 (挖方块/放水/下雨) 标 dirty, 下次 tick 重新计算重力 + 横向均衡. 体积守恒.
 extends Node
 
-const TICK_INTERVAL := 0.18         # 每 0.18s 跑一次 (流速看着不太慢)
-# 单 tick 上限 (吃帧的关键参数). 500 已经足够: 玩家放一桶水 (覆盖 ~30 tile) 一拍处理完;
-# 大坝/瀑布慢一两拍流不死人, 但 2000 时一次 tick 占 GPU 一帧, FPS 抖动明显.
-const MAX_TILES_PER_TICK := 500
+const TICK_INTERVAL := 0.35         # perf: 0.18→0.35 (web 卡, 流水还能看)
+const MAX_TILES_PER_TICK := 300     # perf: 500→300 (web 单 tick 上限更小)
 
 @export var world: Node2D            # 父 World (有 chunk_manager + _set_tile)
 
