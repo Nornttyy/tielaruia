@@ -143,11 +143,16 @@ func _make_slot(idx: int, is_chest: bool) -> PanelContainer:
 	lbl.add_theme_constant_override("outline_size", 3)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(lbl)
-	# 点击 → transfer
+	# 长按 → transfer (用户要求, 短按只是看清楚)
 	var btn := Button.new()
 	btn.flat = true
 	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-	btn.pressed.connect(_on_slot_pressed.bind(idx, is_chest))
+	btn.set_meta("idx", idx)
+	btn.set_meta("is_chest", is_chest)
+	btn.set_meta("hold_timer", 0.0)
+	btn.set_meta("hold_fired", false)
+	btn.button_down.connect(_on_slot_button_down.bind(btn))
+	btn.button_up.connect(_on_slot_button_up.bind(btn))
 	p.add_child(btn)
 	return p
 
@@ -176,14 +181,45 @@ func _refresh_all() -> void:
 			_refresh_slot(_player_slots_ui[i], data)
 
 
-# 点击格子: Terraria 风 - 拿起/放下/合并/交换
-func _on_slot_pressed(idx: int, is_chest: bool) -> void:
+# 长按 0.3s 触发. 短按不动 (用户要求).
+const _HOLD_THRESHOLD := 0.3
+
+func _on_slot_button_down(btn: Button) -> void:
+	btn.set_meta("hold_timer", 0.0)
+	btn.set_meta("hold_fired", false)
+
+func _on_slot_button_up(btn: Button) -> void:
+	# Up 之前已 fire (hold 完) → 啥都不做; 没 fire → 短按, 啥都不做
+	pass
+
+# 在主 _process 里调
+func _process_hold_buttons(delta: float) -> void:
+	if not _is_open:
+		return
+	for slot_arr in [_chest_slots_ui, _player_slots_ui]:
+		for slot_ui in slot_arr:
+			var btn := slot_ui.get_child(slot_ui.get_child_count() - 1) as Button
+			if btn == null:
+				continue
+			if not btn.button_pressed:
+				continue
+			if btn.get_meta("hold_fired", false):
+				continue
+			var t: float = btn.get_meta("hold_timer", 0.0) + delta
+			btn.set_meta("hold_timer", t)
+			if t >= _HOLD_THRESHOLD:
+				btn.set_meta("hold_fired", true)
+				_fire_slot_move(btn)
+
+
+func _fire_slot_move(btn: Button) -> void:
 	if _player_inv == null or _player_inv.inventory == null:
 		return
+	var idx: int = btn.get_meta("idx", 0)
+	var is_chest: bool = btn.get_meta("is_chest", false)
 	if is_chest:
 		InventoryCursor.click_slot(_player_inv, ChestStorage.get_slots(_chest_tile), idx)
 	else:
-		# 主背包格 = inv.slots[9..35]
 		InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, 9 + idx)
 	if _player_inv.has_signal("inventory_changed"):
 		_player_inv.inventory_changed.emit()
@@ -216,7 +252,9 @@ func close() -> void:
 	_is_open = false
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	# Hold-to-move 长按定时
+	_process_hold_buttons(delta)
 	# Cursor icon 跟鼠标
 	if not _is_open or _cursor_icon == null or _player_inv == null:
 		return
