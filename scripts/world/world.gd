@@ -555,12 +555,7 @@ func _apply_graphics_settings() -> void:
 		cam.zoom = Vector2(GameSettings.camera_zoom, GameSettings.camera_zoom)
 
 
-func _on_lightning_flash() -> void:
-	if rain_layer != null:
-		rain_layer.flash_lightning()
-	# 雷声 (远距离低频 rumble) — 借用 SfxBank thunder, 没有的话就 skip
-	if SfxBank != null and SfxBank.has_method("play"):
-		SfxBank.play("thunder", 0.10)
+# _on_lightning_flash 已删 (跟雨一起)
 
 
 func _check_chunk_load() -> void:
