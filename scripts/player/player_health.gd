@@ -7,7 +7,7 @@ signal damaged(amount: int, source_pos: Vector2)
 signal died
 
 const MAX_HEALTH := 20
-const IFRAMES_SEC := 0.5
+const IFRAMES_SEC := 0.6
 
 var current_health: int = MAX_HEALTH
 var _iframe_timer: float = 0.0
@@ -37,6 +37,16 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	var final_amount: int = max(1, int(round(float(amount) * dm)))
 	current_health = max(0, current_health - final_amount)
 	_iframe_timer = IFRAMES_SEC
+	# 击退: 沿 (玩家位置 - source) 方向 + 向上 0.4 分量, 设玩家 velocity
+	if knockback > 0.0 and source_pos != Vector2.ZERO:
+		var player_node: Node = get_parent()
+		if player_node is CharacterBody2D:
+			var target_pos: Vector2 = (player_node as Node2D).global_position
+			var to_self: Vector2 = target_pos - source_pos
+			var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
+			dir.y -= 0.4
+			dir = dir.normalized()
+			(player_node as CharacterBody2D).velocity = dir * knockback
 	damaged.emit(final_amount, source_pos)
 	# 玩家受伤飘暗红字 (跟打怪暖黄字区分)
 	var player_node: Node = get_parent()

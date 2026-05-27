@@ -38,6 +38,32 @@ func _spawn_slime_near(ctx: Dictionary, offset: Vector2) -> Node2D:
 	return slime
 
 
+# T6: 玩家受伤后被击退 (沿远离 source 方向 + 向上)
+func test_player_knockback_pushes_away() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var player: CharacterBody2D = ctx["player"]
+	var hp: Node = player.get_node("PlayerHealth")
+	# source 在玩家左侧 30px → 玩家应被推向右
+	var src: Vector2 = player.global_position - Vector2(30, 0)
+	hp.take_damage(3, src, 100.0)
+	assert_gt(player.velocity.x, 50.0, "玩家应被向右推")
+	assert_lt(player.velocity.y, 0.0, "玩家应被向上推")
+
+
+# T6: 玩家 i-frame 期间第 2 次伤害应被拒
+func test_player_iframe_blocks_multi_hit() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var player: CharacterBody2D = ctx["player"]
+	var hp: Node = player.get_node("PlayerHealth")
+	var hp0: int = hp.current_health
+	var src: Vector2 = player.global_position + Vector2(20, 0)
+	hp.take_damage(3, src)
+	var ok2: bool = hp.take_damage(3, src)
+	assert_false(ok2, "iframe 期间 take_damage 应返回 false")
+	# hp 应只扣 1 次 (考虑难度倍率 1.0 → 3 血)
+	assert_eq(hp.current_health, hp0 - 3, "iframe 内只应扣 1 次伤害")
+
+
 # T3: 击退方向远离 source + y 向上分量
 func test_enemy_knockback_pushes_away() -> void:
 	var ctx: Dictionary = await _setup_game()
