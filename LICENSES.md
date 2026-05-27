@@ -13,6 +13,13 @@
 - 来源: https://opengameart.org/content/cat-fighter-sprite-sheet
 - 许可: CC-BY 3.0
 
+## Pixel Sword 1 (剑系列基础贴图)
+- 文件: `assets/items/sword_base.png`
+- 来源: https://opengameart.org/content/pixel-sword-1
+- 许可: CC-BY 3.0
+- 署名: Sword sprite from opengameart.org/content/pixel-sword-1
+- 用法: SwordLoader 按 tier 染色 (wood/stone/iron/gold/diamond)
+
 ## LPC Animals 2022 (jaguar = lioness)
 - 文件: `assets/animals/lioness_lpc.png`
 - 作者: Sevarihk
