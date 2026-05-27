@@ -11,11 +11,39 @@ const IFRAMES_SEC := 0.6
 
 var current_health: int = MAX_HEALTH
 var _iframe_timer: float = 0.0
+var _was_in_iframe: bool = false
 
 
 func _physics_process(delta: float) -> void:
 	if _iframe_timer > 0.0:
 		_iframe_timer = max(0.0, _iframe_timer - delta)
+		_update_iframe_flash()
+	elif _was_in_iframe:
+		_clear_iframe_flash()
+		_was_in_iframe = false
+
+
+# i-frame 期间: 10Hz 红/白方波闪 (0.1s 红, 0.1s 正常)
+func _update_iframe_flash() -> void:
+	_was_in_iframe = true
+	var sprite: Node = _player_sprite()
+	if sprite == null:
+		return
+	var t: float = (IFRAMES_SEC - _iframe_timer) * 10.0
+	sprite.modulate = Color(1.6, 0.6, 0.6) if int(t) % 2 == 0 else Color.WHITE
+
+
+func _clear_iframe_flash() -> void:
+	var sprite: Node = _player_sprite()
+	if sprite != null:
+		sprite.modulate = Color.WHITE
+
+
+func _player_sprite() -> Node:
+	var player: Node = get_parent()
+	if player == null:
+		return null
+	return player.get_node_or_null("AnimatedSprite2D")
 
 
 func is_alive() -> bool:
