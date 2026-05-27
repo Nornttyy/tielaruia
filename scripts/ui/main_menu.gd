@@ -68,12 +68,11 @@ func _process(delta: float) -> void:
 
 func _setup_sky_gradient() -> void:
 	# 在 Sky ColorRect 上叠一个 GradientTexture2D TextureRect 实现渐变.
-	# 夕阳色板: 顶 深红紫 → 中 暖橙 → 底 金黄 → 地平线 暖肉粉, 营造黄昏氛围
+	# 白天色板: 顶 深天蓝 → 中 中天蓝 → 底 浅天蓝白 (用户要求白天)
 	var gradient := Gradient.new()
-	gradient.set_color(0, Color8(80, 50, 90))           # 顶: 深紫红
-	gradient.add_point(0.35, Color8(220, 110, 90))      # 暮色橙红
-	gradient.add_point(0.65, Color8(255, 180, 110))     # 金橙
-	gradient.set_color(gradient.get_point_count() - 1, Color8(255, 210, 150))  # 底: 暖肉粉
+	gradient.set_color(0, Color8(95, 150, 220))         # 顶: 深天蓝
+	gradient.add_point(0.5, Color8(140, 195, 240))      # 中: 中天蓝
+	gradient.set_color(gradient.get_point_count() - 1, Color8(200, 225, 245))  # 底: 浅蓝
 	var grad_tex := GradientTexture2D.new()
 	grad_tex.gradient = gradient
 	grad_tex.fill_from = Vector2(0, 0)
