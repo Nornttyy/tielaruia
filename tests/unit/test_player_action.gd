@@ -43,7 +43,8 @@ func test_invalid_tile_not_in_reach():
 	assert_false(action.in_reach(Vector2i(-1, -1)))
 
 
-func test_mine_dirt_with_bare_hands():
+# 空手挖不动 dirt (规则变更: 任何方块都必须有工具)
+func test_cannot_mine_dirt_bare_hand():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
 	main.boot_to_game()
@@ -59,7 +60,7 @@ func test_mine_dirt_with_bare_hands():
 	action.aim_override = target
 	action.primary_override = true
 	await wait_frames(60)
-	assert_eq(terrain.get_cell_source_id(target), -1, "dirt 应被挖空")
+	assert_eq(terrain.get_cell_source_id(target), Tiles.DIRT, "dirt 空手不应被挖空")
 
 
 func test_cannot_mine_stone_bare_hand():

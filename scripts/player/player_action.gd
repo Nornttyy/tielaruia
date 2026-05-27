@@ -493,6 +493,24 @@ func _current_tool_kind() -> String:
 	return "" if inv == null else inv.current_tool_kind()
 
 
+func _current_tool_def() -> Variant:
+	var inv: Node = _inventory_node()
+	if inv == null:
+		return null
+	var slot = inv.current_hotbar_slot()
+	if slot == null:
+		return null
+	return ItemDB.get_def(slot.item_id)
+
+
+# 工具的攻击倍率 (剑=1.0, 镐=0.5, 斧=0.0, 其他=0.0). 用 dict get 兜底防旧档.
+func _tool_damage_mult() -> float:
+	var def = _current_tool_def()
+	if def == null:
+		return 0.0
+	return def.get("damage_mult", 0.0)
+
+
 func _sword_damage() -> int:
 	var inv: Node = _inventory_node()
 	if inv == null:
@@ -525,8 +543,11 @@ func _effective_sword_damage() -> int:
 	if base <= 0:
 		return 0
 	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
-	var mult: float = 1.0 if hunger == null else hunger.get_attack_multiplier()
-	return max(1, int(round(float(base) * mult)))
+	var hunger_mult: float = 1.0 if hunger == null else hunger.get_attack_multiplier()
+	var dmg_mult: float = _tool_damage_mult()
+	if dmg_mult <= 0.0:
+		return 0
+	return max(1, int(round(float(base) * hunger_mult * dmg_mult)))
 
 
 func _update_eat_or_place(delta: float) -> void:
