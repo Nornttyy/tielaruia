@@ -144,7 +144,7 @@ func _check_player_contact() -> void:
 
 
 # 跟 slime 同接口 (玩家挥剑统一调 take_damage)
-func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
+func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
 	if _is_dying or amount <= 0:
 		return false
 	current_health = max(0, current_health - amount)

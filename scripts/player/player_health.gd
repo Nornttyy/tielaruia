@@ -27,7 +27,7 @@ func is_invulnerable() -> bool:
 
 
 # 返回 true 表示真的受了伤 (没在 i-frames 中且还活着)
-func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
+func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
 	if amount <= 0 or not is_alive() or is_invulnerable():
 		return false
 	# 难度乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x

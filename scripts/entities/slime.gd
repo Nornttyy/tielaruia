@@ -187,7 +187,7 @@ func _check_player_contact() -> void:
 
 
 # 返回 true 表示本次造成有效伤害
-func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO) -> bool:
+func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
 	if _is_dying or amount <= 0:
 		return false
 	# 被打了 → 激怒, 白天也变敌对
