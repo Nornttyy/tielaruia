@@ -239,6 +239,8 @@ func test_sword_swing_aims_at_mouse_direction():
 	var inv: Node = player.get_node("PlayerInventory")
 	inv.inventory.add("wood_sword", 1)
 	inv.set_hotbar_selection(0)
+	# 强制走 sweep 分支 (combo_step=1), 这个测试验的是 sweep 的中心点公式
+	action._attack_combo_step = 1
 	# 鼠标在玩家右上方 (世界坐标), 期望挥击中心朝向那里
 	var player_pos: Vector2 = player.global_position
 	action.mouse_world_override = player_pos + Vector2(100.0, -100.0)
