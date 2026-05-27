@@ -51,6 +51,8 @@ const SWORD_RANGE_PX := 36.0
 const SWORD_COOLDOWN := 0.3
 const SWORD_ARC_LIFETIME := 0.18
 var _attack_cooldown: float = 0.0
+# 剑的戳/挥交替: 0 = 下一击戳, 1 = 下一击挥. 切工具时归零.
+var _attack_combo_step: int = 0
 
 # 测试用: 记录最近一次挥剑的命中中心点 (玩家中心 + 鼠标方向 * 半径)
 var last_swing_center: Vector2 = Vector2.ZERO
@@ -65,6 +67,24 @@ var _eat_item_id: String = ""
 
 func set_secondary_held_for_test(held: bool) -> void:
 	secondary_held_override = held
+
+
+func _ready() -> void:
+	# 切 hotbar 时重置剑的戳/挥序列 (防玩家切镐再切回剑还接着上次的挥)
+	# 用 call_deferred 等 PlayerInventory 也 _ready 完
+	_connect_hotbar_signal.call_deferred()
+
+
+func _connect_hotbar_signal() -> void:
+	var inv: Node = _inventory_node()
+	if inv != null and inv.has_signal("hotbar_selection_changed"):
+		if not inv.hotbar_selection_changed.is_connected(_on_hotbar_changed):
+			inv.hotbar_selection_changed.connect(_on_hotbar_changed)
+
+
+# signal handler 同步: 不要加 await (CLAUDE.md feedback_no_async_signal)
+func _on_hotbar_changed(_idx: int) -> void:
+	_attack_combo_step = 0
 
 
 func _physics_process(delta: float) -> void:

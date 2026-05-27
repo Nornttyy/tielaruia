@@ -53,6 +53,24 @@ func test_axe_zero_damage_on_enemies() -> void:
 	assert_eq(slime.current_health, hp_before, "斧打 slime 不应该扣血")
 
 
+# T4: 切 hotbar (剑→镐→剑) 后 combo_step 应回 0 (下一击是戳, 不延续上次挥)
+func test_combo_resets_on_hotbar_switch() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "wood_sword")
+	# 人为设到 "下一击是挥"
+	ctx["action"]._attack_combo_step = 1
+	# 装木镐 + 切到镐的 slot
+	var inv: Node = ctx["inv"]
+	inv.pickup("wood_pickaxe", 1)
+	for i in inv.inventory.slots.size():
+		var s = inv.inventory.slots[i]
+		if s != null and s.item_id == "wood_pickaxe":
+			inv.set_hotbar_selection(i)
+			break
+	await wait_frames(2)
+	assert_eq(ctx["action"]._attack_combo_step, 0, "切工具后 combo_step 应回 0")
+
+
 # T3: 斧拿在手对非 LOG tile 不应进入挖矿进度 (避免动画播放)
 func test_axe_on_stone_no_mining_anim() -> void:
 	var ctx: Dictionary = await _setup_game()
