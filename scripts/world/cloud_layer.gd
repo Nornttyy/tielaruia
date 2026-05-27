@@ -19,7 +19,7 @@ var _cloud_data: Array = []  # 每朵 {sprite, speed, wrap_width}
 
 
 func _ready() -> void:
-	# (撤掉 scroll_ignore_camera_zoom = true)
+	scroll_ignore_camera_zoom = true   # 锁屏幕空间, 任何 zoom 都盖满
 	for layer_def in _LAYERS:
 		var pl := ParallaxLayer.new()
 		pl.motion_scale = Vector2(layer_def.motion_scale, layer_def.motion_scale * 0.2)

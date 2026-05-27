@@ -11,9 +11,9 @@ const TileLightGrid = preload("res://scripts/world/tile_light_grid.gd")
 const TILE_SIZE := 16
 # 纹理大小动态算: viewport_size / (camera_zoom * TILE_SIZE) + buffer.
 # 最小 zoom 0.5 (摄像机调小看更远) → 视野 ~160×90 tiles, 我们准备 200×120 上限.
-const MAX_W := 160             # 默认 zoom 0.8 视野 100 tile, 再留余地到 zoom 0.5
-const MAX_H := 100              # 同上 (720/(0.5*16)=90)
-const BUFFER_TILES := 6
+const MAX_W := 180             # zoom 0.5 视野 160 tile + buffer
+const MAX_H := 116              # 720/(0.5*16) = 90 + buffer
+const BUFFER_TILES := 8
 const UPDATE_INTERVAL := 0.25   # 原值 (用户要求调回 4Hz)
 
 var _img: Image

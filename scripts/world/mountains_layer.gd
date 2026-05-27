@@ -42,7 +42,8 @@ var _layer_alpha: float = 1.0  # 由 ScenicDirector 设 (0=矿洞 1=地表)
 func _ready() -> void:
 	# 远山要在天空 (-10) 之上, 云 (默认 0) 之下 — 用 layer=-9
 	layer = -9
-	# (之前加过 scroll_ignore_camera_zoom=true 跟 zoom 0.8 默认后又歪, 撤回)
+	# 锁屏幕空间 (用户要求"不管 zoom 都盖满"). parallax 会失效 (没立体感)
+	scroll_ignore_camera_zoom = true
 	var colors: Array = MountainsArt.all_colors()
 	for i in _LAYERS.size():
 		var ld: Dictionary = _LAYERS[i]
