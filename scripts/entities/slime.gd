@@ -23,6 +23,8 @@ const TILE_SIZE := 16
 var current_health: int = MAX_HEALTH
 var _hop_timer: float = 0.5
 var _hit_flash: float = 0.0
+const ENEMY_IFRAME_SEC := 0.2
+var _iframe_t: float = 0.0
 var _water_dmg_timer: float = 0.0   # 水里持续扣血计时
 var _is_dying: bool = false
 var _current_hop_vx: float = 0.0  # 本次跳跃的目标横速 (空中维持用, 含方向符号)
@@ -90,6 +92,7 @@ func _physics_process(delta: float) -> void:
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
+	_iframe_t = max(0.0, _iframe_t - delta)
 
 	# 史莱姆怕水: 碰到水继续正常重力下沉 + 每 0.5s 扣 1 HP (玩家可用水陷阱杀)
 	var in_water: bool = _is_in_water()
@@ -190,6 +193,9 @@ func _check_player_contact() -> void:
 func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
 	if _is_dying or amount <= 0:
 		return false
+	if _iframe_t > 0.0:
+		return false   # i-frame 中, 本次不算
+	_iframe_t = ENEMY_IFRAME_SEC
 	# 被打了 → 激怒, 白天也变敌对
 	_is_provoked = true
 	current_health = max(0, current_health - amount)

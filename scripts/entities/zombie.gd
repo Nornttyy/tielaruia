@@ -24,6 +24,8 @@ var drop_table: Array = [["bone", 1, 3]]
 
 var current_health: int = 15
 var _hit_flash: float = 0.0
+const ENEMY_IFRAME_SEC := 0.2
+var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _jump_cooldown: float = 0.0
 
@@ -54,6 +56,7 @@ func _physics_process(delta: float) -> void:
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
+	_iframe_t = max(0.0, _iframe_t - delta)
 	if _jump_cooldown > 0.0:
 		_jump_cooldown -= delta
 
@@ -147,6 +150,9 @@ func _check_player_contact() -> void:
 func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
 	if _is_dying or amount <= 0:
 		return false
+	if _iframe_t > 0.0:
+		return false
+	_iframe_t = ENEMY_IFRAME_SEC
 	current_health = max(0, current_health - amount)
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)

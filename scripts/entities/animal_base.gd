@@ -31,6 +31,8 @@ var _flee_from: Vector2 = Vector2.ZERO
 var _wander_dir: float = 0.0
 var _wander_timer: float = 0.0
 var _hit_flash: float = 0.0
+const ENEMY_IFRAME_SEC := 0.2
+var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _stepping: bool = false   # auto-step tween 进行中, 物理暂停
 
@@ -90,6 +92,7 @@ func _physics_process(delta: float) -> void:
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
+	_iframe_t = max(0.0, _iframe_t - delta)
 
 	# 动物不会游泳: 正常重力 (碰水继续下沉)
 	if not is_on_floor():
@@ -177,6 +180,9 @@ func _play_anim(anim_name: String) -> void:
 func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
 	if _is_dying or amount <= 0:
 		return false
+	if _iframe_t > 0.0:
+		return false
+	_iframe_t = ENEMY_IFRAME_SEC
 	current_health = max(0, current_health - amount)
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
