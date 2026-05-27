@@ -38,6 +38,15 @@ const FAMILY_OF: Dictionary = {
 	BlocksArt.GOLD_ORE: "rock",
 	BlocksArt.DIAMOND_ORE: "rock",
 	BlocksArt.HELL_CRYSTAL: "rock",
+	# 新群系 tile 接入 autotile (跟普通泥/草同族, 复用 soil 边缘模板)
+	BlocksArt.SNOW: "soil",
+	BlocksArt.SNOW_DIRT: "soil",
+	BlocksArt.JUNGLE_GRASS: "soil",
+	BlocksArt.JUNGLE_DIRT: "soil",
+	BlocksArt.SWAMP_GRASS: "soil",
+	BlocksArt.MUD: "soil",
+	BlocksArt.ICE: "rock",          # 冰跟石头一族
+	BlocksArt.JUNGLE_LEAVES: "leaf", # 丛林叶跟普通叶同族
 }
 
 

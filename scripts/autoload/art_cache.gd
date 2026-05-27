@@ -95,8 +95,10 @@ func _build_blocks() -> void:
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
-			block_textures[tile_id] = BlocksArt.build_atlas(tile_id)
-			block_icons[tile_id] = _extract_interior_icon(block_textures[tile_id])
+			var atlas: ImageTexture = BlocksArt.build_atlas(tile_id)
+			atlas = _apply_biome_tint(tile_id, atlas)
+			block_textures[tile_id] = atlas
+			block_icons[tile_id] = _extract_interior_icon(atlas)
 		elif tile_id == BlocksArt.WATER:
 			# 水: 64×16 动画 atlas (4 帧). icon 用单帧.
 			block_textures[tile_id] = BlocksArt.get_water_animated_atlas()
@@ -112,25 +114,23 @@ func _build_blocks() -> void:
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		else:
 			var single: ImageTexture = BlocksArt.get_texture(tile_id)
-			# 新群系 tile 暂复用现有 pattern, 这里 tint 一下让视觉上能区分
-			if tile_id == BlocksArt.SNOW:
-				single = _tint_texture(single, Color(0.55, 0.7, 1.6), 0.55)   # 蓝白冷
-			elif tile_id == BlocksArt.ICE:
-				single = _tint_texture(single, Color(0.5, 1.1, 1.8), 0.6)
-			elif tile_id == BlocksArt.JUNGLE_GRASS:
-				single = _tint_texture(single, Color(0.35, 1.4, 0.4), 0.5)   # 深绿
-			elif tile_id == BlocksArt.SWAMP_GRASS:
-				single = _tint_texture(single, Color(0.55, 0.85, 0.45), 0.5) # 灰绿
-			elif tile_id == BlocksArt.MUD:
-				single = _tint_texture(single, Color(0.6, 0.45, 0.3), 0.55)  # 暗棕
-			elif tile_id == BlocksArt.JUNGLE_DIRT:
-				single = _tint_texture(single, Color(0.65, 1.1, 0.5), 0.55)  # 偏绿泥
-			elif tile_id == BlocksArt.SNOW_DIRT:
-				single = _tint_texture(single, Color(0.7, 0.85, 1.3), 0.55)  # 灰蓝冻土
-			elif tile_id == BlocksArt.JUNGLE_LEAVES:
-				single = _tint_texture(single, Color(0.4, 1.4, 0.55), 0.55) # 深湿绿
+			single = _apply_biome_tint(tile_id, single)
 			block_textures[tile_id] = single
 			block_icons[tile_id] = single
+
+
+# 群系 tile 复用现有 pattern, 用 tint 区分. 在 atlas / 单 cell 两种路径都用.
+static func _apply_biome_tint(tile_id: int, tex: ImageTexture) -> ImageTexture:
+	match tile_id:
+		BlocksArt.SNOW:          return _tint_texture(tex, Color(0.55, 0.7, 1.6), 0.55)
+		BlocksArt.ICE:           return _tint_texture(tex, Color(0.5, 1.1, 1.8), 0.6)
+		BlocksArt.JUNGLE_GRASS:  return _tint_texture(tex, Color(0.35, 1.4, 0.4), 0.5)
+		BlocksArt.SWAMP_GRASS:   return _tint_texture(tex, Color(0.55, 0.85, 0.45), 0.5)
+		BlocksArt.MUD:           return _tint_texture(tex, Color(0.6, 0.45, 0.3), 0.55)
+		BlocksArt.JUNGLE_DIRT:   return _tint_texture(tex, Color(0.65, 1.1, 0.5), 0.55)
+		BlocksArt.SNOW_DIRT:     return _tint_texture(tex, Color(0.7, 0.85, 1.3), 0.55)
+		BlocksArt.JUNGLE_LEAVES: return _tint_texture(tex, Color(0.4, 1.4, 0.55), 0.55)
+	return tex
 
 
 # 染色 helper: 把图像每个非透明像素 * lerp(原色, tint, strength).
