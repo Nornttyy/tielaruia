@@ -159,23 +159,21 @@ static func _extract_interior_icon(atlas: ImageTexture) -> ImageTexture:
 
 
 func _build_items() -> void:
-	for item_id in ["wood_axe", "slime_jelly", "apple",
-			"stone_axe",
+	# 非工具类 (老 ASCII pattern)
+	for item_id in ["slime_jelly", "apple",
 			"coal", "iron_ore",
-			"iron_axe",
-			"gold_axe",
-			"diamond_axe",
-			"copper_axe",
 			"raw_meat", "leather", "wool",
 			"grappling_hook"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
-	# 剑 + 镐: 共享 base PNG, 按 tier 染色
-	# sword: opengameart pixel-sword-1 (CC-BY 3.0)
-	# pickaxe: opengameart tools-icons-0 (CC0)
+	# 剑 + 镐 + 斧: 共享 base PNG, 按 tier 染色
+	# sword: pixel-sword-1 (CC-BY 3.0)
+	# pickaxe: tools-icons-0 (CC0)
+	# axe: pixel-pickaxe-and-axe (CC0, 取左半)
 	const ToolLoader = preload("res://scripts/art/tool_loader.gd")
 	for tier in ["wood", "stone", "copper", "iron", "gold", "diamond"]:
 		item_icons["%s_sword" % tier] = ToolLoader.build_icon("sword", tier)
 		item_icons["%s_pickaxe" % tier] = ToolLoader.build_icon("pickaxe", tier)
+		item_icons["%s_axe" % tier] = ToolLoader.build_icon("axe", tier)
 
 
 func _build_doors() -> void:

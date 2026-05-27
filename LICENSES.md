@@ -25,7 +25,12 @@
 - 作者: Exewin
 - 来源: https://opengameart.org/content/tools-icons-0
 - 许可: CC0 (公共领域)
-- 用法: ToolLoader 按 tier 染色
+
+## Pixel Pickaxe and Axe (斧系列基础贴图)
+- 文件: `assets/items/axe_and_pickaxe.png` (左半 = 斧, 右半未用)
+- 来源: https://opengameart.org/content/pixel-pickaxe-and-axe
+- 许可: CC0 (公共领域)
+- 用法: ToolLoader crop_left_half + 按 tier 染色
 
 ## LPC Animals 2022 (jaguar = lioness)
 - 文件: `assets/animals/lioness_lpc.png`

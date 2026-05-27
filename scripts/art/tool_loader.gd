@@ -1,15 +1,13 @@
 # 通用 tool sprite loader. 共享 base PNG, 按 tier 染色 (sword / pickaxe / axe).
 # Sword: opengameart.org/content/pixel-sword-1 (CC-BY 3.0)
 # Pickaxe: opengameart.org/content/tools-icons-0 (CC0)
+# Axe: opengameart.org/content/pixel-pickaxe-and-axe (CC0), 取左半 = 斧
 # 见 LICENSES.md.
-#
-# 染色策略 (同 sword_loader):
-# - "金属头" (浅色, RGB 接近且亮) → luminance × tier 色重染
-# - "把手" (其它色, 通常褐色木把) → 保留原色
 extends RefCounted
 
 const SWORD_PATH := "res://assets/items/sword_base.png"
 const PICKAXE_PATH := "res://assets/items/pickaxe_base.png"
+const AXE_PATH := "res://assets/items/axe_and_pickaxe.png"   # 64x64, 左半=斧 右半=镐
 
 # 6 tier 的金属头色 (新加 copper)
 const TIER_COLORS := {
@@ -22,12 +20,15 @@ const TIER_COLORS := {
 }
 
 
-# tool_kind: "sword" or "pickaxe" (后续可加 axe)
 static func build_icon(tool_kind: String, tier: String) -> ImageTexture:
 	var path: String
+	var crop_left_half: bool = false   # axe: 取左半 (PNG 同时含斧+镐)
 	match tool_kind:
 		"sword": path = SWORD_PATH
 		"pickaxe": path = PICKAXE_PATH
+		"axe":
+			path = AXE_PATH
+			crop_left_half = true
 		_:
 			push_error("unknown tool_kind: %s" % tool_kind)
 			return null
@@ -36,6 +37,12 @@ static func build_icon(tool_kind: String, tier: String) -> ImageTexture:
 		push_error("tool sheet missing: %s" % path)
 		return null
 	var img: Image = tex.get_image().duplicate()
+	if crop_left_half:
+		var w: int = img.get_width()
+		var h: int = img.get_height()
+		var left := Image.create(w / 2, h, false, Image.FORMAT_RGBA8)
+		left.blit_rect(img, Rect2i(0, 0, w / 2, h), Vector2i.ZERO)
+		img = left
 	var head_color: Color = TIER_COLORS.get(tier, Color.WHITE)
 	for y in img.get_height():
 		for x in img.get_width():
