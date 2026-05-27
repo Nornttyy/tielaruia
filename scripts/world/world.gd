@@ -560,31 +560,40 @@ func _on_chunk_loaded(c: Chunk) -> void:
 	const Autotile = preload("res://scripts/world/autotile.gd")
 	const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 	# 把 chunk 数据写到 TileMapLayer (前景方块 + 背景墙)
-	# 能 autotile 的方块用 Autotile.refresh_tile 按邻居 mask 选 atlas_coord
-	# 墙: 浅层 (y < surf+3) 在 world_generator 已不填, 这里全部渲染即可
+	# perf: 拆 4 段 (每段 16 列), 之间 await 1 帧, 不再一次性 26 万 ops 堵主线程.
+	# 玩家会先看到部分 chunk 渲染, 余下几帧内补齐, 视觉无穿帮.
 	var chunk_start: int = c.chunk_x * ChunkConstants.CHUNK_WIDTH
-	for lx in c.tiles.size():
-		var world_x: int = chunk_start + lx
-		var col: Array = c.tiles[lx]
-		var wall_col: Array = c.walls[lx]
-		for y in col.size():
-			var tid: int = col[y]
-			if tid != Tiles.AIR:
-				var pos := Vector2i(world_x, y)
-				if EdgeTemplates.FAMILY_OF.has(tid):
-					var q := Autotile.make_terrain_query(tid, chunk_manager)
-					Autotile.refresh_tile(terrain_layer, pos, tid, q)
-				else:
-					terrain_layer.set_cell(pos, tid, Vector2i.ZERO)
-			var wid: int = wall_col[y]
-			if wid != Tiles.AIR:
-				var wpos := Vector2i(world_x, y)
-				if EdgeTemplates.FAMILY_OF.has(wid):
-					var wq := Autotile.make_wall_query(wid, chunk_manager)
-					Autotile.refresh_tile(wall_layer, wpos, wid, wq)
-				else:
-					wall_layer.set_cell(wpos, wid, Vector2i.ZERO)
-		SkyLightGrid.invalidate_column(world_x)
+	var col_count: int = c.tiles.size()
+	const COLS_PER_FRAME := 16   # 64 列拆 4 帧
+	var lx: int = 0
+	while lx < col_count:
+		var batch_end: int = min(lx + COLS_PER_FRAME, col_count)
+		for bx in range(lx, batch_end):
+			var world_x: int = chunk_start + bx
+			var col: Array = c.tiles[bx]
+			var wall_col: Array = c.walls[bx]
+			for y in col.size():
+				var tid: int = col[y]
+				if tid != Tiles.AIR:
+					var pos := Vector2i(world_x, y)
+					if EdgeTemplates.FAMILY_OF.has(tid):
+						var q := Autotile.make_terrain_query(tid, chunk_manager)
+						Autotile.refresh_tile(terrain_layer, pos, tid, q)
+					else:
+						terrain_layer.set_cell(pos, tid, Vector2i.ZERO)
+				var wid: int = wall_col[y]
+				if wid != Tiles.AIR:
+					var wpos := Vector2i(world_x, y)
+					if EdgeTemplates.FAMILY_OF.has(wid):
+						var wq := Autotile.make_wall_query(wid, chunk_manager)
+						Autotile.refresh_tile(wall_layer, wpos, wid, wq)
+					else:
+						wall_layer.set_cell(wpos, wid, Vector2i.ZERO)
+			SkyLightGrid.invalidate_column(world_x)
+		lx = batch_end
+		# 让出 1 帧, 给主线程喘息
+		if lx < col_count:
+			await get_tree().process_frame
 	# 流水: 只标"边界水" dirty (相邻有 AIR 或低水位才可能流) — 避免 worldgen
 	# 大海/大水池整片几千格全 dirty 卡帧.
 	if water_sim != null:
