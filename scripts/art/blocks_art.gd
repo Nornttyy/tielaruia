@@ -739,10 +739,8 @@ const _SLIME_TORCH := [
 	"................",
 ]
 
-# 木平台: 中间 4 行木梁 (高光/木板/阴影沿), 上下透明
+# 木平台: 中间 8 行木梁 (高光 / 厚木板 / 木结纹 / 阴影沿), 上下透明
 const _WOOD_PLATFORM := [
-	"................",
-	"................",
 	"................",
 	"................",
 	"................",
@@ -750,9 +748,11 @@ const _WOOD_PLATFORM := [
 	"llllllllllllllll",
 	"pppppppppppppppp",
 	"pPpppllpppppPppp",
+	"ppppppppPpppppPp",
+	"pPpppppppPpppppp",
+	"ppppPpppppPpppll",
+	"pPpppllpppppppPp",
 	"kkkkkkkkkkkkkkkk",
-	"................",
-	"................",
 	"................",
 	"................",
 	"................",

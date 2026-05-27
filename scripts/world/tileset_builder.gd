@@ -80,13 +80,11 @@ static func build() -> TileSet:
 					Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8),
 				]))
 			elif tile_id == Tiles.WOOD_PLATFORM:
-				# 平台 (中间一条木梁): 碰撞框跟视觉 y=-2..+1 对齐
+				# 平台 (中间 8 行厚木梁): 碰撞框跟视觉 y=-4..+3 对齐
 				var pprops = source.get_tile_data(Vector2i.ZERO, 0)
 				pprops.add_collision_polygon(0)
-				# Polygon 在 tile 中间 y=-2..+1 一条薄条带, 给玩家落脚.
-				# one_way: 从上落下被挡, 从下穿过
 				pprops.set_collision_polygon_points(0, 0, PackedVector2Array([
-					Vector2(-8, -2), Vector2(8, -2), Vector2(8, 1), Vector2(-8, 1),
+					Vector2(-8, -4), Vector2(8, -4), Vector2(8, 3), Vector2(-8, 3),
 				]))
 				pprops.set_collision_polygon_one_way(0, 0, true)
 			# 水 (4 个水位) 都启用 4 帧动画
