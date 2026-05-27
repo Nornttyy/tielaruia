@@ -15,6 +15,15 @@ func _ready() -> void:
 	add_theme_constant_override("separation", 4)
 
 
+# UI (背包/合成/箱子) 打开时隐藏 hotbar — 用户要求
+func _process(_delta: float) -> void:
+	var c: Node = get_tree().get_first_node_in_group("crafting_panel")
+	var ch: Node = get_tree().get_first_node_in_group("chest_panel")
+	var ui_open: bool = (c != null and c.has_method("is_open") and c.is_open()) \
+			or (ch != null and ch.has_method("is_open") and ch.is_open())
+	visible = not ui_open
+
+
 func _make_slot() -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)

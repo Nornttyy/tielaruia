@@ -203,6 +203,17 @@ func facing_dir() -> int:
 	return 1 if _facing_right else -1
 
 
+# 背包/合成/箱子 任意一个打开 → block 玩家输入
+func _is_inventory_ui_open() -> bool:
+	var c: Node = get_tree().get_first_node_in_group("crafting_panel")
+	var ch: Node = get_tree().get_first_node_in_group("chest_panel")
+	if c != null and c.has_method("is_open") and c.is_open():
+		return true
+	if ch != null and ch.has_method("is_open") and ch.is_open():
+		return true
+	return false
+
+
 func _on_damaged(_amount: int, source_pos: Vector2) -> void:
 	_hurt_timer = HURT_DURATION
 	# 击退: 远离 source
@@ -213,6 +224,17 @@ func _on_damaged(_amount: int, source_pos: Vector2) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# 背包/合成/箱子 UI 打开时: 玩家停止 input, 只保留重力 (用户要求)
+	if _is_inventory_ui_open():
+		if not is_on_floor():
+			velocity.y += GRAVITY * delta
+		velocity.x = move_toward(velocity.x, 0.0, 800.0 * delta)
+		move_and_slide()
+		if sprite.animation != "idle":
+			sprite.play("idle")
+		_was_on_floor = is_on_floor()
+		_previous_vy = velocity.y
+		return
 	# 钩爪拉拽中: 跳过普通物理, 直接朝锚点匀速冲过去
 	if _hook_active:
 		_update_hook_pull(delta)
