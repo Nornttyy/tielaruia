@@ -10,9 +10,6 @@ func _ready() -> void:
 		["raw_meat", 100, 1, 2],
 		["leather", 90, 1, 2],
 	]
-	sprite_frames = ArtCache.cow_frames
+	sprite_frames = ArtCache.jaguar_frames  # Cat Fighter sprite (dogchicken CC-BY 3.0)
 	super._ready()
 	add_to_group("animals")
-	# 染橙色像豹皮
-	if sprite != null:
-		sprite.modulate = Color(1.4, 0.85, 0.4)

@@ -35,6 +35,7 @@ var slime_frames: SpriteFrames
 var zombie_frames: SpriteFrames
 var villager_frames: SpriteFrames
 var cow_frames: SpriteFrames
+var jaguar_frames: SpriteFrames
 var sheep_frames: SpriteFrames
 var pig_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
@@ -182,6 +183,8 @@ func _build_entities() -> void:
 	cow_frames = CowArt.build_sprite_frames()
 	sheep_frames = SheepArt.build_sprite_frames()
 	pig_frames = PigArt.build_sprite_frames()
+	# Jaguar: 用 Cat Fighter sprite (CC-BY 3.0, dogchicken). 见 LICENSES.md
+	jaguar_frames = preload("res://scripts/art/cat_fighter_loader.gd").build_sprite_frames(0.4)
 
 
 # 统一的"取背包/热键栏图标"接口。
