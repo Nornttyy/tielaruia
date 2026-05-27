@@ -4,19 +4,25 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const MAX_HEALTH := 15
-const CONTACT_DAMAGE := 3
 const GRAVITY := 900.0
 const SWIM_GRAVITY := 200.0
 const SWIM_MAX_SINK := 70.0
-const SWIM_UP_SPEED := -45.0   # 头还在水里时向上漂的最大速度
-const WALK_SPEED := 38.0
-const AGGRO_RANGE_PX := 240.0   # 15 tiles
-const JUMP_VY := -260.0         # 撞墙时小跳避障 (1 格)
+const SWIM_UP_SPEED := -45.0
+const JUMP_VY := -260.0
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 16
 
-var current_health: int = MAX_HEALTH
+# 子类可覆盖 (jaguar 等). 用 var 不用 const.
+var max_health: int = 15
+var contact_damage: int = 3
+var walk_speed: float = 38.0
+var aggro_range_px: float = 240.0
+var entity_group: String = "zombies"   # 子类可改成 "animals" 等
+var sprite_frames_override: SpriteFrames = null   # _ready 前由子类设
+# 死亡掉落: 数组每条 [item_id, count_min, count_max], 各 100% 掉
+var drop_table: Array = [["bone", 1, 3]]
+
+var current_health: int = 15
 var _hit_flash: float = 0.0
 var _is_dying: bool = false
 var _jump_cooldown: float = 0.0
@@ -25,10 +31,11 @@ var _jump_cooldown: float = 0.0
 
 
 func _ready() -> void:
-	sprite.sprite_frames = ArtCache.zombie_frames
+	sprite.sprite_frames = sprite_frames_override if sprite_frames_override != null else ArtCache.zombie_frames
 	sprite.play("idle")
-	add_to_group("zombies")
+	add_to_group(entity_group)
 	add_to_group("slimes")  # 共享 slime 攻击/查找逻辑 (剑挥范围/出生点死亡清除)
+	current_health = max_health
 
 
 func _physics_process(delta: float) -> void:
@@ -63,9 +70,9 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 
 	var player := _find_player()
-	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
+	if player != null and global_position.distance_to(player.global_position) <= aggro_range_px:
 		var dir: float = signf(player.global_position.x - global_position.x)
-		velocity.x = dir * WALK_SPEED
+		velocity.x = dir * walk_speed
 		sprite.flip_h = dir < 0
 		if sprite.animation != "walk":
 			sprite.play("walk")
@@ -133,7 +140,7 @@ func _check_player_contact() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
 		return
-	hp.take_damage(CONTACT_DAMAGE, global_position)
+	hp.take_damage(contact_damage, global_position)
 
 
 # 跟 slime 同接口 (玩家挥剑统一调 take_damage)
@@ -158,10 +165,12 @@ func _die() -> void:
 	_is_dying = true
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
-	# 掉 1-3 个 bone
-	var n := 1 + (randi() % 3)
-	for _i in n:
-		_spawn_drop("bone")
+	# 掉落: 遍历 drop_table, 每条按 count_min..count_max 随机数量掉
+	for entry in drop_table:
+		var item_id: String = entry[0]
+		var n: int = randi_range(entry[1], entry[2])
+		for _i in n:
+			_spawn_drop(item_id)
 	queue_free()
 
 
