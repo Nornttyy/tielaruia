@@ -388,17 +388,61 @@ func close() -> void:
 	closed.emit()
 
 
-# 36 个背包格子左键: 拿起/放下/合并/交换
+# 拖动状态: 跟 chest_panel 一致
+var _drag_was_pickup: bool = false
+var _drag_press_idx: int = -1
+
+
+# 36 个背包格子左键: press 拿/放, release 在不同格上 → 落到那
 func _on_inv_slot_input(event: InputEvent, idx: int) -> void:
-	if not (event is InputEventMouseButton) or not event.pressed:
+	if not (event is InputEventMouseButton):
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT:
 		return
 	if _player_inv == null or _player_inv.inventory == null:
 		return
-	InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, idx)
+	if event.pressed:
+		var was_empty: bool = _player_inv.cursor_slot == null
+		InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, idx)
+		if _player_inv.has_signal("inventory_changed"):
+			_player_inv.inventory_changed.emit()
+		_drag_was_pickup = was_empty and _player_inv.cursor_slot != null
+		_drag_press_idx = idx
+
+
+# 全局监听鼠标松开 → 找鼠标下的 slot → 把 cursor 物品落下
+func _input(event: InputEvent) -> void:
+	if not is_open():
+		return
+	if not (event is InputEventMouseButton):
+		return
+	var mb := event as InputEventMouseButton
+	if mb.pressed or mb.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if not _drag_was_pickup:
+		return
+	# 找鼠标下的 slot
+	var found_idx := _find_inv_slot_under_mouse()
+	if found_idx < 0:
+		_drag_was_pickup = false
+		return
+	# 同 slot 松手 → 啥也不做, 保持 cursor 拿着
+	if found_idx == _drag_press_idx:
+		_drag_was_pickup = false
+		return
+	InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, found_idx)
 	if _player_inv.has_signal("inventory_changed"):
 		_player_inv.inventory_changed.emit()
+	_drag_was_pickup = false
+
+
+func _find_inv_slot_under_mouse() -> int:
+	var mp: Vector2 = get_viewport().get_mouse_position()
+	for i in _inv_slot_nodes.size():
+		var slot: Control = _inv_slot_nodes[i]
+		if slot.get_global_rect().has_point(mp):
+			return i
+	return -1
 
 
 func is_open() -> bool:

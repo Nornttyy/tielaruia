@@ -143,16 +143,13 @@ func _make_slot(idx: int, is_chest: bool) -> PanelContainer:
 	lbl.add_theme_constant_override("outline_size", 3)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(lbl)
-	# 长按 → transfer (用户要求, 短按只是看清楚)
+	# 拖动: press 立刻拿起 / 放下, release 在不同 slot 上 → 落点
 	var btn := Button.new()
 	btn.flat = true
 	btn.set_anchors_preset(Control.PRESET_FULL_RECT)
 	btn.set_meta("idx", idx)
 	btn.set_meta("is_chest", is_chest)
-	btn.set_meta("hold_timer", 0.0)
-	btn.set_meta("hold_fired", false)
 	btn.button_down.connect(_on_slot_button_down.bind(btn))
-	btn.button_up.connect(_on_slot_button_up.bind(btn))
 	p.add_child(btn)
 	return p
 
@@ -181,42 +178,50 @@ func _refresh_all() -> void:
 			_refresh_slot(_player_slots_ui[i], data)
 
 
-# 长按 0.3s 触发. 短按不动 (用户要求).
-const _HOLD_THRESHOLD := 0.3
+# 拖动状态: press 时记录从哪个 slot 拿起 + 是否真拿起了 (cursor 之前空 + slot 有物品)
+var _drag_was_pickup: bool = false
+var _drag_press_idx: int = -1
+var _drag_press_is_chest: bool = false
+
 
 func _on_slot_button_down(btn: Button) -> void:
-	btn.set_meta("hold_timer", 0.0)
-	btn.set_meta("hold_fired", false)
-
-func _on_slot_button_up(btn: Button) -> void:
-	# Up 之前已 fire (hold 完) → 啥都不做; 没 fire → 短按, 啥都不做
-	pass
-
-# 在主 _process 里调
-func _process_hold_buttons(delta: float) -> void:
-	if not _is_open:
-		return
-	for slot_arr in [_chest_slots_ui, _player_slots_ui]:
-		for slot_ui in slot_arr:
-			var btn := slot_ui.get_child(slot_ui.get_child_count() - 1) as Button
-			if btn == null:
-				continue
-			if not btn.button_pressed:
-				continue
-			if btn.get_meta("hold_fired", false):
-				continue
-			var t: float = btn.get_meta("hold_timer", 0.0) + delta
-			btn.set_meta("hold_timer", t)
-			if t >= _HOLD_THRESHOLD:
-				btn.set_meta("hold_fired", true)
-				_fire_slot_move(btn)
-
-
-func _fire_slot_move(btn: Button) -> void:
 	if _player_inv == null or _player_inv.inventory == null:
 		return
 	var idx: int = btn.get_meta("idx", 0)
 	var is_chest: bool = btn.get_meta("is_chest", false)
+	# 记录"拿起"还是"放下": 看 cursor 现在是否空
+	var was_empty: bool = _player_inv.cursor_slot == null
+	_apply_click(idx, is_chest)
+	_drag_was_pickup = was_empty and _player_inv.cursor_slot != null
+	_drag_press_idx = idx
+	_drag_press_is_chest = is_chest
+
+
+# 全局监听鼠标松开: 如果是 pickup 后松手在另一个 slot 上 → 落到那个 slot
+func _input(event: InputEvent) -> void:
+	if not _is_open:
+		return
+	if not (event is InputEventMouseButton):
+		return
+	var mb := event as InputEventMouseButton
+	if mb.pressed or mb.button_index != MOUSE_BUTTON_LEFT:
+		return
+	# release 时, 找鼠标下的 slot
+	if not _drag_was_pickup:
+		return
+	var found := _find_slot_under_mouse()
+	if found.idx < 0:
+		_drag_was_pickup = false
+		return
+	# 同 slot 松手 → 啥也不做 (保持 cursor 拿着, 等下一次 press 放下)
+	if found.idx == _drag_press_idx and found.is_chest == _drag_press_is_chest:
+		_drag_was_pickup = false
+		return
+	_apply_click(found.idx, found.is_chest)
+	_drag_was_pickup = false
+
+
+func _apply_click(idx: int, is_chest: bool) -> void:
 	if is_chest:
 		InventoryCursor.click_slot(_player_inv, ChestStorage.get_slots(_chest_tile), idx)
 	else:
@@ -224,6 +229,20 @@ func _fire_slot_move(btn: Button) -> void:
 	if _player_inv.has_signal("inventory_changed"):
 		_player_inv.inventory_changed.emit()
 	_refresh_all()
+
+
+# 查鼠标下是哪个 slot. 返回 {idx, is_chest}, idx=-1 表示不在任何 slot 上
+func _find_slot_under_mouse() -> Dictionary:
+	var mp: Vector2 = get_viewport().get_mouse_position()
+	for i in _chest_slots_ui.size():
+		var slot: Control = _chest_slots_ui[i]
+		if slot.get_global_rect().has_point(mp):
+			return {"idx": i, "is_chest": true}
+	for i in _player_slots_ui.size():
+		var slot: Control = _player_slots_ui[i]
+		if slot.get_global_rect().has_point(mp):
+			return {"idx": i, "is_chest": false}
+	return {"idx": -1, "is_chest": false}
 
 
 func _find_first_empty(arr: Array, start: int, end: int) -> int:
@@ -252,9 +271,7 @@ func close() -> void:
 	_is_open = false
 
 
-func _process(delta: float) -> void:
-	# Hold-to-move 长按定时
-	_process_hold_buttons(delta)
+func _process(_delta: float) -> void:
 	# Cursor icon 跟鼠标
 	if not _is_open or _cursor_icon == null or _player_inv == null:
 		return
