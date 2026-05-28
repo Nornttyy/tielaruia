@@ -9,7 +9,7 @@ class_name SaveData extends Resource
 # 世界时间 [0, 1) — 0=午夜, 0.35=早晨默认, 0.5=正午, 0.75=傍晚
 @export var world_time: float = 0.35
 @export var player_position: Vector2 = Vector2.ZERO
-@export var player_hp: float = 20.0  # 跟 PlayerHealth.MAX_HEALTH 同步 (老遗留 6.0)
+@export var player_hp: float = 100.0  # 跟 PlayerHealth.MAX_HEALTH 同步
 # 9 hotbar + 27 主背包 = 36 槽。每个: null 或 {"item_id": String, "count": int}
 @export var inventory_slots: Array = []
 @export var hotbar_selection: int = 0

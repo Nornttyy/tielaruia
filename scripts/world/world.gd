@@ -947,9 +947,6 @@ func respawn_player() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_method("revive_full"):
 		hp.revive_full()
-	var hg: Node = player.get_node_or_null("PlayerHunger")
-	if hg != null and hg.has_method("refill_full"):
-		hg.refill_full()
 
 
 func _spawn_death_drop(item_id: String, count: int, pos: Vector2) -> void:

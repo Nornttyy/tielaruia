@@ -1,14 +1,15 @@
-# 10 颗红心: 每颗 2 HP; cur >= (i+1)*2 满, cur == 2i+1 半, 否则空。
+# 5 颗红心: 每颗 20 HP; cur >= (i+1)*20 满, cur >= 2i*10+10 半, 否则空。
 extends Control
 
 const HEART_SIZE := 10
-const HEART_SCALE := 2          # 渲染放大倍数 (20px 每颗)
-const HEART_SPACING := 2
-const NUM_HEARTS := 10
+const HEART_SCALE := 3          # 渲染放大倍数 (30px 每颗, 心少了画大点)
+const HEART_SPACING := 4
+const NUM_HEARTS := 5
+const HP_PER_HEART := 20
 const PAD := 8
 
-var _cur: int = 20
-var _max: int = 20
+var _cur: int = 100
+var _max: int = 100
 
 
 func _ready() -> void:
@@ -38,11 +39,15 @@ func _draw() -> void:
 		var x: float = PAD + i * (heart_px + HEART_SPACING)
 		var y: float = PAD
 		var tex: ImageTexture
-		var threshold: int = (i + 1) * 2  # 这颗心代表 HP 范围 (2i+1, 2i+2)
-		if _cur >= threshold:
+		# 这颗心代表 HP 范围 (i*20, (i+1)*20]. >= full 时满, > half 时半, 否则空.
+		var full_threshold: int = (i + 1) * HP_PER_HEART
+		var half_threshold: int = i * HP_PER_HEART + HP_PER_HEART / 2
+		if _cur >= full_threshold:
 			tex = ArtCache.heart_full
-		elif _cur == threshold - 1:
+		elif _cur > half_threshold:
 			tex = ArtCache.heart_half
+		elif _cur > i * HP_PER_HEART:
+			tex = ArtCache.heart_half  # 1-10 HP 也显示半颗 (避免 "明明有血却空" 的迷惑)
 		else:
 			tex = ArtCache.heart_empty
 		if tex != null:

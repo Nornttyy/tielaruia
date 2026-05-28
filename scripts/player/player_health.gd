@@ -6,11 +6,11 @@ signal health_changed(current: int, maximum: int)
 signal damaged(amount: int, source_pos: Vector2)
 signal died
 
-const MAX_HEALTH := 20
+const MAX_HEALTH := 100
 const IFRAMES_SEC := 0.6
 const TILE_SIZE := 12
 const LAVA_TICK_INTERVAL := 0.5     # 每 0.5s 扣一次血
-const LAVA_DAMAGE_PER_TICK := 4     # 每次扣 4 → 满血 20 在 2.5s 内烧死
+const LAVA_DAMAGE_PER_TICK := 20    # 每次扣 20 → 满血 100 在 2.5s 内烧死
 
 var current_health: int = MAX_HEALTH
 var _iframe_timer: float = 0.0

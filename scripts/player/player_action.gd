@@ -181,6 +181,12 @@ func _physics_process(delta: float) -> void:
 			var primary_pressed_a: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 			if primary_pressed_a and _attack_cooldown <= 0.0 and _mouse_has_enemy_nearby():
 				_axe_swing()
+	elif kind == "bow":
+		# 弓: LMB 按下 → 朝鼠标发箭, 消耗 1 wood_arrow. cooldown 0.4s.
+		_reset_mining()
+		var primary_pressed_b: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
+		if primary_pressed_b and _attack_cooldown <= 0.0:
+			_try_fire_bow()
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
@@ -729,12 +735,10 @@ func _effective_sword_damage() -> int:
 	var base: int = _sword_damage()
 	if base <= 0:
 		return 0
-	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
-	var hunger_mult: float = 1.0 if hunger == null else hunger.get_attack_multiplier()
 	var dmg_mult: float = _tool_damage_mult()
 	if dmg_mult <= 0.0:
 		return 0
-	return max(1, int(round(float(base) * hunger_mult * dmg_mult)))
+	return max(1, int(round(float(base) * dmg_mult)))
 
 
 func _update_eat_or_place(delta: float) -> void:
@@ -757,7 +761,8 @@ func _update_eat_or_place(delta: float) -> void:
 	var inv: Node = _inventory_node()
 	var slot = null if inv == null else inv.current_hotbar_slot()
 	var holding_food: bool = slot != null and ItemDB.is_food(slot.item_id)
-	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
+	# 饱食度已删, 食物直接 PlayerHealth.heal(food_fill). 只有血未满才能吃.
+	var hp: Node = get_parent().get_node_or_null("PlayerHealth")
 
 	# 持钩爪 + 右键刚按下 → 朝鼠标发射钩爪 (玩家拉过去)
 	if slot != null and slot.item_id == "grappling_hook" and just:
@@ -786,8 +791,8 @@ func _update_eat_or_place(delta: float) -> void:
 					_trigger_mimic_trap(aim_tile, terrain.get_parent())
 					return
 
-	# 持食物 + 按住 + 没吃饱 → 进入/保持 eating
-	if holding_food and held and hunger != null and int(hunger.current) < hunger.MAX:
+	# 持食物 + 按住 + 血未满 → 进入/保持 eating. 食物 food_fill 现在直接当回血量.
+	if holding_food and held and hp != null and hp.current_health < hp.MAX_HEALTH:
 		if _eat_item_id != slot.item_id:
 			_eat_item_id = slot.item_id
 			_eat_t = 0.0
@@ -795,13 +800,13 @@ func _update_eat_or_place(delta: float) -> void:
 		_eat_t += delta
 		if _eat_t >= EAT_DURATION_SEC:
 			_eat_t = 0.0
-			hunger.consume(ItemDB.food_fill(slot.item_id))
+			hp.heal(ItemDB.food_fill(slot.item_id))
 			SfxBank.play("eat", 0.10)
 			inv.consume_current(1)
 			_stop_eat_anim()  # 吃完一口, 下次按住会重新开始
 		return
 
-	# 取消进食 (松开 / 没食物 / 满饱)
+	# 取消进食 (松开 / 没食物 / 满血)
 	if _eat_t > 0.0:
 		_eat_t = 0.0
 		_eat_item_id = ""
@@ -954,12 +959,10 @@ func _check_pickaxe_spin_hits() -> void:
 	var base: int = _pickaxe_base_damage()
 	if base <= 0:
 		return
-	var hunger: Node = player.get_node_or_null("PlayerHunger")
-	var hunger_mult: float = 1.0 if hunger == null else hunger.get_attack_multiplier()
 	var dmg_mult: float = _tool_damage_mult()
 	if dmg_mult <= 0.0:
 		return
-	var damage: int = max(1, int(round(float(base) * hunger_mult * dmg_mult)))
+	var damage: int = max(1, int(round(float(base) * dmg_mult)))
 	for group in ["slimes", "animals"]:
 		for s in get_tree().get_nodes_in_group(group):
 			var sn := s as Node2D
@@ -1014,16 +1017,14 @@ func _thrust_sword() -> void:
 	elif held != null and held.has_method("play_swing"):
 		held.play_swing()
 	SfxBank.play("swing", 0.10)
-	# 伤害 = sword_damage * hunger_mult * damage_mult * 0.8
+	# 伤害 = sword_damage * damage_mult * 0.8
 	var base: int = _sword_damage()
 	if base <= 0:
 		return
-	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
-	var hunger_mult: float = 1.0 if hunger == null else hunger.get_attack_multiplier()
 	var dmg_mult: float = _tool_damage_mult()
 	if dmg_mult <= 0.0:
 		return
-	var damage: int = max(1, int(round(float(base) * hunger_mult * dmg_mult * THRUST_DAMAGE_MULT)))
+	var damage: int = max(1, int(round(float(base) * dmg_mult * THRUST_DAMAGE_MULT)))
 	# 矩形判定: 沿 swing_dir 长 max_len, 半宽 THRUST_HALF_WIDTH; 找最近的目标
 	var best: Node2D = null
 	var best_dist: float = INF
@@ -1112,6 +1113,55 @@ func in_reach(tile: Vector2i) -> bool:
 		return false
 	var pt: Vector2i = player_tile()
 	return abs(tile.x - pt.x) <= REACH_TILES and abs(tile.y - pt.y) <= REACH_TILES
+
+
+const ArrowScene = preload("res://scenes/entities/arrow.tscn")
+const BOW_COOLDOWN := 0.4
+const BOW_ARROW_DAMAGE := 5    # base, 后续乘 tier multiplier
+
+# 弓发箭: 找 inventory 里第 1 个 wood_arrow → 消耗 1 → spawn Arrow Area2D 朝鼠标飞
+# 没箭 → 不发, 也不进 cooldown (玩家随便点没惩罚)
+func _try_fire_bow() -> void:
+	var inv: Node = _inventory_node()
+	if inv == null:
+		return
+	# 找到任意 wood_arrow 槽并消耗 1
+	var consumed: bool = false
+	if inv.has_method("consume_first"):
+		consumed = inv.consume_first("wood_arrow", 1)
+	else:
+		# 兜底: 直接查 hotbar / main inv 槽位
+		consumed = _consume_arrow_fallback(inv)
+	if not consumed:
+		# TODO: 加"没箭"音效
+		return
+	_attack_cooldown = BOW_COOLDOWN
+	# spawn 箭
+	var parent: Node2D = get_parent() as Node2D
+	if parent == null:
+		return
+	var start: Vector2 = parent.global_position + Vector2(0, -8)   # 玩家身体中部
+	var target: Vector2 = mouse_world_override if mouse_world_override != null else parent.get_global_mouse_position()
+	var arrow = ArrowScene.instantiate()
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = parent.get_parent()
+	entities.add_child(arrow)
+	var dmg: int = BOW_ARROW_DAMAGE
+	# 弓 tier 加伤: tier1 ×1.0, 后续 tier 加 (留口子未来 add bow tier 2-7)
+	dmg = int(round(float(dmg) * _tool_damage_mult()))
+	arrow.setup(start, target, dmg, parent)
+	SfxBank.play("break", 0.10)  # 暂用破方块声当弓弦声; 以后加专属
+
+
+func _consume_arrow_fallback(inv: Node) -> bool:
+	# 老接口兜底: 直接读 hotbar + main slots, 找 wood_arrow 减 1
+	for fn in ["consume", "remove_item"]:
+		if inv.has_method(fn):
+			var ok = inv.call(fn, "wood_arrow", 1)
+			if ok == true or ok == 1:
+				return true
+	return false
 
 
 # 死人箱触发: 玩家右键 / 砍 → 爆炸 + 弹出 Mimic 怪物.
