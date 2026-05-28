@@ -19,6 +19,9 @@ var _tween: Tween = null
 var _current_size: float = TOOL_SIZE
 var _eating: bool = false
 var _eat_phase: float = 0.0   # 进食动画时间累积 (秒)
+# 攻击期间锁 facing: player_controller 每帧 set_facing 跟玩家走路方向,
+# 攻击中翻 facing 会让 sprite 镜像但旋转值还是攻击时算的 → 朝向乱套. 锁住期间忽略.
+var _attack_locked: bool = false
 
 
 func _ready() -> void:
@@ -40,6 +43,10 @@ func bind_inventory(inv: Node) -> void:
 
 
 func set_facing(right: bool) -> void:
+	# 攻击中: 忽略 player_controller 的 facing 更新, 否则跟 play_thrust/swing 算的
+	# 旋转值打架 (sprite 翻面但旋转还是攻击方向 → 朝向反了)
+	if _attack_locked:
+		return
 	if right == _facing_right:
 		return
 	_facing_right = right
@@ -107,9 +114,11 @@ func play_pickaxe_attack(target_angle: float = -PI / 2.0) -> void:
 		return
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
+	_attack_locked = false
 	# 跟着鼠标 facing (跟剑 sweep 同套路, 不靠玩家走路方向)
 	var mouse_on_right: bool = cos(target_angle) >= 0.0
 	set_facing(mouse_on_right)
+	_attack_locked = true
 	# sprite 默认朝上 (tip 在 -y), 要让 tip 起步朝 target_angle 得 + PI/2.
 	# facing_left 时 sprite 已水平翻转, 旋转要反向.
 	var s: float = 1.0 if _facing_right else -1.0
@@ -118,7 +127,10 @@ func play_pickaxe_attack(target_angle: float = -PI / 2.0) -> void:
 	_tween = create_tween()
 	var dir: float = 1.0 if _facing_right else -1.0
 	_tween.tween_property(self, "rotation", start_rot + deg_to_rad(360.0 * dir), PICKAXE_ATTACK_DURATION)
-	_tween.tween_callback(func(): rotation = 0.0)
+	_tween.tween_callback(func():
+		rotation = 0.0
+		_attack_locked = false
+	)
 
 
 # 戳 (剑): 朝鼠标方向向前突再收回, 不旋转 (跟挥不同, 挥是转圈弧)
@@ -127,8 +139,10 @@ func play_thrust(target_angle: float) -> void:
 		return
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
+	_attack_locked = false   # 先解锁, set_facing 才能跟着鼠标转
 	var mouse_on_right: bool = cos(target_angle) >= 0.0
 	set_facing(mouse_on_right)
+	_attack_locked = true    # 锁住, 后续 player_controller set_facing 被忽略
 	var dir_vec := Vector2(cos(target_angle), sin(target_angle))
 	var base_pos := Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
 	var thrust_pos := base_pos + dir_vec * THRUST_OFFSET_PX
@@ -140,7 +154,10 @@ func play_thrust(target_angle: float) -> void:
 	_tween = create_tween()
 	_tween.tween_property(self, "position", thrust_pos, THRUST_DURATION * 0.4).set_ease(Tween.EASE_OUT)
 	_tween.tween_property(self, "position", base_pos, THRUST_DURATION * 0.6).set_ease(Tween.EASE_IN)
-	_tween.tween_callback(func(): rotation = 0.0)
+	_tween.tween_callback(func():
+		rotation = 0.0
+		_attack_locked = false
+	)
 
 
 func play_swing_directional(target_angle: float) -> void:
@@ -150,8 +167,10 @@ func play_swing_directional(target_angle: float) -> void:
 		return
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
+	_attack_locked = false
 	var mouse_on_right: bool = cos(target_angle) >= 0.0
 	set_facing(mouse_on_right)  # 跟鼠标走, 不跟玩家走路方向
+	_attack_locked = true
 	var s: float = 1.0 if _facing_right else -1.0
 	# wrapf 把 base 归一到 [-PI, PI), 防止 facing_left + target_left 的 -7PI/4 那种值
 	var base: float = wrapf(s * (target_angle + PI / 2.0), -PI, PI)
@@ -160,6 +179,7 @@ func play_swing_directional(target_angle: float) -> void:
 	rotation = start_a
 	_tween = create_tween()
 	_tween.tween_property(self, "rotation", end_a, SWING_DURATION)
+	_tween.tween_callback(func(): _attack_locked = false)
 
 
 func _on_changed(_arg = null) -> void:
