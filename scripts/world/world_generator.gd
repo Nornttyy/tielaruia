@@ -853,6 +853,9 @@ const HELL_HALF_WIDTH := 250       # 地狱矩形 x 半宽 (总宽 500 tile)
 # 地狱中心: 世界中心 (世界宽 1024 → 中心 512) ± 100 (按 seed 偏移). 保证玩家从 spawn 走得到.
 const HELL_CENTER_BASE := 512
 const HELL_CENTER_JITTER := 100
+# 地狱边界波浪: 不再直线, 顶/侧用 noise 抖动. 用户要求"有点斜坡".
+const HELL_TOP_WAVE_AMP := 8       # 顶部 y 方向波浪 ±8 tile
+const HELL_SIDE_WAVE_AMP := 6      # 侧面 x 方向波浪 ±6 tile
 
 
 # 地狱矩形 x 范围. 中心在 world 中心 (512) ± seed-derived jitter, 半宽 250.
@@ -867,18 +870,41 @@ const HELL_FRUIT_CHANCE := 0.07    # HELL_STONE 顶 7% 长火果
 
 static func _apply_hell_biome_chunk(c: Chunk, world_seed: int, chunk_x: int,
 		chunk_width: int, height: int) -> void:
-	# 地狱只在 world_x 范围 [hell_zone.x, hell_zone.y] 内出现 (一个大矩形, 不是全宽)
+	# 地狱在 world_x 范围 [hell_zone.x, hell_zone.y] 内, 但边界用 noise 抖出波浪.
 	var hell_zone: Vector2i = _hell_zone_x(world_seed)
 	var chunk_start: int = chunk_x * chunk_width
-	# 本 chunk 跟地狱矩形有交集? 没交集 → 整 chunk 不需处理
-	if chunk_start > hell_zone.y or chunk_start + chunk_width - 1 < hell_zone.x:
+	# 本 chunk 跟地狱矩形大致有交集? (留 amp buffer 因为波浪会突出)
+	var buf: int = HELL_SIDE_WAVE_AMP + 2
+	if chunk_start > hell_zone.y + buf or chunk_start + chunk_width - 1 < hell_zone.x - buf:
 		return
-	# 1) 替换 STONE/DEEP_STONE → HELL_STONE 只在矩形 x 范围内
+	# 边界 noise: 顶部 y 抖, 侧面 x 抖. 用 FastNoiseLite 平滑波浪 (不是抖一格抖一格).
+	var top_noise := FastNoiseLite.new()
+	top_noise.seed = world_seed + 7777
+	top_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	top_noise.frequency = 0.04   # 慢起伏 (每 ~25 格一个山头/山谷)
+	var side_noise := FastNoiseLite.new()
+	side_noise.seed = world_seed + 8888
+	side_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	side_noise.frequency = 0.06
+	# 预算: 每个 world_y 的左右边界 offset (按 y 共用, 不必每 (x,y) 重算)
+	var left_offsets: PackedInt32Array = PackedInt32Array()
+	var right_offsets: PackedInt32Array = PackedInt32Array()
+	left_offsets.resize(height)
+	right_offsets.resize(height)
+	for y in height:
+		left_offsets[y] = int(side_noise.get_noise_1d(float(y) + 0.5) * HELL_SIDE_WAVE_AMP)
+		right_offsets[y] = int(side_noise.get_noise_1d(float(y) + 100.5) * HELL_SIDE_WAVE_AMP)
+	# 1) 替换 STONE/DEEP_STONE → HELL_STONE, 边界按 noise 走波浪
 	for lx in chunk_width:
 		var world_x: int = chunk_start + lx
-		if world_x < hell_zone.x or world_x > hell_zone.y:
-			continue
-		for y in range(HELL_DEPTH + 1, height):
+		# 顶部 y 边界 (由 world_x 决定的 noise)
+		var top_offset: int = int(top_noise.get_noise_1d(float(world_x)) * HELL_TOP_WAVE_AMP)
+		var hell_top_at_x: int = HELL_DEPTH + top_offset
+		for y in range(hell_top_at_x + 1, height):
+			var hell_x_min: int = hell_zone.x + left_offsets[y]
+			var hell_x_max: int = hell_zone.y + right_offsets[y]
+			if world_x < hell_x_min or world_x > hell_x_max:
+				continue
 			var t: int = c.tiles[lx][y]
 			if t == Tiles.STONE or t == Tiles.DEEP_STONE:
 				c.tiles[lx][y] = Tiles.HELL_STONE
