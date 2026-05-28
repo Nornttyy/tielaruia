@@ -62,12 +62,12 @@ const WORM_RADIUS_MIN := 1.2     # 加宽: ≈2.5 tile 宽, 玩家舒服走 (老
 const WORM_RADIUS_MAX := 2.0     # 老值 1.3
 const WORM_BRANCH_CHANCE := 0.025  # 每步 2.5% 派子 worm → 分叉
 # 小室: 主 worm 沿途偶发开个圆室 (节奏点 + 给后续放宝箱/水晶留地方)
-const CHAMBER_STEP_INTERVAL := 25   # 每 25 步检查一次
-const CHAMBER_CHANCE := 0.5         # 50% 实际开 → 平均 ~50 步一个室
+const CHAMBER_STEP_INTERVAL := 15   # 每 15 步检查 (老 25 太稀)
+const CHAMBER_CHANCE := 0.65        # 65% 实际开
 const CHAMBER_RADIUS_MIN := 3.0     # 6 tile 宽
 const CHAMBER_RADIUS_MAX := 5.0     # 10 tile 宽
-const CHAMBER_CHEST_CHANCE := 0.30  # 30% 小室会放宝箱
-const CHAMBER_MUSHROOM_CHANCE := 0.25  # 接下来 25% 长成蘑菇地 (与宝箱互斥)
+const CHAMBER_CHEST_CHANCE := 0.55  # 55% 小室放宝箱 (老 30%)
+const CHAMBER_MUSHROOM_CHANCE := 0.20  # 20% 蘑菇地 (与宝箱互斥), 老 25%
 const CHEST_MIN_DEPTH := 30         # 太浅的小室不放 (玩家走两步就遇见就没惊喜)
 const MUSHROOM_MIN_DEPTH := 20      # 蘑菇地浅一点也行
 const WORM_BRANCH_MAX_DEPTH := 2   # 分叉递归最大深度
