@@ -114,6 +114,21 @@ var _pickaxe_hit_this_spin: Dictionary = {}  # instance_id → true (1 spin 1 �
 var _pickaxe_spin_start_rot: float = 0.0
 var _pickaxe_spin_facing_right: bool = true
 
+# 剑判定: 跟镐 spin 类似, 攻击期间每帧算 grip→tip 线段, 距怪 ≤ HIT_RADIUS 就扣血.
+# 1 攻击 1 只怪 1 击 (hit set 去重). 替代原来的 AoE 矩形/圆形.
+# 用户改: "剑碰到怪就扣血", 不是按攻击瞬间 AoE 圆扣.
+const SWORD_TIP_LOCAL_Y := -16.0     # tip 相对 held.position 的 y (sprite 16h)
+const SWORD_HIT_RADIUS := 12.0       # 怪中心到 grip→tip 线段 ≤ 12px (剑身比镐 tip 长, 半圆挥到弧边怪也要算碰到)
+const SWORD_THRUST_DURATION := 0.15  # 跟 held_item.THRUST_DURATION 一致
+const SWORD_SWING_DURATION := 0.18   # 跟 held_item.SWING_DURATION 一致
+var _sword_attack_active: bool = false
+var _sword_attack_t: float = 0.0
+var _sword_attack_duration: float = 0.0
+var _sword_attack_facing_right: bool = true
+var _sword_attack_damage: int = 0
+var _sword_attack_knockback: float = 0.0
+var _sword_hit_this_attack: Dictionary = {}  # instance_id → true
+
 # 测试用: 记录最近一次挥剑的命中中心点 (玩家中心 + 鼠标方向 * 半径)
 var last_swing_center: Vector2 = Vector2.ZERO
 # 测试用: 注入鼠标世界坐标 (null = 真实 get_global_mouse_position)
@@ -206,6 +221,14 @@ func _physics_process(delta: float) -> void:
 			_pickaxe_hit_this_spin.clear()
 		else:
 			_check_pickaxe_spin_hits()
+	# 剑攻击中 (戳/挥): 同样每帧扫 grip→tip 线段, 跟怪贴近就扣血. 1 攻击 1 只怪 1 击.
+	if _sword_attack_active:
+		_sword_attack_t += delta
+		if _sword_attack_t >= _sword_attack_duration:
+			_sword_attack_active = false
+			_sword_hit_this_attack.clear()
+		else:
+			_check_sword_blade_hits()
 
 
 func _crafting_open() -> bool:
@@ -224,20 +247,34 @@ func _toggle_crafting(n: int) -> void:
 
 
 func _try_open_workbench_or_close() -> void:
-	# 优先级: 附近村民 → 对话 (跳过合成面板)
+	# 优先级 1: 附近村民 → 对话
 	var villager = _find_villager_nearby()
 	if villager != null:
 		var db = get_tree().get_first_node_in_group("dialogue_box")
 		if db != null and db.has_method("open"):
 			db.open(VillagerLines.random_line())
 		return
+	# 优先级 2: 鼠标对准 chest tile → 开 chest (E 跟右键同款 — 用户要求)
+	var aim_tile: Vector2i = aim_tile_coord()
+	if in_reach(aim_tile):
+		var terrain := _terrain()
+		if terrain != null:
+			var aim_tid: int = terrain.get_cell_source_id(aim_tile)
+			if aim_tid == Tiles.CHEST or aim_tid == Tiles.GOLD_CHEST or aim_tid == Tiles.DIAMOND_CHEST or aim_tid == Tiles.SHADOW_CHEST:
+				var chest_p: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
+				if chest_p == null:
+					chest_p = get_tree().root.find_child("ChestPanel", true, false)
+				if chest_p != null and chest_p.has_method("open"):
+					var inv: Node = _inventory_node()
+					chest_p.open(aim_tile, inv)
+				return
+	# 优先级 3: 合成面板 (工作台 → 3x3, 否则 2x2)
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
 	if cp == null:
 		return
 	if cp.is_open():
 		cp.close()
 		return
-	# 工作台 2 格内 → 3x3, 否则 → 2x2 (E 一键合成)
 	if _has_workbench_nearby():
 		cp.open(3)
 	else:
@@ -996,6 +1033,57 @@ func _check_pickaxe_spin_hits() -> void:
 				sn.take_damage(damage, tip_world, _pickaxe_knockback())
 
 
+# 攻击开始时调一次. 接下来 duration 秒内每帧 _check_sword_blade_hits 扫击中.
+func _start_sword_blade_attack(swing_dir: Vector2, damage: int, knockback: float, duration: float) -> void:
+	_sword_attack_active = true
+	_sword_attack_t = 0.0
+	_sword_attack_duration = duration
+	_sword_attack_facing_right = cos(swing_dir.angle()) >= 0.0
+	_sword_attack_damage = max(1, damage)
+	_sword_attack_knockback = knockback
+	_sword_hit_this_attack.clear()
+
+
+# 每帧调: 算剑身 (grip→tip) 在世界里位置, 看哪只怪贴近. 1 击 1 只怪 (hit set 去重).
+# 戳: held.position 由 tween 动 (forward + back), held.global_position 就跟着变.
+# 挥: held.position 静止, held.rotation 由 tween 转, tip 随旋转扫.
+func _check_sword_blade_hits() -> void:
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	var held: Node2D = player.get_node_or_null("HeldItem") as Node2D
+	if held == null or not held.visible:
+		return
+	# grip = held.global_position (sprite 底中心, 即剑柄根); tip = grip + 旋转后的 16px 向上偏移.
+	# facing left 时 scale.x=-1 镜像 X, 用 -rotation 算 tip 等价 X 翻转 (跟镐 spin 同套路).
+	var rot_for_tip: float = held.rotation if _sword_attack_facing_right else -held.rotation
+	var grip_world: Vector2 = held.global_position
+	var tip_world: Vector2 = grip_world + Vector2(0, SWORD_TIP_LOCAL_Y).rotated(rot_for_tip)
+	for group in ["slimes", "animals"]:
+		for s in get_tree().get_nodes_in_group(group):
+			var sn := s as Node2D
+			if sn == null:
+				continue
+			var id: int = sn.get_instance_id()
+			if _sword_hit_this_attack.has(id):
+				continue
+			if _dist_point_to_segment(sn.global_position, grip_world, tip_world) > SWORD_HIT_RADIUS:
+				continue
+			_sword_hit_this_attack[id] = true
+			if sn.has_method("take_damage"):
+				sn.take_damage(_sword_attack_damage, tip_world, _sword_attack_knockback)
+
+
+# 点到线段最近距离. clamp t ∈ [0,1] 让计算落在线段内, 端点外的算到端点.
+static func _dist_point_to_segment(p: Vector2, a: Vector2, b: Vector2) -> float:
+	var ab: Vector2 = b - a
+	var ab_len_sq: float = ab.length_squared()
+	if ab_len_sq < 0.001:
+		return p.distance_to(a)
+	var t: float = clamp((p - a).dot(ab) / ab_len_sq, 0.0, 1.0)
+	return p.distance_to(a + ab * t)
+
+
 # 弧形判定: 目标在 origin → dir 弧内 (距 ≤ SWORD_RANGE_PX 且夹角 ≤ ±45°)
 func _is_in_swing_arc(target_pos: Vector2, origin: Vector2, dir: Vector2) -> bool:
 	var to_target := target_pos - origin
@@ -1043,27 +1131,9 @@ func _thrust_sword() -> void:
 	if dmg_mult <= 0.0:
 		return
 	var damage: int = max(1, int(round(float(base) * dmg_mult * THRUST_DAMAGE_MULT)))
-	# 矩形判定: 沿 swing_dir 长 max_len, 半宽 THRUST_HALF_WIDTH; 找最近的目标
-	var best: Node2D = null
-	var best_dist: float = INF
-	var perp_axis: Vector2 = Vector2(-swing_dir.y, swing_dir.x)
-	for group in ["slimes", "animals"]:
-		for s in get_tree().get_nodes_in_group(group):
-			var sn := s as Node2D
-			if sn == null:
-				continue
-			var local: Vector2 = sn.global_position - player.global_position
-			var along: float = local.dot(swing_dir)
-			if along < 0.0 or along > max_len:
-				continue
-			var perp: float = abs(local.dot(perp_axis))
-			if perp > THRUST_HALF_WIDTH:
-				continue
-			if along < best_dist:
-				best_dist = along
-				best = sn
-	if best != null and best.has_method("take_damage"):
-		best.take_damage(damage, player.global_position, _thrust_knockback())
+	# 用户改: 不再瞬时矩形 AoE, 改成 SWORD_THRUST_DURATION 内每帧扫剑身线段命中.
+	# 戳动画 held.position tween (前 0.4 段 forward + 后 0.6 段收回), 我们看着剑实际位置打.
+	_start_sword_blade_attack(swing_dir, damage, _thrust_knockback(), SWORD_THRUST_DURATION)
 	if player.has_method("shake"):
 		player.shake(2.0)
 
@@ -1093,21 +1163,9 @@ func _sweep_sword() -> void:
 	var damage: int = _effective_sword_damage()
 	if damage <= 0:
 		return
-	# 命中判定: 圆形范围, 半径 SWORD_RANGE_PX * 0.7
-	# 目标: slimes (含 zombies, zombie 也 add_to_group("slimes")) + animals (牛/羊/猪)
-	# dict 去重防同节点多组双击 (虽然现在 zombie 已 dedupe, 加 animals 后保险用 dict)
-	var hit_targets: Dictionary = {}
-	for group in ["slimes", "animals"]:
-		for s in get_tree().get_nodes_in_group(group):
-			hit_targets[s.get_instance_id()] = s
-	for target in hit_targets.values():
-		var sn := target as Node2D
-		if sn == null:
-			continue
-		# T7: 弧形 90° 判定 (前方 ±45°) 替换原圆形, 避免身后误伤
-		if _is_in_swing_arc(sn.global_position, player.global_position, swing_dir):
-			if target.has_method("take_damage"):
-				target.take_damage(damage, player.global_position, _sweep_knockback())
+	# 用户改: 不再瞬时弧 AoE, 改成 SWORD_SWING_DURATION 内每帧扫剑身线段命中.
+	# 挥半圆 180° tween, 剑尖会扫到弧上的怪 — 实际碰才扣血.
+	_start_sword_blade_attack(swing_dir, damage, _sweep_knockback(), SWORD_SWING_DURATION)
 	# 用户改: 删了月牙拖尾 (剑影). 留 shake.
 	if player.has_method("shake"):
 		player.shake(3.0)

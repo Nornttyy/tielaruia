@@ -212,6 +212,10 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	var biome_centers: Dictionary = _build_biome_centers(world_seed)
 	# 地狱矩形 x 范围 (hoist 出 loop, 每 cell 都查)
 	var hell_zone_x: Vector2i = _hell_zone_x(world_seed)
+	# tier 保底: 给本 chunk 按 seed 计算 "本 chunk 第一个 chest 强制升 tier".
+	# 4% shadow / 8% diamond / 15% gold / 73% 不强制 (走深度规则).
+	# 让玩家无论运气好坏, 每世界基本都有金/钻/阴影箱可挖.
+	c.guaranteed_tier = _guaranteed_tier_for_chunk(world_seed, chunk_x)
 
 	# 计算本 chunk 范围内每列的 heights (供地形 + 树木使用)
 	var chunk_start_x := chunk_x * chunk_width
@@ -608,12 +612,13 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 			if roll < CHAMBER_CHEST_CHANCE and depth_here >= CHEST_MIN_DEPTH:
 				# 死人箱概率: 浅 (30-69) 15%, 深 (≥70) 25%. 任何深度都可能中招.
 				var mimic_chance: float = 0.25 if depth_here >= 70 else 0.15
-				# 按"距地表深度"选 tier:
-				# depth<40 木, 40-59 金, 60+ 钻石, 地狱深处 (y>=115) 阴影
+				# 按"距地表深度"选 tier (256 高世界, surf~115):
+				# depth<40 木, 40-69 金, 70+ 钻石, 地狱区 (y>HELL_DEPTH=220) 阴影
+				# (老阈值 pos.y>=115 是按 128 高世界算的, 在 256 世界 = 几乎全 shadow, bug)
 				var ct_chamber: int = Tiles.CHEST
-				if int(pos.y) >= 115:
+				if int(pos.y) > HELL_DEPTH:
 					ct_chamber = Tiles.SHADOW_CHEST
-				elif depth_here >= 60:
+				elif depth_here >= 70:
 					ct_chamber = Tiles.DIAMOND_CHEST
 				elif depth_here >= 40:
 					ct_chamber = Tiles.GOLD_CHEST
@@ -725,6 +730,25 @@ static func _try_place_chest(c: Chunk, world_x: int, start_y: int, max_scan: int
 			chest_tile = Tiles.DIAMOND_CHEST
 		elif chest_y >= 75:
 			chest_tile = Tiles.GOLD_CHEST
+	# 保底: 本 chunk 第一个 chest, 如果 guaranteed_tier > 当前自然 tier, 升级.
+	# (shadow 只在地狱 y >= 119 才生效, 不然普通箱区放 shadow 视觉不搭)
+	if not c._first_chest_placed and c.guaranteed_tier > 0:
+		var natural_tier: int = 0
+		match chest_tile:
+			Tiles.GOLD_CHEST: natural_tier = 1
+			Tiles.DIAMOND_CHEST: natural_tier = 2
+			Tiles.SHADOW_CHEST: natural_tier = 3
+			_: natural_tier = 0
+		if c.guaranteed_tier > natural_tier:
+			match c.guaranteed_tier:
+				1: chest_tile = Tiles.GOLD_CHEST
+				2: chest_tile = Tiles.DIAMOND_CHEST
+				3:
+					if chest_y >= 119:
+						chest_tile = Tiles.SHADOW_CHEST
+					else:
+						chest_tile = Tiles.DIAMOND_CHEST   # 浅区给不了 shadow, 给 diamond
+		c._first_chest_placed = true
 	c.tiles[lx][chest_y] = chest_tile
 	c.treasure_spots.append(Vector2i(world_x, chest_y))
 
@@ -905,6 +929,16 @@ static func _hell_zone_x(world_seed: int) -> Vector2i:
 	jitter = clampi(jitter, -HELL_CENTER_JITTER, HELL_CENTER_JITTER)
 	var center: int = HELL_CENTER_BASE + jitter
 	return Vector2i(center - HELL_HALF_WIDTH, center + HELL_HALF_WIDTH)
+
+
+# 保底 tier: 按 seed+chunk_x 给 chunk 算 "本 chunk 第一个 chest 强制升级"
+# 0=不强制 / 1=gold / 2=diamond / 3=shadow (要在地狱区才生效)
+static func _guaranteed_tier_for_chunk(world_seed: int, chunk_x: int) -> int:
+	var v: int = _hash3(world_seed, chunk_x, 0xc4e57711) % 100
+	if v < 4: return 3   # 4% shadow
+	if v < 12: return 2  # 8% diamond
+	if v < 27: return 1  # 15% gold
+	return 0
 const LAVA_CHUNK_PROB := 0.85      # 每 chunk 85% 试一次放岩浆池
 const LAVA_POOL_MIN_SIZE := 4      # 至少 4 格才算池子
 const HELL_FRUIT_CHANCE := 0.07    # HELL_STONE 顶 7% 长火果

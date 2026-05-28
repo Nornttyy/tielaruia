@@ -11,6 +11,10 @@ var walls: Array = []
 var surfaces: Array = []   # 每列原始地表 y_tile (生成时定, 不被玩家挖动)
 # 矿洞宝箱位置 (世界坐标 Vector2i), 给 ChestStorage 首次填战利品用. 不存档 (chunk 一致性生成保证).
 var treasure_spots: Array = []
+# tier 保底: 由 world_generator 按 seed+chunk_x 决定, 让本 chunk 第一个 chamber chest 强制升 tier.
+# 0 = 无保底; 1 = gold; 2 = diamond; 3 = shadow
+var guaranteed_tier: int = 0
+var _first_chest_placed: bool = false   # 第一个 chest 放完后置 true, 后续 chest 走原规则
 
 
 func _init(p_chunk_x: int = 0) -> void:

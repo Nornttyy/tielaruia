@@ -69,13 +69,21 @@ func _build_ui() -> void:
 		chest_grid.add_child(slot)
 		_chest_slots_ui.append(slot)
 
+	# "全拿" 按钮: 把箱子所有物品送进玩家 inventory (一键清箱)
+	var take_all_btn := Button.new()
+	take_all_btn.text = "全拿 ⇩"
+	take_all_btn.custom_minimum_size = Vector2(0, 26)
+	take_all_btn.tooltip_text = "把箱子里所有东西送进背包 (装不下的留下)"
+	take_all_btn.pressed.connect(take_all_from_chest)
+	vbox.add_child(take_all_btn)
+
 	# 分隔
 	var sep := HSeparator.new()
 	vbox.add_child(sep)
 
 	# 标题: 你的背包
 	var p_title := Label.new()
-	p_title.text = "你的背包 (点格子转移)"
+	p_title.text = "你的背包 (Shift+左键 转移单槽)"
 	p_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	p_title.add_theme_font_size_override("font_size", 14)
 	p_title.add_theme_color_override("font_color", Color(0.831, 0.71, 0.541))
@@ -190,6 +198,11 @@ func _on_slot_button_down(btn: Button) -> void:
 		return
 	var idx: int = btn.get_meta("idx", 0)
 	var is_chest: bool = btn.get_meta("is_chest", false)
+	# Shift+左键 = 单槽 transfer (送到另一边 inventory 第一个空/合并槽).
+	# 跟 Minecraft 一致: shift+click 单槽快速移动.
+	if Input.is_key_pressed(KEY_SHIFT) and _player_inv.cursor_slot == null:
+		_shift_transfer(idx, is_chest)
+		return
 	_drag_press_idx = idx
 	_drag_press_is_chest = is_chest
 	if _player_inv.cursor_slot == null:
@@ -241,6 +254,90 @@ func _apply_click(idx: int, is_chest: bool) -> void:
 		InventoryCursor.click_slot(_player_inv, ChestStorage.get_slots(_chest_tile), idx)
 	else:
 		InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, 9 + idx)
+	if _player_inv.has_signal("inventory_changed"):
+		_player_inv.inventory_changed.emit()
+	_refresh_all()
+
+
+# Shift+左键: 把指定槽内容 transfer 到另一边 (chest → 玩家主背包, 玩家 → chest).
+# 用 Inventory.add 自动 stack + 找空槽. 来源槽空则清.
+func _shift_transfer(idx: int, is_chest: bool) -> void:
+	if _player_inv == null or _player_inv.inventory == null:
+		return
+	var src_array: Array
+	if is_chest:
+		src_array = ChestStorage.get_slots(_chest_tile)
+	else:
+		src_array = _player_inv.inventory.slots
+	var src_idx: int = idx if is_chest else 9 + idx
+	if src_idx < 0 or src_idx >= src_array.size():
+		return
+	var s = src_array[src_idx]
+	if s == null:
+		return
+	var item_id: String = s.item_id
+	var count: int = s.count
+	# 加到目的 inventory
+	var leftover: int = _try_add_to_other_side(item_id, count, is_chest)
+	if leftover < count:
+		var moved: int = count - leftover
+		s.count -= moved
+		if s.count <= 0:
+			src_array[src_idx] = null
+		if _player_inv.has_signal("inventory_changed"):
+			_player_inv.inventory_changed.emit()
+		_refresh_all()
+
+
+# 把 item 加到另一边 inventory. 返回还塞不下的数量 (>=0).
+# is_from_chest=true: 加到玩家 main inv (9..35); false: 加到 chest.
+func _try_add_to_other_side(item_id: String, count: int, is_from_chest: bool) -> int:
+	if is_from_chest:
+		# Chest → 玩家 inv: 用现有 inventory.add (它会智能 stack + 找空槽)
+		return _player_inv.inventory.add(item_id, count)
+	# 玩家 → Chest: 手动塞 chest slots (没现成 add 函数)
+	var chest_slots: Array = ChestStorage.get_slots(_chest_tile)
+	var max_stack: int = ItemDB.max_stack(item_id)
+	var remaining: int = count
+	# 先填同 id 已有的槽
+	for i in chest_slots.size():
+		if remaining <= 0:
+			break
+		var slot = chest_slots[i]
+		if slot == null or slot.item_id != item_id:
+			continue
+		var room: int = max_stack - slot.count
+		if room <= 0:
+			continue
+		var n: int = min(room, remaining)
+		slot.count += n
+		remaining -= n
+	# 再找空槽
+	for i in chest_slots.size():
+		if remaining <= 0:
+			break
+		if chest_slots[i] != null:
+			continue
+		var n: int = min(max_stack, remaining)
+		chest_slots[i] = {"item_id": item_id, "count": n}
+		remaining -= n
+	return remaining
+
+
+# 全拿: 把 chest 所有物品送进玩家 inventory. 装不下的留 chest.
+func take_all_from_chest() -> void:
+	if _player_inv == null or _player_inv.inventory == null:
+		return
+	var chest_slots: Array = ChestStorage.get_slots(_chest_tile)
+	for i in chest_slots.size():
+		var s = chest_slots[i]
+		if s == null:
+			continue
+		var leftover: int = _player_inv.inventory.add(s.item_id, s.count)
+		if leftover == 0:
+			chest_slots[i] = null
+		else:
+			s.count = leftover
 	if _player_inv.has_signal("inventory_changed"):
 		_player_inv.inventory_changed.emit()
 	_refresh_all()
