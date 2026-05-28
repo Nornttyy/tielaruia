@@ -564,10 +564,18 @@ func _hardness(tid: int) -> float:
 
 
 func _tool_speed(tool_kind: String, tid: int) -> float:
-	# axe 砍 LOG: wood ×3, stone ×4
+	# 斧砍 LOG: 7 tier 进阶 (用户改: 木斧 6s/LOG, 钻石斧 0.6s/LOG)
+	# 实际时间 = 硬度 0.6s / speed. wood 0.1→6s, diamond 1.0→0.6s.
 	if tool_kind == "axe" and tid == Tiles.LOG:
 		var tier := _current_tool_tier()
-		return 4.0 if tier >= 2 else 3.0
+		match tier:
+			1: return 0.10  # wood   - 6.0s
+			2: return 0.15  # stone  - 4.0s
+			3: return 0.20  # copper - 3.0s
+			4: return 0.30  # iron   - 2.0s
+			5: return 0.40  # silver - 1.5s
+			6: return 0.60  # gold   - 1.0s
+			_: return 1.00  # diamond+ - 0.6s
 	# pickaxe 挖 STONE: wood ×1, stone ×1.5
 	if tool_kind == "pickaxe" and tid == Tiles.STONE:
 		var tier := _current_tool_tier()
