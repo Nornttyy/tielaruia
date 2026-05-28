@@ -237,31 +237,39 @@ const _P_CHEST := {
 	"W": Color8(141, 93, 53),   # 木板阴影
 	"l": Color8(208, 158, 110), # 木板高光
 	"k": Color8(40, 25, 15),    # 黑描边
-	"m": Color8(218, 165, 80),  # 金属包角 (黄铜色)
-	"M": Color8(150, 105, 40),  # 金属阴影
-	"o": Color8(60, 35, 20),    # 锁孔黑
+	"m": Color8(218, 165, 80),  # 黄铜包角
+	"M": Color8(150, 105, 40),  # 黄铜阴影
+	"f": Color8(248, 200, 110), # 黄铜亮闪
+	"o": Color8(35, 18, 10),    # 锁孔黑
+	"g": Color8(95, 60, 25),    # 钉子/暗木结
 }
 
-# 金宝箱: 金属包角换成亮金, 木板换成深一档 (更显沉甸甸的"贵气").
+# 金宝箱: 深色木板 + 亮金属包角 + 红宝石锁芯, 富贵感.
 const _P_GOLD_CHEST := {
-	"w": Color8(148, 96, 55),    # 木板主色 (比普通深 ≈ 木材包浆)
-	"W": Color8(115, 73, 38),    # 木板深阴影
-	"l": Color8(190, 138, 90),   # 木板高光
-	"k": Color8(40, 25, 15),     # 黑描边
-	"m": Color8(255, 215, 80),   # 亮金属 (金黄, 比普通黄铜更鲜亮)
-	"M": Color8(200, 155, 30),   # 金阴影
-	"o": Color8(255, 235, 120),  # 锁孔金黄 (高亮)
+	"w": Color8(120, 78, 40),    # 深棕木板 (比普通木箱更暗显档次)
+	"W": Color8(80, 50, 25),     # 木板深影
+	"l": Color8(165, 115, 70),   # 木板高光
+	"k": Color8(28, 18, 8),      # 黑描边
+	"m": Color8(245, 200, 70),   # 亮金主
+	"M": Color8(175, 130, 30),   # 金阴影
+	"f": Color8(255, 235, 130),  # 金极亮闪
+	"o": Color8(35, 18, 8),      # 锁孔黑
+	"g": Color8(225, 55, 70),    # 红宝石主
+	"G": Color8(155, 25, 40),    # 红宝石阴影
 }
 
-# 钻石宝箱: 木板深棕 + 蓝水晶包角 + 蓝光锁孔, "终极" 视觉.
+# 钻石宝箱: 深蓝紫木板 + 4 角水晶 + 蓝宝石锁芯. 神秘冰冷感.
 const _P_DIAMOND_CHEST := {
-	"w": Color8(120, 75, 45),    # 木板深棕 (最贵感)
-	"W": Color8(90, 55, 30),
-	"l": Color8(165, 115, 75),
-	"k": Color8(40, 25, 15),
-	"m": Color8(120, 200, 250),  # 浅蓝水晶 (主色)
-	"M": Color8(60, 140, 200),   # 蓝水晶阴影
-	"o": Color8(220, 250, 255),  # 锁孔近白闪光
+	"w": Color8(78, 65, 105),    # 深蓝紫木 (神秘感)
+	"W": Color8(45, 38, 68),     # 深影
+	"l": Color8(115, 100, 160),  # 蓝紫高光
+	"k": Color8(20, 15, 35),     # 黑描边
+	"m": Color8(135, 205, 245),  # 蓝水晶主
+	"M": Color8(75, 145, 200),   # 蓝水晶阴影
+	"f": Color8(235, 250, 255),  # 水晶白闪
+	"o": Color8(25, 30, 60),     # 锁孔深蓝黑
+	"g": Color8(85, 180, 235),   # 蓝宝石主
+	"G": Color8(40, 110, 175),   # 蓝宝石阴影
 }
 
 # 岩浆: 亮黄 + 橙 + 红 (烫感) + 暗红气泡
@@ -327,25 +335,31 @@ const _P_HELL_FRUIT := {
 	"l": Color8(120, 175, 55),    # 绿叶
 }
 
-# 阴影宝箱: 黑色木板 + 红光锁孔 + 红宝石包角 (地狱终极宝箱视觉)
+# 阴影宝箱: 焦黑木板 + 骨白金属 + 红色幽光 + 红眼锁芯, 地狱专属阴森感.
 const _P_SHADOW_CHEST := {
-	"w": Color8(45, 25, 30),     # 黑红木板
-	"W": Color8(25, 15, 20),     # 极深阴影
-	"l": Color8(80, 45, 55),     # 木板高光
-	"k": Color8(15, 8, 12),      # 极黑描边
-	"m": Color8(180, 30, 30),    # 红宝石包角
-	"M": Color8(110, 15, 15),    # 红宝石阴影
-	"o": Color8(255, 100, 70),   # 锁孔红光 (高亮)
+	"w": Color8(48, 28, 30),     # 焦黑红木
+	"W": Color8(22, 12, 18),     # 极深暗
+	"l": Color8(85, 55, 50),     # 微红高光
+	"k": Color8(8, 4, 8),        # 极黑描边
+	"m": Color8(215, 210, 195),  # 骨白金属
+	"M": Color8(150, 145, 130),  # 骨阴影
+	"f": Color8(255, 70, 80),    # 红色幽光闪
+	"o": Color8(15, 5, 8),       # 锁孔极黑
+	"g": Color8(250, 75, 80),    # 红眼瞳
+	"G": Color8(160, 20, 35),    # 红眼暗
 }
 
 # Mimic chest: 跟普通 chest 同 palette 大部分, 多一个红 r (锁孔/眼) 当线索
 const _P_MIMIC_CHEST := {
+	# 跟 _P_CHEST 同色, 但锁孔 r=红 (替代 o=黑)
 	"w": Color8(168, 116, 69),
 	"W": Color8(141, 93, 53),
 	"l": Color8(208, 158, 110),
 	"k": Color8(40, 25, 15),
 	"m": Color8(218, 165, 80),
 	"M": Color8(150, 105, 40),
+	"f": Color8(248, 200, 110), # 黄铜亮闪 (跟 _P_CHEST 一致)
+	"g": Color8(95, 60, 25),    # 木结 (跟 _P_CHEST 一致)
 	"r": Color8(220, 35, 35),   # 锁孔红 (替代 o), 仔细看的线索
 }
 
@@ -972,18 +986,18 @@ const _WORKBENCH := [
 const _CHEST := [
 	"................",
 	".kkkkkkkkkkkkkk.",
-	".kmmwwwwwwwwmmk.",
-	".kmwlwwwwwwlwmk.",
-	".kmwwwwwwwwwwmk.",
+	".kmfmwlwwwlwmfm.",   # top: 黄铜角 + 木纹高光
+	".kmmwwwwlwwwwmm.",
+	".kmwlwgwwwgwlwk.",   # 木结 g
+	".kkkkkkkkkkkkkk.",   # 盖体分隔条
+	".kwlwwmfMmwwwlk.",   # 锁面板 + 锁孔
+	".kwwwwmMomMmwwk.",   # o = 锁孔, M/m 锁面
+	".kwlwwmMmMmwwlk.",
+	".kwwwwwmmmwwwwk.",
+	".kwlwwwwwwwwlwk.",
+	".kwgwlwwwwlwgwk.",   # 木结 + 木纹
 	".kkkkkkkkkkkkkk.",
-	".kwwwwwmmwwwwwk.",
-	".kwlwwwmomwwwlk.",
-	".kwwwwwmmwwwwwk.",
-	".kwwwwwwwwwwwwk.",
-	".kwlwwwWWwwwlwk.",
-	".kwwwwwwwwwwwwk.",
-	".kWWwwwwwwwwWWk.",
-	".kmmwwwwwwwwmmk.",
+	".kmfmwwwwwwwmfm.",   # 底带 + 角金属
 	".kkkkkkkkkkkkkk.",
 	"................",
 ]
@@ -1071,21 +1085,83 @@ const _HELL_FRUIT := [
 ]
 
 # Mimic 看起来像普通 chest, 但锁孔是红色 (o → r). 仔细看的玩家能识别陷阱.
+# 金宝箱: 顶/底厚金边 + 中央大红宝石锁面板. 看一眼就识别 "贵气".
+const _GOLD_CHEST_PAT := [
+	"................",
+	".kmmmmmmmmmmmmk.",   # 顶部宽金边
+	".kmfmfmfmfmfmmk.",   # 金高光纹
+	".kmmmmmmmmmmmmk.",
+	".kwwwlwwwwwlwwk.",   # 深木板身
+	".kwlwwwwwwwwwlk.",
+	".kwwmMGggGMmwwk.",   # 锁盘 + 红宝石 g/G
+	".kwwmGgggggGmwk.",   # 红宝中央
+	".kwwmMGgGGgMmwk.",
+	".kwwwmMmmmMmwwk.",   # 锁盘下沿
+	".kwwwwwwwwwwwwk.",
+	".kwlwwwwlwwwwlk.",
+	".kmmmmmmmmmmmmk.",   # 底厚金边
+	".kmfmfmfmfmfmmk.",
+	".kmmmmmmmmmmmmk.",
+	"................",
+]
+
+# 钻石宝箱: 4 角水晶突出 + 中央蓝宝石锁. 神秘冰冷.
+const _DIAMOND_CHEST_PAT := [
+	"................",
+	".kmmkkkkkkkkmmk.",   # 顶 2 角水晶 m
+	".kmffkwwwwwkffmk",   # 水晶高光 f
+	".kkkkwwwwwwwkkk.",
+	".kwwlwwwwwlwwwk.",   # 深蓝紫木身
+	".kwwwwwwwwwwwwk.",
+	".kwwlmMGgGMmlwk.",   # 锁面 + 蓝宝石
+	".kwwwmGgggGmwwk.",
+	".kwwlmMGgGMmlwk.",
+	".kwwwwwwwwwwwwk.",
+	".kwlwwwwwwwwlwk.",
+	".kkkkwwwwwwwkkk.",
+	".kmffkwwwwwkffmk",   # 底 2 角水晶
+	".kmmkkkkkkkkmmk.",
+	".kkkkkkkkkkkkkk.",
+	"................",
+]
+
+# 阴影宝箱: 锯齿黑顶/底 + 红色幽光裂缝 + 骨白金属 + 红眼锁芯. 地狱阴森.
+const _SHADOW_CHEST_PAT := [
+	"................",
+	".kmkmkmkmkmkmkm.",   # 锯齿黑顶
+	".kmmmmmmmmmmmmk.",
+	".kkkkkkkkkkkkkk.",
+	".kwwlfwwwwwfwlw.",   # 红光闪点 f
+	".kwwwwwwfwwwwwk.",   # 中央火光
+	".kwwlmGggggGmlwk",   # 锁面 + 红眼
+	".kwwwmgggGggmwwk",
+	".kwwlmGggggGmlwk",
+	".kwwwwwwfwwwwwk.",   # 又一火光
+	".kwfwwwwwwwwfwk.",
+	".kkkkkkkkkkkkkk.",
+	".kmmmmmmmmmmmmk.",
+	".kmkmkmkmkmkmkm.",   # 锯齿黑底
+	"................",
+	"................",
+]
+
+
+# Mimic: 跟新 _CHEST 形状几乎一样, 只有锁孔从 o 换 r (红眼). 仔细看的玩家才能识别陷阱.
 const _MIMIC_CHEST := [
 	"................",
 	".kkkkkkkkkkkkkk.",
-	".kmmwwwwwwwwmmk.",
-	".kmwlwwwwwwlwmk.",
-	".kmwwwwwwwwwwmk.",
+	".kmfmwlwwwlwmfm.",
+	".kmmwwwwlwwwwmm.",
+	".kmwlwwwwwwwlwk.",
 	".kkkkkkkkkkkkkk.",
-	".kwwwwwmmwwwwwk.",
-	".kwlwwwmrmwwwlk.",
-	".kwwwwwmmwwwwwk.",
-	".kwwwwwwwwwwwwk.",
-	".kwlwwwWWwwwlwk.",
-	".kwwwwwwwwwwwwk.",
-	".kWWwwwwwwwwWWk.",
-	".kmmwwwwwwwwmmk.",
+	".kwlwwmfMmwwwlk.",
+	".kwwwwmMrmMmwwk.",   # r = 红眼 (替代 o 锁孔)
+	".kwlwwmMmMmwwlk.",
+	".kwwwwwmmmwwwwk.",
+	".kwlwwwwwwwwlwk.",
+	".kwwwlwwwwlwwwk.",
+	".kkkkkkkkkkkkkk.",
+	".kmfmwwwwwwwmfm.",
 	".kkkkkkkkkkkkkk.",
 	"................",
 ]
@@ -1718,14 +1794,14 @@ const _PATTERN_MAP := {
 	MUSHROOM: [_MUSHROOM, _P_MUSHROOM],         # 蓝光蘑菇
 	MIMIC_CHEST: [_MIMIC_CHEST, _P_MIMIC_CHEST], # 死人箱 (假宝箱)
 	# 金/钻石宝箱: 复用 _CHEST 形状, 调色板换金/蓝 → 自动有区别 (palette swap)
-	GOLD_CHEST: [_CHEST, _P_GOLD_CHEST],
-	DIAMOND_CHEST: [_CHEST, _P_DIAMOND_CHEST],
+	GOLD_CHEST: [_GOLD_CHEST_PAT, _P_GOLD_CHEST],
+	DIAMOND_CHEST: [_DIAMOND_CHEST_PAT, _P_DIAMOND_CHEST],
 	# === 地狱 Phase 1 ===
 	LAVA: [_LAVA, _P_LAVA],
 	HELL_STONE: [_HELL_STONE, _P_HELL_STONE],
 	OBSIDIAN: [_OBSIDIAN, _P_OBSIDIAN],
 	HELL_FRUIT: [_HELL_FRUIT, _P_HELL_FRUIT],
-	SHADOW_CHEST: [_CHEST, _P_SHADOW_CHEST],   # 复用 _CHEST 形, 调色板换黑红
+	SHADOW_CHEST: [_SHADOW_CHEST_PAT, _P_SHADOW_CHEST],   # 独立锯齿形 + 红眼骨白
 	LIFE_CRYSTAL: [_LIFE_CRYSTAL, _P_LIFE_CRYSTAL],   # 心形粉色结晶, 矿洞偶发
 	HELL_ALLOY_ORE: [_HELL_ALLOY_ORE, _P_HELL_ALLOY_ORE],   # 地狱合金矿 (紫黑+银)
 }
