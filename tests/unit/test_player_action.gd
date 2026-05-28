@@ -236,12 +236,10 @@ func test_sword_swing_aims_at_mouse_direction():
 	var world = main.get_node("World")
 	var player = world.get_player()
 	var action: Node2D = player.get_node("PlayerAction")
-	# 给玩家一把木剑
+	# 用户改后: tier 1-2 戳, tier 3+ 半圆挥. 用铜剑 (tier 3) 测 sweep 公式.
 	var inv: Node = player.get_node("PlayerInventory")
-	inv.inventory.add("wood_sword", 1)
+	inv.inventory.add("copper_sword", 1)
 	inv.set_hotbar_selection(0)
-	# 强制走 sweep 分支 (combo_step=1), 这个测试验的是 sweep 的中心点公式
-	action._attack_combo_step = 1
 	# 鼠标在玩家右上方 (世界坐标), 期望挥击中心朝向那里
 	var player_pos: Vector2 = player.global_position
 	action.mouse_world_override = player_pos + Vector2(100.0, -100.0)
@@ -249,6 +247,7 @@ func test_sword_swing_aims_at_mouse_direction():
 	await wait_frames(2)
 	# 命中中心应在 player_pos + normalize(100,-100) * SWORD_RANGE_PX * 0.5
 	var expected_dir: Vector2 = Vector2(100.0, -100.0).normalized()
-	var expected_center: Vector2 = player_pos + expected_dir * 18.0  # SWORD_RANGE_PX=36 * 0.5
+	# SWORD_RANGE_PX = 27 (TILE_SIZE 16→12 后), * 0.5 = 13.5
+	var expected_center: Vector2 = player_pos + expected_dir * 13.5
 	assert_almost_eq(action.last_swing_center.x, expected_center.x, 1.0)
 	assert_almost_eq(action.last_swing_center.y, expected_center.y, 1.0)

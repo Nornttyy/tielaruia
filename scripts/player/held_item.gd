@@ -134,7 +134,7 @@ func play_thrust(target_angle: float) -> void:
 
 
 func play_swing_directional(target_angle: float) -> void:
-	# 定向挥击 (挥剑用): 沿 target_angle 方向划 90° 弧.
+	# 定向挥击 (挥剑用): 沿 target_angle 方向划 180° 半圆 (用户改: Terraria 风).
 	# 攻击时把 sprite 朝向锁到鼠标方向, 避免移动中翻面让剑乱飞.
 	if not visible:
 		return
@@ -145,8 +145,8 @@ func play_swing_directional(target_angle: float) -> void:
 	var s: float = 1.0 if _facing_right else -1.0
 	# wrapf 把 base 归一到 [-PI, PI), 防止 facing_left + target_left 的 -7PI/4 那种值
 	var base: float = wrapf(s * (target_angle + PI / 2.0), -PI, PI)
-	var start_a: float = base - deg_to_rad(45.0)
-	var end_a:   float = base + deg_to_rad(45.0)
+	var start_a: float = base - deg_to_rad(90.0)
+	var end_a:   float = base + deg_to_rad(90.0)
 	rotation = start_a
 	_tween = create_tween()
 	_tween.tween_property(self, "rotation", end_a, SWING_DURATION)

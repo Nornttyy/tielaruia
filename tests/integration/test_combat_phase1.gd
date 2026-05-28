@@ -161,11 +161,11 @@ func test_pickaxe_attacks_when_no_block_at_mouse() -> void:
 	assert_gt(ctx["action"]._attack_cooldown, 0.0, "镐对空 + 附近有怪 → 攻击 cooldown 应被设")
 
 
-# T7: 挥剑朝前, 身后的 slime 不该扣血 (90° 弧)
+# T7: 挥剑朝前, 身后的 slime 不该扣血 (用户改后 180° 半圆, 后方仍出弧)
+# 用 copper_sword (tier 3+, 走 sweep). 老用 wood_sword combo=1 强制 sweep, 用户改后木剑只戳.
 func test_sweep_misses_behind() -> void:
 	var ctx: Dictionary = await _setup_game()
-	_equip_tool(ctx, "wood_sword")
-	ctx["action"]._attack_combo_step = 1   # 下一击挥
+	_equip_tool(ctx, "copper_sword")
 	var front = _spawn_slime_near(ctx, Vector2(24, 0))
 	var back = _spawn_slime_near(ctx, Vector2(-24, 0))
 	var front_hp = front.current_health
@@ -176,14 +176,13 @@ func test_sweep_misses_behind() -> void:
 	await wait_frames(2)
 	ctx["action"].primary_override = false
 	assert_lt(front.current_health, front_hp, "正前 slime 应扣血")
-	assert_eq(back.current_health, back_hp, "身后 slime 不该扣血 (弧 90°)")
+	assert_eq(back.current_health, back_hp, "身后 slime 不该扣血 (半圆 180° 仍不含正后)")
 
 
-# T7: 挥剑弧内 (±30° + 正前) 3 只 slime 都扣血
+# T7: 挥剑弧内 3 只 slime 都扣血 (用户改后 180° 半圆, 弧更大)
 func test_sweep_hits_all_in_arc() -> void:
 	var ctx: Dictionary = await _setup_game()
-	_equip_tool(ctx, "wood_sword")
-	ctx["action"]._attack_combo_step = 1
+	_equip_tool(ctx, "copper_sword")
 	var center = _spawn_slime_near(ctx, Vector2(24, 0))
 	var up = _spawn_slime_near(ctx, Vector2(20, -12))
 	var down = _spawn_slime_near(ctx, Vector2(20, 12))
@@ -201,10 +200,10 @@ func test_sweep_hits_all_in_arc() -> void:
 
 
 # T6: 戳前方两只 slime 排成线, 只有近的扣血 (戳只命中 1 个)
+# 用 wood_sword (tier 1, 只戳).
 func test_thrust_hits_only_nearest() -> void:
 	var ctx: Dictionary = await _setup_game()
 	_equip_tool(ctx, "wood_sword")
-	ctx["action"]._attack_combo_step = 0   # 下一击戳
 	var near = _spawn_slime_near(ctx, Vector2(20, 0))
 	var far  = _spawn_slime_near(ctx, Vector2(40, 0))
 	var near_hp = near.current_health
@@ -218,39 +217,8 @@ func test_thrust_hits_only_nearest() -> void:
 	assert_eq(far.current_health, far_hp, "远的 slime 不应扣血 (戳只命中 1)")
 
 
-# T5: 连按 3 次左键, combo_step 序列 = 0 → 1 → 0 (戳挥交替)
-func test_sword_combo_alternates() -> void:
-	var ctx: Dictionary = await _setup_game()
-	_equip_tool(ctx, "wood_sword")
-	var action = ctx["action"]
-	action._attack_combo_step = 0
-	var steps: Array = []
-	for i in range(3):
-		action._attack_cooldown = 0.0
-		steps.append(action._attack_combo_step)
-		action.primary_override = true
-		await wait_frames(2)
-		action.primary_override = false
-		await wait_frames(1)
-	assert_eq(steps, [0, 1, 0], "戳挥应交替")
-
-
-# T4: 切 hotbar (剑→镐→剑) 后 combo_step 应回 0 (下一击是戳, 不延续上次挥)
-func test_combo_resets_on_hotbar_switch() -> void:
-	var ctx: Dictionary = await _setup_game()
-	_equip_tool(ctx, "wood_sword")
-	# 人为设到 "下一击是挥"
-	ctx["action"]._attack_combo_step = 1
-	# 装木镐 + 切到镐的 slot
-	var inv: Node = ctx["inv"]
-	inv.pickup("wood_pickaxe", 1)
-	for i in inv.inventory.slots.size():
-		var s = inv.inventory.slots[i]
-		if s != null and s.item_id == "wood_pickaxe":
-			inv.set_hotbar_selection(i)
-			break
-	await wait_frames(2)
-	assert_eq(ctx["action"]._attack_combo_step, 0, "切工具后 combo_step 应回 0")
+# 老 combo 测试 (test_sword_combo_alternates / test_combo_resets_on_hotbar_switch)
+# 用户改: 删了戳挥交替, tier 1-2 永远戳, tier 3+ 永远挥. 测试不再适用, 删.
 
 
 # T3: 斧拿在手对非 LOG tile 不应进入挖矿进度 (避免动画播放)

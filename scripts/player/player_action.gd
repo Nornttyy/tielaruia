@@ -142,19 +142,16 @@ func _physics_process(delta: float) -> void:
 	if _crafting_open():
 		return
 	_attack_cooldown = max(0.0, _attack_cooldown - delta)
-	# 持剑 LMB → 戳/挥交替; 持镐 → 鼠标对方块挖矿, 否则附近有怪就攻击; 其他 → 挖
+	# 持剑 LMB: 用户改 — tier 1-2 (木/石) 戳, tier 3+ (铜/铁/银/金/钻) 半圆挥 (Terraria 风格)
 	var kind: String = _current_tool_kind()
 	if kind == "sword":
 		_reset_mining()
 		var primary_pressed: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed and _attack_cooldown <= 0.0:
-			# combo: 0 = 下一击戳, 1 = 下一击挥, 然后翻转
-			if _attack_combo_step == 0:
+			if _current_tool_tier() <= 2:
 				_thrust_sword()
-				_attack_combo_step = 1
 			else:
 				_sweep_sword()
-				_attack_combo_step = 0
 	elif kind == "pickaxe":
 		# 优先级: 鼠标对方块 → 挖矿; 否则 鼠标附近有怪 → 攻击
 		if _mouse_on_mineable_tile():
@@ -814,7 +811,7 @@ func _held_item_node() -> Node:
 
 
 # 挥的弧度: 前方 ±45° = 总 90° 弧
-const SWEEP_ARC_HALF_DEG := 45.0
+const SWEEP_ARC_HALF_DEG := 90.0  # 用户改: 半圆挥 180° (Terraria 风), 老 90° 弧
 # 镐攻击的常量
 # cooldown = spin 时长 — 一次完整旋转后才能再攻击 (用户改: 转慢一点 → 攻击也慢一点)
 const PICKAXE_ATTACK_COOLDOWN := 0.7
