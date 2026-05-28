@@ -1,9 +1,9 @@
 # 地上的物品堆。Area2D 检测玩家碰触，触发拾取。
 extends Area2D
 
-const GRAVITY := 600.0
-const FRICTION := 200.0
-const MAX_FALL_SPEED := 400.0
+const GRAVITY := 450.0
+const FRICTION := 150.0
+const MAX_FALL_SPEED := 300.0
 const LIFETIME_SECONDS := 30.0
 const PICKUP_DELAY := 0.4  # 刚 spawn 时短暂无法拾取
 const TILE_SIZE := 12
@@ -29,7 +29,7 @@ func _ready() -> void:
 	lifetime.start()
 	lifetime.timeout.connect(queue_free)
 	# 初始随机弹跳动量
-	velocity = Vector2(randf_range(-30.0, 30.0), -80.0)
+	velocity = Vector2(randf_range(-22.0, 22.0), -60.0)
 	# 短暂延迟才可拾取；到时再扫一次已重叠的 body（玩家跟着掉落同帧重叠时
 	# body_entered 不会触发，需要主动检查）
 	get_tree().create_timer(PICKUP_DELAY).timeout.connect(_on_pickup_ready)
