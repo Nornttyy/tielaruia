@@ -974,10 +974,20 @@ static func _place_volcano_crater_chunk(c: Chunk, world_seed: int, chunk_x: int,
 	rng.seed = _hash3(world_seed, chunk_x, 0x5f81a30c)
 	if rng.randf() > VOLCANO_CHUNK_PROB:
 		return
+	# 检查本 chunk 是否跟地狱矩形有交集
+	var hell_zone: Vector2i = _hell_zone_x(world_seed)
+	var chunk_start: int = chunk_x * chunk_width
+	if chunk_start > hell_zone.y or chunk_start + chunk_width - 1 < hell_zone.x:
+		return
 	# 选位置: chunk 中间一带 x, y 在 HELL_DEPTH+1 ~ height-12 之间
 	var crater_w: int = rng.randi_range(5, 8)         # 宽度
 	var crater_h: int = rng.randi_range(8, 14)        # 高度 (含池). 256 高世界, 地狱 ~34 行能塞大火山
-	var x_center_local: int = rng.randi_range(crater_w / 2 + 2, chunk_width - crater_w / 2 - 3)
+	# x_center 必须落在地狱矩形 (世界坐标) 跟本 chunk 的交集里
+	var x_min_world: int = max(chunk_start + crater_w / 2 + 2, hell_zone.x + crater_w / 2)
+	var x_max_world: int = min(chunk_start + chunk_width - crater_w / 2 - 3, hell_zone.y - crater_w / 2)
+	if x_min_world > x_max_world:
+		return  # 这 chunk 跟地狱矩形交集太小, 放不下火山
+	var x_center_local: int = rng.randi_range(x_min_world, x_max_world) - chunk_start
 	# y_top 范围: HELL_DEPTH+1 起到 (基岩前 crater_h 格). 地狱厚度紧凑.
 	var y_top_max: int = height - 2 - crater_h - 1     # height=128, bedrock=2, 留 1 格底
 	var y_top_min: int = HELL_DEPTH + 1
