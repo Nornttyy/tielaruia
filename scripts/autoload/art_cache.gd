@@ -241,7 +241,7 @@ func _build_items() -> void:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画
-	for tier in ["wood", "stone", "copper", "iron", "silver", "gold", "diamond"]:
+	for tier in ["wood", "stone", "copper", "iron", "silver", "gold", "diamond", "hell"]:
 		item_icons["%s_sword" % tier] = ItemsArt.get_icon("%s_sword" % tier)
 		item_icons["%s_pickaxe" % tier] = ItemsArt.get_icon("%s_pickaxe" % tier)
 		item_icons["%s_axe" % tier] = ItemsArt.get_icon("%s_axe" % tier)

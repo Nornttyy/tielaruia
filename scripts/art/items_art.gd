@@ -1075,6 +1075,69 @@ const _DIAMOND_PANTS := [
 	"................",
 ]
 
+# === 地狱武器 (tier 8): 用 N=紫黑深暗 (借钻石暗蓝) + s/d=银 (合金) + Z/z/P=金 (魔晶装饰) + n=黑.
+# 整体紫黑刀身 + 金色护手 + 银柄, 凸显"魔法金属"感.
+
+# 地狱剑: 紫黑刀刃 + 金黄魔晶护手 + 银柄 + 黑描边
+const _HELL_SWORD := [
+	".......nn.......",
+	"......nNNn......",
+	".....nNssNn.....",
+	".....nNssNn.....",
+	".....nNssNn.....",
+	".....nNssNn.....",
+	".....nNsdNn.....",
+	".....nNssNn.....",
+	".....nNssNn.....",
+	".....nNssNn.....",
+	".....nNssNn.....",
+	"....nZzzPPzzn...",
+	"...nZzzZZZZzzn..",
+	"......nsdsn.....",
+	"......nsdsn.....",
+	"......nKKn......",
+]
+
+# 地狱镐: 紫黑扁宽头 + 银顶高光 + 金柄装饰 + 银杆
+const _HELL_PICKAXE := [
+	"..nnnnnnnnnnnn..",
+	".nNssssPdsssssNn",
+	"..nNNNNNNNNNNn..",
+	"......nsds......",
+	"......nsds......",
+	"......nZzn......",
+	"......nsds......",
+	"......nsds......",
+	"......nZzn......",
+	"......nsds......",
+	"......nsds......",
+	"......nZzn......",
+	"......nsds......",
+	"......nsds......",
+	"......nKKn......",
+	"................",
+]
+
+# 地狱斧: 紫黑方头斧 + 金高光 + 银柄
+const _HELL_AXE := [
+	"......nnn.......",
+	"......nNNn......",
+	"......nnnnnnn...",
+	"......nNssssZn..",
+	"......nNsdPszn..",
+	"......nNsssszn..",
+	"......nnnnnnn...",
+	"......nNNn......",
+	"......nsds......",
+	"......nsds......",
+	"......nZzn......",
+	"......nsds......",
+	"......nsds......",
+	"......nZzn......",
+	"......nKKn......",
+	"................",
+]
+
 # 地狱合金锭 icon: 紫黑底 + 银闪光. 用 K/k 黑 + N/T 钻石蓝 (暗调) + b/F 银亮 + s 银深.
 # N/T 用作"紫光泽" 替代 (items_art PALETTE 没紫). 显示偏紫黑+冷银.
 const _HELL_ALLOY_INGOT := [
@@ -1251,6 +1314,7 @@ const _ICONS := {
 	"silver_helmet": _SILVER_HELMET, "silver_chest": _SILVER_CHEST, "silver_pants": _SILVER_PANTS,
 	"gold_helmet": _GOLD_HELMET, "gold_chest": _GOLD_CHEST, "gold_pants": _GOLD_PANTS,
 	"diamond_helmet": _DIAMOND_HELMET, "diamond_chest": _DIAMOND_CHEST, "diamond_pants": _DIAMOND_PANTS,
+	"hell_sword": _HELL_SWORD, "hell_pickaxe": _HELL_PICKAXE, "hell_axe": _HELL_AXE,
 	"wood_bow": _WOOD_BOW,
 	"wood_arrow": _WOOD_ARROW,
 }

@@ -597,6 +597,25 @@ const _RECIPES := [
 		"pattern": [["diamond","diamond","diamond"], ["diamond","","diamond"], ["diamond","","diamond"]],
 		"output_id": "diamond_pants", "output_count": 1, "mirror_ok": true,
 	},
+	# === 地狱武器 (tier 8): 3 alloy + 1 crystal (魔晶护手/装饰) + 2 planks (柄) ===
+	# 剑形: . X .  /  . X .  /  . X .  + crystal 当装饰
+	{
+		"id": "hell_sword", "grid_size": Vector2i(3, 3),
+		"pattern": [["","hell_alloy_ingot",""], ["","hell_alloy_ingot",""], ["","hell_crystal_ingot",""]],
+		"output_id": "hell_sword", "output_count": 1, "mirror_ok": true,
+	},
+	# 镐形: X X X  /  . X .  /  . X .
+	{
+		"id": "hell_pickaxe", "grid_size": Vector2i(3, 3),
+		"pattern": [["hell_alloy_ingot","hell_alloy_ingot","hell_alloy_ingot"], ["","hell_crystal_ingot",""], ["","hell_alloy_ingot",""]],
+		"output_id": "hell_pickaxe", "output_count": 1, "mirror_ok": true,
+	},
+	# 斧形: X X .  /  X X .  /  . X .
+	{
+		"id": "hell_axe", "grid_size": Vector2i(3, 3),
+		"pattern": [["hell_alloy_ingot","hell_alloy_ingot",""], ["hell_alloy_ingot","hell_crystal_ingot",""], ["","hell_alloy_ingot",""]],
+		"output_id": "hell_axe", "output_count": 1, "mirror_ok": true,
+	},
 	# 木箭: 2 planks 竖排 → 4 支. 用 2x1 形避开已有 "1 planks→wood_wall" 1x1 配方冲突.
 	{
 		"id": "wood_arrow",

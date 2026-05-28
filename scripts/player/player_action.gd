@@ -620,7 +620,8 @@ func _tool_speed(tool_kind: String, tid: int) -> float:
 			4: return 0.20    # iron   - 3.0s
 			5: return 0.267   # silver - 2.25s
 			6: return 0.40    # gold   - 1.5s
-			_: return 0.667   # diamond+ - 0.9s
+			7: return 0.667   # diamond - 0.9s
+			_: return 1.0     # hell tier 8+ - 0.6s
 	# 镐挖 石/深石/矿石: 7 tier 进阶 (用户调: wood 3s 不变, 顶级慢下来到 0.6s)
 	# 硬度 3.0s base. 速度 = 3.0 / 想要时间.
 	if tool_kind == "pickaxe" and _PICKAXE_STONE_LIKE.has(tid):
@@ -632,7 +633,8 @@ func _tool_speed(tool_kind: String, tid: int) -> float:
 			4: return 2.0   # iron    - 1.5s
 			5: return 2.5   # silver  - 1.2s
 			6: return 3.33  # gold    - 0.9s
-			_: return 5.0   # diamond+ - 0.6s
+			7: return 5.0   # diamond - 0.6s
+			_: return 7.5   # hell tier 8+ - 0.4s
 	return 1.0
 
 
@@ -697,7 +699,7 @@ func _pickaxe_knockback() -> float:
 # 用户改: 武器基础伤害按 tier 1-7 递进, 加速曲线 (钻剑 1 击僵尸 15HP).
 # 老公式是 tier 1 → 3, tier 2+ 全 5 (卡 tier 2). 新公式每代都长.
 # 史莱姆 10HP / 僵尸 15HP. 钻剑 20 → 1 击.
-const _TIER_BASE_DAMAGE := [0, 3, 5, 7, 10, 13, 16, 20]  # index = tier (0 = invalid)
+const _TIER_BASE_DAMAGE := [0, 3, 5, 7, 10, 13, 16, 20, 26]  # index = tier (8 = 地狱)
 
 
 # 共享 tier→base 伤害表 (剑 ×1.0, 镐 ×0.5, 斧 ×0.0). 通过 _tool_damage_mult 缩放.
