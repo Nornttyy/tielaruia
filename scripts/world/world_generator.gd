@@ -58,9 +58,14 @@ const ORE_DEPTH_HELL_MIN := 150     # 地狱晶体起始深度
 const WORM_SPAWN_GRID := 14      # 每 14×14 tile 一个候选 worm 起点 (密)
 const WORM_LEN_MIN := 25         # worm 短一点 → 形成自然死路
 const WORM_LEN_MAX := 70
-const WORM_RADIUS_MIN := 0.8     # 窄隧道: 1-2 tile 宽
-const WORM_RADIUS_MAX := 1.3
+const WORM_RADIUS_MIN := 1.2     # 加宽: ≈2.5 tile 宽, 玩家舒服走 (老值 0.8 太挤)
+const WORM_RADIUS_MAX := 2.0     # 老值 1.3
 const WORM_BRANCH_CHANCE := 0.025  # 每步 2.5% 派子 worm → 分叉
+# 小室: 主 worm 沿途偶发开个圆室 (节奏点 + 给后续放宝箱/水晶留地方)
+const CHAMBER_STEP_INTERVAL := 25   # 每 25 步检查一次
+const CHAMBER_CHANCE := 0.5         # 50% 实际开 → 平均 ~50 步一个室
+const CHAMBER_RADIUS_MIN := 3.0     # 6 tile 宽
+const CHAMBER_RADIUS_MAX := 5.0     # 10 tile 宽
 const WORM_BRANCH_MAX_DEPTH := 2   # 分叉递归最大深度
 const WORM_BRANCH_RADIUS_SCALE := 0.6  # 子 worm 半径系数 (孙再叠加 → 越细)
 const WORM_DIR_FREQUENCY := 0.025  # 方向噪声频率
@@ -563,6 +568,10 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 		var radius: float = lerp(WORM_RADIUS_MIN, WORM_RADIUS_MAX, rn) * radius_scale
 		# 挖圆 (只填落入本 chunk 的)
 		_carve_circle(c, pos, radius, chunk_start, chunk_end, height)
+		# 小室: 仅主 worm (depth=0) 沿程偶发开圆室, 子 worm 不开 (防嵌套)
+		if depth == 0 and step > 0 and step % CHAMBER_STEP_INTERVAL == 0 and rng.randf() < CHAMBER_CHANCE:
+			var chamber_r: float = rng.randf_range(CHAMBER_RADIUS_MIN, CHAMBER_RADIUS_MAX)
+			_carve_circle(c, pos, chamber_r, chunk_start, chunk_end, height)
 		# 分叉: 派子 worm (角度偏移 ±60°, 长度更短, 半径更细)
 		if depth < WORM_BRANCH_MAX_DEPTH and rng.randf() < WORM_BRANCH_CHANCE:
 			var branch_len: int = rng.randi_range(WORM_LEN_MIN / 2, WORM_LEN_MAX / 2)
