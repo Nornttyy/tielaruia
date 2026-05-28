@@ -332,6 +332,7 @@ const _ZH_NAMES := {
 	"jungle_dirt": "丛林泥",
 	"snow_dirt": "冻土",
 	"jungle_leaves": "丛林叶",
+	"mushroom": "蘑菇",
 }
 
 

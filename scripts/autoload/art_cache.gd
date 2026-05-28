@@ -96,6 +96,7 @@ func _build_blocks() -> void:
 		BlocksArt.JUNGLE_DIRT, BlocksArt.SNOW_DIRT, BlocksArt.JUNGLE_LEAVES,
 		BlocksArt.SILVER_ORE,
 		BlocksArt.FURNACE,
+		BlocksArt.MUSHROOM,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -206,7 +207,7 @@ func _build_items() -> void:
 	# 非工具类 (老 ASCII pattern)
 	for item_id in ["slime_jelly", "apple",
 			"coal", "iron_ore", "bone", "spider_eye", "lens",
-			"raw_meat", "leather", "wool", "cooked_meat",
+			"raw_meat", "leather", "wool", "cooked_meat", "mushroom",
 			"iron_ingot", "copper_ingot", "tin_ingot", "silver_ingot", "gold_ingot",
 			"grappling_hook"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)

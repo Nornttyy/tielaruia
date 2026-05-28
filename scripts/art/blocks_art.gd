@@ -26,6 +26,7 @@ const JUNGLE_LEAVES := 48
 const SILVER_ORE := 49
 const WOOD_WALL := 50
 const FURNACE := 51
+const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -762,6 +763,34 @@ const _SLIME_TORCH := [
 	"................",
 ]
 
+# 蓝光蘑菇: 圆顶蓝盖 + 白柄 + 白点 (矿洞蘑菇地装饰, 站在 floor 行)
+const _P_MUSHROOM := {
+	"n": Color8(28, 30, 48),     # 极深蓝紫描边
+	"b": Color8(110, 165, 235),  # 蓝盖主色 (亮蓝)
+	"B": Color8(60, 105, 185),   # 蓝盖阴影
+	"s": Color8(240, 245, 255),  # 白点 / 柄高光
+	"w": Color8(220, 225, 240),  # 柄主色 (略带蓝白)
+	"W": Color8(170, 180, 210),  # 柄阴影
+}
+const _MUSHROOM := [
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"......nnnnn.....",
+	".....nbbbBBn....",
+	"....nbsbbBBBn...",
+	"....nbbbbBBBn...",
+	".....nbBBBBn....",
+	"......nnnnn.....",
+	"......nwwn......",
+	"......nwWn......",
+	"......nwWn......",
+	"......nnnn......",
+]
+
 # 木平台: 中间 2 行薄木板 (Terraria 风, 上下透明)
 const _WOOD_PLATFORM := [
 	"................",
@@ -1415,6 +1444,7 @@ const _PATTERN_MAP := {
 	SNOW_DIRT: [_DIRT, _P_DIRT],          # 后面 ArtCache tint 灰蓝
 	JUNGLE_LEAVES: [_LEAVES, _P_LEAVES],  # 后面 ArtCache tint 深湿绿
 	SILVER_ORE: [_SILVER_ORE, _P_SILVER_ORE],   # 专属 sparkle 形 + 亮银调色
+	MUSHROOM: [_MUSHROOM, _P_MUSHROOM],         # 蓝光蘑菇
 }
 
 

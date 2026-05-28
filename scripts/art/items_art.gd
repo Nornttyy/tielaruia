@@ -723,6 +723,27 @@ const _GOLD_INGOT := [
 	"................",
 ]
 
+# 蓝光蘑菇 icon: 蓝盖 + 白点 + 白柄 (复用钻石青蓝 + 羊毛白)
+# N=盖中蓝, T=盖阴影, Q=白点闪光, W=柄主白, w=柄阴影, n=黑边
+const _MUSHROOM_ICON := [
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"......nnnnn.....",
+	".....nNNTTTn....",
+	"....nNNQNTTTn...",
+	"....nNNNNTTTn...",
+	".....nNTTTTn....",
+	"......nnnnn.....",
+	"......nWWn......",
+	"......nWwn......",
+	"......nWwn......",
+	"......nnnn......",
+]
+
 # 熟肉: 烤过的 raw_meat (颜色暗一点 + 焦边)
 const _COOKED_MEAT := [
 	"................",
@@ -847,6 +868,7 @@ const _ICONS := {
 	"silver_ingot": _SILVER_INGOT,
 	"gold_ingot": _GOLD_INGOT,
 	"cooked_meat": _COOKED_MEAT,
+	"mushroom": _MUSHROOM_ICON,
 }
 
 
