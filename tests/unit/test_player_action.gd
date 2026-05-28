@@ -100,7 +100,8 @@ func test_can_mine_stone_with_pickaxe():
 	world._set_tile(target.x, target.y, Tiles.STONE)
 	action.aim_override = target
 	action.primary_override = true
-	await wait_frames(90)
+	# 木镐挖 STONE 现在 3s (硬度 3.0), 60fps × 3.5s = 210 帧
+	await wait_frames(210)
 	assert_eq(terrain.get_cell_source_id(target), -1, "有镚应能挖空 stone")
 
 

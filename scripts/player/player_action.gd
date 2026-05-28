@@ -674,6 +674,19 @@ func _pickaxe_knockback() -> float:
 	return KB_PICKAXE_BASE + KB_PICKAXE_TIER * float(_current_tool_tier())
 
 
+# 用户改: 武器基础伤害按 tier 1-7 递进, 加速曲线 (钻剑 1 击僵尸 15HP).
+# 老公式是 tier 1 → 3, tier 2+ 全 5 (卡 tier 2). 新公式每代都长.
+# 史莱姆 10HP / 僵尸 15HP. 钻剑 20 → 1 击.
+const _TIER_BASE_DAMAGE := [0, 3, 5, 7, 10, 13, 16, 20]  # index = tier (0 = invalid)
+
+
+# 共享 tier→base 伤害表 (剑 ×1.0, 镐 ×0.5, 斧 ×0.0). 通过 _tool_damage_mult 缩放.
+func _base_damage_for_tier(tier: int) -> int:
+	if tier < 1 or tier >= _TIER_BASE_DAMAGE.size():
+		return 0
+	return _TIER_BASE_DAMAGE[tier]
+
+
 func _sword_damage() -> int:
 	var inv: Node = _inventory_node()
 	if inv == null:
@@ -684,8 +697,7 @@ func _sword_damage() -> int:
 	var def = ItemDB.get_def(slot.item_id)
 	if def == null or def.tool_kind != "sword":
 		return 0
-	# wood tier 1 → 3 (4 击杀史莱姆); stone tier 2 → 5 (2 击杀)
-	return 5 if def.tool_tier >= 2 else 3
+	return _base_damage_for_tier(def.tool_tier)
 
 
 func _current_tool_tier() -> int:
@@ -843,15 +855,15 @@ func _mouse_has_enemy_nearby() -> bool:
 	return false
 
 
-# 镐基础伤害: 跟 _sword_damage 同公式 (tier ≥ 2 → 5, else 3),
-# 复制一份避免 _sword_damage 内的 tool_kind 检查 (它只对 sword 返回非 0)
+# 镐基础伤害: 跟 _sword_damage 同 tier 表, 后面 _tool_damage_mult ×0.5 缩放.
+# (老公式 tier ≥ 2 → 5, else 3 已淘汰 — 新表 7 tier 都不同.)
 func _pickaxe_base_damage() -> int:
 	var def = _current_tool_def()
 	if def == null:
 		return 0
 	if def.tool_kind != "pickaxe":
 		return 0
-	return 5 if def.tool_tier >= 2 else 3
+	return _base_damage_for_tier(def.tool_tier)
 
 
 # 镐攻击: 触发 360° spin. 伤害判定不再 AoE — 走 _check_pickaxe_spin_hits
