@@ -7,19 +7,44 @@ extends RefCounted
 
 static func find_match(grid: Array) -> Variant:
 	for r in RecipeDB.all_recipes():
-		var hit = _match_recipe(grid, r, false)
-		if hit != null:
-			return hit
-		if r.mirror_ok:
-			hit = _match_recipe(grid, r, true)
+		# 试 4 个旋转 × (镜像 / 不镜像). rotate_ok=false 时只试旋转 0°.
+		var rotations: int = 4 if r.get("rotate_ok", false) else 1
+		for rot in rotations:
+			var pat_rot: Array = _rotate_n(r.pattern, rot)
+			var hit = _match_pattern(grid, r, pat_rot, false)
 			if hit != null:
 				return hit
+			if r.mirror_ok:
+				hit = _match_pattern(grid, r, pat_rot, true)
+				if hit != null:
+					return hit
 	return null
 
 
-# 把 pattern (可能 mirrored) 平移到 grid 上对应位置，逐 cell 比对。
-static func _match_recipe(grid: Array, recipe: Dictionary, mirror: bool) -> Variant:
-	var pattern: Array = _maybe_mirror(recipe.pattern, mirror)
+# 旋转 pattern 90° × n (clockwise)
+static func _rotate_n(pattern: Array, n: int) -> Array:
+	var p: Array = pattern
+	for _i in n:
+		p = _rotate_90_cw(p)
+	return p
+
+
+static func _rotate_90_cw(pattern: Array) -> Array:
+	var rows: int = pattern.size()
+	var cols: int = (pattern[0] as Array).size()
+	# 新 pattern 是 cols × rows (转置 + 反转每行)
+	var result: Array = []
+	for c in cols:
+		var new_row: Array = []
+		for r in range(rows - 1, -1, -1):
+			new_row.append(pattern[r][c])
+		result.append(new_row)
+	return result
+
+
+# 用预先变换 (旋转/镜像) 过的 pattern 跟 grid 对位.
+static func _match_pattern(grid: Array, recipe: Dictionary, pattern: Array, mirror: bool) -> Variant:
+	pattern = _maybe_mirror(pattern, mirror)
 	var pat_rows: int = pattern.size()
 	var pat_cols: int = (pattern[0] as Array).size()
 

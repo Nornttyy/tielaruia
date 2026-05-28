@@ -420,6 +420,7 @@ const _RECIPES := [
 		"output_id": "iron_ingot",
 		"output_count": 1,
 		"mirror_ok": true,
+		"rotate_ok": true,
 		"requires": "furnace",
 	},
 	{
@@ -429,6 +430,7 @@ const _RECIPES := [
 		"output_id": "copper_ingot",
 		"output_count": 1,
 		"mirror_ok": true,
+		"rotate_ok": true,
 		"requires": "furnace",
 	},
 	{
@@ -438,6 +440,7 @@ const _RECIPES := [
 		"output_id": "tin_ingot",
 		"output_count": 1,
 		"mirror_ok": true,
+		"rotate_ok": true,
 		"requires": "furnace",
 	},
 	{
@@ -447,6 +450,7 @@ const _RECIPES := [
 		"output_id": "silver_ingot",
 		"output_count": 1,
 		"mirror_ok": true,
+		"rotate_ok": true,
 		"requires": "furnace",
 	},
 	{
@@ -456,6 +460,7 @@ const _RECIPES := [
 		"output_id": "gold_ingot",
 		"output_count": 1,
 		"mirror_ok": true,
+		"rotate_ok": true,
 		"requires": "furnace",
 	},
 	# 熟肉: 1 raw_meat 在 2x2 任意角
