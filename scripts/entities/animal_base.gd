@@ -35,6 +35,8 @@ const ENEMY_IFRAME_SEC := 0.2
 var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _stepping: bool = false   # auto-step tween 进行中, 物理暂停
+var _cached_player: Node2D = null  # 缓存 player ref, 每帧避免 get_first_node_in_group
+var _cached_cm: Node = null         # 缓存 chunk_manager 同理
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -59,18 +61,19 @@ func _add_player_exception() -> void:
 
 # 动物身体在水里吗 (腰部 tile 是 WATER)
 func _is_in_water() -> bool:
-	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
-	if terrain == null:
-		return false
-	var world: Node = terrain.get_parent()
-	if world == null:
-		return false
-	var cm = world.get("chunk_manager")
-	if cm == null:
-		return false
+	if _cached_cm == null or not is_instance_valid(_cached_cm):
+		var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
+		if terrain == null:
+			return false
+		var world: Node = terrain.get_parent()
+		if world == null:
+			return false
+		_cached_cm = world.get("chunk_manager")
+		if _cached_cm == null:
+			return false
 	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
 	var ty: int = int(floor((global_position.y - 6.0) / float(TILE_SIZE)))  # 腰部 (高度比玩家小)
-	return cm.get_tile(tx, ty) == Tiles.WATER
+	return _cached_cm.get_tile(tx, ty) == Tiles.WATER
 
 
 func _physics_process(delta: float) -> void:
@@ -82,7 +85,10 @@ func _physics_process(delta: float) -> void:
 	if _stepping:
 		return
 	# 性能: 距玩家 > 50 tile (800 px) 且站地板 → skip 整帧 (动物只是闲逛, 远了看不见)
-	var _p: Node2D = get_tree().get_first_node_in_group("player")
+	# 缓存 player ref, 跟 enemies 同套路 (每帧避免 group 查 = 大优化)
+	if _cached_player == null or not is_instance_valid(_cached_player):
+		_cached_player = get_tree().get_first_node_in_group("player")
+	var _p: Node2D = _cached_player
 	if _p != null and is_on_floor():
 		var _dx: float = _p.global_position.x - global_position.x
 		var _dy: float = _p.global_position.y - global_position.y
