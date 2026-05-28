@@ -9,6 +9,8 @@ var chunk_x: int = 0
 var tiles: Array = []
 var walls: Array = []
 var surfaces: Array = []   # 每列原始地表 y_tile (生成时定, 不被玩家挖动)
+# 矿洞宝箱位置 (世界坐标 Vector2i), 给 ChestStorage 首次填战利品用. 不存档 (chunk 一致性生成保证).
+var treasure_spots: Array = []
 
 
 func _init(p_chunk_x: int = 0) -> void:

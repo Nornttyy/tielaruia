@@ -39,9 +39,15 @@ func unload_far_from(center_cx: int, keep_radius: int) -> void:
 
 func _load_chunk(cx: int) -> void:
 	var c := WorldGenerator.generate_chunk(world_seed, cx, ChunkConstants.WORLD_HEIGHT)
-	# 应用之前累积的 delta (如果有)
+	# 应用之前累积的 delta (如果有). 玩家挖过的 chest tile delta 优先, 不会再 spawn 物品.
 	if _deltas.has(cx):
 		c.apply_delta(_deltas[cx])
+	# 矿洞宝箱: 给 chunk 里每个新生成的 chest 位置填一次战利品 (idempotent, 重载不会再填)
+	for spot in c.treasure_spots:
+		# 如果 delta 已经把 chest 砸了 (变 AIR), 不填.
+		var lx: int = spot.x - cx * ChunkConstants.CHUNK_WIDTH
+		if lx >= 0 and lx < ChunkConstants.CHUNK_WIDTH and c.tiles[lx][spot.y] == Tiles.CHEST:
+			ChestStorage.try_populate_treasure(spot, world_seed)
 	_loaded[cx] = c
 	chunk_loaded.emit(c)
 

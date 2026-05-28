@@ -66,6 +66,8 @@ const CHAMBER_STEP_INTERVAL := 25   # 每 25 步检查一次
 const CHAMBER_CHANCE := 0.5         # 50% 实际开 → 平均 ~50 步一个室
 const CHAMBER_RADIUS_MIN := 3.0     # 6 tile 宽
 const CHAMBER_RADIUS_MAX := 5.0     # 10 tile 宽
+const CHAMBER_CHEST_CHANCE := 0.30  # 30% 小室会放宝箱
+const CHEST_MIN_DEPTH := 30         # 太浅的小室不放 (玩家走两步就遇见就没惊喜)
 const WORM_BRANCH_MAX_DEPTH := 2   # 分叉递归最大深度
 const WORM_BRANCH_RADIUS_SCALE := 0.6  # 子 worm 半径系数 (孙再叠加 → 越细)
 const WORM_DIR_FREQUENCY := 0.025  # 方向噪声频率
@@ -572,6 +574,10 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 		if depth == 0 and step > 0 and step % CHAMBER_STEP_INTERVAL == 0 and rng.randf() < CHAMBER_CHANCE:
 			var chamber_r: float = rng.randf_range(CHAMBER_RADIUS_MIN, CHAMBER_RADIUS_MAX)
 			_carve_circle(c, pos, chamber_r, chunk_start, chunk_end, height)
+			# 部分小室放宝箱: 用挖出的小室中心 + 找下方第一个 STONE/DEEP_STONE 作地板, 上面放 CHEST
+			# (surf_at 是上面 worm 终止检查算的, 此处复用)
+			if rng.randf() < CHAMBER_CHEST_CHANCE and int(pos.y) - surf_at >= CHEST_MIN_DEPTH:
+				_try_place_chest(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r) + 2, chunk_start, chunk_end, height)
 		# 分叉: 派子 worm (角度偏移 ±60°, 长度更短, 半径更细)
 		if depth < WORM_BRANCH_MAX_DEPTH and rng.randf() < WORM_BRANCH_CHANCE:
 			var branch_len: int = rng.randi_range(WORM_LEN_MIN / 2, WORM_LEN_MAX / 2)
@@ -628,7 +634,36 @@ static func _carve_circle(c: Chunk, center: Vector2, radius: float,
 				continue
 			if t == Tiles.GRASS:
 				continue  # 不破坏地表 (避免随机竖井裸露)
+			if t == Tiles.CHEST:
+				continue  # 矿洞宝箱 (前一步刚放) 不要被后续 worm 步覆盖回 AIR
 			c.tiles[lx][wy] = Tiles.AIR
+
+
+# 小室中心朝下找第一个 STONE/DEEP_STONE 当地板, 在它上面那一格放 CHEST + 记下世界坐标.
+# 找不到 (例: 落入老 chamber 间穿连接处, 下面也都是 AIR) → 放弃, 不强求.
+static func _try_place_chest(c: Chunk, world_x: int, start_y: int, max_scan: int,
+		chunk_start: int, chunk_end: int, height: int) -> void:
+	if world_x < chunk_start or world_x >= chunk_end:
+		return
+	var lx: int = world_x - chunk_start
+	# 从 start_y 往下扫, 找第一个 STONE/DEEP_STONE (跳过 AIR/矿石/其他)
+	var floor_y: int = -1
+	for dy in range(0, max_scan + 1):
+		var wy: int = start_y + dy
+		if wy < 0 or wy >= height:
+			break
+		var t: int = c.tiles[lx][wy]
+		if t == Tiles.STONE or t == Tiles.DEEP_STONE:
+			floor_y = wy
+			break
+	if floor_y <= 0:
+		return
+	var chest_y: int = floor_y - 1
+	# chest 头顶那一格必须是 AIR (不然箱子嵌石头里看不到)
+	if c.tiles[lx][chest_y] != Tiles.AIR:
+		return
+	c.tiles[lx][chest_y] = Tiles.CHEST
+	c.treasure_spots.append(Vector2i(world_x, chest_y))
 
 
 # ===== 露天矿洞 (Terraria 山坡侧面洞穴) =====
