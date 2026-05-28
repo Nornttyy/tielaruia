@@ -79,5 +79,6 @@ func test_iron_pickaxe_item():
 	var def = db.get_def("iron_pickaxe")
 	assert_not_null(def)
 	assert_eq(def.tool_kind, "pickaxe")
-	assert_eq(def.tool_tier, 3)
+	# tier 1-7 progressive: wood/stone/copper/iron/silver/gold/diamond
+	assert_eq(def.tool_tier, 4)
 	assert_eq(def.max_stack, 1)

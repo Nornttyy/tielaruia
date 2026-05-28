@@ -56,6 +56,10 @@ func test_continue_game_restores_full_state():
 	# 改 chunk: 在 world (10, 5) 放 stone (验 chunk_deltas 序列化)
 	world.chunk_manager.set_tile(10, 5, Tiles.STONE)
 
+	# 改世界时间 (verify 昼夜也保存)
+	var saved_time := 0.72  # 傍晚 (跟默认 0.35 早晨差很多)
+	TimeOfDay.time = saved_time
+
 	# 存档
 	GameSettings.current_world_name = TEST_SAVE_NAME
 	var ok := SaveManager.save(main)
@@ -110,3 +114,7 @@ func test_continue_game_restores_full_state():
 		var inner: Dictionary = cm._deltas[0]
 		assert_eq(inner.get(Vector2i(10, 5), -999), Tiles.STONE,
 			"world (10,5) 的 stone 还原")
+
+	# 世界时间 (昼夜) 也应该还原 — 不能回到早晨
+	assert_almost_eq(TimeOfDay.time, saved_time, 0.01,
+		"TimeOfDay 还原到 saved (傍晚 0.72), 不是回默认早晨")

@@ -219,6 +219,9 @@ func _apply_save_data(data: Resource) -> void:
 	var w := world
 	if w == null:
 		return
+	# 还原世界时间 (昼夜) - 不然 reload 总回早晨
+	if "world_time" in data and TimeOfDay != null and "time" in TimeOfDay:
+		TimeOfDay.time = float(data.world_time)
 	# 恢复玩家挖/放的 chunk 改动 (写 _deltas, 之后 chunk 加载时会应用)
 	SaveManager.apply_chunk_deltas(w.chunk_manager, data.chunk_deltas)
 	# 恢复箱子内容 (24 格 × 每个 chest tile)

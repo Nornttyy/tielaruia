@@ -47,6 +47,9 @@ func save(main: Node) -> bool:
 	data.world_name = GameSettings.current_world_name if GameSettings != null else ""
 	data.difficulty = GameSettings.current_difficulty if GameSettings != null else 1
 	data.spawn_point = world.spawn_point
+	# 世界时间 (昼夜) - 让玩家加载后接着原来的时间过, 而不是回到早晨
+	if TimeOfDay != null and "time" in TimeOfDay:
+		data.world_time = TimeOfDay.time
 	data.chunk_deltas = _serialize_chunk_deltas(world.chunk_manager)
 	data.entities = _serialize_entities()
 	data.chest_contents = ChestStorage.dump()

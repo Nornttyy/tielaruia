@@ -6,6 +6,8 @@ class_name SaveData extends Resource
 @export var world_name: String = ""
 @export var difficulty: int = 1   # 0=简单 1=普通 2=困难
 @export var spawn_point: Vector2i = Vector2i.ZERO
+# 世界时间 [0, 1) — 0=午夜, 0.35=早晨默认, 0.5=正午, 0.75=傍晚
+@export var world_time: float = 0.35
 @export var player_position: Vector2 = Vector2.ZERO
 @export var player_hp: float = 6.0
 # 9 hotbar + 27 主背包 = 36 槽。每个: null 或 {"item_id": String, "count": int}

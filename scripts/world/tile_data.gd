@@ -204,21 +204,21 @@ const _PROPS := {
 		"drops": [["tin_ore", 100, 1, 1]],
 	},
 	GOLD_ORE: {
-		# 金: 铜/铁镐 (tier 3) — 中期
+		# 金: 银镐 (tier 5) — 后期, 在银之后
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 5, "axe": -1, "sword": -1},
 		"drops": [["gold_ore", 100, 1, 1]],
 	},
 	DIAMOND_ORE: {
-		# 钻石: 金镐 (tier 4) — 后期门槛
+		# 钻石: 金镐 (tier 6) — 后期门槛, 在金之后
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 4, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 6, "axe": -1, "sword": -1},
 		"drops": [["diamond", 100, 1, 1]],
 	},
 	HELL_CRYSTAL: {
-		# 地狱晶体: 钻石镐 (tier 5) — 终局
+		# 地狱晶体: 钻石镐 (tier 7) — 终局, 1→7 progression 顶
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 5, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 7, "axe": -1, "sword": -1},
 		"drops": [["hell_crystal", 100, 1, 1]],
 	},
 	CACTUS: {
@@ -339,9 +339,9 @@ const _PROPS := {
 		"drops": [["apple", 20, 1, 1]],
 	},
 	SILVER_ORE: {
-		# 银: 铁镐 (tier 3) 才能挖 — 跟铁同档但更深
+		# 银: 铁镐 (tier 4) 才能挖 — 在铁之后
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 3, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 4, "axe": -1, "sword": -1},
 		"drops": [["silver_ore", 100, 1, 1]],
 	},
 }

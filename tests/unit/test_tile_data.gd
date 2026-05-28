@@ -70,7 +70,8 @@ func test_coal_ore_properties() -> void:
 
 func test_iron_ore_properties() -> void:
 	assert_true(td.is_solid(td.IRON_ORE))
-	assert_eq(td.required_tool_tier(td.IRON_ORE, "pickaxe"), 2)
+	# 新 tier 进阶: copper (3) 才能挖 iron (老测试以为 stone tier 2, 加 copper tier 后调整)
+	assert_eq(td.required_tool_tier(td.IRON_ORE, "pickaxe"), 3)
 	var got_iron := false
 	for _i in 10:
 		if td.drops_for(td.IRON_ORE, "").has("iron_ore"):
