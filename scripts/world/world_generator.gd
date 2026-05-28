@@ -847,7 +847,8 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 # y > HELL_DEPTH 是地狱区: 把 STONE/DEEP_STONE 换 HELL_STONE,
 # AIR 底部偶发填 LAVA 池, 池四周 HELL_STONE 换 OBSIDIAN, HELL_STONE 顶 5% 长 HELL_FRUIT.
 # 矿石 (COAL/IRON/...) 保留, 让矿洞探险还能挖到原矿.
-const HELL_DEPTH := 110            # y > 此处算地狱区 (世界高 128, 留 ~16 格地狱厚度)
+const HELL_DEPTH := 118            # y > 此处算地狱区. 世界 128 高, 仅最底 ~10 行 (基岩上方紧邻).
+                                   # 用户要求"地狱在地底最下面", 110 太浅会让玩家挖到石头层就见到.
 const LAVA_CHUNK_PROB := 0.85      # 每 chunk 85% 试一次放岩浆池
 const LAVA_POOL_MIN_SIZE := 4      # 至少 4 格才算池子
 const HELL_FRUIT_CHANCE := 0.07    # HELL_STONE 顶 7% 长火果
@@ -946,10 +947,15 @@ static func _place_volcano_crater_chunk(c: Chunk, world_seed: int, chunk_x: int,
 	if rng.randf() > VOLCANO_CHUNK_PROB:
 		return
 	# 选位置: chunk 中间一带 x, y 在 HELL_DEPTH+1 ~ height-12 之间
-	var crater_w: int = rng.randi_range(5, 7)         # 宽度
-	var crater_h: int = rng.randi_range(8, 12)        # 高度 (含池)
+	var crater_w: int = rng.randi_range(4, 6)         # 宽度 (地狱变薄, 火山口也变薄)
+	var crater_h: int = rng.randi_range(4, 6)         # 高度 (含池). 地狱只 ~8 行, 不能太高.
 	var x_center_local: int = rng.randi_range(crater_w / 2 + 2, chunk_width - crater_w / 2 - 3)
-	var y_top: int = rng.randi_range(HELL_DEPTH + 2, height - crater_h - 4)
+	# y_top 范围: HELL_DEPTH+1 起到 (基岩前 crater_h 格). 地狱厚度紧凑.
+	var y_top_max: int = height - 2 - crater_h - 1     # height=128, bedrock=2, 留 1 格底
+	var y_top_min: int = HELL_DEPTH + 1
+	if y_top_max < y_top_min:
+		return   # 地狱太薄, 这次不生成
+	var y_top: int = rng.randi_range(y_top_min, y_top_max)
 	var y_bottom: int = y_top + crater_h - 1
 	# 1) 凿竖井 (核心 AIR), 壁外 1 圈 OBSIDIAN 锁 lava
 	for dx in range(-crater_w / 2, crater_w / 2 + 1):
