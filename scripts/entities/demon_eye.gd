@@ -63,23 +63,23 @@ func _physics_process(delta: float) -> void:
 	_bob_t += delta
 	# 飞行 AI: 朝玩家方向漂, 速度恒定 (不受重力)
 	var player := _find_player()
-	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
+	var in_aggro: bool = player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX
+	if in_aggro:
 		var to_player: Vector2 = player.global_position - global_position
 		var dir: Vector2 = to_player.normalized() if to_player.length() > 1.0 else Vector2.ZERO
 		velocity = dir * FLY_SPEED
-		# sprite 朝玩家方向翻面
 		sprite.flip_h = dir.x < 0
-		# 直接更新 base_y 跟着玩家 (而不是固定 spawn 位置漂动)
+	else:
+		velocity = Vector2.ZERO
+	move_and_slide()
+	if in_aggro:
+		# 追玩家时 Y 也跟着动 (velocity.y 已经被 move_and_slide 应用)
+		# 同步 base_y 让退出 aggro 后 bob 从当前位置开始
 		_base_y = global_position.y
 	else:
-		# 闲逛: 缓慢漂浮 (Y 正弦, X 不动)
-		velocity = Vector2.ZERO
-	# Bob 给 Y 加一个正弦偏移让眼球"飘"
-	var bob: float = sin(_bob_t / BOB_PERIOD * TAU) * BOB_AMPLITUDE
-	# 用 move_and_slide 走 X (撞墙不穿), Y 通过 bob 偏移直接设
-	# 注意: 飞行怪不撞地面 (碰撞 mask 0), 但撞实心墙会停
-	move_and_slide()
-	global_position.y = _base_y + bob
+		# 闲逛: bob 上下漂浮在 _base_y 周围
+		var bob: float = sin(_bob_t / BOB_PERIOD * TAU) * BOB_AMPLITUDE
+		global_position.y = _base_y + bob
 	_check_player_contact()
 
 
