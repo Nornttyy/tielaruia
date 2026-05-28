@@ -13,6 +13,8 @@ const S := {
 	"settings_title": "Settings",
 	"settings_master_volume": "Volume",
 	"settings_camera_zoom": "Zoom",
+	"settings_player_name": "Player Name",
+	"settings_player_name_placeholder": "Player",
 	"settings_back": "Back",
 
 	"world_select_title": "Select World",

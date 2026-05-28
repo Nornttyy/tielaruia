@@ -64,6 +64,19 @@ var current_language: String = "zh":
 		current_language = v
 		_save()
 
+# player_name: 玩家自己起的名字. 显示在死亡画面 / 联机时给对方看 / 存档 metadata.
+# 长度限 1-16, 空字符串 fallback "玩家". 持久化到 settings.cfg.
+var player_name: String = "玩家":
+	set(v):
+		var trimmed: String = v.strip_edges()
+		if trimmed.length() > 16:
+			trimmed = trimmed.substr(0, 16)
+		if trimmed.is_empty():
+			trimmed = "玩家"
+		if player_name == trimmed: return
+		player_name = trimmed
+		_save()
+
 
 # 难度对玩家受伤的乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x
 func damage_multiplier() -> float:
@@ -97,6 +110,7 @@ func _save() -> void:
 	cfg.set_value("graphics", "water_sim_enabled", water_sim_enabled)
 	cfg.set_value("camera", "zoom", camera_zoom)
 	cfg.set_value("locale", "language", current_language)
+	cfg.set_value("player", "name", player_name)
 	cfg.save(SETTINGS_PATH)
 
 
@@ -115,3 +129,5 @@ func _load() -> void:
 	# 语言: 只接受 4 个支持的代码, 其他值退回中文
 	var saved_lang: String = String(cfg.get_value("locale", "language", "zh"))
 	current_language = saved_lang if ["zh", "en", "ja", "ko"].has(saved_lang) else "zh"
+	# 玩家名: setter 自己会 strip + clamp + empty fallback
+	player_name = String(cfg.get_value("player", "name", "玩家"))

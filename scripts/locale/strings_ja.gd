@@ -13,6 +13,8 @@ const S := {
 	"settings_title": "設定",
 	"settings_master_volume": "音量",
 	"settings_camera_zoom": "カメラ",
+	"settings_player_name": "プレイヤー名",
+	"settings_player_name_placeholder": "プレイヤー",
 	"settings_back": "戻る",
 
 	"world_select_title": "ワールド選択",

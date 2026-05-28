@@ -17,6 +17,8 @@ const S := {
 	"settings_title": "设 置",         # 标题: 中文用宽空字距修饰, 英文/日文/韩文不用
 	"settings_master_volume": "主音量",
 	"settings_camera_zoom": "镜头",
+	"settings_player_name": "玩家名",
+	"settings_player_name_placeholder": "玩家",
 	"settings_back": "返回",
 
 	# ===== 世界选择面板 =====

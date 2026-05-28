@@ -88,6 +88,8 @@ func _refresh_localized_text() -> void:
 	$SettingsPanel/VBox/VolumeRow/Label.text = Locale.t("settings_master_volume")
 	$SettingsPanel/VBox/ZoomRow/Label.text = Locale.t("settings_camera_zoom")
 	$SettingsPanel/VBox/LanguageRow/Label.text = Locale.t("lang_label")
+	$SettingsPanel/VBox/NameRow/Label.text = Locale.t("settings_player_name")
+	$SettingsPanel/VBox/NameRow/LineEdit.placeholder_text = Locale.t("settings_player_name_placeholder")
 	$SettingsPanel/VBox/BackButton.text = Locale.t("settings_back")
 
 	# 世界选择面板
@@ -769,6 +771,17 @@ func _setup_settings_panel() -> void:
 		zoom_value_label.text = "%.1f" % v
 	)
 	_setup_language_dropdown()
+	# 玩家名输入: 焦点离开 (text_submitted / focus_exited) 才存, 防每个字符都触发 _save()
+	var name_edit: LineEdit = $SettingsPanel/VBox/NameRow/LineEdit
+	name_edit.text = GameSettings.player_name
+	name_edit.text_submitted.connect(func(t: String):
+		GameSettings.player_name = t
+		name_edit.text = GameSettings.player_name  # setter 会清洗, 回显清洗后的值
+	)
+	name_edit.focus_exited.connect(func():
+		GameSettings.player_name = name_edit.text
+		name_edit.text = GameSettings.player_name
+	)
 	_apply_button_style(back_btn)
 	back_btn.pressed.connect(_on_settings_back_pressed)
 

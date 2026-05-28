@@ -13,6 +13,8 @@ const S := {
 	"settings_title": "설정",
 	"settings_master_volume": "마스터 볼륨",
 	"settings_camera_zoom": "카메라",
+	"settings_player_name": "플레이어 이름",
+	"settings_player_name_placeholder": "플레이어",
 	"settings_back": "뒤로",
 
 	"world_select_title": "월드 선택",
