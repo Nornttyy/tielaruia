@@ -53,6 +53,13 @@ func save(main: Node) -> bool:
 	data.chunk_deltas = _serialize_chunk_deltas(world.chunk_manager)
 	data.entities = _serialize_entities()
 	data.chest_contents = ChestStorage.dump()
+	# 生命水晶世界限: 累计已放数 + 已处理 chunk 列表 (chunk 第一次加载时 cap 检查, 之后跳过)
+	if world.chunk_manager != null:
+		data.life_crystals_spawned = world.chunk_manager.life_crystals_spawned
+		var arr: PackedInt32Array = PackedInt32Array()
+		for cx in world.chunk_manager.processed_chunks.keys():
+			arr.append(int(cx))
+		data.processed_chunks = arr
 	var player: Node2D = world.get_player()
 	if player != null:
 		data.player_position = player.global_position

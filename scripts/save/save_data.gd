@@ -17,6 +17,10 @@ const CURRENT_VERSION := 2
 @export var player_position: Vector2 = Vector2.ZERO
 @export var player_hp: float = 100.0       # 当前血量
 @export var player_max_hp: int = 100        # 永久上限 (吃水晶能涨到 400)
+# 生命水晶世界上限: 单人 15, 联机 玩家数×15. 跨 chunk 不重复刷.
+# spawned = 累计已放出的水晶数 (含被吃掉的); processed_chunks = 已查过的 chunk_x 列表.
+@export var life_crystals_spawned: int = 0
+@export var processed_chunks: PackedInt32Array = []
 # 9 hotbar + 27 主背包 = 36 槽。每个: null 或 {"item_id": String, "count": int}
 @export var inventory_slots: Array = []
 @export var hotbar_selection: int = 0

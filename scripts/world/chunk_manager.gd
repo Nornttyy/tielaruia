@@ -9,14 +9,29 @@ const WorldGenerator = preload("res://scripts/world/world_generator.gd")
 signal chunk_loaded(chunk: Chunk)
 signal chunk_unloaded(chunk_x: int)
 
+const LIFE_CRYSTAL_PER_PLAYER := 15   # 每个玩家世界上限 15 颗水晶 (单人 15, 联机 ×N)
+
 var world_seed: int = 0
 var _loaded: Dictionary = {}    # chunk_x: int → Chunk
 var _deltas: Dictionary = {}    # chunk_x: int → Dict[Vector2i → tid]
+# 生命水晶世界限制: 跨 chunk 总量上限.
+# spawned = 已放出的水晶数 (含被吃的). processed_chunks = 已检查过 cap 的 chunk_x.
+var life_crystals_spawned: int = 0
+var processed_chunks: Dictionary = {}   # chunk_x → true (O(1) 查重)
 
 
 func setup(p_seed: int) -> void:
 	world_seed = p_seed
 	add_to_group("chunk_manager")
+
+
+# 当前世界水晶上限 = 15 × 玩家数. NetworkManager 不存在或没连 = 单人 = 1 个玩家.
+# 联机 PeerJS 是 2 人, connected() true 时返 2.
+func current_crystal_cap() -> int:
+	var players: int = 1
+	if NetworkManager != null and NetworkManager.has_method("connected") and NetworkManager.connected():
+		players = 2  # PeerJS host + 1 client
+	return LIFE_CRYSTAL_PER_PLAYER * players
 
 
 # 加载 center_cx ± VIEW_RADIUS 范围内的 chunks
@@ -42,6 +57,11 @@ func _load_chunk(cx: int) -> void:
 	# 应用之前累积的 delta (如果有). 玩家挖过的 chest tile delta 优先, 不会再 spawn 物品.
 	if _deltas.has(cx):
 		c.apply_delta(_deltas[cx])
+	# 生命水晶上限检查: chunk 第一次加载时扫所有 LIFE_CRYSTAL, 超量的换成 AIR + 记 delta.
+	# 已 processed 的 chunk 跳过 (避免重载时重复计数).
+	if not processed_chunks.has(cx):
+		_cap_life_crystals_in_chunk(c, cx)
+		processed_chunks[cx] = true
 	# 矿洞宝箱: 给 chunk 里每个新生成的 chest 位置填一次战利品 (idempotent, 重载不会再填)
 	for spot in c.treasure_spots:
 		# 如果 delta 已经把 chest 砸了 (变 AIR), 不填.
@@ -52,6 +72,26 @@ func _load_chunk(cx: int) -> void:
 				ChestStorage.try_populate_treasure(spot, world_seed, ct)
 	_loaded[cx] = c
 	chunk_loaded.emit(c)
+
+
+# 扫 chunk 的 LIFE_CRYSTAL, 一直保留到达 cap, 多出的擦掉 + 写 delta.
+# 已 processed_chunks 的不再调 (防双重计数).
+func _cap_life_crystals_in_chunk(c: Chunk, cx: int) -> void:
+	var cap: int = current_crystal_cap()
+	var chunk_w: int = ChunkConstants.CHUNK_WIDTH
+	var height: int = ChunkConstants.WORLD_HEIGHT
+	for lx in chunk_w:
+		for wy in height:
+			if c.tiles[lx][wy] != Tiles.LIFE_CRYSTAL:
+				continue
+			if life_crystals_spawned < cap:
+				life_crystals_spawned += 1
+			else:
+				# 超 cap: 擦掉 + delta 标 AIR (防重载又恢复)
+				c.tiles[lx][wy] = Tiles.AIR
+				if not _deltas.has(cx):
+					_deltas[cx] = {}
+				_deltas[cx][Vector2i(lx, wy)] = Tiles.AIR
 
 
 func _unload_chunk(cx: int) -> void:
