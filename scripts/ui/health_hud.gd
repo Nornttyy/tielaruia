@@ -34,21 +34,23 @@ func _on_changed(cur: int, maximum: int) -> void:
 
 
 func _draw() -> void:
-	var heart_px := HEART_SIZE * HEART_SCALE
+	# 每颗心 = 一个 20px 槽位. 槽位里:
+	#   底色: 空心轮廓 (始终绘制, 让玩家看到血量上限)
+	#   叠层: 满心按 "本颗剩余 HP / 20" 缩小绘制 (居中). 5 颗心都按各自范围连续缩.
+	var slot_px := HEART_SIZE * HEART_SCALE
 	for i in NUM_HEARTS:
-		var x: float = PAD + i * (heart_px + HEART_SPACING)
+		var x: float = PAD + i * (slot_px + HEART_SPACING)
 		var y: float = PAD
-		var tex: ImageTexture
-		# 这颗心代表 HP 范围 (i*20, (i+1)*20]. >= full 时满, > half 时半, 否则空.
-		var full_threshold: int = (i + 1) * HP_PER_HEART
-		var half_threshold: int = i * HP_PER_HEART + HP_PER_HEART / 2
-		if _cur >= full_threshold:
-			tex = ArtCache.heart_full
-		elif _cur > half_threshold:
-			tex = ArtCache.heart_half
-		elif _cur > i * HP_PER_HEART:
-			tex = ArtCache.heart_half  # 1-10 HP 也显示半颗 (避免 "明明有血却空" 的迷惑)
-		else:
-			tex = ArtCache.heart_empty
-		if tex != null:
-			draw_texture_rect(tex, Rect2(x, y, heart_px, heart_px), false)
+		# 始终画空心轮廓占位
+		if ArtCache.heart_empty != null:
+			draw_texture_rect(ArtCache.heart_empty, Rect2(x, y, slot_px, slot_px), false)
+		# 本颗心代表 HP 范围 (i*20, (i+1)*20], 算剩余 fraction
+		var fill_hp: int = clamp(_cur - i * HP_PER_HEART, 0, HP_PER_HEART)
+		if fill_hp <= 0:
+			continue
+		var fraction: float = float(fill_hp) / float(HP_PER_HEART)
+		# 满心按比例缩小 + 居中. 最小给 2px 让贴脸血不要消失 (1 HP 还能看见一点)
+		var size: float = max(2.0, slot_px * fraction)
+		var offset: float = (slot_px - size) * 0.5
+		if ArtCache.heart_full != null:
+			draw_texture_rect(ArtCache.heart_full, Rect2(x + offset, y + offset, size, size), false)
