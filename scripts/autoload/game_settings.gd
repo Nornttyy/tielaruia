@@ -56,6 +56,14 @@ var camera_zoom: float = 0.8:
 		camera_zoom = clamped
 		_save_and_emit()
 
+# current_language: UI 语言. "zh" / "en" / "ja" / "ko". 默认中文.
+# Locale autoload 读这个值 + 发 language_changed 信号让 UI 刷新.
+var current_language: String = "zh":
+	set(v):
+		if current_language == v: return
+		current_language = v
+		_save()
+
 
 # 难度对玩家受伤的乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x
 func damage_multiplier() -> float:
@@ -88,6 +96,7 @@ func _save() -> void:
 	cfg.set_value("graphics", "show_flocks", show_flocks)
 	cfg.set_value("graphics", "water_sim_enabled", water_sim_enabled)
 	cfg.set_value("camera", "zoom", camera_zoom)
+	cfg.set_value("locale", "language", current_language)
 	cfg.save(SETTINGS_PATH)
 
 
@@ -103,3 +112,6 @@ func _load() -> void:
 	show_flocks = false    # 鸟蝠 perf: 36 sprite × 2 每帧 sin 扑翼, 默认关
 	water_sim_enabled = true
 	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 0.8)), 0.5, 2.5)
+	# 语言: 只接受 4 个支持的代码, 其他值退回中文
+	var saved_lang: String = String(cfg.get_value("locale", "language", "zh"))
+	current_language = saved_lang if ["zh", "en", "ja", "ko"].has(saved_lang) else "zh"

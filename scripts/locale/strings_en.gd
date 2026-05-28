@@ -1,0 +1,53 @@
+# English translations. Keys match strings_zh.gd.
+extends RefCounted
+
+const S := {
+	"lang_name": "English",
+	"lang_label": "Language",
+
+	"menu_new_game": "New Game",
+	"menu_multiplayer": "Multiplayer",
+	"menu_settings": "Settings",
+
+	"settings_title": "Settings",
+	"settings_master_volume": "Master Volume",
+	"settings_camera_zoom": "Camera Zoom",
+	"settings_back": "Back",
+
+	"world_select_title": "Select World",
+	"world_select_empty": "No saves yet. Create a new world to start.",
+	"world_new": "New World",
+	"world_enter": "Enter",
+	"world_delete": "Delete",
+	"world_back": "Back",
+
+	"newgame_title": "New World",
+	"newgame_name_label": "World Name",
+	"newgame_seed_label": "Seed",
+	"newgame_seed_random": "Random",
+	"newgame_difficulty_label": "Difficulty",
+	"newgame_difficulty_easy": "Easy",
+	"newgame_difficulty_normal": "Normal",
+	"newgame_difficulty_hard": "Hard",
+	"newgame_cancel": "Cancel",
+	"newgame_start": "Start",
+	"newgame_default_world_name": "My World",
+
+	"mp_title": "Multiplayer",
+	"mp_room_code_prompt": "Enter the 6-digit room code from your friend",
+	"mp_join_label": "Join",
+	"mp_back": "Back",
+	"mp_status_idle": "Enter the 6-digit room code from your friend",
+	"mp_status_joining": "Connecting...",
+	"mp_status_connected": "Connected, loading world...",
+	"mp_status_disconnected": "Disconnected by peer",
+	"mp_status_error_prefix": "Error: ",
+	"mp_room_code_invalid": "Room code must be 6 alphanumeric characters",
+	"mp_module_missing": "Multiplayer module not loaded",
+	"mp_default_world_name": "Co-op World",
+
+	"delete_save_title": "Delete Save",
+	"delete_save_message": "Really delete save \"%s\"? \nThis cannot be undone!",
+	"delete_save_ok": "Delete",
+	"delete_save_cancel": "Cancel",
+}

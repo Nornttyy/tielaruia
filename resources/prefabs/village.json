@@ -1,68 +1,80 @@
 {
   "name": "starter_village",
-  "comment": "锚点 = 玩家 spawn_y 行的指定 x. anchor_x/y 是相对锚点的 offset. grid 字符: P=planks W=stone D=door L=log C=chest B=workbench F=furnace T=torch _=wood_platform .=interior air. villager_offset = [col, row] 在 grid 内.",
+  "comment": "锚点 = 玩家 spawn_y 行的 x. anchor_x/y 是相对锚点的 offset. grid 字符: P=planks W=stone D=door L=log C=chest B=workbench F=furnace T=torch _=wood_platform .=空气. 房子带尖顶/烟囱/塔楼.",
   "houses": [
     {
-      "comment": "起步小屋 (5x4) — 室内一个箱子 + 火把",
-      "anchor_x": 5,
-      "anchor_y": -3,
-      "grid": [
-        "PPPPP",
-        "P.T.P",
-        "P.C.P",
-        "D...P"
-      ],
-      "villager_offset": [2, 3]
-    },
-    {
-      "comment": "工坊 (7x4) — 中间放工作台",
-      "anchor_x": 12,
-      "anchor_y": -3,
-      "grid": [
-        "PPPPPPP",
-        "P..T..P",
-        "P..B..P",
-        "D.....P"
-      ],
-      "villager_offset": [3, 3]
-    },
-    {
-      "comment": "铁匠铺 (5x4) — 熔炉冶炼",
-      "anchor_x": 22,
-      "anchor_y": -3,
-      "grid": [
-        "PPPPP",
-        "P.T.P",
-        "P.F.P",
-        "D...P"
-      ],
-      "villager_offset": [2, 3]
-    },
-    {
-      "comment": "二层楼 (6x6) — 平台分层, 屋顶尖顶",
-      "anchor_x": 29,
+      "comment": "尖顶农舍 (7x6) — 斜屋顶 + 室内火把 + 箱子. 木梁(L)框尖顶",
+      "anchor_x": 4,
       "anchor_y": -5,
       "grid": [
-        "..PPP.",
-        ".PPPPP",
-        "P.T.TP",
-        "P____P",
-        "P.C..P",
-        "D....P"
+        "...L...",
+        "..LPL..",
+        ".LPPPL.",
+        "LPPPPPL",
+        "P.T.C.P",
+        "D.....P"
       ],
       "villager_offset": [3, 5]
     },
     {
-      "comment": "石头小屋 (5x4) — 防火, 跟铁匠铺呼应",
-      "anchor_x": 38,
-      "anchor_y": -3,
+      "comment": "二层楼 + 烟囱 (8x7) — 上层带平台 + 烟囱伸出屋顶",
+      "anchor_x": 13,
+      "anchor_y": -6,
       "grid": [
-        "WWWWW",
+        ".....W..",
+        ".LLLLW..",
+        "LPPPPWPL",
+        "P.T..WLP",
+        "P_____PP",
+        "P.C..B.P",
+        "D......P"
+      ],
+      "villager_offset": [4, 6]
+    },
+    {
+      "comment": "铁匠铺带石烟囱 (7x6) — 熔炉接烟囱出顶",
+      "anchor_x": 23,
+      "anchor_y": -5,
+      "grid": [
+        "..W....",
+        "..W....",
+        "LLWLLLL",
+        "P.W.T.P",
+        "P.F.B.P",
+        "D.....P"
+      ],
+      "villager_offset": [4, 5]
+    },
+    {
+      "comment": "瞭望塔 (5x9) — 高塔顶有火把指引玩家",
+      "anchor_x": 32,
+      "anchor_y": -8,
+      "grid": [
+        "..L..",
+        "..T..",
+        "WLLLW",
+        "W...W",
         "W.T.W",
+        "W___W",
         "W.C.W",
+        "W...W",
         "D...W"
       ],
       "villager_offset": null
+    },
+    {
+      "comment": "客栈/集会厅 (11x6) — 长条大屋 + 双门(前后) + 工作台 + 熔炉 + 双箱",
+      "anchor_x": 39,
+      "anchor_y": -5,
+      "grid": [
+        "...LLLLL...",
+        "..LPPPPPL..",
+        ".LPPPPPPPL.",
+        "PP.T...T.PP",
+        "P.C.B.F.C.P",
+        "D.........D"
+      ],
+      "villager_offset": [5, 5]
     }
   ]
 }

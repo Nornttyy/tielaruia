@@ -1,0 +1,53 @@
+# 한국어 번역. 키는 strings_zh.gd 와 동일.
+extends RefCounted
+
+const S := {
+	"lang_name": "한국어",
+	"lang_label": "언어",
+
+	"menu_new_game": "게임 시작",
+	"menu_multiplayer": "멀티플레이어",
+	"menu_settings": "설정",
+
+	"settings_title": "설정",
+	"settings_master_volume": "마스터 볼륨",
+	"settings_camera_zoom": "카메라 줌",
+	"settings_back": "뒤로",
+
+	"world_select_title": "월드 선택",
+	"world_select_empty": "저장된 게임이 없습니다. 새 월드를 만드세요.",
+	"world_new": "새 월드",
+	"world_enter": "입장",
+	"world_delete": "삭제",
+	"world_back": "뒤로",
+
+	"newgame_title": "새 월드",
+	"newgame_name_label": "월드 이름",
+	"newgame_seed_label": "시드",
+	"newgame_seed_random": "랜덤",
+	"newgame_difficulty_label": "난이도",
+	"newgame_difficulty_easy": "쉬움",
+	"newgame_difficulty_normal": "보통",
+	"newgame_difficulty_hard": "어려움",
+	"newgame_cancel": "취소",
+	"newgame_start": "시작",
+	"newgame_default_world_name": "내 월드",
+
+	"mp_title": "멀티플레이어",
+	"mp_room_code_prompt": "친구에게 받은 6자리 방 코드 입력",
+	"mp_join_label": "참여",
+	"mp_back": "뒤로",
+	"mp_status_idle": "친구에게 받은 6자리 방 코드 입력",
+	"mp_status_joining": "연결 중...",
+	"mp_status_connected": "연결됨, 월드 로딩 중...",
+	"mp_status_disconnected": "상대방이 연결을 끊었습니다",
+	"mp_status_error_prefix": "오류: ",
+	"mp_room_code_invalid": "방 코드는 6자리 영숫자여야 합니다",
+	"mp_module_missing": "멀티플레이어 모듈 미로드",
+	"mp_default_world_name": "협동 월드",
+
+	"delete_save_title": "저장 삭제",
+	"delete_save_message": "정말 저장 \"%s\" 을(를) 삭제하시겠습니까? \n되돌릴 수 없습니다!",
+	"delete_save_ok": "삭제",
+	"delete_save_cancel": "취소",
+}
