@@ -8,8 +8,8 @@ const REACH_TILES := 4
 const INVALID_TILE := Vector2i(-1, -1)
 
 # Tile 硬度（累计 tool_speed*delta 达此值挖完，单位"秒"）
-# 用户改: STONE 1.2→3.0s, 全部矿石跟 STONE 同硬度 3.0s.
-# 镐 _tool_speed 按 tier 1-7 加速 (wood 3s → diamond 0.3s).
+# 用户改: 矿石按 required tier 当硬度 — 越深的矿越硬, 顺次 1→7s.
+# 镐 _tool_speed 按 tier 1-7 加速 (wood ×1 → diamond ×10).
 const _HARDNESS := {
 	Tiles.GRASS: 0.3,
 	Tiles.DIRT: 0.3,
@@ -19,16 +19,16 @@ const _HARDNESS := {
 	Tiles.WORKBENCH: 0.5,
 	Tiles.DOOR: 0.5,
 	Tiles.LOG: 0.6,
-	Tiles.STONE: 3.0,
-	Tiles.DEEP_STONE: 3.0,
-	Tiles.COAL_ORE: 3.0,
-	Tiles.COPPER_ORE: 3.0,
-	Tiles.TIN_ORE: 3.0,
-	Tiles.IRON_ORE: 3.0,
-	Tiles.SILVER_ORE: 3.0,
-	Tiles.GOLD_ORE: 3.0,
-	Tiles.DIAMOND_ORE: 3.0,
-	Tiles.HELL_CRYSTAL: 3.0,
+	Tiles.STONE: 1.0,         # tier 1 base
+	Tiles.DEEP_STONE: 1.0,    # tier 1
+	Tiles.COAL_ORE: 1.0,      # tier 1
+	Tiles.COPPER_ORE: 2.0,    # tier 2
+	Tiles.TIN_ORE: 2.0,       # tier 2
+	Tiles.IRON_ORE: 3.0,      # tier 3
+	Tiles.SILVER_ORE: 4.0,    # tier 4
+	Tiles.GOLD_ORE: 5.0,      # tier 5
+	Tiles.DIAMOND_ORE: 6.0,   # tier 6
+	Tiles.HELL_CRYSTAL: 7.0,  # tier 7
 	Tiles.LOG_TOP: 0.6,
 	Tiles.LOG_ROOT_L: 0.4,
 	Tiles.LOG_ROOT_R: 0.4,
