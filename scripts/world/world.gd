@@ -29,7 +29,7 @@ const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
 
 const MAX_SLIMES := 4              # 白天上限 (slime)
 const MAX_ZOMBIES := 5             # 夜间上限 (zombie)
-const MAX_ANIMALS := 6             # 动物上限 (牛+羊+猪 总和)
+const MAX_ANIMALS := 3             # 动物上限 (牛+羊+猪+企鹅+豹+青蛙 总和)
 const SPAWN_INTERVAL := 6.0
 const ANIMAL_SPAWN_INTERVAL := 12.0  # 动物刷新更慢
 const SPAWN_RANGE_MIN := 12  # tiles
