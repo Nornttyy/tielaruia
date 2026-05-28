@@ -61,8 +61,8 @@ const _TREE_PARTS := {
 	Tiles.BRANCH_R: true,
 }
 
-# 镐挖不了的"植物"类 tile (叶子 / 仙人掌 / 火把等小物). 镐只破坏"方块".
-# 不挡 axe (砍 LOG/仙人掌) / sword (无挖矿). 也不挡徒手 / 别工具.
+# 镐挖不了的"植物"类 tile (叶子 / 仙人掌 / 蘑菇 / 火果 / 火把等小物).
+# 镐只破坏"方块". 不挡 axe (砍 LOG/仙人掌) / sword (无挖矿). 也不挡徒手 / 别工具.
 const _PICKAXE_BLACKLIST := {
 	Tiles.LEAVES: true,
 	Tiles.LEAVES_PINE: true,
@@ -70,6 +70,8 @@ const _PICKAXE_BLACKLIST := {
 	Tiles.JUNGLE_LEAVES: true,
 	Tiles.CACTUS: true,
 	Tiles.CACTUS_BODY: true,
+	Tiles.MUSHROOM: true,
+	Tiles.HELL_FRUIT: true,
 	Tiles.TORCH: true,
 	Tiles.SLIME_TORCH: true,
 }
