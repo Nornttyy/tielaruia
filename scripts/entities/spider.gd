@@ -16,6 +16,7 @@ const JUMP_VY := -240.0      # 撞墙跳更高
 const ENEMY_IFRAME_SEC := 0.2
 
 var current_health: int = MAX_HEALTH
+var _cached_player: Node2D = null
 var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
 var _is_dying: bool = false
@@ -82,10 +83,14 @@ func _physics_process(delta: float) -> void:
 
 
 func _find_player() -> Node2D:
+	if _cached_player != null and is_instance_valid(_cached_player):
+		return _cached_player
 	var players := get_tree().get_nodes_in_group("player")
 	if players.is_empty():
+		_cached_player = null
 		return null
-	return players[0]
+	_cached_player = players[0]
+	return _cached_player
 
 
 func _check_player_contact() -> void:

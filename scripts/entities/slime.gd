@@ -21,6 +21,8 @@ const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
 var current_health: int = MAX_HEALTH
+var _cached_player: Node2D = null  # 缓存 player ref, 每帧避免 get_nodes_in_group
+var _cached_cm: Node = null  # 缓存 chunk_manager (每帧 _is_in_water 不用查 3 层)
 var _hop_timer: float = 0.5
 var _hit_flash: float = 0.0
 const ENEMY_IFRAME_SEC := 0.2
@@ -59,18 +61,19 @@ func _add_player_exception() -> void:
 
 # slime 身体在水里吗 (识别 4 个水位)
 func _is_in_water() -> bool:
-	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
-	if terrain == null:
-		return false
-	var world: Node = terrain.get_parent()
-	if world == null:
-		return false
-	var cm = world.get("chunk_manager")
-	if cm == null:
-		return false
+	if _cached_cm == null or not is_instance_valid(_cached_cm):
+		var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
+		if terrain == null:
+			return false
+		var world: Node = terrain.get_parent()
+		if world == null:
+			return false
+		_cached_cm = world.get("chunk_manager")
+		if _cached_cm == null:
+			return false
 	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
 	var ty: int = int(floor((global_position.y - 5.0) / float(TILE_SIZE)))
-	var t: int = cm.get_tile(tx, ty)
+	var t: int = _cached_cm.get_tile(tx, ty)
 	return t == Tiles.WATER or t == Tiles.WATER_L1 \
 			or t == Tiles.WATER_L2 or t == Tiles.WATER_L3
 
@@ -167,10 +170,15 @@ func _on_anim_done() -> void:
 
 
 func _find_player() -> Node2D:
+	# 缓存 player ref, 避免每帧 get_nodes_in_group (25 怪 × 3 调用 = 75 次/帧)
+	if _cached_player != null and is_instance_valid(_cached_player):
+		return _cached_player
 	var players := get_tree().get_nodes_in_group("player")
 	if players.is_empty():
+		_cached_player = null
 		return null
-	return players[0]
+	_cached_player = players[0]
+	return _cached_player
 
 
 func _check_player_contact() -> void:

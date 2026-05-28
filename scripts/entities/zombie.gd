@@ -23,6 +23,8 @@ var sprite_frames_override: SpriteFrames = null   # _ready 前由子类设
 var drop_table: Array = [["bone", 1, 3]]
 
 var current_health: int = 15
+var _cached_player: Node2D = null
+var _cached_cm: Node = null  # 缓存 chunk_manager, 每帧避免 group + parent 查 3 次
 var _hit_flash: float = 0.0
 const ENEMY_IFRAME_SEC := 0.2
 var _iframe_t: float = 0.0
@@ -102,13 +104,16 @@ func _physics_process(delta: float) -> void:
 
 
 func _get_cm():
+	if _cached_cm != null and is_instance_valid(_cached_cm):
+		return _cached_cm
 	var terrain: Node = get_tree().get_first_node_in_group("terrain_layer")
 	if terrain == null:
 		return null
 	var world: Node = terrain.get_parent()
 	if world == null:
 		return null
-	return world.get("chunk_manager")
+	_cached_cm = world.get("chunk_manager")
+	return _cached_cm
 
 
 static func _is_water_tile(tid: int) -> bool:
@@ -136,10 +141,14 @@ func _is_head_above_water() -> bool:
 
 
 func _find_player() -> Node2D:
+	if _cached_player != null and is_instance_valid(_cached_player):
+		return _cached_player
 	var players := get_tree().get_nodes_in_group("player")
 	if players.is_empty():
+		_cached_player = null
 		return null
-	return players[0]
+	_cached_player = players[0]
+	return _cached_player
 
 
 func _check_player_contact() -> void:
