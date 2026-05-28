@@ -88,7 +88,6 @@ var _mining_swing_t: float = 0.0  # 挖矿挥镐动画节流
 # 战斗
 const SWORD_RANGE_PX := 27.0
 const SWORD_COOLDOWN := 0.3
-const SWORD_ARC_LIFETIME := 0.18
 var _attack_cooldown: float = 0.0
 # 剑的戳/挥交替: 0 = 下一击戳, 1 = 下一击挥. 切工具时归零.
 var _attack_combo_step: int = 0
@@ -1046,41 +1045,9 @@ func _sweep_sword() -> void:
 		if _is_in_swing_arc(sn.global_position, player.global_position, swing_dir):
 			if target.has_method("take_damage"):
 				target.take_damage(damage, player.global_position, _sweep_knockback())
-	# 月牙挥击拖尾 (Task 3 重写)
-	_spawn_swing_arc(player.global_position, swing_dir)
+	# 用户改: 删了月牙拖尾 (剑影). 留 shake.
 	if player.has_method("shake"):
 		player.shake(3.0)
-
-
-func _spawn_swing_arc(origin: Vector2, dir: Vector2) -> void:
-	# 月牙扇形拖尾 (细窄风格): 沿 dir 方向 ±35°, 外径 24px 内径 16px,
-	# 整体偏小贴近剑刃, 不再遮挡玩家.
-	var outer_r: float = 24.0
-	var inner_r: float = 16.0
-	var half_spread: float = deg_to_rad(35.0)
-	var steps: int = 10
-	var base_angle: float = dir.angle()
-	var poly := Polygon2D.new()
-	poly.global_position = origin
-	var pts: PackedVector2Array = PackedVector2Array()
-	for i in range(steps + 1):
-		var t: float = float(i) / float(steps)
-		var a: float = base_angle - half_spread + (half_spread * 2.0) * t
-		pts.append(Vector2(cos(a), sin(a)) * outer_r)
-	for i in range(steps + 1):
-		var t2: float = float(steps - i) / float(steps)
-		var a2: float = base_angle - half_spread + (half_spread * 2.0) * t2
-		pts.append(Vector2(cos(a2), sin(a2)) * inner_r)
-	poly.polygon = pts
-	# 偏蓝白透明感, 像金属挥击残影
-	poly.color = Color(0.92, 0.96, 1.0, 0.55)
-	var parent: Node = get_tree().get_first_node_in_group("effects_root")
-	if parent == null:
-		parent = get_parent()
-	parent.add_child(poly)
-	var tween := poly.create_tween()
-	tween.tween_property(poly, "modulate:a", 0.0, SWORD_ARC_LIFETIME)
-	tween.tween_callback(poly.queue_free)
 
 
 func _inventory_node() -> Node:
