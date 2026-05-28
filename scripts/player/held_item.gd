@@ -102,7 +102,10 @@ func play_swing() -> void:
 	_tween.tween_property(self, "rotation", 0.0, SWING_DURATION * 0.40)
 
 
-const THRUST_DURATION := 0.15
+const THRUST_DURATION := 0.30           # 用户调: 戳要在前端"停"一下 (本来 0.15 闪过去太快)
+const THRUST_EXTEND_RATIO := 0.20       # 前 20% = 突出去 (0.06s)
+const THRUST_HOLD_RATIO := 0.55         # 中 55% = 在前面 dwell (0.165s, 主要打击窗口)
+const THRUST_RETRACT_RATIO := 0.25      # 后 25% = 收回来 (0.075s)
 const THRUST_OFFSET_PX := 10.0   # 工具向前突进的距离 (TILE_SIZE 缩 0.75)
 const PICKAXE_ATTACK_DURATION := 1.0   # 用户改 0.7→1.0 转慢一点
 
@@ -152,8 +155,10 @@ func play_thrust(target_angle: float) -> void:
 	rotation = wrapf(target_angle + PI / 2.0, -PI, PI)
 	position = base_pos
 	_tween = create_tween()
-	_tween.tween_property(self, "position", thrust_pos, THRUST_DURATION * 0.4).set_ease(Tween.EASE_OUT)
-	_tween.tween_property(self, "position", base_pos, THRUST_DURATION * 0.6).set_ease(Tween.EASE_IN)
+	# 三段式: 突出 → dwell (保持 thrust_pos) → 收回. 主要 hit 窗口在 dwell.
+	_tween.tween_property(self, "position", thrust_pos, THRUST_DURATION * THRUST_EXTEND_RATIO).set_ease(Tween.EASE_OUT)
+	_tween.tween_interval(THRUST_DURATION * THRUST_HOLD_RATIO)
+	_tween.tween_property(self, "position", base_pos, THRUST_DURATION * THRUST_RETRACT_RATIO).set_ease(Tween.EASE_IN)
 	_tween.tween_callback(func():
 		rotation = 0.0
 		_attack_locked = false

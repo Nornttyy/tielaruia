@@ -119,7 +119,7 @@ var _pickaxe_spin_facing_right: bool = true
 # 用户改: "剑碰到怪就扣血", 不是按攻击瞬间 AoE 圆扣.
 const SWORD_TIP_LOCAL_Y := -16.0     # tip 相对 held.position 的 y (sprite 16h)
 const SWORD_HIT_RADIUS := 12.0       # 怪中心到 grip→tip 线段 ≤ 12px (剑身比镐 tip 长, 半圆挥到弧边怪也要算碰到)
-const SWORD_THRUST_DURATION := 0.15  # 跟 held_item.THRUST_DURATION 一致
+const SWORD_THRUST_DURATION := 0.30  # 跟 held_item.THRUST_DURATION 一致 (含 dwell)
 const SWORD_SWING_DURATION := 0.18   # 跟 held_item.SWING_DURATION 一致
 var _sword_attack_active: bool = false
 var _sword_attack_t: float = 0.0
