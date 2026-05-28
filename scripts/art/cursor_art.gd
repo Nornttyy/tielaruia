@@ -34,36 +34,6 @@ const _ARROW := [
 ]
 
 
-# --- 剑: 银白刃 + 金护手 + 棕握把, 指右上 ---
-const _P_SWORD := {
-	"o": Color8(20, 16, 8),     # 黑描边
-	"w": Color8(225, 225, 235), # 银白刃
-	"g": Color8(155, 155, 170), # 暗银阴影
-	"y": Color8(255, 200, 90),  # 金色护手
-	"b": Color8(125, 80, 50),   # 棕握把
-	"l": Color8(170, 115, 70),  # 亮木
-}
-
-const _SWORD := [
-	"...........ooo..",
-	"..........owwwo.",
-	".........owwgo..",
-	"........owwgo...",
-	".......owwgo....",
-	"......owwgo.....",
-	".....owwgo......",
-	"....owwgo.......",
-	"...owygo........",
-	"..oyyyo.........",
-	".obyybo.........",
-	"obblbo..........",
-	".obblo..........",
-	"..oblo..........",
-	"...oo...........",
-	"................",
-]
-
-
 # --- 镐: 银镐头 + 棕把, 镐尖左上 ---
 const _P_PICK := {
 	"o": Color8(20, 16, 8),     # 黑描边
@@ -95,10 +65,6 @@ const _PICK := [
 
 static func arrow() -> ImageTexture:
 	return PixelArt.grid_to_texture(_ARROW, _P_ARROW)
-
-
-static func sword() -> ImageTexture:
-	return PixelArt.grid_to_texture(_SWORD, _P_SWORD)
 
 
 static func pickaxe() -> ImageTexture:
