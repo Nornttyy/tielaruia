@@ -420,8 +420,11 @@ static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 		var world_x2: int = chunk_start_x + lx
 		var surf2: int = chunk_heights[world_x2]
 		var col3: Array = c.tiles[lx]
-		# 从下往上扫 (skip 海洋层, 已填)
-		for y in range(min(OCEAN_DEPTH - 1, height - BEDROCK_ROWS - 1), surf2 + WATER_MIN_DEPTH, -1):
+		# 从下往上扫 (skip 海洋层 + 地狱层 — 地狱区不放水, 那里是岩浆世界)
+		var max_y_water: int = min(OCEAN_DEPTH - 1, height - BEDROCK_ROWS - 1)
+		if max_y_water >= HELL_DEPTH:
+			max_y_water = HELL_DEPTH - 1
+		for y in range(max_y_water, surf2 + WATER_MIN_DEPTH, -1):
 			if visited[lx][y] == 1:
 				continue
 			if col3[y] != Tiles.AIR:
