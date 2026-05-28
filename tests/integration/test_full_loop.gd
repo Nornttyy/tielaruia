@@ -97,5 +97,6 @@ func test_full_survival_loop():
 	world._set_tile(stone_target.x, stone_target.y, Tiles.STONE)
 	action.aim_override = stone_target
 	action.primary_override = true
-	await wait_frames(90)
+	# 木镐挖 STONE 现在 3s (用户改 1.2→3.0), 60fps × 3.5s = 210 帧
+	await wait_frames(210)
 	assert_eq(terrain.get_cell_source_id(stone_target), -1, "stone 应被挖空")
