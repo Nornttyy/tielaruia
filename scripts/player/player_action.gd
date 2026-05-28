@@ -791,8 +791,9 @@ func _update_eat_or_place(delta: float) -> void:
 					_trigger_mimic_trap(aim_tile, terrain.get_parent())
 					return
 
-	# 持食物 + 按住 + 血未满 → 进入/保持 eating. 食物 food_fill 现在直接当回血量.
-	if holding_food and held and hp != null and hp.current_health < hp.MAX_HEALTH:
+	# 持食物 + 按住 → 进入/保持 eating. 食物 food_fill 现在直接当回血量.
+	# 不检查血量上限: 满血也能吃 (heal() 内部 clamp), 误点会消耗食物 — 用户选这个语义.
+	if holding_food and held and hp != null:
 		if _eat_item_id != slot.item_id:
 			_eat_item_id = slot.item_id
 			_eat_t = 0.0

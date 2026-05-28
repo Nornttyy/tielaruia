@@ -2,8 +2,8 @@
 extends Control
 
 const HEART_SIZE := 10
-const HEART_SCALE := 3          # 渲染放大倍数 (30px 每颗, 心少了画大点)
-const HEART_SPACING := 4
+const HEART_SCALE := 2          # 渲染放大倍数 (20px 每颗, 保持原来大小)
+const HEART_SPACING := 2
 const NUM_HEARTS := 5
 const HP_PER_HEART := 20
 const PAD := 8

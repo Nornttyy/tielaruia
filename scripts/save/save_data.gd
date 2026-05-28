@@ -2,6 +2,12 @@
 # M1 范围: 玩家 + 背包 + 种子 + 出生点 + chunk delta + 实体快照.
 class_name SaveData extends Resource
 
+# 存档格式版本. 旧存档 (没这字段) 加载时 = 0.
+# v0 → v1: PlayerHealth.MAX_HEALTH 从 20 改 100 + 删饱食度.
+#         旧 player_hp 需要 ×5 缩放到新刻度.
+const CURRENT_VERSION := 1
+
+@export var version: int = CURRENT_VERSION
 @export var world_seed: int = 0
 @export var world_name: String = ""
 @export var difficulty: int = 1   # 0=简单 1=普通 2=困难

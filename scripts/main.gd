@@ -247,7 +247,12 @@ func _apply_save_data(data: Resource) -> void:
 	player.global_position = data.player_position
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and "current_health" in hp:
-		hp.current_health = int(data.player_hp)
+		# 老存档 (version=0) 时 player_hp 是 0-20 刻度, 缩放 ×5 到新刻度 0-100.
+		# 同时 clamp 防越界. 0 → 维持 0 (死亡状态).
+		var loaded_hp: float = data.player_hp
+		if data.version < 1:
+			loaded_hp = loaded_hp * 5.0
+		hp.current_health = clamp(int(loaded_hp), 0, hp.MAX_HEALTH)
 		if hp.has_signal("health_changed"):
 			hp.health_changed.emit(hp.current_health, hp.MAX_HEALTH)
 	var inv_node: Node = player.get_node_or_null("PlayerInventory")
