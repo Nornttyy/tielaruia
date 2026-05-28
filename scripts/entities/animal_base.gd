@@ -86,7 +86,7 @@ func _physics_process(delta: float) -> void:
 	if _p != null and is_on_floor():
 		var _dx: float = _p.global_position.x - global_position.x
 		var _dy: float = _p.global_position.y - global_position.y
-		if _dx * _dx + _dy * _dy > 640000.0:
+		if _dx * _dx + _dy * _dy > 360000.0:
 			velocity = Vector2.ZERO
 			return
 	if _hit_flash > 0.0:

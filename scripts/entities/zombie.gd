@@ -50,7 +50,7 @@ func _physics_process(delta: float) -> void:
 	if _p != null and is_on_floor():
 		var _dx: float = _p.global_position.x - global_position.x
 		var _dy: float = _p.global_position.y - global_position.y
-		if _dx * _dx + _dy * _dy > 640000.0:
+		if _dx * _dx + _dy * _dy > 360000.0:
 			velocity = Vector2.ZERO
 			return
 	if _hit_flash > 0.0:
@@ -138,7 +138,7 @@ func _check_player_contact() -> void:
 	var player := _find_player()
 	if player == null:
 		return
-	if global_position.distance_to(player.global_position) > 20.0:
+	if global_position.distance_to(player.global_position) > 15.0:
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

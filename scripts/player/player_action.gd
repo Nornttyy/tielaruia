@@ -96,8 +96,8 @@ var _attack_combo_step: int = 0
 # 镐旋转: 用户改 — 怪要碰到镐才扣血 (不是 AoE 圆心扣血).
 # spin 期间每帧算 pickaxe tip 世界位置, 距离 ≤ HIT_RADIUS 的怪扣 1 次.
 const PICKAXE_SPIN_DURATION := 0.7
-const PICKAXE_TIP_LOCAL_Y := -11.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 0.7)
-const PICKAXE_HIT_RADIUS := 14.0     # tip 到怪中心 ≤ 14px 算碰到 (镐头 5 + 怪身 6 + 余 3)
+const PICKAXE_TIP_LOCAL_Y := -16.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 1.0)
+const PICKAXE_HIT_RADIUS := 10.0     # tip 到怪中心 ≤ 10px 算碰到 (TILE_SIZE 缩 0.75)
 var _pickaxe_spin_active: bool = false
 var _pickaxe_spin_t: float = 0.0
 var _pickaxe_hit_this_spin: Dictionary = {}  # instance_id → true (1 spin 1 只怪 1 击)

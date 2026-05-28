@@ -86,7 +86,7 @@ func _physics_process(delta: float) -> void:
 	if _p != null and is_on_floor():
 		var _dx: float = _p.global_position.x - global_position.x
 		var _dy: float = _p.global_position.y - global_position.y
-		if _dx * _dx + _dy * _dy > 640000.0:
+		if _dx * _dx + _dy * _dy > 360000.0:
 			velocity = Vector2.ZERO
 			return
 	if _hit_flash > 0.0:
@@ -180,8 +180,8 @@ func _check_player_contact() -> void:
 	var player := _find_player()
 	if player == null:
 		return
-	# 用碰撞框距离判断接触 (玩家半径 ~6px + 史莱姆半径 ~8px)
-	if global_position.distance_to(player.global_position) > 18.0:
+	# 用碰撞框距离判断接触 (玩家半径 ~5px + 史莱姆半径 ~7px, TILE_SIZE 缩后)
+	if global_position.distance_to(player.global_position) > 14.0:
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
