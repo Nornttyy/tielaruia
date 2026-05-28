@@ -606,6 +606,27 @@ const _IRON_ORE_ICON := [
 
 
 
+# 骨头: 水平向, 两端球节 (僵尸掉落)
+const _BONE := [
+	"................",
+	"................",
+	"................",
+	"..jjj......jjj..",
+	".jjjjj....jjjjj.",
+	".jjwjj....jjwjj.",
+	".jjjjjjjjjjjjjj.",
+	"..jjjjjjjjjjjj..",
+	"..jjjjjjjjjjjj..",
+	".jjjjjjjjjjjjjj.",
+	".jjwjj....jjwjj.",
+	".jjjjj....jjjjj.",
+	"..jjj......jjj..",
+	"................",
+	"................",
+	"................",
+]
+
+
 const _ICONS := {
 	"wood_sword": _WOOD_SWORD,
 	"wood_pickaxe": _WOOD_PICKAXE,
@@ -636,6 +657,7 @@ const _ICONS := {
 	"leather": _LEATHER,
 	"wool": _WOOL,
 	"grappling_hook": _GRAPPLING_HOOK,
+	"bone": _BONE,
 }
 
 

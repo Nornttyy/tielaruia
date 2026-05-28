@@ -328,7 +328,8 @@ const WALL_HIDE_TOP_TILES := 3
 const WALL_EXTEND_RADIUS := 3   # 矿洞 AIR 外扩 R 格岩石也填墙 (像泰拉瑞亚)
 static func _fill_walls_chunk(c: Chunk, chunk_heights: Dictionary, chunk_width: int, height: int) -> void:
 	var chunk_start_x: int = c.chunk_x * chunk_width
-	# Pass 1: 矿洞内部 (AIR 格) 填墙
+	# 用户要求: 地底所有方块后面都有墙 (不论 AIR 还是 SOLID)
+	# 唯一例外: 浅层 (surf + WALL_HIDE_TOP_TILES 之上) 仍无墙 — 这样地表才能透天空
 	for local_x in chunk_width:
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
@@ -336,32 +337,7 @@ static func _fill_walls_chunk(c: Chunk, chunk_heights: Dictionary, chunk_width: 
 		for y in height:
 			if y < wall_start:
 				continue
-			if c.tiles[local_x][y] != Tiles.AIR:
-				continue
 			c.walls[local_x][y] = _wall_for_depth(y, surf)
-	# Pass 2: AIR 周围 R 格内的岩石也填墙 (圆形外扩)
-	var r2: int = WALL_EXTEND_RADIUS * WALL_EXTEND_RADIUS
-	for local_x in chunk_width:
-		for y in height:
-			if c.tiles[local_x][y] != Tiles.AIR:
-				continue
-			# 遍历这个 AIR 周围 R 半径的方块
-			for dx in range(-WALL_EXTEND_RADIUS, WALL_EXTEND_RADIUS + 1):
-				for dy in range(-WALL_EXTEND_RADIUS, WALL_EXTEND_RADIUS + 1):
-					if dx * dx + dy * dy > r2:
-						continue
-					var nx: int = local_x + dx
-					var ny: int = y + dy
-					if nx < 0 or nx >= chunk_width:
-						continue
-					if ny < 0 or ny >= height:
-						continue
-					if c.walls[nx][ny] != Tiles.AIR:
-						continue  # 已经有墙
-					var n_surf: int = chunk_heights[chunk_start_x + nx]
-					if ny < n_surf + WALL_HIDE_TOP_TILES:
-						continue  # 浅层不放墙
-					c.walls[nx][ny] = _wall_for_depth(ny, n_surf)
 
 
 static func _wall_for_depth(y: int, surf: int) -> int:

@@ -42,6 +42,9 @@ const SUN_ENERGY_OFF := 0.0
 const SUN_FADE_TIME := 0.3
 
 var _coyote_timer: float = 0.0
+# 下平台: 按 S/Down 0.3s 内不撞 bit 2 (木平台), 落下
+const DROP_THROUGH_DURATION := 0.3
+var _drop_through_t: float = 0.0
 var _facing_right: bool = true
 var _was_on_floor: bool = true
 var _previous_vy: float = 0.0
@@ -299,6 +302,15 @@ func _physics_process(delta: float) -> void:
 			_coyote_timer = 0.0
 			did_jump = true
 			SfxBank.play("jump", 0.08)
+		# 下平台: 按 S/Down 时关掉 bit 2 (木平台) 0.3s, 玩家从平台落下
+		if on_floor_now and (Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)):
+			_drop_through_t = DROP_THROUGH_DURATION
+	# 平台 mask 切换 (放最外层, 任何状态下 timer 都能跑完)
+	if _drop_through_t > 0.0:
+		_drop_through_t = max(0.0, _drop_through_t - delta)
+		collision_mask = 1   # 只撞 bit 0 (实心), 跳过 bit 2 (平台)
+	elif collision_mask != 5:
+		collision_mask = 5   # 恢复 bit 0+2
 
 	# 记录跳前 vy 给落地用
 	var pre_move_vy := velocity.y

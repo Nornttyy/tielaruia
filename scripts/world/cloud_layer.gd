@@ -6,7 +6,7 @@ const CloudsArt = preload("res://scripts/fx/clouds_art.gd")
 
 # 每层 [motion_scale, scroll_speed, cloud_count, color_index]
 const _LAYERS := [
-	{"motion_scale": 0.2, "speed": 6.0,  "count": 6, "color_idx": 2},  # 远，COLOR_FAR
+	{"motion_scale": 0.0, "speed": 6.0,  "count": 6, "color_idx": 2},  # 远，COLOR_FAR (锁视口, 不视差)
 	{"motion_scale": 0.5, "speed": 14.0, "count": 5, "color_idx": 1},  # 中
 	{"motion_scale": 0.8, "speed": 26.0, "count": 4, "color_idx": 0},  # 近
 ]

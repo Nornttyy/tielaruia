@@ -16,7 +16,8 @@ const HORIZON_Y := 420
 # y_extra: 在 horizon 之上额外偏移 (远山高一点, 近丘低一点)
 const _LAYERS := [
 	{
-		"motion_scale": 0.05, "color_idx": 0,
+		# 最远层: 用户要求"远处背景不动" → motion_scale = 0 锁视口
+		"motion_scale": 0.0, "color_idx": 0,
 		"peaks": 4, "jaggedness": 0.5, "snow": true,
 		"y_extra": -40, "alpha": 0.95,
 	},

@@ -162,7 +162,7 @@ static func _extract_interior_icon(atlas: ImageTexture) -> ImageTexture:
 func _build_items() -> void:
 	# 非工具类 (老 ASCII pattern)
 	for item_id in ["slime_jelly", "apple",
-			"coal", "iron_ore",
+			"coal", "iron_ore", "bone",
 			"raw_meat", "leather", "wool",
 			"grappling_hook"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)

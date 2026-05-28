@@ -21,6 +21,11 @@ static func build() -> TileSet:
 	ts.add_physics_layer()
 	ts.set_physics_layer_collision_layer(1, 2)  # 门碰撞放 bit 1
 	ts.set_physics_layer_collision_mask(1, 0)
+	# 物理层 2: 木平台 (bit 2). 玩家 mask=5 撑住, 怪 mask=3 不挡 → 怪掉穿;
+	# 玩家按 S 时临时关 bit 2 → 玩家也能落下.
+	ts.add_physics_layer()
+	ts.set_physics_layer_collision_layer(2, 4)
+	ts.set_physics_layer_collision_mask(2, 0)
 
 	var tile_ids: Array[int] = [
 		Tiles.GRASS, Tiles.DIRT, Tiles.STONE, Tiles.SAND,
@@ -81,13 +86,14 @@ static func build() -> TileSet:
 					Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8),
 				]))
 			elif tile_id == Tiles.WOOD_PLATFORM:
-				# 平台 (2 行薄板): 碰撞框 y=-1..+1 对齐
+				# 平台 (2 行薄板): 碰撞框 y=-1..+1 在物理层 2 (bit 2)
+				# 玩家 mask=5 (bit 0+2) 撑住; 玩家按 S 时切 mask=1 → 落下
 				var pprops = source.get_tile_data(Vector2i.ZERO, 0)
-				pprops.add_collision_polygon(0)
-				pprops.set_collision_polygon_points(0, 0, PackedVector2Array([
+				pprops.add_collision_polygon(2)
+				pprops.set_collision_polygon_points(2, 0, PackedVector2Array([
 					Vector2(-8, -1), Vector2(8, -1), Vector2(8, 1), Vector2(-8, 1),
 				]))
-				pprops.set_collision_polygon_one_way(0, 0, true)
+				pprops.set_collision_polygon_one_way(2, 0, true)
 			# 水 (4 个水位) 都启用 4 帧动画
 			if tile_id == Tiles.WATER or tile_id == Tiles.WATER_L1 \
 					or tile_id == Tiles.WATER_L2 or tile_id == Tiles.WATER_L3:

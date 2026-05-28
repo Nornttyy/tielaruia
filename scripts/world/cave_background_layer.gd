@@ -28,8 +28,8 @@ func _ready() -> void:
 	# 矿洞用 layer = -9 (在天空 -10 之上, 默认 0 之下)
 	layer = -9
 	scroll_ignore_camera_zoom = true   # 锁屏幕空间, 任何 zoom 都盖满
-	# 远岩壁 (motion_scale 0.10)
-	var rock_pl := _add_layer(0.10, CaveBgArt.rocks(ROCKS_W, ROCKS_H, 7), TOP_Y, ROCKS_W)
+	# 远岩壁: 用户要求"远处背景不动" → motion_scale = 0 锁视口
+	var rock_pl := _add_layer(0.0, CaveBgArt.rocks(ROCKS_W, ROCKS_H, 7), TOP_Y, ROCKS_W)
 	_collect_sprites(rock_pl, _rock_sprites)
 	# 钟乳石 (motion_scale 0.18, 顶部下垂)
 	var stal_pl := _add_layer(0.18, CaveBgArt.stalactites(STAL_W, STAL_H, 14, 11), TOP_Y, STAL_W)
