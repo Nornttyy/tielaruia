@@ -68,7 +68,7 @@ const CHAMBER_RADIUS_MIN := 3.0     # 6 tile 宽
 const CHAMBER_RADIUS_MAX := 5.0     # 10 tile 宽
 const CHAMBER_CHEST_CHANCE := 0.55  # 55% 小室放宝箱 (老 30%)
 const CHAMBER_MUSHROOM_CHANCE := 0.20  # 20% 蘑菇地 (与宝箱互斥), 老 25%
-const CHEST_MIN_DEPTH := 30         # 太浅的小室不放 (玩家走两步就遇见就没惊喜)
+const CHEST_MIN_DEPTH := 15         # 浅一点也能出 (用户要更多木宝箱), 原 30
 const MUSHROOM_MIN_DEPTH := 20      # 蘑菇地浅一点也行
 const WORM_BRANCH_MAX_DEPTH := 2   # 分叉递归最大深度
 const WORM_BRANCH_RADIUS_SCALE := 0.6  # 子 worm 半径系数 (孙再叠加 → 越细)
@@ -76,7 +76,7 @@ const WORM_DIR_FREQUENCY := 0.025  # 方向噪声频率
 const WORM_Y_SQUASH := 0.5         # Y 方向步进系数 (X=1.0 不变, Y=0.5 → 矿洞偏横向, 像泰拉瑞亚)
 const WORM_SEARCH_PAD_CELLS := 7   # 邻 chunk 搜索半径
 # 深度分层生成概率: depth = sy - surf
-const WORM_CHANCE_SHALLOW := 0.02  # 表层近乎实心, 只 2% 概率出"山头洞口"
+const WORM_CHANCE_SHALLOW := 0.10  # 浅层 worm: 老 2% 太少, 10% 让浅木宝箱有出处
 const WORM_CHANCE_MID := 0.25      # 中层零散通道, 玩家挖才会遇到
 const WORM_CHANCE_DEEP := 0.92     # 深层密如蛛网 (玩家"主动下矿"区)
 const WORM_DEPTH_SHALLOW_MAX := 40  # 地表 40 格内安全, 不会"踩进去"
