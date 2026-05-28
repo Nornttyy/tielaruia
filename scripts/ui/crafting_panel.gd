@@ -33,6 +33,7 @@ var _recipe_container: VBoxContainer
 var _recipe_buttons: Array = []  # [{recipe_dict, button, cost_label}]
 var _inv_grid: GridContainer
 var _inv_slot_nodes: Array = []  # 36 个 PanelContainer
+var _armor_slot_nodes: Array = []  # 3 个盔甲槽 PanelContainer (helmet/chest/pants 顺序)
 
 # 内部 _cells 初始化用
 func _ready() -> void:
@@ -56,6 +57,23 @@ func _build_ui() -> void:
 	inv_title.add_theme_font_size_override("font_size", 16)
 	inv_title.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
 	inv_vbox.add_child(inv_title)
+
+	# 盔甲槽 (3 个): 头盔 / 胸甲 / 裤子. 右键背包物品 → 装备到匹配槽
+	var armor_label := Label.new()
+	armor_label.text = "盔甲 (右键背包装备)"
+	armor_label.add_theme_font_size_override("font_size", 11)
+	armor_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
+	inv_vbox.add_child(armor_label)
+	var armor_row := HBoxContainer.new()
+	armor_row.add_theme_constant_override("separation", 4)
+	inv_vbox.add_child(armor_row)
+	_armor_slot_nodes = [
+		_make_armor_slot("helmet", "头"),
+		_make_armor_slot("chest",  "胸"),
+		_make_armor_slot("pants",  "腿"),
+	]
+	for n in _armor_slot_nodes:
+		armor_row.add_child(n)
 
 	_inv_grid = GridContainer.new()
 	_inv_grid.columns = 9
@@ -193,6 +211,75 @@ func _build_inv_slots() -> void:
 		var slot := _make_inv_slot(i)
 		_inv_grid.add_child(slot)
 		_inv_slot_nodes.append(slot)
+
+
+# 盔甲槽 panel: 显示当前装备, 鼠标 hover 显示 tooltip (item name + 防御),
+# 左键卸下到背包第一个空槽.
+func _make_armor_slot(slot_kind: String, label_text: String) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.gui_input.connect(_on_armor_slot_input.bind(slot_kind))
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.15, 0.15, 0.2, 0.6)  # 深背景, 跟普通槽区分
+	style.border_color = Color(0.5, 0.5, 0.6, 1)
+	style.border_width_left = 1; style.border_width_top = 1
+	style.border_width_right = 1; style.border_width_bottom = 1
+	panel.add_theme_stylebox_override("panel", style)
+	var layout := Control.new()
+	layout.name = "Layout"
+	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layout.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
+	panel.add_child(layout)
+	# 空槽时显示中文字 (头/胸/腿)
+	var hint := Label.new()
+	hint.name = "Hint"
+	hint.text = label_text
+	hint.add_theme_font_size_override("font_size", 14)
+	hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55))
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layout.add_child(hint)
+	# 装备 icon (有装备时显示)
+	var icon := TextureRect.new()
+	icon.name = "Icon"
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layout.add_child(icon)
+	panel.set_meta("slot_kind", slot_kind)
+	return panel
+
+
+func _on_armor_slot_input(event: InputEvent, slot_kind: String) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	if not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if _player_inv != null and _player_inv.has_method("unequip_armor"):
+		_player_inv.unequip_armor(slot_kind)
+
+
+func _refresh_armor_slots() -> void:
+	if _player_inv == null or _armor_slot_nodes.is_empty():
+		return
+	for panel in _armor_slot_nodes:
+		var slot_kind: String = panel.get_meta("slot_kind", "")
+		var equipped = _player_inv.get_armor(slot_kind)
+		var icon: TextureRect = panel.get_node("Layout/Icon")
+		var hint: Label = panel.get_node("Layout/Hint")
+		if equipped == null:
+			icon.texture = null
+			hint.visible = true
+			panel.tooltip_text = ""
+		else:
+			icon.texture = ArtCache.get_inventory_icon(equipped.item_id)
+			hint.visible = false
+			var name: String = _zh_name(equipped.item_id)
+			var defense: int = ItemDB.defense(equipped.item_id)
+			panel.tooltip_text = "%s\n防御 +%d (减 %.1f 伤)\n左键卸下" % [name, defense, float(defense) * 0.5]
 
 
 func _make_inv_slot(idx: int) -> PanelContainer:
@@ -341,6 +428,12 @@ const _ZH_NAMES := {
 	"hell_crystal_ingot": "魔晶锭",
 	"hell_alloy_ore": "地狱合金矿",
 	"hell_alloy_ingot": "地狱合金锭",
+	# 盔甲
+	"copper_helmet": "铜头盔", "copper_chest": "铜胸甲", "copper_pants": "铜裤子",
+	"iron_helmet": "铁头盔", "iron_chest": "铁胸甲", "iron_pants": "铁裤子",
+	"silver_helmet": "银头盔", "silver_chest": "银胸甲", "silver_pants": "银裤子",
+	"gold_helmet": "金头盔", "gold_chest": "金胸甲", "gold_pants": "金裤子",
+	"diamond_helmet": "钻石头盔", "diamond_chest": "钻石胸甲", "diamond_pants": "钻石裤子",
 	"life_crystal": "生命水晶",
 }
 
@@ -355,6 +448,9 @@ func bind_inventory(player_inv: Node) -> void:
 	_player_inv = player_inv
 	if player_inv != null and player_inv.has_signal("inventory_changed"):
 		player_inv.inventory_changed.connect(_refresh_all)
+	# 盔甲槽变化时也重渲背包 (装备/卸下都要刷)
+	if player_inv != null and player_inv.has_signal("armor_changed"):
+		player_inv.armor_changed.connect(_refresh_all)
 
 
 func open(grid_n: int) -> void:
@@ -417,9 +513,15 @@ var _drag_press_idx: int = -1
 func _on_inv_slot_input(event: InputEvent, idx: int) -> void:
 	if not (event is InputEventMouseButton):
 		return
-	if event.button_index != MOUSE_BUTTON_LEFT:
-		return
 	if _player_inv == null or _player_inv.inventory == null:
+		return
+	# 右键: 如果该 slot 是盔甲 → 装备到对应盔甲槽 (优先于 LMB 拖拽)
+	if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		var s = _player_inv.inventory.slots[idx]
+		if s != null and ItemDB.armor_slot(s.item_id) != "":
+			_player_inv.equip_armor_from_slot(idx)
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT:
 		return
 	if not event.pressed:
 		return
@@ -563,6 +665,7 @@ func _refresh_all() -> void:
 	_refresh_wb_label()
 	_refresh_recipes()
 	_refresh_inv()
+	_refresh_armor_slots()
 	_refresh_cells()
 	_refresh_output()
 
@@ -642,9 +745,18 @@ func _refresh_inv() -> void:
 		if s == null:
 			icon.texture = null
 			count_lbl.text = ""
+			panel.tooltip_text = ""
 		else:
 			icon.texture = ArtCache.get_inventory_icon(s.item_id)
 			count_lbl.text = "" if s.count <= 1 else str(s.count)
+			# tooltip: 盔甲显示防御, 其他显示名字
+			var item_name: String = _zh_name(s.item_id)
+			var aslot: String = ItemDB.armor_slot(s.item_id)
+			if aslot != "":
+				var defense: int = ItemDB.defense(s.item_id)
+				panel.tooltip_text = "%s\n防御 +%d (减 %.1f 伤)\n右键装备" % [item_name, defense, float(defense) * 0.5]
+			else:
+				panel.tooltip_text = item_name
 
 
 # ============= 旧测试 API (保留) =============

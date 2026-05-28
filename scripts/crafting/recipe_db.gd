@@ -512,6 +512,91 @@ const _RECIPES := [
 		"rotate_ok": true,
 		"requires": "furnace",
 	},
+	# === 盔甲: 5 tier × 3 件 = 15 配方. 都是 3x3 工作台. ===
+	# 头盔: 5 锭 (倒 U 形): . X X X . / . X . X . / 共 5 (上排 3 + 下排 2 ingot)
+	# 胸甲: 8 锭 (T 形带洞): X . X / X X X / X X X
+	# 裤子: 7 锭 (n 形): X X X / X . X / X . X
+	#
+	# 铜盔甲
+	{
+		"id": "copper_helmet", "grid_size": Vector2i(3, 3),
+		"pattern": [["copper_ingot","copper_ingot","copper_ingot"], ["copper_ingot","","copper_ingot"], ["","",""]],
+		"output_id": "copper_helmet", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "copper_chest", "grid_size": Vector2i(3, 3),
+		"pattern": [["copper_ingot","","copper_ingot"], ["copper_ingot","copper_ingot","copper_ingot"], ["copper_ingot","copper_ingot","copper_ingot"]],
+		"output_id": "copper_chest", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "copper_pants", "grid_size": Vector2i(3, 3),
+		"pattern": [["copper_ingot","copper_ingot","copper_ingot"], ["copper_ingot","","copper_ingot"], ["copper_ingot","","copper_ingot"]],
+		"output_id": "copper_pants", "output_count": 1, "mirror_ok": true,
+	},
+	# 铁盔甲
+	{
+		"id": "iron_helmet", "grid_size": Vector2i(3, 3),
+		"pattern": [["iron_ingot","iron_ingot","iron_ingot"], ["iron_ingot","","iron_ingot"], ["","",""]],
+		"output_id": "iron_helmet", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "iron_chest", "grid_size": Vector2i(3, 3),
+		"pattern": [["iron_ingot","","iron_ingot"], ["iron_ingot","iron_ingot","iron_ingot"], ["iron_ingot","iron_ingot","iron_ingot"]],
+		"output_id": "iron_chest", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "iron_pants", "grid_size": Vector2i(3, 3),
+		"pattern": [["iron_ingot","iron_ingot","iron_ingot"], ["iron_ingot","","iron_ingot"], ["iron_ingot","","iron_ingot"]],
+		"output_id": "iron_pants", "output_count": 1, "mirror_ok": true,
+	},
+	# 银盔甲
+	{
+		"id": "silver_helmet", "grid_size": Vector2i(3, 3),
+		"pattern": [["silver_ingot","silver_ingot","silver_ingot"], ["silver_ingot","","silver_ingot"], ["","",""]],
+		"output_id": "silver_helmet", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "silver_chest", "grid_size": Vector2i(3, 3),
+		"pattern": [["silver_ingot","","silver_ingot"], ["silver_ingot","silver_ingot","silver_ingot"], ["silver_ingot","silver_ingot","silver_ingot"]],
+		"output_id": "silver_chest", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "silver_pants", "grid_size": Vector2i(3, 3),
+		"pattern": [["silver_ingot","silver_ingot","silver_ingot"], ["silver_ingot","","silver_ingot"], ["silver_ingot","","silver_ingot"]],
+		"output_id": "silver_pants", "output_count": 1, "mirror_ok": true,
+	},
+	# 金盔甲
+	{
+		"id": "gold_helmet", "grid_size": Vector2i(3, 3),
+		"pattern": [["gold_ingot","gold_ingot","gold_ingot"], ["gold_ingot","","gold_ingot"], ["","",""]],
+		"output_id": "gold_helmet", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "gold_chest", "grid_size": Vector2i(3, 3),
+		"pattern": [["gold_ingot","","gold_ingot"], ["gold_ingot","gold_ingot","gold_ingot"], ["gold_ingot","gold_ingot","gold_ingot"]],
+		"output_id": "gold_chest", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "gold_pants", "grid_size": Vector2i(3, 3),
+		"pattern": [["gold_ingot","gold_ingot","gold_ingot"], ["gold_ingot","","gold_ingot"], ["gold_ingot","","gold_ingot"]],
+		"output_id": "gold_pants", "output_count": 1, "mirror_ok": true,
+	},
+	# 钻石盔甲: 用 diamond (raw, 不是 ingot)
+	{
+		"id": "diamond_helmet", "grid_size": Vector2i(3, 3),
+		"pattern": [["diamond","diamond","diamond"], ["diamond","","diamond"], ["","",""]],
+		"output_id": "diamond_helmet", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "diamond_chest", "grid_size": Vector2i(3, 3),
+		"pattern": [["diamond","","diamond"], ["diamond","diamond","diamond"], ["diamond","diamond","diamond"]],
+		"output_id": "diamond_chest", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "diamond_pants", "grid_size": Vector2i(3, 3),
+		"pattern": [["diamond","diamond","diamond"], ["diamond","","diamond"], ["diamond","","diamond"]],
+		"output_id": "diamond_pants", "output_count": 1, "mirror_ok": true,
+	},
 	# 木箭: 2 planks 竖排 → 4 支. 用 2x1 形避开已有 "1 planks→wood_wall" 1x1 配方冲突.
 	{
 		"id": "wood_arrow",

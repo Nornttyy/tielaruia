@@ -3,11 +3,16 @@ extends Node
 
 signal inventory_changed
 signal hotbar_selection_changed(index: int)
+signal armor_changed   # 盔甲槽变化, HUD 跟着重渲
 
 var inventory: Inventory
 var hotbar_selected: int = 0  # 0..8
 # 鼠标手持物品 (Terraria 风背包拖动用). null = 空; { item_id, count } = 持有
 var cursor_slot: Variant = null
+# 盔甲: 3 个槽位 (helmet/chest/pants). null 或 {"item_id": String, "count": 1}
+var armor_helmet: Variant = null
+var armor_chest: Variant = null
+var armor_pants: Variant = null
 
 
 func _ready() -> void:
@@ -74,6 +79,67 @@ func consume_current(n: int = 1) -> int:
 	if taken > 0:
 		inventory_changed.emit()
 	return taken
+
+
+# === 盔甲槽 ===
+# 拿指定槽位的盔甲 slot. 返回 null 或 {"item_id", "count"}.
+func get_armor(slot: String) -> Variant:
+	match slot:
+		"helmet": return armor_helmet
+		"chest":  return armor_chest
+		"pants":  return armor_pants
+	return null
+
+
+# 设盔甲槽 (装备 / 卸下). val null = 卸下. 不验证 — caller 自己确保 item_id 是对的 slot 类型.
+func set_armor(slot: String, val: Variant) -> void:
+	match slot:
+		"helmet": armor_helmet = val
+		"chest":  armor_chest = val
+		"pants":  armor_pants = val
+	armor_changed.emit()
+
+
+# 总防御值 (sum of 3 slots)
+func total_defense() -> int:
+	var d: int = 0
+	for slot_data in [armor_helmet, armor_chest, armor_pants]:
+		if slot_data != null:
+			d += ItemDB.defense(slot_data.item_id)
+	return d
+
+
+# 装备盔甲: 把 hotbar/inv 里某槽的物品移到对应盔甲槽, 旧装备返回到原槽.
+# 返回 true = 成功 (该物品是合法盔甲且槽匹配).
+func equip_armor_from_slot(inv_idx: int) -> bool:
+	if inv_idx < 0 or inv_idx >= inventory.slots.size():
+		return false
+	var s = inventory.slots[inv_idx]
+	if s == null:
+		return false
+	var slot_kind: String = ItemDB.armor_slot(s.item_id)
+	if slot_kind == "":
+		return false   # 不是盔甲
+	var prev = get_armor(slot_kind)
+	set_armor(slot_kind, {"item_id": s.item_id, "count": 1})
+	inventory.slots[inv_idx] = prev   # 旧装备塞回原槽 (null 也行 = 清空)
+	inventory_changed.emit()
+	return true
+
+
+# 卸下: 把盔甲槽的物品塞回 hotbar/inv 第一个空槽. 没空槽就什么都不做.
+func unequip_armor(slot: String) -> bool:
+	var equipped = get_armor(slot)
+	if equipped == null:
+		return false
+	# 找空槽
+	for i in inventory.slots.size():
+		if inventory.slots[i] == null:
+			inventory.slots[i] = equipped
+			set_armor(slot, null)
+			inventory_changed.emit()
+			return true
+	return false   # 背包满
 
 
 # 在 36 槽里找第一个 item_id 槽, 消耗 n 个. 返回 true = 全部消耗成功.

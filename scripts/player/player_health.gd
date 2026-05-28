@@ -73,6 +73,14 @@ func _get_chunk_manager() -> Node:
 	return get_tree().get_first_node_in_group("chunk_manager")
 
 
+# 取 PlayerInventory (sibling 节点, 用来读盔甲槽和总防御)
+func _player_inventory() -> Node:
+	var player: Node = get_parent()
+	if player == null:
+		return null
+	return player.get_node_or_null("PlayerInventory")
+
+
 # i-frame 期间: 10Hz 红/白方波闪 (0.1s 红, 0.1s 正常)
 func _update_iframe_flash() -> void:
 	_was_in_iframe = true
@@ -112,7 +120,13 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	var dm: float = 1.0
 	if GameSettings != null and GameSettings.has_method("damage_multiplier"):
 		dm = GameSettings.damage_multiplier()
-	var final_amount: int = max(1, int(round(float(amount) * dm)))
+	var raw_amount: int = int(round(float(amount) * dm))
+	# 盔甲减伤: 1 防御 = 0.5 减伤. 减后下限 1 (永远不能完全免疫).
+	var inv: Node = _player_inventory()
+	if inv != null and inv.has_method("total_defense"):
+		var defense: int = inv.total_defense()
+		raw_amount -= int(floor(float(defense) * 0.5))
+	var final_amount: int = max(1, raw_amount)
 	current_health = max(0, current_health - final_amount)
 	_iframe_timer = IFRAMES_SEC
 	# 击退: 沿 (玩家位置 - source) 方向 + 向上 0.4 分量, 设玩家 velocity
