@@ -78,6 +78,10 @@ func save(main: Node) -> bool:
 		if inv_node != null and inv_node.inventory != null:
 			data.inventory_slots = _serialize_inventory(inv_node.inventory.slots)
 			data.hotbar_selection = inv_node.hotbar_selected
+			# 盔甲槽 (3 槽, item_id 字符串. null → "")
+			data.armor_helmet_id = "" if inv_node.armor_helmet == null else String(inv_node.armor_helmet.item_id)
+			data.armor_chest_id = "" if inv_node.armor_chest == null else String(inv_node.armor_chest.item_id)
+			data.armor_pants_id = "" if inv_node.armor_pants == null else String(inv_node.armor_pants.item_id)
 	# 存档名: 用 world_name; 没有就 fallback
 	var save_name: String = data.world_name if (data.world_name != null and data.world_name != "") else "默认存档"
 	var path: String = SAVES_DIR + save_name + ".tres"

@@ -254,12 +254,35 @@ func _make_armor_slot(slot_kind: String, label_text: String) -> PanelContainer:
 
 
 func _on_armor_slot_input(event: InputEvent, slot_kind: String) -> void:
-	if not (event is InputEventMouseButton):
+	if not (event is InputEventMouseButton) or not event.pressed:
 		return
-	if not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
+	if _player_inv == null:
 		return
-	if _player_inv != null and _player_inv.has_method("unequip_armor"):
-		_player_inv.unequip_armor(slot_kind)
+	# 右键: 卸下到背包第一个空槽
+	if event.button_index == MOUSE_BUTTON_RIGHT:
+		if _player_inv.has_method("unequip_armor"):
+			_player_inv.unequip_armor(slot_kind)
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	# 左键 4 种情况:
+	#   cursor 空 + 槽空: 啥也别干
+	#   cursor 空 + 槽有: 拿到 cursor (槽清空)
+	#   cursor 有 + 类型不匹配: 啥也别干 (不让乱装)
+	#   cursor 有 + 类型匹配: swap (槽里的去 cursor, cursor 的装上)
+	var cursor = _player_inv.cursor_slot
+	var equipped = _player_inv.get_armor(slot_kind)
+	if cursor == null:
+		if equipped != null:
+			_player_inv.cursor_slot = equipped
+			_player_inv.set_armor(slot_kind, null)
+		return
+	# cursor 有东西: 必须是匹配 slot 的盔甲
+	if ItemDB.armor_slot(String(cursor.item_id)) != slot_kind:
+		return
+	# 匹配: swap. 槽里旧装备 → cursor, cursor 内装上
+	_player_inv.set_armor(slot_kind, {"item_id": String(cursor.item_id), "count": 1})
+	_player_inv.cursor_slot = equipped   # null 或旧装备, 都直接赋
 
 
 func _refresh_armor_slots() -> void:

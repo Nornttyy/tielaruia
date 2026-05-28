@@ -5,7 +5,8 @@ class_name SaveData extends Resource
 # 存档格式版本. 旧存档 (没这字段) 加载时 = 0.
 # v0 → v1: PlayerHealth.MAX_HEALTH 从 20 改 100 + 删饱食度. 旧 player_hp ×5 缩放.
 # v1 → v2: 加生命水晶, player_max_hp 字段记录吃了几个 crystal 后的上限.
-const CURRENT_VERSION := 2
+# v2 → v3: 加 3 件盔甲槽持久化 (armor_helmet/chest/pants item_id). 老存档默认空.
+const CURRENT_VERSION := 3
 
 @export var version: int = CURRENT_VERSION
 @export var world_seed: int = 0
@@ -23,6 +24,10 @@ const CURRENT_VERSION := 2
 @export var life_crystals_spawned: int = 0
 @export var processed_chunks: PackedInt32Array = []
 @export var life_crystal_positions: PackedInt32Array = []
+# 盔甲槽 (v3): 存 item_id 字符串. 空 = 没装备. count 始终是 1.
+@export var armor_helmet_id: String = ""
+@export var armor_chest_id: String = ""
+@export var armor_pants_id: String = ""
 # 9 hotbar + 27 主背包 = 36 槽。每个: null 或 {"item_id": String, "count": int}
 @export var inventory_slots: Array = []
 @export var hotbar_selection: int = 0

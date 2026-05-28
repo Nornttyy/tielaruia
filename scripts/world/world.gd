@@ -935,6 +935,13 @@ func respawn_player() -> void:
 				continue
 			_spawn_death_drop(s.item_id, s.count, death_pos)
 			inv.slots[i] = null
+		# 盔甲也跟着掉 (Terraria 风, 玩家死了脱光). 装备槽清空.
+		if inv_node.has_method("get_armor") and inv_node.has_method("set_armor"):
+			for slot_kind in ["helmet", "chest", "pants"]:
+				var armor = inv_node.get_armor(slot_kind)
+				if armor != null:
+					_spawn_death_drop(armor.item_id, 1, death_pos)
+					inv_node.set_armor(slot_kind, null)
 		if inv_node.has_signal("inventory_changed"):
 			inv_node.inventory_changed.emit()
 	# 清掉地图上所有 slime (防止复活时聚一堆)

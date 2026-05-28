@@ -278,6 +278,13 @@ func _apply_save_data(data: Resource) -> void:
 			inv_node.inventory_changed.emit()
 		if inv_node.has_signal("hotbar_selection_changed"):
 			inv_node.hotbar_selection_changed.emit(data.hotbar_selection)
+		# 盔甲槽 (v3): 还原 3 件装备. 老存档没该字段 → 默认 "" 跳过.
+		if data.version >= 3 and inv_node.has_method("set_armor"):
+			for pair in [["helmet", data.armor_helmet_id], ["chest", data.armor_chest_id], ["pants", data.armor_pants_id]]:
+				var slot_kind: String = pair[0]
+				var item_id: String = pair[1]
+				if item_id != "":
+					inv_node.set_armor(slot_kind, {"item_id": item_id, "count": 1})
 
 
 # 测试用 helper: 同步切到 game 状态, 不走 LoadingScreen.
