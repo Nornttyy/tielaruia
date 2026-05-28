@@ -14,22 +14,22 @@ const PALETTE := {
 	"g": Color8(255, 255, 255),  # 高光闪点
 }
 
-# 圆球状眼睛, 10px 直径居中. 瞳孔正中带高光闪点
+# 圆盘状眼睛, 11×11 直径居中 (用户改: 要更圆). 瞳孔正中带高光闪点
 const _IDLE := [
 	"................",
-	".....nRRRn......",
-	"....nRrrrRn.....",
-	"...nRrwwwrRn....",
-	"..nRrwnnnwrRn...",
-	"..nRrwngnwrRn...",
-	"..nRrwnnnwrRn...",
-	"...nRrwwwrRn....",
-	"....nRrrrRn.....",
-	".....nRRRn......",
 	"................",
 	"................",
-	"................",
-	"................",
+	"......nnnnn.....",
+	"....nRRRRRRRn...",
+	"...nRrrrrrrrRn..",
+	"...nRrwwwwwrRn..",
+	"...nRrwnnnwrRn..",
+	"...nRrwngnwrRn..",
+	"...nRrwnnnwrRn..",
+	"...nRrwwwwwrRn..",
+	"...nRrrrrrrrRn..",
+	"....nRRRRRRRn...",
+	"......nnnnn.....",
 	"................",
 	"................",
 ]
