@@ -22,7 +22,7 @@ const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
 const PigScene = preload("res://scenes/entities/pig.tscn")
 const PenguinScene = preload("res://scenes/entities/penguin.tscn")
-const JaguarScene = preload("res://scenes/entities/jaguar.tscn")
+# const JaguarScene = preload("res://scenes/entities/jaguar.tscn")  # 删除 (用户要求)
 const FrogScene = preload("res://scenes/entities/frog.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
@@ -288,7 +288,7 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
 		"penguin": scene = PenguinScene
-		"jaguar": scene = JaguarScene
+		# "jaguar": scene = JaguarScene  # 删除
 		"frog": scene = FrogScene
 		"villager": scene = VillagerScene
 		_: return null
@@ -479,8 +479,6 @@ func _mp_broadcast_entities() -> void:
 						kind = "pig"
 					elif "penguin" in scene_path:
 						kind = "penguin"
-					elif "jaguar" in scene_path:
-						kind = "jaguar"
 					elif "frog" in scene_path:
 						kind = "frog"
 			NetworkManager.send_entity_pos(
@@ -731,7 +729,8 @@ func _try_spawn_animal() -> void:
 		Tiles.SNOW:
 			scene = PenguinScene if r < 0.7 else CowScene
 		Tiles.JUNGLE_GRASS:
-			scene = JaguarScene if r < 0.5 else PigScene
+			# 丛林只刷猪 (豹子已删)
+			scene = PigScene
 		Tiles.SWAMP_GRASS, Tiles.MUD:
 			scene = FrogScene
 		Tiles.SAND:

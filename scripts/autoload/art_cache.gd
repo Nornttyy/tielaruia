@@ -35,7 +35,7 @@ var slime_frames: SpriteFrames
 var zombie_frames: SpriteFrames
 var villager_frames: SpriteFrames
 var cow_frames: SpriteFrames
-var jaguar_frames: SpriteFrames
+# var jaguar_frames: SpriteFrames  # 删除 (用户要求)
 var sheep_frames: SpriteFrames
 var pig_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
@@ -229,8 +229,7 @@ func _build_entities() -> void:
 	cow_frames = CowArt.build_sprite_frames()
 	sheep_frames = SheepArt.build_sprite_frames()
 	pig_frames = PigArt.build_sprite_frames()
-	# Jaguar: LPC lioness (Sevarihk CC-BY 4.0). 见 LICENSES.md
-	jaguar_frames = preload("res://scripts/art/jaguar_art.gd").build_sprite_frames()
+	# Jaguar 已删 (用户要求)
 
 
 # 统一的"取背包/热键栏图标"接口。
