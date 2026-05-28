@@ -22,6 +22,9 @@ var _cur_w: int = MAX_W        # 当前实际用的纹理宽 (按 zoom 算)
 var _cur_h: int = MAX_H
 var _cached_player: Node2D = null   # 缓存 player ref, 避免每帧 get_tree() 查
 var _cached_cm: Node = null         # 缓存 chunk_manager ref
+# 预分配 bytes buffer + 全黑模板, 每帧 duplicate (C-level memcpy 比 21k GDScript loop 快)
+var _bytes_buffer: PackedByteArray
+var _full_dark_template: PackedByteArray
 
 
 func _ready() -> void:
@@ -32,6 +35,11 @@ func _ready() -> void:
 	scale = Vector2(TILE_SIZE, TILE_SIZE)
 	z_index = 10
 	add_to_group("darkness_layer")
+	# 模板: 全黑 alpha=255. 每帧 _update_viewport duplicate 它再覆盖 viewport.
+	_full_dark_template = PackedByteArray()
+	_full_dark_template.resize(MAX_W * MAX_H * 4)
+	for k in range(MAX_W * MAX_H):
+		_full_dark_template[k * 4 + 3] = 255
 
 
 func _process(delta: float) -> void:
@@ -72,13 +80,9 @@ func _update_viewport() -> void:
 	var grid: Dictionary = TileLightGrid.compute_region(cm, x0, y0, x0 + _cur_w, y0 + _cur_h,
 			Vector2i(px, py), torches)
 	global_position = Vector2(x0 * TILE_SIZE, y0 * TILE_SIZE)
-	# 批量构造像素字节 — 用 MAX_W × MAX_H buffer, 但只填 _cur_w × _cur_h 区域
-	# (没填的边缘像素仍是 alpha=255 即全黑, 没关系因为 sprite 不会渲染超出 _cur_*)
-	var bytes := PackedByteArray()
-	bytes.resize(MAX_W * MAX_H * 4)
-	# 先全 alpha=255 (黑) 再覆盖
-	for k in range(MAX_W * MAX_H):
-		bytes[k * 4 + 3] = 255
+	# 批量构造像素字节 — 用 MAX_W × MAX_H buffer, 只填 _cur_w × _cur_h 区域.
+	# 优化: 不再 GDScript 循环填 alpha=255 (21k iter), 直接 duplicate 预算好的模板 (C-level memcpy).
+	var bytes: PackedByteArray = _full_dark_template.duplicate()
 	var max_l: float = float(TileLightGrid.MAX_LIGHT)
 	for y in range(_cur_h):
 		for x in range(_cur_w):

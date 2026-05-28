@@ -58,11 +58,14 @@ static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: i
 
 
 # BFS 内部. 把 queue 里的 tile 按衰减规则扩散到邻居.
+# 性能: 用 pop_back() (O(1)) 不用 pop_front() (O(n)). max-decrement 算法跟顺序无关,
+# DFS/BFS 顺序换都 OK; 但 pop_front 在 Godot Array 上每次平移整个数组, 万级 tile 时
+# 是 perf 杀手 (jump/fall 时大卡顿主因).
 static func _bfs(chunk_manager: Node, x0: int, y0: int, x1: int, y1: int,
 		grid: Dictionary, queue: Array, atten_air: int, atten_solid: int) -> void:
 	var dirs := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 	while not queue.is_empty():
-		var pos: Vector2i = queue.pop_front()
+		var pos: Vector2i = queue.pop_back()
 		var cur: int = int(grid[pos])
 		if cur <= 1:
 			continue
