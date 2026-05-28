@@ -93,7 +93,12 @@ const _DEFS := {
 	"hell_pickaxe":  {"placeable_tile_id": -1, "tool_kind": "pickaxe", "tool_tier": 8, "max_stack": 1, "damage_mult": 0.5},
 	"hell_axe":      {"placeable_tile_id": -1, "tool_kind": "axe",     "tool_tier": 8, "max_stack": 1, "damage_mult": 0.0},
 	# === 法杖 (Phase 7): 持杖 LMB → 消耗 mana 发火球 ===
+	# 法杖 3 tier (起步早): wood = 学徒, iron = 中期, hell = 末期
+	"wood_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 5,  "spell_damage": 8},
+	"iron_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 12, "spell_damage": 15},
 	"hell_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 20, "spell_damage": 22},
+	# 魔力药水: 喝下 → 立刻 +30 mana (类似食物回血但回魔)
+	"mana_potion":   {"placeable_tile_id": -1, "tool_kind": "",        "tool_tier": 0, "max_stack": 16, "mana_refill": 30},
 	"leather":       {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"wool":          {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"grappling_hook":{"placeable_tile_id": -1,                     "tool_kind": "hook",    "tool_tier": 1, "max_stack": 1},
@@ -156,3 +161,13 @@ func armor_slot(item_id: String) -> String:
 func defense(item_id: String) -> int:
 	var def = get_def(item_id)
 	return 0 if def == null else def.get("defense", 0)
+
+
+# 魔力药水: 喝下回复 mana_refill mana. 非药水返 0.
+func mana_refill(item_id: String) -> int:
+	var def = get_def(item_id)
+	return 0 if def == null else def.get("mana_refill", 0)
+
+
+func is_mana_potion(item_id: String) -> bool:
+	return mana_refill(item_id) > 0

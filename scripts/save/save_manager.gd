@@ -74,6 +74,11 @@ func save(main: Node) -> bool:
 			data.player_hp = float(hp.current_health)
 			# 永久上限 (吃水晶+20 那个值). 没 MAX_HEALTH 字段 → 兜底 100.
 			data.player_max_hp = int(hp.MAX_HEALTH) if "MAX_HEALTH" in hp else 100
+		# 魔力: current + max (跟 hp 同套). 没节点也存 0
+		var mn: Node = player.get_node_or_null("PlayerMana")
+		if mn != null and "current_mana" in mn:
+			data.player_mana = int(mn.current_mana)
+			data.player_max_mana = int(mn.MAX_MANA) if "MAX_MANA" in mn else 100
 		var inv_node: Node = player.get_node_or_null("PlayerInventory")
 		if inv_node != null and inv_node.inventory != null:
 			data.inventory_slots = _serialize_inventory(inv_node.inventory.slots)

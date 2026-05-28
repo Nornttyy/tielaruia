@@ -597,12 +597,30 @@ const _RECIPES := [
 		"pattern": [["diamond","diamond","diamond"], ["diamond","","diamond"], ["diamond","","diamond"]],
 		"output_id": "diamond_pants", "output_count": 1, "mirror_ok": true,
 	},
-	# === 法杖 (Phase 7): 2 hell_crystal_ingot (顶魔晶) + 3 hell_alloy_ingot (杖身) ===
-	# 形: . X . / . X . / . Y .  X=crystal, Y=alloy
+	# === 法杖 (Phase 7) ===
+	# 木法杖: 1 leaves (魔草) + 2 planks 竖排 (新手, 工作台). 易合, 学徒能玩.
 	{
-		"id": "hell_staff", "grid_size": Vector2i(3, 3),
-		"pattern": [["","hell_crystal_ingot",""], ["","hell_crystal_ingot",""], ["","hell_alloy_ingot",""]],
-		"output_id": "hell_staff", "output_count": 1, "mirror_ok": true,
+		"id": "wood_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["leaves"], ["planks"], ["planks"]],
+		"output_id": "wood_staff", "output_count": 1, "mirror_ok": false,
+	},
+	# 铁法杖: 1 diamond (顶宝石) + 2 iron_ingot 竖排
+	{
+		"id": "iron_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["diamond"], ["iron_ingot"], ["iron_ingot"]],
+		"output_id": "iron_staff", "output_count": 1, "mirror_ok": false,
+	},
+	# 地狱法杖: 2 hell_crystal_ingot (顶魔晶) + 1 hell_alloy_ingot (杖身)
+	{
+		"id": "hell_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["hell_crystal_ingot"], ["hell_crystal_ingot"], ["hell_alloy_ingot"]],
+		"output_id": "hell_staff", "output_count": 1, "mirror_ok": false,
+	},
+	# 魔力药水: 1 hell_crystal + 1 silver_ingot (2x1 横排, 工作台). 出 2 瓶
+	{
+		"id": "mana_potion", "grid_size": Vector2i(2, 1),
+		"pattern": [["hell_crystal", "silver_ingot"]],
+		"output_id": "mana_potion", "output_count": 2, "mirror_ok": true,
 	},
 	# === 地狱武器 (tier 8): 3 alloy + 1 crystal (魔晶护手/装饰) + 2 planks (柄) ===
 	# 剑形: . X .  /  . X .  /  . X .  + crystal 当装饰

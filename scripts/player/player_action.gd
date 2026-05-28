@@ -845,6 +845,26 @@ func _update_eat_or_place(delta: float) -> void:
 							_consume_life_crystal_tile(aim_tile, terrain)
 					return
 
+	# 持魔力药水 + 按住 → 喝下立刻 +30 mana (跟食物同流程, 进度条满后消耗)
+	var holding_potion: bool = slot != null and ItemDB.is_mana_potion(slot.item_id)
+	var mana_node: Node = get_parent().get_node_or_null("PlayerMana")
+	if holding_potion and held and mana_node != null:
+		if _eat_item_id != slot.item_id:
+			_eat_item_id = slot.item_id
+			_eat_t = 0.0
+			_start_eat_anim()
+		_eat_t += delta
+		if _eat_t >= EAT_DURATION_SEC:
+			_eat_t = 0.0
+			var refill: int = ItemDB.mana_refill(slot.item_id)
+			mana_node.current_mana = min(mana_node.MAX_MANA, mana_node.current_mana + refill)
+			if mana_node.has_signal("mana_changed"):
+				mana_node.mana_changed.emit(mana_node.current_mana, mana_node.MAX_MANA)
+			SfxBank.play("eat", 0.10)
+			inv.consume_current(1)
+			_stop_eat_anim()
+		return
+
 	# 持食物 + 按住 → 进入/保持 eating. 食物 food_fill 现在直接当回血量.
 	# 不检查血量上限: 满血也能吃 (heal() 内部 clamp), 误点会消耗食物 — 用户选这个语义.
 	if holding_food and held and hp != null:

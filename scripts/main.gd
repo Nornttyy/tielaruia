@@ -269,6 +269,14 @@ func _apply_save_data(data: Resource) -> void:
 		hp.current_health = clamp(int(loaded_hp), 0, hp.MAX_HEALTH)
 		if hp.has_signal("health_changed"):
 			hp.health_changed.emit(hp.current_health, hp.MAX_HEALTH)
+	# 魔力还原 (存档无字段则保持默认 100/100)
+	var mn: Node = player.get_node_or_null("PlayerMana")
+	if mn != null and "current_mana" in mn and "player_mana" in data:
+		if "MAX_MANA" in mn and "player_max_mana" in data:
+			mn.MAX_MANA = int(data.player_max_mana)
+		mn.current_mana = clamp(int(data.player_mana), 0, mn.MAX_MANA)
+		if mn.has_signal("mana_changed"):
+			mn.mana_changed.emit(mn.current_mana, mn.MAX_MANA)
 	var inv_node: Node = player.get_node_or_null("PlayerInventory")
 	if inv_node != null and inv_node.inventory != null:
 		inv_node.inventory.slots = data.inventory_slots.duplicate()

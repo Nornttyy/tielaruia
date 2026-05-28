@@ -1138,6 +1138,71 @@ const _HELL_AXE := [
 	"................",
 ]
 
+# === 早期法杖 (wood/iron) + 魔力药水 ===
+
+# 木法杖: 棕木杖身 + 顶端小绿魔草 (新手)
+# h=木中, H=木暗, I=木亮, L=绿叶, n=黑
+const _WOOD_STAFF := [
+	"......nnnnn.....",
+	".....nLLLLLn....",   # 绿叶/魔草
+	".....nLLLLLn....",
+	"....nLqLqLLn....",   # 草高光 (q=史莱姆球高光)
+	".....nLLLLn.....",
+	"......nnnn......",
+	"......nhin......",
+	"......nhin......",
+	"......nhin......",
+	"......nhin......",
+	"......nhin......",
+	"......nhin......",
+	"......nhin......",
+	"......nhin......",
+	"......nhin......",
+	"......nKKn......",
+]
+
+# 铁法杖: 灰铁杖身 + 顶端蓝水晶球 (中期)
+# E=铁深, F=铁亮, f=铁极亮, N=钻蓝中, X=蓝高, n=黑
+const _IRON_STAFF := [
+	"......nnnn......",
+	".....nNXXNn.....",   # 蓝水晶球
+	"....nNXfXNn....n",   # f 中央闪点
+	"....nNXXXXNn....",
+	"....nNXXXNn.....",
+	".....nnnnn......",
+	"......nEFn......",
+	"......nEFn......",
+	"......nEFn......",
+	"......nEfn......",   # 中段高光
+	"......nEFn......",
+	"......nEFn......",
+	"......nEFn......",
+	"......nEFn......",
+	"......nEFn......",
+	"......nKKn......",
+]
+
+# 魔力药水: 蓝色玻璃瓶 + 蓝色魔法液体 + 软木塞
+# K=金属阴影 (软木塞色), h=木 (软木塞), N=蓝深, X=蓝亮, Q=极亮蓝白, n=黑
+const _MANA_POTION := [
+	"................",
+	"......nhhn......",   # 软木塞
+	"......nhhn......",
+	".....nNNNNn.....",   # 瓶颈
+	".....nNQNNn.....",
+	"....nNNXXNNn....",   # 瓶身
+	"....nNXXXXNn....",
+	"....nNXNXXNn....",
+	"....nNNXXXNn....",
+	"....nNXXXNNn....",
+	"....nNXXNXNn....",
+	"....nNNNNNNn....",
+	"....nNNNNNNn....",
+	".....nNNNNn.....",
+	".....nnnnn......",
+	"................",
+]
+
 # 地狱魔火法杖: 紫黑杖身 + 顶端金黄火球魔晶 + 银缠绕装饰
 # N=紫黑深, s/d=银缠, Z/z/P=金黄魔晶, n=黑描边
 const _HELL_STAFF := [
@@ -1337,6 +1402,8 @@ const _ICONS := {
 	"diamond_helmet": _DIAMOND_HELMET, "diamond_chest": _DIAMOND_CHEST, "diamond_pants": _DIAMOND_PANTS,
 	"hell_sword": _HELL_SWORD, "hell_pickaxe": _HELL_PICKAXE, "hell_axe": _HELL_AXE,
 	"hell_staff": _HELL_STAFF,
+	"wood_staff": _WOOD_STAFF, "iron_staff": _IRON_STAFF,
+	"mana_potion": _MANA_POTION,
 	"wood_bow": _WOOD_BOW,
 	"wood_arrow": _WOOD_ARROW,
 }

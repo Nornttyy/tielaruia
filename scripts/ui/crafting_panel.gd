@@ -460,6 +460,8 @@ const _ZH_NAMES := {
 	# 地狱武器 (tier 8)
 	"hell_sword": "地狱剑", "hell_pickaxe": "地狱镐", "hell_axe": "地狱斧",
 	"hell_staff": "地狱魔火法杖",
+	"wood_staff": "木魔草杖", "iron_staff": "铁蓝晶杖",
+	"mana_potion": "魔力药水",
 	"life_crystal": "生命水晶",
 }
 
