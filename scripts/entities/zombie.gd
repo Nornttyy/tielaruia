@@ -99,10 +99,16 @@ func _physics_process(delta: float) -> void:
 			sprite.play("idle")
 
 	move_and_slide()
-	# 撞墙 + 落地 → 小跳避障
+	# 撞墙 + 落地 → 小跳避障. 但: 玩家在下方时不要跳 (跳起来反而砸头顶或飞过去).
 	if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
-		velocity.y = JUMP_VY
-		_jump_cooldown = 0.5
+		var skip_jump: bool = false
+		if player != null:
+			# 玩家比 zombie 低 1.5 tile 以上 → 不跳, 寻别的路 (或撞墙等)
+			if player.global_position.y - global_position.y > float(TILE_SIZE) * 1.5:
+				skip_jump = true
+		if not skip_jump:
+			velocity.y = JUMP_VY
+			_jump_cooldown = 0.5
 
 	_check_player_contact()
 

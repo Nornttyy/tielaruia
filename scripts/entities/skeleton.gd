@@ -76,9 +76,14 @@ func _physics_process(delta: float) -> void:
 		if abs(velocity.x) < 5.0 and sprite.animation != "idle":
 			sprite.play("idle")
 	move_and_slide()
+	# 撞墙 + 落地 → 跳过去. 玩家在下方时不跳 (跳起来会砸头顶).
 	if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
-		velocity.y = JUMP_VY
-		_jump_cooldown = 0.7
+		var skip_jump: bool = false
+		if player != null and player.global_position.y - global_position.y > float(TILE_SIZE) * 1.5:
+			skip_jump = true
+		if not skip_jump:
+			velocity.y = JUMP_VY
+			_jump_cooldown = 0.7
 	_check_player_contact()
 
 

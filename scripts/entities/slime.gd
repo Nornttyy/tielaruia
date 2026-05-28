@@ -140,22 +140,38 @@ func _attempt_hop() -> void:
 	_hop_timer = randf_range(HOP_COOLDOWN_MIN, HOP_COOLDOWN_MAX)
 	var player := _find_player()
 	var dir: float = 0.0
+	# 自动寻路: hop 高度/距离会根据玩家相对位置调整, 防止砸到玩家头顶.
+	var max_h_tiles: float = HOP_HEIGHT_MAX_TILES
+	var max_d_tiles: float = HOP_DIST_MAX_TILES
+	var min_h_tiles: float = HOP_HEIGHT_MIN_TILES
 	# 仅在敌对状态下追玩家. 白天 (未被激怒) 当玩家不存在, 只闲逛.
 	if _is_hostile() and player != null \
 			and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
-		# 朝玩家跳
-		dir = signf(player.global_position.x - global_position.x)
+		var dx: float = player.global_position.x - global_position.x
+		var dy: float = player.global_position.y - global_position.y
+		# 已经在玩家同列 (≤ 1 tile) 时不跳, 避免直接砸头顶
+		if abs(dx) < float(TILE_SIZE):
+			return
+		dir = signf(dx)
 		sprite.flip_h = dir < 0
+		# 玩家在下方 ≥ 1 tile → 小跳 (重力会带 slime 自然下落, 不要跃过去)
+		if dy > float(TILE_SIZE):
+			max_h_tiles = 0.6
+			min_h_tiles = 0.3
+			max_d_tiles = 1.5
+		# 玩家在上方 ≥ 1 tile → 跳高一点跨过障碍 (维持默认上限)
+		# 同高 → 维持默认
 	else:
-		# 闲逛: 50% 几率跳一次, 随机方向
+		# 闲逛: 50% 几率跳一次, 随机方向 + 小跳 (闲逛不要大跳)
 		if randf() < 0.5:
 			dir = 1.0 if randf() < 0.5 else -1.0
 			sprite.flip_h = dir < 0
+			max_h_tiles = 1.0
 		else:
 			return
-	# 本次跳跃: 高度 1-2 tile, 距离 0-3 tile, 由物理反算 vy/vx
-	var h_tiles: float = randf_range(HOP_HEIGHT_MIN_TILES, HOP_HEIGHT_MAX_TILES)
-	var d_tiles: float = randf_range(HOP_DIST_MIN_TILES, HOP_DIST_MAX_TILES)
+	# 本次跳跃: 高度 [min, max] tile, 距离 [0, max_d] tile, 由物理反算 vy/vx
+	var h_tiles: float = randf_range(min_h_tiles, max_h_tiles)
+	var d_tiles: float = randf_range(HOP_DIST_MIN_TILES, max_d_tiles)
 	var h_px: float = h_tiles * TILE_SIZE
 	var d_px: float = d_tiles * TILE_SIZE
 	# h = vy² / (2g) → vy = sqrt(2*g*h)
