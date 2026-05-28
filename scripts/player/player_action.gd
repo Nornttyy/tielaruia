@@ -62,7 +62,7 @@ const _TREE_PARTS := {
 }
 
 # 镐挖不了的"植物"类 tile (叶子 / 仙人掌 / 火把等小物). 镐只破坏"方块".
-# 不挡 axe (砍 LOG) / sword (无挖矿). 也不挡徒手 / 别工具.
+# 不挡 axe (砍 LOG/仙人掌) / sword (无挖矿). 也不挡徒手 / 别工具.
 const _PICKAXE_BLACKLIST := {
 	Tiles.LEAVES: true,
 	Tiles.LEAVES_PINE: true,
@@ -72,6 +72,13 @@ const _PICKAXE_BLACKLIST := {
 	Tiles.CACTUS_BODY: true,
 	Tiles.TORCH: true,
 	Tiles.SLIME_TORCH: true,
+}
+
+# 斧能砍的 tile (用户改: 仙人掌也能砍). LOG 走 tree cascade, 仙人掌按段砍.
+const _AXE_TARGETS := {
+	Tiles.LOG: true,
+	Tiles.CACTUS: true,
+	Tiles.CACTUS_BODY: true,
 }
 
 # 测试注入
@@ -248,7 +255,7 @@ func _update_mining(delta: float) -> void:
 	if not pressed:
 		_reset_mining()
 		return
-	# 斧只能砍 LOG, 别的 tile 早 return 不播挖矿摆动 (防 "斧对空气挥" 的视觉 bug)
+	# 斧只能砍 LOG / 仙人掌, 别的 tile 早 return 不播挖矿摆动 (防 "斧对空气挥" 视觉 bug)
 	if _current_tool_kind() == "axe":
 		var ax_tile: Vector2i = aim_tile_coord()
 		var ax_terrain := _terrain()
@@ -256,7 +263,7 @@ func _update_mining(delta: float) -> void:
 			_reset_mining()
 			return
 		var ax_tid: int = ax_terrain.get_cell_source_id(ax_tile)
-		if ax_tid != Tiles.LOG:
+		if not _AXE_TARGETS.has(ax_tid):
 			_reset_mining()
 			return
 	# 镐不能挖植物 (叶 / 仙人掌 / 火把). 用户改: "镐只破坏方块"
@@ -828,13 +835,13 @@ func _mouse_on_mineable_tile() -> bool:
 	return tid != -1 and Tiles.is_mineable(tid)
 
 
-# 鼠标对的 tile 是不是 LOG (斧砍树的目标). 用来分发斧的"砍树" vs "空挥"
+# 鼠标对的 tile 是不是斧能砍的目标 (LOG / 仙人掌). 用来分发斧的"砍" vs "空挥"
 func _mouse_on_log() -> bool:
 	var tile: Vector2i = aim_tile_coord()
 	var terrain := _terrain()
 	if terrain == null:
 		return false
-	return terrain.get_cell_source_id(tile) == Tiles.LOG
+	return _AXE_TARGETS.has(terrain.get_cell_source_id(tile))
 
 
 # 鼠标位置周围 SWORD_RANGE_PX * 1.5 半径内是否有可攻击目标
