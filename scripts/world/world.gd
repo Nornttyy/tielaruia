@@ -20,6 +20,7 @@ const ZombieScene = preload("res://scenes/entities/zombie.tscn")
 const SpiderScene = preload("res://scenes/entities/spider.tscn")
 const DemonEyeScene = preload("res://scenes/entities/demon_eye.tscn")
 const MimicScene = preload("res://scenes/entities/mimic.tscn")
+const SkeletonScene = preload("res://scenes/entities/skeleton.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
@@ -290,6 +291,7 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"zombie": scene = ZombieScene
 		"spider": scene = SpiderScene
 		"demon_eye": scene = DemonEyeScene
+		"skeleton": scene = SkeletonScene
 		"cow": scene = CowScene
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
@@ -720,16 +722,20 @@ func _try_spawn_zombie() -> void:
 	var demon_eyes := get_tree().get_nodes_in_group("demon_eyes")
 	if zombies.size() + spiders.size() + demon_eyes.size() >= cap:
 		return
-	# 概率分配: 玩家在地表 (y<30): 40% zombie / 40% spider / 20% demon_eye
-	# 玩家在地下深处 (y>=30): 20% zombie / 50% spider / 30% demon_eye
+	# 概率分配: 玩家地表 (y<30): 40 zombie / 40 spider / 20 demon_eye
+	# 中地下 (30-110): 20 zombie / 50 spider / 30 demon_eye
+	# 地狱 (>=110): 100% skeleton (Phase 2a, 后续加 imp + hell_wasp)
 	var player := get_player()
-	var deep: bool = false
+	var py_tile: int = 0
 	if player != null:
-		var py_tile: int = int(floor(player.global_position.y / TILE_SIZE))
-		deep = py_tile >= 30
+		py_tile = int(floor(player.global_position.y / TILE_SIZE))
 	var r: float = randf()
 	var scene: PackedScene
-	if deep:
+	if py_tile >= 110:
+		scene = SkeletonScene
+		_spawn_hell_creature(scene)  # 地狱在地下深处, 不能用 surface 扫
+		return
+	elif py_tile >= 30:
 		if r < 0.2:
 			scene = ZombieScene
 		elif r < 0.7:
@@ -744,6 +750,38 @@ func _try_spawn_zombie() -> void:
 		else:
 			scene = DemonEyeScene
 	_spawn_surface_creature(scene)
+
+
+# 地狱怪 spawn: 在玩家附近 (12-40 tile X 范围, ±10 Y 范围) 找一个 AIR 上有 HELL_STONE/OBSIDIAN 底的位置.
+func _spawn_hell_creature(scene: PackedScene) -> void:
+	var player := get_player()
+	if player == null:
+		return
+	var px: int = int(floor(player.global_position.x / TILE_SIZE))
+	var py: int = int(floor(player.global_position.y / TILE_SIZE))
+	for _i in 12:
+		var sign_x: int = 1 if randf() < 0.5 else -1
+		var dx: int = sign_x * randi_range(SPAWN_RANGE_MIN, SPAWN_RANGE_MAX)
+		var cand_x: int = px + dx
+		var cand_y: int = py + randi_range(-6, 6)
+		if cand_y < 110 or cand_y >= ChunkConstants.WORLD_HEIGHT - 2:
+			continue
+		if chunk_manager.get_tile(cand_x, cand_y) != Tiles.AIR:
+			continue
+		# 脚下必须实心 (地狱石/黑曜石/最底基岩)
+		var below: int = chunk_manager.get_tile(cand_x, cand_y + 1)
+		if below == Tiles.AIR or below == Tiles.LAVA:
+			continue
+		# 头顶不能挤
+		if chunk_manager.get_tile(cand_x, cand_y - 1) != Tiles.AIR:
+			continue
+		var creature := scene.instantiate()
+		creature.global_position = Vector2(
+			cand_x * TILE_SIZE + TILE_SIZE / 2.0,
+			(cand_y + 1) * TILE_SIZE
+		)
+		entities_root.add_child(creature)
+		return
 
 
 func _try_spawn_animal() -> void:

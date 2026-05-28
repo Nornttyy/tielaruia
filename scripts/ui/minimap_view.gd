@@ -44,6 +44,7 @@ const _TILE_COLORS := {
 	Tiles.HELL_STONE:    Color8(125, 32, 28),    # 地狱石 (深红)
 	Tiles.OBSIDIAN:      Color8(20, 15, 25),     # 黑曜石 (近黑)
 	Tiles.HELL_FRUIT:    Color8(225, 65, 45),    # 火果 (红)
+	Tiles.SHADOW_CHEST:  Color8(50, 20, 25),     # 阴影宝箱 (深黑红, 跟普通箱区分)
 	Tiles.DOOR:          Color8(140, 90, 50),    # 门
 	Tiles.BEDROCK:       Color8(35, 32, 40),     # 基岩近黑
 	Tiles.TORCH:         Color8(255, 200, 80),   # 火把暖黄

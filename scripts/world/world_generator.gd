@@ -591,9 +591,11 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 				# 死人箱概率: 浅 (30-69) 15%, 深 (≥70) 25%. 任何深度都可能中招.
 				var mimic_chance: float = 0.25 if depth_here >= 70 else 0.15
 				# 按"距地表深度"选 tier:
-				# depth<40 木 (浅), 40-59 金 (中), ≥60 钻石 (深)
+				# depth<40 木, 40-59 金, 60+ 钻石, 地狱深处 (y>=115) 阴影
 				var ct_chamber: int = Tiles.CHEST
-				if depth_here >= 60:
+				if int(pos.y) >= 115:
+					ct_chamber = Tiles.SHADOW_CHEST
+				elif depth_here >= 60:
 					ct_chamber = Tiles.DIAMOND_CHEST
 				elif depth_here >= 40:
 					ct_chamber = Tiles.GOLD_CHEST
@@ -657,7 +659,7 @@ static func _carve_circle(c: Chunk, center: Vector2, radius: float,
 			if t == Tiles.GRASS:
 				continue  # 不破坏地表 (避免随机竖井裸露)
 			if t == Tiles.CHEST or t == Tiles.GOLD_CHEST or t == Tiles.DIAMOND_CHEST \
-					or t == Tiles.MIMIC_CHEST or t == Tiles.MUSHROOM:
+					or t == Tiles.SHADOW_CHEST or t == Tiles.MIMIC_CHEST or t == Tiles.MUSHROOM:
 				continue  # 矿洞各种宝箱/蘑菇 (前一步刚放) 不要被后续 worm 步覆盖
 			c.tiles[lx][wy] = Tiles.AIR
 

@@ -25,6 +25,7 @@ const DrumstickArt = preload("res://scripts/art/drumstick_art.gd")
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 const CloudsArt = preload("res://scripts/fx/clouds_art.gd")
 const MimicArt = preload("res://scripts/art/mimic_art.gd")
+const SkeletonArt = preload("res://scripts/art/skeleton_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
 var block_icons: Dictionary = {}           # int (tile_id) -> 16x16 ImageTexture (UI / inventory)
@@ -42,6 +43,7 @@ var pig_frames: SpriteFrames
 var spider_frames: SpriteFrames
 var demon_eye_frames: SpriteFrames
 var mimic_frames: SpriteFrames
+var skeleton_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
 var crack_textures: Array = []  # 4 个阶段
@@ -103,6 +105,7 @@ func _build_blocks() -> void:
 		BlocksArt.GOLD_CHEST,
 		BlocksArt.DIAMOND_CHEST,
 		BlocksArt.LAVA, BlocksArt.HELL_STONE, BlocksArt.OBSIDIAN, BlocksArt.HELL_FRUIT,
+		BlocksArt.SHADOW_CHEST,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -246,6 +249,8 @@ func _build_entities() -> void:
 	demon_eye_frames = preload("res://scripts/art/demon_eye_loader.gd").build_sprite_frames()
 	# Mimic: 自画 ASCII (chest + 红嘴牙)
 	mimic_frames = MimicArt.build_sprite_frames()
+	# 骨架战士: 地狱近战怪
+	skeleton_frames = SkeletonArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)
 
 

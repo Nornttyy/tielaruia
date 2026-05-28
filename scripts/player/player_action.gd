@@ -384,8 +384,8 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 			world._set_tile(tile.x, tile.y + 1, Tiles.AIR)   # 同时消底部
 			# 由底部 (Tiles.DOOR) 的 drops 出 door item, 这里改 tid 让正常流程走底的掉落
 			tid = Tiles.DOOR
-	# 砍 chest (3 个 tier 都一样行为): 内容物先撒出来 (不丢)
-	if tid == Tiles.CHEST or tid == Tiles.GOLD_CHEST or tid == Tiles.DIAMOND_CHEST:
+	# 砍 chest (4 个 tier 都一样行为): 内容物先撒出来 (不丢)
+	if tid == Tiles.CHEST or tid == Tiles.GOLD_CHEST or tid == Tiles.DIAMOND_CHEST or tid == Tiles.SHADOW_CHEST:
 		var contents: Array = ChestStorage.clear(tile)
 		for s in contents:
 			if s != null:
@@ -774,7 +774,7 @@ func _update_eat_or_place(delta: float) -> void:
 			var terrain := _terrain()
 			if terrain != null:
 				var aim_tid: int = terrain.get_cell_source_id(aim_tile)
-				if aim_tid == Tiles.CHEST or aim_tid == Tiles.GOLD_CHEST or aim_tid == Tiles.DIAMOND_CHEST:
+				if aim_tid == Tiles.CHEST or aim_tid == Tiles.GOLD_CHEST or aim_tid == Tiles.DIAMOND_CHEST or aim_tid == Tiles.SHADOW_CHEST:
 					var cp: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
 					if cp == null:
 						cp = get_tree().root.find_child("ChestPanel", true, false)

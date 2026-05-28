@@ -35,6 +35,7 @@ const LAVA := 56            # 岩浆 (亮橙红, 玩家踩到扣血)
 const HELL_STONE := 57      # 地狱石 (深红带黑裂纹 + 烈火高光)
 const OBSIDIAN := 58        # 黑曜石 (黑底 + 紫光泽闪)
 const HELL_FRUIT := 59      # 火果 (装饰, 红果 + 黄柄)
+const SHADOW_CHEST := 60    # 阴影宝箱 (黑底 + 红光锁孔 + 红宝石)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -303,6 +304,17 @@ const _P_HELL_FRUIT := {
 	"o": Color8(255, 130, 50),    # 橙过渡
 	"s": Color8(85, 50, 30),      # 棕叶柄
 	"l": Color8(120, 175, 55),    # 绿叶
+}
+
+# 阴影宝箱: 黑色木板 + 红光锁孔 + 红宝石包角 (地狱终极宝箱视觉)
+const _P_SHADOW_CHEST := {
+	"w": Color8(45, 25, 30),     # 黑红木板
+	"W": Color8(25, 15, 20),     # 极深阴影
+	"l": Color8(80, 45, 55),     # 木板高光
+	"k": Color8(15, 8, 12),      # 极黑描边
+	"m": Color8(180, 30, 30),    # 红宝石包角
+	"M": Color8(110, 15, 15),    # 红宝石阴影
+	"o": Color8(255, 100, 70),   # 锁孔红光 (高亮)
 }
 
 # Mimic chest: 跟普通 chest 同 palette 大部分, 多一个红 r (锁孔/眼) 当线索
@@ -1641,6 +1653,7 @@ const _PATTERN_MAP := {
 	HELL_STONE: [_HELL_STONE, _P_HELL_STONE],
 	OBSIDIAN: [_OBSIDIAN, _P_OBSIDIAN],
 	HELL_FRUIT: [_HELL_FRUIT, _P_HELL_FRUIT],
+	SHADOW_CHEST: [_CHEST, _P_SHADOW_CHEST],   # 复用 _CHEST 形, 调色板换黑红
 }
 
 

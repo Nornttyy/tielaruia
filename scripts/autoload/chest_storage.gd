@@ -35,10 +35,11 @@ func clear(tile_coord: Vector2i) -> Array:
 
 # 矿洞宝箱首次填战利品. 同位置只填一次 (用 _treasure_marked 标记),
 # 玩家拿光后或砸了空箱子, 即便 chunk 重载也不会再填.
-# 战利品 3 层 (按 tile_id 选, 与 world_generator 选 tile tier 一致):
+# 战利品 4 层 (按 tile_id 选, 与 world_generator 选 tile tier 一致):
 #   木宝箱 (CHEST): 火把+食物+铜锡+木板 → 早期入门
 #   金宝箱 (GOLD_CHEST): 火把+食物+铁/煤+铜锡锭 → 中期升级
-#   钻石宝箱 (DIAMOND_CHEST): 火把+食物+金/钻/银+金锭 → 后期豪华
+#   钻石宝箱 (DIAMOND_CHEST): 火把+食物+金/钻/银+金锭 → 深矿豪华
+#   阴影宝箱 (SHADOW_CHEST): 地狱专属, 黑曜石+地狱石+火果+银金锭+大量火把
 # tile_id 没传时, 兼容回退到按 tile.y 判 (老 caller).
 func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -> void:
 	if _treasure_marked.has(tile):
@@ -52,12 +53,14 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 	for i in SLOTS_PER_CHEST:
 		loot[i] = null
 	# 决定 tier: 优先用 tile_id (caller 传), 否则按 tile.y (兼容老 caller).
-	# Tiles.CHEST=37 / GOLD_CHEST=54 / DIAMOND_CHEST=55 (硬编码避免 require Tiles autoload)
-	var tier: int = 0   # 0=wood, 1=gold, 2=diamond
+	# Tiles.CHEST=37 / GOLD_CHEST=54 / DIAMOND_CHEST=55 / SHADOW_CHEST=60 (硬编码避免 require Tiles autoload)
+	var tier: int = 0   # 0=wood, 1=gold, 2=diamond, 3=shadow
 	if tile_id == 54:
 		tier = 1
 	elif tile_id == 55:
 		tier = 2
+	elif tile_id == 60:
+		tier = 3
 	elif tile_id < 0:
 		# 老 caller 兼容: 按 y 判
 		if tile.y >= 100: tier = 2
@@ -67,15 +70,28 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 	var torch_max: int = 12
 	var meat_min: int = 1
 	var meat_max: int = 3
-	if tier == 2:
+	if tier == 3:
+		torch_min = 15; torch_max = 30; meat_min = 3; meat_max = 6
+	elif tier == 2:
 		torch_min = 10; torch_max = 20; meat_min = 2; meat_max = 5
 	elif tier == 1:
 		torch_min = 8; torch_max = 16; meat_min = 2; meat_max = 4
 	loot[0] = {"item_id": "torch", "count": rng.randi_range(torch_min, torch_max)}
 	loot[1] = {"item_id": "cooked_meat", "count": rng.randi_range(meat_min, meat_max)}
 	var slot_idx: int = 2
-	if tier == 2:
-		# 钻石层: 最豪华 — 金矿 + 银矿 + 钻石 + 金锭
+	if tier == 3:
+		# 阴影层 (地狱): 黑曜石 + 地狱石 + 火果 + 钻石 + 银金锭. 最豪华.
+		loot[slot_idx] = {"item_id": "obsidian", "count": rng.randi_range(5, 12)}; slot_idx += 1
+		loot[slot_idx] = {"item_id": "hell_stone", "count": rng.randi_range(8, 18)}; slot_idx += 1
+		loot[slot_idx] = {"item_id": "hell_fruit", "count": rng.randi_range(2, 5)}; slot_idx += 1
+		if rng.randf() < 0.8:
+			loot[slot_idx] = {"item_id": "diamond_ore", "count": rng.randi_range(2, 4)}; slot_idx += 1
+		if rng.randf() < 0.6:
+			loot[slot_idx] = {"item_id": "gold_ingot", "count": rng.randi_range(2, 4)}; slot_idx += 1
+		if rng.randf() < 0.4:
+			loot[slot_idx] = {"item_id": "silver_ingot", "count": rng.randi_range(2, 4)}; slot_idx += 1
+	elif tier == 2:
+		# 钻石层: 金矿 + 银矿 + 钻石 + 金锭
 		loot[slot_idx] = {"item_id": "gold_ore", "count": rng.randi_range(3, 7)}; slot_idx += 1
 		loot[slot_idx] = {"item_id": "silver_ore", "count": rng.randi_range(3, 7)}; slot_idx += 1
 		if rng.randf() < 0.6:

@@ -69,6 +69,7 @@ const LAVA := 56            # 岩浆: 非实心, 不可挖, 玩家踩到持续�
 const HELL_STONE := 57      # 地狱石: 替代 STONE/DEEP_STONE 在地狱区. 铁镐 (tier 4) 可挖
 const OBSIDIAN := 58        # 黑曜石: 钻石镐 (tier 7) 才能挖. 围着岩浆池, 极硬
 const HELL_FRUIT := 59      # 火果子 (地狱农圣果): 装饰 + 食物. 长地狱石顶, 可吃
+const SHADOW_CHEST := 60    # 阴影宝箱 (地狱第 4 tier): 黑底 + 红光锁孔, 装地狱专属战利品
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -406,6 +407,12 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["hell_fruit", 100, 1, 1]],
+	},
+	SHADOW_CHEST: {
+		# 阴影宝箱: 同 DIAMOND_CHEST 行为. 砍了掉 chest 物品.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["chest", 100, 1, 1]],
 	},
 }
 
