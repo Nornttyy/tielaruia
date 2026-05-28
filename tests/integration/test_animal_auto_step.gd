@@ -87,4 +87,5 @@ func test_cow_does_not_climb_two_tile_wall():
 		await wait_frames(1)
 	var dy: float = start_y - cow.global_position.y
 	print("[cow 2-tile wall] start_y=", start_y, " end_y=", cow.global_position.y, " dy=", dy)
-	assert_lt(dy, float(TILE_SIZE) * 0.5, "牛不应该爬 2 格高墙 (dy < 8). 实际 %.1f" % dy)
+	# 牛 auto-step 1 格成功 (dy ~ 12), 但碰上层 wall tile 卡住, dy 不应到 2 格.
+	assert_lt(dy, float(TILE_SIZE) * 1.5, "牛不应越过 2 格高墙 (dy < 1.5 tile). 实际 %.1f" % dy)

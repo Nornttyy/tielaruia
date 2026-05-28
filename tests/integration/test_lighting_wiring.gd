@@ -3,7 +3,7 @@
 extends GutTest
 
 const MainScene = preload("res://scenes/main.tscn")
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 
 
 func _boot() -> Node:
