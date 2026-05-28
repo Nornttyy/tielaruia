@@ -438,7 +438,7 @@ func _spawn_hook_line() -> void:
 	if _hook_line != null and is_instance_valid(_hook_line):
 		_hook_line.queue_free()
 	_hook_line = Line2D.new()
-	_hook_line.width = 1.5
+	_hook_line.width = 1.0
 	_hook_line.default_color = Color(0.55, 0.4, 0.25)   # 麻绳棕
 	_hook_line.add_point(global_position)
 	_hook_line.add_point(_hook_anchor)

@@ -119,7 +119,7 @@ const _CANOPY_REACH := {
 # 树种参数. 只剩 OAK; canopies 重复表示该尺寸更常见
 const _SPECIES_PARAMS := {
 	_SPECIES_OAK: {
-		"trunk_range": [6, 12],  # 树更高 (4-8 → 6-12, 加分支空间)
+		"trunk_range": [8, 16],  # TILE_SIZE 16→12 后, 树要更多 tile 才像原来高度
 		"leaves": Tiles.LEAVES,
 		"canopies": ["oak_cloud_small", "oak_cloud_med", "oak_cloud_med", "oak_cloud_large", "oak_cloud_huge"],
 	},
