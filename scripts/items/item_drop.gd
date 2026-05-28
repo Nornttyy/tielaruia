@@ -19,6 +19,7 @@ const TILE_SIZE := 12
 
 var velocity: Vector2 = Vector2.ZERO
 var _pickup_ready: bool = false
+var _cached_terrain: TileMapLayer = null  # 缓存 terrain ref, 50+ drops 时每帧少 50 群组查
 
 
 func _ready() -> void:
@@ -69,7 +70,9 @@ func _physics_process(delta: float) -> void:
 	var prev_position := position
 	position += velocity * delta
 	# 简单地面检测：查脚下 tile 是否实心
-	var terrain := get_tree().get_first_node_in_group("terrain_layer")
+	if _cached_terrain == null or not is_instance_valid(_cached_terrain):
+		_cached_terrain = get_tree().get_first_node_in_group("terrain_layer") as TileMapLayer
+	var terrain := _cached_terrain
 	if terrain != null:
 		var foot_tile: Vector2i = terrain.local_to_map(terrain.to_local(global_position + Vector2(0, 3)))
 		var tid: int = terrain.get_cell_source_id(foot_tile)
