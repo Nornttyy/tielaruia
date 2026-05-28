@@ -39,6 +39,7 @@ var cow_frames: SpriteFrames
 var sheep_frames: SpriteFrames
 var pig_frames: SpriteFrames
 var spider_frames: SpriteFrames
+var demon_eye_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
 var crack_textures: Array = []  # 4 个阶段
@@ -203,7 +204,7 @@ static func _extract_interior_icon(atlas: ImageTexture) -> ImageTexture:
 func _build_items() -> void:
 	# 非工具类 (老 ASCII pattern)
 	for item_id in ["slime_jelly", "apple",
-			"coal", "iron_ore", "bone", "spider_eye",
+			"coal", "iron_ore", "bone", "spider_eye", "lens",
 			"raw_meat", "leather", "wool",
 			"grappling_hook"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
@@ -232,6 +233,8 @@ func _build_entities() -> void:
 	pig_frames = PigArt.build_sprite_frames()
 	# 蜘蛛: OpenGameArt PNG sprite sheet (Heather Lee Harvey, CC-BY 3.0)
 	spider_frames = preload("res://scripts/art/spider_loader.gd").build_sprite_frames()
+	# 恶魔眼: OpenGameArt head.png 缩 32x18 (JacPete, CC0)
+	demon_eye_frames = preload("res://scripts/art/demon_eye_loader.gd").build_sprite_frames()
 	# Jaguar 已删 (用户要求)
 
 

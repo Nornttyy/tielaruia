@@ -18,6 +18,7 @@ const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
 const ZombieScene = preload("res://scenes/entities/zombie.tscn")
 const SpiderScene = preload("res://scenes/entities/spider.tscn")
+const DemonEyeScene = preload("res://scenes/entities/demon_eye.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
@@ -287,6 +288,7 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"slime": scene = SlimeScene
 		"zombie": scene = ZombieScene
 		"spider": scene = SpiderScene
+		"demon_eye": scene = DemonEyeScene
 		"cow": scene = CowScene
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
@@ -471,10 +473,12 @@ func _mp_broadcast_entities() -> void:
 			var kind: String = "slime"
 			match grp:
 				"slimes":
-					# spider 也在 slimes 组 (共享剑挥). 用 scene_path 区分.
+					# spider / demon_eye 也在 slimes 组 (共享剑挥). 用 scene_path 区分.
 					var scene_path_s: String = n2d.scene_file_path if n2d.scene_file_path != null else ""
 					if "spider" in scene_path_s:
 						kind = "spider"
+					elif "demon_eye" in scene_path_s:
+						kind = "demon_eye"
 					elif "zombie" in scene_path_s:
 						kind = "zombie"
 					else:
@@ -707,25 +711,38 @@ func _try_spawn_slime() -> void:
 
 
 func _try_spawn_zombie() -> void:
-	# 夜间僵尸/蜘蛛刷新. 共享上限 (按难度: 简单 8 / 普通 15 / 困难 25).
+	# 夜间僵尸/蜘蛛/恶魔眼共享上限 (按难度: 简单 8 / 普通 15 / 困难 25).
 	var diff: int = clampi(GameSettings.current_difficulty, 0, 2) if GameSettings != null else 1
 	var cap: int = NIGHT_CAP_BY_DIFFICULTY[diff]
 	var zombies := get_tree().get_nodes_in_group("zombies")
 	var spiders := get_tree().get_nodes_in_group("spiders")
-	if zombies.size() + spiders.size() >= cap:
+	var demon_eyes := get_tree().get_nodes_in_group("demon_eyes")
+	if zombies.size() + spiders.size() + demon_eyes.size() >= cap:
 		return
-	# 50% 概率刷蜘蛛 (替代僵尸), 玩家在地下深处 (y > 30 tile) 时蜘蛛概率 80%
-	var spider_chance: float = 0.5
+	# 概率分配: 玩家在地表 (y<30): 40% zombie / 40% spider / 20% demon_eye
+	# 玩家在地下深处 (y>=30): 20% zombie / 50% spider / 30% demon_eye
 	var player := get_player()
+	var deep: bool = false
 	if player != null:
 		var py_tile: int = int(floor(player.global_position.y / TILE_SIZE))
-		# 玩家位置 y_tile: 地表附近 ~3-5, 30+ 算地下深
-		if py_tile > 30:
-			spider_chance = 0.8
-	if randf() < spider_chance:
-		_spawn_surface_creature(SpiderScene)
+		deep = py_tile >= 30
+	var r: float = randf()
+	var scene: PackedScene
+	if deep:
+		if r < 0.2:
+			scene = ZombieScene
+		elif r < 0.7:
+			scene = SpiderScene
+		else:
+			scene = DemonEyeScene
 	else:
-		_spawn_surface_creature(ZombieScene)
+		if r < 0.4:
+			scene = ZombieScene
+		elif r < 0.8:
+			scene = SpiderScene
+		else:
+			scene = DemonEyeScene
+	_spawn_surface_creature(scene)
 
 
 func _try_spawn_animal() -> void:

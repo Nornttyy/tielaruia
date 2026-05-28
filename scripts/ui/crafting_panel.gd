@@ -312,6 +312,7 @@ const _ZH_NAMES := {
 	"grappling_hook": "钩爪",
 	"bone": "骨头",
 	"spider_eye": "蜘蛛眼",
+	"lens": "镜片",
 	"snow": "雪块",
 	"ice": "冰块",
 	"jungle_grass": "丛林草",

@@ -606,6 +606,27 @@ const _IRON_ORE_ICON := [
 
 
 
+# 镜片 (demon eye 掉落): 圆形透明蓝玻璃 + 边缘高光
+const _LENS := [
+	"................",
+	"................",
+	"................",
+	".....EEEEE......",
+	"....EFFFFFE.....",
+	"...EFffffffE....",
+	"...EfffffffF....",
+	"...EfffjfffE....",
+	"...EfffjfffF....",
+	"...EFffffffE....",
+	"....EFFFFFE.....",
+	".....EEEEE......",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
+
 # 蜘蛛眼: 圆形红眼 + 黑色十字瞳孔
 const _SPIDER_EYE := [
 	"................",
@@ -680,6 +701,7 @@ const _ICONS := {
 	"grappling_hook": _GRAPPLING_HOOK,
 	"bone": _BONE,
 	"spider_eye": _SPIDER_EYE,
+	"lens": _LENS,
 }
 
 

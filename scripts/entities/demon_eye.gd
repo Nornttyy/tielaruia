@@ -1,0 +1,136 @@
+# 恶魔眼: 飞行怪. 不受重力, 漂浮追玩家.
+# 夜晚地表 + 地穴深处出没. HP 8 (脆), 接触 4 伤.
+extends CharacterBody2D
+
+const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
+
+const HIT_FLASH_SEC := 0.1
+const TILE_SIZE := 12
+
+const MAX_HEALTH := 8
+const CONTACT_DAMAGE := 4
+const FLY_SPEED := 60.0       # 飞行速度 (慢但稳)
+const AGGRO_RANGE_PX := 240.0  # 看见 20 tile 内追
+const ENEMY_IFRAME_SEC := 0.2
+# 飞行不受重力, 但漂动给一点缓动让它"活的"感觉
+const BOB_AMPLITUDE := 4.0      # 上下漂动幅度 (px)
+const BOB_PERIOD := 1.5         # 周期 (秒)
+
+var current_health: int = MAX_HEALTH
+var _hit_flash: float = 0.0
+var _iframe_t: float = 0.0
+var _is_dying: bool = false
+var _bob_t: float = 0.0
+var _base_y: float = 0.0  # spawn 时 y 位置, 漂动以此为基
+
+@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+
+
+func _ready() -> void:
+	sprite.sprite_frames = ArtCache.demon_eye_frames
+	sprite.play("idle")
+	add_to_group("demon_eyes")
+	add_to_group("slimes")  # 共享剑挥范围 + 出生点死亡清除
+	current_health = MAX_HEALTH
+	_base_y = global_position.y
+	_bob_t = randf() * BOB_PERIOD   # 随机起始相位, 多只眼睛不同步
+
+
+func _physics_process(delta: float) -> void:
+	if has_meta("is_remote"):
+		return
+	if _is_dying:
+		return
+	# 性能: 距玩家 > 50 tile 直接 skip
+	var _p := _find_player()
+	if _p != null:
+		var _dx: float = _p.global_position.x - global_position.x
+		var _dy: float = _p.global_position.y - global_position.y
+		if _dx * _dx + _dy * _dy > 360000.0:
+			velocity = Vector2.ZERO
+			return
+	if _hit_flash > 0.0:
+		_hit_flash = max(0.0, _hit_flash - delta)
+		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
+	_iframe_t = max(0.0, _iframe_t - delta)
+	_bob_t += delta
+	# 飞行 AI: 朝玩家方向漂, 速度恒定 (不受重力)
+	var player := _find_player()
+	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
+		var to_player: Vector2 = player.global_position - global_position
+		var dir: Vector2 = to_player.normalized() if to_player.length() > 1.0 else Vector2.ZERO
+		velocity = dir * FLY_SPEED
+		# sprite 朝玩家方向翻面
+		sprite.flip_h = dir.x < 0
+		# 直接更新 base_y 跟着玩家 (而不是固定 spawn 位置漂动)
+		_base_y = global_position.y
+	else:
+		# 闲逛: 缓慢漂浮 (Y 正弦, X 不动)
+		velocity = Vector2.ZERO
+	# Bob 给 Y 加一个正弦偏移让眼球"飘"
+	var bob: float = sin(_bob_t / BOB_PERIOD * TAU) * BOB_AMPLITUDE
+	# 用 move_and_slide 走 X (撞墙不穿), Y 通过 bob 偏移直接设
+	# 注意: 飞行怪不撞地面 (碰撞 mask 0), 但撞实心墙会停
+	move_and_slide()
+	global_position.y = _base_y + bob
+	_check_player_contact()
+
+
+func _find_player() -> Node2D:
+	var players := get_tree().get_nodes_in_group("player")
+	if players.is_empty():
+		return null
+	return players[0]
+
+
+func _check_player_contact() -> void:
+	var player := _find_player()
+	if player == null:
+		return
+	if global_position.distance_to(player.global_position) > 16.0:
+		return
+	var hp: Node = player.get_node_or_null("PlayerHealth")
+	if hp == null:
+		return
+	hp.take_damage(CONTACT_DAMAGE, global_position, 100.0)
+
+
+func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
+	if _is_dying or amount <= 0:
+		return false
+	if _iframe_t > 0.0:
+		return false
+	_iframe_t = ENEMY_IFRAME_SEC
+	current_health = max(0, current_health - amount)
+	_hit_flash = HIT_FLASH_SEC
+	sprite.modulate = Color(1.6, 1.0, 1.0)
+	Effects.spawn_damage_number(global_position + Vector2(0, -8), amount)
+	# 击退: 给它一点漂移
+	if knockback > 0.0 and source_pos != Vector2.ZERO:
+		var to_self: Vector2 = global_position - source_pos
+		var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
+		_base_y += dir.y * knockback * 0.05   # 击退也影响 base_y, 不然立刻被 bob 拉回
+		velocity = dir * knockback
+	if current_health == 0:
+		_die()
+	return true
+
+
+func _die() -> void:
+	_is_dying = true
+	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
+	# 掉 1 个 lens (新材料占位, M3 用)
+	_spawn_drop("lens")
+	queue_free()
+
+
+func _spawn_drop(item_id: String) -> void:
+	var drop = ItemDropScene.instantiate()
+	drop.item_id = item_id
+	drop.count = 1
+	drop.global_position = global_position + Vector2(randf_range(-3.0, 3.0), -4.0)
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = get_parent()
+	entities.add_child(drop)
