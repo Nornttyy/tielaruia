@@ -139,10 +139,19 @@ func _physics_process(delta: float) -> void:
 			var primary_pressed_p: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 			if primary_pressed_p and _attack_cooldown <= 0.0 and _mouse_has_enemy_nearby():
 				_pickaxe_attack()
+	elif kind == "axe":
+		# 用户改: 斧动作跟镐同款. 鼠标对 LOG → 砍 + spin; 否则 附近怪 → spin (0 伤害, 视觉)
+		if _mouse_on_log():
+			_update_mining(delta)
+		else:
+			_reset_mining()
+			var primary_pressed_a: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
+			if primary_pressed_a and _attack_cooldown <= 0.0 and _mouse_has_enemy_nearby():
+				_axe_swing()
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
-	# 镐 spin 中: 每帧检查 pickaxe tip 跟怪的距离, 碰到就扣血
+	# 工具 spin 中: 每帧检查 tip 跟怪的距离, 碰到就扣血 (镐 + 斧共用; 斧 damage_mult=0 自动跳过)
 	if _pickaxe_spin_active:
 		_pickaxe_spin_t += delta
 		if _pickaxe_spin_t >= PICKAXE_SPIN_DURATION:
@@ -274,13 +283,13 @@ func _update_mining(delta: float) -> void:
 		_mining_progress = 0.0
 		_mining_swing_t = 0.0
 	_mining_progress += _tool_speed(tool_kind, tid) * delta
-	# 镐: 360° 旋转动画 (跟攻击同款, 慢一点) — 每 0.7s 重启一次
-	# 斧: ±75° 来回挥 — 每 0.35s 挥一次
+	# 镐 + 斧 (用户改: 斧跟镐同款): 360° 旋转动画 — 每 0.7s 重启一次
+	# 其他 (徒手等): ±75° 来回挥 — 每 0.35s 挥一次
 	_mining_swing_t -= delta
 	if _mining_swing_t <= 0.0:
 		var player_node: Node = get_parent()
 		var held: Node = null if player_node == null else player_node.get_node_or_null("HeldItem")
-		if tool_kind == "pickaxe":
+		if tool_kind == "pickaxe" or tool_kind == "axe":
 			_mining_swing_t = 0.7
 			if held != null and held.has_method("play_pickaxe_attack"):
 				_start_pickaxe_spin()
@@ -769,6 +778,15 @@ func _mouse_on_mineable_tile() -> bool:
 	return tid != -1 and Tiles.is_mineable(tid)
 
 
+# 鼠标对的 tile 是不是 LOG (斧砍树的目标). 用来分发斧的"砍树" vs "空挥"
+func _mouse_on_log() -> bool:
+	var tile: Vector2i = aim_tile_coord()
+	var terrain := _terrain()
+	if terrain == null:
+		return false
+	return terrain.get_cell_source_id(tile) == Tiles.LOG
+
+
 # 鼠标位置周围 SWORD_RANGE_PX * 1.5 半径内是否有可攻击目标
 func _mouse_has_enemy_nearby() -> bool:
 	var player: Node2D = get_parent() as Node2D
@@ -806,6 +824,17 @@ func _pickaxe_attack() -> void:
 	SfxBank.play("swing", 0.10)
 	if player.has_method("shake"):
 		player.shake(2.0)
+
+
+# 斧挥: 跟镐 _pickaxe_attack 同套路, 走 spin + collision. 但 damage_mult=0 自动
+# 让 _check_pickaxe_spin_hits 跳过扣血 (return early). 纯视觉动作.
+func _axe_swing() -> void:
+	_attack_cooldown = PICKAXE_ATTACK_COOLDOWN
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	_start_pickaxe_spin()
+	SfxBank.play("swing", 0.10)
 
 
 # 开始一次 360° 旋转 (动画 + 标记 spin 期 + 清空已击中表).
