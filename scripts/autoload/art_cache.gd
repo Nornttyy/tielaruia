@@ -79,7 +79,7 @@ func _build_blocks() -> void:
 		BlocksArt.DOOR, BlocksArt.BEDROCK,
 		BlocksArt.LEAVES_PINE, BlocksArt.LEAVES_AUTUMN, BlocksArt.SLIME_TORCH,
 		BlocksArt.DEEP_STONE, BlocksArt.COAL_ORE, BlocksArt.IRON_ORE, BlocksArt.TORCH,
-		BlocksArt.GRASS_WALL, BlocksArt.DIRT_WALL, BlocksArt.STONE_WALL,
+		BlocksArt.GRASS_WALL, BlocksArt.DIRT_WALL, BlocksArt.STONE_WALL, BlocksArt.WOOD_WALL,
 		BlocksArt.CACTUS, BlocksArt.CACTUS_BODY,
 		BlocksArt.COPPER_ORE, BlocksArt.TIN_ORE, BlocksArt.GOLD_ORE,
 		BlocksArt.DIAMOND_ORE, BlocksArt.HELL_CRYSTAL,
@@ -226,7 +226,7 @@ const _ITEM_TO_TILE := {
 	"swamp_grass": BlocksArt.SWAMP_GRASS,
 	# 平台 + 墙 + 绳
 	"wood_platform": BlocksArt.WOOD_PLATFORM,
-	"wood_wall": BlocksArt.DIRT_WALL,    # 复用 dirt_wall 视觉
+	"wood_wall": BlocksArt.WOOD_WALL,    # 木墙: 真木板纹路
 	"stone_wall": BlocksArt.STONE_WALL,
 	"rope": BlocksArt.ROPE,
 	"jungle_dirt": BlocksArt.JUNGLE_DIRT,

@@ -33,6 +33,7 @@ const FAMILY_OF: Dictionary = {
 	BlocksArt.GRASS_WALL: "wall",
 	BlocksArt.DIRT_WALL: "wall",
 	BlocksArt.STONE_WALL: "wall",
+	BlocksArt.WOOD_WALL: "wall",
 	BlocksArt.COPPER_ORE: "rock",
 	BlocksArt.TIN_ORE: "rock",
 	BlocksArt.GOLD_ORE: "rock",

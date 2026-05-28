@@ -58,6 +58,7 @@ const JUNGLE_DIRT := 46     # 丛林泥土 (深泥黄, 比普通 DIRT 偏绿/棕
 const SNOW_DIRT := 47       # 雪原冻土 (灰白带蓝, 比 SNOW 暗)
 const JUNGLE_LEAVES := 48   # 丛林树叶 (深湿绿, 比 LEAVES 暗)
 const SILVER_ORE := 49      # 银矿 (铁和金之间, tier 3 用 iron 镐挖)
+const WOOD_WALL := 50       # 木墙: 玩家造 (区别于自然生成的土墙/石墙), 木板纹路
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -181,6 +182,11 @@ const _PROPS := {
 		"drops": [],
 	},
 	STONE_WALL: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {},
+		"drops": [],
+	},
+	WOOD_WALL: {
 		"solid": false, "mineable": false,
 		"tool_tiers": {},
 		"drops": [],

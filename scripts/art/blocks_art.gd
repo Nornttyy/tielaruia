@@ -24,6 +24,7 @@ const JUNGLE_DIRT := 46
 const SNOW_DIRT := 47
 const JUNGLE_LEAVES := 48
 const SILVER_ORE := 49
+const WOOD_WALL := 50
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -393,6 +394,18 @@ const _P_GRASS_WALL := {
 	"_e": Color8(48, 36, 25),   # 边缘暗影 (d×0.6)
 	"_h": Color8(90, 70, 50),   # 边缘高光 (d+12%, 低对比)
 	"_H": Color8(102, 78, 54),  # 顶强高光 (d+20%, 暖)
+}
+# 木墙: 木板纹路 (跟 PLANKS 同构, 但偏暗 70% 适合背景), col 0 == col 15 可平铺
+const _P_WOOD_WALL := {
+	"p": Color8(118, 80, 48),   # 木板基色 (planks p×0.7)
+	"P": Color8(92, 60, 33),    # 暗木 (planks P×0.65)
+	"l": Color8(140, 100, 65),  # 亮高光 (稀疏)
+	"k": Color8(50, 32, 18),    # 板缝 (k×0.5)
+	# 新增 (T3): 边缘语义槽 (墙低对比度)
+	"_o": Color8(28, 18, 8),    # 极暗轮廓
+	"_e": Color8(75, 50, 28),   # 边缘暗影 (e 由 _WALL_STYLE 引用)
+	"_h": Color8(135, 95, 60),  # 边缘高光
+	"_H": Color8(155, 110, 72), # 顶强高光
 }
 # 土墙: 均匀深棕 + 零星小石子, 偶尔微亮
 const _P_DIRT_WALL := {
@@ -1235,6 +1248,28 @@ const _DIRT_WALL := [
 	"dDdDddDdDddDdDdD",
 ]
 
+# 木墙: 4 横木板, 每 4 行 1 道板缝 (k). 跟 PLANKS 同结构, 颜色偏暗.
+# 关键: 每行 col 0 == col 15 (都是 p 或 k), 拼贴时左右无缝.
+# row 0 (plank top) 跟 row 15 (sep k) 不同 → 上下拼时显示一道板缝 (这是要的视觉, 不是 bug)
+const _WOOD_WALL := [
+	"pppppppppppppppp",
+	"pPppppppllpppPpp",
+	"pppppPppppllpppp",
+	"kkkkkkkkkkkkkkkk",
+	"ppppllpppppppPpp",
+	"pPppppppllpppppp",
+	"pppppPppppllpppp",
+	"kkkkkkkkkkkkkkkk",
+	"ppllpppppppPpppp",
+	"pppPppppllpppppp",
+	"ppppppllpppPpppp",
+	"kkkkkkkkkkkkkkkk",
+	"pPpppllppppppppp",
+	"ppppppppPpppllpp",
+	"ppPppppppppllppp",
+	"kkkkkkkkkkkkkkkk",
+]
+
 # 石墙: 全是深暖灰, 黑裂纹, 偶尔微亮
 const _STONE_WALL := [
 	"sSssSssSsSssSssS",
@@ -1318,6 +1353,7 @@ const _PATTERN_MAP := {
 	GRASS_WALL: [_GRASS_WALL, _P_GRASS_WALL],
 	DIRT_WALL: [_DIRT_WALL, _P_DIRT_WALL],
 	STONE_WALL: [_STONE_WALL, _P_STONE_WALL],
+	WOOD_WALL: [_WOOD_WALL, _P_WOOD_WALL],
 	CACTUS: [_CACTUS, _P_CACTUS],
 	CACTUS_BODY: [_CACTUS_BODY, _P_CACTUS],
 	COPPER_ORE: [_COPPER_ORE, _P_COPPER_ORE],

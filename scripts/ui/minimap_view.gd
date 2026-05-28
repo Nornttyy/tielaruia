@@ -63,6 +63,7 @@ const _TILE_COLORS := {
 	Tiles.GRASS_WALL:    Color8(45, 75, 35),     # 草墙
 	Tiles.DIRT_WALL:     Color8(60, 45, 30),     # 土墙
 	Tiles.STONE_WALL:    Color8(60, 60, 60),     # 石墙
+	Tiles.WOOD_WALL:     Color8(95, 65, 38),     # 木墙
 	Tiles.ROPE:          Color8(130, 95, 60),    # 绳子
 	Tiles.CACTUS:        Color8(80, 140, 70),    # 仙人掌
 	Tiles.CACTUS_BODY:   Color8(70, 125, 60),
