@@ -847,33 +847,57 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 # y > HELL_DEPTH 是地狱区: 把 STONE/DEEP_STONE 换 HELL_STONE,
 # AIR 底部偶发填 LAVA 池, 池四周 HELL_STONE 换 OBSIDIAN, HELL_STONE 顶 5% 长 HELL_FRUIT.
 # 矿石 (COAL/IRON/...) 保留, 让矿洞探险还能挖到原矿.
-const HELL_DEPTH := 118            # y > 此处算地狱区. 世界 128 高, 仅最底 ~10 行 (基岩上方紧邻).
-                                   # 用户要求"地狱在地底最下面", 110 太浅会让玩家挖到石头层就见到.
+const HELL_DEPTH := 220            # y > 此处算地狱区. 世界 256 高 (ChunkConstants.WORLD_HEIGHT),
+                                   # 地狱在最底 ~34 行. 之前 118 是按 128 算错了 → 地表就能看到地狱.
+const HELL_HALF_WIDTH := 250       # 地狱矩形 x 半宽 (总宽 500 tile)
+# 地狱中心: 世界中心 (世界宽 1024 → 中心 512) ± 100 (按 seed 偏移). 保证玩家从 spawn 走得到.
+const HELL_CENTER_BASE := 512
+const HELL_CENTER_JITTER := 100
+
+
+# 地狱矩形 x 范围. 中心在 world 中心 (512) ± seed-derived jitter, 半宽 250.
+static func _hell_zone_x(world_seed: int) -> Vector2i:
+	var jitter: int = (_hash3(world_seed, 0, 0xdeadbeef) & 0xff) - 128   # -128..127
+	jitter = clampi(jitter, -HELL_CENTER_JITTER, HELL_CENTER_JITTER)
+	var center: int = HELL_CENTER_BASE + jitter
+	return Vector2i(center - HELL_HALF_WIDTH, center + HELL_HALF_WIDTH)
 const LAVA_CHUNK_PROB := 0.85      # 每 chunk 85% 试一次放岩浆池
 const LAVA_POOL_MIN_SIZE := 4      # 至少 4 格才算池子
 const HELL_FRUIT_CHANCE := 0.07    # HELL_STONE 顶 7% 长火果
 
 static func _apply_hell_biome_chunk(c: Chunk, world_seed: int, chunk_x: int,
 		chunk_width: int, height: int) -> void:
-	# 1) 替换 STONE/DEEP_STONE → HELL_STONE (y > HELL_DEPTH 且不是矿石/AIR/BEDROCK)
+	# 地狱只在 world_x 范围 [hell_zone.x, hell_zone.y] 内出现 (一个大矩形, 不是全宽)
+	var hell_zone: Vector2i = _hell_zone_x(world_seed)
+	var chunk_start: int = chunk_x * chunk_width
+	# 本 chunk 跟地狱矩形有交集? 没交集 → 整 chunk 不需处理
+	if chunk_start > hell_zone.y or chunk_start + chunk_width - 1 < hell_zone.x:
+		return
+	# 1) 替换 STONE/DEEP_STONE → HELL_STONE 只在矩形 x 范围内
 	for lx in chunk_width:
+		var world_x: int = chunk_start + lx
+		if world_x < hell_zone.x or world_x > hell_zone.y:
+			continue
 		for y in range(HELL_DEPTH + 1, height):
 			var t: int = c.tiles[lx][y]
 			if t == Tiles.STONE or t == Tiles.DEEP_STONE:
 				c.tiles[lx][y] = Tiles.HELL_STONE
-	# 2) 岩浆池: BFS 找 AIR 连通区域底部 1-2 行填 LAVA (类似 _fill_water_pools_chunk)
+	# 2) 岩浆池: BFS 找 AIR 连通区域底部 1-2 行填 LAVA
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _hash3(world_seed, chunk_x, 0xfa11c123)
 	if rng.randf() < LAVA_CHUNK_PROB:
-		_fill_lava_pools_chunk(c, chunk_width, height, rng)
-	# 3) OBSIDIAN 环: LAVA 邻 HELL_STONE 的 → OBSIDIAN (烫得"烧出"硬层)
+		_fill_lava_pools_chunk(c, chunk_width, height, rng, hell_zone, chunk_start)
+	# 3) OBSIDIAN 环: LAVA 邻 HELL_STONE 的 → OBSIDIAN
 	_ring_obsidian_around_lava(c, chunk_width, height)
 	# 4) 火果: HELL_STONE 顶下方是 AIR → 偶发挂 HELL_FRUIT
 	_place_hell_fruit_chunk(c, chunk_width, height, rng)
 
 
 # 岩浆 BFS: 找 y > HELL_DEPTH 的 AIR 连通区域, 底部 1-2 格填 LAVA. 重用 _bfs_basin 逻辑.
-static func _fill_lava_pools_chunk(c: Chunk, chunk_width: int, height: int, rng: RandomNumberGenerator) -> void:
+static func _fill_lava_pools_chunk(c: Chunk, chunk_width: int, height: int,
+		rng: RandomNumberGenerator,
+		hell_zone: Vector2i = Vector2i(-99999, 99999),
+		chunk_start: int = 0) -> void:
 	var visited: Array = []
 	visited.resize(chunk_width)
 	for lx in chunk_width:
@@ -887,6 +911,10 @@ static func _fill_lava_pools_chunk(c: Chunk, chunk_width: int, height: int, rng:
 	while attempts < 8 and pools_made < 3:
 		attempts += 1
 		var lx: int = rng.randi() % chunk_width
+		# 跳过不在地狱矩形 x 范围内的列
+		var world_x_check: int = chunk_start + lx
+		if world_x_check < hell_zone.x or world_x_check > hell_zone.y:
+			continue
 		var sy: int = rng.randi_range(HELL_DEPTH + 2, height - 3)
 		if visited[lx][sy] or c.tiles[lx][sy] != Tiles.AIR:
 			continue
@@ -947,8 +975,8 @@ static func _place_volcano_crater_chunk(c: Chunk, world_seed: int, chunk_x: int,
 	if rng.randf() > VOLCANO_CHUNK_PROB:
 		return
 	# 选位置: chunk 中间一带 x, y 在 HELL_DEPTH+1 ~ height-12 之间
-	var crater_w: int = rng.randi_range(4, 6)         # 宽度 (地狱变薄, 火山口也变薄)
-	var crater_h: int = rng.randi_range(4, 6)         # 高度 (含池). 地狱只 ~8 行, 不能太高.
+	var crater_w: int = rng.randi_range(5, 8)         # 宽度
+	var crater_h: int = rng.randi_range(8, 14)        # 高度 (含池). 256 高世界, 地狱 ~34 行能塞大火山
 	var x_center_local: int = rng.randi_range(crater_w / 2 + 2, chunk_width - crater_w / 2 - 3)
 	# y_top 范围: HELL_DEPTH+1 起到 (基岩前 crater_h 格). 地狱厚度紧凑.
 	var y_top_max: int = height - 2 - crater_h - 1     # height=128, bedrock=2, 留 1 格底
