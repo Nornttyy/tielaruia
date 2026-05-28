@@ -906,8 +906,17 @@ static func _mountain_factor(world_x: int, world_seed: int) -> float:
 
 # 返回该列的 biome (5 种之一: BIOME_SNOW/JUNGLE/FOREST/SWAMP/DESERT).
 # 4 个特殊 biome 每个全世界只有 1 块, 其余地方都是 FOREST.
+# 性能: scenic_director 每帧调这个 (~60Hz) 跟玩家 biome tint. 缓存 centers 防每帧
+# Fisher-Yates 洗牌 + RNG 分配. 同 world_seed 结果是确定的, 复用 OK.
+static var _biome_centers_cache_seed: int = 0
+static var _biome_centers_cache: Dictionary = {}
+
+
 static func _biome_at(world_x: int, world_seed: int) -> int:
-	return _biome_at_x(world_x, _build_biome_centers(world_seed))
+	if _biome_centers_cache.is_empty() or _biome_centers_cache_seed != world_seed:
+		_biome_centers_cache = _build_biome_centers(world_seed)
+		_biome_centers_cache_seed = world_seed
+	return _biome_at_x(world_x, _biome_centers_cache)
 
 
 # 内联版: chunk_gen 提前算好 centers 不再每列重建
