@@ -8,7 +8,7 @@ extends Sprite2D
 
 const HAND_OFFSET_X := 5.0     # 手相对玩家中心 x 偏移
 const HAND_OFFSET_Y := -10.0   # y (玩家中部胸口位置)
-const TOOL_SIZE := 0.7         # 工具 (剑/镐/斧) 缩到 70% (~11px)
+const TOOL_SIZE := 1.0         # 工具 (剑/镐/斧) 原大小 16px (用户要求"工具太小了" → 0.7→1.0)
 const BLOCK_SIZE := 0.55       # 方块/材料 缩到 55% (~9px)
 const SWING_ANGLE_DEG := 75.0
 const SWING_DURATION := 0.18
