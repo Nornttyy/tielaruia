@@ -21,6 +21,8 @@ const SpiderScene = preload("res://scenes/entities/spider.tscn")
 const DemonEyeScene = preload("res://scenes/entities/demon_eye.tscn")
 const MimicScene = preload("res://scenes/entities/mimic.tscn")
 const SkeletonScene = preload("res://scenes/entities/skeleton.tscn")
+const ImpScene = preload("res://scenes/entities/imp.tscn")
+const HellWaspScene = preload("res://scenes/entities/hell_wasp.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
@@ -292,6 +294,8 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"spider": scene = SpiderScene
 		"demon_eye": scene = DemonEyeScene
 		"skeleton": scene = SkeletonScene
+		"imp": scene = ImpScene
+		"hell_wasp": scene = HellWaspScene
 		"cow": scene = CowScene
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
@@ -732,8 +736,14 @@ func _try_spawn_zombie() -> void:
 	var r: float = randf()
 	var scene: PackedScene
 	if py_tile >= 110:
-		scene = SkeletonScene
-		_spawn_hell_creature(scene)  # 地狱在地下深处, 不能用 surface 扫
+		# 地狱: 40 skeleton / 35 imp / 25 hell_wasp
+		if r < 0.40:
+			scene = SkeletonScene
+		elif r < 0.75:
+			scene = ImpScene
+		else:
+			scene = HellWaspScene
+		_spawn_hell_creature(scene)
 		return
 	elif py_tile >= 30:
 		if r < 0.2:

@@ -26,6 +26,9 @@ const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 const CloudsArt = preload("res://scripts/fx/clouds_art.gd")
 const MimicArt = preload("res://scripts/art/mimic_art.gd")
 const SkeletonArt = preload("res://scripts/art/skeleton_art.gd")
+const ImpArt = preload("res://scripts/art/imp_art.gd")
+const HellWaspArt = preload("res://scripts/art/hell_wasp_art.gd")
+const FireballArt = preload("res://scripts/art/fireball_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
 var block_icons: Dictionary = {}           # int (tile_id) -> 16x16 ImageTexture (UI / inventory)
@@ -44,6 +47,9 @@ var spider_frames: SpriteFrames
 var demon_eye_frames: SpriteFrames
 var mimic_frames: SpriteFrames
 var skeleton_frames: SpriteFrames
+var imp_frames: SpriteFrames
+var hell_wasp_frames: SpriteFrames
+var fireball_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
 var crack_textures: Array = []  # 4 个阶段
@@ -251,6 +257,12 @@ func _build_entities() -> void:
 	mimic_frames = MimicArt.build_sprite_frames()
 	# 骨架战士: 地狱近战怪
 	skeleton_frames = SkeletonArt.build_sprite_frames()
+	# 火魔 (Imp): 飞行 + 火球远程
+	imp_frames = ImpArt.build_sprite_frames()
+	# 地狱蜂: 飞行 + 冲撞
+	hell_wasp_frames = HellWaspArt.build_sprite_frames()
+	# 火球投射物 (Imp 用)
+	fireball_frames = FireballArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)
 
 
