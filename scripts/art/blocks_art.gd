@@ -28,6 +28,8 @@ const WOOD_WALL := 50
 const FURNACE := 51
 const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
+const GOLD_CHEST := 54      # 金宝箱 (金色金属包角)
+const DIAMOND_CHEST := 55   # 钻石宝箱 (蓝水晶金属包角)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -230,6 +232,28 @@ const _P_CHEST := {
 	"m": Color8(218, 165, 80),  # 金属包角 (黄铜色)
 	"M": Color8(150, 105, 40),  # 金属阴影
 	"o": Color8(60, 35, 20),    # 锁孔黑
+}
+
+# 金宝箱: 金属包角换成亮金, 木板换成深一档 (更显沉甸甸的"贵气").
+const _P_GOLD_CHEST := {
+	"w": Color8(148, 96, 55),    # 木板主色 (比普通深 ≈ 木材包浆)
+	"W": Color8(115, 73, 38),    # 木板深阴影
+	"l": Color8(190, 138, 90),   # 木板高光
+	"k": Color8(40, 25, 15),     # 黑描边
+	"m": Color8(255, 215, 80),   # 亮金属 (金黄, 比普通黄铜更鲜亮)
+	"M": Color8(200, 155, 30),   # 金阴影
+	"o": Color8(255, 235, 120),  # 锁孔金黄 (高亮)
+}
+
+# 钻石宝箱: 木板深棕 + 蓝水晶包角 + 蓝光锁孔, "终极" 视觉.
+const _P_DIAMOND_CHEST := {
+	"w": Color8(120, 75, 45),    # 木板深棕 (最贵感)
+	"W": Color8(90, 55, 30),
+	"l": Color8(165, 115, 75),
+	"k": Color8(40, 25, 15),
+	"m": Color8(120, 200, 250),  # 浅蓝水晶 (主色)
+	"M": Color8(60, 140, 200),   # 蓝水晶阴影
+	"o": Color8(220, 250, 255),  # 锁孔近白闪光
 }
 
 # Mimic chest: 跟普通 chest 同 palette 大部分, 多一个红 r (锁孔/眼) 当线索
@@ -1478,6 +1502,9 @@ const _PATTERN_MAP := {
 	SILVER_ORE: [_SILVER_ORE, _P_SILVER_ORE],   # 专属 sparkle 形 + 亮银调色
 	MUSHROOM: [_MUSHROOM, _P_MUSHROOM],         # 蓝光蘑菇
 	MIMIC_CHEST: [_MIMIC_CHEST, _P_MIMIC_CHEST], # 死人箱 (假宝箱)
+	# 金/钻石宝箱: 复用 _CHEST 形状, 调色板换金/蓝 → 自动有区别 (palette swap)
+	GOLD_CHEST: [_CHEST, _P_GOLD_CHEST],
+	DIAMOND_CHEST: [_CHEST, _P_DIAMOND_CHEST],
 }
 
 

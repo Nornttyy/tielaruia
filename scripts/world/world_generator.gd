@@ -587,7 +587,14 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 			if roll < CHAMBER_CHEST_CHANCE and depth_here >= CHEST_MIN_DEPTH:
 				# 死人箱概率: 浅 (30-69) 15%, 深 (≥70) 25%. 任何深度都可能中招.
 				var mimic_chance: float = 0.25 if depth_here >= 70 else 0.15
-				_try_place_chest(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r) + 2, chunk_start, chunk_end, height, mimic_chance, rng)
+				# 按"距地表深度"选 tier:
+				# depth<40 木 (浅), 40-59 金 (中), ≥60 钻石 (深)
+				var ct_chamber: int = Tiles.CHEST
+				if depth_here >= 60:
+					ct_chamber = Tiles.DIAMOND_CHEST
+				elif depth_here >= 40:
+					ct_chamber = Tiles.GOLD_CHEST
+				_try_place_chest(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r) + 2, chunk_start, chunk_end, height, mimic_chance, rng, ct_chamber)
 			elif roll < CHAMBER_CHEST_CHANCE + CHAMBER_MUSHROOM_CHANCE and depth_here >= MUSHROOM_MIN_DEPTH:
 				_try_place_mushroom_patch(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r), chunk_start, chunk_end, height, rng)
 		# 分叉: 派子 worm (角度偏移 ±60°, 长度更短, 半径更细)
@@ -646,17 +653,20 @@ static func _carve_circle(c: Chunk, center: Vector2, radius: float,
 				continue
 			if t == Tiles.GRASS:
 				continue  # 不破坏地表 (避免随机竖井裸露)
-			if t == Tiles.CHEST or t == Tiles.MIMIC_CHEST or t == Tiles.MUSHROOM:
-				continue  # 矿洞宝箱/死人箱/蘑菇 (前一步刚放) 不要被后续 worm 步覆盖回 AIR
+			if t == Tiles.CHEST or t == Tiles.GOLD_CHEST or t == Tiles.DIAMOND_CHEST \
+					or t == Tiles.MIMIC_CHEST or t == Tiles.MUSHROOM:
+				continue  # 矿洞各种宝箱/蘑菇 (前一步刚放) 不要被后续 worm 步覆盖
 			c.tiles[lx][wy] = Tiles.AIR
 
 
 # 小室中心朝下找第一个 STONE/DEEP_STONE 当地板, 在它上面那一格放 CHEST + 记下世界坐标.
 # 找不到 (例: 落入老 chamber 间穿连接处, 下面也都是 AIR) → 放弃, 不强求.
-# mimic_chance > 0 时按概率改成 MIMIC_CHEST (假宝箱, 不加 treasure_spots).
+# mimic_chance > 0 时按概率改成 MIMIC_CHEST.
+# tile_override > 0 时直接用指定 chest tile (用来按 caller 算出的 tier 选金/钻石宝箱).
 static func _try_place_chest(c: Chunk, world_x: int, start_y: int, max_scan: int,
 		chunk_start: int, chunk_end: int, height: int,
-		mimic_chance: float = 0.0, rng: RandomNumberGenerator = null) -> void:
+		mimic_chance: float = 0.0, rng: RandomNumberGenerator = null,
+		tile_override: int = -1) -> void:
 	if world_x < chunk_start or world_x >= chunk_end:
 		return
 	var lx: int = world_x - chunk_start
@@ -680,9 +690,18 @@ static func _try_place_chest(c: Chunk, world_x: int, start_y: int, max_scan: int
 	if is_mimic:
 		c.tiles[lx][chest_y] = Tiles.MIMIC_CHEST
 		# 死人箱不加 treasure_spots — 没储物, ChestStorage 不被填战利品
-	else:
-		c.tiles[lx][chest_y] = Tiles.CHEST
-		c.treasure_spots.append(Vector2i(world_x, chest_y))
+		return
+	# tile_override > 0 直接用 (caller 已按深度/类别选好 tier);
+	# 否则按绝对 y 选 (兼容老 caller)
+	var chest_tile: int = tile_override
+	if chest_tile <= 0:
+		chest_tile = Tiles.CHEST
+		if chest_y >= 100:
+			chest_tile = Tiles.DIAMOND_CHEST
+		elif chest_y >= 75:
+			chest_tile = Tiles.GOLD_CHEST
+	c.tiles[lx][chest_y] = chest_tile
+	c.treasure_spots.append(Vector2i(world_x, chest_y))
 
 
 # 蘑菇小室: 在小室中心 ±x_radius 列里, 把第一个 STONE/DEEP_STONE floor 改 MUD,
@@ -898,7 +917,13 @@ static func _place_waterfall_cave_chunk(c: Chunk, chunk_heights: Dictionary,
 		if rng.randf() < 0.10:
 			c.tiles[clx][chest_y] = Tiles.MIMIC_CHEST
 		else:
-			c.tiles[clx][chest_y] = Tiles.CHEST
+			# 按深度选 tier (跟普通宝箱同规则)
+			var ct: int = Tiles.CHEST
+			if chest_y >= 100:
+				ct = Tiles.DIAMOND_CHEST
+			elif chest_y >= 75:
+				ct = Tiles.GOLD_CHEST
+			c.tiles[clx][chest_y] = ct
 			c.treasure_spots.append(Vector2i(chest_x, chest_y))
 	# 5) 洞内放 1 火把 (在 y_top 行, 离入口 2 格) — 走过路的玩家能看到洞里有光
 	var torch_x: int = x_high + 2 * cave_dir

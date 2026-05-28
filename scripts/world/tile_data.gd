@@ -62,6 +62,8 @@ const WOOD_WALL := 50       # 木墙: 玩家造 (区别于自然生成的土墙/
 const FURNACE := 51         # 熔炉: 玩家造, 实心. 附近能解锁冶炼配方
 const MUSHROOM := 52        # 蓝光蘑菇 (装饰, 非实心, 矿洞蘑菇地长出来. 砍了掉 mushroom 物品)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱): 右键 / 砍 → 弹出蜘蛛, 无掉落, 视觉跟 CHEST 像但带红眼
+const GOLD_CHEST := 54      # 金宝箱 (中层 y 70-99): 金边 + 黄金锁孔, 内含铁/煤/锭
+const DIAMOND_CHEST := 55   # 钻石宝箱 (深层 y >= 100): 蓝水晶边 + 蓝锁孔, 内含金锭/钻石
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -364,6 +366,18 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [],
+	},
+	GOLD_CHEST: {
+		# 金宝箱: 同 CHEST 行为, 只是视觉 + 内含战利品更好. 砍了掉普通 chest 物品.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["chest", 100, 1, 1]],
+	},
+	DIAMOND_CHEST: {
+		# 钻石宝箱: 同 GOLD_CHEST 行为, 视觉更亮 + 战利品最豪华.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["chest", 100, 1, 1]],
 	},
 }
 

@@ -100,6 +100,8 @@ func _build_blocks() -> void:
 		BlocksArt.FURNACE,
 		BlocksArt.MUSHROOM,
 		BlocksArt.MIMIC_CHEST,
+		BlocksArt.GOLD_CHEST,
+		BlocksArt.DIAMOND_CHEST,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):

@@ -35,8 +35,12 @@ func clear(tile_coord: Vector2i) -> Array:
 
 # 矿洞宝箱首次填战利品. 同位置只填一次 (用 _treasure_marked 标记),
 # 玩家拿光后或砸了空箱子, 即便 chunk 重载也不会再填.
-# 战利品根据深度 (tile.y 越大越深) 调整: 浅层 = 火把+食物+铜锡, 深层 = 加铁+金.
-func try_populate_treasure(tile: Vector2i, world_seed: int) -> void:
+# 战利品 3 层 (按 tile_id 选, 与 world_generator 选 tile tier 一致):
+#   木宝箱 (CHEST): 火把+食物+铜锡+木板 → 早期入门
+#   金宝箱 (GOLD_CHEST): 火把+食物+铁/煤+铜锡锭 → 中期升级
+#   钻石宝箱 (DIAMOND_CHEST): 火把+食物+金/钻/银+金锭 → 后期豪华
+# tile_id 没传时, 兼容回退到按 tile.y 判 (老 caller).
+func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -> void:
 	if _treasure_marked.has(tile):
 		return
 	_treasure_marked[tile] = true
@@ -47,30 +51,57 @@ func try_populate_treasure(tile: Vector2i, world_seed: int) -> void:
 	loot.resize(SLOTS_PER_CHEST)
 	for i in SLOTS_PER_CHEST:
 		loot[i] = null
-	# 一定有: 火把 5-12 个 + 熟肉 1-3 个 (玩家进矿要的)
-	loot[0] = {"item_id": "torch", "count": rng.randi_range(5, 12)}
-	loot[1] = {"item_id": "cooked_meat", "count": rng.randi_range(1, 3)}
-	# 浅层 (y<70) 给铜/锡 + 木板; 深层 (>=70) 加铁; 超深 (>=100) 偶发金/钻
+	# 决定 tier: 优先用 tile_id (caller 传), 否则按 tile.y (兼容老 caller).
+	# Tiles.CHEST=37 / GOLD_CHEST=54 / DIAMOND_CHEST=55 (硬编码避免 require Tiles autoload)
+	var tier: int = 0   # 0=wood, 1=gold, 2=diamond
+	if tile_id == 54:
+		tier = 1
+	elif tile_id == 55:
+		tier = 2
+	elif tile_id < 0:
+		# 老 caller 兼容: 按 y 判
+		if tile.y >= 100: tier = 2
+		elif tile.y >= 75: tier = 1
+	# 三层都有: 火把 + 熟肉. 数量按层翻倍.
+	var torch_min: int = 5
+	var torch_max: int = 12
+	var meat_min: int = 1
+	var meat_max: int = 3
+	if tier == 2:
+		torch_min = 10; torch_max = 20; meat_min = 2; meat_max = 5
+	elif tier == 1:
+		torch_min = 8; torch_max = 16; meat_min = 2; meat_max = 4
+	loot[0] = {"item_id": "torch", "count": rng.randi_range(torch_min, torch_max)}
+	loot[1] = {"item_id": "cooked_meat", "count": rng.randi_range(meat_min, meat_max)}
 	var slot_idx: int = 2
-	if tile.y < 70:
-		loot[slot_idx] = {"item_id": "copper_ore", "count": rng.randi_range(5, 10)}
-		slot_idx += 1
+	if tier == 2:
+		# 钻石层: 最豪华 — 金矿 + 银矿 + 钻石 + 金锭
+		loot[slot_idx] = {"item_id": "gold_ore", "count": rng.randi_range(3, 7)}; slot_idx += 1
+		loot[slot_idx] = {"item_id": "silver_ore", "count": rng.randi_range(3, 7)}; slot_idx += 1
 		if rng.randf() < 0.6:
-			loot[slot_idx] = {"item_id": "tin_ore", "count": rng.randi_range(5, 10)}
-			slot_idx += 1
-		loot[slot_idx] = {"item_id": "planks", "count": rng.randi_range(8, 15)}
-		slot_idx += 1
+			loot[slot_idx] = {"item_id": "diamond_ore", "count": rng.randi_range(1, 3)}; slot_idx += 1
+		if rng.randf() < 0.5:
+			loot[slot_idx] = {"item_id": "gold_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
+		if rng.randf() < 0.3:
+			loot[slot_idx] = {"item_id": "iron_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
+	elif tier == 1:
+		# 金层: 铁/煤 + 偶发铜锡锭 + 偶发银锭
+		loot[slot_idx] = {"item_id": "iron_ore", "count": rng.randi_range(4, 9)}; slot_idx += 1
+		loot[slot_idx] = {"item_id": "coal_ore", "count": rng.randi_range(6, 12)}; slot_idx += 1
+		if rng.randf() < 0.5:
+			loot[slot_idx] = {"item_id": "copper_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
+		if rng.randf() < 0.5:
+			loot[slot_idx] = {"item_id": "tin_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
+		if rng.randf() < 0.3:
+			loot[slot_idx] = {"item_id": "silver_ingot", "count": rng.randi_range(1, 2)}; slot_idx += 1
 	else:
-		loot[slot_idx] = {"item_id": "iron_ore", "count": rng.randi_range(4, 9)}
-		slot_idx += 1
-		loot[slot_idx] = {"item_id": "coal_ore", "count": rng.randi_range(6, 12)}
-		slot_idx += 1
-		if tile.y >= 100 and rng.randf() < 0.5:
-			loot[slot_idx] = {"item_id": "gold_ore", "count": rng.randi_range(2, 5)}
-			slot_idx += 1
-		if tile.y >= 100 and rng.randf() < 0.15:
-			loot[slot_idx] = {"item_id": "diamond_ore", "count": rng.randi_range(1, 2)}
-			slot_idx += 1
+		# 木层 (浅): 铜锡矿 + 木板 + 偶发苹果
+		loot[slot_idx] = {"item_id": "copper_ore", "count": rng.randi_range(5, 10)}; slot_idx += 1
+		if rng.randf() < 0.6:
+			loot[slot_idx] = {"item_id": "tin_ore", "count": rng.randi_range(5, 10)}; slot_idx += 1
+		loot[slot_idx] = {"item_id": "planks", "count": rng.randi_range(8, 15)}; slot_idx += 1
+		if rng.randf() < 0.4:
+			loot[slot_idx] = {"item_id": "apple", "count": rng.randi_range(2, 5)}; slot_idx += 1
 	_chests[tile] = loot
 
 

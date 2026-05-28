@@ -46,8 +46,10 @@ func _load_chunk(cx: int) -> void:
 	for spot in c.treasure_spots:
 		# 如果 delta 已经把 chest 砸了 (变 AIR), 不填.
 		var lx: int = spot.x - cx * ChunkConstants.CHUNK_WIDTH
-		if lx >= 0 and lx < ChunkConstants.CHUNK_WIDTH and c.tiles[lx][spot.y] == Tiles.CHEST:
-			ChestStorage.try_populate_treasure(spot, world_seed)
+		if lx >= 0 and lx < ChunkConstants.CHUNK_WIDTH:
+			var ct: int = c.tiles[lx][spot.y]
+			if ct == Tiles.CHEST or ct == Tiles.GOLD_CHEST or ct == Tiles.DIAMOND_CHEST:
+				ChestStorage.try_populate_treasure(spot, world_seed, ct)
 	_loaded[cx] = c
 	chunk_loaded.emit(c)
 
