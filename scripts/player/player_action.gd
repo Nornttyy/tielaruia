@@ -391,6 +391,10 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 			if s != null:
 				for _i in s.count:
 					_spawn_drop(s.item_id, tile)
+	# 砍 mimic_chest: 触发陷阱 (爆炸 + 弹出 Mimic), 跳过普通破方块流程
+	if tid == Tiles.MIMIC_CHEST:
+		_trigger_mimic_trap(tile, world)
+		return
 	# 普通破: 单格
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, Tiles.AIR)
@@ -762,18 +766,24 @@ func _update_eat_or_place(delta: float) -> void:
 			player_node.fire_grappling_hook(player_node.get_global_mouse_position())
 		return
 
-	# 右键刚按下 + 鼠标对准的 tile 是 CHEST → 打开箱子面板 (优先级高于放置/吃)
+	# 右键刚按下 + 鼠标对准的 tile 是 CHEST / MIMIC_CHEST → 开箱 / 触发陷阱
 	if just:
 		var aim_tile: Vector2i = aim_tile_coord()
 		if in_reach(aim_tile):
 			var terrain := _terrain()
-			if terrain != null and terrain.get_cell_source_id(aim_tile) == Tiles.CHEST:
-				var cp: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
-				if cp == null:
-					cp = get_tree().root.find_child("ChestPanel", true, false)
-				if cp != null and cp.has_method("open"):
-					cp.open(aim_tile, inv)
-				return
+			if terrain != null:
+				var aim_tid: int = terrain.get_cell_source_id(aim_tile)
+				if aim_tid == Tiles.CHEST:
+					var cp: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
+					if cp == null:
+						cp = get_tree().root.find_child("ChestPanel", true, false)
+					if cp != null and cp.has_method("open"):
+						cp.open(aim_tile, inv)
+					return
+				elif aim_tid == Tiles.MIMIC_CHEST:
+					# 玩家以为是宝箱, 实际是陷阱: 爆炸 + 弹 mimic
+					_trigger_mimic_trap(aim_tile, terrain.get_parent())
+					return
 
 	# 持食物 + 按住 + 没吃饱 → 进入/保持 eating
 	if holding_food and held and hunger != null and int(hunger.current) < hunger.MAX:
@@ -1101,3 +1111,27 @@ func in_reach(tile: Vector2i) -> bool:
 		return false
 	var pt: Vector2i = player_tile()
 	return abs(tile.x - pt.x) <= REACH_TILES and abs(tile.y - pt.y) <= REACH_TILES
+
+
+# 死人箱触发: 玩家右键 / 砍 → 爆炸 + 弹出 Mimic 怪物.
+# 1) 删掉 tile (变 AIR)
+# 2) 爆炸粒子 + 砸方块 SFX
+# 3) 玩家近距离 (≤2 tile) 扣 12 血 + knockback
+# 4) world.spawn_mimic_at_tile 召唤 Mimic 实体
+func _trigger_mimic_trap(tile: Vector2i, world: Node) -> void:
+	# 1) 删 tile
+	if world.has_method("_set_tile"):
+		world._set_tile(tile.x, tile.y, Tiles.AIR)
+	# 2) 爆炸 FX + 音效
+	var center := Vector2(tile.x * TILE_SIZE + TILE_SIZE / 2.0, tile.y * TILE_SIZE + TILE_SIZE / 2.0)
+	Effects.spawn_explosion(center)
+	SfxBank.play("break", 0.35)  # 暂用破方块声 (响一点); 以后可加专属爆炸 SFX
+	# 3) 玩家在范围内扣血 (玩家既然右键了, 肯定在 reach 内)
+	var player: Node = get_parent()
+	if player != null:
+		var hp: Node = player.get_node_or_null("PlayerHealth")
+		if hp != null:
+			hp.take_damage(12, center, 250.0)
+	# 4) 召唤 Mimic
+	if world != null and world.has_method("spawn_mimic_at_tile"):
+		world.spawn_mimic_at_tile(tile)

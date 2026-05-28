@@ -37,6 +37,7 @@ const _TILE_COLORS := {
 	Tiles.WORKBENCH:     Color8(150, 100, 60),   # 工作台
 	Tiles.FURNACE:       Color8(120, 70, 50),    # 熔炉 (暖棕红, 区别于工作台)
 	Tiles.MUSHROOM:      Color8(110, 165, 235),  # 矿洞蓝蘑菇 (亮蓝, 在深色矿洞里抢眼)
+	Tiles.MIMIC_CHEST:   Color8(180, 120, 60),   # 死人箱 (同 CHEST 色, 地图上不暴露身份)
 	Tiles.DOOR:          Color8(140, 90, 50),    # 门
 	Tiles.BEDROCK:       Color8(35, 32, 40),     # 基岩近黑
 	Tiles.TORCH:         Color8(255, 200, 80),   # 火把暖黄

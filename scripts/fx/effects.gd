@@ -91,3 +91,26 @@ func spawn_walk_puff(world_pos: Vector2) -> void:
 	var d = DustParticleScene.instantiate()
 	parent.add_child(d)
 	d.setup(world_pos + Vector2(randf_range(-2, 2), 0), 0.6)
+
+
+# 爆炸 (死人箱触发): 红黄火光粒子 30 颗向四面散开 + 黑烟 + 飞溅木屑碎片.
+# 用 BlockBreakParticle 当弹片 (颜色覆盖成爆炸色).
+func spawn_explosion(world_pos: Vector2) -> void:
+	var parent: Node = _root()
+	# 爆炸色板: 红 → 橙 → 黄 → 黑烟
+	var explosion_palette: Array = [
+		Color8(255, 230, 90),   # 黄亮
+		Color8(255, 150, 40),   # 橙
+		Color8(220, 60, 30),    # 红
+		Color8(40, 30, 25),     # 黑烟
+		Color8(255, 200, 80),   # 黄
+		Color8(200, 50, 40),    # 暗红
+	]
+	for i in 30:  # 比普通破方块 6 颗多很多 → "爆炸感"
+		var chip = BlockBreakParticleScene.instantiate()
+		parent.add_child(chip)
+		var angle: float = randf_range(-PI, PI)   # 全方向 (不只是向上)
+		var speed: float = randf_range(120.0, 280.0)
+		var vel := Vector2(cos(angle), sin(angle)) * speed
+		var color: Color = explosion_palette[i % explosion_palette.size()]
+		chip.setup(world_pos + Vector2(randf_range(-6, 6), randf_range(-6, 6)), color, vel)

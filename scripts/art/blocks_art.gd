@@ -27,6 +27,7 @@ const SILVER_ORE := 49
 const WOOD_WALL := 50
 const FURNACE := 51
 const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
+const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -229,6 +230,17 @@ const _P_CHEST := {
 	"m": Color8(218, 165, 80),  # 金属包角 (黄铜色)
 	"M": Color8(150, 105, 40),  # 金属阴影
 	"o": Color8(60, 35, 20),    # 锁孔黑
+}
+
+# Mimic chest: 跟普通 chest 同 palette 大部分, 多一个红 r (锁孔/眼) 当线索
+const _P_MIMIC_CHEST := {
+	"w": Color8(168, 116, 69),
+	"W": Color8(141, 93, 53),
+	"l": Color8(208, 158, 110),
+	"k": Color8(40, 25, 15),
+	"m": Color8(218, 165, 80),
+	"M": Color8(150, 105, 40),
+	"r": Color8(220, 35, 35),   # 锁孔红 (替代 o), 仔细看的线索
 }
 
 const _P_DOOR := {
@@ -870,6 +882,26 @@ const _CHEST := [
 	"................",
 ]
 
+# Mimic 看起来像普通 chest, 但锁孔是红色 (o → r). 仔细看的玩家能识别陷阱.
+const _MIMIC_CHEST := [
+	"................",
+	".kkkkkkkkkkkkkk.",
+	".kmmwwwwwwwwmmk.",
+	".kmwlwwwwwwlwmk.",
+	".kmwwwwwwwwwwmk.",
+	".kkkkkkkkkkkkkk.",
+	".kwwwwwmmwwwwwk.",
+	".kwlwwwmrmwwwlk.",
+	".kwwwwwmmwwwwwk.",
+	".kwwwwwwwwwwwwk.",
+	".kwlwwwWWwwwlwk.",
+	".kwwwwwwwwwwwwk.",
+	".kWWwwwwwwwwWWk.",
+	".kmmwwwwwwwwmmk.",
+	".kkkkkkkkkkkkkk.",
+	"................",
+]
+
 # 门 (关) — 占 1 tile，门顶用 Door scene 上方延伸
 const _DOOR_CLOSED := [
 	"DDDDDDDDDDDDDDDD",
@@ -1445,6 +1477,7 @@ const _PATTERN_MAP := {
 	JUNGLE_LEAVES: [_LEAVES, _P_LEAVES],  # 后面 ArtCache tint 深湿绿
 	SILVER_ORE: [_SILVER_ORE, _P_SILVER_ORE],   # 专属 sparkle 形 + 亮银调色
 	MUSHROOM: [_MUSHROOM, _P_MUSHROOM],         # 蓝光蘑菇
+	MIMIC_CHEST: [_MIMIC_CHEST, _P_MIMIC_CHEST], # 死人箱 (假宝箱)
 }
 
 

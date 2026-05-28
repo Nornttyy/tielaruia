@@ -24,6 +24,7 @@ const HeartsArt = preload("res://scripts/art/hearts_art.gd")
 const DrumstickArt = preload("res://scripts/art/drumstick_art.gd")
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 const CloudsArt = preload("res://scripts/fx/clouds_art.gd")
+const MimicArt = preload("res://scripts/art/mimic_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
 var block_icons: Dictionary = {}           # int (tile_id) -> 16x16 ImageTexture (UI / inventory)
@@ -40,6 +41,7 @@ var sheep_frames: SpriteFrames
 var pig_frames: SpriteFrames
 var spider_frames: SpriteFrames
 var demon_eye_frames: SpriteFrames
+var mimic_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
 var crack_textures: Array = []  # 4 个阶段
@@ -97,6 +99,7 @@ func _build_blocks() -> void:
 		BlocksArt.SILVER_ORE,
 		BlocksArt.FURNACE,
 		BlocksArt.MUSHROOM,
+		BlocksArt.MIMIC_CHEST,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -237,6 +240,8 @@ func _build_entities() -> void:
 	spider_frames = preload("res://scripts/art/spider_loader.gd").build_sprite_frames()
 	# 恶魔眼: OpenGameArt head.png 缩 32x18 (JacPete, CC0)
 	demon_eye_frames = preload("res://scripts/art/demon_eye_loader.gd").build_sprite_frames()
+	# Mimic: 自画 ASCII (chest + 红嘴牙)
+	mimic_frames = MimicArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)
 
 

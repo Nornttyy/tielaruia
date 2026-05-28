@@ -19,6 +19,7 @@ const SlimeScene = preload("res://scenes/entities/slime.tscn")
 const ZombieScene = preload("res://scenes/entities/zombie.tscn")
 const SpiderScene = preload("res://scenes/entities/spider.tscn")
 const DemonEyeScene = preload("res://scenes/entities/demon_eye.tscn")
+const MimicScene = preload("res://scenes/entities/mimic.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
@@ -809,6 +810,16 @@ func _spawn_at_column(scene: PackedScene, cand_x: int) -> void:
 	creature.global_position = Vector2(
 		cand_x * TILE_SIZE + TILE_SIZE / 2.0,
 		(surf_y - 1) * TILE_SIZE + TILE_SIZE
+	)
+	entities_root.add_child(creature)
+
+
+# 死人箱触发: 在指定 tile 坐标 spawn Mimic. 外部 (player_action) 调.
+func spawn_mimic_at_tile(tile: Vector2i) -> void:
+	var creature := MimicScene.instantiate()
+	creature.global_position = Vector2(
+		tile.x * TILE_SIZE + TILE_SIZE / 2.0,
+		tile.y * TILE_SIZE + TILE_SIZE   # 脚踏 tile 底部
 	)
 	entities_root.add_child(creature)
 

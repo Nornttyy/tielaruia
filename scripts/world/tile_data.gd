@@ -61,6 +61,7 @@ const SILVER_ORE := 49      # 银矿 (铁和金之间, tier 3 用 iron 镐挖)
 const WOOD_WALL := 50       # 木墙: 玩家造 (区别于自然生成的土墙/石墙), 木板纹路
 const FURNACE := 51         # 熔炉: 玩家造, 实心. 附近能解锁冶炼配方
 const MUSHROOM := 52        # 蓝光蘑菇 (装饰, 非实心, 矿洞蘑菇地长出来. 砍了掉 mushroom 物品)
+const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱): 右键 / 砍 → 弹出蜘蛛, 无掉落, 视觉跟 CHEST 像但带红眼
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -356,6 +357,13 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["mushroom", 100, 1, 1]],
+	},
+	MIMIC_CHEST: {
+		# 死人箱: 视觉跟 CHEST 像, 行为是陷阱. 右键 / 砍 → 爆炸 + 弹 mimic.
+		# 不掉物品 (奖励是打死 mimic 后的掉落). mineable=true 让玩家挥镐能触发陷阱.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [],
 	},
 }
 
