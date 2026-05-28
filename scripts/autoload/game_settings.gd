@@ -48,8 +48,8 @@ var water_sim_enabled: bool = true:
 		_save_and_emit()
 
 # camera_zoom: 摄像机大小 (越小看得越远, 越大看得越近). World 的 Camera2D 同步.
-# 默认 1.2 (跟 world.tscn 原值一致). 范围 0.5 (远视野) ~ 2.5 (近距离)
-var camera_zoom: float = 0.8:
+# 范围 0.5 (远视野) ~ 2.5 (近距离). 0.6 = 方块看起来小一点 + 看到更多世界
+var camera_zoom: float = 0.6:
 	set(v):
 		var clamped: float = clampf(v, 0.5, 2.5)
 		if camera_zoom == clamped: return
