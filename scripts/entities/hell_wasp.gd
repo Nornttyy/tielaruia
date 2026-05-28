@@ -8,14 +8,16 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-const MAX_HEALTH := 15
-const CONTACT_DAMAGE := 7
+# Terraria 风: HP 30 / 接触 12 dmg (冲刺扎人). 木剑 10 击, 钻剑 2 击.
+const BASE_MAX_HEALTH := 30
+const CONTACT_DAMAGE := 12
 const PATROL_SPEED := 60.0
 const CHARGE_SPEED := 130.0     # 冲刺
 const AGGRO_RANGE_PX := 280.0
 const ENEMY_IFRAME_SEC := 0.15
 
-var current_health: int = MAX_HEALTH
+var max_health: int = BASE_MAX_HEALTH
+var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null
 var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
@@ -28,11 +30,13 @@ var _charge_cooldown: float = 0.0
 
 
 func _ready() -> void:
+	# 难度缩放放最前面 (.new() 没 sprite 子节点时仍能正确生效)
+	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
+	current_health = max_health
 	sprite.sprite_frames = ArtCache.hell_wasp_frames
 	sprite.play("move")
 	add_to_group("hell_wasps")
 	add_to_group("slimes")
-	current_health = MAX_HEALTH
 	call_deferred("_add_player_exception")
 
 

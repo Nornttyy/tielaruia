@@ -1,5 +1,5 @@
 # 恶魔眼: 飞行怪. 不受重力, 漂浮追玩家.
-# 夜晚地表 + 地穴深处出没. HP 8 (脆), 接触 4 伤.
+# 夜晚地表 + 地穴深处出没. HP 20 / 接触 8 伤 (Terraria 风, 玩家 100HP 12 击死).
 extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
@@ -7,8 +7,8 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-const MAX_HEALTH := 8
-const CONTACT_DAMAGE := 4
+const BASE_MAX_HEALTH := 20    # 钻剑 20 一击, 木剑 3 × 7 击. 难度缩放见 _ready.
+const CONTACT_DAMAGE := 8
 const FLY_SPEED := 60.0       # 飞行速度 (慢但稳)
 const AGGRO_RANGE_PX := 240.0  # 看见 20 tile 内追
 const ENEMY_IFRAME_SEC := 0.2
@@ -16,7 +16,8 @@ const ENEMY_IFRAME_SEC := 0.2
 const BOB_AMPLITUDE := 4.0      # 上下漂动幅度 (px)
 const BOB_PERIOD := 1.5         # 周期 (秒)
 
-var current_health: int = MAX_HEALTH
+var max_health: int = BASE_MAX_HEALTH
+var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null
 var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
@@ -28,11 +29,13 @@ var _base_y: float = 0.0  # spawn 时 y 位置, 漂动以此为基
 
 
 func _ready() -> void:
+	# 难度缩放放在最前面: 测试用 .new() 直造时没 sprite 子节点, 但 max_health 仍要正确.
+	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
+	current_health = max_health
 	sprite.sprite_frames = ArtCache.demon_eye_frames
 	sprite.play("idle")
 	add_to_group("demon_eyes")
 	add_to_group("slimes")  # 共享剑挥范围 + 出生点死亡清除
-	current_health = MAX_HEALTH
 	_base_y = global_position.y
 	_bob_t = randf() * BOB_PERIOD   # 随机起始相位, 多只眼睛不同步
 	call_deferred("_add_player_exception")

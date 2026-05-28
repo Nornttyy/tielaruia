@@ -86,6 +86,16 @@ func damage_multiplier() -> float:
 		_: return 1.0
 
 
+# 难度对怪物 HP 的乘数: 简单 0.7x (易杀), 普通 1.0x (基准), 困难 1.4x (怪更硬).
+# 怪在 _ready 里 max_health = int(round(base * enemy_hp_multiplier())).
+# 跟 damage_multiplier 一起把"简单/普通/困难"做成真有质感的三档.
+func enemy_hp_multiplier() -> float:
+	match current_difficulty:
+		0: return 0.7
+		2: return 1.4
+		_: return 1.0
+
+
 func _ready() -> void:
 	_load()
 	_apply_to_audio_server()

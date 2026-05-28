@@ -3,8 +3,11 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const MAX_HEALTH := 20   # 用户改 10→20: 木剑 3 × 7 击, 钻剑 20 × 1 击
-const CONTACT_DAMAGE := 2
+# Terraria 风血量基线 (玩家 100 HP, 5 颗心): 普通难度 25 HP / 6 dmg.
+# 木剑 3 × 9 击, 钻剑 20 × 2 击. 接触伤 6 → 100HP 玩家被锁住吃 17 下死 (含 i-frame).
+# 简单 / 困难: HP × 0.7 / 1.4 (见 _ready); 伤害另外有 GameSettings.damage_multiplier 0.5/1/1.5.
+const BASE_MAX_HEALTH := 25
+const CONTACT_DAMAGE := 6
 const GRAVITY := 675.0
 const SWIM_GRAVITY := 150.0   # 水里重力 (慢沉)
 const SWIM_MAX_SINK := 52.0   # 最大下沉速度
@@ -20,7 +23,8 @@ const AGGRO_RANGE_PX := 120.0   # 10 tiles
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-var current_health: int = MAX_HEALTH
+var max_health: int = BASE_MAX_HEALTH      # _ready 里按难度缩放
+var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null  # 缓存 player ref, 每帧避免 get_nodes_in_group
 var _cached_cm: Node = null  # 缓存 chunk_manager (每帧 _is_in_water 不用查 3 层)
 var _hop_timer: float = 0.5
@@ -42,6 +46,9 @@ func _is_hostile() -> bool:
 
 
 func _ready() -> void:
+	# 难度缩放: 简单 ×0.7 / 普通 ×1.0 / 困难 ×1.4 (见 GameSettings.enemy_hp_multiplier)
+	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
+	current_health = max_health
 	sprite.sprite_frames = ArtCache.slime_frames
 	sprite.play("idle")
 	# hop 动画不循环, 播完会停在最后那个"压扁落地"帧, 看着像被压扁

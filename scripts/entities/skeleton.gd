@@ -8,14 +8,16 @@ const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-const MAX_HEALTH := 40
-const CONTACT_DAMAGE := 10
+# Terraria 风地狱精英: HP 80 / 18 dmg. 钻剑 4 击, 100HP 玩家被打 6 击死 (含 i-frame).
+const BASE_MAX_HEALTH := 80
+const CONTACT_DAMAGE := 18
 const WALK_SPEED := 35.0      # 慢, 但血厚
 const AGGRO_RANGE_PX := 220.0
 const JUMP_VY := -200.0
 const ENEMY_IFRAME_SEC := 0.2
 
-var current_health: int = MAX_HEALTH
+var max_health: int = BASE_MAX_HEALTH
+var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null
 var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
@@ -26,11 +28,13 @@ var _jump_cooldown: float = 0.0
 
 
 func _ready() -> void:
+	# 难度缩放放在最前面: 测试用 .new() 直造时没 sprite 子节点, 但 max_health 仍要正确.
+	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
+	current_health = max_health
 	sprite.sprite_frames = ArtCache.skeleton_frames
 	sprite.play("idle")
 	add_to_group("skeletons")
 	add_to_group("slimes")
-	current_health = MAX_HEALTH
 	call_deferred("_add_player_exception")
 
 

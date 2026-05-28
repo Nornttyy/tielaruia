@@ -8,14 +8,16 @@ const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-const MAX_HEALTH := 18
-const CONTACT_DAMAGE := 6
+# Terraria 风: HP 35 / 接触 10 dmg. 木剑 12 击, 钻剑 2 击. 100HP 玩家 10 击死.
+const BASE_MAX_HEALTH := 35
+const CONTACT_DAMAGE := 10
 const WALK_SPEED := 70.0     # 比僵尸 28 快 2.5x
 const AGGRO_RANGE_PX := 200.0  # 看见 ~17 tile 内就追
 const JUMP_VY := -240.0      # 撞墙跳更高
 const ENEMY_IFRAME_SEC := 0.2
 
-var current_health: int = MAX_HEALTH
+var max_health: int = BASE_MAX_HEALTH
+var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null
 var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
@@ -26,11 +28,13 @@ var _jump_cooldown: float = 0.0
 
 
 func _ready() -> void:
+	# 难度缩放放在最前面 (.new() 没 sprite 子节点时仍能正确生效)
+	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
+	current_health = max_health
 	sprite.sprite_frames = ArtCache.spider_frames
 	sprite.play("idle")
 	add_to_group("spiders")
 	add_to_group("slimes")  # 共享剑挥范围 + 出生点死亡清除
-	current_health = MAX_HEALTH
 	call_deferred("_add_player_exception")
 
 

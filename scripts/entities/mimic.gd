@@ -1,5 +1,5 @@
 # 死人箱 (Mimic): 矿洞陷阱怪. 玩家右键 / 砍 MIMIC_CHEST → 爆炸 + 这里 spawn.
-# 比蜘蛛慢 (40 px/s) 但血厚 (30) 伤害高 (8). 跳得高 (-340 撞墙跳).
+# Terraria 风血厚怪: HP 90 / 接触 16 dmg. 跳得高 (-340 撞墙跳).
 # 死了掉 1-2 个好东西 (gold_ingot / iron_ingot / diamond_ore 随机).
 extends CharacterBody2D
 
@@ -9,8 +9,9 @@ const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-const MAX_HEALTH := 30
-const CONTACT_DAMAGE := 8
+# 木剑 30 击, 钻剑 5 击. 接触 16 dmg → 100HP 玩家 6 击死, 鼓励远战.
+const BASE_MAX_HEALTH := 90
+const CONTACT_DAMAGE := 16
 const WALK_SPEED := 40.0      # 慢 (重箱子)
 const AGGRO_RANGE_PX := 240.0
 const JUMP_VY := -340.0       # 跳得高 (像章鱼)
@@ -19,7 +20,8 @@ const ENEMY_IFRAME_SEC := 0.2
 # 死人箱可掉的奖励 (打死后随机 1-2 种)
 const DROP_POOL := ["gold_ingot", "iron_ingot", "copper_ingot", "diamond_ore", "cooked_meat"]
 
-var current_health: int = MAX_HEALTH
+var max_health: int = BASE_MAX_HEALTH
+var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null
 var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
@@ -30,11 +32,13 @@ var _jump_cooldown: float = 0.0
 
 
 func _ready() -> void:
+	# 难度缩放放最前面 (.new() 没 sprite 子节点时仍能正确生效)
+	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
+	current_health = max_health
 	sprite.sprite_frames = ArtCache.mimic_frames
 	sprite.play("attack")  # 死人箱出生就张嘴扑过来, 没有 idle
 	add_to_group("mimics")
 	add_to_group("slimes")  # 共享剑挥击范围 + 死亡组清理
-	current_health = MAX_HEALTH
 	call_deferred("_add_player_exception")
 
 

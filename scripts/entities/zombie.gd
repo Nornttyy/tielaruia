@@ -13,8 +13,9 @@ const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
 # 子类可覆盖 (jaguar 等). 用 var 不用 const.
-var max_health: int = 30   # 用户改 15→30: 钻剑 20 dmg 2 击, 木剑 3 × 10 击
-var contact_damage: int = 3
+# Terraria 风: 木剑 3 × 20 击 / 钻剑 20 × 3 击. 100HP 玩家被打 12 击死.
+var max_health: int = 60
+var contact_damage: int = 8
 var walk_speed: float = 28.0
 var aggro_range_px: float = 180.0
 var entity_group: String = "zombies"   # 子类可改成 "animals" 等
@@ -22,7 +23,7 @@ var sprite_frames_override: SpriteFrames = null   # _ready 前由子类设
 # 死亡掉落: 数组每条 [item_id, count_min, count_max], 各 100% 掉
 var drop_table: Array = [["bone", 1, 3]]
 
-var current_health: int = 15
+var current_health: int = 60
 var _cached_player: Node2D = null
 var _cached_cm: Node = null  # 缓存 chunk_manager, 每帧避免 group + parent 查 3 次
 var _hit_flash: float = 0.0
@@ -39,6 +40,9 @@ func _ready() -> void:
 	sprite.play("idle")
 	add_to_group(entity_group)
 	add_to_group("slimes")  # 共享 slime 攻击/查找逻辑 (剑挥范围/出生点死亡清除)
+	# 难度缩放 (animal 子类的 max_health 也跟着, 但牛羊掉血也少, 影响可接受).
+	# 注意: 子类如果在自己 _ready 里又设了 max_health, 会盖掉这里 — 见 animal_base 处理.
+	max_health = max(1, int(round(max_health * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
 	# 不跟玩家物理碰撞 (用户要求生物不可挡路, 接触伤害靠距离检测)
 	call_deferred("_add_player_exception")

@@ -8,14 +8,16 @@ const FireballScene = preload("res://scenes/entities/fireball.tscn")
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-const MAX_HEALTH := 22
+# Terraria 风: HP 50 (远程怪比近战更脆少点). 火球 14 dmg (见 fireball.gd).
+const BASE_MAX_HEALTH := 50
 const FLY_SPEED := 70.0
 const AGGRO_RANGE_PX := 260.0
 const HOVER_DISTANCE_PX := 90.0  # 想保持的距离 (太近就退后)
 const ATTACK_COOLDOWN_SEC := 1.6
 const ENEMY_IFRAME_SEC := 0.2
 
-var current_health: int = MAX_HEALTH
+var max_health: int = BASE_MAX_HEALTH
+var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null
 var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
@@ -27,11 +29,13 @@ var _bob_phase: float = 0.0
 
 
 func _ready() -> void:
+	# 难度缩放放最前面 (.new() 没 sprite 子节点时仍能正确生效)
+	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
+	current_health = max_health
 	sprite.sprite_frames = ArtCache.imp_frames
 	sprite.play("move")
 	add_to_group("imps")
 	add_to_group("slimes")
-	current_health = MAX_HEALTH
 	_bob_phase = randf() * TAU
 	call_deferred("_add_player_exception")
 
