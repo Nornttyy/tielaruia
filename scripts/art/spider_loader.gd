@@ -9,9 +9,12 @@
 extends RefCounted
 
 const SHEET_PATH := "res://assets/animals/spider.png"
-const FRAME_SIZE := 42        # 原图每帧 42×42
+const FRAME_STRIDE := 42      # 原图每帧 42 像素步长 (含 1px 左边线 + 41px 内容)
+const FRAME_CONTENT := 41     # 每帧实际内容宽 (跳过 col 0 的黑分隔线)
+const FRAME_TOP_SKIP := 1     # 跳过 row 0 (顶部黑线)
+const FRAME_BOTTOM := 41      # 内容高 (跳过 row 0, 保留 shadow)
 const NUM_FRAMES := 5         # 共 5 帧
-const RENDER_SCALE := 0.4     # 缩到 ~17 px, 跟 slime / zombie 同尺寸级别
+const RENDER_SCALE := 0.4     # 缩到 ~16 px, 跟 slime / zombie 同尺寸级别
 
 
 # 加载并切帧. 返回 dict: {"idle": Array[ImageTexture], "attack": [...], "hurt": [...]}
@@ -24,11 +27,14 @@ static func build_sprite_frames() -> SpriteFrames:
 	if img == null:
 		return _empty_sprite_frames()
 	var frames: Array = []  # 5 个 ImageTexture
-	var out_size: int = max(1, int(round(float(FRAME_SIZE) * RENDER_SCALE)))
+	var out_w: int = max(1, int(round(float(FRAME_CONTENT) * RENDER_SCALE)))
+	var out_h: int = max(1, int(round(float(FRAME_BOTTOM) * RENDER_SCALE)))
 	for i in NUM_FRAMES:
-		var cell: Image = img.get_region(Rect2i(i * FRAME_SIZE, 0, FRAME_SIZE, FRAME_SIZE))
-		# 缩到 out_size × out_size (NEAREST 保 pixel art 锐利)
-		cell.resize(out_size, out_size, Image.INTERPOLATE_NEAREST)
+		# 跳过 col 0 (左边竖线) + row 0 (顶横线), 保留 shadow (rows 38-41)
+		var cell: Image = img.get_region(Rect2i(
+			i * FRAME_STRIDE + 1, FRAME_TOP_SKIP,
+			FRAME_CONTENT, FRAME_BOTTOM))
+		cell.resize(out_w, out_h, Image.INTERPOLATE_NEAREST)
 		frames.append(ImageTexture.create_from_image(cell))
 	# 帧映射 (按 description "ready/attack/hurt/growl"):
 	# - idle: 帧 1 (ready) + 帧 4 (growl) 来回切, 1.5 fps 微抖
