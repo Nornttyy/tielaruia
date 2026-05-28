@@ -389,7 +389,7 @@ func _update_workbench_prompt() -> void:
 		for dy in range(-2, 3):
 			var coord := pt + Vector2i(dx, dy)
 			if terrain.get_cell_source_id(coord) == Tiles.WORKBENCH:
-				fp.show_prompt(Vector2(coord.x * 16 + 8, coord.y * 16 - 4), "按 E")
+				fp.show_prompt(Vector2(coord.x * TILE_SIZE + TILE_SIZE / 2, coord.y * TILE_SIZE - TILE_SIZE / 4), "按 E")
 				return
 	# 没找到
 	if fp.is_showing():

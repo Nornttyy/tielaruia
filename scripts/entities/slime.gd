@@ -202,7 +202,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
 	# 飘字 -N (暖黄, 打怪反馈)
-	Effects.spawn_damage_number(global_position + Vector2(0, -8), amount)
+	Effects.spawn_damage_number(global_position + Vector2(0, -6), amount)
 	# 击退: 2D 方向 (target - source) + 向上 0.4 分量; 强度按 knockback 参数 (0 → 不推)
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var to_self: Vector2 = global_position - source_pos

@@ -80,7 +80,7 @@ func _spawn_one() -> void:
 		var tid: int = _terrain.get_cell_source_id(Vector2i(tx, ty))
 		if tid == -1 or not LEAF_COLORS.has(tid):
 			continue
-		var spawn_pos: Vector2 = Vector2(tx * 16 + 8, (ty + 1) * 16 + 4)
+		var spawn_pos: Vector2 = Vector2(tx * TILE_SIZE + TILE_SIZE / 2, (ty + 1) * TILE_SIZE + TILE_SIZE / 4)
 		_spawn_leaf(spawn_pos, LEAF_COLORS[tid])
 		return
 

@@ -79,7 +79,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	# 玩家受伤飘暗红字 (跟打怪暖黄字区分)
 	var player_node: Node = get_parent()
 	if player_node is Node2D:
-		var pos: Vector2 = (player_node as Node2D).global_position + Vector2(0, -12)
+		var pos: Vector2 = (player_node as Node2D).global_position + Vector2(0, -9)
 		Effects.spawn_damage_number(pos, final_amount, Color(1, 0.35, 0.35))
 	SfxBank.play("hurt", 0.08)
 	health_changed.emit(current_health, MAX_HEALTH)
