@@ -97,7 +97,7 @@ func play_swing() -> void:
 
 const THRUST_DURATION := 0.15
 const THRUST_OFFSET_PX := 14.0   # 工具向前突进的距离
-const PICKAXE_ATTACK_DURATION := 0.4   # 转一圈用时
+const PICKAXE_ATTACK_DURATION := 0.7   # 转一圈用时 (慢一点, 用户偏好)
 
 
 # 镐攻击: 工具全周转 360° (区别于挖矿的 ±75° 来回摆)

@@ -53,25 +53,36 @@ func test_axe_zero_damage_on_enemies() -> void:
 	assert_eq(slime.current_health, hp_before, "斧打 slime 不应该扣血")
 
 
-# T9: 镐 360° AoE — 玩家四周 4 方向各放 1 只 slime 都扣血
-func test_pickaxe_aoe_360() -> void:
+# 用户改: 镐扣血改"怪要碰到镐子"(continuous spin collision).
+# 4 方向放 slime 紧贴, 等完整一圈 (0.7s ≈ 45 帧), 每个 slime 应被 tip 扫过 1 次.
+# 冻住玩家 (set_physics_process(false)) 防重力+滑动让 slime 飘出 hit_radius.
+func test_pickaxe_spin_hits_all_directions() -> void:
 	var ctx: Dictionary = await _setup_game()
 	_equip_tool(ctx, "wood_pickaxe")
-	# SWORD_RANGE_PX = 36, AoE 半径 = 36*1.5 = 54. 用 36*1.4 = 50.4 < 54, 安全在内
-	var r: float = 27.0 * 1.4
+	# 等玩家落地 + 冻住物理 (不然玩家 + slime 都重力下落, 测试 13px 距离不准)
+	await wait_frames(10)
+	ctx["player"].set_physics_process(false)
+	ctx["player"].velocity = Vector2.ZERO
+	# tip 绕 hand 转 ~11px 半径, hit_radius=14 → 怪在 player 14px 内能被扫到
+	var r: float = 14.0
 	var slimes: Array = []
 	for offset in [Vector2(r, 0), Vector2(-r, 0), Vector2(0, r), Vector2(0, -r)]:
-		slimes.append(_spawn_slime_near(ctx, offset))
+		var s = _spawn_slime_near(ctx, offset)
+		s.set_physics_process(false)  # 冻住 slime, 不让它重力掉走
+		slimes.append(s)
 	var hps_before: Array = []
 	for s in slimes:
 		hps_before.append(s.current_health)
 	ctx["action"].mouse_world_override = slimes[0].global_position
 	ctx["action"]._attack_cooldown = 0.0
 	ctx["action"].primary_override = true
-	await wait_frames(3)
+	# 0.7s 转一圈, 60fps × 0.75s = 45 帧, 等够 tip 扫过 4 个方向
+	await wait_frames(50)
 	ctx["action"].primary_override = false
+	ctx["player"].set_physics_process(true)
 	for i in range(slimes.size()):
-		assert_lt(slimes[i].current_health, hps_before[i], "方向 %d slime 应扣血 (360° AoE)" % i)
+		assert_lt(slimes[i].current_health, hps_before[i],
+			"方向 %d slime 应被 spin 扫到扣血" % i)
 
 
 # T9: 镐伤害 = 同 tier 剑伤害的 50% (向下取整)
@@ -96,19 +107,27 @@ func test_pickaxe_damage_is_half_of_sword() -> void:
 			inv.set_hotbar_selection(i)
 			break
 	await wait_frames(2)
-	var slime_b = _spawn_slime_near(ctx, Vector2(36, 0))   # 鼠标 near 范围内, 不挡在 tile 上
+	# 用户改: 镐 spin 半径 ~11px + hit_radius 14 → slime 要紧贴 (≤ ~14px)
+	# 冻物理免重力下落
+	ctx["player"].set_physics_process(false)
+	ctx["player"].velocity = Vector2.ZERO
+	var slime_b = _spawn_slime_near(ctx, Vector2(14, 0))
+	slime_b.set_physics_process(false)
 	var hp_b = slime_b.current_health
 	ctx["action"].mouse_world_override = slime_b.global_position
 	ctx["action"]._attack_cooldown = 0.0
 	ctx["action"].primary_override = true
-	await wait_frames(3)
+	# 转 1/4 圈 tip 到右边 slime 就被扫. 等 15 帧 (~0.25s), 然后松手避免 second spin.
+	await wait_frames(15)
 	ctx["action"].primary_override = false
+	ctx["player"].set_physics_process(true)
 	var pickaxe_dmg: int = hp_b - slime_b.current_health
 	var expected: int = max(1, int(round(float(sword_dmg) * 0.5)))
 	assert_eq(pickaxe_dmg, expected, "镐伤害应 = 剑伤害的 50% (round). sword=%d pickaxe=%d" % [sword_dmg, pickaxe_dmg])
 
 
-# T8: 拿镐对石头 tile, 优先挖矿 (不攻击附近的怪)
+# T8: 拿镐对石头 tile, 优先挖矿. 用户改后: spin 期间紧贴的怪会被扫到 (incidental),
+# 所以远离 slime 避开 tip 半径 (HIT_RADIUS=12, tip 半径~11 → 20px 外安全).
 func test_pickaxe_prefers_mining_over_attack() -> void:
 	var ctx: Dictionary = await _setup_game()
 	_equip_tool(ctx, "wood_pickaxe")
@@ -117,14 +136,15 @@ func test_pickaxe_prefers_mining_over_attack() -> void:
 	var terrain: TileMapLayer = ctx["world"].get_node("TerrainLayer")
 	terrain.set_cell(target, Tiles.STONE, Vector2i.ZERO)
 	ctx["world"]._set_tile(target.x, target.y, Tiles.STONE)
-	var slime = _spawn_slime_near(ctx, Vector2(24, 0))
+	# slime 远一点, 镐 spin 扫不到 (用户要求"碰到才扣血")
+	var slime = _spawn_slime_near(ctx, Vector2(36, 0))
 	var slime_hp = slime.current_health
 	ctx["action"].aim_override = target
 	ctx["action"].mouse_world_override = Vector2(target.x * 12 + 6, target.y * 12 + 6)
 	ctx["action"].primary_override = true
 	await wait_frames(15)
 	ctx["action"].primary_override = false
-	assert_eq(slime.current_health, slime_hp, "镐对石头时不该攻击 slime")
+	assert_eq(slime.current_health, slime_hp, "镐对石头时, 远 slime 不该被扫到")
 
 
 # T8: 拿镐对空 (鼠标不在 tile 上) 但附近有怪 → 触发攻击 cooldown

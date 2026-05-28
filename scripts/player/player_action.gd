@@ -35,6 +35,19 @@ const _TREE_PARTS := {
 	Tiles.BRANCH_R: true,
 }
 
+# 镐挖不了的"植物"类 tile (叶子 / 仙人掌 / 火把等小物). 镐只破坏"方块".
+# 不挡 axe (砍 LOG) / sword (无挖矿). 也不挡徒手 / 别工具.
+const _PICKAXE_BLACKLIST := {
+	Tiles.LEAVES: true,
+	Tiles.LEAVES_PINE: true,
+	Tiles.LEAVES_AUTUMN: true,
+	Tiles.JUNGLE_LEAVES: true,
+	Tiles.CACTUS: true,
+	Tiles.CACTUS_BODY: true,
+	Tiles.TORCH: true,
+	Tiles.SLIME_TORCH: true,
+}
+
 # 测试注入
 var aim_override: Variant = null
 var primary_override: Variant = null     # null = 真实输入；bool = 强制
@@ -53,6 +66,15 @@ const SWORD_ARC_LIFETIME := 0.18
 var _attack_cooldown: float = 0.0
 # 剑的戳/挥交替: 0 = 下一击戳, 1 = 下一击挥. 切工具时归零.
 var _attack_combo_step: int = 0
+
+# 镐旋转: 用户改 — 怪要碰到镐才扣血 (不是 AoE 圆心扣血).
+# spin 期间每帧算 pickaxe tip 世界位置, 距离 ≤ HIT_RADIUS 的怪扣 1 次.
+const PICKAXE_SPIN_DURATION := 0.7
+const PICKAXE_TIP_LOCAL_Y := -11.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 0.7)
+const PICKAXE_HIT_RADIUS := 14.0     # tip 到怪中心 ≤ 14px 算碰到 (镐头 5 + 怪身 6 + 余 3)
+var _pickaxe_spin_active: bool = false
+var _pickaxe_spin_t: float = 0.0
+var _pickaxe_hit_this_spin: Dictionary = {}  # instance_id → true (1 spin 1 只怪 1 击)
 
 # 测试用: 记录最近一次挥剑的命中中心点 (玩家中心 + 鼠标方向 * 半径)
 var last_swing_center: Vector2 = Vector2.ZERO
@@ -120,6 +142,14 @@ func _physics_process(delta: float) -> void:
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
+	# 镐 spin 中: 每帧检查 pickaxe tip 跟怪的距离, 碰到就扣血
+	if _pickaxe_spin_active:
+		_pickaxe_spin_t += delta
+		if _pickaxe_spin_t >= PICKAXE_SPIN_DURATION:
+			_pickaxe_spin_active = false
+			_pickaxe_hit_this_spin.clear()
+		else:
+			_check_pickaxe_spin_hits()
 
 
 func _crafting_open() -> bool:
@@ -198,6 +228,15 @@ func _update_mining(delta: float) -> void:
 		if ax_tid != Tiles.LOG:
 			_reset_mining()
 			return
+	# 镐不能挖植物 (叶 / 仙人掌 / 火把). 用户改: "镐只破坏方块"
+	if _current_tool_kind() == "pickaxe":
+		var pk_tile: Vector2i = aim_tile_coord()
+		var pk_terrain := _terrain()
+		if pk_terrain != null:
+			var pk_tid: int = pk_terrain.get_cell_source_id(pk_tile)
+			if _PICKAXE_BLACKLIST.has(pk_tid):
+				_reset_mining()
+				return
 	var tile: Vector2i = aim_tile_coord()
 	if not in_reach(tile):
 		_reset_mining()
@@ -235,14 +274,20 @@ func _update_mining(delta: float) -> void:
 		_mining_progress = 0.0
 		_mining_swing_t = 0.0
 	_mining_progress += _tool_speed(tool_kind, tid) * delta
-	# 挥镐/挥斧动画: 每 0.35s 挥一次
+	# 镐: 360° 旋转动画 (跟攻击同款, 慢一点) — 每 0.7s 重启一次
+	# 斧: ±75° 来回挥 — 每 0.35s 挥一次
 	_mining_swing_t -= delta
 	if _mining_swing_t <= 0.0:
-		_mining_swing_t = 0.35
 		var player_node: Node = get_parent()
 		var held: Node = null if player_node == null else player_node.get_node_or_null("HeldItem")
-		if held != null and held.has_method("play_swing"):
-			held.play_swing()
+		if tool_kind == "pickaxe":
+			_mining_swing_t = 0.7
+			if held != null and held.has_method("play_pickaxe_attack"):
+				_start_pickaxe_spin()
+		else:
+			_mining_swing_t = 0.35
+			if held != null and held.has_method("play_swing"):
+				held.play_swing()
 	# 通知 CrackOverlay 当前进度
 	var ratio: float = clamp(_mining_progress / _hardness(tid), 0.0, 1.0)
 	_set_crack(tile, ratio)
@@ -709,8 +754,8 @@ func _held_item_node() -> Node:
 # 挥的弧度: 前方 ±45° = 总 90° 弧
 const SWEEP_ARC_HALF_DEG := 45.0
 # 镐攻击的常量
-const PICKAXE_ATTACK_COOLDOWN := 0.35
-const PICKAXE_AOE_RADIUS_MULT := 1.5         # 伤害判定圆心 = 玩家, 半径 = SWORD_RANGE_PX * 1.5
+# cooldown = spin 时长 — 一次完整旋转后才能再攻击 (用户改: 转慢一点 → 攻击也慢一点)
+const PICKAXE_ATTACK_COOLDOWN := 0.7
 const PICKAXE_MOUSE_NEAR_RADIUS_MULT := 1.5  # 触发判定圆心 = 鼠标位置
 
 
@@ -750,45 +795,70 @@ func _pickaxe_base_damage() -> int:
 	return 5 if def.tool_tier >= 2 else 3
 
 
-# 镐攻击: 玩家中心 360° AoE, 半径 SWORD_RANGE_PX * 1.5, 伤害 = base * hunger * damage_mult (0.5)
+# 镐攻击: 触发 360° spin. 伤害判定不再 AoE — 走 _check_pickaxe_spin_hits
+# 每帧检查 pickaxe tip 是否碰到怪 (用户改: "怪要碰到镐子才扣血").
 func _pickaxe_attack() -> void:
 	_attack_cooldown = PICKAXE_ATTACK_COOLDOWN
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
-	# 动画 (转圈)
+	_start_pickaxe_spin()
+	SfxBank.play("swing", 0.10)
+	if player.has_method("shake"):
+		player.shake(2.0)
+
+
+# 开始一次 360° 旋转 (动画 + 标记 spin 期 + 清空已击中表).
+# 挖矿循环和单次攻击都调这个. 期间 _physics_process 每帧检查 tip 跟怪的距离.
+func _start_pickaxe_spin() -> void:
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
 	var held: Node = player.get_node_or_null("HeldItem")
 	if held != null and held.has_method("play_pickaxe_attack"):
 		held.play_pickaxe_attack()
 	elif held != null and held.has_method("play_swing"):
 		held.play_swing()
-	SfxBank.play("swing", 0.10)
-	# 伤害
+	_pickaxe_spin_active = true
+	_pickaxe_spin_t = 0.0
+	_pickaxe_hit_this_spin.clear()
+
+
+# spin 期间每帧调: 算 pickaxe tip 世界位置, 检查跟怪的距离.
+# 怪距 ≤ HIT_RADIUS 且这次 spin 还没被打 → 扣血 + 记入 hit set 防重复.
+func _check_pickaxe_spin_hits() -> void:
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	var held: Node2D = player.get_node_or_null("HeldItem") as Node2D
+	if held == null or not held.visible:
+		return
+	# tip 旋转角度自己算 (跟 held_item Tween 的目标值一致 0→2π over 0.7s),
+	# 不读 held.rotation — tween 在 _process 更新, _physics_process 这里读可能滞后.
+	var rot: float = (_pickaxe_spin_t / PICKAXE_SPIN_DURATION) * TAU
+	var tip_world: Vector2 = held.global_position + Vector2(0, PICKAXE_TIP_LOCAL_Y).rotated(rot)
 	var base: int = _pickaxe_base_damage()
 	if base <= 0:
 		return
-	var hunger: Node = get_parent().get_node_or_null("PlayerHunger")
+	var hunger: Node = player.get_node_or_null("PlayerHunger")
 	var hunger_mult: float = 1.0 if hunger == null else hunger.get_attack_multiplier()
 	var dmg_mult: float = _tool_damage_mult()
 	if dmg_mult <= 0.0:
 		return
 	var damage: int = max(1, int(round(float(base) * hunger_mult * dmg_mult)))
-	# AoE 判定: 玩家位置为圆心 (不是鼠标), 360°
-	var radius: float = SWORD_RANGE_PX * PICKAXE_AOE_RADIUS_MULT
-	var origin: Vector2 = player.global_position
-	var hit_targets: Dictionary = {}
 	for group in ["slimes", "animals"]:
 		for s in get_tree().get_nodes_in_group(group):
-			hit_targets[s.get_instance_id()] = s
-	for target in hit_targets.values():
-		var sn := target as Node2D
-		if sn == null:
-			continue
-		if origin.distance_to(sn.global_position) <= radius:
-			if target.has_method("take_damage"):
-				target.take_damage(damage, origin, _pickaxe_knockback())
-	if player.has_method("shake"):
-		player.shake(2.0)
+			var sn := s as Node2D
+			if sn == null:
+				continue
+			var id: int = sn.get_instance_id()
+			if _pickaxe_hit_this_spin.has(id):
+				continue
+			if tip_world.distance_to(sn.global_position) > PICKAXE_HIT_RADIUS:
+				continue
+			_pickaxe_hit_this_spin[id] = true
+			if sn.has_method("take_damage"):
+				sn.take_damage(damage, tip_world, _pickaxe_knockback())
 
 
 # 弧形判定: 目标在 origin → dir 弧内 (距 ≤ SWORD_RANGE_PX 且夹角 ≤ ±45°)
