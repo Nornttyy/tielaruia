@@ -333,6 +333,9 @@ const _ZH_NAMES := {
 	"snow_dirt": "冻土",
 	"jungle_leaves": "丛林叶",
 	"mushroom": "蘑菇",
+	"hell_stone": "地狱石",
+	"obsidian": "黑曜石",
+	"hell_fruit": "火果",
 }
 
 

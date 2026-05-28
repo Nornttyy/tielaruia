@@ -64,6 +64,11 @@ const MUSHROOM := 52        # 蓝光蘑菇 (装饰, 非实心, 矿洞蘑菇地�
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱): 右键 / 砍 → 弹出蜘蛛, 无掉落, 视觉跟 CHEST 像但带红眼
 const GOLD_CHEST := 54      # 金宝箱 (中层 y 70-99): 金边 + 黄金锁孔, 内含铁/煤/锭
 const DIAMOND_CHEST := 55   # 钻石宝箱 (深层 y >= 100): 蓝水晶边 + 蓝锁孔, 内含金锭/钻石
+# === 地狱 (M_HELL Phase 1) ===
+const LAVA := 56            # 岩浆: 非实心, 不可挖, 玩家踩到持续扣血. 出现在 y > HELL_DEPTH
+const HELL_STONE := 57      # 地狱石: 替代 STONE/DEEP_STONE 在地狱区. 铁镐 (tier 4) 可挖
+const OBSIDIAN := 58        # 黑曜石: 钻石镐 (tier 7) 才能挖. 围着岩浆池, 极硬
+const HELL_FRUIT := 59      # 火果子 (地狱农圣果): 装饰 + 食物. 长地狱石顶, 可吃
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -378,6 +383,29 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["chest", 100, 1, 1]],
+	},
+	LAVA: {
+		# 岩浆: 非实心 (玩家穿过 → 扣血), 不可挖 (没法收岩浆). 跟 WATER 同行为, 但伤害.
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	HELL_STONE: {
+		# 地狱石: 实心, 铁镐 (tier 4) 才能挖, 没斧没剑能挖
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 4, "axe": -1, "sword": -1},
+		"drops": [["hell_stone", 100, 1, 1]],
+	},
+	OBSIDIAN: {
+		# 黑曜石: 钻石镐 (tier 7) 才能挖, 极硬
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 7, "axe": -1, "sword": -1},
+		"drops": [["obsidian", 100, 1, 1]],
+	},
+	HELL_FRUIT: {
+		# 火果子: 装饰, 非实心, 任何工具能采 (含徒手), 掉 hell_fruit 物品
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["hell_fruit", 100, 1, 1]],
 	},
 }
 

@@ -30,6 +30,11 @@ const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
 const GOLD_CHEST := 54      # 金宝箱 (金色金属包角)
 const DIAMOND_CHEST := 55   # 钻石宝箱 (蓝水晶金属包角)
+# === 地狱 (Phase 1) ===
+const LAVA := 56            # 岩浆 (亮橙红, 玩家踩到扣血)
+const HELL_STONE := 57      # 地狱石 (深红带黑裂纹 + 烈火高光)
+const OBSIDIAN := 58        # 黑曜石 (黑底 + 紫光泽闪)
+const HELL_FRUIT := 59      # 火果 (装饰, 红果 + 黄柄)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -254,6 +259,50 @@ const _P_DIAMOND_CHEST := {
 	"m": Color8(120, 200, 250),  # 浅蓝水晶 (主色)
 	"M": Color8(60, 140, 200),   # 蓝水晶阴影
 	"o": Color8(220, 250, 255),  # 锁孔近白闪光
+}
+
+# 岩浆: 亮黄 + 橙 + 红 (烫感) + 暗红气泡
+const _P_LAVA := {
+	"y": Color8(255, 235, 95),    # 亮黄 (主要)
+	"o": Color8(255, 165, 35),    # 橙 (常见)
+	"r": Color8(225, 85, 25),     # 红 (次)
+	"R": Color8(165, 35, 15),     # 深红 (暗气泡)
+	"h": Color8(255, 255, 200),   # 极亮黄 (闪点)
+}
+
+# 地狱石: 深红基础 + 暗黑裂纹 + 亮橙红高光 (像 STONE 风格但烈焰色调).
+# 7 个色阶: s/S/b base + L/l 高光 + k 裂 + m 暗.
+const _P_HELL_STONE := {
+	"s": Color8(125, 32, 28),     # 深红 base
+	"S": Color8(85, 18, 15),      # 极暗红阴影
+	"b": Color8(150, 45, 35),     # 红主 (亮些)
+	"L": Color8(225, 95, 45),     # 烈火亮高光
+	"l": Color8(175, 60, 35),     # 中亮红
+	"m": Color8(255, 165, 70),    # 极亮焰橙 (零星)
+	"k": Color8(28, 8, 8),        # 黑裂纹
+	"o": Color8(105, 25, 22),     # 暗红 (次阴影)
+}
+
+# 黑曜石: 暗黑底 + 紫光泽闪 + 蓝紫高光 (玻璃质感)
+const _P_OBSIDIAN := {
+	"k": Color8(15, 10, 18),      # 极黑 (主要)
+	"K": Color8(8, 5, 12),        # 更深 (阴影)
+	"p": Color8(60, 35, 80),      # 暗紫
+	"P": Color8(100, 70, 130),    # 紫光泽
+	"v": Color8(150, 110, 190),   # 亮紫高光
+	"V": Color8(190, 160, 230),   # 极亮紫 (闪点)
+	"b": Color8(35, 30, 50),      # 蓝紫深 (过渡)
+}
+
+# 火果: 红圆果 + 黄/橙高光 + 深红阴影 + 暗叶柄. 16x16 整格但只画下半 + 中间.
+const _P_HELL_FRUIT := {
+	"n": Color8(28, 10, 8),       # 黑描边
+	"r": Color8(225, 65, 45),     # 红主
+	"R": Color8(150, 30, 22),     # 深红阴影
+	"y": Color8(255, 200, 60),    # 黄高光
+	"o": Color8(255, 130, 50),    # 橙过渡
+	"s": Color8(85, 50, 30),      # 棕叶柄
+	"l": Color8(120, 175, 55),    # 绿叶
 }
 
 # Mimic chest: 跟普通 chest 同 palette 大部分, 多一个红 r (锁孔/眼) 当线索
@@ -906,6 +955,88 @@ const _CHEST := [
 	"................",
 ]
 
+# 岩浆: 主要黄橙 (y/o) + 偶发亮闪点 (h) + 暗气泡 (R) + 红丝 (r)
+# 看起来"在动"的感觉靠不均匀分布, 不是真正动画 (后续可加 4 帧轮换)
+const _LAVA := [
+	"yyooyyyyooyyyooy",
+	"yoyhyyyoryyooryo",
+	"yyyooyyyyhyooyoy",
+	"oyyooyyyrRyyyyyy",
+	"yhyyooyyyyyooyor",
+	"oyyyyooyyhyyyyyo",
+	"yyooyyooyhooyyor",
+	"yooooyooyooyyyhy",
+	"oyooryyoryoryoyo",
+	"yhyyyyyyhyyooyoo",
+	"yooyrooyyoooohyo",
+	"oyhyooyyhyooyyyo",
+	"yyooyyoryyoryyoo",
+	"oyyhoryooyooyooy",
+	"yyooryooyhooyyor",
+	"yoyyooyyooRyyyoy",
+]
+
+# 地狱石: 跟 _STONE 同形 (4 角 highlight + L/L 簇 + k 裂纹 + m 焰点)
+# 通过 palette 切换成烈火红, 视觉熔岩石. 复用 STONE 结构保证 autotile 兼容.
+const _HELL_STONE := [
+	"SbsSsbsSsbsSsbsS",
+	"smLLkssssooLLkss",
+	"sLLLkssksslLLkss",
+	"sslksskkkkksslkk",
+	"somLLLsksslkmLss",
+	"soLLLLssllksLLls",
+	"ssLLLkssbkssLLLs",
+	"slkkkkbsslkkkkls",
+	"somsLLLsskLLLmss",
+	"sLLkssolksLLLkbs",
+	"sLLslkkbskssLLls",
+	"ssssLLLLossolssm",
+	"somsLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"somssklllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+# 黑曜石: 大量黑底 + 紫光闪点散布. 看起来像火山玻璃, 反着光.
+const _OBSIDIAN := [
+	"KkkkKkkkkKkkkKkk",
+	"kkkpkkkkkkpkkkkk",
+	"kkkkkkKkkbkkPkkk",
+	"kkbkkkkkkkkkkkkk",
+	"kkkkkVkkkkkkkkkk",
+	"KkkkkkkKbkkkpkkk",
+	"kkpkkkkkkkkkkkkb",
+	"kkkkkkkbkkkbkkkK",
+	"kkkkkPkkkkkkkkkk",
+	"kbkkkkkkKkkkpkkk",
+	"kkkkkkkkkkkkkkVk",
+	"kkkkkkkkkkkkkkkk",
+	"kkkkkkkkkkpkkkkK",
+	"kkkpkkbkkkkkkkkk",
+	"Kkkkkkkkkkkkkkkk",
+	"kkkkkkkkkkPkkkkk",
+]
+
+# 火果: 红圆果挂在天花板, 上有短棕枝 + 1 片绿叶. 视觉像泰拉瑞亚地狱农圣果.
+const _HELL_FRUIT := [
+	"................",
+	".......s........",
+	".......s........",
+	"......sl........",
+	".....nrrn.......",
+	"....nrrrrn......",
+	"...nryyyrrn.....",
+	"..nryryyyrrn....",
+	"..nrrryyrrrn....",
+	"..nrrrrrrrrn....",
+	"..nRrrrrrrRn....",
+	"...nRrrrrRn.....",
+	"....nRRRRn......",
+	".....nnnn.......",
+	"................",
+	"................",
+]
+
 # Mimic 看起来像普通 chest, 但锁孔是红色 (o → r). 仔细看的玩家能识别陷阱.
 const _MIMIC_CHEST := [
 	"................",
@@ -1505,6 +1636,11 @@ const _PATTERN_MAP := {
 	# 金/钻石宝箱: 复用 _CHEST 形状, 调色板换金/蓝 → 自动有区别 (palette swap)
 	GOLD_CHEST: [_CHEST, _P_GOLD_CHEST],
 	DIAMOND_CHEST: [_CHEST, _P_DIAMOND_CHEST],
+	# === 地狱 Phase 1 ===
+	LAVA: [_LAVA, _P_LAVA],
+	HELL_STONE: [_HELL_STONE, _P_HELL_STONE],
+	OBSIDIAN: [_OBSIDIAN, _P_OBSIDIAN],
+	HELL_FRUIT: [_HELL_FRUIT, _P_HELL_FRUIT],
 }
 
 

@@ -40,6 +40,10 @@ const _TILE_COLORS := {
 	Tiles.MIMIC_CHEST:   Color8(180, 120, 60),   # 死人箱 (同 CHEST 色, 地图上不暴露身份)
 	Tiles.GOLD_CHEST:    Color8(230, 190, 70),   # 金宝箱 (亮金黄)
 	Tiles.DIAMOND_CHEST: Color8(130, 200, 240),  # 钻石宝箱 (亮蓝)
+	Tiles.LAVA:          Color8(255, 130, 40),   # 岩浆 (亮橙)
+	Tiles.HELL_STONE:    Color8(125, 32, 28),    # 地狱石 (深红)
+	Tiles.OBSIDIAN:      Color8(20, 15, 25),     # 黑曜石 (近黑)
+	Tiles.HELL_FRUIT:    Color8(225, 65, 45),    # 火果 (红)
 	Tiles.DOOR:          Color8(140, 90, 50),    # 门
 	Tiles.BEDROCK:       Color8(35, 32, 40),     # 基岩近黑
 	Tiles.TORCH:         Color8(255, 200, 80),   # 火把暖黄

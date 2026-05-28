@@ -49,6 +49,9 @@ const FAMILY_OF: Dictionary = {
 	BlocksArt.MUD: "soil",
 	BlocksArt.ICE: "rock",          # 冰跟石头一族
 	BlocksArt.JUNGLE_LEAVES: "leaf", # 丛林叶跟普通叶同族
+	# 地狱方块: 接 rock 族 (跟石头同 autotile 边缘)
+	BlocksArt.HELL_STONE: "rock",
+	BlocksArt.OBSIDIAN: "rock",
 }
 
 

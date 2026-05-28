@@ -8,10 +8,14 @@ signal died
 
 const MAX_HEALTH := 20
 const IFRAMES_SEC := 0.6
+const TILE_SIZE := 12
+const LAVA_TICK_INTERVAL := 0.5     # 每 0.5s 扣一次血
+const LAVA_DAMAGE_PER_TICK := 4     # 每次扣 4 → 满血 20 在 2.5s 内烧死
 
 var current_health: int = MAX_HEALTH
 var _iframe_timer: float = 0.0
 var _was_in_iframe: bool = false
+var _lava_tick_t: float = 0.0
 
 
 func _physics_process(delta: float) -> void:
@@ -21,6 +25,47 @@ func _physics_process(delta: float) -> void:
 	elif _was_in_iframe:
 		_clear_iframe_flash()
 		_was_in_iframe = false
+	# 岩浆扣血: 玩家脚下或身上有 LAVA tile → 持续扣 (bypass iframes)
+	_lava_tick_t += delta
+	if _lava_tick_t >= LAVA_TICK_INTERVAL:
+		_lava_tick_t = 0.0
+		_check_lava_damage()
+
+
+# 检查玩家脚 + 头 tile 有没有 LAVA, 有就扣血. 用 chunk_manager 查 tile.
+func _check_lava_damage() -> void:
+	if not is_alive():
+		return
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	var cm = _get_chunk_manager()
+	if cm == null:
+		return
+	var tile_x: int = int(floor(player.global_position.x / TILE_SIZE))
+	# 玩家 2 格高: 脚 (global_position.y / TILE_SIZE) - 1 到 0 .
+	# global_position 是脚底, 所以脚 tile y = floor(y / TILE_SIZE) - 1; 头 y = floor(y / TILE_SIZE) - 2
+	var foot_y: int = int(floor(player.global_position.y / TILE_SIZE)) - 1
+	var head_y: int = foot_y - 1
+	if cm.get_tile(tile_x, foot_y) == Tiles.LAVA or cm.get_tile(tile_x, head_y) == Tiles.LAVA:
+		# 直接扣血不进 iframe (环境伤害每 0.5s 一跳)
+		current_health = max(0, current_health - LAVA_DAMAGE_PER_TICK)
+		health_changed.emit(current_health, MAX_HEALTH)
+		damaged.emit(LAVA_DAMAGE_PER_TICK, player.global_position)
+		Effects.spawn_damage_number(player.global_position + Vector2(0, -8),
+				LAVA_DAMAGE_PER_TICK, Color(1.0, 0.4, 0.2))
+		if current_health == 0:
+			died.emit()
+
+
+func _get_chunk_manager() -> Node:
+	var player: Node = get_parent()
+	if player == null:
+		return null
+	if player.has_method("_get_chunk_manager"):
+		return player._get_chunk_manager()
+	# 兜底: 从 group 拿
+	return get_tree().get_first_node_in_group("chunk_manager")
 
 
 # i-frame 期间: 10Hz 红/白方波闪 (0.1s 红, 0.1s 正常)

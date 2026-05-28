@@ -287,6 +287,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 注: 水非永久 — chunk 加载时 WATER 会被 sim 流走, 流完后崖底有水洼.
 	_place_waterfall_cave_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
+	# 地狱: y > HELL_DEPTH 区域换成 HELL_STONE + 散布 LAVA 池 + 周围 OBSIDIAN 环 + 火果挂顶
+	_apply_hell_biome_chunk(c, world_seed, chunk_x, chunk_width, height)
+
 	# 沙漠地下保护: 把 SAND 邻 AIR 的 tile 改 STONE (防沙崩塌填满矿洞)
 	_protect_sand_caves(c, chunk_heights, chunk_width, height)
 
@@ -833,6 +836,111 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 					dir_noise, rad_noise, surf_noise, mountain_noise,
 					chunk_start_x, chunk_end_x, height, 0,
 					OPEN_WORM_RADIUS_SCALE, OPEN_WORM_SURFACE_BUFFER, bias)
+
+
+# ===== 地狱 (Phase 1) =====
+# y > HELL_DEPTH 是地狱区: 把 STONE/DEEP_STONE 换 HELL_STONE,
+# AIR 底部偶发填 LAVA 池, 池四周 HELL_STONE 换 OBSIDIAN, HELL_STONE 顶 5% 长 HELL_FRUIT.
+# 矿石 (COAL/IRON/...) 保留, 让矿洞探险还能挖到原矿.
+const HELL_DEPTH := 110            # y > 此处算地狱区 (世界高 128, 留 ~16 格地狱厚度)
+const LAVA_CHUNK_PROB := 0.85      # 每 chunk 85% 试一次放岩浆池
+const LAVA_POOL_MIN_SIZE := 4      # 至少 4 格才算池子
+const HELL_FRUIT_CHANCE := 0.07    # HELL_STONE 顶 7% 长火果
+
+static func _apply_hell_biome_chunk(c: Chunk, world_seed: int, chunk_x: int,
+		chunk_width: int, height: int) -> void:
+	# 1) 替换 STONE/DEEP_STONE → HELL_STONE (y > HELL_DEPTH 且不是矿石/AIR/BEDROCK)
+	for lx in chunk_width:
+		for y in range(HELL_DEPTH + 1, height):
+			var t: int = c.tiles[lx][y]
+			if t == Tiles.STONE or t == Tiles.DEEP_STONE:
+				c.tiles[lx][y] = Tiles.HELL_STONE
+	# 2) 岩浆池: BFS 找 AIR 连通区域底部 1-2 行填 LAVA (类似 _fill_water_pools_chunk)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _hash3(world_seed, chunk_x, 0xfa11c123)
+	if rng.randf() < LAVA_CHUNK_PROB:
+		_fill_lava_pools_chunk(c, chunk_width, height, rng)
+	# 3) OBSIDIAN 环: LAVA 邻 HELL_STONE 的 → OBSIDIAN (烫得"烧出"硬层)
+	_ring_obsidian_around_lava(c, chunk_width, height)
+	# 4) 火果: HELL_STONE 顶下方是 AIR → 偶发挂 HELL_FRUIT
+	_place_hell_fruit_chunk(c, chunk_width, height, rng)
+
+
+# 岩浆 BFS: 找 y > HELL_DEPTH 的 AIR 连通区域, 底部 1-2 格填 LAVA. 重用 _bfs_basin 逻辑.
+static func _fill_lava_pools_chunk(c: Chunk, chunk_width: int, height: int, rng: RandomNumberGenerator) -> void:
+	var visited: Array = []
+	visited.resize(chunk_width)
+	for lx in chunk_width:
+		var col: Array = []
+		col.resize(height)
+		col.fill(false)
+		visited[lx] = col
+	# 多次尝试找池子起点 (随机起 air cell)
+	var attempts: int = 0
+	var pools_made: int = 0
+	while attempts < 8 and pools_made < 3:
+		attempts += 1
+		var lx: int = rng.randi() % chunk_width
+		var sy: int = rng.randi_range(HELL_DEPTH + 2, height - 3)
+		if visited[lx][sy] or c.tiles[lx][sy] != Tiles.AIR:
+			continue
+		# BFS 找 basin (跟 _bfs_basin 思路同, 这里复用简化版)
+		var basin: Array = []
+		var max_y: int = sy
+		var queue: Array = [Vector2i(lx, sy)]
+		visited[lx][sy] = true
+		while not queue.is_empty():
+			var p: Vector2i = queue.pop_back()
+			if p.y > max_y: max_y = p.y
+			basin.append(p)
+			if basin.size() > 80:
+				break  # 太大, 放弃
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var nx: int = p.x + d.x
+				var ny: int = p.y + d.y
+				if nx < 0 or nx >= chunk_width or ny <= HELL_DEPTH or ny >= height - 1:
+					continue
+				if visited[nx][ny]:
+					continue
+				if c.tiles[nx][ny] != Tiles.AIR:
+					continue
+				visited[nx][ny] = true
+				queue.append(Vector2i(nx, ny))
+		if basin.size() < LAVA_POOL_MIN_SIZE:
+			continue
+		# 填 LAVA: 池底 2 行 (max_y 和 max_y - 1) 的所有 basin cells
+		for p in basin:
+			if p.y >= max_y - 1:
+				c.tiles[p.x][p.y] = Tiles.LAVA
+		pools_made += 1
+
+
+# OBSIDIAN 环: LAVA 紧邻 HELL_STONE → 改 OBSIDIAN. 像火山岩遇水降温.
+static func _ring_obsidian_around_lava(c: Chunk, chunk_width: int, height: int) -> void:
+	for lx in chunk_width:
+		for y in range(HELL_DEPTH, height):
+			if c.tiles[lx][y] != Tiles.LAVA:
+				continue
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var nx: int = lx + d.x
+				var ny: int = y + d.y
+				if nx < 0 or nx >= chunk_width or ny < 0 or ny >= height:
+					continue
+				if c.tiles[nx][ny] == Tiles.HELL_STONE:
+					c.tiles[nx][ny] = Tiles.OBSIDIAN
+
+
+# 火果: HELL_STONE 块下方是 AIR → 7% 长一个 HELL_FRUIT 挂在下方那格.
+# 玩家从下方仰望能看到红果挂在天花板下.
+static func _place_hell_fruit_chunk(c: Chunk, chunk_width: int, height: int, rng: RandomNumberGenerator) -> void:
+	for lx in chunk_width:
+		for y in range(HELL_DEPTH + 1, height - 2):
+			if c.tiles[lx][y] != Tiles.HELL_STONE:
+				continue
+			if c.tiles[lx][y + 1] != Tiles.AIR:
+				continue
+			if rng.randf() < HELL_FRUIT_CHANCE:
+				c.tiles[lx][y + 1] = Tiles.HELL_FRUIT
 
 
 # ===== 瀑布矿洞 =====

@@ -723,6 +723,68 @@ const _GOLD_INGOT := [
 	"................",
 ]
 
+# 火果 icon: 圆果红身 + 棕枝 + 绿叶 + 高光. 用 items_art PALETTE: A=苹果红, a=红高光, m=暗红影, S=棕梗, L=绿叶, n=黑描边, y=沙黄高光.
+const _HELL_FRUIT_ICON := [
+	"................",
+	"........S.......",
+	".......LS.......",
+	".......SL.......",
+	".....nAAAn......",
+	"....nAayyaAn....",
+	"...nAyaAAayAn...",
+	"...nAaaaaaaAn...",
+	"...nAayyaayAn...",
+	"...nAaaaaaaAn...",
+	"...nmaaaaaamn...",
+	"....nmaaaamn....",
+	".....nmmmmn.....",
+	"......nnnn......",
+	"................",
+	"................",
+]
+
+# 黑曜石 icon: 黑灰块 + 紫灰光泽 (items_art 没紫, 用 K/k 灰 + v 偏冷调).
+# K=金属阴影 (主), k=深棕 (暗), v=石冷灰 (闪光), n=黑描边
+const _OBSIDIAN_ICON := [
+	"................",
+	"................",
+	".....nnnnn......",
+	"....nKkkkKn.....",
+	"...nKkvkkKn.....",
+	"...nKkkKKkn.....",
+	"...nKvkkkkn.....",
+	"...nKkkkvKn.....",
+	"...nKkvkkKn.....",
+	"...nkkkkkKn.....",
+	"....nKkkkn......",
+	".....nnnn.......",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
+# 地狱石 icon: 红色矿石块状 + 黑裂纹 + 暗红高光.
+# A=红主, a=红亮, m=暗红影, u=橙焰 (rust orange 偷用), n=黑裂.
+const _HELL_STONE_ICON := [
+	"................",
+	"................",
+	".....AAAAA......",
+	"....AAaaaAAA....",
+	"...AaanaaAaaA...",
+	"...AaannnaaaA...",
+	"...AauaaAAaAA...",
+	"...AaaaaaaaaA...",
+	"...AaaAuuuaaa...",
+	"...AmAaaaaaAA...",
+	"....AaaaaaAa....",
+	".....AAAAA......",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
 # 蓝光蘑菇 icon: 蓝盖 + 白点 + 白柄 (复用钻石青蓝 + 羊毛白)
 # N=盖中蓝, T=盖阴影, Q=白点闪光, W=柄主白, w=柄阴影, n=黑边
 const _MUSHROOM_ICON := [
@@ -869,6 +931,9 @@ const _ICONS := {
 	"gold_ingot": _GOLD_INGOT,
 	"cooked_meat": _COOKED_MEAT,
 	"mushroom": _MUSHROOM_ICON,
+	"hell_fruit": _HELL_FRUIT_ICON,
+	"obsidian": _OBSIDIAN_ICON,
+	"hell_stone": _HELL_STONE_ICON,
 }
 
 
