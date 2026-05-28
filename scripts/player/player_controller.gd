@@ -35,8 +35,8 @@ const SHAKE_MAX_OFFSET := 4.0
 const SHAKE_DECAY := 20.0
 
 # Light2D 配置: PlayerAura 常亮小光圈, SunAura 头顶天空时大日光 (0.3s lerp)
-const PLAYER_AURA_TEX_SIZE := 64
-const SUN_AURA_TEX_SIZE := 400
+const PLAYER_AURA_TEX_SIZE := 48      # TILE_SIZE 16→12 后缩 0.75 (光圈跟世界比例同)
+const SUN_AURA_TEX_SIZE := 300        # 同上
 const SUN_ENERGY_ON := 1.5
 const SUN_ENERGY_OFF := 0.0
 const SUN_FADE_TIME := 0.3
