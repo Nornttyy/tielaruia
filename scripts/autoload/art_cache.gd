@@ -29,6 +29,7 @@ const SkeletonArt = preload("res://scripts/art/skeleton_art.gd")
 const ImpArt = preload("res://scripts/art/imp_art.gd")
 const HellWaspArt = preload("res://scripts/art/hell_wasp_art.gd")
 const FireballArt = preload("res://scripts/art/fireball_art.gd")
+const ArrowProjArt = preload("res://scripts/art/arrow_proj_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
 var block_icons: Dictionary = {}           # int (tile_id) -> 16x16 ImageTexture (UI / inventory)
@@ -50,6 +51,7 @@ var skeleton_frames: SpriteFrames
 var imp_frames: SpriteFrames
 var hell_wasp_frames: SpriteFrames
 var fireball_frames: SpriteFrames
+var arrow_proj_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
 var crack_textures: Array = []  # 4 个阶段
@@ -263,6 +265,8 @@ func _build_entities() -> void:
 	hell_wasp_frames = HellWaspArt.build_sprite_frames()
 	# 火球投射物 (Imp 用)
 	fireball_frames = FireballArt.build_sprite_frames()
+	# 玩家箭投射物 (弓用)
+	arrow_proj_frames = ArrowProjArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)
 
 

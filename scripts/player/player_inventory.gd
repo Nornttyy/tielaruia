@@ -74,3 +74,17 @@ func consume_current(n: int = 1) -> int:
 	if taken > 0:
 		inventory_changed.emit()
 	return taken
+
+
+# 在 36 槽里找第一个 item_id 槽, 消耗 n 个. 返回 true = 全部消耗成功.
+# 弓发箭等场景用 (玩家持弓时, 箭可能不在 hotbar 当前槽).
+func consume_first(item_id: String, n: int = 1) -> bool:
+	for i in inventory.TOTAL:
+		var s = inventory.slots[i]
+		if s == null or s.item_id != item_id:
+			continue
+		var taken: int = inventory.remove(i, n)
+		if taken > 0:
+			inventory_changed.emit()
+		return taken >= n
+	return false

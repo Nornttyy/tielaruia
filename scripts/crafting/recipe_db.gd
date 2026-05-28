@@ -476,6 +476,29 @@ const _RECIPES := [
 		"mirror_ok": true,
 		"requires": "furnace",
 	},
+	# === 远程武器 ===
+	# 木弓: 3 planks + 3 wool (羊毛当弓弦), 3x3 弧形
+	{
+		"id": "wood_bow",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["",       "planks", "wool"],
+			["planks", "",       "wool"],
+			["",       "planks", "wool"],
+		],
+		"output_id": "wood_bow",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	# 木箭: 1 planks 出 4 支 (划算)
+	{
+		"id": "wood_arrow",
+		"grid_size": Vector2i(1, 1),
+		"pattern": [["planks"]],
+		"output_id": "wood_arrow",
+		"output_count": 4,
+		"mirror_ok": false,
+	},
 ]
 
 

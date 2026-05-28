@@ -336,6 +336,8 @@ const _ZH_NAMES := {
 	"hell_stone": "地狱石",
 	"obsidian": "黑曜石",
 	"hell_fruit": "火果",
+	"wood_bow": "木弓",
+	"wood_arrow": "木箭",
 }
 
 
