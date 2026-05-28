@@ -28,7 +28,7 @@ const _HARDNESS := {
 	Tiles.SILVER_ORE: 5.0,    # +2
 	Tiles.GOLD_ORE: 6.0,      # +3
 	Tiles.DIAMOND_ORE: 7.0,   # +4
-	Tiles.HELL_CRYSTAL: 8.0,  # +5
+	Tiles.HELL_CRYSTAL: 4.0,  # 用户调: 8→4 (钻镐挖 0.8s)
 	Tiles.LOG_TOP: 0.6,
 	Tiles.LOG_ROOT_L: 0.4,
 	Tiles.LOG_ROOT_R: 0.4,
