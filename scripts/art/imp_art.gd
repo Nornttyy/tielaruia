@@ -27,7 +27,7 @@ const _F0 := [
 	"....nrronrrrn...",   # o = 嘴里橙红
 	".....nrrrrnn....",   # 下巴 / 脖子
 	"...nknrrrrnkn...",   # k = 翅膀根
-	"..nkkk rrr kkkn.",   # 翅膀展开 (空格 = 视觉外伸)
+	"..nkkk.rrr.kkkn.",   # 翅膀展开 (空隙用 . 透明, 用户检查时改对了)
 	"..nkkkkrrkkkkkn.",
 	"...nkkkRRkkkkn..",   # 翅膀往下
 	"....nkkkRkkn....",

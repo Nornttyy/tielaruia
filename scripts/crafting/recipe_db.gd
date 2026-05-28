@@ -490,11 +490,14 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
-	# 木箭: 1 planks 出 4 支 (划算)
+	# 木箭: 2 planks 竖排 → 4 支. 用 2x1 形避开已有 "1 planks→wood_wall" 1x1 配方冲突.
 	{
 		"id": "wood_arrow",
-		"grid_size": Vector2i(1, 1),
-		"pattern": [["planks"]],
+		"grid_size": Vector2i(1, 2),
+		"pattern": [
+			["planks"],
+			["planks"],
+		],
 		"output_id": "wood_arrow",
 		"output_count": 4,
 		"mirror_ok": false,
