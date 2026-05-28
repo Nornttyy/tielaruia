@@ -283,6 +283,10 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 露天矿洞: 漏斗坑 (pit) 或 窄缝 (crack) 直通地表, 玩家能跳下去
 	_carve_open_pits_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
+	# 瀑布矿洞: 找悬崖, 高侧凿小洞 + 末尾小室带宝箱, 低侧柱填 WATER 当瀑布
+	# 注: 水非永久 — chunk 加载时 WATER 会被 sim 流走, 流完后崖底有水洼.
+	_place_waterfall_cave_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+
 	# 沙漠地下保护: 把 SAND 邻 AIR 的 tile 改 STONE (防沙崩塌填满矿洞)
 	_protect_sand_caves(c, chunk_heights, chunk_width, height)
 
@@ -801,6 +805,78 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 					dir_noise, rad_noise, surf_noise, mountain_noise,
 					chunk_start_x, chunk_end_x, height, 0,
 					OPEN_WORM_RADIUS_SCALE, OPEN_WORM_SURFACE_BUFFER, bias)
+
+
+# ===== 瀑布矿洞 =====
+# 每 chunk 12% 出一个: 找悬崖 (Δsurf≥8), 高侧凿 7 格深的洞 (3 高) 末尾接 3×3 小室带 CHEST,
+# 低侧那柱填 WATER (高度=悬崖高度差). 水非永久, chunk 加载时 water_sim 会让它流下来形成水洼.
+# 用 chunk-deterministic RNG (同 seed+chunk_x 总是同结果). 不允许跨 chunk (洞 + 室都得在本 chunk 内).
+const WATERFALL_CHUNK_CHANCE := 0.50  # 地形平滑, 提高命中
+const WATERFALL_MIN_CLIFF := 4       # 至少 4 格高差 (4 列范围内累计)
+const WATERFALL_CLIFF_SPAN := 4      # 4 列范围内的累计落差判断悬崖
+const WATERFALL_CAVE_DEPTH := 7      # 洞往里挖 7 格 + 3 格小室
+static func _place_waterfall_cave_chunk(c: Chunk, chunk_heights: Dictionary,
+		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _hash3(world_seed, chunk_x, 0x53194fa3)
+	if rng.randf() > WATERFALL_CHUNK_CHANCE:
+		return
+	var chunk_start: int = chunk_x * chunk_width
+	var chunk_end: int = chunk_start + chunk_width
+	# 找候选: 在 X..X+SPAN 列范围内, 一侧比另一侧高 ≥ MIN_CLIFF 格. 两个方向都行.
+	# candidate 存 [x_low, x_high] (洞要往高侧挖, 水从高侧下来)
+	var candidates: Array = []
+	for wx in range(chunk_start, chunk_end - WATERFALL_CLIFF_SPAN):
+		var wx2: int = wx + WATERFALL_CLIFF_SPAN
+		if not chunk_heights.has(wx) or not chunk_heights.has(wx2):
+			continue
+		var h_left: int = chunk_heights[wx]
+		var h_right: int = chunk_heights[wx2]
+		# 右高 (山在右): x_low=左, 洞往右挖. 需 X+SPAN+CAVE_DEPTH+3 在 chunk 内.
+		if h_left - h_right >= WATERFALL_MIN_CLIFF:
+			if wx2 + WATERFALL_CAVE_DEPTH + 3 < chunk_end:
+				candidates.append([wx, wx2, 1])   # dir=1 (右)
+		# 左高 (山在左): x_low=右, 洞往左挖. 需 X-CAVE_DEPTH-3 在 chunk 内.
+		elif h_right - h_left >= WATERFALL_MIN_CLIFF:
+			if wx - WATERFALL_CAVE_DEPTH - 3 >= chunk_start:
+				candidates.append([wx2, wx, -1])  # dir=-1 (左)
+	if candidates.is_empty():
+		return
+	var picked: Array = candidates[rng.randi() % candidates.size()]
+	var x_low: int = picked[0]
+	var x_high: int = picked[1]
+	var cave_dir: int = picked[2]   # +1 洞往右挖, -1 洞往左挖
+	var low_surf: int = chunk_heights[x_low]
+	var high_surf: int = chunk_heights[x_high]
+	# 1) 瀑布: 低侧那柱 X=x_low, y in [high_surf, low_surf - 1] 填 WATER
+	#    水将从 y=high_surf 往下流, 沿途和邻列空气交互, 最后在低地堆成水洼.
+	for wy in range(high_surf, low_surf):
+		c.tiles[x_low - chunk_start][wy] = Tiles.WATER
+	# 2) 洞口 + 隧道 + 小室. 洞高 3 格 (y_top..y_bot), 玩家能直立走. cave_dir=±1 选方向.
+	var y_bot: int = low_surf - 1     # 玩家脚下站这格
+	var y_top: int = low_surf - 3     # 头顶
+	for dx in range(0, WATERFALL_CAVE_DEPTH + 3):
+		var wx: int = x_high + dx * cave_dir
+		if wx < chunk_start or wx >= chunk_end:
+			break
+		var lx: int = wx - chunk_start
+		for wy in range(y_top, y_bot + 1):
+			c.tiles[lx][wy] = Tiles.AIR
+	# 3) 小室高一点 (再 +1 格头顶), 让进去后视觉开阔
+	for dx in range(WATERFALL_CAVE_DEPTH, WATERFALL_CAVE_DEPTH + 3):
+		var wx: int = x_high + dx * cave_dir
+		if wx < chunk_start or wx >= chunk_end:
+			break
+		var lx: int = wx - chunk_start
+		if y_top - 1 >= 0:
+			c.tiles[lx][y_top - 1] = Tiles.AIR
+	# 4) CHEST 放小室中间, 在地板 (y_bot) 那格 (脚下空气格, 下面是 STONE 地板)
+	var chest_x: int = x_high + (WATERFALL_CAVE_DEPTH + 1) * cave_dir
+	var chest_y: int = y_bot
+	if chest_x >= chunk_start and chest_x < chunk_end and chest_y > 0:
+		var clx: int = chest_x - chunk_start
+		c.tiles[clx][chest_y] = Tiles.CHEST
+		c.treasure_spots.append(Vector2i(chest_x, chest_y))
 
 
 # 跟 generate_chunk 里 surf 公式一致: 用主 noise 的种子重算单列 surf.
