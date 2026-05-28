@@ -28,7 +28,7 @@ const _HARDNESS := {
 	Tiles.SILVER_ORE: 8.0,     # 铁镐挖 4s
 	Tiles.GOLD_ORE: 10.0,      # 银镐挖 4s
 	Tiles.DIAMOND_ORE: 12.0,   # 金镐挖 3.6s
-	Tiles.HELL_CRYSTAL: 6.0,   # 钻镐挖 1.2s
+	Tiles.HELL_CRYSTAL: 15.0,  # 用户改: 应是最久的矿 (> 钻 12s), 钻镐挖 3s
 	Tiles.LOG_TOP: 0.6,
 	Tiles.LOG_ROOT_L: 0.4,
 	Tiles.LOG_ROOT_R: 0.4,
