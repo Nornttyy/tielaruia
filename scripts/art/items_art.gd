@@ -827,6 +827,28 @@ const _HELL_STONE_ICON := [
 	"................",
 ]
 
+# 魔晶锭 icon: 锭形 (圆角矩形) + 黄金主 + 焰橙过渡 + 白闪点 + 黑边
+# Z=金中 (palette), z=金亮, P=金极亮, R=金深, u=铁锈/橙过渡 (复用 palette).
+# 注: items_art PALETTE 没"魔晶"专属色, 借金 Z/z/P + 铁锈 u 拼出 "火焰金属" 感
+const _HELL_CRYSTAL_INGOT := [
+	"................",
+	"................",
+	"................",
+	"................",
+	"....nnnnnnnn....",
+	"...nZzzzzzPZn...",
+	"..nZzzPPPzzZRn..",
+	".nRZzzzzzzZZRn..",
+	".nRZzPzzzPzZRn..",
+	".nRZzzzzzzzZRn..",
+	".nRZuZzzzZuZRn..",
+	"..nRRZZZZZRRn...",
+	"...nnnnnnnnn....",
+	"................",
+	"................",
+	"................",
+]
+
 # 蓝光蘑菇 icon: 蓝盖 + 白点 + 白柄 (复用钻石青蓝 + 羊毛白)
 # N=盖中蓝, T=盖阴影, Q=白点闪光, W=柄主白, w=柄阴影, n=黑边
 const _MUSHROOM_ICON := [
@@ -976,6 +998,7 @@ const _ICONS := {
 	"hell_fruit": _HELL_FRUIT_ICON,
 	"obsidian": _OBSIDIAN_ICON,
 	"hell_stone": _HELL_STONE_ICON,
+	"hell_crystal_ingot": _HELL_CRYSTAL_INGOT,
 	"wood_bow": _WOOD_BOW,
 	"wood_arrow": _WOOD_ARROW,
 }

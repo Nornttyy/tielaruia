@@ -67,6 +67,8 @@ const _DEFS := {
 	# === 远程武器: 弓 + 箭 ===
 	"wood_bow":      {"placeable_tile_id": -1,                     "tool_kind": "bow",     "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0},
 	"wood_arrow":    {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
+	# === 地狱矿石 ===
+	"hell_crystal_ingot": {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	"leather":       {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"wool":          {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"grappling_hook":{"placeable_tile_id": -1,                     "tool_kind": "hook",    "tool_tier": 1, "max_stack": 1},

@@ -490,6 +490,17 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# 魔晶锭: 3 hell_crystal → 1 ingot. 熔炉烧, 跟其他金属同形 (3 横排).
+	{
+		"id": "hell_crystal_ingot",
+		"grid_size": Vector2i(3, 1),
+		"pattern": [["hell_crystal", "hell_crystal", "hell_crystal"]],
+		"output_id": "hell_crystal_ingot",
+		"output_count": 1,
+		"mirror_ok": true,
+		"rotate_ok": true,
+		"requires": "furnace",
+	},
 	# 木箭: 2 planks 竖排 → 4 支. 用 2x1 形避开已有 "1 planks→wood_wall" 1x1 配方冲突.
 	{
 		"id": "wood_arrow",
