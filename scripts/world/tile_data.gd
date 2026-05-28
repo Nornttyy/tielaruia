@@ -59,6 +59,7 @@ const SNOW_DIRT := 47       # 雪原冻土 (灰白带蓝, 比 SNOW 暗)
 const JUNGLE_LEAVES := 48   # 丛林树叶 (深湿绿, 比 LEAVES 暗)
 const SILVER_ORE := 49      # 银矿 (铁和金之间, tier 3 用 iron 镐挖)
 const WOOD_WALL := 50       # 木墙: 玩家造 (区别于自然生成的土墙/石墙), 木板纹路
+const FURNACE := 51         # 熔炉: 玩家造, 实心. 附近能解锁冶炼配方
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -111,6 +112,11 @@ const _PROPS := {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["workbench", 100, 1, 1]],
+	},
+	FURNACE: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"drops": [["furnace", 100, 1, 1]],
 	},
 	DOOR: {
 		# 门底部: 视觉占 1 格, 但和 DOOR_TOP (上一格) 配对成 2 格高门.

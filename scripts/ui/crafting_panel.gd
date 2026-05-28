@@ -313,6 +313,13 @@ const _ZH_NAMES := {
 	"bone": "骨头",
 	"spider_eye": "蜘蛛眼",
 	"lens": "镜片",
+	"furnace": "熔炉",
+	"iron_ingot": "铁锭",
+	"copper_ingot": "铜锭",
+	"tin_ingot": "锡锭",
+	"silver_ingot": "银锭",
+	"gold_ingot": "金锭",
+	"cooked_meat": "熟肉",
 	"snow": "雪块",
 	"ice": "冰块",
 	"jungle_grass": "丛林草",
@@ -565,14 +572,20 @@ func _refresh_recipes() -> void:
 	if _player_inv == null:
 		return
 	var inv = _player_inv.inventory
+	# 查附近是否有 furnace (跟 workbench 同模式)
+	var has_furnace: bool = _has_furnace_nearby()
 	for entry in _recipe_buttons:
 		var recipe: Dictionary = entry.recipe
 		var btn: Button = entry.button
 		# 模式过滤: 2x2 模式只显示 2x2 配方; 工作台 (3x3 模式) 显示 ≤ 3x3 的全部配方
-		# (= 工作台也能合 2x2 的徒手配方, 用户偏好)
 		var recipe_size: int = max(recipe.grid_size.x, recipe.grid_size.y)
 		btn.visible = (recipe_size <= _mode)
 		if not btn.visible:
+			continue
+		# 冶炼配方过滤: 要求 "furnace" 的, 玩家身边必须有 furnace
+		var requires: String = recipe.get("requires", "")
+		if requires == "furnace" and not has_furnace:
+			btn.visible = false
 			continue
 		# 素材是否够 → 灰显
 		var req: Dictionary = _required_inputs(recipe)
@@ -583,6 +596,28 @@ func _refresh_recipes() -> void:
 				break
 		btn.disabled = not has_materials
 		btn.modulate = Color(1, 1, 1, 1) if has_materials else Color(0.5, 0.5, 0.5, 0.7)
+
+
+# 玩家附近 (≤ 2 格) 有 furnace tile 吗 (跟 workbench 同检测)
+func _has_furnace_nearby() -> bool:
+	if _player_inv == null:
+		return false
+	var player: Node = _player_inv.get_parent()
+	if player == null:
+		return false
+	var pa: Node = player.get_node_or_null("PlayerAction")
+	if pa == null or not pa.has_method("player_tile"):
+		return false
+	var pt: Vector2i = pa.player_tile()
+	var terrain: TileMapLayer = get_tree().get_first_node_in_group("terrain_layer") as TileMapLayer
+	if terrain == null:
+		return false
+	for dx in range(-2, 3):
+		for dy in range(-2, 3):
+			var tid: int = terrain.get_cell_source_id(pt + Vector2i(dx, dy))
+			if tid == Tiles.FURNACE:
+				return true
+	return false
 
 
 func _refresh_inv() -> void:

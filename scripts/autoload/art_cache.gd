@@ -95,6 +95,7 @@ func _build_blocks() -> void:
 		BlocksArt.WOOD_PLATFORM, BlocksArt.ROPE,
 		BlocksArt.JUNGLE_DIRT, BlocksArt.SNOW_DIRT, BlocksArt.JUNGLE_LEAVES,
 		BlocksArt.SILVER_ORE,
+		BlocksArt.FURNACE,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -205,7 +206,8 @@ func _build_items() -> void:
 	# 非工具类 (老 ASCII pattern)
 	for item_id in ["slime_jelly", "apple",
 			"coal", "iron_ore", "bone", "spider_eye", "lens",
-			"raw_meat", "leather", "wool",
+			"raw_meat", "leather", "wool", "cooked_meat",
+			"iron_ingot", "copper_ingot", "tin_ingot", "silver_ingot", "gold_ingot",
 			"grappling_hook"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
@@ -254,6 +256,7 @@ const _ITEM_TO_TILE := {
 	"autumn_leaves": BlocksArt.LEAVES_AUTUMN,
 	"planks": BlocksArt.PLANKS,
 	"workbench": BlocksArt.WORKBENCH,
+	"furnace": BlocksArt.FURNACE,
 	"door": BlocksArt.DOOR,
 	"slime_torch": BlocksArt.SLIME_TORCH,
 	"torch": BlocksArt.TORCH,

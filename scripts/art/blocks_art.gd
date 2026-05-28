@@ -25,6 +25,7 @@ const SNOW_DIRT := 47
 const JUNGLE_LEAVES := 48
 const SILVER_ORE := 49
 const WOOD_WALL := 50
+const FURNACE := 51
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -394,6 +395,16 @@ const _P_GRASS_WALL := {
 	"_H": Color8(102, 78, 54),  # 顶强高光 (d+20%, 暖)
 }
 # 木墙: 木板纹路 (跟 PLANKS 同构, 但偏暗 70% 适合背景), col 0 == col 15 可平铺
+const _P_FURNACE := {
+	"s": Color8(120, 110, 100),   # 石灰色身
+	"S": Color8(85, 75, 68),      # 暗灰
+	"k": Color8(40, 32, 28),      # 黑描边
+	"R": Color8(220, 90, 40),     # 火焰橙红 (内部)
+	"r": Color8(255, 160, 60),    # 火焰亮黄
+	"y": Color8(255, 230, 130),   # 火焰最亮
+}
+
+
 const _P_WOOD_WALL := {
 	"p": Color8(118, 80, 48),   # 木板基色 (planks p×0.7)
 	"P": Color8(92, 60, 33),    # 暗木 (planks P×0.65)
@@ -1249,6 +1260,26 @@ const _DIRT_WALL := [
 # 木墙: 4 横木板, 每 4 行 1 道板缝 (k). 跟 PLANKS 同结构, 颜色偏暗.
 # 关键: 每行 col 0 == col 15 (都是 p 或 k), 拼贴时左右无缝.
 # row 0 (plank top) 跟 row 15 (sep k) 不同 → 上下拼时显示一道板缝 (这是要的视觉, 不是 bug)
+const _FURNACE := [
+	"kkkkkkkkkkkkkkkk",
+	"kssssssssssssssk",
+	"ksSsssssssssSsSk",
+	"ksssSsskkssSssSk",
+	"ksSsSskRRksssssk",
+	"kssssskRrkssSssk",
+	"ksSssskRykSsssSk",
+	"ksssSskryksssSsk",
+	"ksSsSskRrkssssSk",
+	"ksssssskkksSsssk",
+	"kSssSssssSssssSk",
+	"ksssssSsssssssSk",
+	"kSsSsssssSssSssk",
+	"kssssSsssssssssk",
+	"ksSsssssssSssSsk",
+	"kkkkkkkkkkkkkkkk",
+]
+
+
 const _WOOD_WALL := [
 	"pppppppppppppppp",
 	"pPppppppllpppPpp",
@@ -1352,6 +1383,7 @@ const _PATTERN_MAP := {
 	DIRT_WALL: [_DIRT_WALL, _P_DIRT_WALL],
 	STONE_WALL: [_STONE_WALL, _P_STONE_WALL],
 	WOOD_WALL: [_WOOD_WALL, _P_WOOD_WALL],
+	FURNACE: [_FURNACE, _P_FURNACE],
 	CACTUS: [_CACTUS, _P_CACTUS],
 	CACTUS_BODY: [_CACTUS_BODY, _P_CACTUS],
 	COPPER_ORE: [_COPPER_ORE, _P_COPPER_ORE],

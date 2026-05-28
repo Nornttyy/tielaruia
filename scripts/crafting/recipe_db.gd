@@ -398,6 +398,79 @@ const _RECIPES := [
 		"output_count": 6,
 		"mirror_ok": true,
 	},
+	# === 熔炉 (用 8 石头围 □ 形) ===
+	{
+		"id": "furnace",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["stone", "stone", "stone"],
+			["stone", "",      "stone"],
+			["stone", "stone", "stone"],
+		],
+		"output_id": "furnace",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
+	# === 冶炼 (要求附近有 furnace) ===
+	# 3 个矿石横排 → 1 个对应锭. mirror_ok 让横/竖都能匹配
+	{
+		"id": "iron_ingot",
+		"grid_size": Vector2i(3, 1),
+		"pattern": [["iron_ore", "iron_ore", "iron_ore"]],
+		"output_id": "iron_ingot",
+		"output_count": 1,
+		"mirror_ok": true,
+		"requires": "furnace",
+	},
+	{
+		"id": "copper_ingot",
+		"grid_size": Vector2i(3, 1),
+		"pattern": [["copper_ore", "copper_ore", "copper_ore"]],
+		"output_id": "copper_ingot",
+		"output_count": 1,
+		"mirror_ok": true,
+		"requires": "furnace",
+	},
+	{
+		"id": "tin_ingot",
+		"grid_size": Vector2i(3, 1),
+		"pattern": [["tin_ore", "tin_ore", "tin_ore"]],
+		"output_id": "tin_ingot",
+		"output_count": 1,
+		"mirror_ok": true,
+		"requires": "furnace",
+	},
+	{
+		"id": "silver_ingot",
+		"grid_size": Vector2i(3, 1),
+		"pattern": [["silver_ore", "silver_ore", "silver_ore"]],
+		"output_id": "silver_ingot",
+		"output_count": 1,
+		"mirror_ok": true,
+		"requires": "furnace",
+	},
+	{
+		"id": "gold_ingot",
+		"grid_size": Vector2i(3, 1),
+		"pattern": [["gold_ore", "gold_ore", "gold_ore"]],
+		"output_id": "gold_ingot",
+		"output_count": 1,
+		"mirror_ok": true,
+		"requires": "furnace",
+	},
+	# 熟肉: 1 raw_meat 在 2x2 任意角
+	{
+		"id": "cooked_meat",
+		"grid_size": Vector2i(2, 2),
+		"pattern": [
+			["raw_meat", ""],
+			["",         ""],
+		],
+		"output_id": "cooked_meat",
+		"output_count": 1,
+		"mirror_ok": true,
+		"requires": "furnace",
+	},
 ]
 
 
