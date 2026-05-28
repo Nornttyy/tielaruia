@@ -19,16 +19,16 @@ const _HARDNESS := {
 	Tiles.WORKBENCH: 0.5,
 	Tiles.DOOR: 0.5,
 	Tiles.LOG: 0.6,
-	Tiles.STONE: 3.0,         # base
+	Tiles.STONE: 3.0,          # base (不变)
 	Tiles.DEEP_STONE: 3.0,
-	Tiles.COAL_ORE: 3.0,      # 跟石头同
-	Tiles.COPPER_ORE: 3.5,    # +0.5
-	Tiles.TIN_ORE: 3.5,
-	Tiles.IRON_ORE: 4.0,      # +1
-	Tiles.SILVER_ORE: 5.0,    # +2
-	Tiles.GOLD_ORE: 6.0,      # +3
-	Tiles.DIAMOND_ORE: 7.0,   # +4
-	Tiles.HELL_CRYSTAL: 4.0,  # 用户调: 8→4 (钻镐挖 0.8s)
+	Tiles.COAL_ORE: 3.0,       # 跟石头同
+	Tiles.COPPER_ORE: 6.0,     # 用户改: 矿石明显比石头难, 石镐挖 5s
+	Tiles.TIN_ORE: 6.0,
+	Tiles.IRON_ORE: 8.0,       # 铜镐挖 5.3s
+	Tiles.SILVER_ORE: 10.0,    # 铁镐挖 5s
+	Tiles.GOLD_ORE: 12.0,      # 银镐挖 4.8s
+	Tiles.DIAMOND_ORE: 14.0,   # 金镐挖 4.2s
+	Tiles.HELL_CRYSTAL: 8.0,   # 用户调小: 钻镐挖 1.6s
 	Tiles.LOG_TOP: 0.6,
 	Tiles.LOG_ROOT_L: 0.4,
 	Tiles.LOG_ROOT_R: 0.4,
