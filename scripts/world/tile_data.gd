@@ -233,9 +233,9 @@ const _PROPS := {
 		"drops": [["diamond", 100, 1, 1]],
 	},
 	HELL_CRYSTAL: {
-		# 地狱晶体: 钻石镐 (tier 7) — 终局, 1→7 progression 顶
+		# 地狱晶: 金镐 (tier 6) + 钻石镐 (tier 7) 都能挖 (用户改: 不仅钻石)
 		"solid": true, "mineable": true,
-		"tool_tiers": {"": -1, "pickaxe": 7, "axe": -1, "sword": -1},
+		"tool_tiers": {"": -1, "pickaxe": 6, "axe": -1, "sword": -1},
 		"drops": [["hell_crystal", 100, 1, 1]],
 	},
 	CACTUS: {
