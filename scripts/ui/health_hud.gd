@@ -23,11 +23,30 @@ const FILL_MAX_RATIO := 0.78
 const HIGHLIGHT_SIZE_RATIO := 0.18
 const HIGHLIGHT_OFFSET := Vector2(-0.18, -0.18)
 
+const TEXT_FONT_SIZE := 14    # "100/100" 显示字号
+const TEXT_HEIGHT := 18       # 给 label 留的垂直空间 (含 padding)
+
 var _cur: int = 100
 var _max: int = 100
+var _hp_label: Label
 
 
 func _ready() -> void:
+	# 血量数字 label 放在 HUD 右上角 (跟 HUD 一起锚定屏幕右上角)
+	_hp_label = Label.new()
+	_hp_label.add_theme_font_size_override("font_size", TEXT_FONT_SIZE)
+	_hp_label.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+	_hp_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	_hp_label.add_theme_constant_override("shadow_offset_x", 1)
+	_hp_label.add_theme_constant_override("shadow_offset_y", 1)
+	_hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_hp_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_hp_label.offset_left = -120.0
+	_hp_label.offset_right = -PAD
+	_hp_label.offset_top = 0.0
+	_hp_label.offset_bottom = TEXT_HEIGHT
+	add_child(_hp_label)
+	_update_label()
 	_update_min_size()
 
 
@@ -45,7 +64,14 @@ func _on_changed(cur: int, maximum: int) -> void:
 	if maximum != _max:
 		_max = maximum
 		_update_min_size()
+	_update_label()
 	queue_redraw()
+
+
+# 把 "当前/上限" 数字同步到右上角 label. cur 改变 / max 改变都调.
+func _update_label() -> void:
+	if _hp_label != null:
+		_hp_label.text = "%d / %d" % [_cur, _max]
 
 
 # 根据当前 _max 计算总心数 + 行数, 更新 custom_minimum_size.
