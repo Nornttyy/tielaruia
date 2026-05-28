@@ -639,7 +639,17 @@ func _update_drag_cursor() -> void:
 		return
 	var cs = _player_inv.cursor_slot
 	if cs == null:
-		return  # 不接管 cursor (留给老逻辑)
+		# 放下后清掉 drag icon (bug fix: 不然图标残留在屏幕上)
+		var icon_clear: TextureRect = cursor.get_node_or_null("DragIcon")
+		if icon_clear != null:
+			icon_clear.texture = null
+		var lbl_clear: Label = cursor.get_node_or_null("DragCount")
+		if lbl_clear != null:
+			lbl_clear.text = ""
+		# 只有 crafting 的 _cursor_item 也不在用时才隐 cursor 节点
+		if _cursor_item == null:
+			cursor.visible = false
+		return
 	# 确保子节点存在
 	var icon: TextureRect = cursor.get_node_or_null("DragIcon")
 	if icon == null:
