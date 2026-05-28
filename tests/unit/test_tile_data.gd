@@ -89,3 +89,17 @@ func test_deep_stone_properties() -> void:
 			got_stone = true
 			break
 	assert_true(got_stone, "DEEP_STONE 应掉 stone")
+
+
+# 树干族 (LOG / LOG_TOP / LOG_ROOT_L/R / BRANCH_L/R) 只能用斧砍
+# (修镜镐子能挖树太快 bug)
+func test_log_family_axe_only():
+	for tid in [td.LOG, td.LOG_TOP, td.LOG_ROOT_L, td.LOG_ROOT_R, td.BRANCH_L, td.BRANCH_R]:
+		assert_eq(td.required_tool_tier(tid, "axe"), 0,
+			"tile %d 应能用斧子徒手砍" % tid)
+		assert_eq(td.required_tool_tier(tid, "pickaxe"), -1,
+			"tile %d 镐子挖不动 (bug fix)" % tid)
+		assert_eq(td.required_tool_tier(tid, "sword"), -1,
+			"tile %d 剑砍不动" % tid)
+		assert_eq(td.required_tool_tier(tid, ""), -1,
+			"tile %d 徒手挖不动 (要斧)" % tid)
