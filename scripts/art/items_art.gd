@@ -584,6 +584,27 @@ const _COAL := [
 	"................",
 ]
 
+# 银矿原石: 冷石底 + 银光斑
+const _SILVER_ORE_ICON := [
+	"................",
+	"................",
+	"....xdxxx.......",
+	"...xVVdVVx......",
+	"..xVVxxVVVx.....",
+	"..xVxVxVVdx.....",
+	"..xVddVxVVx.....",
+	"...xVxVVVx......",
+	"....xxxdx.......",
+	".....xxx........",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
+
 # 铁矿原石: 暖石底 + 几处铁锈斑
 const _IRON_ORE_ICON := [
 	"................",
@@ -797,6 +818,7 @@ const _ICONS := {
 	"stone_axe": _STONE_AXE,
 	"coal": _COAL,
 	"iron_ore": _IRON_ORE_ICON,
+	"silver_ore": _SILVER_ORE_ICON,
 	"iron_pickaxe": _IRON_PICKAXE,
 	"iron_sword": _IRON_SWORD,
 	"iron_axe": _IRON_AXE,

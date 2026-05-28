@@ -216,8 +216,7 @@ func _build_items() -> void:
 		item_icons["%s_sword" % tier] = ItemsArt.get_icon("%s_sword" % tier)
 		item_icons["%s_pickaxe" % tier] = ItemsArt.get_icon("%s_pickaxe" % tier)
 		item_icons["%s_axe" % tier] = ItemsArt.get_icon("%s_axe" % tier)
-	# 银矿物 (跟 iron_ore 一个画风, 暂复用 IRON_ORE pattern)
-	item_icons["silver_ore"] = ItemsArt.get_icon("iron_ore")  # TODO: 专属银矿石 ASCII
+	item_icons["silver_ore"] = ItemsArt.get_icon("silver_ore")
 
 
 func _build_doors() -> void:
