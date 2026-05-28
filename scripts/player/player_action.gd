@@ -960,7 +960,7 @@ func _is_in_swing_arc(target_pos: Vector2, origin: Vector2, dir: Vector2) -> boo
 
 
 # 戳的常量
-const THRUST_COOLDOWN := 0.18
+const THRUST_COOLDOWN := 0.5    # 用户改 0.18→0.5: 戳太快了, 慢一档
 const THRUST_LENGTH_MULT := 1.2      # 戳长 = SWORD_RANGE_PX * 1.2 ≈ 43px (比挥更远)
 const THRUST_HALF_WIDTH := 4.5       # 戳带半宽 6px (总宽 12), 鼠标偏一点也命中
 const THRUST_DAMAGE_MULT := 0.8

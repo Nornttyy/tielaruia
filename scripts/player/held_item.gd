@@ -124,8 +124,10 @@ func play_thrust(target_angle: float) -> void:
 	var dir_vec := Vector2(cos(target_angle), sin(target_angle))
 	var base_pos := Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
 	var thrust_pos := base_pos + dir_vec * THRUST_OFFSET_PX
-	# 工具锋朝鼠标 (突刺感)
-	rotation = target_angle
+	# 工具锋朝鼠标 (突刺感). sword sprite 默认朝上, 要朝水平方向得 + PI/2.
+	# facing_left 时 sprite 已水平翻转, 旋转要反向 (跟 play_swing_directional 同套路).
+	var s: float = 1.0 if _facing_right else -1.0
+	rotation = wrapf(s * (target_angle + PI / 2.0), -PI, PI)
 	position = base_pos
 	_tween = create_tween()
 	_tween.tween_property(self, "position", thrust_pos, THRUST_DURATION * 0.4).set_ease(Tween.EASE_OUT)
