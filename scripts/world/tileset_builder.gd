@@ -52,7 +52,7 @@ static func build() -> TileSet:
 	for tile_id in tile_ids:
 		var source := TileSetAtlasSource.new()
 		source.texture = ArtCache.block_textures[tile_id]
-		source.texture_region_size = Vector2i(16, 16)
+		source.texture_region_size = Vector2i(12, 12)
 		ts.add_source(source, tile_id)
 
 		# 门 (上+下) 走物理层 1, 跟普通 solid 不同; 在下面专门处理

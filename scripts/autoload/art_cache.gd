@@ -98,8 +98,10 @@ func _build_blocks() -> void:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
 			var atlas: ImageTexture = BlocksArt.build_atlas(tile_id)
 			atlas = _apply_biome_tint(tile_id, atlas)
+			# TILE_SIZE 16→12: 每格 16x16 缩到 12x12, 边缘行/列保留 (避免 Godot 渲染时丢边线)
+			atlas = _smart_resize_atlas_16_to_12(atlas)
 			block_textures[tile_id] = atlas
-			block_icons[tile_id] = _extract_interior_icon(atlas)
+			block_icons[tile_id] = _extract_interior_icon_12(atlas)
 		elif tile_id == BlocksArt.WATER:
 			# 水: 64×16 动画 atlas (4 帧). icon 用单帧.
 			block_textures[tile_id] = BlocksArt.get_water_animated_atlas()
@@ -116,6 +118,8 @@ func _build_blocks() -> void:
 		else:
 			var single: ImageTexture = BlocksArt.get_texture(tile_id)
 			single = _apply_biome_tint(tile_id, single)
+			# 单 cell 16x16 也缩到 12x12 (跟 TileSet tile_size=12 一致)
+			single = _smart_resize_atlas_16_to_12(single)
 			block_textures[tile_id] = single
 			block_icons[tile_id] = single
 
@@ -146,6 +150,43 @@ static func _tint_texture(src: ImageTexture, tint: Color, strength: float) -> Im
 			var tinted := Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a)
 			img.set_pixel(x, y, c.lerp(tinted, strength))
 	return ImageTexture.create_from_image(img)
+
+
+# 16x16 → 12x12 智能缩放: 保留 4 个边缘行/列, 内部 12 行/列压到 8.
+# 用途: TileSet tile_size=12 后, 让 16x16 ASCII pattern 在 Godot 渲染前先缩成 12x12,
+# 避免 Godot 内部缩时不均匀采样导致边线 (autotile edge) 厚薄不一.
+static func _smart_resize_atlas_16_to_12(tex: ImageTexture) -> ImageTexture:
+	var src: Image = tex.get_image()
+	var w_cells: int = src.get_width() / 16
+	var h_cells: int = src.get_height() / 16
+	if w_cells <= 0 or h_cells <= 0:
+		return tex
+	var dst := Image.create(w_cells * 12, h_cells * 12, false, Image.FORMAT_RGBA8)
+	dst.fill(Color(0, 0, 0, 0))
+	# dst[i] → src[?] 映射: 12 行/列里, 前 2 + 后 2 保留 src 0/1/14/15
+	# 中间 8 行/列采自 src 2..13: 跳 src 3/6/9/12 → 取 2,4,5,7,8,10,11,13
+	var map12: PackedInt32Array = PackedInt32Array([0, 1, 2, 4, 5, 7, 8, 10, 11, 13, 14, 15])
+	for cy in h_cells:
+		for cx in w_cells:
+			for dr in 12:
+				var sr: int = cy * 16 + map12[dr]
+				for dc in 12:
+					var sc: int = cx * 16 + map12[dc]
+					dst.set_pixel(cx * 12 + dc, cy * 12 + dr, src.get_pixel(sc, sr))
+	return ImageTexture.create_from_image(dst)
+
+
+# 从 12x12 atlas 抽 mask=255 (CCCCIIII, 全包围) 那一格做 UI 图标
+static func _extract_interior_icon_12(atlas: ImageTexture) -> ImageTexture:
+	var coord: Vector2i = BlobLookup.ATLAS_COORD[255]
+	var ox: int = coord.x * 12
+	var oy: int = coord.y * 12
+	var src: Image = atlas.get_image()
+	var dst := Image.create(12, 12, false, Image.FORMAT_RGBA8)
+	for y in 12:
+		for x in 12:
+			dst.set_pixel(x, y, src.get_pixel(ox + x, oy + y))
+	return ImageTexture.create_from_image(dst)
 
 
 # 从 atlas 抽 mask=255 (CCCCIIII, 全包围) 那一格做 UI 图标. 16×16.
