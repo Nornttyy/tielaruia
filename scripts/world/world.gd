@@ -578,21 +578,25 @@ func _on_chunk_loaded(c: Chunk) -> void:
 		var wall_col: Array = c.walls[lx]
 		for y in col.size():
 			var tid: int = col[y]
-			if tid != Tiles.AIR:
-				var pos := Vector2i(world_x, y)
-				if EdgeTemplates.FAMILY_OF.has(tid):
-					var q := Autotile.make_terrain_query(tid, chunk_manager)
-					Autotile.refresh_tile(terrain_layer, pos, tid, q)
-				else:
-					terrain_layer.set_cell(pos, tid, Vector2i.ZERO)
+			var pos := Vector2i(world_x, y)
+			if tid == Tiles.AIR:
+				# 修存档 bug: 挖空 tile 必须 erase_cell, 不能 skip — 不然 reload 时
+				# terrain_layer 还留着老地形, 玩家卡块.
+				terrain_layer.erase_cell(pos)
+			elif EdgeTemplates.FAMILY_OF.has(tid):
+				var q := Autotile.make_terrain_query(tid, chunk_manager)
+				Autotile.refresh_tile(terrain_layer, pos, tid, q)
+			else:
+				terrain_layer.set_cell(pos, tid, Vector2i.ZERO)
 			var wid: int = wall_col[y]
-			if wid != Tiles.AIR:
-				var wpos := Vector2i(world_x, y)
-				if EdgeTemplates.FAMILY_OF.has(wid):
-					var wq := Autotile.make_wall_query(wid, chunk_manager)
-					Autotile.refresh_tile(wall_layer, wpos, wid, wq)
-				else:
-					wall_layer.set_cell(wpos, wid, Vector2i.ZERO)
+			var wpos := Vector2i(world_x, y)
+			if wid == Tiles.AIR:
+				wall_layer.erase_cell(wpos)
+			elif EdgeTemplates.FAMILY_OF.has(wid):
+				var wq := Autotile.make_wall_query(wid, chunk_manager)
+				Autotile.refresh_tile(wall_layer, wpos, wid, wq)
+			else:
+				wall_layer.set_cell(wpos, wid, Vector2i.ZERO)
 		SkyLightGrid.invalidate_column(world_x)
 	# 流水: 只标"边界水" dirty (相邻有 AIR 或低水位才可能流) — 避免 worldgen
 	# 大海/大水池整片几千格全 dirty 卡帧.
