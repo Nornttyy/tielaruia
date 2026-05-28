@@ -17,6 +17,7 @@ const VillagePlacer = preload("res://scripts/world/village_placer.gd")
 const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
 const ZombieScene = preload("res://scenes/entities/zombie.tscn")
+const SpiderScene = preload("res://scenes/entities/spider.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
@@ -284,6 +285,7 @@ func _spawn_remote_entity(kind: String) -> Node:
 	match kind:
 		"slime": scene = SlimeScene
 		"zombie": scene = ZombieScene
+		"spider": scene = SpiderScene
 		"cow": scene = CowScene
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
@@ -467,6 +469,15 @@ func _mp_broadcast_entities() -> void:
 			var n2d: Node2D = ent
 			var kind: String = "slime"
 			match grp:
+				"slimes":
+					# spider 也在 slimes 组 (共享剑挥). 用 scene_path 区分.
+					var scene_path_s: String = n2d.scene_file_path if n2d.scene_file_path != null else ""
+					if "spider" in scene_path_s:
+						kind = "spider"
+					elif "zombie" in scene_path_s:
+						kind = "zombie"
+					else:
+						kind = "slime"
 				"zombies": kind = "zombie"
 				"villagers": kind = "villager"
 				"animals":
@@ -691,11 +702,23 @@ func _try_spawn_slime() -> void:
 
 
 func _try_spawn_zombie() -> void:
-	# 夜间僵尸刷新. 上限独立于白天 slime.
+	# 夜间僵尸/蜘蛛刷新. 共享 MAX_ZOMBIES 上限.
 	var zombies := get_tree().get_nodes_in_group("zombies")
-	if zombies.size() >= MAX_ZOMBIES:
+	var spiders := get_tree().get_nodes_in_group("spiders")
+	if zombies.size() + spiders.size() >= MAX_ZOMBIES:
 		return
-	_spawn_surface_creature(ZombieScene)
+	# 50% 概率刷蜘蛛 (替代僵尸), 玩家在地下深处 (y > 30 tile) 时蜘蛛概率 80%
+	var spider_chance: float = 0.5
+	var player := get_player()
+	if player != null:
+		var py_tile: int = int(floor(player.global_position.y / TILE_SIZE))
+		# 玩家位置 y_tile: 地表附近 ~3-5, 30+ 算地下深
+		if py_tile > 30:
+			spider_chance = 0.8
+	if randf() < spider_chance:
+		_spawn_surface_creature(SpiderScene)
+	else:
+		_spawn_surface_creature(ZombieScene)
 
 
 func _try_spawn_animal() -> void:

@@ -1,0 +1,137 @@
+# 蜘蛛: 地穴深处 + 夜晚地表怪. 跑得快 (70 px/s), 接触 6 伤 (高于僵尸).
+# 跟 zombie.gd 结构类似, 但数值更狠.
+extends CharacterBody2D
+
+const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
+
+const GRAVITY := 675.0
+const HIT_FLASH_SEC := 0.1
+const TILE_SIZE := 12
+
+const MAX_HEALTH := 18
+const CONTACT_DAMAGE := 6
+const WALK_SPEED := 70.0     # 比僵尸 28 快 2.5x
+const AGGRO_RANGE_PX := 200.0  # 看见 ~17 tile 内就追
+const JUMP_VY := -240.0      # 撞墙跳更高
+const ENEMY_IFRAME_SEC := 0.2
+
+var current_health: int = MAX_HEALTH
+var _hit_flash: float = 0.0
+var _iframe_t: float = 0.0
+var _is_dying: bool = false
+var _jump_cooldown: float = 0.0
+
+@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+
+
+func _ready() -> void:
+	sprite.sprite_frames = ArtCache.spider_frames
+	sprite.play("idle")
+	add_to_group("spiders")
+	add_to_group("slimes")  # 共享剑挥范围 + 出生点死亡清除
+	current_health = MAX_HEALTH
+
+
+func _physics_process(delta: float) -> void:
+	if has_meta("is_remote"):
+		return
+	if _is_dying:
+		return
+	# 性能: 距玩家 > 50 tile 且站地板 → skip
+	var _p := _find_player()
+	if _p != null and is_on_floor():
+		var _dx: float = _p.global_position.x - global_position.x
+		var _dy: float = _p.global_position.y - global_position.y
+		if _dx * _dx + _dy * _dy > 360000.0:
+			velocity = Vector2.ZERO
+			return
+	if _hit_flash > 0.0:
+		_hit_flash = max(0.0, _hit_flash - delta)
+		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
+	_iframe_t = max(0.0, _iframe_t - delta)
+	if _jump_cooldown > 0.0:
+		_jump_cooldown -= delta
+	# 重力
+	if not is_on_floor():
+		velocity.y += GRAVITY * delta
+	# 追玩家
+	var player := _find_player()
+	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
+		var dir: float = signf(player.global_position.x - global_position.x)
+		velocity.x = dir * WALK_SPEED
+		sprite.flip_h = dir < 0
+		if sprite.animation != "walk":
+			sprite.play("walk")
+	else:
+		velocity.x = move_toward(velocity.x, 0.0, 120.0 * delta)
+		if abs(velocity.x) < 5.0 and sprite.animation != "idle":
+			sprite.play("idle")
+	move_and_slide()
+	# 撞墙 + 落地 → 跳
+	if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
+		velocity.y = JUMP_VY
+		_jump_cooldown = 0.6
+	_check_player_contact()
+
+
+func _find_player() -> Node2D:
+	var players := get_tree().get_nodes_in_group("player")
+	if players.is_empty():
+		return null
+	return players[0]
+
+
+func _check_player_contact() -> void:
+	var player := _find_player()
+	if player == null:
+		return
+	if global_position.distance_to(player.global_position) > 15.0:
+		return
+	var hp: Node = player.get_node_or_null("PlayerHealth")
+	if hp == null:
+		return
+	hp.take_damage(CONTACT_DAMAGE, global_position, 120.0)
+
+
+# 跟 slime/zombie 同接口
+func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
+	if _is_dying or amount <= 0:
+		return false
+	if _iframe_t > 0.0:
+		return false
+	_iframe_t = ENEMY_IFRAME_SEC
+	current_health = max(0, current_health - amount)
+	_hit_flash = HIT_FLASH_SEC
+	sprite.modulate = Color(1.6, 1.0, 1.0)
+	Effects.spawn_damage_number(global_position + Vector2(0, -8), amount)
+	if knockback > 0.0 and source_pos != Vector2.ZERO:
+		var to_self: Vector2 = global_position - source_pos
+		var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
+		dir.y -= 0.4
+		dir = dir.normalized()
+		velocity = dir * knockback
+	if current_health == 0:
+		_die()
+	return true
+
+
+func _die() -> void:
+	_is_dying = true
+	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
+	# 掉 1-2 个 spider_eye
+	var n: int = randi_range(1, 2)
+	for _i in n:
+		_spawn_drop("spider_eye")
+	queue_free()
+
+
+func _spawn_drop(item_id: String) -> void:
+	var drop = ItemDropScene.instantiate()
+	drop.item_id = item_id
+	drop.count = 1
+	drop.global_position = global_position + Vector2(randf_range(-3.0, 3.0), -4.0)
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = get_parent()
+	entities.add_child(drop)

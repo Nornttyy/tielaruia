@@ -606,6 +606,27 @@ const _IRON_ORE_ICON := [
 
 
 
+# 蜘蛛眼: 圆形红眼 + 黑色十字瞳孔
+const _SPIDER_EYE := [
+	"................",
+	"................",
+	"................",
+	".....AAAAA......",
+	"....AaaaaaA.....",
+	"...AAaaaaaAA....",
+	"...AaaajaaaA....",
+	"...AaajnjaaA....",
+	"...AaaajaaaA....",
+	"...AAaaaaaAA....",
+	"....AaaaaaA.....",
+	".....AAAAA......",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
+
 # 骨头: 水平向, 两端球节 (僵尸掉落)
 const _BONE := [
 	"................",
@@ -658,6 +679,7 @@ const _ICONS := {
 	"wool": _WOOL,
 	"grappling_hook": _GRAPPLING_HOOK,
 	"bone": _BONE,
+	"spider_eye": _SPIDER_EYE,
 }
 
 

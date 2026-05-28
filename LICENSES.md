@@ -7,15 +7,16 @@
 - 许可: CC-BY 3.0 / GPL 2.0+
 - 署名: Animal sprites by Daniel Eddeland (opengameart.org)
 
-## Cat Fighter (旧 jaguar 视觉, 现已替换)
-- 文件: `assets/animals/cat_fighter.png` (可删, 暂留)
-- 作者: dogchicken
-- 来源: https://opengameart.org/content/cat-fighter-sprite-sheet
-- 许可: CC-BY 3.0
+## 旧 jaguar 视觉 (已全部删除)
+- Cat Fighter (dogchicken, CC-BY 3.0) — 旧
+- LPC lioness (Sevarihk, CC-BY 4.0) — 旧
+- 两份 PNG 已删, 美洲豹也已移出游戏
 
-## LPC Animals 2022 (jaguar = lioness)
-- 文件: `assets/animals/lioness_lpc.png`
-- 作者: Sevarihk
-- 来源: https://opengameart.org/content/lpc-bears-deer-lions-and-more
-- 许可: CC-BY 4.0
-- 署名: Lioness sprite by Sevarihk (opengameart.org)
+## Loyalty Lies Monsters - Chaos Monster 04 (蜘蛛)
+- 文件: `assets/animals/spider.png`
+- 作者: Heather Lee Harvey
+- 来源: https://opengameart.org/content/loyalty-lies-monsters-chaos-monster-04
+- 主页: https://emeraldactivities.com
+- 许可: CC-BY 3.0
+- 署名: Spider sprite by Heather Lee Harvey (EmeraldActivities.com / opengameart.org), CC-BY 3.0
+- 格式: 210×42 PNG, 5 帧每帧 42×42 (ready / attack / hurt / growl + 1 额外)

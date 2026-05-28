@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://b_spider_2026"]
+
+[ext_resource type="Script" path="res://scripts/entities/spider.gd" id="1_spider"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_spider"]
+size = Vector2(12, 8)
+
+[node name="Spider" type="CharacterBody2D"]
+script = ExtResource("1_spider")
+collision_layer = 4
+collision_mask = 3
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -10)
+centered = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_spider")
