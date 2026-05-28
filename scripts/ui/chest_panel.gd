@@ -178,8 +178,9 @@ func _refresh_all() -> void:
 			_refresh_slot(_player_slots_ui[i], data)
 
 
-# 拖动状态: press 时记录从哪个 slot 拿起 + 是否真拿起了 (cursor 之前空 + slot 有物品)
-var _drag_was_pickup: bool = false
+# 拖动状态: 严格"按住拖" — press 只拿起 / release 才放下, 没有 click-click
+var _drag_active: bool = false           # 当前是否在 drag 中 (press 后 release 前)
+var _drag_picked_up_this_press: bool = false  # 这次 press 是不是从空 cursor 拿起的
 var _drag_press_idx: int = -1
 var _drag_press_is_chest: bool = false
 
@@ -189,15 +190,24 @@ func _on_slot_button_down(btn: Button) -> void:
 		return
 	var idx: int = btn.get_meta("idx", 0)
 	var is_chest: bool = btn.get_meta("is_chest", false)
-	# 记录"拿起"还是"放下": 看 cursor 现在是否空
-	var was_empty: bool = _player_inv.cursor_slot == null
-	_apply_click(idx, is_chest)
-	_drag_was_pickup = was_empty and _player_inv.cursor_slot != null
 	_drag_press_idx = idx
 	_drag_press_is_chest = is_chest
+	if _player_inv.cursor_slot == null:
+		# cursor 空 → 尝试拿起 (click_slot 在空 slot 上是无操作)
+		_apply_click(idx, is_chest)
+		if _player_inv.cursor_slot != null:
+			_drag_active = true
+			_drag_picked_up_this_press = true
+		else:
+			_drag_active = false
+			_drag_picked_up_this_press = false
+	else:
+		# cursor 已有 (上次 swap 留下来的) → 不在 press 上放下, 等 release 落点
+		_drag_active = true
+		_drag_picked_up_this_press = false
 
 
-# 全局监听鼠标松开: 如果是 pickup 后松手在另一个 slot 上 → 落到那个 slot
+# 全局监听鼠标松开 → 决定 drop / cancel / no-op
 func _input(event: InputEvent) -> void:
 	if not _is_open:
 		return
@@ -206,19 +216,24 @@ func _input(event: InputEvent) -> void:
 	var mb := event as InputEventMouseButton
 	if mb.pressed or mb.button_index != MOUSE_BUTTON_LEFT:
 		return
-	# release 时, 找鼠标下的 slot
-	if not _drag_was_pickup:
+	if not _drag_active:
 		return
 	var found := _find_slot_under_mouse()
 	if found.idx < 0:
-		_drag_was_pickup = false
+		# 松手在 slot 外: 如果本次拿起的, 取消放回原位; 否则 cursor 保留
+		if _drag_picked_up_this_press:
+			_apply_click(_drag_press_idx, _drag_press_is_chest)
+		_drag_active = false
 		return
-	# 同 slot 松手 → 啥也不做 (保持 cursor 拿着, 等下一次 press 放下)
 	if found.idx == _drag_press_idx and found.is_chest == _drag_press_is_chest:
-		_drag_was_pickup = false
+		# 同 slot 松手 (没拖动): 取消拿起 (放回原位), 或 cursor 已经在拿则保持
+		if _drag_picked_up_this_press:
+			_apply_click(_drag_press_idx, _drag_press_is_chest)
+		_drag_active = false
 		return
+	# 拖到不同 slot → 放下/合并/交换 (click_slot 处理 4 种情况)
 	_apply_click(found.idx, found.is_chest)
-	_drag_was_pickup = false
+	_drag_active = false
 
 
 func _apply_click(idx: int, is_chest: bool) -> void:

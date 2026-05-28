@@ -388,12 +388,13 @@ func close() -> void:
 	closed.emit()
 
 
-# 拖动状态: 跟 chest_panel 一致
-var _drag_was_pickup: bool = false
+# 拖动状态: 严格"按住拖" — press 只拿起 / release 才放下, 没有 click-click
+var _drag_active: bool = false
+var _drag_picked_up_this_press: bool = false
 var _drag_press_idx: int = -1
 
 
-# 36 个背包格子左键: press 拿/放, release 在不同格上 → 落到那
+# 36 个背包格子: press 只拿起 (cursor 空时), 不放下. 放下走 _input release.
 func _on_inv_slot_input(event: InputEvent, idx: int) -> void:
 	if not (event is InputEventMouseButton):
 		return
@@ -401,16 +402,29 @@ func _on_inv_slot_input(event: InputEvent, idx: int) -> void:
 		return
 	if _player_inv == null or _player_inv.inventory == null:
 		return
-	if event.pressed:
-		var was_empty: bool = _player_inv.cursor_slot == null
-		InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, idx)
-		if _player_inv.has_signal("inventory_changed"):
-			_player_inv.inventory_changed.emit()
-		_drag_was_pickup = was_empty and _player_inv.cursor_slot != null
-		_drag_press_idx = idx
+	if not event.pressed:
+		return
+	_drag_press_idx = idx
+	if _player_inv.cursor_slot == null:
+		_apply_inv_click(idx)
+		if _player_inv.cursor_slot != null:
+			_drag_active = true
+			_drag_picked_up_this_press = true
+		else:
+			_drag_active = false
+			_drag_picked_up_this_press = false
+	else:
+		_drag_active = true
+		_drag_picked_up_this_press = false
 
 
-# 全局监听鼠标松开 → 找鼠标下的 slot → 把 cursor 物品落下
+func _apply_inv_click(idx: int) -> void:
+	InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, idx)
+	if _player_inv.has_signal("inventory_changed"):
+		_player_inv.inventory_changed.emit()
+
+
+# 全局监听鼠标松开 → 找鼠标下的 slot → 放下/合并/交换 (没拖动则取消)
 func _input(event: InputEvent) -> void:
 	if not is_open():
 		return
@@ -419,21 +433,24 @@ func _input(event: InputEvent) -> void:
 	var mb := event as InputEventMouseButton
 	if mb.pressed or mb.button_index != MOUSE_BUTTON_LEFT:
 		return
-	if not _drag_was_pickup:
+	if not _drag_active:
 		return
-	# 找鼠标下的 slot
 	var found_idx := _find_inv_slot_under_mouse()
 	if found_idx < 0:
-		_drag_was_pickup = false
+		# 松手在 slot 外: 本次拿起的就放回, 否则 cursor 保留
+		if _drag_picked_up_this_press:
+			_apply_inv_click(_drag_press_idx)
+		_drag_active = false
 		return
-	# 同 slot 松手 → 啥也不做, 保持 cursor 拿着
 	if found_idx == _drag_press_idx:
-		_drag_was_pickup = false
+		# 同 slot 松手 (没拖动): 取消本次拿起
+		if _drag_picked_up_this_press:
+			_apply_inv_click(_drag_press_idx)
+		_drag_active = false
 		return
-	InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, found_idx)
-	if _player_inv.has_signal("inventory_changed"):
-		_player_inv.inventory_changed.emit()
-	_drag_was_pickup = false
+	# 拖到不同 slot → 放下/合并/交换
+	_apply_inv_click(found_idx)
+	_drag_active = false
 
 
 func _find_inv_slot_under_mouse() -> int:
