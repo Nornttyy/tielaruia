@@ -115,6 +115,7 @@ func _build_blocks() -> void:
 		BlocksArt.LAVA, BlocksArt.HELL_STONE, BlocksArt.OBSIDIAN, BlocksArt.HELL_FRUIT,
 		BlocksArt.SHADOW_CHEST,
 		BlocksArt.LIFE_CRYSTAL,
+		BlocksArt.HELL_ALLOY_ORE,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -222,14 +223,15 @@ static func _extract_interior_icon(atlas: ImageTexture) -> ImageTexture:
 
 
 func _build_items() -> void:
-	# 非工具类 (老 ASCII pattern)
+	# 非工具类 (老 ASCII pattern). 注意: 矿石原料 (coal / iron_ore / silver_ore / 等) 不在
+	# 这里 — 它们在 _ITEM_TO_TILE 里映射到 block 图, 用世界里的"矿石方块"样子.
 	for item_id in ["slime_jelly", "apple",
-			"coal", "iron_ore", "bone", "spider_eye", "lens",
+			"bone", "spider_eye", "lens",
 			"raw_meat", "leather", "wool", "cooked_meat", "mushroom",
 			"iron_ingot", "copper_ingot", "tin_ingot", "silver_ingot", "gold_ingot",
 			"grappling_hook",
 			"hell_fruit", "obsidian", "hell_stone",
-			"wood_bow", "wood_arrow", "hell_crystal_ingot"]:
+			"wood_bow", "wood_arrow", "hell_crystal_ingot", "hell_alloy_ingot"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画
@@ -237,7 +239,6 @@ func _build_items() -> void:
 		item_icons["%s_sword" % tier] = ItemsArt.get_icon("%s_sword" % tier)
 		item_icons["%s_pickaxe" % tier] = ItemsArt.get_icon("%s_pickaxe" % tier)
 		item_icons["%s_axe" % tier] = ItemsArt.get_icon("%s_axe" % tier)
-	item_icons["silver_ore"] = ItemsArt.get_icon("silver_ore")
 
 
 func _build_doors() -> void:
@@ -292,11 +293,16 @@ const _ITEM_TO_TILE := {
 	"door": BlocksArt.DOOR,
 	"slime_torch": BlocksArt.SLIME_TORCH,
 	"torch": BlocksArt.TORCH,
+	# 矿物物品 (挖矿掉的) 全部用对应的"矿石方块" tile 图: 跟世界里挖到的方块一致.
+	# 熔炼后变成 *_ingot 物品, 才是干净的金属条 (见 items_art.gd _IRON_INGOT 等).
 	"copper_ore": BlocksArt.COPPER_ORE,
 	"tin_ore": BlocksArt.TIN_ORE,
 	"gold_ore": BlocksArt.GOLD_ORE,
 	"diamond": BlocksArt.DIAMOND_ORE,
 	"hell_crystal": BlocksArt.HELL_CRYSTAL,
+	"coal": BlocksArt.COAL_ORE,
+	"iron_ore": BlocksArt.IRON_ORE,
+	"silver_ore": BlocksArt.SILVER_ORE,
 	"chest": BlocksArt.CHEST,
 	# 新群系
 	"snow": BlocksArt.SNOW,

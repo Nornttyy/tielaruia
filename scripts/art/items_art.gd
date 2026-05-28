@@ -565,66 +565,9 @@ const _APPLE := [
 ]
 
 # 煤块: 不规则块状堆叠, 中央深 k 阴影
-const _COAL := [
-	"................",
-	"................",
-	"....cccccc......",
-	"...ckckckkc.....",
-	"..ckccccccck....",
-	"..ccckcccckcc...",
-	"..cccccckkccc...",
-	"...cccckcccc....",
-	"....ccckcc......",
-	".....ccc........",
-	"................",
-	"................",
-	"................",
-	"................",
-	"................",
-	"................",
-]
-
-# 银矿原石: 冷石底 + 银光斑
-const _SILVER_ORE_ICON := [
-	"................",
-	"................",
-	"....xdxxx.......",
-	"...xVVdVVx......",
-	"..xVVxxVVVx.....",
-	"..xVxVxVVdx.....",
-	"..xVddVxVVx.....",
-	"...xVxVVVx......",
-	"....xxxdx.......",
-	".....xxx........",
-	"................",
-	"................",
-	"................",
-	"................",
-	"................",
-	"................",
-]
-
-
-# 铁矿原石: 暖石底 + 几处铁锈斑
-const _IRON_ORE_ICON := [
-	"................",
-	"................",
-	"....utuuu.......",
-	"...uUUtUUu......",
-	"..uUUuuUUUu.....",
-	"..uUuUuUUtu.....",
-	"..uUttUuUUu.....",
-	"...uUuUUUu......",
-	"....uuutu.......",
-	".....uuu........",
-	"................",
-	"................",
-	"................",
-	"................",
-	"................",
-	"................",
-]
-
+# 注: coal / iron_ore / silver_ore 等矿物物品的图标已统一为"挖到的方块"样子,
+# 走 art_cache.gd 的 _ITEM_TO_TILE → BlocksArt.COAL_ORE / IRON_ORE / SILVER_ORE.
+# 以前这里有 _COAL / _IRON_ORE_ICON / _SILVER_ORE_ICON 小块岩屑图, 用户要求统一就删了.
 
 
 # 金属锭 通用形状: 6x3 梯形 (上窄下宽), 16x16 居中. 不同金属换色.
@@ -849,6 +792,27 @@ const _HELL_CRYSTAL_INGOT := [
 	"................",
 ]
 
+# 地狱合金锭 icon: 紫黑底 + 银闪光. 用 K/k 黑 + N/T 钻石蓝 (暗调) + b/F 银亮 + s 银深.
+# N/T 用作"紫光泽" 替代 (items_art PALETTE 没紫). 显示偏紫黑+冷银.
+const _HELL_ALLOY_INGOT := [
+	"................",
+	"................",
+	"................",
+	"................",
+	"....nnnnnnnn....",
+	"...nKKkkkkKKn...",
+	"..nKbbssssbbTn..",
+	".nTKbbsssbbbKTn.",
+	".nTKbsFssFsbKTn.",
+	".nTKbsssssbbKTn.",
+	".nTKbsNsssNbKTn.",
+	"..nTTKKKKKKTTn..",
+	"...nnnnnnnnn....",
+	"................",
+	"................",
+	"................",
+]
+
 # 蓝光蘑菇 icon: 蓝盖 + 白点 + 白柄 (复用钻石青蓝 + 羊毛白)
 # N=盖中蓝, T=盖阴影, Q=白点闪光, W=柄主白, w=柄阴影, n=黑边
 const _MUSHROOM_ICON := [
@@ -963,9 +927,7 @@ const _ICONS := {
 	"stone_sword": _STONE_SWORD,
 	"stone_pickaxe": _STONE_PICKAXE,
 	"stone_axe": _STONE_AXE,
-	"coal": _COAL,
-	"iron_ore": _IRON_ORE_ICON,
-	"silver_ore": _SILVER_ORE_ICON,
+	# coal / iron_ore / silver_ore: 走 art_cache.gd _ITEM_TO_TILE 用 block 图, 不在这里
 	"iron_pickaxe": _IRON_PICKAXE,
 	"iron_sword": _IRON_SWORD,
 	"iron_axe": _IRON_AXE,
@@ -999,6 +961,7 @@ const _ICONS := {
 	"obsidian": _OBSIDIAN_ICON,
 	"hell_stone": _HELL_STONE_ICON,
 	"hell_crystal_ingot": _HELL_CRYSTAL_INGOT,
+	"hell_alloy_ingot": _HELL_ALLOY_INGOT,
 	"wood_bow": _WOOD_BOW,
 	"wood_arrow": _WOOD_ARROW,
 }
