@@ -8,8 +8,8 @@ const REACH_TILES := 4
 const INVALID_TILE := Vector2i(-1, -1)
 
 # Tile 硬度（累计 tool_speed*delta 达此值挖完，单位"秒"）
-# STONE 3.0s, 全部矿石跟 STONE 同硬度 3.0s.
-# 镐 _tool_speed 按 tier 1-7 加速 (wood 3s → diamond 0.3s).
+# 用户改: 矿石按 tier 递增 (3→8s), 石头/煤 3s base.
+# 镐 _tool_speed 按 tier 1-7 加速 (wood ×1 → diamond ×5).
 const _HARDNESS := {
 	Tiles.GRASS: 0.3,
 	Tiles.DIRT: 0.3,
@@ -19,16 +19,16 @@ const _HARDNESS := {
 	Tiles.WORKBENCH: 0.5,
 	Tiles.DOOR: 0.5,
 	Tiles.LOG: 0.6,
-	Tiles.STONE: 3.0,
+	Tiles.STONE: 3.0,         # base
 	Tiles.DEEP_STONE: 3.0,
-	Tiles.COAL_ORE: 3.0,
-	Tiles.COPPER_ORE: 3.0,
-	Tiles.TIN_ORE: 3.0,
-	Tiles.IRON_ORE: 3.0,
-	Tiles.SILVER_ORE: 3.0,
-	Tiles.GOLD_ORE: 3.0,
-	Tiles.DIAMOND_ORE: 3.0,
-	Tiles.HELL_CRYSTAL: 3.0,
+	Tiles.COAL_ORE: 3.0,      # 跟石头同
+	Tiles.COPPER_ORE: 3.5,    # +0.5
+	Tiles.TIN_ORE: 3.5,
+	Tiles.IRON_ORE: 4.0,      # +1
+	Tiles.SILVER_ORE: 5.0,    # +2
+	Tiles.GOLD_ORE: 6.0,      # +3
+	Tiles.DIAMOND_ORE: 7.0,   # +4
+	Tiles.HELL_CRYSTAL: 8.0,  # +5
 	Tiles.LOG_TOP: 0.6,
 	Tiles.LOG_ROOT_L: 0.4,
 	Tiles.LOG_ROOT_R: 0.4,
@@ -602,18 +602,18 @@ func _tool_speed(tool_kind: String, tid: int) -> float:
 			5: return 0.267   # silver - 2.25s
 			6: return 0.40    # gold   - 1.5s
 			_: return 0.667   # diamond+ - 0.9s
-	# 镐挖 石/深石/矿石: 7 tier 进阶 (用户改: wood 3s, diamond 0.3s)
+	# 镐挖 石/深石/矿石: 7 tier 进阶 (用户调: wood 3s 不变, 顶级慢下来到 0.6s)
 	# 硬度 3.0s base. 速度 = 3.0 / 想要时间.
 	if tool_kind == "pickaxe" and _PICKAXE_STONE_LIKE.has(tid):
 		var tier := _current_tool_tier()
 		match tier:
 			1: return 1.0   # wood    - 3.0s
-			2: return 1.5   # stone   - 2.0s
-			3: return 2.0   # copper  - 1.5s
-			4: return 3.0   # iron    - 1.0s
-			5: return 4.0   # silver  - 0.75s
-			6: return 6.0   # gold    - 0.5s
-			_: return 10.0  # diamond+ - 0.3s
+			2: return 1.2   # stone   - 2.5s
+			3: return 1.5   # copper  - 2.0s
+			4: return 2.0   # iron    - 1.5s
+			5: return 2.5   # silver  - 1.2s
+			6: return 3.33  # gold    - 0.9s
+			_: return 5.0   # diamond+ - 0.6s
 	return 1.0
 
 
