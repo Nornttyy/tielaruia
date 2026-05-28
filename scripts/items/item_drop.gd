@@ -71,7 +71,7 @@ func _physics_process(delta: float) -> void:
 	# 简单地面检测：查脚下 tile 是否实心
 	var terrain := get_tree().get_first_node_in_group("terrain_layer")
 	if terrain != null:
-		var foot_tile: Vector2i = terrain.local_to_map(terrain.to_local(global_position + Vector2(0, 4)))
+		var foot_tile: Vector2i = terrain.local_to_map(terrain.to_local(global_position + Vector2(0, 3)))
 		var tid: int = terrain.get_cell_source_id(foot_tile)
 		if tid != -1 and Tiles.is_solid(tid):
 			if velocity.y > 0.0:

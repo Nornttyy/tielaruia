@@ -6,8 +6,8 @@
 # 底部中心对齐到 position 这个"手"点, 这样挥摆时手柄不离手, 像真的握住一样.
 extends Sprite2D
 
-const HAND_OFFSET_X := 5.0     # 手相对玩家中心 x 偏移
-const HAND_OFFSET_Y := -10.0   # y (玩家中部胸口位置)
+const HAND_OFFSET_X := 4.0     # 手相对玩家中心 x 偏移 (TILE_SIZE 16→12 后跟玩家缩 0.75)
+const HAND_OFFSET_Y := -8.0    # y (玩家中部胸口位置)
 const TOOL_SIZE := 1.0         # 工具 (剑/镐/斧) 原大小 16px (用户要求"工具太小了" → 0.7→1.0)
 const BLOCK_SIZE := 0.55       # 方块/材料 缩到 55% (~9px)
 const SWING_ANGLE_DEG := 75.0
@@ -96,7 +96,7 @@ func play_swing() -> void:
 
 
 const THRUST_DURATION := 0.15
-const THRUST_OFFSET_PX := 14.0   # 工具向前突进的距离
+const THRUST_OFFSET_PX := 10.0   # 工具向前突进的距离 (TILE_SIZE 缩 0.75)
 const PICKAXE_ATTACK_DURATION := 0.7   # 转一圈用时 (慢一点, 用户偏好)
 
 

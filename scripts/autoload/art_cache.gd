@@ -96,32 +96,31 @@ func _build_blocks() -> void:
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
-			var atlas: ImageTexture = BlocksArt.build_atlas(tile_id)
-			atlas = _apply_biome_tint(tile_id, atlas)
-			# TILE_SIZE 16→12: 每格 16x16 缩到 12x12, 边缘行/列保留 (避免 Godot 渲染时丢边线)
-			atlas = _smart_resize_atlas_16_to_12(atlas)
-			block_textures[tile_id] = atlas
-			block_icons[tile_id] = _extract_interior_icon_12(atlas)
+			var atlas_16: ImageTexture = BlocksArt.build_atlas(tile_id)
+			atlas_16 = _apply_biome_tint(tile_id, atlas_16)
+			# UI icon 用原 16x16 (不缩, 库存里能看清);
+			# 世界内 tile 用 smart-resize 后 12x12 (匹配 TileSet tile_size=12, 边线齐整)
+			block_icons[tile_id] = _extract_interior_icon(atlas_16)
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(atlas_16)
 		elif tile_id == BlocksArt.WATER:
-			# 水: 64×16 动画 atlas (4 帧). icon 用单帧.
-			block_textures[tile_id] = BlocksArt.get_water_animated_atlas()
+			# 水: 64×16 → 48×12 智能缩放; UI icon 用原 16x16
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_animated_atlas())
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L1:
-			block_textures[tile_id] = BlocksArt.get_water_level_atlas(1)
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(1))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L2:
-			block_textures[tile_id] = BlocksArt.get_water_level_atlas(2)
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(2))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L3:
-			block_textures[tile_id] = BlocksArt.get_water_level_atlas(3)
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(3))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		else:
-			var single: ImageTexture = BlocksArt.get_texture(tile_id)
-			single = _apply_biome_tint(tile_id, single)
-			# 单 cell 16x16 也缩到 12x12 (跟 TileSet tile_size=12 一致)
-			single = _smart_resize_atlas_16_to_12(single)
-			block_textures[tile_id] = single
-			block_icons[tile_id] = single
+			var single_16: ImageTexture = BlocksArt.get_texture(tile_id)
+			single_16 = _apply_biome_tint(tile_id, single_16)
+			# UI icon 用原 16x16; world tile 用 12x12 (匹配 TileSet)
+			block_icons[tile_id] = single_16
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(single_16)
 
 
 # 群系 tile 复用现有 pattern, 用 tint 区分. 在 atlas / 单 cell 两种路径都用.
