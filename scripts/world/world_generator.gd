@@ -290,6 +290,10 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 地狱: y > HELL_DEPTH 区域换成 HELL_STONE + 散布 LAVA 池 + 周围 OBSIDIAN 环 + 火果挂顶
 	_apply_hell_biome_chunk(c, world_seed, chunk_x, chunk_width, height)
 
+	# 火山口: 偶发 (1/4 chunk 一个) 在地狱区凿垂直竖井, 黑曜石包边 + 底部岩浆池 + 顶岩浆源
+	# (chunk 加载时顶部 LAVA 会被 water_sim 流下来, 形成"瀑布"动画 → 流完后底池子保留)
+	_place_volcano_crater_chunk(c, world_seed, chunk_x, chunk_width, height)
+
 	# 沙漠地下保护: 把 SAND 邻 AIR 的 tile 改 STONE (防沙崩塌填满矿洞)
 	_protect_sand_caves(c, chunk_heights, chunk_width, height)
 
@@ -930,6 +934,72 @@ static func _ring_obsidian_around_lava(c: Chunk, chunk_width: int, height: int) 
 					continue
 				if c.tiles[nx][ny] == Tiles.HELL_STONE:
 					c.tiles[nx][ny] = Tiles.OBSIDIAN
+
+
+# 火山口: 在地狱区凿一个 5-7 宽 × 8-12 高的垂直竖井, 壁黑曜石,
+# 底 LAVA 池 (3 行), 顶有 LAVA 源 (1 列 4 高). 加载时源处 LAVA 顺壁流下 → 视觉"瀑布".
+# 每 chunk 25% 概率出 1 个 (太密则不像奇景).
+const VOLCANO_CHUNK_PROB := 0.25
+static func _place_volcano_crater_chunk(c: Chunk, world_seed: int, chunk_x: int,
+		chunk_width: int, height: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _hash3(world_seed, chunk_x, 0x5f81a30c)
+	if rng.randf() > VOLCANO_CHUNK_PROB:
+		return
+	# 选位置: chunk 中间一带 x, y 在 HELL_DEPTH+1 ~ height-12 之间
+	var crater_w: int = rng.randi_range(5, 7)         # 宽度
+	var crater_h: int = rng.randi_range(8, 12)        # 高度 (含池)
+	var x_center_local: int = rng.randi_range(crater_w / 2 + 2, chunk_width - crater_w / 2 - 3)
+	var y_top: int = rng.randi_range(HELL_DEPTH + 2, height - crater_h - 4)
+	var y_bottom: int = y_top + crater_h - 1
+	# 1) 凿竖井 (核心 AIR), 壁外 1 圈 OBSIDIAN 锁 lava
+	for dx in range(-crater_w / 2, crater_w / 2 + 1):
+		var lx: int = x_center_local + dx
+		if lx < 0 or lx >= chunk_width:
+			continue
+		# 是边缘列? 用 OBSIDIAN 包边
+		var is_edge_x: bool = (dx == -crater_w / 2) or (dx == crater_w / 2)
+		for wy in range(y_top, y_bottom + 1):
+			if is_edge_x or wy == y_bottom:
+				# 边或底: 黑曜石 (lava 容器)
+				c.tiles[lx][wy] = Tiles.OBSIDIAN
+			else:
+				c.tiles[lx][wy] = Tiles.AIR
+	# 2) 底部 3 行 LAVA 池 (在内部 AIR 区), 池底是 OBSIDIAN 撑住
+	for dx in range(-crater_w / 2 + 1, crater_w / 2):
+		var lx: int = x_center_local + dx
+		if lx < 0 or lx >= chunk_width:
+			continue
+		for dy in range(0, 3):
+			var wy: int = y_bottom - 1 - dy
+			if wy <= y_top:
+				break
+			c.tiles[lx][wy] = Tiles.LAVA
+	# 3) 顶部 LAVA 源: 中央 1 列 4 高 (从 y_top+1 往下 4 格), 加载时会瀑布下来
+	var src_x: int = x_center_local
+	if src_x >= 0 and src_x < chunk_width:
+		for dy in range(0, 4):
+			var wy: int = y_top + 1 + dy
+			if wy >= height:
+				break
+			c.tiles[src_x][wy] = Tiles.LAVA
+	# 4) 火山口"嘴": 在 y_top 往上 1-2 格挖出一个略宽的"漏斗口" (3-5 宽 AIR + OBSIDIAN 边)
+	# 让玩家从上方能看到火山口, 视觉提示
+	var lip_w: int = crater_w + 2
+	for dy in range(1, 3):
+		var wy: int = y_top - dy
+		if wy < HELL_DEPTH:
+			break
+		for dx in range(-lip_w / 2, lip_w / 2 + 1):
+			var lx: int = x_center_local + dx
+			if lx < 0 or lx >= chunk_width:
+				continue
+			var is_lip_edge: bool = (dx == -lip_w / 2) or (dx == lip_w / 2)
+			if c.tiles[lx][wy] == Tiles.HELL_STONE or c.tiles[lx][wy] == Tiles.OBSIDIAN:
+				if is_lip_edge:
+					c.tiles[lx][wy] = Tiles.OBSIDIAN
+				else:
+					c.tiles[lx][wy] = Tiles.AIR
 
 
 # 火果: HELL_STONE 块下方是 AIR → 7% 长一个 HELL_FRUIT 挂在下方那格.
