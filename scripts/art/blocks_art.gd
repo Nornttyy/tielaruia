@@ -38,6 +38,7 @@ const HELL_FRUIT := 59      # 火果 (装饰, 红果 + 黄柄)
 const SHADOW_CHEST := 60    # 阴影宝箱 (黑底 + 红光锁孔 + 红宝石)
 const LIFE_CRYSTAL := 61    # 生命水晶 (用户加, _PATTERN_MAP 引用了, 补常量声明)
 const HELL_ALLOY_ORE := 62  # 地狱合金矿 (深紫黑 + 银闪点)
+const SANDSTONE := 63       # 砂岩 (暖黄, 有层纹, 金字塔骨架)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -303,6 +304,17 @@ const _P_OBSIDIAN := {
 	"v": Color8(150, 110, 190),   # 亮紫高光
 	"V": Color8(190, 160, 230),   # 极亮紫 (闪点)
 	"b": Color8(35, 30, 50),      # 蓝紫深 (过渡)
+}
+
+# 砂岩: 暖黄基 + 水平层纹 + 偶发裂纹. 比 SAND 暗 + 有结构感, 适合做"古老金字塔".
+const _P_SANDSTONE := {
+	"s": Color8(210, 175, 95),    # 砂岩主色 (暖黄)
+	"S": Color8(165, 130, 60),    # 阴影
+	"l": Color8(235, 200, 130),   # 高光
+	"k": Color8(75, 50, 22),      # 黑裂纹
+	"m": Color8(195, 155, 80),    # 中间过渡
+	"o": Color8(180, 140, 70),    # 层纹深
+	"L": Color8(245, 215, 150),   # 极亮
 }
 
 # 地狱合金矿: 深紫黑底 + 银闪点 + 紫光泽过渡. 嵌在地狱石上.
@@ -1420,6 +1432,26 @@ const _P_SILVER_ORE := {
 }
 
 # 地狱晶体: DEEP_STONE 骨架更暗 + h 烈火红 + H 深岩浆 + y 黄红发光
+# 砂岩 pattern: 横向层纹 (像古埃及石材) + 偶发小裂纹 + 暖色调
+const _SANDSTONE := [
+	"slslslslslslslsl",
+	"smmmmmmmmommmmms",
+	"slsssssssssssssl",
+	"sLsssssssssssssL",   # 高光层
+	"slsssssssssssssl",
+	"smmmmmmmmmmmommm",
+	"oooooooooooooooo",   # 深层纹
+	"slkslslslslslsls",   # 小裂纹 k
+	"sLssssssssssssss",
+	"slsssssssssssssl",
+	"smmmmmmmmmmmmmms",
+	"oooooooooooooooo",   # 又一深层纹
+	"slssksssssssssss",
+	"slsssssssssssssl",
+	"smmmmmmmmmmmmmms",
+	"sSslslslslslslsS",
+]
+
 # 地狱合金矿: 紫黑基底 + 银闪点 + 偶发紫光泽. STONE 形结构 + 不同颜色族.
 const _HELL_ALLOY_ORE := [
 	"sSsbsSsSsbsSsSss",
@@ -1804,6 +1836,7 @@ const _PATTERN_MAP := {
 	SHADOW_CHEST: [_SHADOW_CHEST_PAT, _P_SHADOW_CHEST],   # 独立锯齿形 + 红眼骨白
 	LIFE_CRYSTAL: [_LIFE_CRYSTAL, _P_LIFE_CRYSTAL],   # 心形粉色结晶, 矿洞偶发
 	HELL_ALLOY_ORE: [_HELL_ALLOY_ORE, _P_HELL_ALLOY_ORE],   # 地狱合金矿 (紫黑+银)
+	SANDSTONE: [_SANDSTONE, _P_SANDSTONE],                  # 砂岩 (暖黄+层纹)
 }
 
 

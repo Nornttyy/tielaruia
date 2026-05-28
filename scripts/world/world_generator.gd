@@ -309,6 +309,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# (chunk 加载时顶部 LAVA 会被 water_sim 流下来, 形成"瀑布"动画 → 流完后底池子保留)
 	_place_volcano_crater_chunk(c, world_seed, chunk_x, chunk_width, height)
 
+	# 沙漠金字塔: 2-3 个/世界, 沙漠 chunk 上盖 25 宽 13 层台阶金字塔 + 内部走廊 + 2-3 宝箱
+	_place_pyramid_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height, biome_centers)
+
 	# 沙漠地下保护: 把 SAND 邻 AIR 的 tile 改 STONE (防沙崩塌填满矿洞)
 	_protect_sand_caves(c, chunk_heights, chunk_width, height)
 
@@ -1157,6 +1160,113 @@ static func _place_hell_fruit_chunk(c: Chunk, chunk_width: int, height: int, rng
 				continue
 			if rng.randf() < HELL_FRUIT_CHANCE:
 				c.tiles[lx][y + 1] = Tiles.HELL_FRUIT
+
+
+# ===== 沙漠金字塔 =====
+# 用户要求: 典典台阶 13 层, 基底 25 宽, 顶 1 宽. 2-3 个/世界, 沙漠区随机出.
+# 内部: 底层走廊 (高 3) 横穿 + 2 个垂直入口 + 沿走廊 2-3 个 chest.
+const PYRAMID_BASE_WIDTH := 25
+const PYRAMID_LAYERS := 13
+const PYRAMID_ROOM_HEIGHT := 3   # 内部走廊高 3 格
+
+# 给定 world_seed, 返回 2-3 个 chunk_x (有金字塔的, 都在沙漠区).
+# 先扫所有 chunk 找沙漠的, 再从中随机选 2-3 个. 保证每世界都有金字塔.
+static func _pyramid_chunks(world_seed: int) -> Array:
+	var centers: Dictionary = _build_biome_centers(world_seed)
+	# 找所有 "中心在沙漠 biome 内" 的 chunks (扫 -20 到 +35, 兼容 biome 落在负 chunk 的情况)
+	var desert_chunks: Array = []
+	for cx in range(-20, 36):
+		var chunk_center_x: int = cx * 64 + 32
+		if _biome_at_x(chunk_center_x, centers) == BIOME_DESERT:
+			desert_chunks.append(cx)
+	if desert_chunks.is_empty():
+		return []
+	# 随机选 min(2-3, 沙漠 chunk 总数)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = world_seed + 0xa1b2c3
+	var target_count: int = rng.randi_range(2, 3)
+	var num: int = min(target_count, desert_chunks.size())
+	# Shuffle 选前 num 个
+	var pool: Array = desert_chunks.duplicate()
+	for i in range(pool.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = pool[i]
+		pool[i] = pool[j]
+		pool[j] = tmp
+	return pool.slice(0, num)
+
+
+static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
+		world_seed: int, chunk_x: int, chunk_width: int, height: int, biome_centers: Dictionary) -> void:
+	var pyramid_chunks: Array = _pyramid_chunks(world_seed)
+	if not pyramid_chunks.has(chunk_x):
+		return
+	var chunk_start: int = chunk_x * chunk_width
+	# 选中心 x (chunk 中部, 留 PYRAMID_BASE_WIDTH/2 + 2 边)
+	var half_base: int = PYRAMID_BASE_WIDTH / 2   # 12
+	var x_center_local: int = chunk_width / 2     # 32
+	var world_x_center: int = chunk_start + x_center_local
+	# 必须落在沙漠 biome (不然金字塔长在草地上不合理)
+	if _biome_at_x(world_x_center, biome_centers) != BIOME_DESERT:
+		return
+	# 基底 y: 用中心列的 surf
+	if not chunk_heights.has(world_x_center):
+		return
+	var base_y: int = chunk_heights[world_x_center]
+	# 顶 y = base_y - 12. 检查不顶天
+	var top_y: int = base_y - (PYRAMID_LAYERS - 1)
+	if top_y < 2:
+		return
+	# 1) 实心塔身: 每层 SANDSTONE, 半宽递减
+	for layer in PYRAMID_LAYERS:
+		var y: int = base_y - layer
+		var half_w_layer: int = half_base - layer
+		if half_w_layer < 0:
+			break
+		for dx in range(-half_w_layer, half_w_layer + 1):
+			var lx: int = x_center_local + dx
+			if lx < 0 or lx >= chunk_width:
+				continue
+			c.tiles[lx][y] = Tiles.SANDSTONE
+	# 2) 凿内部走廊 (底 3 行 AIR, 横穿基底)
+	#    y_corridor_bot = base_y - 1 (脚踏 y), y_corridor_top = base_y - 3 (头顶上)
+	var corridor_half: int = half_base - 2   # 走廊比塔窄 2 格 (留 2 格墙)
+	for dy in range(0, PYRAMID_ROOM_HEIGHT):
+		var y: int = base_y - 1 - dy
+		for dx in range(-corridor_half, corridor_half + 1):
+			var lx: int = x_center_local + dx
+			if lx < 0 or lx >= chunk_width:
+				continue
+			c.tiles[lx][y] = Tiles.AIR
+	# 3) 2-3 个宝箱沿走廊摆 (用 chunk-deterministic RNG 选具体几个)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _hash3(world_seed, chunk_x, 0xfeed5cab)
+	var chest_count: int = rng.randi_range(2, 3)
+	var chest_xs: Array = []
+	for _i in chest_count:
+		var dx: int = rng.randi_range(-corridor_half + 1, corridor_half - 1)
+		var attempt: int = 0
+		while chest_xs.has(dx) and attempt < 10:
+			dx = rng.randi_range(-corridor_half + 1, corridor_half - 1)
+			attempt += 1
+		chest_xs.append(dx)
+	# 宝箱 tier: 第 1 个 gold, 第 2 个 diamond, 第 3 个 shadow (递增惊喜)
+	var chest_tiers: Array = [Tiles.GOLD_CHEST, Tiles.DIAMOND_CHEST, Tiles.SHADOW_CHEST]
+	for i in chest_xs.size():
+		var dx: int = chest_xs[i]
+		var lx: int = x_center_local + dx
+		var chest_y: int = base_y - 1   # 走廊底 (脚边)
+		if lx < 0 or lx >= chunk_width:
+			continue
+		var ct: int = chest_tiers[i]
+		c.tiles[lx][chest_y] = ct
+		c.treasure_spots.append(Vector2i(chunk_start + lx, chest_y))
+	# 4) 顶部入口 (中央竖井): 从 y=base_y-PYRAMID_ROOM_HEIGHT 到 y=top_y+1, 1 列宽 AIR
+	var shaft_x: int = x_center_local
+	for y in range(top_y + 1, base_y - PYRAMID_ROOM_HEIGHT + 1):
+		if shaft_x >= 0 and shaft_x < chunk_width:
+			c.tiles[shaft_x][y] = Tiles.AIR
+	# 5) 走廊里偶发 1-2 zombie/skeleton 怪 — Phase 4 再加 (这里仅记 spawn 位置标记)
 
 
 # ===== 瀑布矿洞 =====
