@@ -35,7 +35,7 @@ const ANIMAL_SPAWN_INTERVAL := 12.0  # 动物刷新更慢
 const SPAWN_RANGE_MIN := 12  # tiles
 const SPAWN_RANGE_MAX := 22
 
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 
 const MINIMAP_VIEW_TILES_X := 18  # 玩家屏幕能看到的横向 tile (略大于实际视野)
 const MINIMAP_VIEW_TILES_Y := 14  # 纵向

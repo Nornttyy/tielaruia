@@ -14,7 +14,7 @@ func test_walk_loads_new_chunks_unloads_old():
 	assert_eq(cm.loaded_chunk_count(), 5)
 	# 瞬移玩家到 chunk 10 (world_x ≈ 10 * 64 * 16 = 10240)
 	var player: Node2D = world.get_player()
-	player.global_position = Vector2(10 * 64 * 16 + 100, player.global_position.y)
+	player.global_position = Vector2(10 * 64 * 12 + 100, player.global_position.y)
 	await wait_frames(3)
 	# chunk 10 ± 2 应加载, 老的卸载
 	for cx in [8, 9, 10, 11, 12]:
@@ -35,7 +35,7 @@ func test_modified_tile_persists_after_unload_reload():
 	assert_eq(cm.get_tile(10, 50), Tiles.STONE)
 	# 走远卸载 chunk 0
 	var player: Node2D = world.get_player()
-	player.global_position = Vector2(10 * 64 * 16 + 100, player.global_position.y)
+	player.global_position = Vector2(10 * 64 * 12 + 100, player.global_position.y)
 	await wait_frames(3)
 	assert_false(cm.is_chunk_loaded(0), "走远后 chunk 0 应 unloaded")
 	# 走回来加载

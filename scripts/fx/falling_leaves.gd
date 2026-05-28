@@ -11,6 +11,7 @@ const SWAY_AMPLITUDE := 12.0
 const SWAY_PERIOD := 1.8
 const LIFE_TIME := 6.0
 const LEAF_SIZE := 3
+const TILE_SIZE := 12
 
 # 不同 leaves tile id → 叶子颜色 (用 id 数字, 不依赖 Tiles 常量)
 const LEAF_COLORS := {
@@ -70,8 +71,8 @@ func _reset_timer() -> void:
 
 func _spawn_one() -> void:
 	var ppos: Vector2 = _player.global_position
-	var ptx: int = int(floor(ppos.x / 16.0))
-	var pty: int = int(floor(ppos.y / 16.0))
+	var ptx: int = int(floor(ppos.x / float(TILE_SIZE)))
+	var pty: int = int(floor(ppos.y / float(TILE_SIZE)))
 	# 试 5 次找树叶 tile
 	for attempt in 5:
 		var tx: int = ptx + randi_range(-SEARCH_RADIUS_TILES, SEARCH_RADIUS_TILES)

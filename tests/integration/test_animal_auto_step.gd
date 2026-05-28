@@ -2,7 +2,7 @@
 extends GutTest
 
 const CowScene = preload("res://scenes/entities/cow.tscn")
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 
 
 func test_cow_climbs_one_tile_step():

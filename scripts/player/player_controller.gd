@@ -5,23 +5,23 @@ extends CharacterBody2D
 const Chunk = preload("res://scripts/world/chunk.gd")
 const CAVE_DEPTH_THRESHOLD := 10   # 玩家离原始地表 >10 格才算"地下" (即使顶上方块挖掉了)
 
-const SPEED := 140.0
-const JUMP_VELOCITY := -320.0
-const GRAVITY := 900.0
+const SPEED := 105.0
+const JUMP_VELOCITY := -240.0
+const GRAVITY := 675.0
 const COYOTE_TIME := 0.10
-const LAND_VY_THRESHOLD := 200.0    # 落地时 vy 超此值才扬大灰
+const LAND_VY_THRESHOLD := 150.0    # 落地时 vy 超此值才扬大灰
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 # 游泳物理: 水里重力 ~22%, 按 Space/W 持续上浮.
-const SWIM_GRAVITY := 200.0         # 水里重力 (vs GRAVITY 900 → 慢慢沉)
-const SWIM_UP_SPEED := -110.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -320 → 弱跳)
-const SWIM_MAX_SINK := 180.0        # 最大下沉速度 (浮力封顶)
-const ROPE_CLIMB_SPEED := 110.0     # 绳子上下爬速度 (vs SPEED 140 — 慢点)
+const SWIM_GRAVITY := 150.0         # 水里重力 (vs GRAVITY 900 → 慢慢沉)
+const SWIM_UP_SPEED := -82.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -320 → 弱跳)
+const SWIM_MAX_SINK := 135.0        # 最大下沉速度 (浮力封顶)
+const ROPE_CLIMB_SPEED := 82.0     # 绳子上下爬速度 (vs SPEED 140 — 慢点)
 const ROPE_HOLD_GRAVITY := 0.0      # 抓绳子时无重力 (松手才掉)
 # 玩家碰撞框高度 (跟 player.tscn 同步, 用于水/绳/头检测)
-const PLAYER_BODY_HEIGHT := 30      # collider y 尺寸 (1.3x 之后)
-const PLAYER_HEAD_OFFSET := -30     # 头部 y 偏移 (脚到头)
-const PLAYER_WAIST_OFFSET := -15    # 腰部 y 偏移
+const PLAYER_BODY_HEIGHT := 22      # collider y 尺寸 (1.3x 之后)
+const PLAYER_HEAD_OFFSET := -22     # 头部 y 偏移 (脚到头)
+const PLAYER_WAIST_OFFSET := -11    # 腰部 y 偏移
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _player_aura: PointLight2D = $PlayerAura
@@ -29,8 +29,8 @@ const PLAYER_WAIST_OFFSET := -15    # 腰部 y 偏移
 @onready var _held_item: Sprite2D = $HeldItem
 
 const HURT_DURATION := 0.4
-const KNOCKBACK_VX := 90.0
-const KNOCKBACK_VY := -180.0
+const KNOCKBACK_VX := 67.0
+const KNOCKBACK_VY := -135.0
 const SHAKE_MAX_OFFSET := 4.0
 const SHAKE_DECAY := 20.0
 
@@ -60,8 +60,8 @@ var _cached_chunk_manager = null   # 第一次 _process 查到后缓存, 避免�
 
 # 钩爪状态: 持 grappling_hook 时右键发射, 锁定到第一个实心方块, 拉玩家过去
 const HOOK_MAX_DIST_TILES := 15           # 最远射程 15 tile
-const HOOK_PULL_SPEED := 280.0            # 拉过去的速度 px/s
-const HOOK_RELEASE_DIST := 10.0           # 距锚点 < 这个值就脱钩 (避免抖)
+const HOOK_PULL_SPEED := 210.0            # 拉过去的速度 px/s
+const HOOK_RELEASE_DIST := 7.5           # 距锚点 < 这个值就脱钩 (避免抖)
 var _hook_active: bool = false
 var _hook_anchor: Vector2 = Vector2.ZERO
 var _hook_line: Line2D = null
@@ -153,8 +153,8 @@ func _is_in_water() -> bool:
 	var cm = _get_chunk_manager()
 	if cm == null:
 		return false
-	var tx: int = int(floor(global_position.x / 16.0))
-	var ty: int = int(floor((global_position.y + float(PLAYER_WAIST_OFFSET)) / 16.0))
+	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
+	var ty: int = int(floor((global_position.y + float(PLAYER_WAIST_OFFSET)) / float(TILE_SIZE)))
 	return _is_water_tile(cm.get_tile(tx, ty))
 
 
@@ -163,10 +163,10 @@ func _is_on_rope() -> bool:
 	var cm = _get_chunk_manager()
 	if cm == null:
 		return false
-	var tx: int = int(floor(global_position.x / 16.0))
+	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
 	# 脚 + 腰 + 头 3 个 y 任何一个在 rope tile 上就算抓住
 	for off_y in [-2.0, float(PLAYER_WAIST_OFFSET), float(PLAYER_HEAD_OFFSET)]:
-		var ty: int = int(floor((global_position.y + off_y) / 16.0))
+		var ty: int = int(floor((global_position.y + off_y) / float(TILE_SIZE)))
 		if cm.get_tile(tx, ty) == Tiles.ROPE:
 			return true
 	return false
@@ -177,8 +177,8 @@ func _is_head_above_water() -> bool:
 	var cm = _get_chunk_manager()
 	if cm == null:
 		return true
-	var tx: int = int(floor(global_position.x / 16.0))
-	var ty: int = int(floor((global_position.y + float(PLAYER_HEAD_OFFSET)) / 16.0))
+	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
+	var ty: int = int(floor((global_position.y + float(PLAYER_HEAD_OFFSET)) / float(TILE_SIZE)))
 	return not _is_water_tile(cm.get_tile(tx, ty))
 
 
@@ -384,7 +384,7 @@ func _update_workbench_prompt() -> void:
 	if terrain == null:
 		return
 	var foot := global_position
-	var pt := Vector2i(int(floor(foot.x / 16.0)), int(floor(foot.y / 16.0)))
+	var pt := Vector2i(int(floor(foot.x / float(TILE_SIZE))), int(floor(foot.y / float(TILE_SIZE))))
 	for dx in range(-2, 3):
 		for dy in range(-2, 3):
 			var coord := pt + Vector2i(dx, dy)

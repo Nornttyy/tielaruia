@@ -4,19 +4,19 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const GRAVITY := 900.0
-const SWIM_GRAVITY := 200.0
-const SWIM_MAX_SINK := 70.0
-const SWIM_UP_SPEED := -45.0
-const JUMP_VY := -260.0
+const GRAVITY := 675.0
+const SWIM_GRAVITY := 150.0
+const SWIM_MAX_SINK := 52.0
+const SWIM_UP_SPEED := -34.0
+const JUMP_VY := -195.0
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 
 # 子类可覆盖 (jaguar 等). 用 var 不用 const.
 var max_health: int = 15
 var contact_damage: int = 3
-var walk_speed: float = 38.0
-var aggro_range_px: float = 240.0
+var walk_speed: float = 28.0
+var aggro_range_px: float = 180.0
 var entity_group: String = "zombies"   # 子类可改成 "animals" 等
 var sprite_frames_override: SpriteFrames = null   # _ready 前由子类设
 # 死亡掉落: 数组每条 [item_id, count_min, count_max], 各 100% 掉
@@ -112,8 +112,8 @@ func _is_in_water() -> bool:
 	var cm = _get_cm()
 	if cm == null:
 		return false
-	var tx: int = int(floor(global_position.x / 16.0))
-	var ty: int = int(floor((global_position.y - 11.0) / 16.0))
+	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
+	var ty: int = int(floor((global_position.y - 11.0) / float(TILE_SIZE)))
 	return _is_water_tile(cm.get_tile(tx, ty))
 
 
@@ -122,8 +122,8 @@ func _is_head_above_water() -> bool:
 	var cm = _get_cm()
 	if cm == null:
 		return true
-	var tx: int = int(floor(global_position.x / 16.0))
-	var ty: int = int(floor((global_position.y - 22.0) / 16.0))
+	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
+	var ty: int = int(floor((global_position.y - 22.0) / float(TILE_SIZE)))
 	return not _is_water_tile(cm.get_tile(tx, ty))
 
 
@@ -143,7 +143,7 @@ func _check_player_contact() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
 		return
-	hp.take_damage(contact_damage, global_position, 130.0)
+	hp.take_damage(contact_damage, global_position, 97.0)
 
 
 # 跟 slime 同接口 (玩家挥剑统一调 take_damage)

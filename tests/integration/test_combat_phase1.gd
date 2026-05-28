@@ -44,7 +44,7 @@ func _spawn_slime_near(ctx: Dictionary, offset: Vector2) -> Node2D:
 func test_axe_zero_damage_on_enemies() -> void:
 	var ctx: Dictionary = await _setup_game()
 	_equip_tool(ctx, "wood_axe")
-	var slime = _spawn_slime_near(ctx, Vector2(16, 0))
+	var slime = _spawn_slime_near(ctx, Vector2(12, 0))
 	var hp_before: int = slime.current_health
 	ctx["action"].mouse_world_override = slime.global_position
 	ctx["action"].primary_override = true
@@ -58,7 +58,7 @@ func test_pickaxe_aoe_360() -> void:
 	var ctx: Dictionary = await _setup_game()
 	_equip_tool(ctx, "wood_pickaxe")
 	# SWORD_RANGE_PX = 36, AoE 半径 = 36*1.5 = 54. 用 36*1.4 = 50.4 < 54, 安全在内
-	var r: float = 36.0 * 1.4
+	var r: float = 27.0 * 1.4
 	var slimes: Array = []
 	for offset in [Vector2(r, 0), Vector2(-r, 0), Vector2(0, r), Vector2(0, -r)]:
 		slimes.append(_spawn_slime_near(ctx, offset))
@@ -120,7 +120,7 @@ func test_pickaxe_prefers_mining_over_attack() -> void:
 	var slime = _spawn_slime_near(ctx, Vector2(24, 0))
 	var slime_hp = slime.current_health
 	ctx["action"].aim_override = target
-	ctx["action"].mouse_world_override = Vector2(target.x * 16 + 8, target.y * 16 + 8)
+	ctx["action"].mouse_world_override = Vector2(target.x * 12 + 6, target.y * 12 + 6)
 	ctx["action"].primary_override = true
 	await wait_frames(15)
 	ctx["action"].primary_override = false

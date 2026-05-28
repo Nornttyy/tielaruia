@@ -11,6 +11,7 @@ const ZOOM_DEFAULT := 2
 const REFRESH_INTERVAL := 0.2
 
 var pixel_per_tile: int = ZOOM_DEFAULT
+const TILE_SIZE := 12
 var view_tiles_x: int = MAP_PIXEL_WIDTH / ZOOM_DEFAULT
 var view_tiles_y: int = MAP_PIXEL_HEIGHT / ZOOM_DEFAULT
 
@@ -199,8 +200,8 @@ func _process(delta: float) -> void:
 
 func _redraw() -> void:
 	# 玩家 tile 坐标 (TILE_SIZE = 16)
-	var ptx: int = int(floor(_player.global_position.x / 16.0))
-	var pty: int = int(floor(_player.global_position.y / 16.0))
+	var ptx: int = int(floor(_player.global_position.x / float(TILE_SIZE)))
+	var pty: int = int(floor(_player.global_position.y / float(TILE_SIZE)))
 	var x0: int = ptx - view_tiles_x / 2
 	var y0: int = pty - view_tiles_y / 2
 

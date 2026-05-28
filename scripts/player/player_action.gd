@@ -3,7 +3,7 @@ extends Node2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const VillagerLines = preload("res://scripts/npc/villager_lines.gd")
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 const REACH_TILES := 4
 const INVALID_TILE := Vector2i(-1, -1)
 
@@ -47,7 +47,7 @@ var _mining_progress: float = 0.0
 var _mining_swing_t: float = 0.0  # 挖矿挥镐动画节流
 
 # 战斗
-const SWORD_RANGE_PX := 36.0
+const SWORD_RANGE_PX := 27.0
 const SWORD_COOLDOWN := 0.3
 const SWORD_ARC_LIFETIME := 0.18
 var _attack_cooldown: float = 0.0
@@ -559,12 +559,12 @@ func _tool_damage_mult() -> float:
 
 
 # 击退强度 (阶段 2): 按工具 + tier 缩放
-const KB_THRUST_BASE := 60.0
-const KB_THRUST_TIER := 15.0
-const KB_SWEEP_BASE := 80.0
-const KB_SWEEP_TIER := 20.0
-const KB_PICKAXE_BASE := 30.0
-const KB_PICKAXE_TIER := 8.0
+const KB_THRUST_BASE := 45.0
+const KB_THRUST_TIER := 11.0
+const KB_SWEEP_BASE := 60.0
+const KB_SWEEP_TIER := 15.0
+const KB_PICKAXE_BASE := 22.0
+const KB_PICKAXE_TIER := 6.0
 
 
 func _thrust_knockback() -> float:
@@ -806,7 +806,7 @@ func _is_in_swing_arc(target_pos: Vector2, origin: Vector2, dir: Vector2) -> boo
 # 戳的常量
 const THRUST_COOLDOWN := 0.18
 const THRUST_LENGTH_MULT := 1.2      # 戳长 = SWORD_RANGE_PX * 1.2 ≈ 43px (比挥更远)
-const THRUST_HALF_WIDTH := 6.0       # 戳带半宽 6px (总宽 12), 鼠标偏一点也命中
+const THRUST_HALF_WIDTH := 4.5       # 戳带半宽 6px (总宽 12), 鼠标偏一点也命中
 const THRUST_DAMAGE_MULT := 0.8
 
 

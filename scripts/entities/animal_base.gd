@@ -4,16 +4,16 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const GRAVITY := 900.0
-const SWIM_GRAVITY := 200.0     # 水里重力 (慢慢沉)
-const SWIM_MAX_SINK := 80.0     # 水里最大下沉速度
+const GRAVITY := 675.0
+const SWIM_GRAVITY := 150.0     # 水里重力 (慢慢沉)
+const SWIM_MAX_SINK := 60.0     # 水里最大下沉速度
 const WATER_SPEED_MUL := 0.5    # 水里横向速度系数
 const FLEE_DURATION := 4.0
 const FLEE_SPEED_MULT := 1.8
 const WANDER_SWITCH_MIN := 2.0
 const WANDER_SWITCH_MAX := 5.0
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 # Auto-step: 撞 1 格台阶时自动抬上去 (避免动物在山坡/小台阶前来回踱步).
 # 抬 17 = TILE_SIZE+1: Godot test_move 有 0.08 px safe_margin, 多抬 1 px 避免误判碰撞.
 const AUTO_STEP_LIFT := TILE_SIZE + 1
@@ -21,7 +21,7 @@ const AUTO_STEP_DURATION := 0.12  # tween 时长 (秒). 太短像瞬移, 太长�
 
 # 子类覆盖
 var max_health: int = 10
-var walk_speed: float = 50.0
+var walk_speed: float = 37.0
 var drop_table: Array = []   # [item_id, weight%, count_min, count_max]
 var sprite_frames: SpriteFrames = null
 
@@ -68,8 +68,8 @@ func _is_in_water() -> bool:
 	var cm = world.get("chunk_manager")
 	if cm == null:
 		return false
-	var tx: int = int(floor(global_position.x / 16.0))
-	var ty: int = int(floor((global_position.y - 6.0) / 16.0))  # 腰部 (高度比玩家小)
+	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
+	var ty: int = int(floor((global_position.y - 6.0) / float(TILE_SIZE)))  # 腰部 (高度比玩家小)
 	return cm.get_tile(tx, ty) == Tiles.WATER
 
 

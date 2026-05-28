@@ -6,7 +6,7 @@ const BlockBreakParticleScene = preload("res://scenes/fx/block_break_particle.ts
 const DustParticleScene = preload("res://scenes/fx/dust_particle.tscn")
 const PlaceBounceScene = preload("res://scenes/fx/place_bounce.tscn")
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 const CHIPS_PER_BREAK := 6
 
 

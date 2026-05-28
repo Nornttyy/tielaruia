@@ -8,7 +8,7 @@ extends Sprite2D
 
 const TileLightGrid = preload("res://scripts/world/tile_light_grid.gd")
 
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 # 纹理大小动态算: viewport_size / (camera_zoom * TILE_SIZE) + buffer.
 # 最小 zoom 0.5 (摄像机调小看更远) → 视野 ~160×90 tiles, 我们准备 200×120 上限.
 const MAX_W := 180             # zoom 0.5 视野 160 tile + buffer

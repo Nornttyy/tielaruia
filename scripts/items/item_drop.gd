@@ -6,7 +6,7 @@ const FRICTION := 200.0
 const MAX_FALL_SPEED := 400.0
 const LIFETIME_SECONDS := 30.0
 const PICKUP_DELAY := 0.4  # 刚 spawn 时短暂无法拾取
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 
 @export var item_id: String = ""
 @export var count: int = 1

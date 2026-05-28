@@ -5,9 +5,9 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const MAX_HEALTH := 10   # 木剑 3 dmg × 4 击, 石剑 5 dmg × 2 击
 const CONTACT_DAMAGE := 2
-const GRAVITY := 900.0
-const SWIM_GRAVITY := 200.0   # 水里重力 (慢沉)
-const SWIM_MAX_SINK := 70.0   # 最大下沉速度
+const GRAVITY := 675.0
+const SWIM_GRAVITY := 150.0   # 水里重力 (慢沉)
+const SWIM_MAX_SINK := 52.0   # 最大下沉速度
 # 跳高/跳远: 每次跳前随机挑 (tile, 16 px 一格).
 # 高度 1-2 格, 距离 0-3 格. 由物理公式反算 vy/vx.
 const HOP_HEIGHT_MIN_TILES := 1.0
@@ -16,9 +16,9 @@ const HOP_DIST_MIN_TILES := 0.0
 const HOP_DIST_MAX_TILES := 3.0
 const HOP_COOLDOWN_MIN := 0.8
 const HOP_COOLDOWN_MAX := 1.8
-const AGGRO_RANGE_PX := 160.0   # 10 tiles
+const AGGRO_RANGE_PX := 120.0   # 10 tiles
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 16
+const TILE_SIZE := 12
 
 var current_health: int = MAX_HEALTH
 var _hop_timer: float = 0.5
@@ -68,8 +68,8 @@ func _is_in_water() -> bool:
 	var cm = world.get("chunk_manager")
 	if cm == null:
 		return false
-	var tx: int = int(floor(global_position.x / 16.0))
-	var ty: int = int(floor((global_position.y - 5.0) / 16.0))
+	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
+	var ty: int = int(floor((global_position.y - 5.0) / float(TILE_SIZE)))
 	var t: int = cm.get_tile(tx, ty)
 	return t == Tiles.WATER or t == Tiles.WATER_L1 \
 			or t == Tiles.WATER_L2 or t == Tiles.WATER_L3
@@ -186,7 +186,7 @@ func _check_player_contact() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
 		return
-	hp.take_damage(CONTACT_DAMAGE, global_position, 100.0)
+	hp.take_damage(CONTACT_DAMAGE, global_position, 75.0)
 
 
 # 返回 true 表示本次造成有效伤害
