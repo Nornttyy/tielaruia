@@ -55,6 +55,66 @@ func _ready() -> void:
 	_setup_settings_panel()
 	_setup_new_game_panel()
 	_setup_world_select_panel()
+	# i18n: 用当前语言覆盖 .tscn 默认中文; 切语言时再调一次刷新.
+	_refresh_localized_text()
+	Locale.language_changed.connect(_on_language_changed)
+
+
+# 接 Locale.language_changed: 切语言时刷新所有 UI 文字, 并重建 saves list (因为它是动态生成).
+func _on_language_changed(_new_lang: String) -> void:
+	_refresh_localized_text()
+	# WorldSelectPanel 可见时 saves list 里的 "[简单]" / "进入" / "删除" 也要重刷
+	if has_node("WorldSelectPanel") and $WorldSelectPanel.visible:
+		_refresh_saves_list()
+	# 多人面板的状态文字 (依赖当前 NetworkManager.status) 也要重译
+	if has_node("MultiplayerPanel") and $MultiplayerPanel.visible:
+		_refresh_multiplayer_status()
+
+
+# 用 Locale.t() 把所有面板的静态文字 (标题/按钮/标签/placeholder) 重新拉一遍.
+# 动态内容 (saves list, status label) 不在这里, 由各自的 refresh 函数管.
+func _refresh_localized_text() -> void:
+	# Logo 下面的副标题
+	if has_node("TitleLayer/Subtitle"):
+		$TitleLayer/Subtitle.text = Locale.t("menu_subtitle")
+
+	# 主菜单 3 按钮
+	$ButtonLayer/VBox/NewGameRow/Button.text = Locale.t("menu_new_game")
+	$ButtonLayer/VBox/MultiplayerRow/Button.text = Locale.t("menu_multiplayer")
+	$ButtonLayer/VBox/SettingsRow/Button.text = Locale.t("menu_settings")
+
+	# 设置面板
+	$SettingsPanel/VBox/TitleLabel.text = Locale.t("settings_title")
+	$SettingsPanel/VBox/VolumeRow/Label.text = Locale.t("settings_master_volume")
+	$SettingsPanel/VBox/ZoomRow/Label.text = Locale.t("settings_camera_zoom")
+	$SettingsPanel/VBox/LanguageRow/Label.text = Locale.t("lang_label")
+	$SettingsPanel/VBox/BackButton.text = Locale.t("settings_back")
+
+	# 世界选择面板
+	$WorldSelectPanel/VBox/TitleLabel.text = Locale.t("world_select_title")
+	$WorldSelectPanel/VBox/NewWorldButton.text = Locale.t("world_new")
+	$WorldSelectPanel/VBox/EmptyLabel.text = Locale.t("world_select_empty")
+	$WorldSelectPanel/VBox/BackButton.text = Locale.t("world_back")
+
+	# 新建世界面板
+	$NewGamePanel/VBox/TitleLabel.text = Locale.t("newgame_title")
+	$NewGamePanel/VBox/NameRow/Label.text = Locale.t("newgame_name_label")
+	$NewGamePanel/VBox/NameRow/LineEdit.placeholder_text = Locale.t("newgame_default_world_name")
+	$NewGamePanel/VBox/SeedRow/Label.text = Locale.t("newgame_seed_label")
+	$NewGamePanel/VBox/SeedRow/LineEdit.placeholder_text = Locale.t("newgame_seed_placeholder")
+	$NewGamePanel/VBox/SeedRow/RandomButton.text = Locale.t("newgame_seed_random")
+	$NewGamePanel/VBox/DifficultyRow/Label.text = Locale.t("newgame_difficulty_label")
+	$NewGamePanel/VBox/DifficultyRow/EasyButton.text = Locale.t("newgame_difficulty_easy")
+	$NewGamePanel/VBox/DifficultyRow/NormalButton.text = Locale.t("newgame_difficulty_normal")
+	$NewGamePanel/VBox/DifficultyRow/HardButton.text = Locale.t("newgame_difficulty_hard")
+	$NewGamePanel/VBox/ButtonRow/CancelButton.text = Locale.t("newgame_cancel")
+	$NewGamePanel/VBox/ButtonRow/StartButton.text = Locale.t("newgame_start")
+
+	# 多人游戏面板
+	$MultiplayerPanel/VBox/TitleLabel.text = Locale.t("mp_title")
+	$MultiplayerPanel/VBox/JoinRow/JoinInput.placeholder_text = Locale.t("mp_room_code_placeholder")
+	$MultiplayerPanel/VBox/JoinRow/JoinButton.text = Locale.t("mp_join_label")
+	$MultiplayerPanel/VBox/BackButton.text = Locale.t("mp_back")
 
 
 func _process(delta: float) -> void:
@@ -388,24 +448,28 @@ func _make_save_row(parent: VBoxContainer, save_name: String, data) -> void:
 	var row := HBoxContainer.new()
 	row.custom_minimum_size = Vector2(0, 44)
 	row.size_flags_horizontal = 3
-	# 世界名 + 难度
+	# 世界名 + 难度 (难度文字按当前语言)
 	var label := Label.new()
-	var diff_text: String = "简单" if data.difficulty == DIFF_EASY else ("困难" if data.difficulty == DIFF_HARD else "普通")
-	label.text = "%s   [%s]" % [save_name, diff_text]
+	var diff_key: String = "save_diff_normal"
+	if data.difficulty == DIFF_EASY:
+		diff_key = "save_diff_easy"
+	elif data.difficulty == DIFF_HARD:
+		diff_key = "save_diff_hard"
+	label.text = "%s   [%s]" % [save_name, Locale.t(diff_key)]
 	label.size_flags_horizontal = 3
 	label.add_theme_color_override("font_color", Color(0.949, 0.761, 0.396, 1.0))
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(label)
 	# 进入按钮
 	var enter_btn := Button.new()
-	enter_btn.text = "进入"
+	enter_btn.text = Locale.t("world_enter")
 	enter_btn.custom_minimum_size = Vector2(70, 0)
 	_apply_button_style(enter_btn)
 	enter_btn.pressed.connect(func(): _on_load_save_pressed(save_name))
 	row.add_child(enter_btn)
 	# 删除按钮 (点了弹确认对话框, 防误删)
 	var del_btn := Button.new()
-	del_btn.text = "删除"
+	del_btn.text = Locale.t("world_delete")
 	del_btn.custom_minimum_size = Vector2(60, 0)
 	_apply_button_style(del_btn)
 	del_btn.pressed.connect(func(): _confirm_delete_save(save_name))
@@ -416,10 +480,10 @@ func _make_save_row(parent: VBoxContainer, save_name: String, data) -> void:
 # 弹 ConfirmationDialog: 真的删存档吗? OK → 删 + 刷新; 取消 → 啥也不做
 func _confirm_delete_save(save_name: String) -> void:
 	var dlg := ConfirmationDialog.new()
-	dlg.title = "删除存档"
-	dlg.dialog_text = "真的要删除存档 \"%s\" 吗? \n这个操作不能撤销!" % save_name
-	dlg.ok_button_text = "删除"
-	dlg.get_cancel_button().text = "取消"
+	dlg.title = Locale.t("delete_save_title")
+	dlg.dialog_text = Locale.t("delete_save_message") % save_name
+	dlg.ok_button_text = Locale.t("delete_save_ok")
+	dlg.get_cancel_button().text = Locale.t("delete_save_cancel")
 	dlg.confirmed.connect(func():
 		SaveManager.delete_save_by_name(save_name)
 		_refresh_saves_list()
@@ -565,9 +629,9 @@ func _setup_new_game_panel() -> void:
 	# 开始: 读输入 → opts → 淡出开始
 	start_btn.pressed.connect(func():
 		var opts: Dictionary = {}
-		# 世界名 (空则默认)
+		# 世界名 (空则按当前语言默认 "我的世界" / "My World" / ...)
 		var nm: String = name_edit.text.strip_edges()
-		opts["world_name"] = "我的世界" if nm.is_empty() else nm
+		opts["world_name"] = Locale.t("newgame_default_world_name") if nm.is_empty() else nm
 		# seed: 空 / 非数字 → 随机
 		var seed_text: String = seed_edit.text.strip_edges()
 		if seed_text.is_empty() or not seed_text.is_valid_int():
@@ -629,7 +693,7 @@ func _on_join_pressed() -> void:
 	var input: LineEdit = $MultiplayerPanel/VBox/JoinRow/JoinInput
 	var code: String = input.text.strip_edges().to_upper()
 	if code.length() != 6:
-		$MultiplayerPanel/VBox/StatusLabel.text = "房间码必须是 6 位字母数字"
+		$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_room_code_invalid")
 		return
 	if NetworkManager != null:
 		NetworkManager.join(code)
@@ -657,32 +721,32 @@ func _start_multiplayer_game(seed_val: int) -> void:
 	t.parallel().tween_property(fade, "modulate:a", 1.0, 0.4)
 	t.tween_callback(func(): start_game.emit({
 		"world_seed": seed_val,
-		"world_name": "联机世界",
+		"world_name": Locale.t("mp_default_world_name"),
 		"difficulty": 1,
 		"multiplayer": true,
 	}))
 
 
 func _on_mp_error(msg: String) -> void:
-	$MultiplayerPanel/VBox/StatusLabel.text = "出错: " + msg
+	$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_status_error_prefix") + msg
 
 
 func _refresh_multiplayer_status() -> void:
 	var lbl: Label = $MultiplayerPanel/VBox/StatusLabel
 	if NetworkManager == null:
-		lbl.text = "联机模块未加载"
+		lbl.text = Locale.t("mp_module_missing")
 		return
 	match NetworkManager.status:
 		"idle":
-			lbl.text = "输入朋友给的 6 位房间码"
+			lbl.text = Locale.t("mp_status_idle")
 		"joining":
-			lbl.text = "连接中..."
+			lbl.text = Locale.t("mp_status_joining")
 		"connected":
-			lbl.text = "已连接, 加载世界..."
+			lbl.text = Locale.t("mp_status_connected")
 		"disconnected":
-			lbl.text = "对方断开了"
+			lbl.text = Locale.t("mp_status_disconnected")
 		"error":
-			lbl.text = "出错: " + NetworkManager.last_error
+			lbl.text = Locale.t("mp_status_error_prefix") + NetworkManager.last_error
 
 
 func _setup_settings_panel() -> void:

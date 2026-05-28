@@ -1,25 +1,29 @@
-# English translations. Keys match strings_zh.gd.
+# English translations. Keys must match strings_zh.gd.
 extends RefCounted
 
 const S := {
 	"lang_name": "English",
 	"lang_label": "Language",
 
+	"menu_subtitle": "2D Sandbox · Terraria-style",
 	"menu_new_game": "New Game",
-	"menu_multiplayer": "Multiplayer",
+	"menu_multiplayer": "Join Room",
 	"menu_settings": "Settings",
 
 	"settings_title": "Settings",
-	"settings_master_volume": "Master Volume",
-	"settings_camera_zoom": "Camera Zoom",
+	"settings_master_volume": "Volume",
+	"settings_camera_zoom": "Zoom",
 	"settings_back": "Back",
 
 	"world_select_title": "Select World",
-	"world_select_empty": "No saves yet. Create a new world to start.",
-	"world_new": "New World",
+	"world_select_empty": "(No saves yet — create a new world to start)",
+	"world_new": "+ New World",
 	"world_enter": "Enter",
 	"world_delete": "Delete",
 	"world_back": "Back",
+	"save_diff_easy": "Easy",
+	"save_diff_normal": "Normal",
+	"save_diff_hard": "Hard",
 
 	"newgame_title": "New World",
 	"newgame_name_label": "World Name",
@@ -32,9 +36,11 @@ const S := {
 	"newgame_cancel": "Cancel",
 	"newgame_start": "Start",
 	"newgame_default_world_name": "My World",
+	"newgame_seed_placeholder": "Random",
 
-	"mp_title": "Multiplayer",
+	"mp_title": "Join Room",
 	"mp_room_code_prompt": "Enter the 6-digit room code from your friend",
+	"mp_room_code_placeholder": "6-digit code",
 	"mp_join_label": "Join",
 	"mp_back": "Back",
 	"mp_status_idle": "Enter the 6-digit room code from your friend",

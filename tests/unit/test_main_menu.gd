@@ -173,3 +173,68 @@ func test_back_button_closes_panel():
 	mm._on_settings_pressed()
 	mm._on_settings_back_pressed()
 	assert_false(mm.get_node("SettingsPanel").visible)
+
+
+# ---- 多语言 (i18n) ----
+
+# 默认 (中文): 主菜单按钮应显中文
+func test_default_language_buttons_are_chinese():
+	Locale.set_language("zh")
+	var mm = _make()
+	await get_tree().process_frame
+	var btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
+	assert_eq(btn.text, "开始游戏", "默认中文按钮显 \"开始游戏\"")
+
+
+# 切英文后按钮 + 标签应同步刷新 (而不是留中文)
+func test_switching_to_english_refreshes_buttons():
+	Locale.set_language("zh")
+	var mm = _make()
+	await get_tree().process_frame
+	Locale.set_language("en")
+	# language_changed 信号同步触发, 不需等帧
+	var new_game_btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
+	var settings_label: Label = mm.get_node("SettingsPanel/VBox/LanguageRow/Label")
+	assert_eq(new_game_btn.text, "New Game", "英文按钮 = New Game")
+	assert_eq(settings_label.text, "Language", "英文 \"语言\" 标签 = Language")
+	Locale.set_language("zh")   # 恢复
+
+
+# 日文切换
+func test_switching_to_japanese():
+	Locale.set_language("zh")
+	var mm = _make()
+	await get_tree().process_frame
+	Locale.set_language("ja")
+	var btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
+	assert_eq(btn.text, "ゲーム開始", "日文 = ゲーム開始")
+	Locale.set_language("zh")
+
+
+# 韩文切换
+func test_switching_to_korean():
+	Locale.set_language("zh")
+	var mm = _make()
+	await get_tree().process_frame
+	Locale.set_language("ko")
+	var btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
+	assert_eq(btn.text, "게임 시작", "韩文 = 게임 시작")
+	Locale.set_language("zh")
+
+
+# 下拉应有 4 选项, 顺序匹配 Locale.SUPPORTED
+func test_language_dropdown_has_4_items():
+	var mm = _make()
+	var opt: OptionButton = mm.get_node("SettingsPanel/VBox/LanguageRow/OptionButton")
+	assert_eq(opt.item_count, 4, "语言下拉 4 项 (zh/en/ja/ko)")
+
+
+# 选下拉就应触发 Locale.set_language (走信号 → 落盘 + 信号)
+func test_dropdown_selection_changes_locale():
+	Locale.set_language("zh")
+	var mm = _make()
+	var opt: OptionButton = mm.get_node("SettingsPanel/VBox/LanguageRow/OptionButton")
+	opt.selected = 1  # en
+	opt.item_selected.emit(1)
+	assert_eq(Locale.current_language(), "en", "选第 2 项应切到英文")
+	Locale.set_language("zh")
