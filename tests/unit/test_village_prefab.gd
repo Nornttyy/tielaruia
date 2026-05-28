@@ -3,18 +3,21 @@ extends GutTest
 const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
 
 
-func test_load_default_has_2_houses():
+func test_load_default_has_houses():
 	var prefab = VillagePrefab.load_default()
 	assert_true(prefab.has("houses"))
-	assert_eq(prefab.houses.size(), 2, "spec 要求 2 间小屋")
+	# 用户扩展村庄到 5 间不同房子 (起步小屋/工坊/铁匠铺/二层楼/石屋)
+	assert_gte(prefab.houses.size(), 2, "至少 2 间")
 
 
-func test_each_house_5x4():
+func test_each_house_valid():
 	var prefab = VillagePrefab.load_default()
 	for house in prefab.houses:
-		assert_eq(house.grid.size(), 4, "高 4 行")
+		assert_gt(house.grid.size(), 0, "至少 1 行")
+		var w: int = (house.grid[0] as String).length()
+		assert_gt(w, 0, "至少 1 列")
 		for row in house.grid:
-			assert_eq(row.length(), 5, "宽 5 列")
+			assert_eq(row.length(), w, "同 prefab 每行同宽")
 
 
 func test_house_has_door():
@@ -35,10 +38,15 @@ func test_first_house_has_villager_offset():
 	assert_eq(h0.villager_offset.size(), 2, "offset 是 [col, row]")
 
 
-func test_second_house_no_villager():
+func test_at_least_one_house_no_villager():
+	# 部分房子无村民 (M2 预留 / 装饰房). 检查至少 1 间
 	var prefab = VillagePrefab.load_default()
-	var h1 = prefab.houses[1]
-	assert_eq(h1.villager_offset, null, "房 2 无 villager (M2 预留)")
+	var any_empty: bool = false
+	for h in prefab.houses:
+		if h.villager_offset == null:
+			any_empty = true
+			break
+	assert_true(any_empty, "至少 1 间无 villager (装饰/预留)")
 
 
 func test_char_to_tile_P_is_planks():

@@ -26,11 +26,29 @@ static func load_from(path: String) -> Dictionary:
 
 
 # 把 grid 字符转 tile_id。'.' 表示不写 (跳过, 保留原 tile)。
+# 扩展 char 让 prefab 能放家具/装饰让村子像样:
+#   P/W = wall (PLANKS/STONE), D = DOOR, L = LOG (柱/梁)
+#   C = CHEST, B = WORKBENCH, F = FURNACE, T = TORCH (室内灯)
+#   _ = WOOD_PLATFORM (穿过式平台, 阁楼地板)
 static func char_to_tile(ch: String) -> int:
 	match ch:
 		"P":
 			return Tiles.PLANKS
 		"D":
 			return Tiles.DOOR
+		"L":
+			return Tiles.LOG
+		"W":
+			return Tiles.STONE
+		"C":
+			return Tiles.CHEST
+		"B":
+			return Tiles.WORKBENCH
+		"F":
+			return Tiles.FURNACE
+		"T":
+			return Tiles.TORCH
+		"_":
+			return Tiles.WOOD_PLATFORM
 		_:
 			return -1   # skip

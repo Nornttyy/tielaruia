@@ -1,26 +1,66 @@
 {
   "name": "starter_village",
-  "comment": "锚点 = 玩家 spawn_y 行的指定 x。anchor_x/y 是相对锚点的 offset。grid 字符: P=planks, D=door, .=interior air。villager_offset = [col, row] 在 grid 内。",
+  "comment": "锚点 = 玩家 spawn_y 行的指定 x. anchor_x/y 是相对锚点的 offset. grid 字符: P=planks W=stone D=door L=log C=chest B=workbench F=furnace T=torch _=wood_platform .=interior air. villager_offset = [col, row] 在 grid 内.",
   "houses": [
     {
+      "comment": "起步小屋 (5x4) — 室内一个箱子 + 火把",
       "anchor_x": 5,
       "anchor_y": -3,
       "grid": [
         "PPPPP",
-        "P...P",
-        "P...P",
+        "P.T.P",
+        "P.C.P",
         "D...P"
       ],
       "villager_offset": [2, 3]
     },
     {
+      "comment": "工坊 (7x4) — 中间放工作台",
       "anchor_x": 12,
       "anchor_y": -3,
       "grid": [
+        "PPPPPPP",
+        "P..T..P",
+        "P..B..P",
+        "D.....P"
+      ],
+      "villager_offset": [3, 3]
+    },
+    {
+      "comment": "铁匠铺 (5x4) — 熔炉冶炼",
+      "anchor_x": 22,
+      "anchor_y": -3,
+      "grid": [
         "PPPPP",
-        "P...P",
-        "P...P",
+        "P.T.P",
+        "P.F.P",
         "D...P"
+      ],
+      "villager_offset": [2, 3]
+    },
+    {
+      "comment": "二层楼 (6x6) — 平台分层, 屋顶尖顶",
+      "anchor_x": 29,
+      "anchor_y": -5,
+      "grid": [
+        "..PPP.",
+        ".PPPPP",
+        "P.T.TP",
+        "P____P",
+        "P.C..P",
+        "D....P"
+      ],
+      "villager_offset": [3, 5]
+    },
+    {
+      "comment": "石头小屋 (5x4) — 防火, 跟铁匠铺呼应",
+      "anchor_x": 38,
+      "anchor_y": -3,
+      "grid": [
+        "WWWWW",
+        "W.T.W",
+        "W.C.W",
+        "D...W"
       ],
       "villager_offset": null
     }
