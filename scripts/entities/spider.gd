@@ -30,6 +30,13 @@ func _ready() -> void:
 	add_to_group("spiders")
 	add_to_group("slimes")  # 共享剑挥范围 + 出生点死亡清除
 	current_health = MAX_HEALTH
+	call_deferred("_add_player_exception")
+
+
+func _add_player_exception() -> void:
+	var player = get_tree().get_first_node_in_group("player")
+	if player != null:
+		add_collision_exception_with(player)
 
 
 func _physics_process(delta: float) -> void:

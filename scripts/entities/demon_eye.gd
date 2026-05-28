@@ -34,6 +34,13 @@ func _ready() -> void:
 	current_health = MAX_HEALTH
 	_base_y = global_position.y
 	_bob_t = randf() * BOB_PERIOD   # 随机起始相位, 多只眼睛不同步
+	call_deferred("_add_player_exception")
+
+
+func _add_player_exception() -> void:
+	var player = get_tree().get_first_node_in_group("player")
+	if player != null:
+		add_collision_exception_with(player)
 
 
 func _physics_process(delta: float) -> void:

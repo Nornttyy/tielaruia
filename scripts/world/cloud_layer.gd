@@ -10,7 +10,7 @@ const _LAYERS := [
 	{"motion_scale": 0.5, "speed": 14.0, "count": 5, "color_idx": 1},  # 中
 	{"motion_scale": 0.8, "speed": 26.0, "count": 4, "color_idx": 0},  # 近
 ]
-const WORLD_WIDTH_PX := 1024 * 16  # 16384
+const WORLD_WIDTH_PX := 1024 * 12  # 12288 (TILE_SIZE 12)
 const SKY_Y_TOP := -200          # 云出现的 y 范围（玩家头顶之上）
 const SKY_Y_BOTTOM := 200
 

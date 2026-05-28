@@ -38,6 +38,14 @@ func _ready() -> void:
 	add_to_group(entity_group)
 	add_to_group("slimes")  # 共享 slime 攻击/查找逻辑 (剑挥范围/出生点死亡清除)
 	current_health = max_health
+	# 不跟玩家物理碰撞 (用户要求生物不可挡路, 接触伤害靠距离检测)
+	call_deferred("_add_player_exception")
+
+
+func _add_player_exception() -> void:
+	var player = get_tree().get_first_node_in_group("player")
+	if player != null:
+		add_collision_exception_with(player)
 
 
 func _physics_process(delta: float) -> void:
