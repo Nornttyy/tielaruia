@@ -211,6 +211,17 @@ custom_minimum_size = Vector2(40, 0)
 text = "0.8"
 theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
 
+[node name="LanguageRow" type="HBoxContainer" parent="SettingsPanel/VBox"]
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="SettingsPanel/VBox/LanguageRow"]
+custom_minimum_size = Vector2(80, 0)
+text = "语言"
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="OptionButton" type="OptionButton" parent="SettingsPanel/VBox/LanguageRow"]
+custom_minimum_size = Vector2(200, 0)
+
 [node name="BackButton" type="Button" parent="SettingsPanel/VBox"]
 custom_minimum_size = Vector2(0, 36)
 text = "返回"

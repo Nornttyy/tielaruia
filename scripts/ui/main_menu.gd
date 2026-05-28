@@ -704,5 +704,21 @@ func _setup_settings_panel() -> void:
 		GameSettings.camera_zoom = v
 		zoom_value_label.text = "%.1f" % v
 	)
+	_setup_language_dropdown()
 	_apply_button_style(back_btn)
 	back_btn.pressed.connect(_on_settings_back_pressed)
+
+
+# 语言下拉: 4 个选项, 每项用各语言本身的名字 (中文显 "中文", 英文显 "English").
+# 选中当前语言, 改了就调 Locale.set_language() (它存盘 + 发信号让 UI 刷新).
+func _setup_language_dropdown() -> void:
+	var opt: OptionButton = $SettingsPanel/VBox/LanguageRow/OptionButton
+	opt.clear()
+	for code in Locale.SUPPORTED:
+		opt.add_item(Locale.language_display_name(code))
+	opt.selected = Locale.current_language_index()
+	# item_selected(i): 用 i 反查 SUPPORTED[i] → 切语言.
+	opt.item_selected.connect(func(idx: int):
+		var code: String = Locale.SUPPORTED[idx]
+		Locale.set_language(code)
+	)
