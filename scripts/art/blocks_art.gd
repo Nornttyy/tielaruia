@@ -37,6 +37,7 @@ const OBSIDIAN := 58        # 黑曜石 (黑底 + 紫光泽闪)
 const HELL_FRUIT := 59      # 火果 (装饰, 红果 + 黄柄)
 const SHADOW_CHEST := 60    # 阴影宝箱 (黑底 + 红光锁孔 + 红宝石)
 const LIFE_CRYSTAL := 61    # 生命水晶 (用户加, _PATTERN_MAP 引用了, 补常量声明)
+const HELL_ALLOY_ORE := 62  # 地狱合金矿 (深紫黑 + 银闪点)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -295,6 +296,25 @@ const _P_OBSIDIAN := {
 	"V": Color8(190, 160, 230),   # 极亮紫 (闪点)
 	"b": Color8(35, 30, 50),      # 蓝紫深 (过渡)
 }
+
+# 地狱合金矿: 深紫黑底 + 银闪点 + 紫光泽过渡. 嵌在地狱石上.
+# s/S/b 紫黑基底 (像曜石但更紫), L/l 银闪闪点 (高对比, 不像金黄不像红).
+const _P_HELL_ALLOY_ORE := {
+	"s": Color8(45, 28, 55),     # 紫黑主 (深邃)
+	"S": Color8(30, 18, 38),     # 紫黑阴影
+	"b": Color8(58, 38, 70),     # 紫黑亮一档
+	"L": Color8(225, 230, 245),  # 银亮闪点
+	"l": Color8(165, 165, 185),  # 银中
+	"m": Color8(195, 195, 215),  # 银偏亮
+	"k": Color8(15, 10, 22),     # 极黑裂纹/描边
+	"o": Color8(95, 65, 115),    # 紫光泽过渡 (深紫)
+	"h": Color8(125, 90, 155),   # 紫光泽亮 (闪点旁)
+	"H": Color8(70, 45, 90),     # 紫光泽暗
+	"y": Color8(255, 255, 255),  # 极亮银白闪 (稀点)
+	"_o": Color8(18, 12, 28), "_e": Color8(45, 30, 60),
+	"_h": Color8(180, 180, 200), "_H": Color8(225, 225, 240),
+}
+
 
 # 火果: 红圆果 + 黄/橙高光 + 深红阴影 + 暗叶柄. 16x16 整格但只画下半 + 中间.
 const _P_HELL_FRUIT := {
@@ -1324,6 +1344,27 @@ const _P_SILVER_ORE := {
 }
 
 # 地狱晶体: DEEP_STONE 骨架更暗 + h 烈火红 + H 深岩浆 + y 黄红发光
+# 地狱合金矿: 紫黑基底 + 银闪点 + 偶发紫光泽. STONE 形结构 + 不同颜色族.
+const _HELL_ALLOY_ORE := [
+	"sSsbsSsSsbsSsSss",
+	"sbssLLlssoOOLLbs",
+	"sssbssksLLLsskks",
+	"sslkkskkkkksslkk",
+	"sbosLLLsklssLLls",
+	"sooLLLLsslmkmLls",
+	"ssLLLkssbkssLLLs",
+	"slkkkkbsylkkkkls",
+	"sbosLLLshkLLLoss",
+	"sLLkssolksLLLkbs",
+	"sLLsHHkbskssLLls",
+	"sssoLLLLossolssm",
+	"sbosLLLkssbkLLss",
+	"sslkkkbsslkLLLss",
+	"sbosshlllksmsLls",
+	"sSsbsSsSsbsSsSss",
+]
+
+
 const _HELL_CRYSTAL := [
 	"SbsSsbsSsbsSsbsS",
 	"shHykssssooLLkss",
@@ -1686,6 +1727,7 @@ const _PATTERN_MAP := {
 	HELL_FRUIT: [_HELL_FRUIT, _P_HELL_FRUIT],
 	SHADOW_CHEST: [_CHEST, _P_SHADOW_CHEST],   # 复用 _CHEST 形, 调色板换黑红
 	LIFE_CRYSTAL: [_LIFE_CRYSTAL, _P_LIFE_CRYSTAL],   # 心形粉色结晶, 矿洞偶发
+	HELL_ALLOY_ORE: [_HELL_ALLOY_ORE, _P_HELL_ALLOY_ORE],   # 地狱合金矿 (紫黑+银)
 }
 
 

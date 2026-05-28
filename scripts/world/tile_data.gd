@@ -71,6 +71,7 @@ const OBSIDIAN := 58        # 黑曜石: 钻石镐 (tier 7) 才能挖. 围着岩
 const HELL_FRUIT := 59      # 火果子 (地狱农圣果): 装饰 + 食物. 长地狱石顶, 可吃
 const SHADOW_CHEST := 60    # 阴影宝箱 (地狱第 4 tier): 黑底 + 红光锁孔, 装地狱专属战利品
 const LIFE_CRYSTAL := 61    # 生命水晶 (Terraria 风): 矿洞偶发, 右键吃 → 永久 +20 MAX HP (上限 400)
+const HELL_ALLOY_ORE := 62  # 地狱合金矿: 深紫黑底 + 银闪点. 金/钻镐挖, 熔炉炼锭, 造 tier 8 武器主金属
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -237,6 +238,12 @@ const _PROPS := {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 6, "axe": -1, "sword": -1},
 		"drops": [["hell_crystal", 100, 1, 1]],
+	},
+	HELL_ALLOY_ORE: {
+		# 地狱合金矿: 跟地狱晶同 tier (金镐 + 钻石镐 都能挖), 烧成锭后造装备
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 6, "axe": -1, "sword": -1},
+		"drops": [["hell_alloy_ore", 100, 1, 1]],
 	},
 	CACTUS: {
 		# 仙人掌: 不实心 (玩家穿过, 像 LOG), 任何工具都能砍, 掉 cactus 物品

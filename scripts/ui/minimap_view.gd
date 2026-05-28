@@ -57,6 +57,7 @@ const _TILE_COLORS := {
 	Tiles.GOLD_ORE:      Color8(230, 200, 60),   # 金黄
 	Tiles.DIAMOND_ORE:   Color8(140, 220, 235),  # 钻石冰蓝
 	Tiles.HELL_CRYSTAL:  Color8(255, 215, 70),   # 地狱晶: 火魂金黄 (用户改, 不再血红)
+	Tiles.HELL_ALLOY_ORE: Color8(85, 60, 110),   # 地狱合金矿: 紫黑 (跟金黄区分)
 	Tiles.SILVER_ORE:    Color8(220, 225, 235),  # 银亮白
 	Tiles.WATER:         Color8(60, 100, 170),   # 水蓝
 	Tiles.CHEST:         Color8(180, 120, 60),   # 箱子棕黄

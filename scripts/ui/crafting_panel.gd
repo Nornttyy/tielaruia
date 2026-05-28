@@ -339,6 +339,8 @@ const _ZH_NAMES := {
 	"wood_bow": "木弓",
 	"wood_arrow": "木箭",
 	"hell_crystal_ingot": "魔晶锭",
+	"hell_alloy_ore": "地狱合金矿",
+	"hell_alloy_ingot": "地狱合金锭",
 	"life_crystal": "生命水晶",
 }
 

@@ -69,6 +69,8 @@ const _DEFS := {
 	"wood_arrow":    {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	# === 地狱矿石 ===
 	"hell_crystal_ingot": {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
+	"hell_alloy_ore":     {"placeable_tile_id": Tiles.HELL_ALLOY_ORE, "tool_kind": "",     "tool_tier": 0, "max_stack": 99},
+	"hell_alloy_ingot":   {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	"leather":       {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"wool":          {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"grappling_hook":{"placeable_tile_id": -1,                     "tool_kind": "hook",    "tool_tier": 1, "max_stack": 1},

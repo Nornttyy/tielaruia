@@ -196,6 +196,11 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	hell_noise.seed = world_seed + 14
 	hell_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	hell_noise.frequency = 0.07
+	# 地狱合金矿 noise: 独立种子, 跟 hell_crystal 不重叠
+	var hell_alloy_noise := FastNoiseLite.new()
+	hell_alloy_noise.seed = world_seed + 19
+	hell_alloy_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	hell_alloy_noise.frequency = 0.08
 
 	# 山区 noise: 低频, 决定哪些列是高山 (factor>0) 哪些是平地 (factor=0)
 	var mountain_noise := FastNoiseLite.new()
@@ -261,9 +266,13 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 				var tn: float = tin_noise.get_noise_2d(float(world_x), float(y))
 				var sn: float = silver_noise.get_noise_2d(float(world_x), float(y))
 				# 地狱晶体: 严格只在地狱矩形 (y > HELL_DEPTH + x 在 zone). 不放浅 deep_stone.
+				var an: float = hell_alloy_noise.get_noise_2d(float(world_x), float(y))
 				if y > HELL_DEPTH and hn > HELL_THRESHOLD \
 						and world_x >= hell_zone_x.x and world_x <= hell_zone_x.y:
 					tid = Tiles.HELL_CRYSTAL
+				elif y > HELL_DEPTH and an > 0.40 \
+						and world_x >= hell_zone_x.x and world_x <= hell_zone_x.y:
+					tid = Tiles.HELL_ALLOY_ORE
 				elif depth >= ORE_DEPTH_DEEP_MIN and dn > DIAMOND_THRESHOLD:
 					tid = Tiles.DIAMOND_ORE
 				elif depth >= ORE_DEPTH_MID_MIN and gn > GOLD_THRESHOLD:
