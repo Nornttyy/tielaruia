@@ -10,9 +10,9 @@ func before_each():
 	add_child_autofree(db)
 
 
-func test_has_32_recipes():
-	# 29 + silver sword/pickaxe/axe = 32
-	assert_eq(db.all_recipes().size(), 32)
+func test_has_recipes():
+	# 用户持续加 recipe (furnace/ingot/cooked_meat 等), 不卡死定数. 至少 30 个.
+	assert_gt(db.all_recipes().size(), 30)
 
 
 func test_planks_recipe():
