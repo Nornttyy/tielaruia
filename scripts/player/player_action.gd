@@ -101,12 +101,16 @@ var _attack_combo_step: int = 0
 
 # 镐旋转: 用户改 — 怪要碰到镐才扣血 (不是 AoE 圆心扣血).
 # spin 期间每帧算 pickaxe tip 世界位置, 距离 ≤ HIT_RADIUS 的怪扣 1 次.
-const PICKAXE_SPIN_DURATION := 0.7
+# 用户改: PICKAXE_SPIN_DURATION 0.7→1.0 慢一点; spin 起始朝鼠标 (不再总从上).
+const PICKAXE_SPIN_DURATION := 1.0
 const PICKAXE_TIP_LOCAL_Y := -16.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 1.0)
 const PICKAXE_HIT_RADIUS := 10.0     # tip 到怪中心 ≤ 10px 算碰到 (TILE_SIZE 缩 0.75)
 var _pickaxe_spin_active: bool = false
 var _pickaxe_spin_t: float = 0.0
 var _pickaxe_hit_this_spin: Dictionary = {}  # instance_id → true (1 spin 1 只怪 1 击)
+# spin 起始旋转 + 朝向 (跟 held_item.play_pickaxe_attack 同步, 用于 hit 检测 tip 算法)
+var _pickaxe_spin_start_rot: float = 0.0
+var _pickaxe_spin_facing_right: bool = true
 
 # 测试用: 记录最近一次挥剑的命中中心点 (玩家中心 + 鼠标方向 * 半径)
 var last_swing_center: Vector2 = Vector2.ZERO
@@ -820,8 +824,8 @@ func _held_item_node() -> Node:
 # 挥的弧度: 前方 ±45° = 总 90° 弧
 const SWEEP_ARC_HALF_DEG := 90.0  # 用户改: 半圆挥 180° (Terraria 风), 老 90° 弧
 # 镐攻击的常量
-# cooldown = spin 时长 — 一次完整旋转后才能再攻击 (用户改: 转慢一点 → 攻击也慢一点)
-const PICKAXE_ATTACK_COOLDOWN := 0.7
+# cooldown = spin 时长 — 一次完整旋转后才能再攻击 (用户改 0.7→1.0 同步慢)
+const PICKAXE_ATTACK_COOLDOWN := 1.0
 const PICKAXE_MOUSE_NEAR_RADIUS_MULT := 1.5  # 触发判定圆心 = 鼠标位置
 
 
@@ -896,13 +900,22 @@ func _axe_swing() -> void:
 
 # 开始一次 360° 旋转 (动画 + 标记 spin 期 + 清空已击中表).
 # 挖矿循环和单次攻击都调这个. 期间 _physics_process 每帧检查 tip 跟怪的距离.
+# 用户改: spin 起始朝鼠标 (不再总从上). 算 mouse_angle 传给 held + 存起来给 hit 检测.
 func _start_pickaxe_spin() -> void:
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
+	# 鼠标方向 (测试用 override > 真实输入)
+	var mouse_world: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
+	var to_mouse: Vector2 = mouse_world - player.global_position
+	var mouse_angle: float = to_mouse.angle() if to_mouse.length() > 0.001 else -PI / 2.0
+	# 跟 held_item.play_pickaxe_attack 同公式算 start_rot
+	_pickaxe_spin_facing_right = cos(mouse_angle) >= 0.0
+	var s: float = 1.0 if _pickaxe_spin_facing_right else -1.0
+	_pickaxe_spin_start_rot = wrapf(s * (mouse_angle + PI / 2.0), -PI, PI)
 	var held: Node = player.get_node_or_null("HeldItem")
 	if held != null and held.has_method("play_pickaxe_attack"):
-		held.play_pickaxe_attack()
+		held.play_pickaxe_attack(mouse_angle)
 	elif held != null and held.has_method("play_swing"):
 		held.play_swing()
 	_pickaxe_spin_active = true
@@ -919,10 +932,14 @@ func _check_pickaxe_spin_hits() -> void:
 	var held: Node2D = player.get_node_or_null("HeldItem") as Node2D
 	if held == null or not held.visible:
 		return
-	# tip 旋转角度自己算 (跟 held_item Tween 的目标值一致 0→2π over 0.7s),
+	# tip 旋转角度自己算 (跟 held_item Tween 同步 — start_rot + 360° over duration),
 	# 不读 held.rotation — tween 在 _process 更新, _physics_process 这里读可能滞后.
-	var rot: float = (_pickaxe_spin_t / PICKAXE_SPIN_DURATION) * TAU
-	var tip_world: Vector2 = held.global_position + Vector2(0, PICKAXE_TIP_LOCAL_Y).rotated(rot)
+	var rot_delta: float = (_pickaxe_spin_t / PICKAXE_SPIN_DURATION) * TAU
+	var dir: float = 1.0 if _pickaxe_spin_facing_right else -1.0
+	var held_rot: float = _pickaxe_spin_start_rot + rot_delta * dir
+	# facing left 时 sprite scale.x=-1 镜像 X, tip 在世界坐标用 -held_rot 算 (等价 X 翻转)
+	var rot_for_tip: float = held_rot if _pickaxe_spin_facing_right else -held_rot
+	var tip_world: Vector2 = held.global_position + Vector2(0, PICKAXE_TIP_LOCAL_Y).rotated(rot_for_tip)
 	var base: int = _pickaxe_base_damage()
 	if base <= 0:
 		return

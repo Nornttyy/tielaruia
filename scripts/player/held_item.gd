@@ -97,19 +97,27 @@ func play_swing() -> void:
 
 const THRUST_DURATION := 0.15
 const THRUST_OFFSET_PX := 10.0   # 工具向前突进的距离 (TILE_SIZE 缩 0.75)
-const PICKAXE_ATTACK_DURATION := 0.7   # 转一圈用时 (慢一点, 用户偏好)
+const PICKAXE_ATTACK_DURATION := 1.0   # 用户改 0.7→1.0 转慢一点
 
 
-# 镐攻击: 工具全周转 360° (区别于挖矿的 ±75° 来回摆)
-func play_pickaxe_attack() -> void:
+# 镐攻击: 工具全周转 360°. 用户改: 起始朝鼠标 (target_angle), 不再总从上方开始.
+# target_angle: 鼠标相对玩家的角度 (radians, 0 = 右). 默认 -PI/2 = 上 (兼容老调用).
+func play_pickaxe_attack(target_angle: float = -PI / 2.0) -> void:
 	if not visible:
 		return
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
-	rotation = 0.0
+	# 跟着鼠标 facing (跟剑 sweep 同套路, 不靠玩家走路方向)
+	var mouse_on_right: bool = cos(target_angle) >= 0.0
+	set_facing(mouse_on_right)
+	# sprite 默认朝上 (tip 在 -y), 要让 tip 起步朝 target_angle 得 + PI/2.
+	# facing_left 时 sprite 已水平翻转, 旋转要反向.
+	var s: float = 1.0 if _facing_right else -1.0
+	var start_rot: float = wrapf(s * (target_angle + PI / 2.0), -PI, PI)
+	rotation = start_rot
 	_tween = create_tween()
 	var dir: float = 1.0 if _facing_right else -1.0
-	_tween.tween_property(self, "rotation", deg_to_rad(360.0 * dir), PICKAXE_ATTACK_DURATION)
+	_tween.tween_property(self, "rotation", start_rot + deg_to_rad(360.0 * dir), PICKAXE_ATTACK_DURATION)
 	_tween.tween_callback(func(): rotation = 0.0)
 
 
