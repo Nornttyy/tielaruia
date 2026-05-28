@@ -3,7 +3,7 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const MAX_HEALTH := 10   # 木剑 3 dmg × 4 击, 石剑 5 dmg × 2 击
+const MAX_HEALTH := 20   # 用户改 10→20: 木剑 3 × 7 击, 钻剑 20 × 1 击
 const CONTACT_DAMAGE := 2
 const GRAVITY := 675.0
 const SWIM_GRAVITY := 150.0   # 水里重力 (慢沉)

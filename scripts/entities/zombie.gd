@@ -13,7 +13,7 @@ const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
 # 子类可覆盖 (jaguar 等). 用 var 不用 const.
-var max_health: int = 15
+var max_health: int = 30   # 用户改 15→30: 钻剑 20 dmg 2 击, 木剑 3 × 10 击
 var contact_damage: int = 3
 var walk_speed: float = 28.0
 var aggro_range_px: float = 180.0
