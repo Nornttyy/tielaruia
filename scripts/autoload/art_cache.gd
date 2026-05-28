@@ -237,7 +237,8 @@ func _build_items() -> void:
 			"iron_helmet", "iron_chest", "iron_pants",
 			"silver_helmet", "silver_chest", "silver_pants",
 			"gold_helmet", "gold_chest", "gold_pants",
-			"diamond_helmet", "diamond_chest", "diamond_pants"]:
+			"diamond_helmet", "diamond_chest", "diamond_pants",
+			"hell_staff"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画

@@ -3,6 +3,7 @@ extends CanvasLayer
 
 @onready var hotbar: HBoxContainer = $HotbarAnchor/Hotbar
 @onready var health_hud: Control = $HealthHUD
+@onready var mana_hud: Control = $ManaHUD
 @onready var minimap: Control = $Minimap
 
 
@@ -13,5 +14,8 @@ func bind_player(player: Node2D) -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null:
 		health_hud.bind(hp)
+	var mana: Node = player.get_node_or_null("PlayerMana")
+	if mana != null and mana_hud != null:
+		mana_hud.bind(mana)
 	if minimap != null and minimap.has_method("bind_player"):
 		minimap.bind_player(player)

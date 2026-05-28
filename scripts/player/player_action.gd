@@ -189,6 +189,12 @@ func _physics_process(delta: float) -> void:
 		var primary_pressed_b: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed_b and _attack_cooldown <= 0.0:
 			_try_fire_bow()
+	elif kind == "staff":
+		# 法杖: LMB 按下 → 消耗 mana 发火球 (撞怪不撞玩家). cd 0.5s.
+		_reset_mining()
+		var primary_pressed_s: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
+		if primary_pressed_s and _attack_cooldown <= 0.0:
+			_try_cast_staff()
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
@@ -1128,8 +1134,10 @@ func in_reach(tile: Vector2i) -> bool:
 
 
 const ArrowScene = preload("res://scenes/entities/arrow.tscn")
+const FireballScene = preload("res://scenes/entities/fireball.tscn")
 const BOW_COOLDOWN := 0.4
 const BOW_ARROW_DAMAGE := 5    # base, 后续乘 tier multiplier
+const STAFF_COOLDOWN := 0.5    # 法杖 cd (mana 限制为主, cd 防自动连发)
 
 # 弓发箭: 找 inventory 里第 1 个 wood_arrow → 消耗 1 → spawn Arrow Area2D 朝鼠标飞
 # 没箭 → 不发, 也不进 cooldown (玩家随便点没惩罚)
@@ -1164,6 +1172,39 @@ func _try_fire_bow() -> void:
 	dmg = int(round(float(dmg) * _tool_damage_mult()))
 	arrow.setup(start, target, dmg, parent)
 	SfxBank.play("break", 0.10)  # 暂用破方块声当弓弦声; 以后加专属
+
+
+# 法杖发火球: 检查 mana 够 → 扣 → spawn fireball 朝鼠标飞.
+# damage 跟 mana_cost 由 ItemDB.get_def() 配置 (hell_staff: 22 dmg / 20 mana).
+func _try_cast_staff() -> void:
+	var def: Variant = _current_tool_def()
+	if def == null:
+		return
+	var mana_cost: int = def.get("mana_cost", 20)
+	var spell_dmg: int = def.get("spell_damage", 14)
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	var mana: Node = player.get_node_or_null("PlayerMana")
+	if mana == null:
+		return
+	if not mana.has_method("try_consume"):
+		return
+	if not mana.try_consume(mana_cost):
+		# mana 不够
+		return
+	_attack_cooldown = STAFF_COOLDOWN
+	var start: Vector2 = player.global_position + Vector2(0, -8)
+	var target: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
+	var fb = FireballScene.instantiate()
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = player.get_parent()
+	entities.add_child(fb)
+	# damage_mult 让未来高 tier 法杖加伤
+	var final_dmg: int = int(round(float(spell_dmg) * _tool_damage_mult()))
+	fb.setup(start, target, final_dmg, true)   # true = player_cast
+	SfxBank.play("break", 0.12)
 
 
 func _consume_arrow_fallback(inv: Node) -> bool:

@@ -436,6 +436,7 @@ const _ZH_NAMES := {
 	"diamond_helmet": "钻石头盔", "diamond_chest": "钻石胸甲", "diamond_pants": "钻石裤子",
 	# 地狱武器 (tier 8)
 	"hell_sword": "地狱剑", "hell_pickaxe": "地狱镐", "hell_axe": "地狱斧",
+	"hell_staff": "地狱魔火法杖",
 	"life_crystal": "生命水晶",
 }
 

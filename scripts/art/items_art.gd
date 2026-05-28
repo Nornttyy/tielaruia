@@ -1138,6 +1138,27 @@ const _HELL_AXE := [
 	"................",
 ]
 
+# 地狱魔火法杖: 紫黑杖身 + 顶端金黄火球魔晶 + 银缠绕装饰
+# N=紫黑深, s/d=银缠, Z/z/P=金黄魔晶, n=黑描边
+const _HELL_STAFF := [
+	"......nnnn......",
+	".....nZzzZn.....",
+	"....nZzPPzZn....",   # 魔晶球
+	"....nZzPPzZn....",
+	".....nZzzZn.....",
+	"......nnnn......",
+	"......ndsdn.....",   # 银缠绕装饰
+	"......nNNNn.....",
+	"......nNNNn.....",
+	"......ndsdn.....",   # 第 2 圈银缠
+	"......nNNNn.....",
+	"......nNNNn.....",
+	"......nNNNn.....",
+	"......ndsdn.....",
+	"......nNNNn.....",
+	"......nKKKn.....",   # 杖底黑
+]
+
 # 地狱合金锭 icon: 紫黑底 + 银闪光. 用 K/k 黑 + N/T 钻石蓝 (暗调) + b/F 银亮 + s 银深.
 # N/T 用作"紫光泽" 替代 (items_art PALETTE 没紫). 显示偏紫黑+冷银.
 const _HELL_ALLOY_INGOT := [
@@ -1315,6 +1336,7 @@ const _ICONS := {
 	"gold_helmet": _GOLD_HELMET, "gold_chest": _GOLD_CHEST, "gold_pants": _GOLD_PANTS,
 	"diamond_helmet": _DIAMOND_HELMET, "diamond_chest": _DIAMOND_CHEST, "diamond_pants": _DIAMOND_PANTS,
 	"hell_sword": _HELL_SWORD, "hell_pickaxe": _HELL_PICKAXE, "hell_axe": _HELL_AXE,
+	"hell_staff": _HELL_STAFF,
 	"wood_bow": _WOOD_BOW,
 	"wood_arrow": _WOOD_ARROW,
 }

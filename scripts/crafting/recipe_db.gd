@@ -597,6 +597,13 @@ const _RECIPES := [
 		"pattern": [["diamond","diamond","diamond"], ["diamond","","diamond"], ["diamond","","diamond"]],
 		"output_id": "diamond_pants", "output_count": 1, "mirror_ok": true,
 	},
+	# === 法杖 (Phase 7): 2 hell_crystal_ingot (顶魔晶) + 3 hell_alloy_ingot (杖身) ===
+	# 形: . X . / . X . / . Y .  X=crystal, Y=alloy
+	{
+		"id": "hell_staff", "grid_size": Vector2i(3, 3),
+		"pattern": [["","hell_crystal_ingot",""], ["","hell_crystal_ingot",""], ["","hell_alloy_ingot",""]],
+		"output_id": "hell_staff", "output_count": 1, "mirror_ok": true,
+	},
 	# === 地狱武器 (tier 8): 3 alloy + 1 crystal (魔晶护手/装饰) + 2 planks (柄) ===
 	# 剑形: . X .  /  . X .  /  . X .  + crystal 当装饰
 	{
