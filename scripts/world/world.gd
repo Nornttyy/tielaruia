@@ -29,7 +29,8 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
 
 const MAX_SLIMES := 4              # 白天上限 (slime)
-const MAX_ZOMBIES := 5             # 夜间上限 (zombie)
+# 夜间怪 (zombie + spider 共享) 上限按难度: 简单 8 / 普通 15 / 困难 25
+const NIGHT_CAP_BY_DIFFICULTY := [8, 15, 25]
 const MAX_ANIMALS := 3             # 动物上限 (牛+羊+猪+企鹅+豹+青蛙 总和)
 const SPAWN_INTERVAL := 6.0
 const ANIMAL_SPAWN_INTERVAL := 12.0  # 动物刷新更慢
@@ -702,10 +703,12 @@ func _try_spawn_slime() -> void:
 
 
 func _try_spawn_zombie() -> void:
-	# 夜间僵尸/蜘蛛刷新. 共享 MAX_ZOMBIES 上限.
+	# 夜间僵尸/蜘蛛刷新. 共享上限 (按难度: 简单 8 / 普通 15 / 困难 25).
+	var diff: int = clampi(GameSettings.current_difficulty, 0, 2) if GameSettings != null else 1
+	var cap: int = NIGHT_CAP_BY_DIFFICULTY[diff]
 	var zombies := get_tree().get_nodes_in_group("zombies")
 	var spiders := get_tree().get_nodes_in_group("spiders")
-	if zombies.size() + spiders.size() >= MAX_ZOMBIES:
+	if zombies.size() + spiders.size() >= cap:
 		return
 	# 50% 概率刷蜘蛛 (替代僵尸), 玩家在地下深处 (y > 30 tile) 时蜘蛛概率 80%
 	var spider_chance: float = 0.5
