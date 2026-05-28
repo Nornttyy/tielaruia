@@ -123,7 +123,7 @@ func test_pickaxe_damage_is_half_of_sword() -> void:
 	ctx["player"].set_physics_process(true)
 	var pickaxe_dmg: int = hp_b - slime_b.current_health
 	var expected: int = max(1, int(round(float(sword_dmg) * 0.5)))
-	assert_eq(pickaxe_dmg, expected, "镐伤害应 = 剑伤害的 50% (round). sword=%d pickaxe=%d" % [sword_dmg, pickaxe_dmg])
+	assert_eq(pickaxe_dmg, expected, "镐伤害应 = 剑伤害的一半. sword=%d pickaxe=%d" % [sword_dmg, pickaxe_dmg])
 
 
 # T8: 拿镐对石头 tile, 优先挖矿. 用户改后: spin 期间紧贴的怪会被扫到 (incidental),
