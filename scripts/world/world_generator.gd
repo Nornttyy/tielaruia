@@ -820,9 +820,9 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 # 每 chunk 12% 出一个: 找悬崖 (Δsurf≥8), 高侧凿 7 格深的洞 (3 高) 末尾接 3×3 小室带 CHEST,
 # 低侧那柱填 WATER (高度=悬崖高度差). 水非永久, chunk 加载时 water_sim 会让它流下来形成水洼.
 # 用 chunk-deterministic RNG (同 seed+chunk_x 总是同结果). 不允许跨 chunk (洞 + 室都得在本 chunk 内).
-const WATERFALL_CHUNK_CHANCE := 0.50  # 地形平滑, 提高命中
-const WATERFALL_MIN_CLIFF := 4       # 至少 4 格高差 (4 列范围内累计)
-const WATERFALL_CLIFF_SPAN := 4      # 4 列范围内的累计落差判断悬崖
+const WATERFALL_CHUNK_CHANCE := 1.00  # 总试一次 (找不到悬崖就跳过)
+const WATERFALL_MIN_CLIFF := 3       # 至少 3 格高差 (3 列范围内)
+const WATERFALL_CLIFF_SPAN := 3      # 3 列范围内的累计落差
 const WATERFALL_CAVE_DEPTH := 7      # 洞往里挖 7 格 + 3 格小室
 static func _place_waterfall_cave_chunk(c: Chunk, chunk_heights: Dictionary,
 		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
@@ -858,9 +858,19 @@ static func _place_waterfall_cave_chunk(c: Chunk, chunk_heights: Dictionary,
 	var low_surf: int = chunk_heights[x_low]
 	var high_surf: int = chunk_heights[x_high]
 	# 1) 瀑布: 低侧那柱 X=x_low, y in [high_surf, low_surf - 1] 填 WATER
-	#    水将从 y=high_surf 往下流, 沿途和邻列空气交互, 最后在低地堆成水洼.
+	#    水将从 y=high_surf 往下流 → 加载几秒后流完, 在低地堆水洼.
 	for wy in range(high_surf, low_surf):
 		c.tiles[x_low - chunk_start][wy] = Tiles.WATER
+	# 1.5) 崖底预放小水洼 (5 格水平), 即使瀑布流完也能看到水痕迹
+	#      column x_low ± 2 在 y = low_surf - 1 填 WATER (低地 1 格上)
+	for dx in range(-2, 3):
+		var wx: int = x_low + dx
+		if wx < chunk_start or wx >= chunk_end:
+			continue
+		var lxx: int = wx - chunk_start
+		var puddle_y: int = low_surf - 1
+		if puddle_y >= 0 and c.tiles[lxx][puddle_y] == Tiles.AIR:
+			c.tiles[lxx][puddle_y] = Tiles.WATER
 	# 2) 洞口 + 隧道 + 小室. 洞高 3 格 (y_top..y_bot), 玩家能直立走. cave_dir=±1 选方向.
 	var y_bot: int = low_surf - 1     # 玩家脚下站这格
 	var y_top: int = low_surf - 3     # 头顶
@@ -890,6 +900,11 @@ static func _place_waterfall_cave_chunk(c: Chunk, chunk_heights: Dictionary,
 		else:
 			c.tiles[clx][chest_y] = Tiles.CHEST
 			c.treasure_spots.append(Vector2i(chest_x, chest_y))
+	# 5) 洞内放 1 火把 (在 y_top 行, 离入口 2 格) — 走过路的玩家能看到洞里有光
+	var torch_x: int = x_high + 2 * cave_dir
+	var torch_y: int = y_top
+	if torch_x >= chunk_start and torch_x < chunk_end and torch_y >= 0:
+		c.tiles[torch_x - chunk_start][torch_y] = Tiles.TORCH
 
 
 # 跟 generate_chunk 里 surf 公式一致: 用主 noise 的种子重算单列 surf.
