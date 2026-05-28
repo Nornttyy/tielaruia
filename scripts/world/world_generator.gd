@@ -47,12 +47,12 @@ const COPPER_THRESHOLD := 0.30   # 铜矿: 浅层 STONE 常见
 const TIN_THRESHOLD := 0.35      # 锡矿: 浅层 STONE 稍稀
 const GOLD_THRESHOLD := 0.40     # 金矿: 深度 > 40 (相对 surf), 中等
 const DIAMOND_THRESHOLD := 0.50  # 钻石: 深度 > 80, 较稀
-const HELL_THRESHOLD := 0.55     # 地狱晶体: 深度 > 150, 很稀
+const HELL_THRESHOLD := 0.40     # 地狱晶体: 阈值放低一点 (0.55 → 0.40), 让地狱里有得挖
 # 矿层深度边界 (y - surf), 单位 tile
 const ORE_DEPTH_SHALLOW_MAX := 50   # 铜锡浅层上限
 const ORE_DEPTH_MID_MIN := 40       # 金矿起始深度
 const ORE_DEPTH_DEEP_MIN := 80      # 钻石起始深度
-const ORE_DEPTH_HELL_MIN := 150     # 地狱晶体起始深度
+const ORE_DEPTH_HELL_MIN := 100     # 地狱晶体起始深度 (256 高世界, 地狱 y>220, surf~115 → depth 105)
 
 # Perlin Worms 洞穴系统 (细隧道网 + 分叉 + 死路, 按深度分层: 表少 / 深密)
 const WORM_SPAWN_GRID := 14      # 每 14×14 tile 一个候选 worm 起点 (密)
@@ -68,8 +68,10 @@ const CHAMBER_RADIUS_MIN := 3.0     # 6 tile 宽
 const CHAMBER_RADIUS_MAX := 5.0     # 10 tile 宽
 const CHAMBER_CHEST_CHANCE := 0.55  # 55% 小室放宝箱 (老 30%)
 const CHAMBER_MUSHROOM_CHANCE := 0.20  # 20% 蘑菇地 (与宝箱互斥), 老 25%
+const CHAMBER_LIFE_CRYSTAL_CHANCE := 0.12  # 12% 小室放生命水晶 (跟前两个互斥)
 const CHEST_MIN_DEPTH := 15         # 浅一点也能出 (用户要更多木宝箱), 原 30
 const MUSHROOM_MIN_DEPTH := 20      # 蘑菇地浅一点也行
+const LIFE_CRYSTAL_MIN_DEPTH := 25  # 生命水晶 25 格深起 (新手探索一下能找到)
 const WORM_BRANCH_MAX_DEPTH := 2   # 分叉递归最大深度
 const WORM_BRANCH_RADIUS_SCALE := 0.6  # 子 worm 半径系数 (孙再叠加 → 越细)
 const WORM_DIR_FREQUENCY := 0.025  # 方向噪声频率
@@ -203,6 +205,8 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 
 	# Biome centers: 4 个 biome 用 seed shuffle 分到 _BIOME_SLOTS, 每个 +- jitter
 	var biome_centers: Dictionary = _build_biome_centers(world_seed)
+	# 地狱矩形 x 范围 (hoist 出 loop, 每 cell 都查)
+	var hell_zone_x: Vector2i = _hell_zone_x(world_seed)
 
 	# 计算本 chunk 范围内每列的 heights (供地形 + 树木使用)
 	var chunk_start_x := chunk_x * chunk_width
@@ -256,7 +260,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 				var un: float = copper_noise.get_noise_2d(float(world_x), float(y))
 				var tn: float = tin_noise.get_noise_2d(float(world_x), float(y))
 				var sn: float = silver_noise.get_noise_2d(float(world_x), float(y))
-				if depth >= ORE_DEPTH_HELL_MIN and hn > HELL_THRESHOLD:
+				# 地狱晶体: 严格只在地狱矩形 (y > HELL_DEPTH + x 在 zone). 不放浅 deep_stone.
+				if y > HELL_DEPTH and hn > HELL_THRESHOLD \
+						and world_x >= hell_zone_x.x and world_x <= hell_zone_x.y:
 					tid = Tiles.HELL_CRYSTAL
 				elif depth >= ORE_DEPTH_DEEP_MIN and dn > DIAMOND_THRESHOLD:
 					tid = Tiles.DIAMOND_ORE
@@ -605,6 +611,8 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 				_try_place_chest(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r) + 2, chunk_start, chunk_end, height, mimic_chance, rng, ct_chamber)
 			elif roll < CHAMBER_CHEST_CHANCE + CHAMBER_MUSHROOM_CHANCE and depth_here >= MUSHROOM_MIN_DEPTH:
 				_try_place_mushroom_patch(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r), chunk_start, chunk_end, height, rng)
+			elif roll < CHAMBER_CHEST_CHANCE + CHAMBER_MUSHROOM_CHANCE + CHAMBER_LIFE_CRYSTAL_CHANCE and depth_here >= LIFE_CRYSTAL_MIN_DEPTH:
+				_try_place_life_crystal(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r) + 2, chunk_start, chunk_end, height)
 		# 分叉: 派子 worm (角度偏移 ±60°, 长度更短, 半径更细)
 		if depth < WORM_BRANCH_MAX_DEPTH and rng.randf() < WORM_BRANCH_CHANCE:
 			var branch_len: int = rng.randi_range(WORM_LEN_MIN / 2, WORM_LEN_MAX / 2)
@@ -710,6 +718,30 @@ static func _try_place_chest(c: Chunk, world_x: int, start_y: int, max_scan: int
 			chest_tile = Tiles.GOLD_CHEST
 	c.tiles[lx][chest_y] = chest_tile
 	c.treasure_spots.append(Vector2i(world_x, chest_y))
+
+
+# 跟 _try_place_chest 同款 (找小室底 STONE 上面 AIR 那格), 但放 LIFE_CRYSTAL.
+# 不进 treasure_spots — 水晶不是宝箱, 没储物. 右键吃直接消耗 tile.
+static func _try_place_life_crystal(c: Chunk, world_x: int, start_y: int, max_scan: int,
+		chunk_start: int, chunk_end: int, height: int) -> void:
+	if world_x < chunk_start or world_x >= chunk_end:
+		return
+	var lx: int = world_x - chunk_start
+	var floor_y: int = -1
+	for dy in range(0, max_scan + 1):
+		var wy: int = start_y + dy
+		if wy < 0 or wy >= height:
+			break
+		var t: int = c.tiles[lx][wy]
+		if t == Tiles.STONE or t == Tiles.DEEP_STONE:
+			floor_y = wy
+			break
+	if floor_y <= 0:
+		return
+	var crystal_y: int = floor_y - 1
+	if c.tiles[lx][crystal_y] != Tiles.AIR:
+		return
+	c.tiles[lx][crystal_y] = Tiles.LIFE_CRYSTAL
 
 
 # 蘑菇小室: 在小室中心 ±x_radius 列里, 把第一个 STONE/DEEP_STONE floor 改 MUD,

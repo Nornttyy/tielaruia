@@ -36,6 +36,7 @@ const HELL_STONE := 57      # 地狱石 (深红带黑裂纹 + 烈火高光)
 const OBSIDIAN := 58        # 黑曜石 (黑底 + 紫光泽闪)
 const HELL_FRUIT := 59      # 火果 (装饰, 红果 + 黄柄)
 const SHADOW_CHEST := 60    # 阴影宝箱 (黑底 + 红光锁孔 + 红宝石)
+const LIFE_CRYSTAL := 61    # 生命水晶 (用户加, _PATTERN_MAP 引用了, 补常量声明)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -466,15 +467,15 @@ const _P_WATER := {
 
 # 地狱晶体: DEEP_STONE 底 (更暗背景烘托) + h/H/y 烈火红
 const _P_HELL_CRYSTAL := {
-	"s": Color8(180, 50, 30),   "S": Color8(135, 25, 15),
-	"l": Color8(215, 90, 60),   "k": Color8(75, 15, 8),
-	"L": Color8(245, 130, 90),  "m": Color8(155, 35, 22),
-	"b": Color8(100, 20, 12),   "o": Color8(195, 70, 45),
-	"h": Color8(255, 80, 30),
-	"H": Color8(180, 30, 10),
-	"y": Color8(255, 220, 120),
-	"_o": Color8(35, 5, 2), "_e": Color8(95, 18, 8),
-	"_h": Color8(245, 130, 90), "_H": Color8(255, 165, 120),
+	# 用户改: 火魂黄 (亮金+橙+焰白闪点), 不再是红
+	"s": Color8(180, 130, 30),  "S": Color8(125, 85, 15),    # 琥珀金底 + 深金影
+	"l": Color8(225, 175, 55),  "k": Color8(50, 30, 8),      # 金中亮 + 黑裂纹
+	"L": Color8(255, 220, 90),  "m": Color8(220, 130, 35),   # 亮黄高光 + 焰橙过渡
+	"b": Color8(80, 50, 15),    "o": Color8(245, 200, 70),   # 黑棕暗 + 金亮
+	"h": Color8(255, 245, 160), "H": Color8(255, 150, 50),   # 极亮黄白 + 烈焰橙
+	"y": Color8(255, 255, 220),                              # 火魂闪点 (近白)
+	"_o": Color8(40, 25, 5), "_e": Color8(95, 65, 15),       # 边暗
+	"_h": Color8(245, 200, 100), "_H": Color8(255, 230, 140),# 边亮
 }
 
 
@@ -1343,6 +1344,36 @@ const _HELL_CRYSTAL := [
 ]
 
 
+# 生命水晶 palette: 透明背景 + 粉红心形, 4 层颜色让心立体
+const _P_LIFE_CRYSTAL := {
+	"k": Color8(80, 12, 25),       # 暗红外框
+	"r": Color8(170, 45, 65),      # 暗粉过渡
+	"R": Color8(230, 80, 110),     # 亮粉主色
+	"P": Color8(255, 180, 200),    # 高光浅粉
+}
+
+
+# 生命水晶: 16x16 心形粉色结晶 (透明背景, 玩家右键吃 → 永久 +20 MAX HP)
+const _LIFE_CRYSTAL := [
+	"................",
+	"................",
+	"....kk....kk....",
+	"...kPPk..kPPk...",
+	"..kPRRPkkPRRPk..",
+	".kRRRRrkkrRRRRk.",
+	".kRRRRRRRRRRRRk.",
+	".kRRRPRRRRRPRRk.",
+	"..kRRRRRRRRRRk..",
+	"...kRRRRRRRRk...",
+	"....kRRrrRRk....",
+	".....kRRRRk.....",
+	"......kRRk......",
+	".......kk.......",
+	"................",
+	"................",
+]
+
+
 # 水: 4 帧动画, 高光位置渐移做"水波闪动"感. 邻 tile 拼起来视觉无缝.
 # 边缘行/列 100% 'a' → 跟邻 tile 必无缝. 帧 0-3 内部高光位置依次右移.
 const _WATER := [    # 帧 0 (做静态 fallback 用, 也作动画首帧)
@@ -1654,6 +1685,7 @@ const _PATTERN_MAP := {
 	OBSIDIAN: [_OBSIDIAN, _P_OBSIDIAN],
 	HELL_FRUIT: [_HELL_FRUIT, _P_HELL_FRUIT],
 	SHADOW_CHEST: [_CHEST, _P_SHADOW_CHEST],   # 复用 _CHEST 形, 调色板换黑红
+	LIFE_CRYSTAL: [_LIFE_CRYSTAL, _P_LIFE_CRYSTAL],   # 心形粉色结晶, 矿洞偶发
 }
 
 

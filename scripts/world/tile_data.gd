@@ -70,6 +70,7 @@ const HELL_STONE := 57      # 地狱石: 替代 STONE/DEEP_STONE 在地狱区. �
 const OBSIDIAN := 58        # 黑曜石: 钻石镐 (tier 7) 才能挖. 围着岩浆池, 极硬
 const HELL_FRUIT := 59      # 火果子 (地狱农圣果): 装饰 + 食物. 长地狱石顶, 可吃
 const SHADOW_CHEST := 60    # 阴影宝箱 (地狱第 4 tier): 黑底 + 红光锁孔, 装地狱专属战利品
+const LIFE_CRYSTAL := 61    # 生命水晶 (Terraria 风): 矿洞偶发, 右键吃 → 永久 +20 MAX HP (上限 400)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -413,6 +414,12 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["chest", 100, 1, 1]],
+	},
+	LIFE_CRYSTAL: {
+		# 生命水晶: 不能挖 (右键吃专用). 实心防玩家穿过. 砸不掉 → 必须靠近右键.
+		"solid": true, "mineable": false,
+		"tool_tiers": {"": -1, "pickaxe": -1, "axe": -1, "sword": -1},
+		"drops": [],
 	},
 }
 

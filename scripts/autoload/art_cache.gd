@@ -114,6 +114,7 @@ func _build_blocks() -> void:
 		BlocksArt.DIAMOND_CHEST,
 		BlocksArt.LAVA, BlocksArt.HELL_STONE, BlocksArt.OBSIDIAN, BlocksArt.HELL_FRUIT,
 		BlocksArt.SHADOW_CHEST,
+		BlocksArt.LIFE_CRYSTAL,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -227,7 +228,8 @@ func _build_items() -> void:
 			"raw_meat", "leather", "wool", "cooked_meat", "mushroom",
 			"iron_ingot", "copper_ingot", "tin_ingot", "silver_ingot", "gold_ingot",
 			"grappling_hook",
-			"hell_fruit", "obsidian", "hell_stone"]:
+			"hell_fruit", "obsidian", "hell_stone",
+			"wood_bow", "wood_arrow", "hell_crystal_ingot"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画

@@ -247,11 +247,14 @@ func _apply_save_data(data: Resource) -> void:
 	player.global_position = data.player_position
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and "current_health" in hp:
-		# 老存档 (version=0) 时 player_hp 是 0-20 刻度, 缩放 ×5 到新刻度 0-100.
-		# 同时 clamp 防越界. 0 → 维持 0 (死亡状态).
+		# v0 → v1: 老存档 player_hp 0-20 刻度, ×5 缩放到 0-100.
+		# v1 → v2: 加 player_max_hp 永久上限 (吃水晶涨过的). 老存档没该字段 = BASE.
 		var loaded_hp: float = data.player_hp
 		if data.version < 1:
 			loaded_hp = loaded_hp * 5.0
+		# 先还原永久上限 (才知道 clamp 边界)
+		if data.version >= 2 and "MAX_HEALTH" in hp:
+			hp.MAX_HEALTH = clamp(data.player_max_hp, hp.BASE_MAX_HEALTH, hp.MAX_HEALTH_CAP)
 		hp.current_health = clamp(int(loaded_hp), 0, hp.MAX_HEALTH)
 		if hp.has_signal("health_changed"):
 			hp.health_changed.emit(hp.current_health, hp.MAX_HEALTH)

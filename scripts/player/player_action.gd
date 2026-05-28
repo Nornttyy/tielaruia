@@ -790,6 +790,13 @@ func _update_eat_or_place(delta: float) -> void:
 					# 玩家以为是宝箱, 实际是陷阱: 爆炸 + 弹 mimic
 					_trigger_mimic_trap(aim_tile, terrain.get_parent())
 					return
+				elif aim_tid == Tiles.LIFE_CRYSTAL:
+					# 生命水晶: 右键吃 → 永久 +20 MAX HP + 同量当前回血 + 消失.
+					# 已达 400 上限时不消耗 (避免误吃浪费).
+					if hp != null and hp.has_method("try_extend_max"):
+						if hp.try_extend_max():
+							_consume_life_crystal_tile(aim_tile, terrain)
+					return
 
 	# 持食物 + 按住 → 进入/保持 eating. 食物 food_fill 现在直接当回血量.
 	# 不检查血量上限: 满血也能吃 (heal() 内部 clamp), 误点会消耗食物 — 用户选这个语义.
@@ -1187,3 +1194,16 @@ func _trigger_mimic_trap(tile: Vector2i, world: Node) -> void:
 	# 4) 召唤 Mimic
 	if world != null and world.has_method("spawn_mimic_at_tile"):
 		world.spawn_mimic_at_tile(tile)
+
+
+# 玩家吃了生命水晶: tile 变 AIR + 粉色粒子 + "ding" 音效.
+# (try_extend_max 已经更新 HP, 这里只处理视觉/世界 side effect)
+func _consume_life_crystal_tile(tile: Vector2i, terrain: TileMapLayer) -> void:
+	var world: Node = terrain.get_parent()
+	if world != null and world.has_method("_set_tile"):
+		world._set_tile(tile.x, tile.y, Tiles.AIR)
+	var center := Vector2(tile.x * TILE_SIZE + TILE_SIZE / 2.0, tile.y * TILE_SIZE + TILE_SIZE / 2.0)
+	# 粉色 "+20 MAX" 飘字 + 爆炸粒子 (粉色没专门 API → 暂用爆炸表示喜庆)
+	Effects.spawn_damage_number(center + Vector2(0, -10), 20, Color(1.0, 0.4, 0.6))
+	Effects.spawn_explosion(center)
+	SfxBank.play("pickup", 0.25)  # 暂用拾取 SFX 表示"获得"

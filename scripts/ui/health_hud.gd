@@ -1,36 +1,34 @@
-# 5 颗红心 HUD. 每颗 = 20 HP 槽位.
-# Terraria 风: 外圈深色边框 + 内部红色, 红心按本槽剩余 HP 平滑缩小.
-# 用程序绘制 (圆 + 三角) 而不是缩像素纹理 — 像素艺术缩小会糊, 这样任意大小都顺滑.
+# 心 HUD: 每颗 = 20 HP. 心数 = ceil(MAX_HEALTH / 20), 5 ~ 20 颗 (Terraria 上限).
+# > 10 颗时换行: 第 1 行 10 颗, 第 2 行剩下的. 跟 Terraria 一致.
+# Terraria 风: 程序绘制 (圆 + 三角), 4 层叠 (深红边框 + 暗红空心 + 鲜红填充 + 浅红高光).
+# 心按本槽剩余 HP 平滑缩, 不分半格.
 extends Control
 
 const HEART_SLOT_PX := 24       # 一颗心占的边框正方形大小 (像素)
 const HEART_SPACING := 4
-const NUM_HEARTS := 5
+const HEARTS_PER_ROW := 10      # 第 1 行最多 10 颗心, 超出换第 2 行 (Terraria 风)
 const HP_PER_HEART := 20
 const PAD := 8
 
-# 颜色分层: 外深红边框 → 暗红空心底 → 鲜红填充 → 浅红高光.
-const COLOR_BORDER := Color8(60, 8, 12)       # 几乎黑的深红 (Terraria 重边框感)
-const COLOR_EMPTY := Color8(95, 25, 28)       # 空心时露的暗红 (跟边框拉开一档让边框看得清)
-const COLOR_FILL := Color8(220, 45, 55)       # 鲜红主体
-const COLOR_HIGHLIGHT := Color8(255, 145, 150) # 左上角小高光让心立体
+# 颜色分层
+const COLOR_BORDER := Color8(60, 8, 12)
+const COLOR_EMPTY := Color8(95, 25, 28)
+const COLOR_FILL := Color8(220, 45, 55)
+const COLOR_HIGHLIGHT := Color8(255, 145, 150)
 
-# 心形 "外圈"/"内圈" 的相对尺寸 (相对 slot_px)
-const BORDER_SIZE_RATIO := 1.0    # 占满槽位
-const EMPTY_SIZE_RATIO := 0.78    # 边框给 (1-0.78)/2 = 11% slot 厚度的深红边
-const FILL_MAX_RATIO := 0.78      # 满血时填充 = 空心底大小, 完全盖住
-const HIGHLIGHT_SIZE_RATIO := 0.18 # 高光小圆
-const HIGHLIGHT_OFFSET := Vector2(-0.18, -0.18)   # 左上偏移 (相对 slot 中心)
+# 心形 "外圈"/"内圈" 相对尺寸 (相对 slot_px)
+const BORDER_SIZE_RATIO := 1.0
+const EMPTY_SIZE_RATIO := 0.78
+const FILL_MAX_RATIO := 0.78
+const HIGHLIGHT_SIZE_RATIO := 0.18
+const HIGHLIGHT_OFFSET := Vector2(-0.18, -0.18)
 
 var _cur: int = 100
 var _max: int = 100
 
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(
-		PAD * 2 + (HEART_SLOT_PX + HEART_SPACING) * NUM_HEARTS - HEART_SPACING,
-		PAD * 2 + HEART_SLOT_PX
-	)
+	_update_min_size()
 
 
 func bind(health_node: Node) -> void:
@@ -43,46 +41,63 @@ func bind(health_node: Node) -> void:
 
 func _on_changed(cur: int, maximum: int) -> void:
 	_cur = cur
-	_max = maximum
+	# max 变化时调整 HUD 高度 (吃了水晶后 max 变大 → 可能多行)
+	if maximum != _max:
+		_max = maximum
+		_update_min_size()
 	queue_redraw()
 
 
+# 根据当前 _max 计算总心数 + 行数, 更新 custom_minimum_size.
+func _update_min_size() -> void:
+	var num_hearts: int = _heart_count()
+	var rows: int = ceili(float(num_hearts) / float(HEARTS_PER_ROW))
+	var cols_first_row: int = min(num_hearts, HEARTS_PER_ROW)
+	custom_minimum_size = Vector2(
+		PAD * 2 + (HEART_SLOT_PX + HEART_SPACING) * cols_first_row - HEART_SPACING,
+		PAD * 2 + (HEART_SLOT_PX + HEART_SPACING) * rows - HEART_SPACING
+	)
+
+
+func _heart_count() -> int:
+	return ceili(float(_max) / float(HP_PER_HEART))
+
+
 func _draw() -> void:
-	for i in NUM_HEARTS:
-		var cx: float = PAD + i * (HEART_SLOT_PX + HEART_SPACING) + HEART_SLOT_PX * 0.5
-		var cy: float = PAD + HEART_SLOT_PX * 0.5
+	var num_hearts: int = _heart_count()
+	for i in num_hearts:
+		var row: int = i / HEARTS_PER_ROW
+		var col: int = i % HEARTS_PER_ROW
+		var cx: float = PAD + col * (HEART_SLOT_PX + HEART_SPACING) + HEART_SLOT_PX * 0.5
+		var cy: float = PAD + row * (HEART_SLOT_PX + HEART_SPACING) + HEART_SLOT_PX * 0.5
 		var center := Vector2(cx, cy)
-		# 边框 (最外, 始终画)
+		# 边框 (始终画)
 		_draw_heart(center, HEART_SLOT_PX * BORDER_SIZE_RATIO, COLOR_BORDER)
-		# 空心底 (略缩, 露出一圈边框)
+		# 空心底
 		_draw_heart(center, HEART_SLOT_PX * EMPTY_SIZE_RATIO, COLOR_EMPTY)
-		# 红色填充: 平滑按 fraction 缩
+		# 红色填充, 按 fraction 平滑缩
 		var fill_hp: int = clamp(_cur - i * HP_PER_HEART, 0, HP_PER_HEART)
 		if fill_hp > 0:
 			var frac: float = float(fill_hp) / float(HP_PER_HEART)
 			var fill_size: float = HEART_SLOT_PX * FILL_MAX_RATIO * frac
-			# 心太小时跳过避免锯齿, 但 1 HP 还是要看见点, 给最小 4px
 			fill_size = max(4.0, fill_size)
 			_draw_heart(center, fill_size, COLOR_FILL)
-			# 高光: 跟着 fill 一起缩, 只在 fraction > 0.3 时画 (太小没意义)
 			if frac > 0.3:
 				var hl_size: float = fill_size * HIGHLIGHT_SIZE_RATIO * 2.0
 				var hl_offset := HIGHLIGHT_OFFSET * fill_size
 				draw_circle(center + hl_offset, hl_size * 0.5, COLOR_HIGHLIGHT)
 
 
-# 程序绘制心形: 两个圆叠 + 一个倒三角. size 是心的"全宽". 用此函数缩放才平滑.
+# 程序绘制心: 两个圆瓣 + 底部倒三角. size 是心的"全宽". 缩任意大小都平滑.
 func _draw_heart(center: Vector2, size: float, color: Color) -> void:
 	if size <= 0.0:
 		return
-	var lobe_radius: float = size * 0.28        # 两个圆瓣半径
-	var lobe_offset_x: float = size * 0.22      # 圆心相对 center.x 的左右偏移
-	var lobe_offset_y: float = -size * 0.16     # 圆心相对 center.y 的上偏 (心顶在上)
-	# 两个圆瓣 (左右)
+	var lobe_radius: float = size * 0.28
+	var lobe_offset_x: float = size * 0.22
+	var lobe_offset_y: float = -size * 0.16
 	draw_circle(center + Vector2(-lobe_offset_x, lobe_offset_y), lobe_radius, color)
 	draw_circle(center + Vector2(lobe_offset_x, lobe_offset_y), lobe_radius, color)
-	# 底部倒三角: 顶边连接两瓣外缘, 底点在心尖
-	var tri_top_y: float = center.y + lobe_offset_y    # 两瓣中心连线 y
+	var tri_top_y: float = center.y + lobe_offset_y
 	var tri_left := Vector2(center.x - lobe_offset_x - lobe_radius * 0.85, tri_top_y)
 	var tri_right := Vector2(center.x + lobe_offset_x + lobe_radius * 0.85, tri_top_y)
 	var tri_bottom := Vector2(center.x, center.y + size * 0.42)

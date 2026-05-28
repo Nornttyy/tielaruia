@@ -59,6 +59,8 @@ func save(main: Node) -> bool:
 		var hp: Node = player.get_node_or_null("PlayerHealth")
 		if hp != null and "current_health" in hp:
 			data.player_hp = float(hp.current_health)
+			# 永久上限 (吃水晶+20 那个值). 没 MAX_HEALTH 字段 → 兜底 100.
+			data.player_max_hp = int(hp.MAX_HEALTH) if "MAX_HEALTH" in hp else 100
 		var inv_node: Node = player.get_node_or_null("PlayerInventory")
 		if inv_node != null and inv_node.inventory != null:
 			data.inventory_slots = _serialize_inventory(inv_node.inventory.slots)

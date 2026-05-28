@@ -6,13 +6,18 @@ signal health_changed(current: int, maximum: int)
 signal damaged(amount: int, source_pos: Vector2)
 signal died
 
-const MAX_HEALTH := 100
+const BASE_MAX_HEALTH := 100        # 起始上限 (5 颗心)
+const MAX_HEALTH_CAP := 400         # 永久 +HP 上限 (20 颗心, Terraria 风)
+const HP_PER_CRYSTAL := 20          # 生命水晶 +20 max HP
 const IFRAMES_SEC := 0.6
 const TILE_SIZE := 12
 const LAVA_TICK_INTERVAL := 0.5     # 每 0.5s 扣一次血
 const LAVA_DAMAGE_PER_TICK := 5     # 每次扣 5 → 满血 100 在 10s 内烧死 (用户调: 20 太狠)
 
-var current_health: int = MAX_HEALTH
+# MAX_HEALTH 现在是 var (不是 const) — 生命水晶能永久加上限.
+# 旧代码 hp.MAX_HEALTH 引用照样工作 (var 名同).
+var MAX_HEALTH: int = BASE_MAX_HEALTH
+var current_health: int = BASE_MAX_HEALTH
 var _iframe_timer: float = 0.0
 var _was_in_iframe: bool = false
 var _lava_tick_t: float = 0.0
@@ -145,3 +150,14 @@ func revive_full() -> void:
 	current_health = MAX_HEALTH
 	_iframe_timer = 0.0
 	health_changed.emit(current_health, MAX_HEALTH)
+
+
+# 用生命水晶: 永久 +HP_PER_CRYSTAL max HP + 也加同量当前 HP.
+# 已达 cap 返 false (玩家应该不能再吃). 否则返 true.
+func try_extend_max(amount: int = HP_PER_CRYSTAL) -> bool:
+	if MAX_HEALTH >= MAX_HEALTH_CAP:
+		return false
+	MAX_HEALTH = min(MAX_HEALTH_CAP, MAX_HEALTH + amount)
+	current_health = min(MAX_HEALTH, current_health + amount)
+	health_changed.emit(current_health, MAX_HEALTH)
+	return true

@@ -3,9 +3,9 @@
 class_name SaveData extends Resource
 
 # 存档格式版本. 旧存档 (没这字段) 加载时 = 0.
-# v0 → v1: PlayerHealth.MAX_HEALTH 从 20 改 100 + 删饱食度.
-#         旧 player_hp 需要 ×5 缩放到新刻度.
-const CURRENT_VERSION := 1
+# v0 → v1: PlayerHealth.MAX_HEALTH 从 20 改 100 + 删饱食度. 旧 player_hp ×5 缩放.
+# v1 → v2: 加生命水晶, player_max_hp 字段记录吃了几个 crystal 后的上限.
+const CURRENT_VERSION := 2
 
 @export var version: int = CURRENT_VERSION
 @export var world_seed: int = 0
@@ -15,7 +15,8 @@ const CURRENT_VERSION := 1
 # 世界时间 [0, 1) — 0=午夜, 0.35=早晨默认, 0.5=正午, 0.75=傍晚
 @export var world_time: float = 0.35
 @export var player_position: Vector2 = Vector2.ZERO
-@export var player_hp: float = 100.0  # 跟 PlayerHealth.MAX_HEALTH 同步
+@export var player_hp: float = 100.0       # 当前血量
+@export var player_max_hp: int = 100        # 永久上限 (吃水晶能涨到 400)
 # 9 hotbar + 27 主背包 = 36 槽。每个: null 或 {"item_id": String, "count": int}
 @export var inventory_slots: Array = []
 @export var hotbar_selection: int = 0
