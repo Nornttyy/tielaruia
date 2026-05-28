@@ -224,11 +224,17 @@ func _apply_save_data(data: Resource) -> void:
 		TimeOfDay.time = float(data.world_time)
 	# 恢复玩家挖/放的 chunk 改动 (写 _deltas, 之后 chunk 加载时会应用)
 	SaveManager.apply_chunk_deltas(w.chunk_manager, data.chunk_deltas)
-	# 恢复生命水晶世界限计数 + 已处理 chunk 列表 (防 chunk 重载又重新 cap)
+	# 恢复生命水晶世界限计数 + 已处理 chunk 列表 + 位置 (防 chunk 重载又 cap)
 	if data.version >= 2 and w.chunk_manager != null:
 		w.chunk_manager.life_crystals_spawned = data.life_crystals_spawned
 		for cx in data.processed_chunks:
 			w.chunk_manager.processed_chunks[int(cx)] = true
+		# positions 扁平存还原: [x0,y0, x1,y1, ...]
+		var pos_arr: PackedInt32Array = data.life_crystal_positions
+		var i: int = 0
+		while i + 1 < pos_arr.size():
+			w.chunk_manager.life_crystal_positions.append(Vector2i(pos_arr[i], pos_arr[i + 1]))
+			i += 2
 	# 恢复箱子内容 (24 格 × 每个 chest tile)
 	if "chest_contents" in data:
 		ChestStorage.restore(data.chest_contents)

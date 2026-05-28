@@ -10,14 +10,17 @@ signal chunk_loaded(chunk: Chunk)
 signal chunk_unloaded(chunk_x: int)
 
 const LIFE_CRYSTAL_PER_PLAYER := 15   # 每个玩家世界上限 15 颗水晶 (单人 15, 联机 ×N)
+const LIFE_CRYSTAL_MIN_DIST := 40     # 任意两颗水晶世界坐标最小曼哈顿距离 (约 2/3 chunk 宽)
 
 var world_seed: int = 0
 var _loaded: Dictionary = {}    # chunk_x: int → Chunk
 var _deltas: Dictionary = {}    # chunk_x: int → Dict[Vector2i → tid]
-# 生命水晶世界限制: 跨 chunk 总量上限.
-# spawned = 已放出的水晶数 (含被吃的). processed_chunks = 已检查过 cap 的 chunk_x.
+# 生命水晶世界限制: 跨 chunk 总量上限 + 最小间距.
+# spawned = 已放出数 (含被吃的). processed_chunks = 已查过 cap 的 chunk_x.
+# positions = 所有已放水晶世界坐标 (用 Vector2i 存 — 即使被吃也保留, 防 "原位置再生").
 var life_crystals_spawned: int = 0
 var processed_chunks: Dictionary = {}   # chunk_x → true (O(1) 查重)
+var life_crystal_positions: Array = []   # Array of Vector2i (world coords)
 
 
 func setup(p_seed: int) -> void:
@@ -74,7 +77,7 @@ func _load_chunk(cx: int) -> void:
 	chunk_loaded.emit(c)
 
 
-# 扫 chunk 的 LIFE_CRYSTAL, 一直保留到达 cap, 多出的擦掉 + 写 delta.
+# 扫 chunk 的 LIFE_CRYSTAL, 保留满足 "cap + 最小间距" 的, 多余的擦掉 + 写 delta.
 # 已 processed_chunks 的不再调 (防双重计数).
 func _cap_life_crystals_in_chunk(c: Chunk, cx: int) -> void:
 	var cap: int = current_crystal_cap()
@@ -84,14 +87,26 @@ func _cap_life_crystals_in_chunk(c: Chunk, cx: int) -> void:
 		for wy in height:
 			if c.tiles[lx][wy] != Tiles.LIFE_CRYSTAL:
 				continue
-			if life_crystals_spawned < cap:
+			var wx: int = cx * chunk_w + lx
+			var pos := Vector2i(wx, wy)
+			# 决定保留 / 擦掉: 满足 cap 内 + 离任何已存在水晶 ≥ MIN_DIST 才保留
+			var keep: bool = life_crystals_spawned < cap and _far_enough_from_crystals(pos)
+			if keep:
 				life_crystals_spawned += 1
+				life_crystal_positions.append(pos)
 			else:
-				# 超 cap: 擦掉 + delta 标 AIR (防重载又恢复)
 				c.tiles[lx][wy] = Tiles.AIR
 				if not _deltas.has(cx):
 					_deltas[cx] = {}
 				_deltas[cx][Vector2i(lx, wy)] = Tiles.AIR
+
+
+# 曼哈顿距离 < MIN_DIST → 太近, 返 false. 没历史返 true.
+func _far_enough_from_crystals(pos: Vector2i) -> bool:
+	for p in life_crystal_positions:
+		if abs(p.x - pos.x) + abs(p.y - pos.y) < LIFE_CRYSTAL_MIN_DIST:
+			return false
+	return true
 
 
 func _unload_chunk(cx: int) -> void:
