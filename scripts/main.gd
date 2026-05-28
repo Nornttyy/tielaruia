@@ -21,6 +21,10 @@ var _game_nodes: Array[Node] = []
 # 自动存档: 每 AUTO_SAVE_INTERVAL 秒保存一次. 玩游戏时启动 Timer.
 const AUTO_SAVE_INTERVAL := 1.0   # 每秒自动存档 (用户要求实时, 不再 30s)
 var _autosave_timer: Timer = null
+# Continue 路径: _continue_game 把 SaveData 暂存这, 等 _run_async_load 全部加载完才应用.
+# 老代码用 .call_deferred 在 _run_async_load 第一个 await 就触发,
+# 那时 world.chunk_manager 还是 null, 应用就崩了 (玩家/背包/方块全没还原).
+var _pending_save_data: Resource = null
 
 var world: Node2D:
 	get:
@@ -132,6 +136,11 @@ func _run_async_load(world_seed: int) -> void:
 	loading.finish_and_fade()
 	await loading.finished
 	loading.queue_free()
+	# Continue 路径: 世界全部初始化完才应用存档 (chunk_manager / player 都就绪).
+	# 必须在这, 不能在 _continue_game 里 call_deferred — 那会在第一个 await 就触发.
+	if _pending_save_data != null:
+		_apply_save_data(_pending_save_data)
+		_pending_save_data = null
 
 
 # 同步路径: 测试 + boot_to_game 用. 不走 LoadingScreen, World defer_init=false 自动跑完
@@ -194,13 +203,15 @@ func _stop_autosave() -> void:
 func _continue_game(data: Resource) -> void:
 	if data == null:
 		return
+	# 暂存存档 — _run_async_load 把世界全部初始化完才应用 (不能 call_deferred,
+	# 那会在第一个 await 触发, 那时 chunk_manager 还没建).
+	_pending_save_data = data
 	# 走 opts 路径 → world_seed + 还原 world_name/difficulty 到 GameSettings
 	_start_game({
 		"world_seed": int(data.world_seed),
 		"world_name": String(data.world_name) if "world_name" in data else "",
 		"difficulty": int(data.difficulty) if "difficulty" in data else 1,
 	})
-	_apply_save_data.call_deferred(data)
 
 
 func _apply_save_data(data: Resource) -> void:
