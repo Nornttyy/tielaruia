@@ -111,32 +111,37 @@ func _draw() -> void:
 			# 像素风去掉抗锯齿圆形高光
 
 
-# 8x8 像素星 pattern. X = 填色, . = 透明.
-# 4 点罗盘星形状 — 上下左右各 1 点突出 + 菱形中央. 8x8 网格里 5 点星会
-# 卡得很丑 (底部分腿成奇怪嘴), 罗盘星干净对称, 像素艺术辨识度好.
+# 12x12 像素 5 角星 pattern. X = 填色, . = 透明.
+# 用 12x12 不是 8x8 — 8x8 容不下对称 5 角星 (5×72° 跟 8 cell 网格不齐).
+# 12x12 给每个尖角足够像素 cell, 顶点 + 横臂 + 左下/右下两腿都清晰.
 const STAR_PIXELS := [
-	"....X...",
-	"....X...",
-	"...XXX..",
-	"XXXXXXXX",
-	"XXXXXXXX",
-	"...XXX..",
-	"....X...",
-	"....X...",
+	".....XX.....",
+	"....XXXX....",
+	"...XXXXXX...",
+	"XXXXXXXXXXXX",
+	".XXXXXXXXXX.",
+	"..XXXXXXXX..",
+	"..XXXXXXXX..",
+	".XXX....XXX.",
+	".XX......XX.",
+	"XX........XX",
+	"X..........X",
+	"............",
 ]
+const STAR_GRID := 12
 
 
-# 像素星: 每个 cell 画 draw_rect. size = 星总宽, cell = size/8.
+# 像素 5 角星: 每个 cell 画 draw_rect. size = 星总宽, cell = size/12.
 # 跟其他方块美术一致 chunky 像素风, 不抗锯齿.
 func _draw_star(center: Vector2, size: float, color: Color) -> void:
 	if size <= 0.0:
 		return
-	var cell: float = size / 8.0
+	var cell: float = size / float(STAR_GRID)
 	var origin_x: float = center.x - size * 0.5
 	var origin_y: float = center.y - size * 0.5
 	var cell_draw: float = cell + 0.5
-	for row in 8:
+	for row in STAR_GRID:
 		var s: String = STAR_PIXELS[row]
-		for col in 8:
+		for col in STAR_GRID:
 			if s[col] == "X":
 				draw_rect(Rect2(origin_x + col * cell, origin_y + row * cell, cell_draw, cell_draw), color)
