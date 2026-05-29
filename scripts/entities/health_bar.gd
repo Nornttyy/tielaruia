@@ -36,7 +36,16 @@ func _ready() -> void:
 			GameSettings.settings_changed.connect(queue_redraw)
 
 
+var _hidden_throttle_t: float = 0.0   # 隐藏时跳帧倒计时 (30 怪 × 60fps 太重)
+
+
 func _process(delta: float) -> void:
+	# 隐藏时只 10Hz 检查 parent HP (怪没受伤血量不会变, 没必要 60Hz 轮询)
+	if _show_t <= 0.0:
+		_hidden_throttle_t -= delta
+		if _hidden_throttle_t > 0.0:
+			return
+		_hidden_throttle_t = 0.1   # 下次 100ms 再查
 	var changed: bool = _sync_from_parent()
 	if changed:
 		# 血量变了 → 重置显示倒计时 + 重画
