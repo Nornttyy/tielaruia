@@ -1266,7 +1266,13 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 	for y in range(top_y + 1, base_y - PYRAMID_ROOM_HEIGHT + 1):
 		if shaft_x >= 0 and shaft_x < chunk_width:
 			c.tiles[shaft_x][y] = Tiles.AIR
-	# 5) 走廊里偶发 1-2 zombie/skeleton 怪 — Phase 4 再加 (这里仅记 spawn 位置标记)
+	# 5) 守卫木乃伊: 走廊里记 2-3 spawn 点, chunk_manager 加载时召 mummy
+	var mummy_count: int = rng.randi_range(2, 3)
+	for _i in mummy_count:
+		var mdx: int = rng.randi_range(-corridor_half + 1, corridor_half - 1)
+		var mummy_x: int = chunk_start + x_center_local + mdx
+		var mummy_y: int = base_y - 1   # 走廊地面
+		c.mummy_spawn_spots.append(Vector2i(mummy_x, mummy_y))
 
 
 # ===== 瀑布矿洞 =====

@@ -73,6 +73,11 @@ func _load_chunk(cx: int) -> void:
 			var ct: int = c.tiles[lx][spot.y]
 			if ct == Tiles.CHEST or ct == Tiles.GOLD_CHEST or ct == Tiles.DIAMOND_CHEST or ct == Tiles.SHADOW_CHEST:
 				ChestStorage.try_populate_treasure(spot, world_seed, ct)
+	# 金字塔守卫木乃伊: chunk 首次加载时召 (世界节点接管). 已召过的 chunk 不重生.
+	if not c.mummy_spawn_spots.is_empty():
+		var world_node: Node = get_tree().get_first_node_in_group("world")
+		if world_node != null and world_node.has_method("spawn_mummies_for_chunk"):
+			world_node.spawn_mummies_for_chunk(cx, c.mummy_spawn_spots)
 	_loaded[cx] = c
 	chunk_loaded.emit(c)
 

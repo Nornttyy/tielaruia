@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://b_mummy_2026"]
+
+[ext_resource type="Script" path="res://scripts/entities/mummy.gd" id="1_mummy"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mummy"]
+size = Vector2(10, 16)
+
+[node name="Mummy" type="CharacterBody2D"]
+script = ExtResource("1_mummy")
+collision_layer = 0
+collision_mask = 3
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -8)
+centered = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -8)
+shape = SubResource("RectangleShape2D_mummy")

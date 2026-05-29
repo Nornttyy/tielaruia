@@ -23,6 +23,7 @@ const MimicScene = preload("res://scenes/entities/mimic.tscn")
 const SkeletonScene = preload("res://scenes/entities/skeleton.tscn")
 const ImpScene = preload("res://scenes/entities/imp.tscn")
 const HellWaspScene = preload("res://scenes/entities/hell_wasp.tscn")
+const MummyScene = preload("res://scenes/entities/mummy.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
@@ -296,6 +297,7 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"skeleton": scene = SkeletonScene
 		"imp": scene = ImpScene
 		"hell_wasp": scene = HellWaspScene
+		"mummy": scene = MummyScene
 		"cow": scene = CowScene
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
@@ -727,15 +729,16 @@ func _try_spawn_zombie() -> void:
 	if zombies.size() + spiders.size() + demon_eyes.size() >= cap:
 		return
 	# 概率分配: 玩家地表 (y<30): 40 zombie / 40 spider / 20 demon_eye
-	# 中地下 (30-110): 20 zombie / 50 spider / 30 demon_eye
-	# 地狱 (>=110): 100% skeleton (Phase 2a, 后续加 imp + hell_wasp)
+	# 中地下 (30-220): 20 zombie / 50 spider / 30 demon_eye
+	# 地狱 (>=220): 40 skeleton / 35 imp / 25 hell_wasp
+	# 注: 阈值 220 跟 world_generator HELL_DEPTH=220 对齐. 老阈值 110 不对, 让深矿洞也刷地狱怪 bug.
 	var player := get_player()
 	var py_tile: int = 0
 	if player != null:
 		py_tile = int(floor(player.global_position.y / TILE_SIZE))
 	var r: float = randf()
 	var scene: PackedScene
-	if py_tile >= 110:
+	if py_tile >= 220:
 		# 地狱: 40 skeleton / 35 imp / 25 hell_wasp
 		if r < 0.40:
 			scene = SkeletonScene
@@ -774,7 +777,7 @@ func _spawn_hell_creature(scene: PackedScene) -> void:
 		var dx: int = sign_x * randi_range(SPAWN_RANGE_MIN, SPAWN_RANGE_MAX)
 		var cand_x: int = px + dx
 		var cand_y: int = py + randi_range(-6, 6)
-		if cand_y < 110 or cand_y >= ChunkConstants.WORLD_HEIGHT - 2:
+		if cand_y < 220 or cand_y >= ChunkConstants.WORLD_HEIGHT - 2:
 			continue
 		if chunk_manager.get_tile(cand_x, cand_y) != Tiles.AIR:
 			continue
@@ -870,6 +873,24 @@ func spawn_mimic_at_tile(tile: Vector2i) -> void:
 		tile.y * TILE_SIZE + TILE_SIZE   # 脚踏 tile 底部
 	)
 	entities_root.add_child(creature)
+
+
+# 金字塔守卫: 给一组 spawn 点 (世界坐标) 召 mummy. chunk_manager 在
+# chunk 加载时调. 用 _pyramid_chunks_spawned 防同 chunk 重 spawn.
+var _pyramid_chunks_spawned: Dictionary = {}   # chunk_x int → true
+func spawn_mummies_for_chunk(chunk_x: int, spots: Array) -> void:
+	if spots.is_empty():
+		return
+	if _pyramid_chunks_spawned.has(chunk_x):
+		return   # 已 spawn 过, chunk 重载不再生 (杀完就清空)
+	_pyramid_chunks_spawned[chunk_x] = true
+	for spot in spots:
+		var creature := MummyScene.instantiate()
+		creature.global_position = Vector2(
+			spot.x * TILE_SIZE + TILE_SIZE / 2.0,
+			spot.y * TILE_SIZE + TILE_SIZE
+		)
+		entities_root.add_child(creature)
 
 
 # 在玩家附近地表随机刷一个 creature (slime/zombie 共用站位逻辑)
