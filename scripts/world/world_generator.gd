@@ -326,6 +326,10 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 在 water 之后: 绿洲水替换了 SAND 地表, 树/仙人掌不会长在水上.
 	_place_trees_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
+	# 世纪树: 1 棵/世界, 在某 forest chunk 中央种巨型橡树 + 顶端树屋 + 2 宝箱.
+	# 放在普通树之后, 覆盖该位置的小树.
+	_place_world_tree_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height, biome_centers)
+
 	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
 	_fill_walls_chunk(c, chunk_heights, chunk_width, height)
 	return c
@@ -1199,6 +1203,16 @@ const PYRAMID_BASE_WIDTH := 25
 const PYRAMID_LAYERS := 13
 const PYRAMID_ROOM_HEIGHT := 3   # 内部走廊高 3 格
 
+# 世纪树 (World Tree): 1 棵/世界, 巨型橡树 + 顶端树屋 + 2 宝箱.
+# 32 高树干, 椭圆大叶冠, 屋内 GOLD + DIAMOND chest, 中心 ROPE 一路爬到顶.
+const WORLD_TREE_HEIGHT := 32           # 树干高度 (surf 到 trunk_top)
+const WORLD_TREE_CANOPY_RX := 9          # 椭圆叶冠横向半径
+const WORLD_TREE_CANOPY_RY := 11         # 椭圆叶冠纵向半径 (上下椭长)
+const WORLD_TREE_ROOM_HALF_W := 2        # 树屋半宽 (5 tile 宽)
+const WORLD_TREE_ROOM_TOP_OFFSET := 3    # 屋顶 = trunk_top + 3
+const WORLD_TREE_ROOM_BOT_OFFSET := 6    # 屋底 = trunk_top + 6
+const WORLD_TREE_MIN_SPAWN_CHUNK := 2    # 离 spawn (chunk 0) 至少 2 chunk 远
+
 # 给定 world_seed, 返回 2-3 个 chunk_x (有金字塔的, 都在沙漠区).
 # 先扫所有 chunk 找沙漠的, 再从中随机选 2-3 个. 保证每世界都有金字塔.
 static func _pyramid_chunks(world_seed: int) -> Array:
@@ -1303,6 +1317,119 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 		var mummy_x: int = chunk_start + x_center_local + mdx
 		var mummy_y: int = base_y - 1   # 走廊地面
 		c.mummy_spawn_spots.append(Vector2i(mummy_x, mummy_y))
+
+
+# ===== 世纪树 (World Tree) =====
+# 选 1 个 forest biome chunk (离 spawn 至少 2 chunk 远) 当世纪树位置. 同 seed 必定同 chunk.
+static func _world_tree_chunk(world_seed: int, biome_centers: Dictionary) -> int:
+	var forest_chunks: Array = []
+	for cx in range(-20, 36):
+		if abs(cx) < WORLD_TREE_MIN_SPAWN_CHUNK:
+			continue
+		var chunk_center_x: int = cx * 64 + 32
+		if _biome_at_x(chunk_center_x, biome_centers) == BIOME_FOREST:
+			forest_chunks.append(cx)
+	if forest_chunks.is_empty():
+		return -99999   # 哨兵 — 没找到合适 chunk (理论不会发生 — forest 至少 1 个)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = world_seed + 0xfeed7e3e   # "feed tree" 派生 magic
+	return forest_chunks[rng.randi() % forest_chunks.size()]
+
+
+# 在该 chunk 中央种 1 棵世纪树. 树干 LOG 3 wide × 32 tall, 大椭圆叶冠 LEAVES,
+# 顶端凿 5×3 树屋 (PLANKS 边框, 内部 AIR, GOLD + DIAMOND chest),
+# 中心列 ROPE 贯穿底到屋, 玩家爬上去拿宝.
+static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
+		world_seed: int, chunk_x: int, chunk_width: int, height: int, biome_centers: Dictionary) -> void:
+	if chunk_x != _world_tree_chunk(world_seed, biome_centers):
+		return
+	var chunk_start: int = chunk_x * chunk_width
+	var x_center_local: int = chunk_width / 2
+	var world_x_center: int = chunk_start + x_center_local
+	if not chunk_heights.has(world_x_center):
+		return
+	var base_y: int = chunk_heights[world_x_center]
+	var trunk_top_y: int = base_y - WORLD_TREE_HEIGHT
+	# 留出 canopy + 余量: 叶冠纵向半径 11 + 2 余量
+	if trunk_top_y < WORLD_TREE_CANOPY_RY + 2:
+		return
+	# 0) 树根地基: trunk 5 列 (中心±2) 强制铺 GRASS + DIRT, 避免长在水/沙上根浮
+	for dx in range(-2, 3):
+		var lx_g: int = x_center_local + dx
+		if lx_g < 0 or lx_g >= chunk_width:
+			continue
+		c.tiles[lx_g][base_y] = Tiles.GRASS
+		if base_y + 1 < height:
+			c.tiles[lx_g][base_y + 1] = Tiles.DIRT
+	# 1) 树干 3 wide: 中心 + 左右 1, 从 surf-1 到 trunk_top_y
+	for dx in [-1, 0, 1]:
+		var lx: int = x_center_local + dx
+		if lx < 0 or lx >= chunk_width:
+			continue
+		for y in range(trunk_top_y, base_y):   # base_y 是 grass, 不覆盖
+			c.tiles[lx][y] = Tiles.LOG
+	# 2) 大椭圆叶冠: 中心在 trunk_top_y, 椭圆 (dx/rx)² + (dy/ry)² ≤ 1
+	# 留 trunk 列 — leaves 不覆盖 LOG.
+	var rx: int = WORLD_TREE_CANOPY_RX
+	var ry: int = WORLD_TREE_CANOPY_RY
+	for dy in range(-ry, ry + 1):
+		for dx in range(-rx, rx + 1):
+			var fx: float = float(dx) / float(rx)
+			var fy: float = float(dy) / float(ry)
+			if fx * fx + fy * fy > 1.0:
+				continue
+			var lx: int = x_center_local + dx
+			var ly: int = trunk_top_y + dy
+			if lx < 0 or lx >= chunk_width or ly < 0 or ly >= height:
+				continue
+			if c.tiles[lx][ly] != Tiles.AIR:
+				continue
+			c.tiles[lx][ly] = Tiles.LEAVES
+	# 3) 凿树屋 (5 wide × 3 tall) 在 trunk 顶下方一点, override 树干 LOG.
+	# ROOM_TOP_y / BOT_y 都在 trunk 内 (offset 自 trunk_top_y, 都为正 → 下方)
+	var room_top_y: int = trunk_top_y + WORLD_TREE_ROOM_TOP_OFFSET   # 屋顶 PLANKS 行
+	var room_bot_y: int = trunk_top_y + WORLD_TREE_ROOM_BOT_OFFSET   # 屋底 PLANKS 行
+	var hw: int = WORLD_TREE_ROOM_HALF_W
+	# 屋顶 / 屋底: PLANKS 一行 5 块. 屋底中央 1 块留 AIR (给 rope 穿过)
+	for dx in range(-hw, hw + 1):
+		var lx: int = x_center_local + dx
+		if lx < 0 or lx >= chunk_width:
+			continue
+		c.tiles[lx][room_top_y] = Tiles.PLANKS
+		if dx == 0:
+			c.tiles[lx][room_bot_y] = Tiles.AIR    # rope 通道
+		else:
+			c.tiles[lx][room_bot_y] = Tiles.PLANKS
+	# 屋左右两侧墙 + 内部清空 (override LOG)
+	for dy in range(1, WORLD_TREE_ROOM_BOT_OFFSET - WORLD_TREE_ROOM_TOP_OFFSET):
+		var y: int = room_top_y + dy
+		# 左右墙
+		var lx_left: int = x_center_local - hw
+		var lx_right: int = x_center_local + hw
+		if lx_left >= 0:
+			c.tiles[lx_left][y] = Tiles.PLANKS
+		if lx_right < chunk_width:
+			c.tiles[lx_right][y] = Tiles.PLANKS
+		# 内部 AIR (3 wide)
+		for dx in range(-hw + 1, hw):
+			var lx: int = x_center_local + dx
+			if lx < 0 or lx >= chunk_width:
+				continue
+			c.tiles[lx][y] = Tiles.AIR
+	# 4) 屋内 2 宝箱: GOLD (左) + DIAMOND (右), 站屋底之上 1 格
+	var chest_y: int = room_bot_y - 1
+	var gold_lx: int = x_center_local - 1
+	var diamond_lx: int = x_center_local + 1
+	if gold_lx >= 0 and gold_lx < chunk_width:
+		c.tiles[gold_lx][chest_y] = Tiles.GOLD_CHEST
+		c.treasure_spots.append(Vector2i(chunk_start + gold_lx, chest_y))
+	if diamond_lx >= 0 and diamond_lx < chunk_width:
+		c.tiles[diamond_lx][chest_y] = Tiles.DIAMOND_CHEST
+		c.treasure_spots.append(Vector2i(chunk_start + diamond_lx, chest_y))
+	# 5) 中心列 ROPE: 从屋底 AIR 洞下方 1 格 (= room_bot_y + 1) 一路向下到地面.
+	# 替代 trunk LOG. 玩家右键攀爬 = 直通屋内.
+	for y in range(room_bot_y + 1, base_y):
+		c.tiles[x_center_local][y] = Tiles.ROPE
 
 
 # ===== 瀑布矿洞 =====
