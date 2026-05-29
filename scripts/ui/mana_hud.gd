@@ -1,11 +1,11 @@
-# 魔力 HUD: Terraria 风 5 角星. 每颗 = 20 mana. 100 满 = 5 星, max 上限增长就多星.
-# 跟 health_hud (心) 同布局: 一行 10 颗, 超出换行.
+# 魔力 HUD: Terraria 风 5 角星, 竖排. 每颗 = 20 mana. 100 满 = 5 星, max 上限增长就多星.
+# 用户改: 横排 → 竖排 (一列 10 颗, 超出加新列).
 # 蓝紫色调 (跟魔晶/法杖呼应).
 extends Control
 
 const STAR_SLOT_PX := 24       # 一颗星占的边框正方形大小
 const STAR_SPACING := 4
-const STARS_PER_ROW := 10
+const STARS_PER_COL := 10      # 一列最多 10 颗, 超出右侧加新列
 const MANA_PER_STAR := 20      # 每颗星 = 20 mana (跟法杖一发同价)
 const PAD := 8
 
@@ -31,16 +31,17 @@ var _mana_label: Label
 
 
 func _ready() -> void:
+	# 竖排: label 跨整个 container 宽度顶部, 居中对齐数字 "100 / 100"
 	_mana_label = Label.new()
 	_mana_label.add_theme_font_size_override("font_size", TEXT_FONT_SIZE)
 	_mana_label.add_theme_color_override("font_color", Color(0.93, 0.93, 1.0))
 	_mana_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 	_mana_label.add_theme_constant_override("shadow_offset_x", 1)
 	_mana_label.add_theme_constant_override("shadow_offset_y", 1)
-	_mana_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_mana_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_mana_label.offset_left = -120.0
-	_mana_label.offset_right = -PAD
+	_mana_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mana_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_mana_label.offset_left = 0.0
+	_mana_label.offset_right = 0.0
 	_mana_label.offset_top = 0.0
 	_mana_label.offset_bottom = TEXT_HEIGHT
 	add_child(_mana_label)
@@ -72,11 +73,12 @@ func _update_label() -> void:
 
 func _update_min_size() -> void:
 	var num_stars: int = _star_count()
-	var rows: int = ceili(float(num_stars) / float(STARS_PER_ROW))
-	var cols_first_row: int = min(num_stars, STARS_PER_ROW)
+	var cols: int = ceili(float(num_stars) / float(STARS_PER_COL))
+	var rows_first_col: int = min(num_stars, STARS_PER_COL)
+	# 竖排: 宽 = 列数 × slot, 高 = 一列里星数 × slot. 上面留 TEXT_HEIGHT 给 label.
 	custom_minimum_size = Vector2(
-		PAD * 2 + (STAR_SLOT_PX + STAR_SPACING) * cols_first_row - STAR_SPACING,
-		PAD * 2 + (STAR_SLOT_PX + STAR_SPACING) * rows - STAR_SPACING
+		PAD * 2 + (STAR_SLOT_PX + STAR_SPACING) * cols - STAR_SPACING,
+		PAD * 2 + TEXT_HEIGHT + (STAR_SLOT_PX + STAR_SPACING) * rows_first_col - STAR_SPACING
 	)
 
 
@@ -86,11 +88,14 @@ func _star_count() -> int:
 
 func _draw() -> void:
 	var num_stars: int = _star_count()
+	# 竖排: i / STARS_PER_COL = 列号 (从左数), i % STARS_PER_COL = 列内行号 (从上数).
+	# 第 1 列 = i 0-9, 第 2 列 = i 10-19 ...
+	# 顶部留 TEXT_HEIGHT 让数字 label 不撞星.
 	for i in num_stars:
-		var row: int = i / STARS_PER_ROW
-		var col: int = i % STARS_PER_ROW
+		var col: int = i / STARS_PER_COL
+		var row: int = i % STARS_PER_COL
 		var cx: float = PAD + col * (STAR_SLOT_PX + STAR_SPACING) + STAR_SLOT_PX * 0.5
-		var cy: float = PAD + row * (STAR_SLOT_PX + STAR_SPACING) + STAR_SLOT_PX * 0.5
+		var cy: float = PAD + TEXT_HEIGHT + row * (STAR_SLOT_PX + STAR_SPACING) + STAR_SLOT_PX * 0.5
 		var center := Vector2(cx, cy)
 		# 边框
 		_draw_star(center, STAR_SLOT_PX * BORDER_SIZE_RATIO, COLOR_BORDER)
