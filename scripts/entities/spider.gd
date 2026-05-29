@@ -8,12 +8,13 @@ const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-# 用户调: 蜘蛛太超纲, 削血量 + 微降速度, 伤害保留.
-# HP 35→25 (跟史莱姆同一档, 木剑 9 击 / 钻剑 2 击).
-# 速度 70→55 (仍比僵尸 28 快 2x, 但玩家踢一脚有机会拉开距离).
-const BASE_MAX_HEALTH := 25
-const CONTACT_DAMAGE := 10
-const WALK_SPEED := 55.0     # 比僵尸 28 快 ~2x (老是 2.5x)
+# 用户调: 玻璃大炮 — 高伤低血.
+# HP 25→12 (木剑 3dmg × 4 击死, 钻剑 1 击秒杀).
+# 接触伤 10→20 (跟钻剑同档, 100HP 玩家 5 击死, 别让它粘上).
+# 速度 55 保留 (不再 nerf, 但也不复原 70).
+const BASE_MAX_HEALTH := 12
+const CONTACT_DAMAGE := 20
+const WALK_SPEED := 55.0     # 比僵尸 28 快 ~2x
 const AGGRO_RANGE_PX := 200.0  # 看见 ~17 tile 内就追
 const JUMP_VY := -240.0      # 撞墙跳更高
 const ENEMY_IFRAME_SEC := 0.2
