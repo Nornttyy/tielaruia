@@ -101,7 +101,11 @@ func _check_player_contact() -> void:
 	var player := _find_player()
 	if player == null:
 		return
-	if global_position.distance_to(player.global_position) > 15.0:
+	# AABB 盒子重叠判: 玩家 10w × 22h (脚在 global_position), 蜘蛛 12w × 8h (脚在 global_position).
+	# 蜘蛛可能踩到玩家头上 (dy = -22 to 22), 之前用中心距 15 漏了头顶接触 → bug.
+	var dx: float = abs(player.global_position.x - global_position.x)
+	var dy: float = player.global_position.y - global_position.y  # >0 时蜘蛛在玩家上方
+	if dx > 11.0 or dy < -8.0 or dy > 22.0:
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
