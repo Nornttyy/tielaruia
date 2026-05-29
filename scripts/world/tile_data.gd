@@ -74,6 +74,7 @@ const LIFE_CRYSTAL := 61    # 生命水晶 (Terraria 风): 矿洞偶发, 右键�
 const HELL_ALLOY_ORE := 62  # 地狱合金矿: 深紫黑底 + 银闪点. 金/钻镐挖, 熔炉炼锭, 造 tier 8 武器主金属
 const SANDSTONE := 63       # 砂岩: 金字塔骨架. 实心不掉 (跟 SAND 区分, 无重力 bug)
 const MANA_CRYSTAL := 64    # 魔力水晶 (蓝紫星形): 矿洞偶发, 右键吃 → 永久 +20 MAX MANA (上限 200)
+const BED := 65             # 床: 玩家造 (3 planks + 3 wool). 右键 → 夜跳到早晨 + 复活点设到床位置
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -442,6 +443,12 @@ const _PROPS := {
 		"solid": true, "mineable": false,
 		"tool_tiers": {"": -1, "pickaxe": -1, "axe": -1, "sword": -1},
 		"drops": [],
+	},
+	BED: {
+		# 床: 玩家造装饰 + 复活点. 非实心 (玩家穿过), 徒手即可拆 → 1 床物品.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["bed", 100, 1, 1]],
 	},
 }
 
