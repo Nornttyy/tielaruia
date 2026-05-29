@@ -120,7 +120,8 @@ var _pickaxe_spin_facing_right: bool = true
 # 注: rotation/position 自己按 _sword_attack_t 算, 不读 held.rotation —
 # tween 在 _process 更新, _physics_process 这里读可能滞后 (headless 测试 tween 可能不动).
 const SWORD_TIP_LOCAL_Y := -16.0       # tip 相对 held.position 的 y (sprite 16h)
-const SWORD_HIT_RADIUS := 10.0         # 怪中心到 grip→tip 线段 ≤ 10px (跟 pickaxe 一致, 怪 12 宽合适)
+const SWORD_HIT_RADIUS := 14.0         # 怪中心到 grip→tip 线段 ≤ 14px. 用户调: 10 太瘦, 视觉碰到了 算法 miss
+const SWORD_POINT_BLANK_DIST := 18.0   # 怪离玩家中心 ≤ 18px 视为贴脸, 任何剑攻击一律命中 (防剑指远处但怪在身边算 miss)
 const SWORD_HAND_OFFSET_X := 4.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
 const SWORD_HAND_OFFSET_Y := -8.0      # 跟 held_item.HAND_OFFSET_Y 一致
 const SWORD_THRUST_OFFSET := 10.0      # 跟 held_item.THRUST_OFFSET_PX 一致
@@ -1124,7 +1125,12 @@ func _check_sword_blade_hits() -> void:
 			var id: int = sn.get_instance_id()
 			if _sword_hit_this_attack.has(id):
 				continue
-			if _dist_point_to_segment(sn.global_position, grip_world, tip_world) > SWORD_HIT_RADIUS:
+			# 贴脸保险: 怪在玩家 ≤ 18px 内一律算命中 (剑指远处也保住近身怪)
+			var to_player_dist: float = sn.global_position.distance_to(player.global_position)
+			var hit: bool = to_player_dist <= SWORD_POINT_BLANK_DIST
+			if not hit:
+				hit = _dist_point_to_segment(sn.global_position, grip_world, tip_world) <= SWORD_HIT_RADIUS
+			if not hit:
 				continue
 			_sword_hit_this_attack[id] = true
 			if sn.has_method("take_damage"):
