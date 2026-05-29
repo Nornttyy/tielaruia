@@ -33,6 +33,7 @@ const PenguinScene = preload("res://scenes/entities/penguin.tscn")
 const FrogScene = preload("res://scenes/entities/frog.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
+const HealthBarScript = preload("res://scripts/entities/health_bar.gd")
 
 const MAX_SLIMES := 4              # 白天上限 (slime)
 # 夜间怪 (zombie + spider 共享) 上限按难度: 简单 8 / 普通 15 / 困难 25
@@ -96,6 +97,9 @@ func _ready() -> void:
 	var sp = SparkPoolClass.new()
 	sp.name = "SparkPool"
 	$EffectsRoot.add_child(sp)
+	# 怪物血条: 任何进 entities_root 且有 current_health 的非玩家实体自动挂血条.
+	# 一处集中 — 不用每个 entity.gd 单独加.
+	entities_root.child_entered_tree.connect(_on_entity_added_for_bar)
 	if world_seed == 0:
 		world_seed = randi()
 	if defer_init:
@@ -103,6 +107,29 @@ func _ready() -> void:
 	# 默认: 顺序跑所有 step (兼容 boot_to_game / 直接 add_child World)
 	for i in STEP_LABELS.size():
 		run_init_step(i)
+
+
+# entities_root 加新子节点时检查: 有 current_health 且不是玩家/远程玩家 → 挂血条.
+# 用 call_deferred 是因为 child_entered_tree 时 child 可能还没 _ready (没 add_to_group),
+# 等帧末再挂避免顺序问题.
+func _on_entity_added_for_bar(child: Node) -> void:
+	if child == null:
+		return
+	if not ("current_health" in child):
+		return
+	if child.has_meta("is_remote"):
+		return  # 联机远程实体: 位置由网络同步, 血条让本端自己显
+	if child.is_in_group("player"):
+		return  # 玩家有 HUD, 不要头顶血条
+	_attach_health_bar.call_deferred(child)
+
+
+func _attach_health_bar(target: Node) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	var bar := HealthBarScript.new()
+	bar.name = "HealthBar"
+	target.add_child(bar)
 
 
 func get_init_step_count() -> int:
