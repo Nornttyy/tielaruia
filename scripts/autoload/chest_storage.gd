@@ -90,6 +90,10 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 			loot[slot_idx] = {"item_id": "gold_ingot", "count": rng.randi_range(2, 4)}; slot_idx += 1
 		if rng.randf() < 0.4:
 			loot[slot_idx] = {"item_id": "silver_ingot", "count": rng.randi_range(2, 4)}; slot_idx += 1
+		# 钻石盔甲 (60%) 或 金 (30%): 最豪华装备
+		var shadow_armor: String = _pick_armor_piece(rng, "diamond" if rng.randf() < 0.6 else "gold")
+		if shadow_armor != "":
+			loot[slot_idx] = {"item_id": shadow_armor, "count": 1}; slot_idx += 1
 	elif tier == 2:
 		# 钻石层: 金矿 + 银矿 + 钻石 + 金锭
 		loot[slot_idx] = {"item_id": "gold_ore", "count": rng.randi_range(3, 7)}; slot_idx += 1
@@ -100,6 +104,12 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 			loot[slot_idx] = {"item_id": "gold_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
 		if rng.randf() < 0.3:
 			loot[slot_idx] = {"item_id": "iron_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
+		# 银/金盔甲 (50/30/10 → silver/gold/diamond)
+		var r2: float = rng.randf()
+		var t2: String = "silver" if r2 < 0.5 else ("gold" if r2 < 0.8 else "diamond")
+		var dia_armor: String = _pick_armor_piece(rng, t2)
+		if dia_armor != "":
+			loot[slot_idx] = {"item_id": dia_armor, "count": 1}; slot_idx += 1
 	elif tier == 1:
 		# 金层: 铁/煤 + 偶发铜锡锭 + 偶发银锭
 		loot[slot_idx] = {"item_id": "iron_ore", "count": rng.randi_range(4, 9)}; slot_idx += 1
@@ -110,6 +120,12 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 			loot[slot_idx] = {"item_id": "tin_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
 		if rng.randf() < 0.3:
 			loot[slot_idx] = {"item_id": "silver_ingot", "count": rng.randi_range(1, 2)}; slot_idx += 1
+		# 铁/银盔甲 (50% 铁, 15% 银)
+		if rng.randf() < 0.50:
+			var t1: String = "silver" if rng.randf() < 0.30 else "iron"
+			var gold_armor: String = _pick_armor_piece(rng, t1)
+			if gold_armor != "":
+				loot[slot_idx] = {"item_id": gold_armor, "count": 1}; slot_idx += 1
 	else:
 		# 木层 (浅): 铜锡矿 + 木板 + 偶发苹果
 		loot[slot_idx] = {"item_id": "copper_ore", "count": rng.randi_range(5, 10)}; slot_idx += 1
@@ -118,7 +134,19 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 		loot[slot_idx] = {"item_id": "planks", "count": rng.randi_range(8, 15)}; slot_idx += 1
 		if rng.randf() < 0.4:
 			loot[slot_idx] = {"item_id": "apple", "count": rng.randi_range(2, 5)}; slot_idx += 1
+		# 铜盔甲 (25% 概率) — 新手鼓励
+		if rng.randf() < 0.25:
+			var wood_armor: String = _pick_armor_piece(rng, "copper")
+			if wood_armor != "":
+				loot[slot_idx] = {"item_id": wood_armor, "count": 1}; slot_idx += 1
 	_chests[tile] = loot
+
+
+# 随机挑 3 件盔甲之一 (helmet / chest / pants) 返回 item_id. tier 是 "copper" / "iron" 等.
+func _pick_armor_piece(rng: RandomNumberGenerator, tier: String) -> String:
+	var pieces: Array = ["helmet", "chest", "pants"]
+	var piece: String = pieces[rng.randi() % pieces.size()]
+	return "%s_%s" % [tier, piece]
 
 
 # === 存档 ===
