@@ -854,7 +854,7 @@ func _update_eat_or_place(delta: float) -> void:
 					# 已达 400 上限时不消耗 (避免误吃浪费).
 					if hp != null and hp.has_method("try_extend_max"):
 						if hp.try_extend_max():
-							_consume_life_crystal_tile(aim_tile, terrain)
+							_consume_crystal_tile(aim_tile, terrain, Color(1.0, 0.4, 0.6))
 					return
 				elif aim_tid == Tiles.MANA_CRYSTAL:
 					# 魔力水晶: 右键吃 → 永久 +20 MAX MANA + 同量当前回魔 + 消失.
@@ -862,7 +862,7 @@ func _update_eat_or_place(delta: float) -> void:
 					var mn: Node = get_parent().get_node_or_null("PlayerMana")
 					if mn != null and mn.has_method("try_extend_max"):
 						if mn.try_extend_max():
-							_consume_life_crystal_tile(aim_tile, terrain)
+							_consume_crystal_tile(aim_tile, terrain, Color(0.55, 0.45, 1.0))
 					return
 
 	# 持魔力药水 + 按住 → 喝下立刻 +30 mana (跟食物同流程, 进度条满后消耗)
@@ -1377,14 +1377,15 @@ func _trigger_mimic_trap(tile: Vector2i, world: Node) -> void:
 		world.spawn_mimic_at_tile(tile)
 
 
-# 玩家吃了生命水晶: tile 变 AIR + 粉色粒子 + "ding" 音效.
-# (try_extend_max 已经更新 HP, 这里只处理视觉/世界 side effect)
-func _consume_life_crystal_tile(tile: Vector2i, terrain: TileMapLayer) -> void:
+# 玩家吃了水晶 (生命 / 魔力): tile 变 AIR + 飘字 + 爆炸粒子 + "ding" 音效.
+# (try_extend_max 已经更新 HP/MANA, 这里只处理视觉/世界 side effect)
+# color 飘字颜色 (生命 → 粉, 魔力 → 蓝紫)
+func _consume_crystal_tile(tile: Vector2i, terrain: TileMapLayer, color: Color = Color(1.0, 0.4, 0.6)) -> void:
 	var world: Node = terrain.get_parent()
 	if world != null and world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, Tiles.AIR)
 	var center := Vector2(tile.x * TILE_SIZE + TILE_SIZE / 2.0, tile.y * TILE_SIZE + TILE_SIZE / 2.0)
-	# 粉色 "+20 MAX" 飘字 + 爆炸粒子 (粉色没专门 API → 暂用爆炸表示喜庆)
-	Effects.spawn_damage_number(center + Vector2(0, -10), 20, Color(1.0, 0.4, 0.6))
+	# "+20 MAX" 飘字 + 爆炸粒子
+	Effects.spawn_damage_number(center + Vector2(0, -10), 20, color)
 	Effects.spawn_explosion(center)
 	SfxBank.play("pickup", 0.25)  # 暂用拾取 SFX 表示"获得"

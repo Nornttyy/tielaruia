@@ -73,6 +73,12 @@ func save(main: Node) -> bool:
 			mc_pos_arr.append(int(p.x))
 			mc_pos_arr.append(int(p.y))
 		data.mana_crystal_positions = mc_pos_arr
+	# 已 spawn 过守卫木乃伊的金字塔 chunk_x 列表 (防 chunk 重载/存档重读后木乃伊复活)
+	var pyramid_arr: PackedInt32Array = PackedInt32Array()
+	if "_pyramid_chunks_spawned" in world:
+		for cx in world._pyramid_chunks_spawned.keys():
+			pyramid_arr.append(int(cx))
+	data.pyramid_chunks_spawned = pyramid_arr
 	var player: Node2D = world.get_player()
 	if player != null:
 		data.player_position = player.global_position

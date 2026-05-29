@@ -313,6 +313,7 @@ const _ITEM_TO_TILE := {
 	"gold_ore": BlocksArt.GOLD_ORE,
 	"diamond": BlocksArt.DIAMOND_ORE,
 	"hell_crystal": BlocksArt.HELL_CRYSTAL,
+	"hell_alloy_ore": BlocksArt.HELL_ALLOY_ORE,
 	"coal": BlocksArt.COAL_ORE,
 	"iron_ore": BlocksArt.IRON_ORE,
 	"silver_ore": BlocksArt.SILVER_ORE,

@@ -1029,6 +1029,9 @@ static func _fill_lava_pools_chunk(c: Chunk, chunk_width: int, height: int,
 		rng: RandomNumberGenerator,
 		hell_zone: Vector2i = Vector2i(-99999, 99999),
 		chunk_start: int = 0) -> void:
+	# 短世界 (height ≤ HELL_DEPTH+3) 没地狱区, 直接返回 — 防 randi_range 反向 + OOB
+	if height <= HELL_DEPTH + 3:
+		return
 	var visited: Array = []
 	visited.resize(chunk_width)
 	for lx in chunk_width:

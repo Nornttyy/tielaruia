@@ -6,7 +6,8 @@ class_name SaveData extends Resource
 # v0 → v1: PlayerHealth.MAX_HEALTH 从 20 改 100 + 删饱食度. 旧 player_hp ×5 缩放.
 # v1 → v2: 加生命水晶, player_max_hp 字段记录吃了几个 crystal 后的上限.
 # v2 → v3: 加 3 件盔甲槽持久化 (armor_helmet/chest/pants item_id). 老存档默认空.
-const CURRENT_VERSION := 3
+# v3 → v4: 加魔力 (current+max) + 魔力水晶 spawned/positions.
+const CURRENT_VERSION := 4
 
 @export var version: int = CURRENT_VERSION
 @export var world_seed: int = 0
@@ -24,6 +25,14 @@ const CURRENT_VERSION := 3
 @export var life_crystals_spawned: int = 0
 @export var processed_chunks: PackedInt32Array = []
 @export var life_crystal_positions: PackedInt32Array = []
+# 魔力 (v4): 当前 mana + 永久上限 (吃魔力水晶能涨到 200)
+@export var player_mana: int = 100
+@export var player_max_mana: int = 100
+# 魔力水晶世界上限: 单人 5, 联机 玩家数×5. 与 life_crystal 同套.
+@export var mana_crystals_spawned: int = 0
+@export var mana_crystal_positions: PackedInt32Array = []
+# 已 spawn 守卫木乃伊的金字塔 chunk_x 列表 (防存档重读后木乃伊复活)
+@export var pyramid_chunks_spawned: PackedInt32Array = []
 # 盔甲槽 (v3): 存 item_id 字符串. 空 = 没装备. count 始终是 1.
 @export var armor_helmet_id: String = ""
 @export var armor_chest_id: String = ""

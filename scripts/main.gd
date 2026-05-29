@@ -244,6 +244,10 @@ func _apply_save_data(data: Resource) -> void:
 			while j + 1 < mc_pos.size():
 				w.chunk_manager.mana_crystal_positions.append(Vector2i(mc_pos[j], mc_pos[j + 1]))
 				j += 2
+		# 已 spawn 守卫木乃伊的金字塔 chunk_x: 防杀完木乃伊存档重读后复活
+		if "pyramid_chunks_spawned" in data and "_pyramid_chunks_spawned" in w:
+			for cx in data.pyramid_chunks_spawned:
+				w._pyramid_chunks_spawned[int(cx)] = true
 	# 恢复箱子内容 (24 格 × 每个 chest tile)
 	if "chest_contents" in data:
 		ChestStorage.restore(data.chest_contents)
