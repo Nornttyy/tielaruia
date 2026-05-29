@@ -886,8 +886,15 @@ func _update_eat_or_place(delta: float) -> void:
 		return
 
 	# 持食物 + 按住 → 进入/保持 eating. 食物 food_fill 现在直接当回血量.
-	# 不检查血量上限: 满血也能吃 (heal() 内部 clamp), 误点会消耗食物 — 用户选这个语义.
+	# 满血时不让吃 (用户改: 防止误点浪费食物). 吃到一半被回满也会立刻中断.
 	if holding_food and held and hp != null:
+		if hp.current_health >= hp.MAX_HEALTH:
+			# 满血: 中断进食状态, 不消耗食物
+			if _eat_item_id != "":
+				_eat_item_id = ""
+				_eat_t = 0.0
+				_stop_eat_anim()
+			return
 		if _eat_item_id != slot.item_id:
 			_eat_item_id = slot.item_id
 			_eat_t = 0.0
