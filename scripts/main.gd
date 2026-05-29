@@ -11,6 +11,7 @@ const CraftingPanelScene = preload("res://scenes/ui/crafting_panel.tscn")
 const ChestPanelScene = preload("res://scenes/ui/chest_panel.tscn")
 const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
 const LoadingScreenScene = preload("res://scenes/ui/loading_screen.tscn")
+const TouchControlsScript = preload("res://scripts/ui/touch_controls.gd")
 
 @onready var _main_menu: CanvasLayer = $MainMenu
 @onready var _pause_menu: CanvasLayer = $PauseMenu
@@ -107,6 +108,7 @@ func _run_async_load(world_seed: int) -> void:
 	hud.name = "HUD"
 	add_child(hud)
 	_game_nodes.append(hud)
+	_add_touch_controls_if_mobile()
 	var crafting = CraftingPanelScene.instantiate()
 	crafting.name = "CraftingPanel"
 	crafting.add_to_group("crafting_panel")
@@ -155,6 +157,7 @@ func _start_game_sync(world_seed: int) -> void:
 	hud.name = "HUD"
 	add_child(hud)
 	_game_nodes.append(hud)
+	_add_touch_controls_if_mobile()
 	var crafting = CraftingPanelScene.instantiate()
 	crafting.name = "CraftingPanel"
 	crafting.add_to_group("crafting_panel")
@@ -311,6 +314,16 @@ func _apply_save_data(data: Resource) -> void:
 # 测试用 helper: 同步切到 game 状态, 不走 LoadingScreen.
 # 顺便 queue_free MainMenu. 默认固定 seed=42 让测试可重复.
 # 生产路径走 _main_menu.start_game 信号 → _start_game() async 流程.
+# 触屏 UI: 仅手机/平板浏览器显示. main.tscn 加进游戏 nodes 列表方便 _return_to_menu 清理.
+func _add_touch_controls_if_mobile() -> void:
+	if not TouchControlsScript.should_show():
+		return
+	var touch: CanvasLayer = TouchControlsScript.new()
+	touch.name = "TouchControls"
+	add_child(touch)
+	_game_nodes.append(touch)
+
+
 func boot_to_game(world_seed: int = 42) -> void:
 	if _state == "game":
 		return
