@@ -117,13 +117,24 @@ var _pickaxe_spin_facing_right: bool = true
 # 剑判定: 跟镐 spin 类似, 攻击期间每帧算 grip→tip 线段, 距怪 ≤ HIT_RADIUS 就扣血.
 # 1 攻击 1 只怪 1 击 (hit set 去重). 替代原来的 AoE 矩形/圆形.
 # 用户改: "剑碰到怪就扣血", 不是按攻击瞬间 AoE 圆扣.
-const SWORD_TIP_LOCAL_Y := -16.0     # tip 相对 held.position 的 y (sprite 16h)
-const SWORD_HIT_RADIUS := 12.0       # 怪中心到 grip→tip 线段 ≤ 12px (剑身比镐 tip 长, 半圆挥到弧边怪也要算碰到)
-const SWORD_THRUST_DURATION := 0.30  # 跟 held_item.THRUST_DURATION 一致 (含 dwell)
-const SWORD_SWING_DURATION := 0.18   # 跟 held_item.SWING_DURATION 一致
+# 注: rotation/position 自己按 _sword_attack_t 算, 不读 held.rotation —
+# tween 在 _process 更新, _physics_process 这里读可能滞后 (headless 测试 tween 可能不动).
+const SWORD_TIP_LOCAL_Y := -16.0       # tip 相对 held.position 的 y (sprite 16h)
+const SWORD_HIT_RADIUS := 10.0         # 怪中心到 grip→tip 线段 ≤ 10px (跟 pickaxe 一致, 怪 12 宽合适)
+const SWORD_HAND_OFFSET_X := 4.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
+const SWORD_HAND_OFFSET_Y := -8.0      # 跟 held_item.HAND_OFFSET_Y 一致
+const SWORD_THRUST_OFFSET := 10.0      # 跟 held_item.THRUST_OFFSET_PX 一致
+const SWORD_THRUST_DURATION := 0.30    # 三段: 20% 突出, 55% dwell, 25% 收回
+const SWORD_THRUST_EXTEND_END := 0.20  # 0..0.20 突出阶段结束
+const SWORD_THRUST_DWELL_END := 0.75   # 0.20..0.75 dwell, 0.75+ 收回 (主要打击在 dwell)
+const SWORD_SWING_DURATION := 0.18     # 半圆旋转
 var _sword_attack_active: bool = false
 var _sword_attack_t: float = 0.0
 var _sword_attack_duration: float = 0.0
+var _sword_attack_is_sweep: bool = false   # true = 挥 (rotation 转半圆), false = 戳 (position 动)
+var _sword_attack_swing_dir: Vector2 = Vector2.RIGHT
+var _sword_attack_target_angle: float = 0.0
+var _sword_attack_start_rot: float = 0.0   # 挥的起手 rotation (戳不用)
 var _sword_attack_facing_right: bool = true
 var _sword_attack_damage: int = 0
 var _sword_attack_knockback: float = 0.0
@@ -1054,31 +1065,57 @@ func _check_pickaxe_spin_hits() -> void:
 
 
 # 攻击开始时调一次. 接下来 duration 秒内每帧 _check_sword_blade_hits 扫击中.
-func _start_sword_blade_attack(swing_dir: Vector2, damage: int, knockback: float, duration: float) -> void:
+func _start_sword_blade_attack(is_sweep: bool, swing_dir: Vector2, damage: int, knockback: float) -> void:
 	_sword_attack_active = true
 	_sword_attack_t = 0.0
-	_sword_attack_duration = duration
-	_sword_attack_facing_right = cos(swing_dir.angle()) >= 0.0
+	_sword_attack_duration = SWORD_SWING_DURATION if is_sweep else SWORD_THRUST_DURATION
+	_sword_attack_is_sweep = is_sweep
+	_sword_attack_swing_dir = swing_dir
+	_sword_attack_target_angle = swing_dir.angle()
+	_sword_attack_facing_right = cos(_sword_attack_target_angle) >= 0.0
+	# 挥 (sweep) 起手旋转: 跟 held_item.play_swing_directional 同公式.
+	# base = target_angle + PI/2 (剑尖朝鼠标), start_a = base - 90° (起手在 base 左 90°).
+	# 挥剑时剑尖在中心列, 翻转不影响剑尖方向, 不用 s * 反向 (跟最新 play_thrust 同逻辑).
+	if is_sweep:
+		var base: float = wrapf(_sword_attack_target_angle + PI / 2.0, -PI, PI)
+		_sword_attack_start_rot = base - deg_to_rad(90.0)
 	_sword_attack_damage = max(1, damage)
 	_sword_attack_knockback = knockback
 	_sword_hit_this_attack.clear()
 
 
 # 每帧调: 算剑身 (grip→tip) 在世界里位置, 看哪只怪贴近. 1 击 1 只怪 (hit set 去重).
-# 戳: held.position 由 tween 动 (forward + back), held.global_position 就跟着变.
-# 挥: held.position 静止, held.rotation 由 tween 转, tip 随旋转扫.
+# 不读 held.rotation/position — 自己按 _sword_attack_t 跟动画公式同步, headless 测试也能跑.
 func _check_sword_blade_hits() -> void:
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
-	var held: Node2D = player.get_node_or_null("HeldItem") as Node2D
-	if held == null or not held.visible:
-		return
-	# grip = held.global_position (sprite 底中心, 即剑柄根); tip = grip + 旋转后的 16px 向上偏移.
-	# facing left 时 scale.x=-1 镜像 X, 用 -rotation 算 tip 等价 X 翻转 (跟镐 spin 同套路).
-	var rot_for_tip: float = held.rotation if _sword_attack_facing_right else -held.rotation
-	var grip_world: Vector2 = held.global_position
-	var tip_world: Vector2 = grip_world + Vector2(0, SWORD_TIP_LOCAL_Y).rotated(rot_for_tip)
+	var t: float = _sword_attack_t
+	var blade_rot: float = 0.0
+	var hand_x: float = SWORD_HAND_OFFSET_X if _sword_attack_facing_right else -SWORD_HAND_OFFSET_X
+	var grip_local: Vector2 = Vector2(hand_x, SWORD_HAND_OFFSET_Y)
+	if _sword_attack_is_sweep:
+		# 半圆挥: rotation 从 start_a 线性插值到 start_a + 180° over SWORD_SWING_DURATION.
+		var progress: float = clamp(t / SWORD_SWING_DURATION, 0.0, 1.0)
+		blade_rot = _sword_attack_start_rot + deg_to_rad(180.0) * progress
+	else:
+		# 戳: rotation 静止指向鼠标 (target_angle + PI/2). position 三段式动.
+		blade_rot = wrapf(_sword_attack_target_angle + PI / 2.0, -PI, PI)
+		var progress: float = clamp(t / SWORD_THRUST_DURATION, 0.0, 1.0)
+		var thrust_amount: float = 0.0
+		if progress <= SWORD_THRUST_EXTEND_END:
+			# 0..0.20 突出: linear (近似 EASE_OUT)
+			thrust_amount = progress / SWORD_THRUST_EXTEND_END
+		elif progress <= SWORD_THRUST_DWELL_END:
+			# 0.20..0.75 dwell: 维持在最前
+			thrust_amount = 1.0
+		else:
+			# 0.75..1.0 收回: 1 → 0 linear (近似 EASE_IN)
+			thrust_amount = 1.0 - (progress - SWORD_THRUST_DWELL_END) / (1.0 - SWORD_THRUST_DWELL_END)
+		grip_local += _sword_attack_swing_dir * (SWORD_THRUST_OFFSET * thrust_amount)
+	var grip_world: Vector2 = player.global_position + grip_local
+	# 剑尖在 sprite 中心列, 不受 facing 翻转影响, 直接用 blade_rot 算 tip 偏移.
+	var tip_world: Vector2 = grip_world + Vector2(0, SWORD_TIP_LOCAL_Y).rotated(blade_rot)
 	for group in ["slimes", "animals"]:
 		for s in get_tree().get_nodes_in_group(group):
 			var sn := s as Node2D
@@ -1152,8 +1189,8 @@ func _thrust_sword() -> void:
 		return
 	var damage: int = max(1, int(round(float(base) * dmg_mult * THRUST_DAMAGE_MULT)))
 	# 用户改: 不再瞬时矩形 AoE, 改成 SWORD_THRUST_DURATION 内每帧扫剑身线段命中.
-	# 戳动画 held.position tween (前 0.4 段 forward + 后 0.6 段收回), 我们看着剑实际位置打.
-	_start_sword_blade_attack(swing_dir, damage, _thrust_knockback(), SWORD_THRUST_DURATION)
+	# 戳动画 held.position 三段式 (extend + dwell + retract), 我们 sync 算位置打怪.
+	_start_sword_blade_attack(false, swing_dir, damage, _thrust_knockback())
 	if player.has_method("shake"):
 		player.shake(2.0)
 
@@ -1184,8 +1221,8 @@ func _sweep_sword() -> void:
 	if damage <= 0:
 		return
 	# 用户改: 不再瞬时弧 AoE, 改成 SWORD_SWING_DURATION 内每帧扫剑身线段命中.
-	# 挥半圆 180° tween, 剑尖会扫到弧上的怪 — 实际碰才扣血.
-	_start_sword_blade_attack(swing_dir, damage, _sweep_knockback(), SWORD_SWING_DURATION)
+	# 挥半圆 180° rotation, 剑尖按 progress 扫弧 — 实际碰才扣血.
+	_start_sword_blade_attack(true, swing_dir, damage, _sweep_knockback())
 	# 用户改: 删了月牙拖尾 (剑影). 留 shake.
 	if player.has_method("shake"):
 		player.shake(3.0)
