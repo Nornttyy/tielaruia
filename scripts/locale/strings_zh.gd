@@ -19,6 +19,8 @@ const S := {
 	"settings_camera_zoom": "镜头",
 	"settings_player_name": "玩家名",
 	"settings_player_name_placeholder": "玩家",
+	"settings_enemy_hp_bar": "怪物血条",
+	"settings_enemy_hp_number": "怪物血量数字",
 	"settings_back": "返回",
 
 	# ===== 世界选择面板 =====

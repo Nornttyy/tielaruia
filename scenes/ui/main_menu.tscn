@@ -235,6 +235,28 @@ custom_minimum_size = Vector2(200, 0)
 max_length = 16
 placeholder_text = "玩家"
 
+[node name="EnemyHpBarRow" type="HBoxContainer" parent="SettingsPanel/VBox"]
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="SettingsPanel/VBox/EnemyHpBarRow"]
+custom_minimum_size = Vector2(140, 0)
+text = "怪物血条"
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="CheckBox" type="CheckBox" parent="SettingsPanel/VBox/EnemyHpBarRow"]
+button_pressed = true
+
+[node name="EnemyHpNumberRow" type="HBoxContainer" parent="SettingsPanel/VBox"]
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="SettingsPanel/VBox/EnemyHpNumberRow"]
+custom_minimum_size = Vector2(140, 0)
+text = "怪物血量数字"
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="CheckBox" type="CheckBox" parent="SettingsPanel/VBox/EnemyHpNumberRow"]
+button_pressed = true
+
 [node name="BackButton" type="Button" parent="SettingsPanel/VBox"]
 custom_minimum_size = Vector2(0, 36)
 text = "返回"

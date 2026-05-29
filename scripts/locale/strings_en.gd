@@ -15,6 +15,8 @@ const S := {
 	"settings_camera_zoom": "Zoom",
 	"settings_player_name": "Player Name",
 	"settings_player_name_placeholder": "Player",
+	"settings_enemy_hp_bar": "Enemy HP Bar",
+	"settings_enemy_hp_number": "Enemy HP Number",
 	"settings_back": "Back",
 
 	"world_select_title": "Select World",

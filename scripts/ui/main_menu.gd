@@ -90,6 +90,8 @@ func _refresh_localized_text() -> void:
 	$SettingsPanel/VBox/LanguageRow/Label.text = Locale.t("lang_label")
 	$SettingsPanel/VBox/NameRow/Label.text = Locale.t("settings_player_name")
 	$SettingsPanel/VBox/NameRow/LineEdit.placeholder_text = Locale.t("settings_player_name_placeholder")
+	$SettingsPanel/VBox/EnemyHpBarRow/Label.text = Locale.t("settings_enemy_hp_bar")
+	$SettingsPanel/VBox/EnemyHpNumberRow/Label.text = Locale.t("settings_enemy_hp_number")
 	$SettingsPanel/VBox/BackButton.text = Locale.t("settings_back")
 
 	# 世界选择面板
@@ -782,6 +784,13 @@ func _setup_settings_panel() -> void:
 		GameSettings.player_name = name_edit.text
 		name_edit.text = GameSettings.player_name
 	)
+	# 怪物血条 + 血量数字: 2 个 checkbox, 切换立刻生效 (HealthBar 监听 settings_changed)
+	var hp_bar_cb: CheckBox = $SettingsPanel/VBox/EnemyHpBarRow/CheckBox
+	hp_bar_cb.button_pressed = GameSettings.show_enemy_hp_bar
+	hp_bar_cb.toggled.connect(func(p: bool): GameSettings.show_enemy_hp_bar = p)
+	var hp_num_cb: CheckBox = $SettingsPanel/VBox/EnemyHpNumberRow/CheckBox
+	hp_num_cb.button_pressed = GameSettings.show_enemy_hp_number
+	hp_num_cb.toggled.connect(func(p: bool): GameSettings.show_enemy_hp_number = p)
 	_apply_button_style(back_btn)
 	back_btn.pressed.connect(_on_settings_back_pressed)
 

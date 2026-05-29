@@ -15,6 +15,8 @@ const S := {
 	"settings_camera_zoom": "カメラ",
 	"settings_player_name": "プレイヤー名",
 	"settings_player_name_placeholder": "プレイヤー",
+	"settings_enemy_hp_bar": "敵のHPバー",
+	"settings_enemy_hp_number": "敵のHP数字",
 	"settings_back": "戻る",
 
 	"world_select_title": "ワールド選択",

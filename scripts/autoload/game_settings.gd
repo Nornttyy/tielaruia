@@ -77,6 +77,19 @@ var player_name: String = "玩家":
 		player_name = trimmed
 		_save()
 
+# 怪物血条 / 血量数字开关. 默认都开. 玩家可在设置里关掉减视觉杂乱.
+var show_enemy_hp_bar: bool = true:
+	set(v):
+		if show_enemy_hp_bar == v: return
+		show_enemy_hp_bar = v
+		_save_and_emit()   # HealthBar 监听 settings_changed 立刻重画
+
+var show_enemy_hp_number: bool = true:
+	set(v):
+		if show_enemy_hp_number == v: return
+		show_enemy_hp_number = v
+		_save_and_emit()
+
 
 # 难度对玩家受伤的乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x
 func damage_multiplier() -> float:
@@ -121,6 +134,8 @@ func _save() -> void:
 	cfg.set_value("camera", "zoom", camera_zoom)
 	cfg.set_value("locale", "language", current_language)
 	cfg.set_value("player", "name", player_name)
+	cfg.set_value("hud", "enemy_hp_bar", show_enemy_hp_bar)
+	cfg.set_value("hud", "enemy_hp_number", show_enemy_hp_number)
 	cfg.save(SETTINGS_PATH)
 
 
@@ -141,3 +156,6 @@ func _load() -> void:
 	current_language = saved_lang if ["zh", "en", "ja", "ko"].has(saved_lang) else "zh"
 	# 玩家名: setter 自己会 strip + clamp + empty fallback
 	player_name = String(cfg.get_value("player", "name", "玩家"))
+	# 怪物血条/数字开关: 默认都开
+	show_enemy_hp_bar = bool(cfg.get_value("hud", "enemy_hp_bar", true))
+	show_enemy_hp_number = bool(cfg.get_value("hud", "enemy_hp_number", true))

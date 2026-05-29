@@ -15,6 +15,8 @@ const S := {
 	"settings_camera_zoom": "카메라",
 	"settings_player_name": "플레이어 이름",
 	"settings_player_name_placeholder": "플레이어",
+	"settings_enemy_hp_bar": "적 HP 바",
+	"settings_enemy_hp_number": "적 HP 숫자",
 	"settings_back": "뒤로",
 
 	"world_select_title": "월드 선택",
