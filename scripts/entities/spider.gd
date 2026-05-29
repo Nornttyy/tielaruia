@@ -8,12 +8,12 @@ const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-# 用户调: 玻璃大炮 — 高伤低血.
-# HP 25→12 (木剑 3dmg × 4 击死, 钻剑 1 击秒杀).
-# 接触伤 10→20 (跟钻剑同档, 100HP 玩家 5 击死, 别让它粘上).
-# 速度 55 保留 (不再 nerf, 但也不复原 70).
-const BASE_MAX_HEALTH := 12
-const CONTACT_DAMAGE := 20
+# 用户调: 玻璃大炮 v2 — 伤害收一点, 血量给一点.
+# HP 20 (木剑 7 击 / 钻剑 1 击).
+# 接触伤 10 (100HP 玩家 10 击死, 给反应余地).
+# 速度 55 保留.
+const BASE_MAX_HEALTH := 20
+const CONTACT_DAMAGE := 10
 const WALK_SPEED := 55.0     # 比僵尸 28 快 ~2x
 const AGGRO_RANGE_PX := 200.0  # 看见 ~17 tile 内就追
 const JUMP_VY := -240.0      # 撞墙跳更高

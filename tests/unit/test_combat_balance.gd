@@ -32,9 +32,9 @@ func test_baseline_demon_eye():
 
 
 func test_baseline_spider():
-	# 用户调: 玻璃大炮 — HP 12 / 接触 20 / 速度 55. 木剑 4 击死, 但碰 5 次玩家也挂.
-	assert_eq(Spider.BASE_MAX_HEALTH, 12)
-	assert_eq(Spider.CONTACT_DAMAGE, 20)
+	# 用户调 v2: HP 20 / 接触 10 / 速度 55. 木剑 7 击死, 玩家 10 击死. 给反应余地.
+	assert_eq(Spider.BASE_MAX_HEALTH, 20)
+	assert_eq(Spider.CONTACT_DAMAGE, 10)
 	assert_almost_eq(Spider.WALK_SPEED, 55.0, 0.01)
 
 
