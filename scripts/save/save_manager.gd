@@ -79,6 +79,12 @@ func save(main: Node) -> bool:
 		for cx in world._pyramid_chunks_spawned.keys():
 			pyramid_arr.append(int(cx))
 	data.pyramid_chunks_spawned = pyramid_arr
+	# 世纪树蜘蛛同款持久化
+	var wt_arr: PackedInt32Array = PackedInt32Array()
+	if "_world_tree_chunks_spawned" in world:
+		for cx in world._world_tree_chunks_spawned.keys():
+			wt_arr.append(int(cx))
+	data.world_tree_chunks_spawned = wt_arr
 	var player: Node2D = world.get_player()
 	if player != null:
 		data.player_position = player.global_position

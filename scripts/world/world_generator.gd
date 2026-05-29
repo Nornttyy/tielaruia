@@ -1441,17 +1441,35 @@ static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
 	# 6) 侧隧道 (50% 概率): 从屋一侧凿 2 高 AIR 8-14 长. 可能撞上 worm 矿洞 → 连接.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _hash3(world_seed, chunk_x, 0xc0ffee07)
+	var tunnel_made: bool = false
+	var tunnel_side: int = 0
+	var tunnel_len: int = 0
+	var t_floor_y: int = room_bot_y - 1   # 跟屋内同高 (脚踏)
 	if rng.randf() < WORLD_TREE_SIDE_TUNNEL_CHANCE:
-		var side: int = -1 if rng.randf() < 0.5 else 1
-		var tunnel_len: int = rng.randi_range(WORLD_TREE_SIDE_TUNNEL_MIN_LEN, WORLD_TREE_SIDE_TUNNEL_MAX_LEN)
-		var t_floor_y: int = room_bot_y - 1  # 跟屋内同高 (脚踏)
+		tunnel_side = -1 if rng.randf() < 0.5 else 1
+		tunnel_len = rng.randi_range(WORLD_TREE_SIDE_TUNNEL_MIN_LEN, WORLD_TREE_SIDE_TUNNEL_MAX_LEN)
 		var t_head_y: int = room_bot_y - 2   # 头顶
 		for d in range(1, tunnel_len + 1):
-			var lx: int = x_center_local + side * (hw + d)
+			var lx: int = x_center_local + tunnel_side * (hw + d)
 			if lx < 0 or lx >= chunk_width:
 				break
 			c.tiles[lx][t_floor_y] = Tiles.AIR
 			c.tiles[lx][t_head_y] = Tiles.AIR
+		tunnel_made = true
+	# 7) 蜘蛛守卫: 屋内 2 + 隧道末端 1-2 个. spawn 点存到 chunk.world_tree_spider_spots
+	# 屋内左右 (avoid chest 列 -1 / +1, 用 0 = center 之上 1 行)
+	c.world_tree_spider_spots.append(Vector2i(chunk_start + x_center_local, room_bot_y - 1))
+	if hw >= 2:
+		# 屋内左右 corner (远 chest 一点)
+		c.world_tree_spider_spots.append(Vector2i(chunk_start + x_center_local - (hw - 1), room_bot_y - 1))
+	if tunnel_made and tunnel_len >= 4:
+		var n_tunnel_spiders: int = rng.randi_range(1, 2)
+		for _i in n_tunnel_spiders:
+			var t_offset: int = rng.randi_range(3, tunnel_len)
+			var spider_lx: int = x_center_local + tunnel_side * (hw + t_offset)
+			if spider_lx < 0 or spider_lx >= chunk_width:
+				continue
+			c.world_tree_spider_spots.append(Vector2i(chunk_start + spider_lx, t_floor_y))
 
 
 # ===== 瀑布矿洞 =====

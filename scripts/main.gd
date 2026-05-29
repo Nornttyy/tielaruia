@@ -251,6 +251,10 @@ func _apply_save_data(data: Resource) -> void:
 		if "pyramid_chunks_spawned" in data and "_pyramid_chunks_spawned" in w:
 			for cx in data.pyramid_chunks_spawned:
 				w._pyramid_chunks_spawned[int(cx)] = true
+		# 同款: 已 spawn 世纪树蜘蛛的 chunk_x
+		if "world_tree_chunks_spawned" in data and "_world_tree_chunks_spawned" in w:
+			for cx in data.world_tree_chunks_spawned:
+				w._world_tree_chunks_spawned[int(cx)] = true
 	# 恢复箱子内容 (24 格 × 每个 chest tile)
 	if "chest_contents" in data:
 		ChestStorage.restore(data.chest_contents)
