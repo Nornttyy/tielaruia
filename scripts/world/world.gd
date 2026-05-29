@@ -88,6 +88,9 @@ var weather: Node
 var village_villager_spawns: Array = []
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
+var _crop_grow_timer: float = 15.0   # 作物生长 tick: 每 15s 一次, 每个 WHEAT_0/1/2 升一阶概率
+const CROP_GROW_INTERVAL := 15.0
+const CROP_GROW_CHANCE := 0.7        # 每次 tick 升级概率 (70% → 平均成熟 ~45s)
 var _last_player_chunk_x: int = 0
 var _minimap_mark_timer: float = 0.0
 
@@ -533,6 +536,10 @@ func _process(delta: float) -> void:
 			_animal_spawn_timer = ANIMAL_SPAWN_INTERVAL
 			if not TimeOfDay.is_night():
 				_try_spawn_animal()
+		_crop_grow_timer -= delta
+		if _crop_grow_timer <= 0.0:
+			_crop_grow_timer = CROP_GROW_INTERVAL
+			_tick_crop_growth()
 	# 玩家视野内 tile 标记为 minimap 可见
 	_minimap_mark_timer -= delta
 	if _minimap_mark_timer <= 0.0:
@@ -821,24 +828,32 @@ func _on_chunk_unloaded(cx: int) -> void:
 	darkness_layer.clear_chunk(cx, ChunkConstants.CHUNK_WIDTH, ChunkConstants.WORLD_HEIGHT)
 
 
-# 在 chunk 0 内找 GRASS 上方 3 格空气列, fallback 到 (0, 100)
+# 找任何地表 (草/沙/雪/丛林/沼泽) 上方 3 格空气. 先 chunk 0, 再扫 ±2 chunk.
+# 大世界 (world_size=2) biome 拉远 1.6x, chunk 0 可能落进雪/丛林/沼泽, 之前只认
+# GRASS/SAND → 找不到 → 玩家埋在 (0, 100) 石头里 → 拿不到 starter + 不能动 + 小地图不扩.
 func _find_spawn_in_loaded() -> Vector2i:
-	var ch: Chunk = chunk_manager.get_chunk(0)
-	if ch == null:
-		return Vector2i(0, 100)
-	# spawn 接受 GRASS 或 SAND 地表 (沙漠生态也能 spawn)
-	for lx in ch.tiles.size():
-		var col: Array = ch.tiles[lx]
-		for y in range(3, col.size() - 1):
-			if col[y] != Tiles.GRASS and col[y] != Tiles.SAND:
-				continue
-			if col[y - 1] != Tiles.AIR \
-					or col[y - 2] != Tiles.AIR \
-					or col[y - 3] != Tiles.AIR:
-				continue
-			# world_x = chunk_x*64 + lx = 0 + lx = lx
-			return Vector2i(lx, y - 1)
-	return Vector2i(0, 100)
+	var surface_tiles := {
+		Tiles.GRASS: true, Tiles.SAND: true,
+		Tiles.SNOW: true, Tiles.JUNGLE_GRASS: true,
+		Tiles.SWAMP_GRASS: true, Tiles.MUD: true,
+	}
+	for cx in [0, -1, 1, -2, 2]:
+		var ch: Chunk = chunk_manager.get_chunk(cx)
+		if ch == null:
+			continue
+		for lx in ch.tiles.size():
+			var col: Array = ch.tiles[lx]
+			for y in range(3, col.size() - 1):
+				if not surface_tiles.has(col[y]):
+					continue
+				if col[y - 1] != Tiles.AIR \
+						or col[y - 2] != Tiles.AIR \
+						or col[y - 3] != Tiles.AIR:
+					continue
+				var wx: int = cx * ChunkConstants.CHUNK_WIDTH + lx
+				return Vector2i(wx, y - 1)
+	# 兜底: (0, 50) 比 (0, 100) 安全 — 至少在地表附近高空, 落下到地面
+	return Vector2i(0, 50)
 
 
 func _try_spawn_slime() -> void:
@@ -1037,6 +1052,29 @@ func spawn_world_tree_spiders_for_chunk(chunk_x: int, spots: Array) -> void:
 			spot.y * TILE_SIZE + TILE_SIZE
 		)
 		entities_root.add_child(creature)
+
+
+# 菜园: 扫所有 loaded chunk 找 WHEAT_0/1/2, 70% 概率升一阶. 每 15s 调.
+# 平均 ~45s 从苗到熟 (15s × 3 阶段 / 0.7 概率).
+func _tick_crop_growth() -> void:
+	if chunk_manager == null:
+		return
+	const CHUNK_WIDTH := 64
+	const HEIGHT := 256   # ChunkConstants.WORLD_HEIGHT (用常量避免 import)
+	for cx in chunk_manager._loaded.keys():
+		var c = chunk_manager.get_chunk(cx)
+		if c == null:
+			continue
+		var chunk_start: int = cx * CHUNK_WIDTH
+		for lx in CHUNK_WIDTH:
+			for y in HEIGHT:
+				var tid: int = c.tiles[lx][y]
+				if tid != Tiles.WHEAT_0 and tid != Tiles.WHEAT_1 and tid != Tiles.WHEAT_2:
+					continue
+				if randf() > CROP_GROW_CHANCE:
+					continue
+				var next_id: int = tid + 1   # WHEAT_0→1, 1→2, 2→3 (顺序硬编码)
+				_set_tile(chunk_start + lx, y, next_id)
 
 
 # 废弃矿井守卫蜘蛛: 同款机制
