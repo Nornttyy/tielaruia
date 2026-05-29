@@ -601,12 +601,18 @@ func _setup_new_game_panel() -> void:
 	var easy_btn: Button = panel.get_node("VBox/DifficultyRow/EasyButton")
 	var normal_btn: Button = panel.get_node("VBox/DifficultyRow/NormalButton")
 	var hard_btn: Button = panel.get_node("VBox/DifficultyRow/HardButton")
+	var small_btn: Button = panel.get_node("VBox/SizeRow/SmallButton")
+	var medium_btn: Button = panel.get_node("VBox/SizeRow/MediumButton")
+	var large_btn: Button = panel.get_node("VBox/SizeRow/LargeButton")
 	var cancel_btn: Button = panel.get_node("VBox/ButtonRow/CancelButton")
 	var start_btn: Button = panel.get_node("VBox/ButtonRow/StartButton")
 	_apply_button_style(random_btn)
 	_apply_button_style(easy_btn)
 	_apply_button_style(normal_btn)
 	_apply_button_style(hard_btn)
+	_apply_button_style(small_btn)
+	_apply_button_style(medium_btn)
+	_apply_button_style(large_btn)
 	_apply_button_style(cancel_btn)
 	_apply_button_style(start_btn)
 	# 难度: 3 个互斥 toggle (像 radio button)
@@ -620,6 +626,18 @@ func _setup_new_game_panel() -> void:
 			for j in diff_btns.size():
 				if j != idx:
 					diff_btns[j].button_pressed = false
+		)
+	# 世界大小: 同款 radio toggle
+	var size_btns: Array = [small_btn, medium_btn, large_btn]
+	for i in size_btns.size():
+		var btn: Button = size_btns[i]
+		var idx: int = i
+		btn.toggled.connect(func(on: bool):
+			if not on:
+				return
+			for j in size_btns.size():
+				if j != idx:
+					size_btns[j].button_pressed = false
 		)
 	# 随机种子按钮
 	random_btn.pressed.connect(func():
@@ -649,6 +667,13 @@ func _setup_new_game_panel() -> void:
 		elif hard_btn.button_pressed:
 			diff = DIFF_HARD
 		opts["difficulty"] = diff
+		# 世界大小 (0=小 1=中 2=大)
+		var ws: int = 1
+		if small_btn.button_pressed:
+			ws = 0
+		elif large_btn.button_pressed:
+			ws = 2
+		opts["world_size"] = ws
 		_emit_start_game_with(opts)
 	)
 

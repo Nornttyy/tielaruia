@@ -17,6 +17,26 @@ var master_volume: float = 1.0:
 # difficulty: 0=简单, 1=普通, 2=困难
 var current_difficulty: int = 1
 var current_world_name: String = ""
+# 当前世界大小 (0=小 1=中 2=大). 影响 biome 间距 + 金字塔数量.
+# 不持久化到 settings.cfg — 是 per-world 的, 从 SaveData 读 (新世界从 start_game opts 写入).
+var current_world_size: int = 1
+
+
+# 世界大小尺度: 小 0.5x / 中 1.0x / 大 1.6x. 用来缩放 BIOME_SLOTS 距离 + 影响 pyramid 数.
+# 静态 access: world_generator 静态函数读这个 (autoload 调用 = 同 process 内同 Engine state)
+func world_size_scale() -> float:
+	match current_world_size:
+		0: return 0.5
+		2: return 1.6
+		_: return 1.0
+
+
+# 金字塔数量乘数 (1=1 个 / 2=2-3 / 3=3-5 起始)
+func pyramid_count_range() -> Array:
+	match current_world_size:
+		0: return [1, 1]      # 小: 1 个
+		2: return [3, 5]      # 大: 3-5 个
+		_: return [2, 3]      # 中: 2-3 个 (现行)
 
 # ===== 图形开关 (用户在设置面板里勾选, 持久化) =====
 # show_rain: 下雨粒子, 关掉省 GPU

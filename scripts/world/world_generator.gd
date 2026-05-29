@@ -1220,18 +1220,22 @@ const WORLD_TREE_MIN_SPAWN_CHUNK := 2    # 离 spawn (chunk 0) 至少 2 chunk �
 # 先扫所有 chunk 找沙漠的, 再从中随机选 2-3 个. 保证每世界都有金字塔.
 static func _pyramid_chunks(world_seed: int) -> Array:
 	var centers: Dictionary = _build_biome_centers(world_seed)
-	# 找所有 "中心在沙漠 biome 内" 的 chunks (扫 -20 到 +35, 兼容 biome 落在负 chunk 的情况)
+	# 扫 chunk 范围按 world_size scale: 小 -10..+18, 中 -20..+36, 大 -32..+58
+	var scan_range: Array = _scan_chunk_range()
 	var desert_chunks: Array = []
-	for cx in range(-20, 36):
+	for cx in range(scan_range[0], scan_range[1]):
 		var chunk_center_x: int = cx * 64 + 32
 		if _biome_at_x(chunk_center_x, centers) == BIOME_DESERT:
 			desert_chunks.append(cx)
 	if desert_chunks.is_empty():
 		return []
-	# 随机选 min(2-3, 沙漠 chunk 总数)
+	# 数量由 world_size 控: 小 1, 中 2-3, 大 3-5
 	var rng := RandomNumberGenerator.new()
 	rng.seed = world_seed + 0xa1b2c3
-	var target_count: int = rng.randi_range(2, 3)
+	var count_range: Array = [2, 3]
+	if Engine.get_main_loop() != null and Engine.get_main_loop().get_root().get_node_or_null("GameSettings") != null:
+		count_range = GameSettings.pyramid_count_range()
+	var target_count: int = rng.randi_range(count_range[0], count_range[1])
 	var num: int = min(target_count, desert_chunks.size())
 	# Shuffle 选前 num 个
 	var pool: Array = desert_chunks.duplicate()
@@ -1326,7 +1330,8 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 # 选 1 个 forest biome chunk (离 spawn 至少 2 chunk 远) 当世纪树位置. 同 seed 必定同 chunk.
 static func _world_tree_chunk(world_seed: int, biome_centers: Dictionary) -> int:
 	var forest_chunks: Array = []
-	for cx in range(-20, 36):
+	var scan_range: Array = _scan_chunk_range()
+	for cx in range(scan_range[0], scan_range[1]):
 		if abs(cx) < WORLD_TREE_MIN_SPAWN_CHUNK:
 			continue
 		var chunk_center_x: int = cx * 64 + 32
@@ -1522,10 +1527,28 @@ static func _biome_at_x(world_x: int, biome_centers: Dictionary) -> int:
 	return BIOME_FOREST
 
 
+# 找 biome / 金字塔 / 世纪树扫的 chunk 范围. 跟着 world_size 走 (大世界扫更宽).
+# 返回 [start_cx, end_cx] (exclusive end), 默认覆盖 -20..36 (1 chunk = 64 tile).
+static func _scan_chunk_range() -> Array:
+	var scale: float = 1.0
+	if Engine.get_main_loop() != null and Engine.get_main_loop().get_root().get_node_or_null("GameSettings") != null:
+		scale = GameSettings.world_size_scale()
+	# 默认 -20..36 = 56 chunk 宽. scale 后比例同步.
+	var half_left: int = int(round(20.0 * scale))
+	var half_right: int = int(round(36.0 * scale))
+	return [-half_left, half_right]
+
+
 # 用 seed shuffle 4 个槽位给 4 个 biome, 每个加 jitter
+# 槽位按 GameSettings.current_world_size 缩放: 小 0.5x / 中 1.0x / 大 1.6x
 static func _build_biome_centers(world_seed: int) -> Dictionary:
-	# Fisher-Yates shuffle slots
-	var slots: Array = _BIOME_SLOTS.duplicate()
+	var scale: float = 1.0
+	if Engine.has_singleton("GameSettings") or (Engine.get_main_loop() != null and Engine.get_main_loop().has_method("get_root") and Engine.get_main_loop().get_root().get_node_or_null("GameSettings") != null):
+		scale = GameSettings.world_size_scale()
+	# Fisher-Yates shuffle slots (scale 后)
+	var slots: Array = []
+	for s in _BIOME_SLOTS:
+		slots.append(int(round(float(s) * scale)))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = world_seed * 1000003 + 7
 	for i in range(slots.size() - 1, 0, -1):

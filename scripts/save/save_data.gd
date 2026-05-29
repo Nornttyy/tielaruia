@@ -13,6 +13,7 @@ const CURRENT_VERSION := 4
 @export var world_seed: int = 0
 @export var world_name: String = ""
 @export var difficulty: int = 1   # 0=简单 1=普通 2=困难
+@export var world_size: int = 1   # 0=小 1=中 2=大 (影响 biome 间距 + 金字塔数)
 @export var spawn_point: Vector2i = Vector2i.ZERO
 # 世界时间 [0, 1) — 0=午夜, 0.35=早晨默认, 0.5=正午, 0.75=傍晚
 @export var world_time: float = 0.35

@@ -58,17 +58,21 @@ func _start_game(seed_or_opts = 0) -> void:
 	var world_seed: int = 0
 	var world_name: String = ""
 	var difficulty: int = 1
+	var world_size: int = 1   # 0=小 1=中 2=大
 	if seed_or_opts is Dictionary:
 		var opts: Dictionary = seed_or_opts
 		world_seed = int(opts.get("world_seed", 0))
 		world_name = String(opts.get("world_name", ""))
 		difficulty = int(opts.get("difficulty", 1))
+		world_size = int(opts.get("world_size", 1))
 	else:
 		world_seed = int(seed_or_opts)
 	if "current_difficulty" in GameSettings:
 		GameSettings.current_difficulty = difficulty
 	if "current_world_name" in GameSettings:
 		GameSettings.current_world_name = world_name
+	if "current_world_size" in GameSettings:
+		GameSettings.current_world_size = world_size
 	_state = "game"
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.visible = false
@@ -214,6 +218,7 @@ func _continue_game(data: Resource) -> void:
 		"world_seed": int(data.world_seed),
 		"world_name": String(data.world_name) if "world_name" in data else "",
 		"difficulty": int(data.difficulty) if "difficulty" in data else 1,
+		"world_size": int(data.world_size) if "world_size" in data else 1,
 	})
 
 
