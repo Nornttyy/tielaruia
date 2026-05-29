@@ -18,6 +18,7 @@ config/name="teilaruia"
 config/description="2D 沙盒，受泰拉瑞亚启发"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
+config/icon="res://icon.png"
 
 [autoload]
 
