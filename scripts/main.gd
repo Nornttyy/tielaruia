@@ -263,6 +263,10 @@ func _apply_save_data(data: Resource) -> void:
 		if "world_tree_chunks_spawned" in data and "_world_tree_chunks_spawned" in w:
 			for cx in data.world_tree_chunks_spawned:
 				w._world_tree_chunks_spawned[int(cx)] = true
+		# 同款: 已 spawn 废弃矿井蜘蛛的 chunk_x
+		if "mineshaft_chunks_spawned" in data and "_mineshaft_chunks_spawned" in w:
+			for cx in data.mineshaft_chunks_spawned:
+				w._mineshaft_chunks_spawned[int(cx)] = true
 	# 恢复箱子内容 (24 格 × 每个 chest tile)
 	if "chest_contents" in data:
 		ChestStorage.restore(data.chest_contents)
@@ -383,12 +387,13 @@ func _wire_player() -> void:
 # 测试 helper boot_to_game / _start_game_sync 跳过, 让测试用空背包独立 setup.
 # continue 路径靠 _apply_save_data.call_deferred 在更后一帧覆盖背包, 不会留下重复.
 func _grant_starter_on_new_game() -> void:
-	var w := world
-	if w == null:
-		return
 	# PlayerInventory._ready 创建 inventory, 可能跟我们 call_deferred 时机错位.
 	# 最多等 8 帧重试, 让 player + inventory 都就绪再发起步包.
+	# 每次循环重新 fetch world (await 后玩家可能 ESC 回主菜单, world freed).
 	for i in 8:
+		var w := world
+		if w == null or not is_instance_valid(w):
+			return  # world 没了 (回主菜单), 放弃
 		var player: Node2D = w.get_player()
 		if player != null:
 			var inv_node: Node = player.get_node_or_null("PlayerInventory")
