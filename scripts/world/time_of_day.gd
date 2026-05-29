@@ -5,7 +5,7 @@
 #   0.3-0.7 白天
 #   0.7-0.8 日落 (lerp)
 #   0.8-1.0 夜
-# DAY_DURATION_SEC = 240s (4 分钟一个日夜, 约 2 分日 + 2 分夜)
+# DAY_DURATION_SEC = 1200s (20 分钟一个日夜, ~10 分白天 + 10 分黑夜) — 跟 Minecraft 一致.
 #
 # 用法:
 #   TimeOfDay.is_night()  → bool
@@ -13,7 +13,7 @@
 #   TimeOfDay.sky_color()  → Color (给天空背景用)
 extends Node
 
-const DAY_DURATION_SEC := 600.0   # 10 分钟一个日夜 (~5 分白天 + 5 分黑夜)
+const DAY_DURATION_SEC := 1200.0   # 20 分钟一个日夜 (Minecraft 标准, ~10 分白天 + 10 分黑夜)
 const NIGHT_LIGHT := 4          # 夜里地表光值 (0..15, 越大越亮; 月光不至于全黑)
 const DAY_LIGHT := 15           # 白天地表光值
 
