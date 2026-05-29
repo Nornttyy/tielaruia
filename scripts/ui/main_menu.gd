@@ -511,10 +511,29 @@ func _on_load_save_pressed(save_name: String) -> void:
 	t.tween_callback(func(): continue_game.emit(data))
 
 
-# 从 WorldSelectPanel 点 "创建新世界" → 显 NewGamePanel
+# 从 WorldSelectPanel 点 "创建新世界" → 显 NewGamePanel.
+# 自动给 name LineEdit 填一个不冲突的默认名 (我的世界 / 我的世界 2 / 我的世界 3 ...)
+# 防 bug "不能创建多个世界" (没改名直接开始会覆盖上一个同名存档).
 func _on_create_world_pressed() -> void:
 	$WorldSelectPanel.visible = false
 	$NewGamePanel.visible = true
+	var name_edit: LineEdit = $NewGamePanel.get_node("VBox/NameRow/LineEdit")
+	if name_edit != null:
+		name_edit.text = _compute_unique_world_name()
+
+
+# 扫已存档名, 找第一个不冲突的默认 "我的世界" / "我的世界 2" / ... .
+func _compute_unique_world_name() -> String:
+	var base: String = Locale.t("newgame_default_world_name")
+	var existing: Dictionary = {}
+	for entry in SaveManager.list_saves():
+		existing[String(entry["name"])] = true
+	if not existing.has(base):
+		return base
+	var i: int = 2
+	while existing.has("%s %d" % [base, i]):
+		i += 1
+	return "%s %d" % [base, i]
 
 
 # 从 WorldSelectPanel 点 "返回" → 回主菜单

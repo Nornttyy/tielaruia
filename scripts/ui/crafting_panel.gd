@@ -601,6 +601,16 @@ func _input(event: InputEvent) -> void:
 		return
 	# 拖到不同 slot → 放下/合并/交换
 	_apply_inv_click(found_idx)
+	# 拖动交换 (drag-swap): 本次按下才拿起的 + 交换后 cursor 还有东西
+	# = "拖 A 到 B 上, B 应该回到 A 原位置, 不是留在鼠标"
+	if _drag_picked_up_this_press and _player_inv.cursor_slot != null:
+		var src_idx: int = _drag_press_idx
+		if src_idx >= 0 and src_idx < _player_inv.inventory.slots.size():
+			if _player_inv.inventory.slots[src_idx] == null:
+				_player_inv.inventory.slots[src_idx] = _player_inv.cursor_slot
+				_player_inv.cursor_slot = null
+				if _player_inv.has_signal("inventory_changed"):
+					_player_inv.inventory_changed.emit()
 	_drag_active = false
 
 

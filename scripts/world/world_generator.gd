@@ -1327,10 +1327,11 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 
 
 # ===== 世纪树 (World Tree) =====
-# 选 N 个 forest biome chunk 当世纪树位置 (N 跟 world_size 走, 小 1 / 中 1-2 / 大 2-3).
+# 选 N 个 forest biome chunk 当世纪树位置. 保证至少 1 棵在 spawn ±8 chunk (玩家容易找到).
 # 同 seed 必定同位置 (deterministic).
 static func _world_tree_chunks(world_seed: int, biome_centers: Dictionary) -> Array:
 	var forest_chunks: Array = []
+	var near_forest_chunks: Array = []   # |cx| ≤ 8 = 近 spawn 候选
 	var scan_range: Array = _scan_chunk_range()
 	for cx in range(scan_range[0], scan_range[1]):
 		if abs(cx) < WORLD_TREE_MIN_SPAWN_CHUNK:
@@ -1338,6 +1339,8 @@ static func _world_tree_chunks(world_seed: int, biome_centers: Dictionary) -> Ar
 		var chunk_center_x: int = cx * 64 + 32
 		if _biome_at_x(chunk_center_x, biome_centers) == BIOME_FOREST:
 			forest_chunks.append(cx)
+			if abs(cx) <= 8:
+				near_forest_chunks.append(cx)
 	if forest_chunks.is_empty():
 		return []
 	# 数量由 world_size 控
@@ -1348,13 +1351,19 @@ static func _world_tree_chunks(world_seed: int, biome_centers: Dictionary) -> Ar
 	rng.seed = world_seed + 0xfeed7e3e   # "feed tree" 派生 magic
 	var target_count: int = rng.randi_range(count_range[0], count_range[1])
 	var num: int = min(target_count, forest_chunks.size())
-	# Fisher-Yates shuffle 选前 num
+	# Fisher-Yates shuffle 远候选
 	for i in range(forest_chunks.size() - 1, 0, -1):
 		var j: int = rng.randi_range(0, i)
 		var tmp = forest_chunks[i]
 		forest_chunks[i] = forest_chunks[j]
 		forest_chunks[j] = tmp
-	return forest_chunks.slice(0, num)
+	var picked: Array = forest_chunks.slice(0, num)
+	# 强制第一个 = 近 spawn (≤ 8 chunk). 没近候选只能用远的.
+	if not near_forest_chunks.is_empty():
+		var near_pick: int = near_forest_chunks[rng.randi() % near_forest_chunks.size()]
+		if not picked.has(near_pick):
+			picked[0] = near_pick
+	return picked
 
 
 # 在该 chunk 中央种 1 棵世纪树. Terraria living tree 风:

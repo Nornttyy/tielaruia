@@ -280,6 +280,16 @@ func _try_open_workbench_or_close() -> void:
 					var inv: Node = _inventory_node()
 					chest_p.open(aim_tile, inv)
 				return
+	# 优先级 2.5: 没对准 chest 时, 找玩家身边 ±2 格里的 chest 开 (用户要求 "靠近就 E")
+	var near_chest: Vector2i = _find_chest_nearby()
+	if near_chest != Vector2i(-99999, -99999):
+		var chest_p2: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
+		if chest_p2 == null:
+			chest_p2 = get_tree().root.find_child("ChestPanel", true, false)
+		if chest_p2 != null and chest_p2.has_method("open"):
+			var inv2: Node = _inventory_node()
+			chest_p2.open(near_chest, inv2)
+		return
 	# 优先级 3: 合成面板 (工作台 → 3x3, 否则 2x2)
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
 	if cp == null:
@@ -315,6 +325,22 @@ func _has_workbench_nearby() -> bool:
 			if tid == Tiles.WORKBENCH:
 				return true
 	return false
+
+
+# 找玩家身边 ±2 格里第一个 CHEST/GOLD/DIAMOND/SHADOW tile, 返回 tile 坐标.
+# 没找到返 (-99999, -99999) 哨兵.
+func _find_chest_nearby() -> Vector2i:
+	var terrain := _terrain()
+	if terrain == null:
+		return Vector2i(-99999, -99999)
+	var pt: Vector2i = player_tile()
+	for dy in range(-2, 3):
+		for dx in range(-2, 3):
+			var coord: Vector2i = pt + Vector2i(dx, dy)
+			var tid: int = terrain.get_cell_source_id(coord)
+			if tid == Tiles.CHEST or tid == Tiles.GOLD_CHEST or tid == Tiles.DIAMOND_CHEST or tid == Tiles.SHADOW_CHEST:
+				return coord
+	return Vector2i(-99999, -99999)
 
 
 func _update_mining(delta: float) -> void:
