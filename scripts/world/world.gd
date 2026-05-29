@@ -952,19 +952,43 @@ func respawn_player() -> void:
 	# 把背包所有物品掉在死亡处
 	var death_pos: Vector2 = player.global_position
 	var inv_node: Node = player.get_node_or_null("PlayerInventory")
-	if inv_node != null and inv_node.inventory != null:
+	# 难度决定死亡掉落规则:
+	#   0 简单: 啥都不掉 (新手友好, 死了爬起来继续)
+	#   1 普通: 每堆掉 50% (向下取整), 盔甲每件 50% 几率掉
+	#   2 困难: 全掉, 只留木剑/木镐/木斧 (重新做工具的成本省了)
+	var difficulty: int = GameSettings.current_difficulty if GameSettings != null else 1
+	var wood_kit := {"wood_sword": true, "wood_pickaxe": true, "wood_axe": true}
+	if inv_node != null and inv_node.inventory != null and difficulty > 0:
 		var inv = inv_node.inventory
 		for i in inv.slots.size():
 			var s = inv.slots[i]
 			if s == null:
 				continue
-			_spawn_death_drop(s.item_id, s.count, death_pos)
-			inv.slots[i] = null
-		# 盔甲也跟着掉 (Terraria 风, 玩家死了脱光). 装备槽清空.
+			if difficulty == 2:
+				# 困难: 木剑/木镐/木斧 保留, 其余全掉
+				if wood_kit.has(s.item_id):
+					continue
+				_spawn_death_drop(s.item_id, s.count, death_pos)
+				inv.slots[i] = null
+			else:
+				# 普通: 一堆掉一半 (向下取整, 5 件 → 掉 2 留 3, 1 件 → 全留)
+				var drop_count: int = int(s.count) / 2
+				if drop_count <= 0:
+					continue
+				_spawn_death_drop(s.item_id, drop_count, death_pos)
+				s.count = int(s.count) - drop_count
+				if s.count <= 0:
+					inv.slots[i] = null
+		# 盔甲掉落:
+		#   普通: 每件 50% 几率掉
+		#   困难: 全掉 (木头三件套是工具, 盔甲不算)
 		if inv_node.has_method("get_armor") and inv_node.has_method("set_armor"):
 			for slot_kind in ["helmet", "chest", "pants"]:
 				var armor = inv_node.get_armor(slot_kind)
-				if armor != null:
+				if armor == null:
+					continue
+				var should_drop: bool = (difficulty == 2) or (difficulty == 1 and randf() < 0.5)
+				if should_drop:
 					_spawn_death_drop(armor.item_id, 1, death_pos)
 					inv_node.set_armor(slot_kind, null)
 		if inv_node.has_signal("inventory_changed"):
