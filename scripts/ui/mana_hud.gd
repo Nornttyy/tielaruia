@@ -107,8 +107,8 @@ func _draw() -> void:
 			var frac: float = float(fill_mana) / float(MANA_PER_STAR)
 			var fill_size: float = STAR_SLOT_PX * FILL_MAX_RATIO * frac
 			fill_size = max(4.0, fill_size)
-			_draw_star(center, fill_size, COLOR_FILL)
-			# 像素风去掉抗锯齿圆形高光
+			# fill 大于一半时加 shine (光泽), 小血量时只有主色不抢镜
+			_draw_star(center, fill_size, COLOR_FILL, frac > 0.5)
 
 
 # 12x12 像素 5 角星 pattern. X = 填色, . = 透明.
@@ -128,12 +128,28 @@ const STAR_PIXELS := [
 	"X..........X",
 	"............",
 ]
+# 光泽 (shine) pattern — 跟主 pattern 同 grid, 在主色之上画几颗高光.
+# 上左 + 顶尖几颗浅色像素让星看起来"反光", 跟 Terraria 风格魔力星呼应.
+const STAR_SHINE_PIXELS := [
+	"............",
+	"............",
+	".....H......",
+	".HHH........",
+	"..H.........",
+	"............",
+	"............",
+	"............",
+	"............",
+	"............",
+	"............",
+	"............",
+]
 const STAR_GRID := 12
 
 
 # 像素 5 角星: 每个 cell 画 draw_rect. size = 星总宽, cell = size/12.
-# 跟其他方块美术一致 chunky 像素风, 不抗锯齿.
-func _draw_star(center: Vector2, size: float, color: Color) -> void:
+# with_shine=true 时 fill 上面再叠 STAR_SHINE_PIXELS 高光 (只对最亮的填充层用).
+func _draw_star(center: Vector2, size: float, color: Color, with_shine: bool = false) -> void:
 	if size <= 0.0:
 		return
 	var cell: float = size / float(STAR_GRID)
@@ -145,3 +161,9 @@ func _draw_star(center: Vector2, size: float, color: Color) -> void:
 		for col in STAR_GRID:
 			if s[col] == "X":
 				draw_rect(Rect2(origin_x + col * cell, origin_y + row * cell, cell_draw, cell_draw), color)
+	if with_shine:
+		for row in STAR_GRID:
+			var sr: String = STAR_SHINE_PIXELS[row]
+			for col in STAR_GRID:
+				if sr[col] == "H":
+					draw_rect(Rect2(origin_x + col * cell, origin_y + row * cell, cell_draw, cell_draw), COLOR_HIGHLIGHT)
