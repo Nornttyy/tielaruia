@@ -102,6 +102,11 @@ func _ready() -> void:
 	var sp = SparkPoolClass.new()
 	sp.name = "SparkPool"
 	$EffectsRoot.add_child(sp)
+	# 灰尘对象池: 跳/落/走 dust 共用. 跳一下 4 颗 / 落一下 6 颗, 无池就卡帧
+	var DustPoolClass = preload("res://scripts/fx/dust_pool.gd")
+	var dp = DustPoolClass.new()
+	dp.name = "DustPool"
+	$EffectsRoot.add_child(dp)
 	# 怪物血条: 任何进 entities_root 且有 current_health 的非玩家实体自动挂血条.
 	# 一处集中 — 不用每个 entity.gd 单独加.
 	entities_root.child_entered_tree.connect(_on_entity_added_for_bar)

@@ -46,21 +46,28 @@ func spawn_place_bounce(tile_coord: Vector2i, tile_id: int = -1) -> void:
 
 
 func spawn_jump_dust(world_pos: Vector2) -> void:
-	var parent: Node = _root()
+	var pool: Node = get_tree().get_first_node_in_group("dust_pool")
 	for i in 4:
+		var pos: Vector2 = world_pos + Vector2(randf_range(-5, 5), randf_range(-2, 2))
+		var scl: float = randf_range(0.7, 1.0)
+		# 池: 几乎零开销复用. 兜底 instantiate (池满 / 池没建)
+		if pool != null and pool.request_dust(pos, scl):
+			continue
 		var d = DustParticleScene.instantiate()
-		parent.add_child(d)
-		d.setup(world_pos + Vector2(randf_range(-5, 5), randf_range(-2, 2)),
-			randf_range(0.7, 1.0))
+		_root().add_child(d)
+		d.setup(pos, scl)
 
 
 func spawn_land_dust(world_pos: Vector2) -> void:
-	var parent: Node = _root()
+	var pool: Node = get_tree().get_first_node_in_group("dust_pool")
 	for i in 6:
+		var pos: Vector2 = world_pos + Vector2(randf_range(-8, 8), randf_range(-1, 1))
+		var scl: float = randf_range(1.0, 1.4)
+		if pool != null and pool.request_dust(pos, scl):
+			continue
 		var d = DustParticleScene.instantiate()
-		parent.add_child(d)
-		d.setup(world_pos + Vector2(randf_range(-8, 8), randf_range(-1, 1)),
-			randf_range(1.0, 1.4))
+		_root().add_child(d)
+		d.setup(pos, scl)
 
 
 func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1, 0.9, 0.5)) -> void:
@@ -87,10 +94,13 @@ func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1
 
 
 func spawn_walk_puff(world_pos: Vector2) -> void:
-	var parent: Node = _root()
+	var pos: Vector2 = world_pos + Vector2(randf_range(-2, 2), 0)
+	var pool: Node = get_tree().get_first_node_in_group("dust_pool")
+	if pool != null and pool.request_dust(pos, 0.6):
+		return
 	var d = DustParticleScene.instantiate()
-	parent.add_child(d)
-	d.setup(world_pos + Vector2(randf_range(-2, 2), 0), 0.6)
+	_root().add_child(d)
+	d.setup(pos, 0.6)
 
 
 # 爆炸 (死人箱触发): 红黄火光粒子 30 颗向四面散开 + 黑烟 + 飞溅木屑碎片.
