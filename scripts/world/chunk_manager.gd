@@ -33,6 +33,28 @@ func setup(p_seed: int) -> void:
 	add_to_group("chunk_manager")
 
 
+# 联机里把水晶按 deterministic 哈希分配 owner (0 或 1).
+# 单人 → 全部 owner 0. 联机两个玩家都用同一公式 → 算出一致结果, 不需同步.
+# 用 (x*73 + y*31) % 2 做位置 → owner 索引. 73/31 是素数减少 pattern.
+static func crystal_owner_for_pos(pos: Vector2i) -> int:
+	return (int(pos.x) * 73 + int(pos.y) * 31) & 1
+
+
+# 本地玩家在网络里的 peer 索引: host = 0, client = 1. 单人也 0.
+# 这跟 crystal_owner_for_pos 对得上 — host 看到 owner=0 的水晶, client 看到 owner=1 的.
+func local_peer_idx() -> int:
+	if NetworkManager == null or not NetworkManager.has_method("connected") or not NetworkManager.connected():
+		return 0
+	return 0 if NetworkManager.is_host else 1
+
+
+# 这颗水晶是不是属于本地玩家? 单人永远 true. 联机时按 owner 哈希分.
+func is_my_crystal(pos: Vector2i) -> bool:
+	if NetworkManager == null or not NetworkManager.has_method("connected") or not NetworkManager.connected():
+		return true   # 单人, 都是自己的
+	return crystal_owner_for_pos(pos) == local_peer_idx()
+
+
 # 当前世界水晶上限 = 15 × 玩家数. NetworkManager 不存在或没连 = 单人 = 1 个玩家.
 # 联机 PeerJS 是 2 人, connected() true 时返 2.
 func current_crystal_cap() -> int:

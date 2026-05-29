@@ -596,6 +596,10 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				# 修存档 bug: 挖空 tile 必须 erase_cell, 不能 skip — 不然 reload 时
 				# terrain_layer 还留着老地形, 玩家卡块.
 				terrain_layer.erase_cell(pos)
+			elif (tid == Tiles.LIFE_CRYSTAL or tid == Tiles.MANA_CRYSTAL) and not chunk_manager.is_my_crystal(pos):
+				# 联机: 别人家的水晶, 本地渲染成 AIR (看不到 + 走得过 + 挖不动).
+				# chunk.tiles[] 仍然是 LIFE_CRYSTAL — owner 那边能挖能吃.
+				terrain_layer.erase_cell(pos)
 			elif EdgeTemplates.FAMILY_OF.has(tid):
 				var q := Autotile.make_terrain_query(tid, chunk_manager)
 				Autotile.refresh_tile(terrain_layer, pos, tid, q)
@@ -1017,6 +1021,9 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 	var pos := Vector2i(x, y)
 	# 同步 TileMapLayer (chunk_manager 数据已写, 但视觉需另外刷)
 	if tile_id == Tiles.AIR:
+		terrain_layer.set_cell(pos, -1)
+	elif (tile_id == Tiles.LIFE_CRYSTAL or tile_id == Tiles.MANA_CRYSTAL) and not chunk_manager.is_my_crystal(pos):
+		# 联机: 别人家的水晶, 本地不显示
 		terrain_layer.set_cell(pos, -1)
 	elif EdgeTemplates.FAMILY_OF.has(tile_id):
 		var q := Autotile.make_terrain_query(tile_id, chunk_manager)

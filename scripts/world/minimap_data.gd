@@ -32,10 +32,15 @@ func mark(world_x: int, world_y: int, tile_id: int) -> void:
 
 
 # 标记矩形范围 (玩家移动时一次刷一片). 用 chunk_mgr 查每格 tile_id 写入缓存.
+# 联机: 别人家的水晶在小地图也别露馅, 替换成 AIR.
 func mark_rect(chunk_mgr: Node, world_x0: int, world_y0: int, world_x1: int, world_y1: int) -> void:
 	for wx in range(world_x0, world_x1 + 1):
 		for wy in range(world_y0, world_y1 + 1):
 			var tid: int = chunk_mgr.get_tile(wx, wy)
+			if (tid == Tiles.LIFE_CRYSTAL or tid == Tiles.MANA_CRYSTAL) \
+					and chunk_mgr.has_method("is_my_crystal") \
+					and not chunk_mgr.is_my_crystal(Vector2i(wx, wy)):
+				tid = Tiles.AIR
 			mark(wx, wy, tid)
 
 
