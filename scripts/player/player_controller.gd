@@ -3,6 +3,7 @@
 extends CharacterBody2D
 
 const Chunk = preload("res://scripts/world/chunk.gd")
+const ItemsArt = preload("res://scripts/art/items_art.gd")
 const CAVE_DEPTH_THRESHOLD := 10   # 玩家离原始地表 >10 格才算"地下" (即使顶上方块挖掉了)
 
 const SPEED := 105.0
@@ -58,13 +59,22 @@ var _music_timer: float = 0.0
 var _sun_timer: float = 0.0
 var _cached_chunk_manager = null   # 第一次 _process 查到后缓存, 避免反复 get_tree 查 group
 
-# 钩爪状态: 持 grappling_hook 时右键发射, 锁定到第一个实心方块, 拉玩家过去
+# 钩爪状态: 持 grappling_hook 时右键发射. 状态机:
+# - flying: 钩头沿 dir 飞 (HOOK_FLY_SPEED). 撞实心 tile → active. 飞超 max_dist → 释放.
+# - active: 玩家被匀速拉向锚点. 距锚 < HOOK_RELEASE_DIST 自动脱; jump 中断.
 const HOOK_MAX_DIST_TILES := 15           # 最远射程 15 tile
+const HOOK_FLY_SPEED := 360.0             # 钩头飞行速度 px/s (比拉拽快, 才看得清钩)
 const HOOK_PULL_SPEED := 210.0            # 拉过去的速度 px/s
 const HOOK_RELEASE_DIST := 7.5           # 距锚点 < 这个值就脱钩 (避免抖)
 var _hook_active: bool = false
 var _hook_anchor: Vector2 = Vector2.ZERO
 var _hook_line: Line2D = null
+# 飞行阶段
+var _hook_flying: bool = false
+var _hook_tip: Vector2 = Vector2.ZERO
+var _hook_dir: Vector2 = Vector2.ZERO
+var _hook_origin: Vector2 = Vector2.ZERO
+var _hook_head: Sprite2D = null
 
 
 func _ready() -> void:
@@ -242,6 +252,10 @@ func _physics_process(delta: float) -> void:
 	if _hook_active:
 		_update_hook_pull(delta)
 		return
+	# 钩头飞行中: 玩家继续受重力, 钩头独立前进 + 撞墙检测
+	if _hook_flying:
+		_update_hook_flying(delta)
+		return
 	# 受击 lockout: 保留击退速度, 玩家暂失输入控制
 	if _hurt_timer > 0.0:
 		_hurt_timer = max(0.0, _hurt_timer - delta)
@@ -403,45 +417,33 @@ func shake(amount: float = 4.0) -> void:
 # ===== 钩爪 (grappling_hook) =====
 
 # 由 player_action 在右键 + 持钩爪时调. target_world = 鼠标对应的世界坐标.
-# 射线从玩家中心出发, 沿方向每 4 px 步进, 找到第一个实心 tile 当锚点.
+# 进入飞行阶段: 钩头从玩家中心朝鼠标方向飞, 撞实心 tile 锚定 + 切到拉拽.
+# 已在飞行 / 已锚定时再调 = 立刻释放 (玩家中断).
 func fire_grappling_hook(target_world: Vector2) -> void:
-	if _hook_active:
+	if _hook_active or _hook_flying:
 		_release_hook()
-		return
-	var cm = _chunk_manager()
-	if cm == null:
 		return
 	var origin: Vector2 = global_position
 	var dir: Vector2 = (target_world - origin).normalized()
 	if dir.length() < 0.01:
 		return
-	var max_dist: float = HOOK_MAX_DIST_TILES * TILE_SIZE
-	var step: float = 4.0
-	var t: float = 0.0
-	while t < max_dist:
-		t += step
-		var p: Vector2 = origin + dir * t
-		var tx: int = int(floor(p.x / TILE_SIZE))
-		var ty: int = int(floor(p.y / TILE_SIZE))
-		var tid: int = cm.get_tile(tx, ty)
-		if tid != -1 and Tiles.is_solid(tid):
-			# 锚到 tile 中心
-			_hook_anchor = Vector2(tx * TILE_SIZE + TILE_SIZE / 2.0, ty * TILE_SIZE + TILE_SIZE / 2.0)
-			_hook_active = true
-			_spawn_hook_line()
-			SfxBank.play("hurt", 0.20)   # 临时复用音效 (没专门钩爪音)
-			return
-	# 没打到任何 tile → 不发钩
+	_hook_origin = origin
+	_hook_dir = dir
+	_hook_tip = origin
+	_hook_flying = true
+	_spawn_hook_line(origin, origin)
+	_spawn_hook_head(origin, dir)
+	SfxBank.play("swing", 0.10)   # 钩出: 甩绳感
 
 
-func _spawn_hook_line() -> void:
+func _spawn_hook_line(p_from: Vector2, p_to: Vector2) -> void:
 	if _hook_line != null and is_instance_valid(_hook_line):
 		_hook_line.queue_free()
 	_hook_line = Line2D.new()
 	_hook_line.width = 1.0
 	_hook_line.default_color = Color(0.55, 0.4, 0.25)   # 麻绳棕
-	_hook_line.add_point(global_position)
-	_hook_line.add_point(_hook_anchor)
+	_hook_line.add_point(p_from)
+	_hook_line.add_point(p_to)
 	# 加到 world (effects_root) 上方, top-level 避免被玩家 transform 跟着动
 	_hook_line.top_level = true
 	var root: Node = get_tree().get_first_node_in_group("effects_root")
@@ -449,6 +451,23 @@ func _spawn_hook_line() -> void:
 		root = get_parent()
 	if root != null:
 		root.add_child(_hook_line)
+
+
+# 钩头 sprite: 小钩子图, rotation 跟飞行方向; 撞墙后停在锚点
+func _spawn_hook_head(p_pos: Vector2, p_dir: Vector2) -> void:
+	if _hook_head != null and is_instance_valid(_hook_head):
+		_hook_head.queue_free()
+	_hook_head = Sprite2D.new()
+	_hook_head.texture = ItemsArt.get_hook_head_texture()
+	_hook_head.centered = true
+	_hook_head.top_level = true
+	_hook_head.global_position = p_pos
+	_hook_head.rotation = p_dir.angle()
+	var root: Node = get_tree().get_first_node_in_group("effects_root")
+	if root == null:
+		root = get_parent()
+	if root != null:
+		root.add_child(_hook_head)
 
 
 func _update_hook_pull(delta: float) -> void:
@@ -464,6 +483,7 @@ func _update_hook_pull(delta: float) -> void:
 		# 到了 → 脱钩, 停一下让玩家能继续跳
 		_release_hook()
 		velocity = Vector2.ZERO
+		SfxBank.play("land", 0.10)   # 拉到了的"咚"
 		return
 	# 朝锚点匀速冲, move_and_slide 仍处理碰撞 (撞墙不穿)
 	velocity = to_anchor.normalized() * HOOK_PULL_SPEED
@@ -472,11 +492,60 @@ func _update_hook_pull(delta: float) -> void:
 		_hook_line.set_point_position(0, global_position)
 
 
+# 钩头飞行阶段每帧: 推 _hook_tip + 撞墙检测 + 飞超 max_dist 释放.
+# 撞实心 → 锁定锚点, 切换到 active (玩家被拉过去).
+func _update_hook_flying(delta: float) -> void:
+	# 玩家按 jump 主动取消
+	if Input.is_action_just_pressed("jump"):
+		_release_hook()
+		return
+	# 普通重力照常吃 (玩家飞钩时还得跌)
+	if not is_on_floor():
+		velocity.y += GRAVITY * delta
+	velocity.x = move_toward(velocity.x, 0.0, 600.0 * delta)
+	move_and_slide()
+	# 推进钩头
+	_hook_tip += _hook_dir * HOOK_FLY_SPEED * delta
+	# 飞超 max_dist → miss, 释放
+	if _hook_tip.distance_to(_hook_origin) > HOOK_MAX_DIST_TILES * TILE_SIZE:
+		_release_hook()
+		return
+	# 撞实心 tile?
+	var cm = _chunk_manager()
+	if cm != null:
+		var tx: int = int(floor(_hook_tip.x / TILE_SIZE))
+		var ty: int = int(floor(_hook_tip.y / TILE_SIZE))
+		var tid: int = cm.get_tile(tx, ty)
+		if tid != -1 and Tiles.is_solid(tid):
+			# 锚到 tile 中心 → 切换到 active
+			_hook_anchor = Vector2(tx * TILE_SIZE + TILE_SIZE / 2.0, ty * TILE_SIZE + TILE_SIZE / 2.0)
+			_hook_flying = false
+			_hook_active = true
+			# 钩头停在锚点
+			if _hook_head != null and is_instance_valid(_hook_head):
+				_hook_head.global_position = _hook_anchor
+			# 绳子尾端也跟到锚点
+			if _hook_line != null and is_instance_valid(_hook_line):
+				_hook_line.set_point_position(1, _hook_anchor)
+			SfxBank.play("place", 0.15)   # 钩中: 短金属敲击感
+			return
+	# 没撞 → 更新视觉
+	if _hook_head != null and is_instance_valid(_hook_head):
+		_hook_head.global_position = _hook_tip
+	if _hook_line != null and is_instance_valid(_hook_line):
+		_hook_line.set_point_position(0, global_position)
+		_hook_line.set_point_position(1, _hook_tip)
+
+
 func _release_hook() -> void:
 	_hook_active = false
+	_hook_flying = false
 	if _hook_line != null and is_instance_valid(_hook_line):
 		_hook_line.queue_free()
 	_hook_line = null
+	if _hook_head != null and is_instance_valid(_hook_head):
+		_hook_head.queue_free()
+	_hook_head = null
 
 
 func _chunk_manager():

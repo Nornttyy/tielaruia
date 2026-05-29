@@ -1441,3 +1441,29 @@ static func get_icon(item_id: String) -> ImageTexture:
 
 static func has_icon(item_id: String) -> bool:
 	return _ICONS.has(item_id)
+
+
+# 钩爪飞行时显示的小钩头 (16x16, 默认朝右; sprite 用 rotation 跟方向).
+# 钩尖朝右上, 后面带一段绳子 (会被 Line2D 接上, 这里只画头).
+const _HOOK_HEAD := [
+	"................",
+	"................",
+	"................",
+	"..........nKn...",
+	"..........nKn...",
+	".........nKBn...",
+	".........nBBn...",
+	"........nKBn....",
+	".......nKBn.....",
+	"......nKBn......",
+	".....nKBn.......",
+	"....nBBn........",
+	"...nBn..........",
+	"...nn...........",
+	"................",
+	"................",
+]
+
+
+static func get_hook_head_texture() -> ImageTexture:
+	return PixelArt.grid_to_texture(_HOOK_HEAD, PALETTE)
