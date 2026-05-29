@@ -53,12 +53,13 @@ func _check_lava_damage() -> void:
 	var foot_y: int = int(floor(player.global_position.y / TILE_SIZE)) - 1
 	var head_y: int = foot_y - 1
 	if cm.get_tile(tile_x, foot_y) == Tiles.LAVA or cm.get_tile(tile_x, head_y) == Tiles.LAVA:
-		# 直接扣血不进 iframe (环境伤害每 0.5s 一跳)
+		# 直接扣血不进 iframe (环境伤害每 0.5s 一跳). clamp 飘字真实扣血.
+		var lava_loss: int = min(LAVA_DAMAGE_PER_TICK, current_health)
 		current_health = max(0, current_health - LAVA_DAMAGE_PER_TICK)
 		health_changed.emit(current_health, MAX_HEALTH)
 		damaged.emit(LAVA_DAMAGE_PER_TICK, player.global_position)
 		Effects.spawn_damage_number(player.global_position + Vector2(0, -8),
-				LAVA_DAMAGE_PER_TICK, Color(1.0, 0.4, 0.2))
+				lava_loss, Color(1.0, 0.4, 0.2))
 		if current_health == 0:
 			died.emit()
 
@@ -127,6 +128,8 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 		var defense: int = inv.total_defense()
 		raw_amount -= int(floor(float(defense) * 0.5))
 	var final_amount: int = max(1, raw_amount)
+	# 飘字显示真实扣血 (clamp 到剩余 HP), 防最后一击显示超额
+	var displayed_loss: int = min(final_amount, current_health)
 	current_health = max(0, current_health - final_amount)
 	_iframe_timer = IFRAMES_SEC
 	# 击退: 沿 (玩家位置 - source) 方向 + 向上 0.4 分量, 设玩家 velocity
@@ -140,11 +143,11 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 			dir = dir.normalized()
 			(player_node as CharacterBody2D).velocity = dir * knockback
 	damaged.emit(final_amount, source_pos)
-	# 玩家受伤飘暗红字 (跟打怪暖黄字区分)
+	# 玩家受伤飘暗红字 (跟打怪暖黄字区分). 用 displayed_loss 显真实扣血.
 	var player_node: Node = get_parent()
 	if player_node is Node2D:
 		var pos: Vector2 = (player_node as Node2D).global_position + Vector2(0, -9)
-		Effects.spawn_damage_number(pos, final_amount, Color(1, 0.35, 0.35))
+		Effects.spawn_damage_number(pos, displayed_loss, Color(1, 0.35, 0.35))
 	SfxBank.play("hurt", 0.08)
 	health_changed.emit(current_health, MAX_HEALTH)
 	if current_health == 0:

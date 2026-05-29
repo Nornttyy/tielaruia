@@ -189,10 +189,11 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	if _iframe_t > 0.0:
 		return false
 	_iframe_t = ENEMY_IFRAME_SEC
+	var actual_loss: int = min(amount, current_health)
 	current_health = max(0, current_health - amount)
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
-	Effects.spawn_damage_number(global_position + Vector2(0, -6), amount)
+	Effects.spawn_damage_number(global_position + Vector2(0, -6), actual_loss)
 	_flee_timer = FLEE_DURATION
 	if source_pos != Vector2.ZERO:
 		_flee_from = source_pos

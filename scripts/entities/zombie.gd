@@ -180,10 +180,12 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	if _iframe_t > 0.0:
 		return false
 	_iframe_t = ENEMY_IFRAME_SEC
+	# 飘字显示真实扣血 (clamp 到剩余 HP), 防最后一击显示超额
+	var actual_loss: int = min(amount, current_health)
 	current_health = max(0, current_health - amount)
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
-	Effects.spawn_damage_number(global_position + Vector2(0, -8), amount)
+	Effects.spawn_damage_number(global_position + Vector2(0, -8), actual_loss)
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var to_self: Vector2 = global_position - source_pos
 		var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()

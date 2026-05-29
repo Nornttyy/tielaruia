@@ -229,11 +229,13 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	_iframe_t = ENEMY_IFRAME_SEC
 	# 被打了 → 激怒, 白天也变敌对
 	_is_provoked = true
+	# 实际扣的血 = 最多扣到 0, 别让超额输出显示在飘字上 (用户反馈"数字跟扣血对不上")
+	var actual_loss: int = min(amount, current_health)
 	current_health = max(0, current_health - amount)
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
-	# 飘字 -N (暖黄, 打怪反馈)
-	Effects.spawn_damage_number(global_position + Vector2(0, -6), amount)
+	# 飘字 -N (暖黄, 打怪反馈) — 显示真实扣血量, 不是 raw amount
+	Effects.spawn_damage_number(global_position + Vector2(0, -6), actual_loss)
 	# 击退: 2D 方向 (target - source) + 向上 0.4 分量; 强度按 knockback 参数 (0 → 不推)
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var to_self: Vector2 = global_position - source_pos
