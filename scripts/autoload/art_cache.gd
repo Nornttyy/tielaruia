@@ -121,6 +121,7 @@ func _build_blocks() -> void:
 		BlocksArt.SANDSTONE,
 		BlocksArt.MANA_CRYSTAL,
 		BlocksArt.BED,
+		BlocksArt.WHEAT_0, BlocksArt.WHEAT_1, BlocksArt.WHEAT_2, BlocksArt.WHEAT_3,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):

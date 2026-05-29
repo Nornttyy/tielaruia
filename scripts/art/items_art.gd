@@ -1382,6 +1382,8 @@ const _ICONS := {
 	"leather": _LEATHER,
 	"wool": _WOOL,
 	"grappling_hook": _GRAPPLING_HOOK,
+	"wheat_seed": _WHEAT_SEED,
+	"wheat": _WHEAT_ITEM,
 	"bone": _BONE,
 	"spider_eye": _SPIDER_EYE,
 	"lens": _LENS,
@@ -1467,3 +1469,45 @@ const _HOOK_HEAD := [
 
 static func get_hook_head_texture() -> ImageTexture:
 	return PixelArt.grid_to_texture(_HOOK_HEAD, PALETTE)
+
+
+# 小麦种子 (3 颗小米粒)
+const _WHEAT_SEED := [
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	".....ZZz........",
+	"....ZZZZz.......",
+	".....zZZ........",
+	"..........zZZ...",
+	".........ZZZZz..",
+	"..........zZZ...",
+	".....ZZz........",
+	"....ZZZZz.......",
+	".....zZZ........",
+	"................",
+]
+
+
+# 小麦 (黄穗 + 绿杆, 食物)
+const _WHEAT_ITEM := [
+	"................",
+	"................",
+	".......ZzZ......",
+	"......ZZZZZ.....",
+	".....ZzZzZz.....",
+	"......ZZZZZ.....",
+	".......ZzZ......",
+	".......L.L......",
+	".......LLL......",
+	"........L.......",
+	".......LLL......",
+	"........L.......",
+	".......LLL......",
+	"........L.......",
+	"........L.......",
+	"................",
+]

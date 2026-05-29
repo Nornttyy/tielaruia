@@ -139,6 +139,9 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 			var wood_armor: String = _pick_armor_piece(rng, "copper")
 			if wood_armor != "":
 				loot[slot_idx] = {"item_id": wood_armor, "count": 1}; slot_idx += 1
+		# 小麦种子 (50% 概率, 1-3 颗) — 菜园起步
+		if rng.randf() < 0.5:
+			loot[slot_idx] = {"item_id": "wheat_seed", "count": rng.randi_range(1, 3)}; slot_idx += 1
 	_chests[tile] = loot
 
 

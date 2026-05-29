@@ -856,6 +856,23 @@ func _update_eat_or_place(delta: float) -> void:
 			player_node.fire_grappling_hook(player_node.get_global_mouse_position())
 		return
 
+	# 持小麦种子 + 右键刚按下 → 鼠标对准 GRASS 上方 AIR → 种 WHEAT_0
+	if slot != null and slot.item_id == "wheat_seed" and just:
+		var terrain_s := _terrain()
+		var aim_t: Vector2i = aim_tile_coord()
+		if terrain_s != null and in_reach(aim_t):
+			var aim_id: int = terrain_s.get_cell_source_id(aim_t)
+			var below: Vector2i = aim_t + Vector2i(0, 1)
+			var below_id: int = terrain_s.get_cell_source_id(below)
+			# 条件: aim 是 AIR (空气), 下面是 GRASS (草地)
+			if aim_id == -1 and below_id == Tiles.GRASS:
+				var w_node_s: Node = terrain_s.get_parent()
+				if w_node_s != null and w_node_s.has_method("_set_tile"):
+					w_node_s._set_tile(aim_t.x, aim_t.y, Tiles.WHEAT_0)
+					inv.consume_current(1)
+					SfxBank.play("place", 0.10)
+		return
+
 	# 右键刚按下 + 鼠标对准的 tile 是 CHEST/GOLD_CHEST/DIAMOND_CHEST → 开箱
 	# (MIMIC_CHEST 走陷阱分支)
 	if just:
