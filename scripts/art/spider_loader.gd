@@ -15,6 +15,10 @@ const FRAME_TOP_SKIP := 1     # 跳过 row 0 (顶部黑线)
 const FRAME_BOTTOM := 41      # 内容高 (跳过 row 0, 保留 shadow)
 const NUM_FRAMES := 5         # 共 5 帧
 const RENDER_SCALE := 0.4     # 缩到 ~16 px, 跟 slime / zombie 同尺寸级别
+# 白色阈值: R/G/B 都 ≥ 240 视为白色 (蛛丝), 透明化.
+# 用户要求: 蛛丝白像素剥掉 (不显示).
+# 用 240 而不是 255: 容忍轻微抗锯齿/压缩失真, 但不误伤亮高光 (一般高光带点色调)
+const WHITE_STRIP_THRESHOLD := 240
 
 
 # 加载并切帧. 返回 dict: {"idle": Array[ImageTexture], "attack": [...], "hurt": [...]}
@@ -34,6 +38,8 @@ static func build_sprite_frames() -> SpriteFrames:
 		var cell: Image = img.get_region(Rect2i(
 			i * FRAME_STRIDE + 1, FRAME_TOP_SKIP,
 			FRAME_CONTENT, FRAME_BOTTOM))
+		# 蛛丝剥离: resize 前先扫白像素 (近白 → alpha 0). resize NEAREST 会保 alpha.
+		_strip_white(cell)
 		cell.resize(out_w, out_h, Image.INTERPOLATE_NEAREST)
 		frames.append(ImageTexture.create_from_image(cell))
 	# 帧映射 (按 description "ready/attack/hurt/growl"):
@@ -67,6 +73,20 @@ static func build_sprite_frames() -> SpriteFrames:
 	sf.set_animation_loop("hurt", false)
 	sf.add_frame("hurt", frames[3])
 	return sf
+
+
+# 扫每个像素, R/G/B 都 ≥ 阈值 → 透明化 (剥蛛丝). 改 img in-place.
+# 仅处理 alpha > 0 的像素, 透明区不动. 灰阶高光会保留 (G != R 等微差).
+static func _strip_white(img: Image) -> void:
+	var w: int = img.get_width()
+	var h: int = img.get_height()
+	for y in h:
+		for x in w:
+			var c: Color = img.get_pixel(x, y)
+			if c.a < 0.01:
+				continue
+			if c.r8 >= WHITE_STRIP_THRESHOLD and c.g8 >= WHITE_STRIP_THRESHOLD and c.b8 >= WHITE_STRIP_THRESHOLD:
+				img.set_pixel(x, y, Color(0, 0, 0, 0))
 
 
 static func _empty_sprite_frames() -> SpriteFrames:
