@@ -51,6 +51,10 @@ func _physics_process(delta: float) -> void:
 		return
 	if _is_dying:
 		return
+	# 地狱边界: 飞到地狱顶 (y=220 格) 以上 20 格就 despawn — 防火魔追玩家飞到地面.
+	if int(floor(global_position.y / TILE_SIZE)) < 200:
+		queue_free()
+		return
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
