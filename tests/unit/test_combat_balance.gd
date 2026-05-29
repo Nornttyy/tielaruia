@@ -32,8 +32,10 @@ func test_baseline_demon_eye():
 
 
 func test_baseline_spider():
-	assert_eq(Spider.BASE_MAX_HEALTH, 35)
+	# 用户调: 蜘蛛太超纲, HP 35→25 + 速度 70→55, 伤害保留 10
+	assert_eq(Spider.BASE_MAX_HEALTH, 25)
 	assert_eq(Spider.CONTACT_DAMAGE, 10)
+	assert_almost_eq(Spider.WALK_SPEED, 55.0, 0.01)
 
 
 func test_baseline_hell_wasp():
