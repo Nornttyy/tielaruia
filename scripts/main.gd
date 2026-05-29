@@ -324,10 +324,22 @@ func _apply_save_data(data: Resource) -> void:
 # 顺便 queue_free MainMenu. 默认固定 seed=42 让测试可重复.
 # 生产路径走 _main_menu.start_game 信号 → _start_game() async 流程.
 # 触屏 UI: 仅手机/平板浏览器显示. main.tscn 加进游戏 nodes 列表方便 _return_to_menu 清理.
+# 用 call_deferred 包裹: 即使 TouchControls _ready 抛错也不阻塞主 loading 流程 (用户反馈手机卡 loading).
 func _add_touch_controls_if_mobile() -> void:
 	if not TouchControlsScript.should_show():
 		return
+	_add_touch_controls_deferred.call_deferred()
+
+
+func _add_touch_controls_deferred() -> void:
+	# 容错: TouchControls 创建/初始化任何环节出错都不影响游戏主流程
+	if TouchControlsScript == null:
+		push_warning("TouchControls 脚本未加载, 跳过触屏 UI")
+		return
 	var touch: CanvasLayer = TouchControlsScript.new()
+	if touch == null:
+		push_warning("TouchControls.new() 返回 null, 跳过触屏 UI")
+		return
 	touch.name = "TouchControls"
 	add_child(touch)
 	_game_nodes.append(touch)

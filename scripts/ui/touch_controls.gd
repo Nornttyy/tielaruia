@@ -96,7 +96,8 @@ static func should_show() -> bool:
 	# 2. HTML5 + 小屏: 视口宽 ≤ 900 或 触屏类型 (iPad/手机浏览器)
 	if OS.get_name() == "Web":
 		# Web 没法直接查触屏, 用窗口宽近似: 手机/iPad 竖屏宽都 ≤ 900
-		var vp_size: Vector2 = DisplayServer.window_get_size()
+		# 注: window_get_size 返 Vector2i, 用 Vector2i 接 (老 Vector2 严格类型可能炸)
+		var vp_size: Vector2i = DisplayServer.window_get_size()
 		if vp_size.x <= 900 or vp_size.y <= 700:
 			return true
 		# 主流台式机宽 > 900, 这里 false
