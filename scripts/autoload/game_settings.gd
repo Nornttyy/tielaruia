@@ -38,6 +38,14 @@ func pyramid_count_range() -> Array:
 		2: return [3, 5]      # 大: 3-5 个
 		_: return [2, 3]      # 中: 2-3 个 (现行)
 
+
+# 世纪树数量: 小 1 / 中 1-2 / 大 2-3 (比金字塔少, 因为更稀有的地标)
+func world_tree_count_range() -> Array:
+	match current_world_size:
+		0: return [1, 1]
+		2: return [2, 3]
+		_: return [1, 2]
+
 # ===== 图形开关 (用户在设置面板里勾选, 持久化) =====
 # show_rain: 下雨粒子, 关掉省 GPU
 var show_rain: bool = true:

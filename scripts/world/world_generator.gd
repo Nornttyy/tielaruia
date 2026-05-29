@@ -1327,8 +1327,9 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 
 
 # ===== 世纪树 (World Tree) =====
-# 选 1 个 forest biome chunk (离 spawn 至少 2 chunk 远) 当世纪树位置. 同 seed 必定同 chunk.
-static func _world_tree_chunk(world_seed: int, biome_centers: Dictionary) -> int:
+# 选 N 个 forest biome chunk 当世纪树位置 (N 跟 world_size 走, 小 1 / 中 1-2 / 大 2-3).
+# 同 seed 必定同位置 (deterministic).
+static func _world_tree_chunks(world_seed: int, biome_centers: Dictionary) -> Array:
 	var forest_chunks: Array = []
 	var scan_range: Array = _scan_chunk_range()
 	for cx in range(scan_range[0], scan_range[1]):
@@ -1338,10 +1339,22 @@ static func _world_tree_chunk(world_seed: int, biome_centers: Dictionary) -> int
 		if _biome_at_x(chunk_center_x, biome_centers) == BIOME_FOREST:
 			forest_chunks.append(cx)
 	if forest_chunks.is_empty():
-		return -99999   # 哨兵 — 没找到合适 chunk (理论不会发生 — forest 至少 1 个)
+		return []
+	# 数量由 world_size 控
+	var count_range: Array = [1, 2]
+	if Engine.get_main_loop() != null and Engine.get_main_loop().get_root().get_node_or_null("GameSettings") != null:
+		count_range = GameSettings.world_tree_count_range()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = world_seed + 0xfeed7e3e   # "feed tree" 派生 magic
-	return forest_chunks[rng.randi() % forest_chunks.size()]
+	var target_count: int = rng.randi_range(count_range[0], count_range[1])
+	var num: int = min(target_count, forest_chunks.size())
+	# Fisher-Yates shuffle 选前 num
+	for i in range(forest_chunks.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = forest_chunks[i]
+		forest_chunks[i] = forest_chunks[j]
+		forest_chunks[j] = tmp
+	return forest_chunks.slice(0, num)
 
 
 # 在该 chunk 中央种 1 棵世纪树. Terraria living tree 风:
@@ -1353,7 +1366,7 @@ static func _world_tree_chunk(world_seed: int, biome_centers: Dictionary) -> int
 # - 50% 概率屋一侧凿 8-14 长 2 高隧道 → 可能撞上 worm 矿洞 → 连接
 static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
 		world_seed: int, chunk_x: int, chunk_width: int, height: int, biome_centers: Dictionary) -> void:
-	if chunk_x != _world_tree_chunk(world_seed, biome_centers):
+	if not _world_tree_chunks(world_seed, biome_centers).has(chunk_x):
 		return
 	var chunk_start: int = chunk_x * chunk_width
 	var x_center_local: int = chunk_width / 2
