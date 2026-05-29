@@ -71,7 +71,7 @@ func _on_changed(cur: int, maximum: int) -> void:
 # 把 "当前/上限" 数字同步到右上角 label. cur 改变 / max 改变都调.
 func _update_label() -> void:
 	if _hp_label != null:
-		_hp_label.text = "%d / %d" % [_cur, _max]
+		_hp_label.text = "血 %d / %d" % [_cur, _max]
 
 
 # 根据当前 _max 计算总心数 + 行数, 更新 custom_minimum_size.

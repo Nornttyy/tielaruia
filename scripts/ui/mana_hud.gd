@@ -68,7 +68,7 @@ func _on_changed(cur: int, maximum: int) -> void:
 
 func _update_label() -> void:
 	if _mana_label != null:
-		_mana_label.text = "%d / %d" % [_cur, _max]
+		_mana_label.text = "魔 %d / %d" % [_cur, _max]
 
 
 func _update_min_size() -> void:
