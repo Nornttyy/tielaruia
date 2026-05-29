@@ -101,30 +101,41 @@ func _draw() -> void:
 		_draw_heart(center, HEART_SLOT_PX * BORDER_SIZE_RATIO, COLOR_BORDER)
 		# 空心底
 		_draw_heart(center, HEART_SLOT_PX * EMPTY_SIZE_RATIO, COLOR_EMPTY)
-		# 红色填充, 按 fraction 平滑缩
+		# 红色填充, 按 fraction 缩 (像素 grid, 离散变化)
 		var fill_hp: int = clamp(_cur - i * HP_PER_HEART, 0, HP_PER_HEART)
 		if fill_hp > 0:
 			var frac: float = float(fill_hp) / float(HP_PER_HEART)
 			var fill_size: float = HEART_SLOT_PX * FILL_MAX_RATIO * frac
 			fill_size = max(4.0, fill_size)
 			_draw_heart(center, fill_size, COLOR_FILL)
-			if frac > 0.3:
-				var hl_size: float = fill_size * HIGHLIGHT_SIZE_RATIO * 2.0
-				var hl_offset := HIGHLIGHT_OFFSET * fill_size
-				draw_circle(center + hl_offset, hl_size * 0.5, COLOR_HIGHLIGHT)
+			# 像素风去掉抗锯齿圆形高光 (跟 chunky pixel 不和谐)
 
 
-# 程序绘制心: 两个圆瓣 + 底部倒三角. size 是心的"全宽". 缩任意大小都平滑.
+# 8x8 像素心 pattern. X = 填色, . = 透明 (跟游戏其他像素艺术风格一致).
+const HEART_PIXELS := [
+	".XX..XX.",
+	"XXXXXXXX",
+	"XXXXXXXX",
+	"XXXXXXXX",
+	".XXXXXX.",
+	"..XXXX..",
+	"...XX...",
+	"........",
+]
+
+
+# 像素心: 每个 cell 画 draw_rect. size = 心总宽, cell = size/8.
+# 跟其他方块美术一致 chunky 像素风, 不抗锯齿.
 func _draw_heart(center: Vector2, size: float, color: Color) -> void:
 	if size <= 0.0:
 		return
-	var lobe_radius: float = size * 0.28
-	var lobe_offset_x: float = size * 0.22
-	var lobe_offset_y: float = -size * 0.16
-	draw_circle(center + Vector2(-lobe_offset_x, lobe_offset_y), lobe_radius, color)
-	draw_circle(center + Vector2(lobe_offset_x, lobe_offset_y), lobe_radius, color)
-	var tri_top_y: float = center.y + lobe_offset_y
-	var tri_left := Vector2(center.x - lobe_offset_x - lobe_radius * 0.85, tri_top_y)
-	var tri_right := Vector2(center.x + lobe_offset_x + lobe_radius * 0.85, tri_top_y)
-	var tri_bottom := Vector2(center.x, center.y + size * 0.42)
-	draw_colored_polygon(PackedVector2Array([tri_left, tri_right, tri_bottom]), color)
+	var cell: float = size / 8.0
+	var origin_x: float = center.x - size * 0.5
+	var origin_y: float = center.y - size * 0.5
+	# +0.5 cell 防浮点缩放产生 1px 缝
+	var cell_draw: float = cell + 0.5
+	for row in 8:
+		var s: String = HEART_PIXELS[row]
+		for col in 8:
+			if s[col] == "X":
+				draw_rect(Rect2(origin_x + col * cell, origin_y + row * cell, cell_draw, cell_draw), color)

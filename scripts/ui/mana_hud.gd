@@ -101,29 +101,40 @@ func _draw() -> void:
 		_draw_star(center, STAR_SLOT_PX * BORDER_SIZE_RATIO, COLOR_BORDER)
 		# 空星底
 		_draw_star(center, STAR_SLOT_PX * EMPTY_SIZE_RATIO, COLOR_EMPTY)
-		# 蓝紫填充, 按 fraction 平滑缩
+		# 蓝紫填充, 按 fraction 缩 (像素 grid)
 		var fill_mana: int = clamp(_cur - i * MANA_PER_STAR, 0, MANA_PER_STAR)
 		if fill_mana > 0:
 			var frac: float = float(fill_mana) / float(MANA_PER_STAR)
 			var fill_size: float = STAR_SLOT_PX * FILL_MAX_RATIO * frac
 			fill_size = max(4.0, fill_size)
 			_draw_star(center, fill_size, COLOR_FILL)
-			if frac > 0.3:
-				var hl_size: float = fill_size * HIGHLIGHT_SIZE_RATIO * 2.0
-				var hl_offset := HIGHLIGHT_OFFSET * fill_size
-				draw_circle(center + hl_offset, hl_size * 0.5, COLOR_HIGHLIGHT)
+			# 像素风去掉抗锯齿圆形高光
 
 
-# 程序绘制 5 角星. size = 外接圆 "直径". 缩任意大小都平滑.
-# 5 角星 = 10 个点轮流外/内 半径. 起始朝上 (-90°).
+# 8x8 像素星 pattern. X = 填色, . = 透明. 跟游戏其他像素艺术风格一致.
+const STAR_PIXELS := [
+	"...XX...",
+	"..XXXX..",
+	"XXXXXXXX",
+	".XXXXXX.",
+	"..XXXX..",
+	".XX..XX.",
+	"XX....XX",
+	"........",
+]
+
+
+# 像素星: 每个 cell 画 draw_rect. size = 星总宽, cell = size/8.
+# 跟其他方块美术一致 chunky 像素风, 不抗锯齿.
 func _draw_star(center: Vector2, size: float, color: Color) -> void:
 	if size <= 0.0:
 		return
-	var outer_r: float = size * 0.5
-	var inner_r: float = outer_r * 0.42   # 黄金分割大致
-	var points := PackedVector2Array()
-	for i in 10:
-		var angle: float = -PI / 2.0 + float(i) * PI / 5.0
-		var r: float = outer_r if i % 2 == 0 else inner_r
-		points.append(center + Vector2(cos(angle), sin(angle)) * r)
-	draw_colored_polygon(points, color)
+	var cell: float = size / 8.0
+	var origin_x: float = center.x - size * 0.5
+	var origin_y: float = center.y - size * 0.5
+	var cell_draw: float = cell + 0.5
+	for row in 8:
+		var s: String = STAR_PIXELS[row]
+		for col in 8:
+			if s[col] == "X":
+				draw_rect(Rect2(origin_x + col * cell, origin_y + row * cell, cell_draw, cell_draw), color)
