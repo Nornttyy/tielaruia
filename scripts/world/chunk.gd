@@ -19,6 +19,8 @@ var _first_chest_placed: bool = false   # 第一个 chest 放完后置 true, 后
 var mummy_spawn_spots: Array = []
 # 世纪树地下房间 + 隧道 spawn 蜘蛛位置 (世界坐标 Vector2i)
 var world_tree_spider_spots: Array = []
+# 废弃矿井 spawn 蜘蛛位置 (世界坐标 Vector2i)
+var mineshaft_spider_spots: Array = []
 
 
 func _init(p_chunk_x: int = 0) -> void:

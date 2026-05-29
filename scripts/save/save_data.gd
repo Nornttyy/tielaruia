@@ -38,6 +38,8 @@ const CURRENT_VERSION := 4
 @export var pyramid_chunks_spawned: PackedInt32Array = []
 # 已 spawn 守卫蜘蛛的世纪树 chunk_x 列表 (防存档重读后蜘蛛复活)
 @export var world_tree_chunks_spawned: PackedInt32Array = []
+# 已 spawn 守卫蜘蛛的废弃矿井 chunk_x 列表
+@export var mineshaft_chunks_spawned: PackedInt32Array = []
 # 盔甲槽 (v3): 存 item_id 字符串. 空 = 没装备. count 始终是 1.
 @export var armor_helmet_id: String = ""
 @export var armor_chest_id: String = ""

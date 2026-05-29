@@ -330,6 +330,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 放在普通树之后, 覆盖该位置的小树.
 	_place_world_tree_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height, biome_centers)
 
+	# 废弃矿井: 2-3 个/中世界, 地下深层 30 格水平木走廊 + 木支柱 + 1-2 宝箱 + 蜘蛛.
+	_place_mineshaft_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+
 	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
 	_fill_walls_chunk(c, chunk_heights, chunk_width, height)
 	return c
@@ -1216,6 +1219,15 @@ const WORLD_TREE_SIDE_TUNNEL_MIN_LEN := 8     # 隧道最少长度 (tile)
 const WORLD_TREE_SIDE_TUNNEL_MAX_LEN := 14    # 隧道最长长度 (tile)
 const WORLD_TREE_MIN_SPAWN_CHUNK := 2    # 离 spawn (chunk 0) 至少 2 chunk 远
 
+# 废弃矿井 (Minecraft mineshaft 风): 地下深层水平走廊 + 木支柱 + 偶发竖井 + 蜘蛛 + 宝箱.
+const MINESHAFT_DEPTH_OFFSET := 30      # surf + 30 tile 深 (地下深层, 远离 surface 矿)
+const MINESHAFT_LENGTH := 36            # 走廊长度 (tile)
+const MINESHAFT_HEIGHT := 3             # 走廊内部高 (3 tile = 玩家 + 头顶)
+const MINESHAFT_PILLAR_SPACING := 5     # 木支柱间距 (每 5 tile 1 柱)
+const MINESHAFT_SHAFT_CHANCE := 0.4     # 40% 概率出垂直竖井
+const MINESHAFT_SHAFT_MIN_LEN := 6
+const MINESHAFT_SHAFT_MAX_LEN := 12
+
 # 给定 world_seed, 返回 2-3 个 chunk_x (有金字塔的, 都在沙漠区).
 # 先扫所有 chunk 找沙漠的, 再从中随机选 2-3 个. 保证每世界都有金字塔.
 static func _pyramid_chunks(world_seed: int) -> Array:
@@ -1497,6 +1509,138 @@ static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
 			if spider_lx < 0 or spider_lx >= chunk_width:
 				continue
 			c.world_tree_spider_spots.append(Vector2i(chunk_start + spider_lx, t_floor_y))
+
+
+# ===== 废弃矿井 (Mineshaft) =====
+# Minecraft 风: 地下深层水平走廊 + 木支柱 + 偶发竖井 + 蜘蛛 + 宝箱.
+# 跟金字塔 / 世纪树同样 chunk-selection 模式.
+static func _mineshaft_chunks(world_seed: int) -> Array:
+	var scan_range: Array = _scan_chunk_range()
+	var candidates: Array = []
+	for cx in range(scan_range[0], scan_range[1]):
+		# 离 spawn (chunk 0) ≥ 1 远 (不要长 spawn 脚下), 但不限 biome (地下不分群系)
+		if abs(cx) < 1:
+			continue
+		candidates.append(cx)
+	if candidates.is_empty():
+		return []
+	var count_range: Array = [2, 3]
+	if Engine.get_main_loop() != null and Engine.get_main_loop().get_root().get_node_or_null("GameSettings") != null:
+		count_range = GameSettings.mineshaft_count_range()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = world_seed + 0x319e54af   # mineshaft 派生 magic
+	var target_count: int = rng.randi_range(count_range[0], count_range[1])
+	var num: int = min(target_count, candidates.size())
+	# Fisher-Yates shuffle 选前 num
+	for i in range(candidates.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = candidates[i]
+		candidates[i] = candidates[j]
+		candidates[j] = tmp
+	return candidates.slice(0, num)
+
+
+# 在该 chunk 地下 (surf + 30) 凿 36 tile 水平走廊 + 偶发竖井.
+# 顶部 PLANKS, 木 LOG 支柱每 5 tile 1 根, 走廊 3 高 AIR. 走廊里 1-2 chest + 2-3 蜘蛛 spawn.
+static func _place_mineshaft_chunk(c: Chunk, chunk_heights: Dictionary,
+		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
+	if not _mineshaft_chunks(world_seed).has(chunk_x):
+		return
+	var chunk_start: int = chunk_x * chunk_width
+	var x_center_local: int = chunk_width / 2
+	var world_x_center: int = chunk_start + x_center_local
+	if not chunk_heights.has(world_x_center):
+		return
+	var surf: int = chunk_heights[world_x_center]
+	var corridor_floor_y: int = surf + MINESHAFT_DEPTH_OFFSET
+	# 边界检查: 走廊 + 顶 + 留 1 格余量 不能超 height
+	if corridor_floor_y + 2 >= height - 2:
+		return
+	var half_len: int = MINESHAFT_LENGTH / 2
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _hash3(world_seed, chunk_x, 0xc0a1bea7)
+	# 1) 水平走廊: -half_len..+half_len. 内部 3 高 AIR, 顶 PLANKS, 地 PLANKS
+	# corridor_floor_y = 脚踏 cell (玩家站这, 注意 GDScript y 向下增大)
+	#   y = corridor_floor_y      → 脚踏 AIR
+	#   y = corridor_floor_y - 1  → 腰 AIR
+	#   y = corridor_floor_y - 2  → 头 AIR
+	#   y = corridor_floor_y + 1  → 地板 PLANKS (玩家踩这)
+	#   y = corridor_floor_y - 3  → 顶 PLANKS
+	for dx in range(-half_len, half_len + 1):
+		var lx: int = x_center_local + dx
+		if lx < 0 or lx >= chunk_width:
+			continue
+		# 内部 AIR
+		for dy in range(0, MINESHAFT_HEIGHT):
+			c.tiles[lx][corridor_floor_y - dy] = Tiles.AIR
+		# 地板 PLANKS (玩家踩)
+		if corridor_floor_y + 1 < height:
+			c.tiles[lx][corridor_floor_y + 1] = Tiles.PLANKS
+		# 顶 PLANKS
+		var ceil_y: int = corridor_floor_y - MINESHAFT_HEIGHT
+		if ceil_y >= 0:
+			c.tiles[lx][ceil_y] = Tiles.PLANKS
+	# 2) 木支柱: 每 PILLAR_SPACING tile 1 根 LOG 柱, 高度 = 走廊高 (从顶 PLANKS 到地板 PLANKS 之间)
+	var pillar_top_y: int = corridor_floor_y - MINESHAFT_HEIGHT + 1   # 顶 PLANKS 下一格
+	var pillar_bot_y: int = corridor_floor_y                          # 脚踏 cell (柱底)
+	for dx in range(-half_len, half_len + 1, MINESHAFT_PILLAR_SPACING):
+		var lx: int = x_center_local + dx
+		if lx < 0 or lx >= chunk_width:
+			continue
+		for y in range(pillar_top_y, pillar_bot_y + 1):
+			c.tiles[lx][y] = Tiles.LOG
+	# 3) 1-2 个宝箱 (CHEST 或 GOLD_CHEST), 摆在地板上 (= corridor_floor_y, AIR 行最底)
+	# 避开支柱位置 (dx % PILLAR_SPACING != 0)
+	var chest_count: int = rng.randi_range(1, 2)
+	var chest_xs: Array = []
+	for _i in chest_count:
+		var attempt: int = 0
+		var dx: int = rng.randi_range(-half_len + 2, half_len - 2)
+		while (dx % MINESHAFT_PILLAR_SPACING == 0 or chest_xs.has(dx)) and attempt < 10:
+			dx = rng.randi_range(-half_len + 2, half_len - 2)
+			attempt += 1
+		chest_xs.append(dx)
+		var lx: int = x_center_local + dx
+		if lx < 0 or lx >= chunk_width:
+			continue
+		var ct: int = Tiles.GOLD_CHEST if rng.randf() < 0.35 else Tiles.CHEST
+		c.tiles[lx][corridor_floor_y] = ct
+		c.treasure_spots.append(Vector2i(chunk_start + lx, corridor_floor_y))
+	# 4) 蜘蛛 spawn: 2-3 个, 随机走廊位置 (避开支柱 + chest)
+	var spider_count: int = rng.randi_range(2, 3)
+	for _i in spider_count:
+		var attempt2: int = 0
+		var sdx: int = rng.randi_range(-half_len + 1, half_len - 1)
+		while (sdx % MINESHAFT_PILLAR_SPACING == 0 or chest_xs.has(sdx)) and attempt2 < 10:
+			sdx = rng.randi_range(-half_len + 1, half_len - 1)
+			attempt2 += 1
+		var spider_lx: int = x_center_local + sdx
+		if spider_lx < 0 or spider_lx >= chunk_width:
+			continue
+		c.mineshaft_spider_spots.append(Vector2i(chunk_start + spider_lx, corridor_floor_y))
+	# 5) 偶发竖井 (40% 概率): 走廊中段开一个洞向下 6-12 格 + WOOD_PLATFORM 楼梯
+	if rng.randf() < MINESHAFT_SHAFT_CHANCE:
+		var shaft_dx: int = rng.randi_range(-half_len / 2, half_len / 2)
+		# 避开支柱 + chest
+		var attempt3: int = 0
+		while (shaft_dx % MINESHAFT_PILLAR_SPACING == 0 or chest_xs.has(shaft_dx)) and attempt3 < 10:
+			shaft_dx = rng.randi_range(-half_len / 2, half_len / 2)
+			attempt3 += 1
+		var shaft_lx: int = x_center_local + shaft_dx
+		if shaft_lx >= 0 and shaft_lx < chunk_width:
+			var shaft_len: int = rng.randi_range(MINESHAFT_SHAFT_MIN_LEN, MINESHAFT_SHAFT_MAX_LEN)
+			# 凿地板 + 向下 shaft_len 格 AIR
+			c.tiles[shaft_lx][corridor_floor_y + 1] = Tiles.AIR
+			for d in range(1, shaft_len + 1):
+				var y: int = corridor_floor_y + 1 + d
+				if y >= height - 1:
+					break
+				c.tiles[shaft_lx][y] = Tiles.AIR
+				# 旁边一格 WOOD_PLATFORM (玩家踩着下楼梯)
+				if d % 2 == 0:
+					var step_lx: int = shaft_lx + (1 if d % 4 == 0 else -1)
+					if step_lx >= 0 and step_lx < chunk_width and c.tiles[step_lx][y] != Tiles.AIR:
+						c.tiles[step_lx][y] = Tiles.WOOD_PLATFORM
 
 
 # ===== 瀑布矿洞 =====

@@ -1039,6 +1039,23 @@ func spawn_world_tree_spiders_for_chunk(chunk_x: int, spots: Array) -> void:
 		entities_root.add_child(creature)
 
 
+# 废弃矿井守卫蜘蛛: 同款机制
+var _mineshaft_chunks_spawned: Dictionary = {}   # chunk_x int → true
+func spawn_mineshaft_spiders_for_chunk(chunk_x: int, spots: Array) -> void:
+	if spots.is_empty():
+		return
+	if _mineshaft_chunks_spawned.has(chunk_x):
+		return
+	_mineshaft_chunks_spawned[chunk_x] = true
+	for spot in spots:
+		var creature := SpiderScene.instantiate()
+		creature.global_position = Vector2(
+			spot.x * TILE_SIZE + TILE_SIZE / 2.0,
+			spot.y * TILE_SIZE + TILE_SIZE
+		)
+		entities_root.add_child(creature)
+
+
 # 在玩家附近地表随机刷一个 creature (slime/zombie 共用站位逻辑)
 func _spawn_surface_creature(scene: PackedScene) -> void:
 	var player := get_player()

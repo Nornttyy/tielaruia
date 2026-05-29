@@ -118,6 +118,11 @@ func _load_chunk(cx: int) -> void:
 		var world_node2: Node = get_tree().get_first_node_in_group("world")
 		if world_node2 != null and world_node2.has_method("spawn_world_tree_spiders_for_chunk"):
 			world_node2.spawn_world_tree_spiders_for_chunk(cx, c.world_tree_spider_spots)
+	# 废弃矿井守卫蜘蛛: 同款机制
+	if not c.mineshaft_spider_spots.is_empty():
+		var world_node3: Node = get_tree().get_first_node_in_group("world")
+		if world_node3 != null and world_node3.has_method("spawn_mineshaft_spiders_for_chunk"):
+			world_node3.spawn_mineshaft_spiders_for_chunk(cx, c.mineshaft_spider_spots)
 	_loaded[cx] = c
 	chunk_loaded.emit(c)
 
