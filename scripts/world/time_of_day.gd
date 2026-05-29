@@ -22,10 +22,12 @@ const DUSK_SKY := Color(0.85, 0.55, 0.40)     # 橙红
 const NIGHT_SKY := Color(0.04, 0.05, 0.12)    # 深蓝紫
 
 var time: float = 0.35  # 启动从早晨开始
+# 时间流速倍数. 默认 1.0 (正常). 玩家上床睡觉时 world.gd 调高到 10.0 加速跳夜.
+var time_multiplier: float = 1.0
 
 
 func _process(delta: float) -> void:
-	time += delta / DAY_DURATION_SEC
+	time += delta * time_multiplier / DAY_DURATION_SEC
 	if time >= 1.0:
 		time -= 1.0
 

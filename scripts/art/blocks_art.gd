@@ -40,6 +40,7 @@ const LIFE_CRYSTAL := 61    # 生命水晶 (用户加, _PATTERN_MAP 引用了, �
 const HELL_ALLOY_ORE := 62  # 地狱合金矿 (深紫黑 + 银闪点)
 const SANDSTONE := 63       # 砂岩 (暖黄, 有层纹, 金字塔骨架)
 const MANA_CRYSTAL := 64    # 魔力水晶 (蓝紫五角星, 矿洞偶发)
+const BED := 65             # 床 (木框 + 红被 + 白枕)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -1544,6 +1545,39 @@ const _MANA_CRYSTAL := [
 ]
 
 
+# 床 palette: 深木 + 浅木 + 白枕 + 红被.
+const _P_BED := {
+	"B": Color8(70, 40, 20),       # 深木 (外框 + 阴影)
+	"b": Color8(135, 85, 45),      # 浅木 (内框)
+	"W": Color8(245, 240, 230),    # 枕头白
+	"w": Color8(200, 195, 185),    # 枕头阴影
+	"R": Color8(200, 50, 55),      # 红被子主色
+	"r": Color8(150, 30, 35),      # 红被子暗
+	"H": Color8(240, 110, 110),    # 红被子高光
+}
+
+
+# 床: 16x16 横放矩形, 透明上半 + 下方床体. 左端白枕头, 中右红被子, 木框.
+const _BED := [
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	".BBBBBBBBBBBBBB.",
+	"BbWWwRRHRRRRRRrB",
+	"BbWWWRRRRRRHRRrB",
+	"BbWWwRRRRRRRRRrB",
+	"BbRRRrrrrrrrrrrB",
+	".BBBBBBBBBBBBBB.",
+	".B............B.",
+	".B............B.",
+	"BB............BB",
+	"................",
+]
+
+
 # 生命水晶: 16x16 心形粉色结晶 (透明背景, 玩家右键吃 → 永久 +20 MAX HP)
 const _LIFE_CRYSTAL := [
 	"................",
@@ -1880,6 +1914,7 @@ const _PATTERN_MAP := {
 	MANA_CRYSTAL: [_MANA_CRYSTAL, _P_MANA_CRYSTAL],   # 星形蓝紫结晶, 矿洞偶发
 	HELL_ALLOY_ORE: [_HELL_ALLOY_ORE, _P_HELL_ALLOY_ORE],   # 地狱合金矿 (紫黑+银)
 	SANDSTONE: [_SANDSTONE, _P_SANDSTONE],                  # 砂岩 (暖黄+层纹)
+	BED: [_BED, _P_BED],                                    # 床 (木框 + 红被 + 白枕)
 }
 
 

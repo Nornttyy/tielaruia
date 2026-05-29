@@ -104,6 +104,7 @@ const _DEFS := {
 	"wool":          {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"grappling_hook":{"placeable_tile_id": -1,                     "tool_kind": "hook",    "tool_tier": 1, "max_stack": 1},
 	"chest":         {"placeable_tile_id": Tiles.CHEST,            "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
+	"bed":           {"placeable_tile_id": Tiles.BED,              "tool_kind": "",        "tool_tier": 0, "max_stack": 1},
 	# 新群系 (雪原 / 丛林 / 沼泽) 方块物品
 	"snow":          {"placeable_tile_id": Tiles.SNOW,             "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"ice":           {"placeable_tile_id": Tiles.ICE,              "tool_kind": "",        "tool_tier": 0, "max_stack": 64},

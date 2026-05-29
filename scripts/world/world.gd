@@ -69,6 +69,11 @@ const STEP_LABELS := [
 @onready var darkness_layer: Sprite2D = $DarknessLayer  # 平滑光照 (Sprite2D + bilinear), 不是 TileMapLayer
 
 var spawn_point: Vector2i
+# 床复活点: 玩家睡过床后从这里复活. (-99999, -99999) = 没设过, 用默认 spawn_point.
+var bed_spawn_point: Vector2i = Vector2i(-99999, -99999)
+# 睡觉状态: true = 时间 10x 加速中 (玩家在床位置, 不动). 醒条件: 天亮 / 玩家移动 / 攻击键.
+var _sleeping: bool = false
+var _sleep_anchor_x: float = 0.0     # 睡时玩家 x, 移动超过 8px 醒
 var chunk_manager: ChunkManager
 var water_sim: Node
 var minimap_data: Node
@@ -562,6 +567,45 @@ func _mark_explored_around_player() -> void:
 
 func _physics_process(_delta: float) -> void:
 	_check_chunk_load()
+	if _sleeping:
+		_check_sleep_wake()
+
+
+# 上床睡觉: 设复活点 + 启动 10x 时间. tile 是床的世界坐标.
+func sleep_in_bed(tile: Vector2i) -> void:
+	bed_spawn_point = tile
+	_sleeping = true
+	if TimeOfDay != null:
+		TimeOfDay.time_multiplier = 10.0
+	var player := get_player()
+	if player != null:
+		_sleep_anchor_x = player.global_position.x
+
+
+# 睡觉醒条件: 天亮 (is_day) / 玩家走出 8px / 玩家按主键攻击.
+# 醒 → time_multiplier = 1.0, _sleeping = false.
+func _check_sleep_wake() -> void:
+	if TimeOfDay == null:
+		_wake_up()
+		return
+	if TimeOfDay.is_day():
+		_wake_up()
+		return
+	var player := get_player()
+	if player == null:
+		_wake_up()
+		return
+	if abs(player.global_position.x - _sleep_anchor_x) > 8.0:
+		_wake_up()
+		return
+	if Input.is_action_pressed("primary"):
+		_wake_up()
+
+
+func _wake_up() -> void:
+	_sleeping = false
+	if TimeOfDay != null:
+		TimeOfDay.time_multiplier = 1.0
 
 
 # 把当前 GameSettings 应用到所有视觉节点. _ready 末尾 + settings_changed 信号都会调.
@@ -983,9 +1027,11 @@ func _spawn_player() -> void:
 func _spawn_world_pos() -> Vector2:
 	# 玩家从地表上方 1 格出生 (而不是脚切线贴草顶), 防止物理引擎边缘情况
 	# 下 is_on_floor() 不稳定. 落地只需 1 帧 (重力 900 → 0.5s 内稳).
+	# 床睡过 → 用 bed_spawn_point. 没设过 (-99999 sentinel) → 用世界默认 spawn_point.
+	var sp: Vector2i = bed_spawn_point if bed_spawn_point.x > -99000 else spawn_point
 	return Vector2(
-		spawn_point.x * TILE_SIZE + TILE_SIZE / 2.0,
-		spawn_point.y * TILE_SIZE
+		sp.x * TILE_SIZE + TILE_SIZE / 2.0,
+		sp.y * TILE_SIZE
 	)
 
 

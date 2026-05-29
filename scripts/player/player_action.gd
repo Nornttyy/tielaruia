@@ -864,6 +864,12 @@ func _update_eat_or_place(delta: float) -> void:
 						if mn.try_extend_max():
 							_consume_crystal_tile(aim_tile, terrain, Color(0.55, 0.45, 1.0))
 					return
+				elif aim_tid == Tiles.BED:
+					# 床: 右键 → 复活点设到床, 时间 10x 加速直到白天 / 玩家移动.
+					var w: Node = terrain.get_parent()
+					if w != null and w.has_method("sleep_in_bed"):
+						w.sleep_in_bed(aim_tile)
+					return
 
 	# 持魔力药水 + 按住 → 喝下立刻 +30 mana (跟食物同流程, 进度条满后消耗)
 	var holding_potion: bool = slot != null and ItemDB.is_mana_potion(slot.item_id)

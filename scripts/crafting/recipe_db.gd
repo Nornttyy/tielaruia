@@ -253,6 +253,19 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# === 床 (3 planks 底 + 3 wool 顶, 横放) ===
+	{
+		"id": "bed",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["",     "",     ""],
+			["wool", "wool", "wool"],
+			["planks", "planks", "planks"],
+		],
+		"output_id": "bed",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
 	# === 箱子 (8 个 planks 围一圈, 中空) ===
 	{
 		"id": "chest",

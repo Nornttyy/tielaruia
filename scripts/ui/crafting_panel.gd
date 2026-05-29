@@ -419,6 +419,7 @@ const _ZH_NAMES := {
 	"leather": "皮革",
 	"wool": "羊毛",
 	"chest": "箱子",
+	"bed": "床",
 	"grappling_hook": "钩爪",
 	"bone": "骨头",
 	"spider_eye": "蜘蛛眼",
