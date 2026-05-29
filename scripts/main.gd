@@ -230,6 +230,9 @@ func _apply_save_data(data: Resource) -> void:
 	# 还原世界时间 (昼夜) - 不然 reload 总回早晨
 	if "world_time" in data and TimeOfDay != null and "time" in TimeOfDay:
 		TimeOfDay.time = float(data.world_time)
+	# 床复活点 (老存档没字段则保持默认 -99999 = 无床)
+	if "bed_spawn_point" in data and "bed_spawn_point" in w:
+		w.bed_spawn_point = data.bed_spawn_point
 	# 恢复玩家挖/放的 chunk 改动 (写 _deltas, 之后 chunk 加载时会应用)
 	SaveManager.apply_chunk_deltas(w.chunk_manager, data.chunk_deltas)
 	# 恢复生命水晶世界限计数 + 已处理 chunk 列表 + 位置 (防 chunk 重载又 cap)

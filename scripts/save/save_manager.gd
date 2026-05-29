@@ -48,6 +48,9 @@ func save(main: Node) -> bool:
 	data.difficulty = GameSettings.current_difficulty if GameSettings != null else 1
 	data.world_size = GameSettings.current_world_size if GameSettings != null else 1
 	data.spawn_point = world.spawn_point
+	# 床复活点 (玩家睡过床后才有意义)
+	if "bed_spawn_point" in world:
+		data.bed_spawn_point = world.bed_spawn_point
 	# 世界时间 (昼夜) - 让玩家加载后接着原来的时间过, 而不是回到早晨
 	if TimeOfDay != null and "time" in TimeOfDay:
 		data.world_time = TimeOfDay.time
