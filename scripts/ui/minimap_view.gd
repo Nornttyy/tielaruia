@@ -59,6 +59,7 @@ const _TILE_COLORS := {
 	Tiles.HELL_CRYSTAL:  Color8(255, 215, 70),   # 地狱晶: 火魂金黄 (用户改, 不再血红)
 	Tiles.HELL_ALLOY_ORE: Color8(85, 60, 110),   # 地狱合金矿: 紫黑 (跟金黄区分)
 	Tiles.SANDSTONE:     Color8(210, 175, 95),   # 砂岩: 暖黄 (跟普通沙黄稍区分)
+	Tiles.MANA_CRYSTAL:  Color8(110, 90, 230),   # 魔力水晶: 蓝紫 (跟生命水晶粉红区分)
 	Tiles.SILVER_ORE:    Color8(220, 225, 235),  # 银亮白
 	Tiles.WATER:         Color8(60, 100, 170),   # 水蓝
 	Tiles.CHEST:         Color8(180, 120, 60),   # 箱子棕黄

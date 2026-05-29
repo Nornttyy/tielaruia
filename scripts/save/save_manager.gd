@@ -66,6 +66,13 @@ func save(main: Node) -> bool:
 			pos_arr.append(int(p.x))
 			pos_arr.append(int(p.y))
 		data.life_crystal_positions = pos_arr
+		# 同款: 魔力水晶 spawned + positions
+		data.mana_crystals_spawned = world.chunk_manager.mana_crystals_spawned
+		var mc_pos_arr: PackedInt32Array = PackedInt32Array()
+		for p in world.chunk_manager.mana_crystal_positions:
+			mc_pos_arr.append(int(p.x))
+			mc_pos_arr.append(int(p.y))
+		data.mana_crystal_positions = mc_pos_arr
 	var player: Node2D = world.get_player()
 	if player != null:
 		data.player_position = player.global_position

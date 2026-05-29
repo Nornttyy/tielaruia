@@ -69,9 +69,11 @@ const CHAMBER_RADIUS_MAX := 5.0     # 10 tile 宽
 const CHAMBER_CHEST_CHANCE := 0.55  # 55% 小室放宝箱 (老 30%)
 const CHAMBER_MUSHROOM_CHANCE := 0.20  # 20% 蘑菇地 (与宝箱互斥), 老 25%
 const CHAMBER_LIFE_CRYSTAL_CHANCE := 0.12  # 12% 小室放生命水晶 (跟前两个互斥)
+const CHAMBER_MANA_CRYSTAL_CHANCE := 0.10  # 10% 小室放魔力水晶 (Phase 7 完善)
 const CHEST_MIN_DEPTH := 15         # 浅一点也能出 (用户要更多木宝箱), 原 30
 const MUSHROOM_MIN_DEPTH := 20      # 蘑菇地浅一点也行
 const LIFE_CRYSTAL_MIN_DEPTH := 25  # 生命水晶 25 格深起 (新手探索一下能找到)
+const MANA_CRYSTAL_MIN_DEPTH := 35  # 魔力水晶: 比生命水晶深一点 (更稀有, 玩到中期遇到)
 const WORM_BRANCH_MAX_DEPTH := 2   # 分叉递归最大深度
 const WORM_BRANCH_RADIUS_SCALE := 0.6  # 子 worm 半径系数 (孙再叠加 → 越细)
 const WORM_DIR_FREQUENCY := 0.025  # 方向噪声频率
@@ -630,6 +632,8 @@ static func _simulate_worm(c: Chunk, start_pos: Vector2, worm_len: int,
 				_try_place_mushroom_patch(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r), chunk_start, chunk_end, height, rng)
 			elif roll < CHAMBER_CHEST_CHANCE + CHAMBER_MUSHROOM_CHANCE + CHAMBER_LIFE_CRYSTAL_CHANCE and depth_here >= LIFE_CRYSTAL_MIN_DEPTH:
 				_try_place_life_crystal(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r) + 2, chunk_start, chunk_end, height)
+			elif roll < CHAMBER_CHEST_CHANCE + CHAMBER_MUSHROOM_CHANCE + CHAMBER_LIFE_CRYSTAL_CHANCE + CHAMBER_MANA_CRYSTAL_CHANCE and depth_here >= MANA_CRYSTAL_MIN_DEPTH:
+				_try_place_mana_crystal(c, int(round(pos.x)), int(round(pos.y)), int(chamber_r) + 2, chunk_start, chunk_end, height)
 		# 分叉: 派子 worm (角度偏移 ±60°, 长度更短, 半径更细)
 		if depth < WORM_BRANCH_MAX_DEPTH and rng.randf() < WORM_BRANCH_CHANCE:
 			var branch_len: int = rng.randi_range(WORM_LEN_MIN / 2, WORM_LEN_MAX / 2)
@@ -778,6 +782,29 @@ static func _try_place_life_crystal(c: Chunk, world_x: int, start_y: int, max_sc
 	if c.tiles[lx][crystal_y] != Tiles.AIR:
 		return
 	c.tiles[lx][crystal_y] = Tiles.LIFE_CRYSTAL
+
+
+# 跟 _try_place_life_crystal 同款: 找小室底 STONE 上 AIR 那格, 放 MANA_CRYSTAL.
+static func _try_place_mana_crystal(c: Chunk, world_x: int, start_y: int, max_scan: int,
+		chunk_start: int, chunk_end: int, height: int) -> void:
+	if world_x < chunk_start or world_x >= chunk_end:
+		return
+	var lx: int = world_x - chunk_start
+	var floor_y: int = -1
+	for dy in range(0, max_scan + 1):
+		var wy: int = start_y + dy
+		if wy < 0 or wy >= height:
+			break
+		var t: int = c.tiles[lx][wy]
+		if t == Tiles.STONE or t == Tiles.DEEP_STONE:
+			floor_y = wy
+			break
+	if floor_y <= 0:
+		return
+	var crystal_y: int = floor_y - 1
+	if c.tiles[lx][crystal_y] != Tiles.AIR:
+		return
+	c.tiles[lx][crystal_y] = Tiles.MANA_CRYSTAL
 
 
 # 蘑菇小室: 在小室中心 ±x_radius 列里, 把第一个 STONE/DEEP_STONE floor 改 MUD,

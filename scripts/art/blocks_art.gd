@@ -39,6 +39,7 @@ const SHADOW_CHEST := 60    # 阴影宝箱 (黑底 + 红光锁孔 + 红宝石)
 const LIFE_CRYSTAL := 61    # 生命水晶 (用户加, _PATTERN_MAP 引用了, 补常量声明)
 const HELL_ALLOY_ORE := 62  # 地狱合金矿 (深紫黑 + 银闪点)
 const SANDSTONE := 63       # 砂岩 (暖黄, 有层纹, 金字塔骨架)
+const MANA_CRYSTAL := 64    # 魔力水晶 (蓝紫五角星, 矿洞偶发)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -1502,6 +1503,37 @@ const _P_LIFE_CRYSTAL := {
 }
 
 
+# 魔力水晶: 16x16 蓝紫五角星结晶 (透明背景, 右键吃 → 永久 +20 MAX MANA)
+# 对应 mana_hud 的星型 + 蓝紫色调
+const _P_MANA_CRYSTAL := {
+	"k": Color8(20, 15, 55),       # 深蓝紫边
+	"r": Color8(60, 50, 130),      # 暗紫过渡
+	"R": Color8(110, 90, 230),     # 蓝紫主色
+	"P": Color8(200, 195, 255),    # 浅紫高光
+}
+
+
+# 5 角星结晶 (尖朝上 + 4 个外角): 跟 mana_hud 同 5 角星形状, 但实心 tile 块.
+const _MANA_CRYSTAL := [
+	"................",
+	"................",
+	".......kk.......",
+	"......kRRk......",
+	"......kRRk......",
+	"kkk..kRRRRk..kkk",
+	"kRRkkRRPPRRkkRRk",
+	"kRRRRRRPPRRRRRRk",
+	".kRRRRrRRrRRRRk.",
+	"..kRRRRRRRRRRk..",
+	"...kRRRRRRRRk...",
+	"..kRRrkkkkrRRk..",
+	".kRRkk....kkRRk.",
+	"kkkk........kkkk",
+	"................",
+	"................",
+]
+
+
 # 生命水晶: 16x16 心形粉色结晶 (透明背景, 玩家右键吃 → 永久 +20 MAX HP)
 const _LIFE_CRYSTAL := [
 	"................",
@@ -1835,6 +1867,7 @@ const _PATTERN_MAP := {
 	HELL_FRUIT: [_HELL_FRUIT, _P_HELL_FRUIT],
 	SHADOW_CHEST: [_SHADOW_CHEST_PAT, _P_SHADOW_CHEST],   # 独立锯齿形 + 红眼骨白
 	LIFE_CRYSTAL: [_LIFE_CRYSTAL, _P_LIFE_CRYSTAL],   # 心形粉色结晶, 矿洞偶发
+	MANA_CRYSTAL: [_MANA_CRYSTAL, _P_MANA_CRYSTAL],   # 星形蓝紫结晶, 矿洞偶发
 	HELL_ALLOY_ORE: [_HELL_ALLOY_ORE, _P_HELL_ALLOY_ORE],   # 地狱合金矿 (紫黑+银)
 	SANDSTONE: [_SANDSTONE, _P_SANDSTONE],                  # 砂岩 (暖黄+层纹)
 }

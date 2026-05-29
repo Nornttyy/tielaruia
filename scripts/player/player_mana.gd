@@ -6,6 +6,8 @@ extends Node
 signal mana_changed(current: int, maximum: int)
 
 const BASE_MAX_MANA := 100
+const MAX_MANA_CAP := 200        # 上限 (10 颗星, Terraria 风)
+const MANA_PER_CRYSTAL := 20     # 魔力水晶 +20 max
 const REGEN_PER_SEC := 5.0   # 满血 100, 20s 全回
 
 # var (非 const) — 未来星辰碎片之类可永久 +max
@@ -48,3 +50,14 @@ func extend_max(amount: int) -> void:
 	MAX_MANA += amount
 	current_mana = min(MAX_MANA, current_mana + amount)
 	mana_changed.emit(current_mana, MAX_MANA)
+
+
+# 用魔力水晶: 永久 +MANA_PER_CRYSTAL max + 也加同量当前 mana.
+# 已达 cap 返 false (玩家不能再吃). 否则返 true.
+func try_extend_max(amount: int = MANA_PER_CRYSTAL) -> bool:
+	if MAX_MANA >= MAX_MANA_CAP:
+		return false
+	MAX_MANA = min(MAX_MANA_CAP, MAX_MANA + amount)
+	current_mana = min(MAX_MANA, current_mana + amount)
+	mana_changed.emit(current_mana, MAX_MANA)
+	return true

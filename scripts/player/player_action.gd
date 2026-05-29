@@ -856,6 +856,14 @@ func _update_eat_or_place(delta: float) -> void:
 						if hp.try_extend_max():
 							_consume_life_crystal_tile(aim_tile, terrain)
 					return
+				elif aim_tid == Tiles.MANA_CRYSTAL:
+					# 魔力水晶: 右键吃 → 永久 +20 MAX MANA + 同量当前回魔 + 消失.
+					# 已达 200 上限时不消耗.
+					var mn: Node = get_parent().get_node_or_null("PlayerMana")
+					if mn != null and mn.has_method("try_extend_max"):
+						if mn.try_extend_max():
+							_consume_life_crystal_tile(aim_tile, terrain)
+					return
 
 	# 持魔力药水 + 按住 → 喝下立刻 +30 mana (跟食物同流程, 进度条满后消耗)
 	var holding_potion: bool = slot != null and ItemDB.is_mana_potion(slot.item_id)

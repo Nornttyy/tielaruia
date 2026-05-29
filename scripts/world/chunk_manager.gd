@@ -11,6 +11,8 @@ signal chunk_unloaded(chunk_x: int)
 
 const LIFE_CRYSTAL_PER_PLAYER := 15   # 每个玩家世界上限 15 颗水晶 (单人 15, 联机 ×N)
 const LIFE_CRYSTAL_MIN_DIST := 40     # 任意两颗水晶世界坐标最小曼哈顿距离 (约 2/3 chunk 宽)
+const MANA_CRYSTAL_PER_PLAYER := 5    # 每玩家 5 颗 (100 base + 5×20 = 200 cap)
+const MANA_CRYSTAL_MIN_DIST := 60     # 比 life_crystal 离得更远 (更稀有)
 
 var world_seed: int = 0
 var _loaded: Dictionary = {}    # chunk_x: int → Chunk
@@ -21,6 +23,9 @@ var _deltas: Dictionary = {}    # chunk_x: int → Dict[Vector2i → tid]
 var life_crystals_spawned: int = 0
 var processed_chunks: Dictionary = {}   # chunk_x → true (O(1) 查重)
 var life_crystal_positions: Array = []   # Array of Vector2i (world coords)
+# 魔力水晶: 同款 cap + 位置追踪
+var mana_crystals_spawned: int = 0
+var mana_crystal_positions: Array = []
 
 
 func setup(p_seed: int) -> void:
@@ -35,6 +40,13 @@ func current_crystal_cap() -> int:
 	if NetworkManager != null and NetworkManager.has_method("connected") and NetworkManager.connected():
 		players = 2  # PeerJS host + 1 client
 	return LIFE_CRYSTAL_PER_PLAYER * players
+
+
+func current_mana_crystal_cap() -> int:
+	var players: int = 1
+	if NetworkManager != null and NetworkManager.has_method("connected") and NetworkManager.connected():
+		players = 2
+	return MANA_CRYSTAL_PER_PLAYER * players
 
 
 # 加载 center_cx ± VIEW_RADIUS 范围内的 chunks
@@ -64,6 +76,7 @@ func _load_chunk(cx: int) -> void:
 	# 已 processed 的 chunk 跳过 (避免重载时重复计数).
 	if not processed_chunks.has(cx):
 		_cap_life_crystals_in_chunk(c, cx)
+		_cap_mana_crystals_in_chunk(c, cx)
 		processed_chunks[cx] = true
 	# 矿洞宝箱: 给 chunk 里每个新生成的 chest 位置填一次战利品 (idempotent, 重载不会再填)
 	for spot in c.treasure_spots:
@@ -110,6 +123,35 @@ func _cap_life_crystals_in_chunk(c: Chunk, cx: int) -> void:
 func _far_enough_from_crystals(pos: Vector2i) -> bool:
 	for p in life_crystal_positions:
 		if abs(p.x - pos.x) + abs(p.y - pos.y) < LIFE_CRYSTAL_MIN_DIST:
+			return false
+	return true
+
+
+# 同款 cap + 距离 — 跟 _cap_life_crystals_in_chunk 平行
+func _cap_mana_crystals_in_chunk(c: Chunk, cx: int) -> void:
+	var cap: int = current_mana_crystal_cap()
+	var chunk_w: int = ChunkConstants.CHUNK_WIDTH
+	var height: int = ChunkConstants.WORLD_HEIGHT
+	for lx in chunk_w:
+		for wy in height:
+			if c.tiles[lx][wy] != Tiles.MANA_CRYSTAL:
+				continue
+			var wx: int = cx * chunk_w + lx
+			var pos := Vector2i(wx, wy)
+			var keep: bool = mana_crystals_spawned < cap and _far_enough_from_mana_crystals(pos)
+			if keep:
+				mana_crystals_spawned += 1
+				mana_crystal_positions.append(pos)
+			else:
+				c.tiles[lx][wy] = Tiles.AIR
+				if not _deltas.has(cx):
+					_deltas[cx] = {}
+				_deltas[cx][Vector2i(lx, wy)] = Tiles.AIR
+
+
+func _far_enough_from_mana_crystals(pos: Vector2i) -> bool:
+	for p in mana_crystal_positions:
+		if abs(p.x - pos.x) + abs(p.y - pos.y) < MANA_CRYSTAL_MIN_DIST:
 			return false
 	return true
 

@@ -73,6 +73,7 @@ const SHADOW_CHEST := 60    # 阴影宝箱 (地狱第 4 tier): 黑底 + 红光�
 const LIFE_CRYSTAL := 61    # 生命水晶 (Terraria 风): 矿洞偶发, 右键吃 → 永久 +20 MAX HP (上限 400)
 const HELL_ALLOY_ORE := 62  # 地狱合金矿: 深紫黑底 + 银闪点. 金/钻镐挖, 熔炉炼锭, 造 tier 8 武器主金属
 const SANDSTONE := 63       # 砂岩: 金字塔骨架. 实心不掉 (跟 SAND 区分, 无重力 bug)
+const MANA_CRYSTAL := 64    # 魔力水晶 (蓝紫星形): 矿洞偶发, 右键吃 → 永久 +20 MAX MANA (上限 200)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -435,6 +436,12 @@ const _PROPS := {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
 		"drops": [["sandstone", 100, 1, 1]],
+	},
+	MANA_CRYSTAL: {
+		# 魔力水晶: 跟生命水晶同款, 不能挖 (右键吃), 实心防穿过.
+		"solid": true, "mineable": false,
+		"tool_tiers": {"": -1, "pickaxe": -1, "axe": -1, "sword": -1},
+		"drops": [],
 	},
 }
 

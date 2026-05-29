@@ -235,6 +235,15 @@ func _apply_save_data(data: Resource) -> void:
 		while i + 1 < pos_arr.size():
 			w.chunk_manager.life_crystal_positions.append(Vector2i(pos_arr[i], pos_arr[i + 1]))
 			i += 2
+		# 同款: 魔力水晶 (老存档没字段则跳过)
+		if "mana_crystals_spawned" in data:
+			w.chunk_manager.mana_crystals_spawned = data.mana_crystals_spawned
+		if "mana_crystal_positions" in data:
+			var mc_pos: PackedInt32Array = data.mana_crystal_positions
+			var j: int = 0
+			while j + 1 < mc_pos.size():
+				w.chunk_manager.mana_crystal_positions.append(Vector2i(mc_pos[j], mc_pos[j + 1]))
+				j += 2
 	# 恢复箱子内容 (24 格 × 每个 chest tile)
 	if "chest_contents" in data:
 		ChestStorage.restore(data.chest_contents)
