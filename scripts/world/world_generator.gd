@@ -1203,14 +1203,17 @@ const PYRAMID_BASE_WIDTH := 25
 const PYRAMID_LAYERS := 13
 const PYRAMID_ROOM_HEIGHT := 3   # 内部走廊高 3 格
 
-# 世纪树 (World Tree): 1 棵/世界, 巨型橡树 + 顶端树屋 + 2 宝箱.
-# 32 高树干, 椭圆大叶冠, 屋内 GOLD + DIAMOND chest, 中心 ROPE 一路爬到顶.
+# 世纪树 (World Tree): 1 棵/世界, 巨型橡树 + 地下房间 + 双宝箱.
+# Terraria living tree 风: 树干 solid LOG + 底部 hollow 入口 + 地下 PLANKS 房间 + 30% 可能连矿洞.
 const WORLD_TREE_HEIGHT := 32           # 树干高度 (surf 到 trunk_top)
 const WORLD_TREE_CANOPY_RX := 9          # 椭圆叶冠横向半径
 const WORLD_TREE_CANOPY_RY := 11         # 椭圆叶冠纵向半径 (上下椭长)
-const WORLD_TREE_ROOM_HALF_W := 2        # 树屋半宽 (5 tile 宽)
-const WORLD_TREE_ROOM_TOP_OFFSET := 3    # 屋顶 = trunk_top + 3
-const WORLD_TREE_ROOM_BOT_OFFSET := 6    # 屋底 = trunk_top + 6
+const WORLD_TREE_ROOM_HALF_W := 2        # 地下房间半宽 (5 tile 宽)
+const WORLD_TREE_ROOM_TOP_DEPTH := 3     # 屋顶相对 surf 深度 (= base_y + 3)
+const WORLD_TREE_ROOM_HEIGHT := 4        # 地下房间高度 (含上下 PLANKS 行)
+const WORLD_TREE_SIDE_TUNNEL_CHANCE := 0.5    # 50% 概率从屋一侧凿隧道
+const WORLD_TREE_SIDE_TUNNEL_MIN_LEN := 8     # 隧道最少长度 (tile)
+const WORLD_TREE_SIDE_TUNNEL_MAX_LEN := 14    # 隧道最长长度 (tile)
 const WORLD_TREE_MIN_SPAWN_CHUNK := 2    # 离 spawn (chunk 0) 至少 2 chunk 远
 
 # 给定 world_seed, 返回 2-3 个 chunk_x (有金字塔的, 都在沙漠区).
@@ -1336,9 +1339,13 @@ static func _world_tree_chunk(world_seed: int, biome_centers: Dictionary) -> int
 	return forest_chunks[rng.randi() % forest_chunks.size()]
 
 
-# 在该 chunk 中央种 1 棵世纪树. 树干 LOG 3 wide × 32 tall, 大椭圆叶冠 LEAVES,
-# 顶端凿 5×3 树屋 (PLANKS 边框, 内部 AIR, GOLD + DIAMOND chest),
-# 中心列 ROPE 贯穿底到屋, 玩家爬上去拿宝.
+# 在该 chunk 中央种 1 棵世纪树. Terraria living tree 风:
+# - 树干 LOG 3 wide × 32 tall, 全 solid (玩家撞不进)
+# - 大椭圆叶冠 LEAVES (rx=9, ry=11)
+# - 树干底中心 1 格 AIR = visible "hollow" 入口
+# - 地下 vertical shaft (1 wide AIR) 从入口往下通房间
+# - 房间在地下 (PLANKS 5×4): 内有 GOLD + DIAMOND chest
+# - 50% 概率屋一侧凿 8-14 长 2 高隧道 → 可能撞上 worm 矿洞 → 连接
 static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
 		world_seed: int, chunk_x: int, chunk_width: int, height: int, biome_centers: Dictionary) -> void:
 	if chunk_x != _world_tree_chunk(world_seed, biome_centers):
@@ -1350,26 +1357,31 @@ static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
 		return
 	var base_y: int = chunk_heights[world_x_center]
 	var trunk_top_y: int = base_y - WORLD_TREE_HEIGHT
-	# 留出 canopy + 余量: 叶冠纵向半径 11 + 2 余量
+	# 留出 canopy + 余量
 	if trunk_top_y < WORLD_TREE_CANOPY_RY + 2:
 		return
-	# 0) 树根地基: trunk 5 列 (中心±2) 强制铺 GRASS + DIRT, 避免长在水/沙上根浮
+	# 地下房间位置: 屋顶在 base_y + 3, 屋底在 base_y + 6 (4 tall)
+	var room_top_y: int = base_y + WORLD_TREE_ROOM_TOP_DEPTH
+	var room_bot_y: int = room_top_y + WORLD_TREE_ROOM_HEIGHT - 1
+	if room_bot_y >= height - 2:
+		return   # 房间撞 bedrock
+	var hw: int = WORLD_TREE_ROOM_HALF_W
+	# 0) 树根地基: trunk 5 列 (中心±2) 强制铺 GRASS, 避免长水/沙上
 	for dx in range(-2, 3):
 		var lx_g: int = x_center_local + dx
 		if lx_g < 0 or lx_g >= chunk_width:
 			continue
 		c.tiles[lx_g][base_y] = Tiles.GRASS
-		if base_y + 1 < height:
-			c.tiles[lx_g][base_y + 1] = Tiles.DIRT
-	# 1) 树干 3 wide: 中心 + 左右 1, 从 surf-1 到 trunk_top_y
+	# 1) 树干 3 wide solid LOG (full). 玩家撞不进, 只能从底中心入口入.
 	for dx in [-1, 0, 1]:
 		var lx: int = x_center_local + dx
 		if lx < 0 or lx >= chunk_width:
 			continue
-		for y in range(trunk_top_y, base_y):   # base_y 是 grass, 不覆盖
+		for y in range(trunk_top_y, base_y):
 			c.tiles[lx][y] = Tiles.LOG
-	# 2) 大椭圆叶冠: 中心在 trunk_top_y, 椭圆 (dx/rx)² + (dy/ry)² ≤ 1
-	# 留 trunk 列 — leaves 不覆盖 LOG.
+	# 1b) 树底中心 1 格 AIR = visible 入口 (像树洞的口)
+	c.tiles[x_center_local][base_y - 1] = Tiles.AIR
+	# 2) 大椭圆叶冠
 	var rx: int = WORLD_TREE_CANOPY_RX
 	var ry: int = WORLD_TREE_CANOPY_RY
 	for dy in range(-ry, ry + 1):
@@ -1385,38 +1397,38 @@ static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
 			if c.tiles[lx][ly] != Tiles.AIR:
 				continue
 			c.tiles[lx][ly] = Tiles.LEAVES
-	# 3) 凿树屋 (5 wide × 3 tall) 在 trunk 顶下方一点, override 树干 LOG.
-	# ROOM_TOP_y / BOT_y 都在 trunk 内 (offset 自 trunk_top_y, 都为正 → 下方)
-	var room_top_y: int = trunk_top_y + WORLD_TREE_ROOM_TOP_OFFSET   # 屋顶 PLANKS 行
-	var room_bot_y: int = trunk_top_y + WORLD_TREE_ROOM_BOT_OFFSET   # 屋底 PLANKS 行
-	var hw: int = WORLD_TREE_ROOM_HALF_W
-	# 屋顶 / 屋底: PLANKS 一行 5 块. 屋底中央 1 块留 AIR (给 rope 穿过)
+	# 3) 地下 vertical shaft: 中心列 AIR 从入口 (base_y) 一路下到房间顶 (room_top_y)
+	#    穿透 GRASS + DIRT 层, 玩家从树底掉下去进屋
+	for y in range(base_y, room_top_y):
+		c.tiles[x_center_local][y] = Tiles.AIR
+	# 4) 地下房间 (PLANKS 5×4): 顶 / 底 / 左 / 右墙 + 内部清空
+	# 顶 (room_top_y): 全 PLANKS 但中心 1 格 = AIR (shaft 接入)
 	for dx in range(-hw, hw + 1):
 		var lx: int = x_center_local + dx
 		if lx < 0 or lx >= chunk_width:
 			continue
-		c.tiles[lx][room_top_y] = Tiles.PLANKS
-		if dx == 0:
-			c.tiles[lx][room_bot_y] = Tiles.AIR    # rope 通道
-		else:
-			c.tiles[lx][room_bot_y] = Tiles.PLANKS
-	# 屋左右两侧墙 + 内部清空 (override LOG)
-	for dy in range(1, WORLD_TREE_ROOM_BOT_OFFSET - WORLD_TREE_ROOM_TOP_OFFSET):
+		c.tiles[lx][room_top_y] = Tiles.AIR if dx == 0 else Tiles.PLANKS
+	# 底 (room_bot_y): 全 PLANKS
+	for dx in range(-hw, hw + 1):
+		var lx: int = x_center_local + dx
+		if lx < 0 or lx >= chunk_width:
+			continue
+		c.tiles[lx][room_bot_y] = Tiles.PLANKS
+	# 左右墙 + 内部 AIR
+	for dy in range(1, WORLD_TREE_ROOM_HEIGHT - 1):
 		var y: int = room_top_y + dy
-		# 左右墙
 		var lx_left: int = x_center_local - hw
 		var lx_right: int = x_center_local + hw
 		if lx_left >= 0:
 			c.tiles[lx_left][y] = Tiles.PLANKS
 		if lx_right < chunk_width:
 			c.tiles[lx_right][y] = Tiles.PLANKS
-		# 内部 AIR (3 wide)
 		for dx in range(-hw + 1, hw):
 			var lx: int = x_center_local + dx
 			if lx < 0 or lx >= chunk_width:
 				continue
 			c.tiles[lx][y] = Tiles.AIR
-	# 4) 屋内 2 宝箱: GOLD (左) + DIAMOND (右), 站屋底之上 1 格
+	# 5) 屋内 2 宝箱: GOLD (左) + DIAMOND (右), 站屋底之上 1 格
 	var chest_y: int = room_bot_y - 1
 	var gold_lx: int = x_center_local - 1
 	var diamond_lx: int = x_center_local + 1
@@ -1426,10 +1438,20 @@ static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
 	if diamond_lx >= 0 and diamond_lx < chunk_width:
 		c.tiles[diamond_lx][chest_y] = Tiles.DIAMOND_CHEST
 		c.treasure_spots.append(Vector2i(chunk_start + diamond_lx, chest_y))
-	# 5) 中心列 ROPE: 从屋底 AIR 洞下方 1 格 (= room_bot_y + 1) 一路向下到地面.
-	# 替代 trunk LOG. 玩家右键攀爬 = 直通屋内.
-	for y in range(room_bot_y + 1, base_y):
-		c.tiles[x_center_local][y] = Tiles.ROPE
+	# 6) 侧隧道 (50% 概率): 从屋一侧凿 2 高 AIR 8-14 长. 可能撞上 worm 矿洞 → 连接.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _hash3(world_seed, chunk_x, 0xc0ffee07)
+	if rng.randf() < WORLD_TREE_SIDE_TUNNEL_CHANCE:
+		var side: int = -1 if rng.randf() < 0.5 else 1
+		var tunnel_len: int = rng.randi_range(WORLD_TREE_SIDE_TUNNEL_MIN_LEN, WORLD_TREE_SIDE_TUNNEL_MAX_LEN)
+		var t_floor_y: int = room_bot_y - 1  # 跟屋内同高 (脚踏)
+		var t_head_y: int = room_bot_y - 2   # 头顶
+		for d in range(1, tunnel_len + 1):
+			var lx: int = x_center_local + side * (hw + d)
+			if lx < 0 or lx >= chunk_width:
+				break
+			c.tiles[lx][t_floor_y] = Tiles.AIR
+			c.tiles[lx][t_head_y] = Tiles.AIR
 
 
 # ===== 瀑布矿洞 =====
