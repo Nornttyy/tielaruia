@@ -655,6 +655,13 @@ func _wake_up() -> void:
 		TimeOfDay.time_multiplier = 1.0
 
 
+# world 被 free 时 (回主菜单 / 切场景) 必须 reset autoload 的 time_multiplier,
+# 不然睡觉中 ESC 退出 → TimeOfDay 卡 10x, 下局时间一直快进.
+func _exit_tree() -> void:
+	if TimeOfDay != null:
+		TimeOfDay.time_multiplier = 1.0
+
+
 # 把当前 GameSettings 应用到所有视觉节点. _ready 末尾 + settings_changed 信号都会调.
 func _apply_graphics_settings() -> void:
 	# 雨已删 (用户要求), 这里跳过
@@ -1140,6 +1147,9 @@ func respawn_player() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_method("revive_full"):
 		hp.revive_full()
+	# 床睡着死了 → 复活点就是床位置 → 8px 移动检测不到 → 卡 10x 时间循环.
+	# 复活时强制 wake (无论是否在睡都安全, _sleeping=false 是幂等).
+	_wake_up()
 
 
 func _spawn_death_drop(item_id: String, count: int, pos: Vector2) -> void:
