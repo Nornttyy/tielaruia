@@ -725,6 +725,12 @@ func _refresh_recipes() -> void:
 	if _player_inv == null:
 		return
 	var inv = _player_inv.inventory
+	if inv == null:
+		# 玩家 inv 还没初始化 (race), 全部 disable 防"看起来都能合成"假象
+		for entry in _recipe_buttons:
+			(entry.button as Button).disabled = true
+			(entry.button as Button).modulate = Color(0.5, 0.5, 0.5, 0.7)
+		return
 	# 查附近是否有 furnace (跟 workbench 同模式)
 	var has_furnace: bool = _has_furnace_nearby()
 	for entry in _recipe_buttons:

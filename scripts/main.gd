@@ -383,10 +383,17 @@ func _grant_starter_on_new_game() -> void:
 	var w := world
 	if w == null:
 		return
-	var player: Node2D = w.get_player()
-	if player == null:
-		return
-	_grant_starter_inventory(player)
+	# PlayerInventory._ready 创建 inventory, 可能跟我们 call_deferred 时机错位.
+	# 最多等 8 帧重试, 让 player + inventory 都就绪再发起步包.
+	for i in 8:
+		var player: Node2D = w.get_player()
+		if player != null:
+			var inv_node: Node = player.get_node_or_null("PlayerInventory")
+			if inv_node != null and inv_node.inventory != null:
+				_grant_starter_inventory(player)
+				return
+		await get_tree().process_frame
+	push_warning("starter 没发出去: player/inventory 8 帧内没就绪")
 
 
 func _grant_starter_inventory(player: Node) -> void:
