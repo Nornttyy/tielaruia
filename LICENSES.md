@@ -12,11 +12,12 @@
 - LPC lioness (Sevarihk, CC-BY 4.0) — 旧
 - 两份 PNG 已删, 美洲豹也已移出游戏
 
-## Loyalty Lies Monsters - Chaos Monster 04 (蜘蛛)
+## 2D Spider Animated (蜘蛛)
 - 文件: `assets/animals/spider.png`
-- 作者: Heather Lee Harvey
-- 来源: https://opengameart.org/content/loyalty-lies-monsters-chaos-monster-04
-- 主页: https://emeraldactivities.com
-- 许可: CC-BY 3.0
-- 署名: Spider sprite by Heather Lee Harvey (EmeraldActivities.com / opengameart.org), CC-BY 3.0
-- 格式: 210×42 PNG, 5 帧每帧 42×42 (ready / attack / hurt / growl + 1 额外)
+- 作者: SpinachChicken
+- 来源: https://opengameart.org/content/2d-spider-animated
+- 许可: CC0 (公有领域)
+- 署名: 不强制 (CC0)
+- 格式: 51×20 PNG, 3 帧水平排列, 每帧 17×20
+- 备注: spider_loader.gd 加载时自动剥离近白像素 (R/G/B ≥ 240) → 透明,
+        去掉原素材的蛛丝.
