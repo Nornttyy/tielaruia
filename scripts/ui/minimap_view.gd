@@ -81,6 +81,14 @@ const _TILE_COLORS := {
 	Tiles.ROPE:          Color8(130, 95, 60),    # 绳子
 	Tiles.CACTUS:        Color8(80, 140, 70),    # 仙人掌
 	Tiles.CACTUS_BODY:   Color8(70, 125, 60),
+	# 床 + 水晶 + 装饰
+	Tiles.BED:           Color8(180, 60, 70),    # 床: 红被显眼
+	Tiles.LIFE_CRYSTAL:  Color8(230, 80, 110),   # 生命水晶: 粉红
+	Tiles.PLANT_GRASS:   Color8(110, 180, 70),   # 装饰草: 跟 GRASS 微差
+	Tiles.WHEAT_0:       Color8(140, 200, 90),   # 小麦苗: 嫩绿
+	Tiles.WHEAT_1:       Color8(160, 200, 85),
+	Tiles.WHEAT_2:       Color8(190, 195, 80),   # 中: 偏黄
+	Tiles.WHEAT_3:       Color8(225, 195, 70),   # 熟: 金黄
 }
 
 const _UNEXPLORED_COLOR := Color8(0, 0, 0, 200)
