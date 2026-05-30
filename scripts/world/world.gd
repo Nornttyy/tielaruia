@@ -1140,7 +1140,8 @@ func _spawn_player() -> void:
 
 
 # 清 (tx, ty) 周围 2 宽 × 3 高空气坑 (玩家 1×2 + 头顶余量). 防玩家 spawn 卡石头.
-# 跳过 BEDROCK (不可破) + 跳过 chunk 没加载 (避免改未生成 tile).
+# 必须用 _set_tile (不是 chunk_manager.set_tile), 才会同时刷 terrain_layer 视觉 +
+# 物理碰撞. 单调 chunk 数据会让玩家撞到看不见的"鬼石头".
 func _ensure_air_pocket(tx: int, ty: int) -> void:
 	if chunk_manager == null:
 		return
@@ -1153,7 +1154,7 @@ func _ensure_air_pocket(tx: int, ty: int) -> void:
 			var tid: int = chunk_manager.get_tile(x, y)
 			if tid == Tiles.AIR or tid == Tiles.BEDROCK:
 				continue
-			chunk_manager.set_tile(x, y, Tiles.AIR)
+			_set_tile(x, y, Tiles.AIR)   # 同时更新 chunk + terrain_layer + 碰撞
 
 
 func _spawn_world_pos() -> Vector2:
