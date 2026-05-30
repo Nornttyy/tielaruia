@@ -77,7 +77,8 @@ func _update_viewport() -> void:
 	var x0: int = px - half_w
 	var y0: int = py - half_h
 	var torches: Array = _collect_torches()
-	var grid: Dictionary = TileLightGrid.compute_region(cm, x0, y0, x0 + _cur_w, y0 + _cur_h,
+	# compute_region 返 PackedByteArray (索引 (y-y0)*_cur_w + (x-x0)), 不再是 Vector2i dict.
+	var grid: PackedByteArray = TileLightGrid.compute_region(cm, x0, y0, x0 + _cur_w, y0 + _cur_h,
 			Vector2i(px, py), torches)
 	global_position = Vector2(x0 * TILE_SIZE, y0 * TILE_SIZE)
 	# 批量构造像素字节 — 用 MAX_W × MAX_H buffer, 只填 _cur_w × _cur_h 区域.
@@ -85,10 +86,12 @@ func _update_viewport() -> void:
 	var bytes: PackedByteArray = _full_dark_template.duplicate()
 	var max_l: float = float(TileLightGrid.MAX_LIGHT)
 	for y in range(_cur_h):
+		var row_grid: int = y * _cur_w
+		var row_bytes: int = y * MAX_W
 		for x in range(_cur_w):
-			var light: int = int(grid.get(Vector2i(x0 + x, y0 + y), 0))
+			var light: int = grid[row_grid + x]
 			var a: int = clampi(int((1.0 - float(light) / max_l) * 255.0), 0, 255)
-			var bi: int = (y * MAX_W + x) * 4
+			var bi: int = (row_bytes + x) * 4
 			bytes[bi] = 0
 			bytes[bi + 1] = 0
 			bytes[bi + 2] = 0

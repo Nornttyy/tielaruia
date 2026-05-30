@@ -586,6 +586,11 @@ func sleep_in_bed(tile: Vector2i) -> void:
 	var player := get_player()
 	if player != null:
 		_sleep_anchor_x = player.global_position.x
+		# 睡觉期间禁止玩家移动 + 给一个安全 iframe (老 bug: 没锁, 怪打过来 = 任挨打死)
+		player.set_physics_process(false)
+		var hp = player.get_node_or_null("PlayerHealth")
+		if hp != null:
+			hp._iframe_timer = 999.0  # 睡觉期间无敌, _wake_up 时清
 
 
 # 睡觉醒条件: 天亮 (is_day) / 玩家走出 8px / 玩家按主键攻击.
@@ -612,6 +617,13 @@ func _wake_up() -> void:
 	_sleeping = false
 	if TimeOfDay != null:
 		TimeOfDay.time_multiplier = 1.0
+	# 恢复玩家移动 + 清掉 sleep 时的无敌 (跟 sleep_in_bed 对应)
+	var player := get_player()
+	if player != null:
+		player.set_physics_process(true)
+		var hp = player.get_node_or_null("PlayerHealth")
+		if hp != null and hp._iframe_timer > 100.0:
+			hp._iframe_timer = 0.5  # 短 iframe 防醒了立刻被怪打
 
 
 # world 被 free 时 (回主菜单 / 切场景) 必须 reset autoload 的 time_multiplier,
