@@ -339,6 +339,20 @@ func _apply_save_data(data: Resource) -> void:
 				var item_id: String = pair[1]
 				if item_id != "":
 					inv_node.set_armor(slot_kind, {"item_id": item_id, "count": 1})
+		# 救命: 加载完背包是空的 → 重新发起步包 (大世界 spawn bug 时存的空背包, 老坏存档救回来).
+		# 也覆盖盔甲全空: 死亡时该掉的都掉了, 给点工具继续玩.
+		var all_empty: bool = true
+		for s in inv_node.inventory.slots:
+			if s != null:
+				all_empty = false
+				break
+		if all_empty:
+			push_warning("加载后背包全空 → 重新发起步包")
+			inv_node.pickup("wood_pickaxe", 1)
+			inv_node.pickup("wood_axe", 1)
+			inv_node.pickup("wood_sword", 1)
+			if inv_node.has_signal("inventory_changed"):
+				inv_node.inventory_changed.emit()
 
 
 # 测试用 helper: 同步切到 game 状态, 不走 LoadingScreen.
