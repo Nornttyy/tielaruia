@@ -46,6 +46,7 @@ const WHEAT_0 := 66         # 苗 (1-2 高小绿点)
 const WHEAT_1 := 67         # 小 (3 高小芽)
 const WHEAT_2 := 68         # 中 (有杆带叶)
 const WHEAT_3 := 69         # 熟 (黄色穗子, 可收割)
+const PLANT_GRASS := 70     # 装饰小草 (草地点缀, 挖 20% 掉种子)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -1677,6 +1678,27 @@ const _WHEAT_3 := [
 ]
 
 
+# 装饰小草: 几片摇曳的绿叶, 长在 GRASS 上, 透明背景
+const _PLANT_GRASS := [
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	".....g..........",
+	".....G.gg..g....",
+	"....gGGG..gG....",
+	"....GGGGgGGG....",
+	"...gGGGGGGGGg...",
+	"...gGGGGGGGGg...",
+	"....GGGGGGGG....",
+	"................",
+]
+
+
 # 生命水晶: 16x16 心形粉色结晶 (透明背景, 玩家右键吃 → 永久 +20 MAX HP)
 const _LIFE_CRYSTAL := [
 	"................",
@@ -2019,6 +2041,8 @@ const _PATTERN_MAP := {
 	WHEAT_1: [_WHEAT_1, _P_WHEAT],
 	WHEAT_2: [_WHEAT_2, _P_WHEAT],
 	WHEAT_3: [_WHEAT_3, _P_WHEAT],
+	# 装饰小草 (复用 _P_WHEAT 绿色, 几片小叶)
+	PLANT_GRASS: [_PLANT_GRASS, _P_WHEAT],
 }
 
 

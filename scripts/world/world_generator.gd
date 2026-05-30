@@ -27,7 +27,7 @@ const BIOME_SWAMP := 4
 # 4 个固定 "槽位" (中心 X), 4 个 biome 用 seed shuffle 分到槽位.
 # 槽位都距 spawn>=300 列, 保证 spawn 周围是 forest. 槽位间距 600 防重叠.
 const _BIOME_SLOTS := [-1200, -600, 600, 1200]
-const _BIOME_SLOT_HALF_WIDTH := 175  # 每个 biome 半宽 (= 350 列宽)
+const _BIOME_SLOT_HALF_WIDTH := 100  # 每个 biome 半宽 (= 200 列宽). 用户要求平原 GRASS 多, 其他 biome 缩小.
 const _BIOME_CENTER_JITTER := 80     # 中心额外随机 ±80 列
 
 const BEDROCK_ROWS := 2          # 基岩占最底几行
@@ -332,6 +332,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 
 	# 废弃矿井: 2-3 个/中世界, 地下深层 30 格水平木走廊 + 木支柱 + 1-2 宝箱 + 蜘蛛.
 	_place_mineshaft_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+
+	# 装饰小草: GRASS 上方 AIR + 15% 概率长 PLANT_GRASS (用户要求草地点缀)
+	_place_grass_decor_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
 	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
 	_fill_walls_chunk(c, chunk_heights, chunk_width, height)
@@ -1509,6 +1512,30 @@ static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
 			if spider_lx < 0 or spider_lx >= chunk_width:
 				continue
 			c.world_tree_spider_spots.append(Vector2i(chunk_start + spider_lx, t_floor_y))
+
+
+# ===== 装饰小草 =====
+# 草地表面 (GRASS + 上方 AIR) 偶发长 PLANT_GRASS. 用户要求 "增大平原 + 加小草".
+# 概率: 每列 15%. 挖掉: 80% 啥都没 / 20% wheat_seed (tile_data PROPS 已配)
+static func _place_grass_decor_chunk(c: Chunk, chunk_heights: Dictionary,
+		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
+	var chunk_start: int = chunk_x * chunk_width
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _hash3(world_seed, chunk_x, 0x91a55ded)   # "grass seed" 派生
+	for local_x in chunk_width:
+		var world_x: int = chunk_start + local_x
+		var surf: int = chunk_heights.get(world_x, -1)
+		if surf < 1:
+			continue
+		# 必须是 GRASS 地表 (沙漠 / 雪原 / 丛林 不长小草)
+		if c.tiles[local_x][surf] != Tiles.GRASS:
+			continue
+		# 上方必须 AIR (避开树干 / 仙人掌 / 花)
+		var above_y: int = surf - 1
+		if above_y < 0 or c.tiles[local_x][above_y] != Tiles.AIR:
+			continue
+		if rng.randf() < 0.15:
+			c.tiles[local_x][above_y] = Tiles.PLANT_GRASS
 
 
 # ===== 废弃矿井 (Mineshaft) =====

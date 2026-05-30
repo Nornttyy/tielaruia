@@ -81,6 +81,9 @@ const WHEAT_0 := 66         # 苗 (刚种, 小绿点)
 const WHEAT_1 := 67         # 小 (3 高小芽)
 const WHEAT_2 := 68         # 中 (有杆带叶)
 const WHEAT_3 := 69         # 熟 (黄色穗子, 可收割)
+# 装饰小草 (草地表面). 1 格高, 非实心 (玩家穿过), 长在 GRASS 上方 AIR.
+# 挖掉: 80% 啥都没有 / 20% wheat_seed (玩家拓荒, 用户要求).
+const PLANT_GRASS := 70
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -477,6 +480,12 @@ const _PROPS := {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["wheat", 100, 2, 4], ["wheat_seed", 100, 1, 2]],
+	},
+	# 装饰小草: 80% 啥都没有 / 20% wheat_seed 1 颗 (用户要求拓荒玩法).
+	PLANT_GRASS: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["wheat_seed", 20, 1, 1]],
 	},
 }
 
