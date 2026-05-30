@@ -85,7 +85,7 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 		loot[slot_idx] = {"item_id": "hell_stone", "count": rng.randi_range(8, 18)}; slot_idx += 1
 		loot[slot_idx] = {"item_id": "hell_fruit", "count": rng.randi_range(2, 5)}; slot_idx += 1
 		if rng.randf() < 0.8:
-			loot[slot_idx] = {"item_id": "diamond_ore", "count": rng.randi_range(2, 4)}; slot_idx += 1
+			loot[slot_idx] = {"item_id": "diamond", "count": rng.randi_range(2, 4)}; slot_idx += 1
 		if rng.randf() < 0.6:
 			loot[slot_idx] = {"item_id": "gold_ingot", "count": rng.randi_range(2, 4)}; slot_idx += 1
 		if rng.randf() < 0.4:
@@ -99,7 +99,7 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 		loot[slot_idx] = {"item_id": "gold_ore", "count": rng.randi_range(3, 7)}; slot_idx += 1
 		loot[slot_idx] = {"item_id": "silver_ore", "count": rng.randi_range(3, 7)}; slot_idx += 1
 		if rng.randf() < 0.6:
-			loot[slot_idx] = {"item_id": "diamond_ore", "count": rng.randi_range(1, 3)}; slot_idx += 1
+			loot[slot_idx] = {"item_id": "diamond", "count": rng.randi_range(1, 3)}; slot_idx += 1
 		if rng.randf() < 0.5:
 			loot[slot_idx] = {"item_id": "gold_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
 		if rng.randf() < 0.3:
@@ -113,7 +113,7 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 	elif tier == 1:
 		# 金层: 铁/煤 + 偶发铜锡锭 + 偶发银锭
 		loot[slot_idx] = {"item_id": "iron_ore", "count": rng.randi_range(4, 9)}; slot_idx += 1
-		loot[slot_idx] = {"item_id": "coal_ore", "count": rng.randi_range(6, 12)}; slot_idx += 1
+		loot[slot_idx] = {"item_id": "coal", "count": rng.randi_range(6, 12)}; slot_idx += 1
 		if rng.randf() < 0.5:
 			loot[slot_idx] = {"item_id": "copper_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
 		if rng.randf() < 0.5:

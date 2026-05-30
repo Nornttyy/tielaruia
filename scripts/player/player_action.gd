@@ -150,6 +150,7 @@ var mouse_world_override: Variant = null
 const EAT_DURATION_SEC := 2.0   # 进食 2 秒 (按住右键 / F 键持续)
 var _eat_t: float = 0.0
 var _eat_item_id: String = ""
+var _f_was_pressed: bool = false   # F 键上一帧状态 (KEY_F 没有 is_key_just_pressed, 自己 track)
 
 
 func set_secondary_held_for_test(held: bool) -> void:
@@ -484,6 +485,9 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	if tid == Tiles.MIMIC_CHEST:
 		_trigger_mimic_trap(tile, world)
 		return
+	# 砍床: 清复活点 (老 bug: 不清, 复活时还指着已变空气的床位置, 玩家从天上掉下)
+	if tid == Tiles.BED and "bed_spawn_point" in world:
+		world.bed_spawn_point = Vector2i(-99999, -99999)
 	# 普通破: 单格
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, Tiles.AIR)
@@ -840,8 +844,13 @@ func _update_eat_or_place(delta: float) -> void:
 		held = (secondary_held_override == true)
 		just = false
 	else:
-		held = Input.is_action_pressed("secondary") or Input.is_key_pressed(KEY_F)
-		just = Input.is_action_just_pressed("secondary") or Input.is_key_pressed(KEY_F)
+		var f_now: bool = Input.is_key_pressed(KEY_F)
+		# F 键边缘检测: 上一帧没按, 这一帧按了 = just. 老 bug 用 is_key_pressed 当 just → 持续按 F 时
+		# 每帧 just=true 导致钩爪连发/种子连种/床 sleep_in_bed 重复重置 anchor 永不醒.
+		var f_just: bool = f_now and not _f_was_pressed
+		_f_was_pressed = f_now
+		held = Input.is_action_pressed("secondary") or f_now
+		just = Input.is_action_just_pressed("secondary") or f_just
 
 	var inv: Node = _inventory_node()
 	var slot = null if inv == null else inv.current_hotbar_slot()

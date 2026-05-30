@@ -1151,6 +1151,22 @@ func respawn_player() -> void:
 				if should_drop:
 					_spawn_death_drop(armor.item_id, 1, death_pos)
 					inv_node.set_armor(slot_kind, null)
+		# 鼠标拖动中的 cursor_slot 也按难度掉 (老 bug: 不处理 → 物品永久卡在 cursor_slot 浮空中)
+		if "cursor_slot" in inv_node and inv_node.cursor_slot != null:
+			var cs = inv_node.cursor_slot
+			if difficulty == 2:
+				# 困难: 不在木套里就全掉
+				if not wood_kit.has(cs.item_id):
+					_spawn_death_drop(cs.item_id, cs.count, death_pos)
+					inv_node.cursor_slot = null
+			else:
+				# 普通: 一半
+				var cs_drop: int = int(cs.count) / 2
+				if cs_drop > 0:
+					_spawn_death_drop(cs.item_id, cs_drop, death_pos)
+					cs.count = int(cs.count) - cs_drop
+					if cs.count <= 0:
+						inv_node.cursor_slot = null
 		if inv_node.has_signal("inventory_changed"):
 			inv_node.inventory_changed.emit()
 	# 清掉地图上所有 slime (防止复活时聚一堆)
@@ -1158,11 +1174,14 @@ func respawn_player() -> void:
 		s.queue_free()
 	# 重置 spawn timer, 给玩家几秒缓冲再开始刷新
 	_slime_spawn_timer = 5.0
-	# 传送回出生点 + 满血
+	# 传送回出生点 + 满血 + 满魔 (老 bug: mana 不回, 持法杖死了复活就发不出火球)
 	player.global_position = _spawn_world_pos()
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_method("revive_full"):
 		hp.revive_full()
+	var mn: Node = player.get_node_or_null("PlayerMana")
+	if mn != null and mn.has_method("refill_full"):
+		mn.refill_full()
 	# 床睡着死了 → 复活点就是床位置 → 8px 移动检测不到 → 卡 10x 时间循环.
 	# 复活时强制 wake (无论是否在睡都安全, _sleeping=false 是幂等).
 	_wake_up()

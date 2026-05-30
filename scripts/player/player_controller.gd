@@ -516,6 +516,10 @@ func _update_hook_flying(delta: float) -> void:
 		var tx: int = int(floor(_hook_tip.x / TILE_SIZE))
 		var ty: int = int(floor(_hook_tip.y / TILE_SIZE))
 		var tid: int = cm.get_tile(tx, ty)
+		# 钩头穿岩浆 (solid=false) 但拉过去玩家就死. 提前 release 防玩家自杀.
+		if tid == Tiles.LAVA:
+			_release_hook()
+			return
 		if tid != -1 and Tiles.is_solid(tid):
 			# 锚到 tile 中心 → 切换到 active
 			_hook_anchor = Vector2(tx * TILE_SIZE + TILE_SIZE / 2.0, ty * TILE_SIZE + TILE_SIZE / 2.0)
