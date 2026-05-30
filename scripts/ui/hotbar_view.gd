@@ -5,6 +5,9 @@ const SLOT_SIZE := 36
 
 var _player_inv: Node = null
 var _slot_nodes: Array = []
+# perf: 缓存 panel ref 防每帧 2 次 group 查找
+var _cached_crafting_panel: Node = null
+var _cached_chest_panel: Node = null
 
 
 func _ready() -> void:
@@ -17,8 +20,13 @@ func _ready() -> void:
 
 # UI (背包/合成/箱子) 打开时隐藏 hotbar — 用户要求
 func _process(_delta: float) -> void:
-	var c: Node = get_tree().get_first_node_in_group("crafting_panel")
-	var ch: Node = get_tree().get_first_node_in_group("chest_panel")
+	# panel 一旦 queue_free 引用就 invalid; 失效就重查
+	if _cached_crafting_panel == null or not is_instance_valid(_cached_crafting_panel):
+		_cached_crafting_panel = get_tree().get_first_node_in_group("crafting_panel")
+	if _cached_chest_panel == null or not is_instance_valid(_cached_chest_panel):
+		_cached_chest_panel = get_tree().get_first_node_in_group("chest_panel")
+	var c: Node = _cached_crafting_panel
+	var ch: Node = _cached_chest_panel
 	var ui_open: bool = (c != null and c.has_method("is_open") and c.is_open()) \
 			or (ch != null and ch.has_method("is_open") and ch.is_open())
 	visible = not ui_open
