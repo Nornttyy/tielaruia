@@ -33,11 +33,28 @@ func mark(world_x: int, world_y: int, tile_id: int) -> void:
 
 # 标记矩形范围 (玩家移动时一次刷一片). 用 chunk_mgr 查每格 tile_id 写入缓存.
 # 联机: 别人家的水晶在小地图也别露馅, 替换成 AIR.
-# perf: has_method 检查提到循环外 (chunk_mgr 不变), 避免 252 tile × 重复反射查询.
+# perf:
+# 1) has_method 检查提到循环外 (chunk_mgr 不变)
+# 2) 已探索 tile 跳过 chunk_mgr.get_tile() — 老逻辑每次都查, 60×40 = 2400 tile × 4Hz
+#    = 9600/s 严重卡顿. 内联 is_explored 直接走 _tiles dict, 避免函数调.
 func mark_rect(chunk_mgr: Node, world_x0: int, world_y0: int, world_x1: int, world_y1: int) -> void:
 	var has_crystal_check: bool = chunk_mgr.has_method("is_my_crystal")
+	# 缓存 chunk 范围: 一个 chunk 内的 tile 共用同一 _tiles[cx] buffer, 不必每 tile 重查 dict
+	var prev_cx: int = -999999
+	var prev_bm: PackedByteArray
 	for wx in range(world_x0, world_x1 + 1):
+		var cx: int = Chunk.chunk_x_of(wx)
+		var lx: int = Chunk.local_x_of(wx)
+		if cx != prev_cx:
+			prev_cx = cx
+			prev_bm = _tiles.get(cx, PackedByteArray())
+		var lx_offset: int = lx * ChunkConstants.WORLD_HEIGHT
 		for wy in range(world_y0, world_y1 + 1):
+			if wy < 0 or wy >= ChunkConstants.WORLD_HEIGHT:
+				continue
+			# 已探索 → 跳过 (省 chunk_mgr.get_tile call). bm 空 = chunk 没缓存过, 当未探索.
+			if prev_bm.size() > 0 and prev_bm[lx_offset + wy] != UNEXPLORED:
+				continue
 			var tid: int = chunk_mgr.get_tile(wx, wy)
 			if has_crystal_check and (tid == Tiles.LIFE_CRYSTAL or tid == Tiles.MANA_CRYSTAL):
 				if not chunk_mgr.is_my_crystal(Vector2i(wx, wy)):
