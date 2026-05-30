@@ -179,9 +179,6 @@ func _step_chunks() -> void:
 
 
 func _step_fx_layers() -> void:
-	# 装饰层动态实例化 (老 world.tscn 一次性 instantiate 太多, iOS Safari 384MB WebGL 上限爆掉).
-	# 拆出来一个个加, 给 GC 喘息时间. 顺序倒着加 + move_child 到位置 0, 还原 world.tscn 老结构.
-	_instantiate_decorative_layers()
 	# 流水模拟: dirty 列表驱动, 接 chunk_manager + _set_tile
 	water_sim = WaterSimClass.new()
 	water_sim.name = "WaterSim"
@@ -200,45 +197,6 @@ func _step_fx_layers() -> void:
 	_apply_graphics_settings.call_deferred()  # 让所有 child 先 _ready
 	if not GameSettings.settings_changed.is_connected(_apply_graphics_settings):
 		GameSettings.settings_changed.connect(_apply_graphics_settings)
-
-
-# 装饰层 (Sky / 山 / 云 / 鸟蝠 / 月日 / 岩浆滴 / 矿洞背景) 动态加.
-# 倒序加 + move_child(0): 顺序变成 [SkyBackground, CelestialLayer, MountainsLayer,
-#   CaveBackgroundLayer, CloudLayer, BirdLayer, BatLayer, LavaDripLayer, WallLayer, ...]
-# 跟老 world.tscn 一致. Node2D/ColorRect 按 scene order 渲染, ParallaxBackground/CanvasLayer
-# 按 layer 属性渲染, 两边都对.
-func _instantiate_decorative_layers() -> void:
-	var SkyScene := preload("res://scenes/world/sky_background.tscn")
-	var CelestialScene := preload("res://scenes/world/celestial_layer.tscn")
-	var MountainsScene := preload("res://scenes/world/mountains_layer.tscn")
-	var CaveBgScene := preload("res://scenes/world/cave_background_layer.tscn")
-	var CloudsScene := preload("res://scenes/world/cloud_layer.tscn")
-	var FlockScene := preload("res://scenes/world/flock_layer.tscn")
-	var LavaScene := preload("res://scenes/world/lava_drip_layer.tscn")
-	# 倒序加, 每个 move_child(0) 把它推到最前 (最底层渲染)
-	_add_decorative(LavaScene, "LavaDripLayer", {})
-	_add_decorative(FlockScene, "BatLayer", {"kind": "bat"})
-	_add_decorative(FlockScene, "BirdLayer", {"kind": "bird"})
-	_add_decorative(CloudsScene, "CloudLayer", {})
-	_add_decorative(CaveBgScene, "CaveBackgroundLayer", {})
-	_add_decorative(MountainsScene, "MountainsLayer", {})
-	_add_decorative(CelestialScene, "CelestialLayer", {})
-	_add_decorative(SkyScene, "SkyBackground", {})
-	# ScenicDirector 必须最后加 — 它 _ready 自动找上面的装饰层
-	var DirScene := preload("res://scenes/world/scenic_director.tscn")
-	var dir = DirScene.instantiate()
-	dir.name = "ScenicDirector"
-	add_child(dir)
-
-
-func _add_decorative(scene: PackedScene, node_name: String, props: Dictionary) -> void:
-	var inst: Node = scene.instantiate()
-	inst.name = node_name
-	for k in props:
-		inst.set(k, props[k])
-	add_child(inst)
-	# 推到最前面 (位置 0). 后续加的会反复推 0 → 最后顺序跟代码倒过来
-	move_child(inst, 0)
 
 
 func _step_spawn_player() -> void:
