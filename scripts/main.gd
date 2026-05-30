@@ -182,6 +182,8 @@ func _start_game_sync(world_seed: int) -> void:
 	add_child(dialogue)
 	_game_nodes.append(dialogue)
 	_wire_player.call_deferred()
+	# boot_to_game 用同步路径时也要发起步包 (异步路径会发, 同步路径以前忘了 → 空背包进游戏)
+	_grant_starter_on_new_game.call_deferred()
 	_start_autosave()
 
 

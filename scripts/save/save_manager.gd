@@ -112,8 +112,13 @@ func save(main: Node) -> bool:
 			data.armor_helmet_id = "" if inv_node.armor_helmet == null else String(inv_node.armor_helmet.item_id)
 			data.armor_chest_id = "" if inv_node.armor_chest == null else String(inv_node.armor_chest.item_id)
 			data.armor_pants_id = "" if inv_node.armor_pants == null else String(inv_node.armor_pants.item_id)
-	# 存档名: 用 world_name; 没有就 fallback
+	# 存档名: 用 world_name; 没有就 fallback. 防路径注入: 把危险字符替换掉.
 	var save_name: String = data.world_name if (data.world_name != null and data.world_name != "") else "默认存档"
+	# 把 / \ .. : * ? " < > | 这些路径相关 / 文件系统非法字符全替换为 _
+	for bad_char in ["/", "\\", "..", ":", "*", "?", "\"", "<", ">", "|"]:
+		save_name = save_name.replace(bad_char, "_")
+	if save_name.is_empty():
+		save_name = "默认存档"
 	var path: String = SAVES_DIR + save_name + ".tres"
 	var err: int = ResourceSaver.save(data, path)
 	if err != OK:
@@ -149,8 +154,11 @@ func list_saves() -> Array:
 	return out
 
 
-# 用存档名读特定存档. None → null.
+# 用存档名读特定存档. None → null. 防路径注入同 delete_save_by_name.
 func load_save_by_name(save_name: String) -> SaveData:
+	if save_name.is_empty() or save_name.contains("/") or save_name.contains("\\") or save_name.contains(".."):
+		push_warning("load_save_by_name: 非法存档名 '%s', 拒绝读" % save_name)
+		return null
 	var path: String = SAVES_DIR + save_name + ".tres"
 	if not FileAccess.file_exists(path):
 		return null
@@ -174,8 +182,11 @@ func has_save() -> bool:
 	return not list_saves().is_empty()
 
 
-# 删一个存档 (不可恢复)
+# 删一个存档 (不可恢复). 防路径注入: save_name 不能含 "/" / ".." / 空 (否则可删任意文件).
 func delete_save_by_name(save_name: String) -> void:
+	if save_name.is_empty() or save_name.contains("/") or save_name.contains("\\") or save_name.contains(".."):
+		push_warning("delete_save_by_name: 非法存档名 '%s', 拒绝删" % save_name)
+		return
 	var path: String = SAVES_DIR + save_name + ".tres"
 	if FileAccess.file_exists(path):
 		DirAccess.remove_absolute(path)

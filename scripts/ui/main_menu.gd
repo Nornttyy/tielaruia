@@ -494,6 +494,8 @@ func _confirm_delete_save(save_name: String) -> void:
 		dlg.queue_free()
 	)
 	dlg.canceled.connect(func(): dlg.queue_free())
+	# 用户按 X 关 (close_requested) — 老代码漏接, 对话框留 scene tree leak
+	dlg.close_requested.connect(func(): dlg.queue_free())
 	add_child(dlg)
 	dlg.popup_centered()
 
