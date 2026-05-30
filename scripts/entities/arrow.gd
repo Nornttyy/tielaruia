@@ -57,17 +57,19 @@ func _physics_process(delta: float) -> void:
 
 
 func _check_enemy_hit() -> void:
-	for enemy in get_tree().get_nodes_in_group("slimes"):
-		if enemy == _shooter or not is_instance_valid(enemy):
-			continue
-		if not enemy is Node2D:
-			continue
-		if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX:
-			continue
-		if enemy.has_method("take_damage"):
-			enemy.take_damage(damage, global_position, 120.0)
-			_destroy()
-			return
+	# 扫两组: slimes (敌对怪) + animals (牛羊猪 — 弓应该能射). 否则箭穿过动物.
+	for group in ["slimes", "animals"]:
+		for enemy in get_tree().get_nodes_in_group(group):
+			if enemy == _shooter or not is_instance_valid(enemy):
+				continue
+			if not enemy is Node2D:
+				continue
+			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX:
+				continue
+			if enemy.has_method("take_damage"):
+				enemy.take_damage(damage, global_position, 120.0)
+				_destroy()
+				return
 
 
 func _destroy() -> void:

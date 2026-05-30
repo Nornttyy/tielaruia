@@ -25,6 +25,7 @@ var _is_dying: bool = false
 var _charge_target: Vector2 = Vector2.ZERO
 var _charge_t: float = 0.0    # >0 = 在冲刺中
 var _charge_cooldown: float = 0.0
+var _spawn_y_tile: int = -1  # 出生 y_tile (despawn 用), -1 = 未设
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -51,8 +52,13 @@ func _physics_process(delta: float) -> void:
 		return
 	if _is_dying:
 		return
-	# 地狱边界: 飞出地狱顶 (y < 200 格, 留 20 格 buffer) 直接 despawn — 防地狱蜂追玩家飞到地面.
-	if int(floor(global_position.y / TILE_SIZE)) < 200:
+	# 首次进入 _physics_process 缓存 spawn_y_tile (spawner 设好 global_position 后)
+	if _spawn_y_tile < 0:
+		_spawn_y_tile = int(floor(global_position.y / TILE_SIZE))
+	# 地狱边界: 飞出 spawn_y 以上 32 tile 才 despawn (老阈值 200 太紧, 击退一下就消失 bug)
+	# 同时绝对地狱顶 (y < 180) 保险 despawn
+	var y_tile: int = int(floor(global_position.y / TILE_SIZE))
+	if y_tile < 180 or y_tile < _spawn_y_tile - 32:
 		queue_free()
 		return
 	if _hit_flash > 0.0:
