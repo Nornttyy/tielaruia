@@ -165,7 +165,11 @@ func _check_player_contact() -> void:
 	var player := _find_player()
 	if player == null:
 		return
-	if global_position.distance_to(player.global_position) > 15.0:
+	# AABB 盒重叠 (修踩头躲 bug): 玩家 10×22, 僵尸 10×18.
+	# dx ≤ 10 + 玩家半宽 5 ≈ 10; dy 玩家在僵尸下方 (dy>0) 到玩家踩僵尸头上 (dy=-18).
+	var dx: float = abs(player.global_position.x - global_position.x)
+	var dy: float = player.global_position.y - global_position.y
+	if dx > 10.0 or dy < -10.0 or dy > 22.0:
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

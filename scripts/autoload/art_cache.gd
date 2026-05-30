@@ -244,7 +244,9 @@ func _build_items() -> void:
 			"silver_helmet", "silver_chest", "silver_pants",
 			"gold_helmet", "gold_chest", "gold_pants",
 			"diamond_helmet", "diamond_chest", "diamond_pants",
-			"hell_staff", "wood_staff", "iron_staff", "mana_potion"]:
+			"hell_staff", "wood_staff", "iron_staff", "mana_potion",
+			# 用户加: 小麦 / 种子 之前漏了, 收割掉地没图
+			"wheat", "wheat_seed"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画
@@ -320,6 +322,11 @@ const _ITEM_TO_TILE := {
 	"iron_ore": BlocksArt.IRON_ORE,
 	"silver_ore": BlocksArt.SILVER_ORE,
 	"chest": BlocksArt.CHEST,
+	# 用户加: 床 / 水晶 / 砂岩 之前漏了 _ITEM_TO_TILE, 物品掉地上没图 + console 刷 warning
+	"bed": BlocksArt.BED,
+	"life_crystal": BlocksArt.LIFE_CRYSTAL,
+	"mana_crystal": BlocksArt.MANA_CRYSTAL,
+	"sandstone": BlocksArt.SANDSTONE,
 	# 新群系
 	"snow": BlocksArt.SNOW,
 	"ice": BlocksArt.ICE,

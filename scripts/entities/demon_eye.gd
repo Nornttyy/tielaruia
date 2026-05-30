@@ -102,7 +102,10 @@ func _check_player_contact() -> void:
 	var player := _find_player()
 	if player == null:
 		return
-	if global_position.distance_to(player.global_position) > 16.0:
+	# AABB (飞行怪, dy 范围更宽因为它悬空, 玩家中部 ~ dy=-11).
+	var dx: float = abs(player.global_position.x - global_position.x)
+	var dy: float = player.global_position.y - global_position.y
+	if dx > 10.0 or dy < -22.0 or dy > 22.0:
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

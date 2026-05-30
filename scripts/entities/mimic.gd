@@ -101,7 +101,10 @@ func _check_player_contact() -> void:
 	var player := _find_player()
 	if player == null:
 		return
-	if global_position.distance_to(player.global_position) > 18.0:
+	# AABB 盒重叠 (修踩头躲 bug). Mimic 体型 12×14 大一点, dx 半径 11.
+	var dx: float = abs(player.global_position.x - global_position.x)
+	var dy: float = player.global_position.y - global_position.y
+	if dx > 11.0 or dy < -10.0 or dy > 22.0:
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
