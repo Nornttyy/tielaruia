@@ -164,6 +164,13 @@ const _P_LOG := {
 	"o": Color8(184, 131, 106),  # 樱木暖橙
 }
 
+# 麻绳: 偏暖黄棕色, 更亮更轻 (跟 log 树干区分)
+const _P_ROPE := {
+	"h": Color8(180, 145, 95),   # 麻绳基 (淡黄棕)
+	"H": Color8(125, 95, 55),    # 麻绳深 (twist 暗边)
+	"l": Color8(220, 185, 135),  # 麻绳高光 (亮淡)
+}
+
 const _P_LEAVES := {
 	"l": Color8(125, 173, 92),   # 暖中绿
 	"L": Color8(86, 129, 74),    # 暖阴影
@@ -825,6 +832,27 @@ const _BRANCH_R := [
 
 
 # 原木：暖竖纹树皮 (4 道凹沟 B + 凸条 l) + 2 个木结 (RR 带 B 框) + 中树皮 r + 樱木暖橙 o 微调
+# 麻绳: 中央 4-6 px 宽双股扭绳, 透明边. 16×16. 用户改: 老复用 _LOG 太像木头, 现在专门画.
+# 4px 窄段 (HhhH) 跟 6px 宽段 (HhllhH) 交替, 模拟扭股的明暗起伏.
+const _ROPE := [
+	"......HhhH......",
+	".....HhllhH.....",
+	"......HhhH......",
+	".....HhllhH.....",
+	"......HhhH......",
+	".....HhllhH.....",
+	"......HhhH......",
+	".....HhllhH.....",
+	"......HhhH......",
+	".....HhllhH.....",
+	"......HhhH......",
+	".....HhllhH.....",
+	"......HhhH......",
+	".....HhllhH.....",
+	"......HhhH......",
+	".....HhllhH.....",
+]
+
 const _LOG := [
 	"bBbpBbbBpbBbpBbB",
 	"bBblrBblbBblrBbl",
@@ -2015,7 +2043,7 @@ const _PATTERN_MAP := {
 	MUD: [_DIRT, _P_DIRT],
 	SWAMP_GRASS: [_GRASS, _P_GRASS],
 	WOOD_PLATFORM: [_WOOD_PLATFORM, _P_PLANKS],  # 上 4 行木梁 + 下面透明
-	ROPE: [_LOG, _P_LOG],                 # 复用 log 颜色 (棕), 后续可做专属麻绳
+	ROPE: [_ROPE, _P_ROPE],               # 专属麻绳: 双股扭, 淡黄棕
 	JUNGLE_DIRT: [_DIRT, _P_DIRT],        # 后面 ArtCache tint 深绿
 	SNOW_DIRT: [_DIRT, _P_DIRT],          # 后面 ArtCache tint 灰蓝
 	JUNGLE_LEAVES: [_LEAVES, _P_LEAVES],  # 后面 ArtCache tint 深湿绿
