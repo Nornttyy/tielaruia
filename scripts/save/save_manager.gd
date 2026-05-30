@@ -83,12 +83,8 @@ func save(main: Node) -> bool:
 		for cx in world._pyramid_chunks_spawned.keys():
 			pyramid_arr.append(int(cx))
 	data.pyramid_chunks_spawned = pyramid_arr
-	# 世纪树蜘蛛同款持久化
-	var wt_arr: PackedInt32Array = PackedInt32Array()
-	if "_world_tree_chunks_spawned" in world:
-		for cx in world._world_tree_chunks_spawned.keys():
-			wt_arr.append(int(cx))
-	data.world_tree_chunks_spawned = wt_arr
+	# 世纪树已删 (用户要求), data.world_tree_chunks_spawned 字段留空保留向后兼容
+	data.world_tree_chunks_spawned = PackedInt32Array()
 	# 废弃矿井蜘蛛同款持久化
 	var ms_arr: PackedInt32Array = PackedInt32Array()
 	if "_mineshaft_chunks_spawned" in world:

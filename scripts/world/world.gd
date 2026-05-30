@@ -7,8 +7,6 @@ const ChunkManagerClass = preload("res://scripts/world/chunk_manager.gd")
 const WaterSimClass = preload("res://scripts/world/water_sim.gd")
 const MinimapDataClass = preload("res://scripts/world/minimap_data.gd")
 const WeatherClass = preload("res://scripts/world/weather.gd")
-# RainLayer 已删 (用户要求, commit 后此行可全删)
-# 萤火虫/流星/飘叶 fx 已删 (用户要求, perf)
 const CursorManagerClass = preload("res://scripts/world/cursor_manager.gd")
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
@@ -29,7 +27,6 @@ const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
 const PigScene = preload("res://scenes/entities/pig.tscn")
 const PenguinScene = preload("res://scenes/entities/penguin.tscn")
-# const JaguarScene = preload("res://scenes/entities/jaguar.tscn")  # 删除 (用户要求)
 const FrogScene = preload("res://scenes/entities/frog.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
@@ -83,8 +80,6 @@ const _MP_TIME_SYNC_INTERVAL := 5.0
 var _mp_entity_sync_timer: float = 0.0  # host 广播实体位置计时 (Phase E)
 const _MP_ENTITY_SYNC_INTERVAL := 0.2
 var weather: Node
-# var rain_layer: CanvasLayer  # 已删
-# fireflies/shooting_star/falling_leaves vars 已删
 var village_villager_spawns: Array = []
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
@@ -342,7 +337,6 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
 		"penguin": scene = PenguinScene
-		# "jaguar": scene = JaguarScene  # 删除
 		"frog": scene = FrogScene
 		"villager": scene = VillagerScene
 		_: return null
@@ -995,22 +989,7 @@ func spawn_mummies_for_chunk(chunk_x: int, spots: Array) -> void:
 		entities_root.add_child(creature)
 
 
-# 世纪树守卫蜘蛛: 跟 mummy 同模式, 杀完 chunk 不重生.
-var _world_tree_chunks_spawned: Dictionary = {}   # chunk_x int → true
-func spawn_world_tree_spiders_for_chunk(chunk_x: int, spots: Array) -> void:
-	if spots.is_empty():
-		return
-	if _world_tree_chunks_spawned.has(chunk_x):
-		return
-	_world_tree_chunks_spawned[chunk_x] = true
-	for spot in spots:
-		var creature := SpiderScene.instantiate()
-		creature.global_position = Vector2(
-			spot.x * TILE_SIZE + TILE_SIZE / 2.0,
-			spot.y * TILE_SIZE + TILE_SIZE
-		)
-		entities_root.add_child(creature)
-
+# 世纪树已删 (用户要求)
 
 # 菜园: 扫所有 loaded chunk 找 WHEAT_0/1/2, 70% 概率升一阶. 每 15s 调.
 # 平均 ~45s 从苗到熟 (15s × 3 阶段 / 0.7 概率).

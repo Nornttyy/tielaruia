@@ -17,8 +17,6 @@ var guaranteed_tier: int = 0
 var _first_chest_placed: bool = false   # 第一个 chest 放完后置 true, 后续 chest 走原规则
 # 金字塔守卫 spawn 位置 (世界坐标 Vector2i). chunk_manager 加载时召 mummy.
 var mummy_spawn_spots: Array = []
-# 世纪树地下房间 + 隧道 spawn 蜘蛛位置 (世界坐标 Vector2i)
-var world_tree_spider_spots: Array = []
 # 废弃矿井 spawn 蜘蛛位置 (世界坐标 Vector2i)
 var mineshaft_spider_spots: Array = []
 

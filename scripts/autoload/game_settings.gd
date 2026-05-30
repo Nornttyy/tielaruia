@@ -39,12 +39,7 @@ func pyramid_count_range() -> Array:
 		_: return [2, 3]      # 中: 2-3 个 (现行)
 
 
-# 世纪树数量: 小 1-2 / 中 2-3 / 大 4-6
-func world_tree_count_range() -> Array:
-	match current_world_size:
-		0: return [1, 2]
-		2: return [4, 6]
-		_: return [2, 3]
+# 世纪树已删 (用户要求), world_tree_count_range 函数已移除
 
 
 # 废弃矿井数量: 小 1 / 中 2-3 / 大 3-5
@@ -55,13 +50,6 @@ func mineshaft_count_range() -> Array:
 		_: return [2, 3]
 
 # ===== 图形开关 (用户在设置面板里勾选, 持久化) =====
-# show_rain: 下雨粒子, 关掉省 GPU
-var show_rain: bool = true:
-	set(v):
-		if show_rain == v: return
-		show_rain = v
-		_save_and_emit()
-
 # show_parallax: 远景视差 (云 + 远山 + 矿洞远景), 关掉省 draw_call
 var show_parallax: bool = true:
 	set(v):
@@ -163,7 +151,6 @@ func _save_and_emit() -> void:
 func _save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("audio", "master_volume", master_volume)
-	cfg.set_value("graphics", "show_rain", show_rain)
 	cfg.set_value("graphics", "show_parallax", show_parallax)
 	cfg.set_value("graphics", "show_flocks", show_flocks)
 	cfg.set_value("graphics", "water_sim_enabled", water_sim_enabled)
@@ -181,8 +168,7 @@ func _load() -> void:
 		return  # 文件不存在 → 用默认值
 	# 直接赋字段, 绕开 setter 避免 _ready 阶段多次重存盘
 	master_volume = clamp(float(cfg.get_value("audio", "master_volume", 1.0)), 0.0, 1.0)
-	# 图形开关: UI 已删, perf 优化默认: 远景/水开, 鸟蝠/雨关
-	show_rain = true       # 雨已彻底删, 这个 flag 没意义
+	# 图形开关: UI 已删, perf 优化默认: 远景/水开, 鸟蝠关
 	show_parallax = true   # 远山+矿洞背景, 不卡
 	show_flocks = false    # 鸟蝠 perf: 36 sprite × 2 每帧 sin 扑翼, 默认关
 	water_sim_enabled = true

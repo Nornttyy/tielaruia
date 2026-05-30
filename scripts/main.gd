@@ -259,10 +259,7 @@ func _apply_save_data(data: Resource) -> void:
 		if "pyramid_chunks_spawned" in data and "_pyramid_chunks_spawned" in w:
 			for cx in data.pyramid_chunks_spawned:
 				w._pyramid_chunks_spawned[int(cx)] = true
-		# 同款: 已 spawn 世纪树蜘蛛的 chunk_x
-		if "world_tree_chunks_spawned" in data and "_world_tree_chunks_spawned" in w:
-			for cx in data.world_tree_chunks_spawned:
-				w._world_tree_chunks_spawned[int(cx)] = true
+		# 世纪树已删 (用户要求), 老存档的 world_tree_chunks_spawned 字段忽略
 		# 同款: 已 spawn 废弃矿井蜘蛛的 chunk_x
 		if "mineshaft_chunks_spawned" in data and "_mineshaft_chunks_spawned" in w:
 			for cx in data.mineshaft_chunks_spawned:
