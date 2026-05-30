@@ -46,8 +46,8 @@ const SPAWN_RANGE_MAX := 22
 
 const TILE_SIZE := 12
 
-const MINIMAP_VIEW_TILES_X := 18  # 玩家屏幕能看到的横向 tile (略大于实际视野)
-const MINIMAP_VIEW_TILES_Y := 14  # 纵向
+const MINIMAP_VIEW_TILES_X := 60  # 屏幕能看到的横向 tile (1280px / 0.8 zoom / 12 ≈ 133, 用 60 覆盖近视野)
+const MINIMAP_VIEW_TILES_Y := 40  # 纵向 (覆盖屏幕高度)
 const MINIMAP_MARK_INTERVAL := 0.25  # 每 0.25s 标记一次玩家周围. 玩家 0.25s 走 ~1 tile,
                                      # minimap 也跟得上, 但循环 18x14 tile 的成本省 60%
 
@@ -610,7 +610,7 @@ func _mp_broadcast_entities() -> void:
 
 func _mark_explored_around_player() -> void:
 	var player := get_player()
-	if player == null or minimap_data == null:
+	if player == null or minimap_data == null or chunk_manager == null:
 		return
 	var ptx: int = int(floor(player.global_position.x / TILE_SIZE))
 	var pty: int = int(floor(player.global_position.y / TILE_SIZE))
