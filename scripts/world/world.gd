@@ -1126,11 +1126,34 @@ func _spawn_surface_creature(scene: PackedScene) -> void:
 
 func _spawn_player() -> void:
 	var player := PlayerScene.instantiate()
-	player.position = _spawn_world_pos()
+	var spawn_pos: Vector2 = _spawn_world_pos()
+	# 保险: 大世界 spawn 找点可能落在不稳的位置, 强制清出 2 宽 × 3 高空气坑
+	# 让玩家 (1×2 hitbox + 头顶 1 格余量) 永远落得下脚, 不会埋石头.
+	var sp_tile_x: int = int(floor(spawn_pos.x / TILE_SIZE))
+	var sp_tile_y: int = int(floor(spawn_pos.y / TILE_SIZE))
+	_ensure_air_pocket(sp_tile_x, sp_tile_y)
+	player.position = spawn_pos
 	entities_root.add_child(player)
 	camera.reparent(player)
 	camera.position = Vector2.ZERO
 	# 气氛效果 (萤火虫/流星/飘叶) 已删
+
+
+# 清 (tx, ty) 周围 2 宽 × 3 高空气坑 (玩家 1×2 + 头顶余量). 防玩家 spawn 卡石头.
+# 跳过 BEDROCK (不可破) + 跳过 chunk 没加载 (避免改未生成 tile).
+func _ensure_air_pocket(tx: int, ty: int) -> void:
+	if chunk_manager == null:
+		return
+	for dx in [-1, 0, 1]:
+		for dy in [-3, -2, -1, 0]:   # 脚 ty, 头 ty-1, 余量 ty-2/-3
+			var x: int = tx + dx
+			var y: int = ty + dy
+			if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
+				continue
+			var tid: int = chunk_manager.get_tile(x, y)
+			if tid == Tiles.AIR or tid == Tiles.BEDROCK:
+				continue
+			chunk_manager.set_tile(x, y, Tiles.AIR)
 
 
 func _spawn_world_pos() -> Vector2:
