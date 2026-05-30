@@ -88,9 +88,9 @@ var weather: Node
 var village_villager_spawns: Array = []
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
-var _crop_grow_timer: float = 15.0   # 作物生长 tick: 每 15s 一次, 每个 WHEAT_0/1/2 升一阶概率
-const CROP_GROW_INTERVAL := 15.0
-const CROP_GROW_CHANCE := 0.7        # 每次 tick 升级概率 (70% → 平均成熟 ~45s)
+var _crop_grow_timer: float = 60.0   # 作物生长 tick: 每 60s 一次, 每个 WHEAT_0/1/2 升一阶概率
+const CROP_GROW_INTERVAL := 60.0
+const CROP_GROW_CHANCE := 0.6        # 每次 tick 升级概率 (60% → 平均成熟 ~5 分钟)
 var _last_player_chunk_x: int = 0
 var _minimap_mark_timer: float = 0.0
 
