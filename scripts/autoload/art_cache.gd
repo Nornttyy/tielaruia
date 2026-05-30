@@ -42,7 +42,6 @@ var slime_frames: SpriteFrames
 var zombie_frames: SpriteFrames
 var villager_frames: SpriteFrames
 var cow_frames: SpriteFrames
-# var jaguar_frames: SpriteFrames  # 删除 (用户要求)
 var sheep_frames: SpriteFrames
 var pig_frames: SpriteFrames
 var spider_frames: SpriteFrames
