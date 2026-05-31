@@ -4,6 +4,18 @@ extends GutTest
 const MainScene = preload("res://scenes/main.tscn")
 const SlimeBallScene = preload("res://scenes/entities/slime_ball.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
+const KingSlimeScene = preload("res://scenes/entities/king_slime.tscn")
+
+
+func test_king_slime_base_stats() -> void:
+	var boss = KingSlimeScene.instantiate()
+	add_child_autofree(boss)
+	await wait_frames(1)
+	var expected := int(round(1000 * GameSettings.enemy_hp_multiplier()))
+	assert_eq(boss.max_health, expected, "Boss HP = 1000 × 难度倍率")
+	assert_eq(boss.CONTACT_DAMAGE, 20, "接触伤害 20")
+	assert_true(boss.is_in_group("king_slime"), "应在 king_slime 组")
+	assert_true(boss.is_in_group("boss"), "应在 boss 组")
 
 
 func test_slime_crown_and_ball_defs_exist() -> void:
@@ -81,10 +93,10 @@ func _equip(ctx: Dictionary, item_id: String) -> void:
 func test_slimeball_weapon_throws_projectile() -> void:
 	var ctx: Dictionary = await _setup_game()
 	_equip(ctx, "slime_ball")
-	var before := ctx["world"].get_tree().get_nodes_in_group("slime_balls").size()
+	var before: int = ctx["world"].get_tree().get_nodes_in_group("slime_balls").size()
 	ctx["action"].mouse_world_override = ctx["player"].global_position + Vector2(40, 0)
 	ctx["action"].primary_override = true
 	await wait_frames(3)
 	ctx["action"].primary_override = false
-	var after := ctx["world"].get_tree().get_nodes_in_group("slime_balls").size()
+	var after: int = ctx["world"].get_tree().get_nodes_in_group("slime_balls").size()
 	assert_gt(after, before, "持史莱姆球点 LMB 应投出一个投射物")

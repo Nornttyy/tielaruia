@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://b_kingslime_2026"]
+
+[ext_resource type="Script" path="res://scripts/entities/king_slime.gd" id="1_ks"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ks"]
+size = Vector2(40, 32)
+
+[node name="KingSlime" type="CharacterBody2D"]
+script = ExtResource("1_ks")
+collision_layer = 0
+collision_mask = 3
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -16)
+centered = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -16)
+shape = SubResource("RectangleShape2D_ks")
