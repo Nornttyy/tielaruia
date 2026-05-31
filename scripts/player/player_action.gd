@@ -105,8 +105,8 @@ var _attack_combo_step: int = 0
 # spin 期间每帧算 pickaxe tip 世界位置, 距离 ≤ HIT_RADIUS 的怪扣 1 次.
 # 用户改: PICKAXE_SPIN_DURATION 0.7→1.0 慢一点; spin 起始朝鼠标 (不再总从上).
 const PICKAXE_SPIN_DURATION := 1.0
-const PICKAXE_TIP_LOCAL_Y := -24.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 1.5)
-const PICKAXE_HIT_RADIUS := 15.0     # tip 到怪中心 ≤ 15px 算碰到 (玩家 1.5x)
+const PICKAXE_TIP_LOCAL_Y := -20.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 1.25)
+const PICKAXE_HIT_RADIUS := 12.5     # tip 到怪中心 ≤ 12.5px 算碰到 (玩家 1.25x)
 var _pickaxe_spin_active: bool = false
 var _pickaxe_spin_t: float = 0.0
 var _pickaxe_hit_this_spin: Dictionary = {}  # instance_id → true (1 spin 1 只怪 1 击)
@@ -119,12 +119,12 @@ var _pickaxe_spin_facing_right: bool = true
 # 用户改: "剑碰到怪就扣血", 不是按攻击瞬间 AoE 圆扣.
 # 注: rotation/position 自己按 _sword_attack_t 算, 不读 held.rotation —
 # tween 在 _process 更新, _physics_process 这里读可能滞后 (headless 测试 tween 可能不动).
-const SWORD_TIP_LOCAL_Y := -24.0       # tip 相对 held.position 的 y (sprite 16h × scale 1.5)
-const SWORD_HIT_RADIUS := 21.0         # 怪中心到 grip→tip 线段 ≤ 21px (玩家 1.5x). 视觉碰到了 算法也命中
-const SWORD_POINT_BLANK_DIST := 27.0   # 怪离玩家中心 ≤ 27px 视为贴脸 (玩家 1.5x), 任何剑攻击一律命中
-const SWORD_HAND_OFFSET_X := 6.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
-const SWORD_HAND_OFFSET_Y := -12.0     # 跟 held_item.HAND_OFFSET_Y 一致
-const SWORD_THRUST_OFFSET := 15.0      # 跟 held_item.THRUST_OFFSET_PX 一致
+const SWORD_TIP_LOCAL_Y := -20.0       # tip 相对 held.position 的 y (sprite 16h × scale 1.25)
+const SWORD_HIT_RADIUS := 17.5         # 怪中心到 grip→tip 线段 ≤ 17.5px (玩家 1.25x). 视觉碰到了 算法也命中
+const SWORD_POINT_BLANK_DIST := 22.5   # 怪离玩家中心 ≤ 22.5px 视为贴脸 (玩家 1.25x), 任何剑攻击一律命中
+const SWORD_HAND_OFFSET_X := 5.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
+const SWORD_HAND_OFFSET_Y := -10.0     # 跟 held_item.HAND_OFFSET_Y 一致
+const SWORD_THRUST_OFFSET := 12.5      # 跟 held_item.THRUST_OFFSET_PX 一致
 const SWORD_THRUST_DURATION := 0.30    # 三段: 20% 突出, 55% dwell, 25% 收回
 const SWORD_THRUST_EXTEND_END := 0.20  # 0..0.20 突出阶段结束
 const SWORD_THRUST_DWELL_END := 0.75   # 0.20..0.75 dwell, 0.75+ 收回 (主要打击在 dwell)
