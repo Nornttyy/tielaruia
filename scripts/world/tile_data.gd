@@ -123,10 +123,10 @@ const _PROPS := {
 		"drops": [["log", 100, 1, 1]],
 	},
 	LEAVES: {
-		# 不实心. 不掉 leaves 物品 (砍树或单独砍都直接消失), 仅 20% 掉 apple
+		# 不实心. 2% 掉 leaves 物品 (做木法杖 + 当建材, 之前 0% 掉导致木法杖无法合成), 另 20% 掉 apple
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
-		"drops": [["apple", 20, 1, 1]],
+		"drops": [["apple", 20, 1, 1], ["leaves", 2, 1, 1]],
 	},
 	PLANKS: {
 		"solid": true, "mineable": true,
