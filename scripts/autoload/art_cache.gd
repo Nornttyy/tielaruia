@@ -102,7 +102,8 @@ func _build_blocks() -> void:
 		BlocksArt.MIMIC_CHEST,
 		BlocksArt.GOLD_CHEST,
 		BlocksArt.DIAMOND_CHEST,
-		BlocksArt.LAVA, BlocksArt.HELL_STONE, BlocksArt.OBSIDIAN, BlocksArt.HELL_FRUIT,
+		BlocksArt.LAVA, BlocksArt.LAVA_L1, BlocksArt.LAVA_L2, BlocksArt.LAVA_L3,
+		BlocksArt.HELL_STONE, BlocksArt.OBSIDIAN, BlocksArt.HELL_FRUIT,
 		BlocksArt.SHADOW_CHEST,
 		BlocksArt.LIFE_CRYSTAL,
 		BlocksArt.HELL_ALLOY_ORE,
@@ -133,6 +134,16 @@ func _build_blocks() -> void:
 		elif tile_id == BlocksArt.WATER_L3:
 			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(3))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
+		elif tile_id == BlocksArt.LAVA_L1:
+			# 岩浆深浅不是 item, icon 直接复用世界贴图 (避免缺 key 崩)
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_lava_level_atlas(1))
+			block_icons[tile_id] = block_textures[tile_id]
+		elif tile_id == BlocksArt.LAVA_L2:
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_lava_level_atlas(2))
+			block_icons[tile_id] = block_textures[tile_id]
+		elif tile_id == BlocksArt.LAVA_L3:
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_lava_level_atlas(3))
+			block_icons[tile_id] = block_textures[tile_id]
 		else:
 			var single_16: ImageTexture = BlocksArt.get_texture(tile_id)
 			single_16 = _apply_biome_tint(tile_id, single_16)

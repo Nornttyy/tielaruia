@@ -47,6 +47,9 @@ const WHEAT_1 := 67         # 小 (3 高小芽)
 const WHEAT_2 := 68         # 中 (有杆带叶)
 const WHEAT_3 := 69         # 熟 (黄色穗子, 可收割)
 const PLANT_GRASS := 70     # 装饰小草 (草地点缀, 挖 20% 掉种子)
+const LAVA_L1 := 71         # 1/4 岩浆 (流动浅位)
+const LAVA_L2 := 72         # 2/4 岩浆
+const LAVA_L3 := 73         # 3/4 岩浆 (满格仍是 LAVA = 56)
 const STONE := 3
 const SAND := 4
 const LOG := 5
@@ -2133,6 +2136,21 @@ static func get_water_level_atlas(level: int) -> ImageTexture:
 	for i in range(4):
 		var clipped: Array = _clip_water_top(frames[i], clip_rows)
 		var frame_img: Image = PixelArt.grid_to_image(clipped, _P_WATER)
+		dst.blit_rect(frame_img, Rect2i(0, 0, 16, 16), Vector2i(i * 16, 0))
+	return ImageTexture.create_from_image(dst)
+
+
+# 岩浆深浅 atlas: 跟 get_water_level_atlas 同结构 (64×16), 4 帧相同 (岩浆不动画).
+# level: 1 = 1/4 满 (顶 12 行透明), 2 = 1/2 满 (顶 8 行透明), 3 = 3/4 满 (顶 4 行透明)
+static func get_lava_level_atlas(level: int) -> ImageTexture:
+	assert(level >= 1 and level <= 3, "level 必须 1-3")
+	var clip_rows: int = (4 - level) * 4  # 顶部清除多少行
+	var clipped: Array = _clip_water_top(_LAVA, clip_rows)
+	var dst := Image.create(64, 16, false, Image.FORMAT_RGBA8)
+	dst.fill(Color(0, 0, 0, 0))
+	for i in range(4):
+		# 4 帧画一样的 (岩浆不动画), 复用同一 clipped pattern
+		var frame_img: Image = PixelArt.grid_to_image(clipped, _P_LAVA)
 		dst.blit_rect(frame_img, Rect2i(0, 0, 16, 16), Vector2i(i * 16, 0))
 	return ImageTexture.create_from_image(dst)
 

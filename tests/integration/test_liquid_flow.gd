@@ -9,3 +9,9 @@ func test_lava_level_tiles_defined() -> void:
 	assert_false(Tiles.is_solid(Tiles.LAVA_L1), "LAVA_L1 非实心")
 	assert_false(Tiles.is_solid(Tiles.LAVA_L2), "LAVA_L2 非实心")
 	assert_false(Tiles.is_solid(Tiles.LAVA_L3), "LAVA_L3 非实心")
+
+
+func test_lava_level_textures_built() -> void:
+	assert_not_null(ArtCache.block_textures.get(Tiles.LAVA_L1), "LAVA_L1 该有世界贴图")
+	assert_not_null(ArtCache.block_textures.get(Tiles.LAVA_L2), "LAVA_L2 该有世界贴图")
+	assert_not_null(ArtCache.block_textures.get(Tiles.LAVA_L3), "LAVA_L3 该有世界贴图")
