@@ -57,7 +57,7 @@ func add_water(x: int, y: int) -> bool:
 		return true
 	var L: int = _level_of(tid)
 	if L > 0 and L < 4:
-		world._set_water_tile_fast(x, y, _tile_for_level(L + 1))
+		world._set_water_tile_fast(x, y, _tile_for_level("water", L + 1))
 		notify_tile_changed(x, y)
 		return true
 	return false
@@ -65,15 +65,30 @@ func add_water(x: int, y: int) -> bool:
 
 # 内部 ----
 
+# 液种: "water" / "lava" / "" (非流体)
+func _liquid_kind(tid: int) -> String:
+	if tid == Tiles.WATER or tid == Tiles.WATER_L1 or tid == Tiles.WATER_L2 or tid == Tiles.WATER_L3:
+		return "water"
+	if tid == Tiles.LAVA or tid == Tiles.LAVA_L1 or tid == Tiles.LAVA_L2 or tid == Tiles.LAVA_L3:
+		return "lava"
+	return ""
+
+
 func _level_of(tid: int) -> int:
-	if tid == Tiles.WATER: return 4
-	if tid == Tiles.WATER_L3: return 3
-	if tid == Tiles.WATER_L2: return 2
-	if tid == Tiles.WATER_L1: return 1
+	if tid == Tiles.WATER or tid == Tiles.LAVA: return 4
+	if tid == Tiles.WATER_L3 or tid == Tiles.LAVA_L3: return 3
+	if tid == Tiles.WATER_L2 or tid == Tiles.LAVA_L2: return 2
+	if tid == Tiles.WATER_L1 or tid == Tiles.LAVA_L1: return 1
 	return 0
 
 
-func _tile_for_level(L: int) -> int:
+func _tile_for_level(kind: String, L: int) -> int:
+	if kind == "lava":
+		if L >= 4: return Tiles.LAVA
+		if L == 3: return Tiles.LAVA_L3
+		if L == 2: return Tiles.LAVA_L2
+		if L == 1: return Tiles.LAVA_L1
+		return Tiles.AIR
 	if L >= 4: return Tiles.WATER
 	if L == 3: return Tiles.WATER_L3
 	if L == 2: return Tiles.WATER_L2
@@ -101,58 +116,57 @@ func _run_tick() -> void:
 		world.end_tile_batch()
 
 
-# 单 tile 一步: 优先重力下流, 否则横向往低 level 邻居均衡
+# 单 tile 一步: 优先重力下流, 否则横向往同种低 level 邻居均衡.
+# 水和岩浆共用同一套流动物理, 但绝不互相混合 (反应留给后续 task).
 func _step_tile(cm, x: int, y: int) -> void:
 	var tid: int = cm.get_tile(x, y)
+	var kind: String = _liquid_kind(tid)
+	if kind == "":
+		return
 	var L: int = _level_of(tid)
-	if L == 0:
-		return  # 不是水
-	# 重力: 看 (x, y+1)
+	# 重力: 下方
 	var below_tid: int = cm.get_tile(x, y + 1)
 	if below_tid == Tiles.AIR:
-		# 全水下流
-		world._set_water_tile_fast(x, y + 1, _tile_for_level(L))
+		world._set_water_tile_fast(x, y + 1, _tile_for_level(kind, L))
 		world._set_water_tile_fast(x, y, Tiles.AIR)
 		notify_tile_changed(x, y + 1)
 		return
-	var below_L: int = _level_of(below_tid)
-	if below_L > 0 and below_L < 4:
-		# 转给下面
-		var xfer: int = mini(L, 4 - below_L)
-		world._set_water_tile_fast(x, y + 1, _tile_for_level(below_L + xfer))
-		var new_L: int = L - xfer
-		if new_L > 0:
-			world._set_water_tile_fast(x, y, _tile_for_level(new_L))
-			mark_dirty(x, y)
-		else:
-			world._set_water_tile_fast(x, y, Tiles.AIR)
-		notify_tile_changed(x, y + 1)
-		return
-	# 下方堵 → 横向均衡 (L >= 2 才溢, L=1 当残留)
+	if _liquid_kind(below_tid) == kind:
+		var below_L: int = _level_of(below_tid)
+		if below_L < 4:
+			var xfer: int = mini(L, 4 - below_L)
+			world._set_water_tile_fast(x, y + 1, _tile_for_level(kind, below_L + xfer))
+			var new_L: int = L - xfer
+			if new_L > 0:
+				world._set_water_tile_fast(x, y, _tile_for_level(kind, new_L))
+				mark_dirty(x, y)
+			else:
+				world._set_water_tile_fast(x, y, Tiles.AIR)
+			notify_tile_changed(x, y + 1)
+			return
+	# 下方堵 → 横向 (L>=2 才溢)
 	if L < 2:
 		return
 	var lx_tid: int = cm.get_tile(x - 1, y)
 	var rx_tid: int = cm.get_tile(x + 1, y)
-	var lx_blocked: bool = lx_tid != Tiles.AIR and _level_of(lx_tid) == 0
-	var rx_blocked: bool = rx_tid != Tiles.AIR and _level_of(rx_tid) == 0
-	var lx_L: int = _level_of(lx_tid)
-	var rx_L: int = _level_of(rx_tid)
 	var candidates: Array = []
-	if not lx_blocked and lx_L < L:
-		candidates.append([x - 1, lx_L])
-	if not rx_blocked and rx_L < L:
-		candidates.append([x + 1, rx_L])
+	for nx_pair in [[x - 1, lx_tid], [x + 1, rx_tid]]:
+		var nx: int = nx_pair[0]
+		var nt: int = nx_pair[1]
+		if nt == Tiles.AIR:
+			candidates.append([nx, 0])
+		elif _liquid_kind(nt) == kind and _level_of(nt) < L:
+			candidates.append([nx, _level_of(nt)])
 	if candidates.is_empty():
 		return
-	# 选 level 最低的邻居
 	candidates.sort_custom(func(a, b): return a[1] < b[1])
 	var target: Array = candidates[0]
 	var tx: int = int(target[0])
 	var tL: int = int(target[1])
-	world._set_water_tile_fast(tx, y, _tile_for_level(tL + 1))
-	var new_L: int = L - 1
-	if new_L > 0:
-		world._set_water_tile_fast(x, y, _tile_for_level(new_L))
+	world._set_water_tile_fast(tx, y, _tile_for_level(kind, tL + 1))
+	var nl: int = L - 1
+	if nl > 0:
+		world._set_water_tile_fast(x, y, _tile_for_level(kind, nl))
 		mark_dirty(x, y)
 	else:
 		world._set_water_tile_fast(x, y, Tiles.AIR)
