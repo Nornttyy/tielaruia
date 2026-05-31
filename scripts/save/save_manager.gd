@@ -133,8 +133,28 @@ func save(main: Node) -> bool:
 		push_error("save: rename .tmp → .tres 失败 err=%d" % rename_err)
 		DirAccess.remove_absolute(tmp_path)  # 别留垃圾
 		return false
+	# 网页版: 把刚写的存档"刷进"浏览器的 IndexedDB.
+	# 浏览器里 user:// 其实存在内存文件系统 (IDBFS), 不主动刷一下, 关页面/刷新就丢了.
+	# 这是"网页版丢存档"最可能的原因. 桌面/测试上这步自动跳过, 不受影响.
+	_flush_web_filesystem()
 	save_completed.emit()
 	return true
+
+
+# 网页版专用: 请求浏览器把内存里的存档同步到 IndexedDB (持久化).
+# 非网页平台 (桌面 / gut 测试) 直接 no-op.
+# 说明: 这是 best-effort. Godot web 导出本身有个定时自动同步, 但玩家可能在它跑之前
+# 就关了页面 → 丢档. 这里存完立刻主动喊一次, 把丢档窗口压到最小.
+func _flush_web_filesystem() -> void:
+	if not OS.has_feature("web"):
+		return
+	# 调浏览器的 Emscripten 文件系统 FS.syncfs(false, cb): false = 内存 → IndexedDB 方向.
+	# 用 typeof 兜底: 万一这版导出没把 FS 暴露到全局, 也不会报错, 只是这次不刷.
+	JavaScriptBridge.eval("""
+		try {
+			if (typeof FS !== 'undefined' && FS.syncfs) { FS.syncfs(false, function(e){}); }
+		} catch (e) {}
+	""", true)
 
 
 # 列出所有存档. 按文件修改时间排序 (最新的在前).
