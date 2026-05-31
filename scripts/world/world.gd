@@ -22,6 +22,7 @@ const SkeletonScene = preload("res://scenes/entities/skeleton.tscn")
 const ImpScene = preload("res://scenes/entities/imp.tscn")
 const HellWaspScene = preload("res://scenes/entities/hell_wasp.tscn")
 const MummyScene = preload("res://scenes/entities/mummy.tscn")
+const KingSlimeScene = preload("res://scenes/entities/king_slime.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
@@ -81,6 +82,7 @@ var _mp_entity_sync_timer: float = 0.0  # host 广播实体位置计时 (Phase E
 const _MP_ENTITY_SYNC_INTERVAL := 0.2
 var weather: Node
 var village_villager_spawns: Array = []
+var _active_king_slime: Node = null  # 当前存活的史莱姆王 Boss (一次只准一个)
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
 var _crop_grow_timer: float = 60.0   # 作物生长 tick: 每 60s 一次, 每个 WHEAT_0/1/2 升一阶概率
@@ -981,6 +983,19 @@ func spawn_mimic_at_tile(tile: Vector2i) -> void:
 		tile.y * TILE_SIZE + TILE_SIZE   # 脚踏 tile 底部
 	)
 	entities_root.add_child(creature)
+
+
+# 召唤史莱姆王到 pos 附近. 已有存活 Boss → 返回 false 拒绝 (一次只准一个).
+# 注: queue_free 掉的旧 Boss 会变成 invalid, is_instance_valid 自动放行新召唤,
+# 所以 Boss 死/消失不用主动通知 world.
+func spawn_king_slime(pos: Vector2) -> bool:
+	if _active_king_slime != null and is_instance_valid(_active_king_slime):
+		return false
+	var boss = KingSlimeScene.instantiate()
+	entities_root.add_child(boss)
+	boss.global_position = pos
+	_active_king_slime = boss
+	return true
 
 
 # 金字塔守卫: 给一组 spawn 点 (世界坐标) 召 mummy. chunk_manager 在

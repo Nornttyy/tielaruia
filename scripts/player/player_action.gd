@@ -878,6 +878,11 @@ func _update_eat_or_place(delta: float) -> void:
 			player_node.fire_grappling_hook(player_node.get_global_mouse_position())
 		return
 
+	# 持召唤道具 (史莱姆王冠) + 右键刚按下 → 召唤 Boss
+	if slot != null and ItemDB.is_summon(slot.item_id) and just:
+		try_use_summon_item()
+		return
+
 	# 持小麦种子 + 右键刚按下 → 鼠标对准 GRASS 上方 AIR → 种 WHEAT_0
 	if slot != null and slot.item_id == "wheat_seed" and just:
 		var terrain_s := _terrain()
@@ -1415,6 +1420,34 @@ func _try_cast_staff() -> void:
 	var final_dmg: int = int(round(float(spell_dmg) * _tool_damage_mult()))
 	fb.setup(start, target, final_dmg, true)   # true = player_cast
 	SfxBank.play("break", 0.12)
+
+
+# 手持召唤道具 (slime_crown) 使用 → 在玩家附近召唤 Boss, 成功则消耗 1.
+func try_use_summon_item() -> bool:
+	var inv: Node = _inventory_node()
+	if inv == null:
+		return false
+	var slot = inv.current_hotbar_slot()
+	if slot == null or not ItemDB.is_summon(slot.item_id):
+		return false
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return false
+	var world: Node = _find_world()
+	if world == null or not world.has_method("spawn_king_slime"):
+		return false
+	var spawn_pos: Vector2 = player.global_position + Vector2(40, -24)
+	if not world.spawn_king_slime(spawn_pos):
+		return false
+	inv.consume_current(1)
+	SfxBank.play("break", 0.2)
+	return true
+
+
+# 找 World 节点 (terrain 的父节点; 跟 _consume_crystal_tile / _trigger_mimic_trap 同款路径)
+func _find_world() -> Node:
+	var t := _terrain()
+	return t.get_parent() if t != null else null
 
 
 func _try_throw_slimeball() -> void:

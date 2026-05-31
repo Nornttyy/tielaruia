@@ -146,3 +146,24 @@ func test_king_slime_despawns_when_player_far() -> void:
 	boss._check_despawn(0.1)
 	await wait_frames(2)
 	assert_false(is_instance_valid(boss) and not boss._is_dying, "远离超时该消失")
+
+func test_crown_summons_boss_and_consumes() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip(ctx, "slime_crown")
+	var before := get_tree().get_nodes_in_group("king_slime").size()
+	var ok: bool = ctx["action"].try_use_summon_item()
+	await wait_frames(2)
+	assert_true(ok, "召唤应成功")
+	assert_eq(get_tree().get_nodes_in_group("king_slime").size(), before + 1, "应出现 1 个史莱姆王")
+	var slot = ctx["inv"].current_hotbar_slot()
+	assert_true(slot == null or slot.item_id != "slime_crown", "王冠应被消耗")
+
+func test_no_double_boss() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip(ctx, "slime_crown")
+	ctx["action"].try_use_summon_item()
+	await wait_frames(2)
+	_equip(ctx, "slime_crown")
+	var ok2: bool = ctx["action"].try_use_summon_item()
+	assert_false(ok2, "已有 Boss 时不该再召唤")
+	assert_eq(get_tree().get_nodes_in_group("king_slime").size(), 1, "场上只 1 个 Boss")
