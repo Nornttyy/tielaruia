@@ -223,6 +223,12 @@ func _physics_process(delta: float) -> void:
 		var primary_pressed_s: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed_s and _attack_cooldown <= 0.0:
 			_try_cast_staff()
+	elif kind == "slimeball":
+		# 史莱姆球: LMB 按下 → 朝鼠标投弹跳球. cd 0.45s. 无弹药 (Boss 武器).
+		_reset_mining()
+		var primary_pressed_sb: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
+		if primary_pressed_sb and _attack_cooldown <= 0.0:
+			_try_throw_slimeball()
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
@@ -1336,9 +1342,12 @@ func in_reach(tile: Vector2i) -> bool:
 
 const ArrowScene = preload("res://scenes/entities/arrow.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
+const SlimeBallScene = preload("res://scenes/entities/slime_ball.tscn")
 const BOW_COOLDOWN := 0.4
 const BOW_ARROW_DAMAGE := 5    # base, 后续乘 tier multiplier
 const STAFF_COOLDOWN := 0.5    # 法杖 cd (mana 限制为主, cd 防自动连发)
+const SLIMEBALL_COOLDOWN := 0.45
+const SLIMEBALL_DAMAGE := 16   # 高于 iron 剑 (tier4 ≈ 10)
 
 # 弓发箭: 找 inventory 里第 1 个 wood_arrow → 消耗 1 → spawn Arrow Area2D 朝鼠标飞
 # 没箭 → 不发, 也不进 cooldown (玩家随便点没惩罚)
@@ -1406,6 +1415,23 @@ func _try_cast_staff() -> void:
 	var final_dmg: int = int(round(float(spell_dmg) * _tool_damage_mult()))
 	fb.setup(start, target, final_dmg, true)   # true = player_cast
 	SfxBank.play("break", 0.12)
+
+
+func _try_throw_slimeball() -> void:
+	_attack_cooldown = SLIMEBALL_COOLDOWN
+	var parent: Node2D = get_parent() as Node2D
+	if parent == null:
+		return
+	var start: Vector2 = parent.global_position + Vector2(0, -8)
+	var target: Vector2 = mouse_world_override if mouse_world_override != null else parent.get_global_mouse_position()
+	var ball = SlimeBallScene.instantiate()
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = parent.get_parent()
+	entities.add_child(ball)
+	var dmg: int = int(round(float(SLIMEBALL_DAMAGE) * _tool_damage_mult()))
+	ball.setup(start, target, dmg, parent)
+	SfxBank.play("break", 0.10)
 
 
 func _consume_arrow_fallback(inv: Node) -> bool:

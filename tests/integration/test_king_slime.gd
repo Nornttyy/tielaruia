@@ -57,3 +57,34 @@ func test_slime_ball_bounces_off_ground() -> void:
 	add_child_autofree(ball)
 	assert_true("_bounces" in ball, "slime_ball 应有 _bounces 计数")
 	assert_true(ball.has_method("setup"), "应有 setup")
+
+
+func _setup_game() -> Dictionary:
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	main.boot_to_game()
+	await wait_frames(3)
+	var world: Node2D = main.get_node("World")
+	var player: Node2D = world.get_player()
+	return {"main": main, "world": world, "player": player,
+		"action": player.get_node("PlayerAction"), "inv": player.get_node("PlayerInventory")}
+
+func _equip(ctx: Dictionary, item_id: String) -> void:
+	var inv: Node = ctx["inv"]
+	inv.pickup(item_id, 1)
+	for i in inv.inventory.slots.size():
+		var s = inv.inventory.slots[i]
+		if s != null and s.item_id == item_id:
+			inv.set_hotbar_selection(i)
+			return
+
+func test_slimeball_weapon_throws_projectile() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip(ctx, "slime_ball")
+	var before := ctx["world"].get_tree().get_nodes_in_group("slime_balls").size()
+	ctx["action"].mouse_world_override = ctx["player"].global_position + Vector2(40, 0)
+	ctx["action"].primary_override = true
+	await wait_frames(3)
+	ctx["action"].primary_override = false
+	var after := ctx["world"].get_tree().get_nodes_in_group("slime_balls").size()
+	assert_gt(after, before, "持史莱姆球点 LMB 应投出一个投射物")
