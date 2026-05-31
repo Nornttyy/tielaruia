@@ -100,3 +100,24 @@ func test_slimeball_weapon_throws_projectile() -> void:
 	ctx["action"].primary_override = false
 	var after: int = ctx["world"].get_tree().get_nodes_in_group("slime_balls").size()
 	assert_gt(after, before, "持史莱姆球点 LMB 应投出一个投射物")
+
+func test_king_slime_shrinks_and_speeds_up() -> void:
+	var boss = KingSlimeScene.instantiate()
+	add_child_autofree(boss)
+	await wait_frames(1)
+	var scale_full: float = boss.sprite.scale.x
+	var hop_full: float = boss._hop_cooldown_now()
+	boss.current_health = int(boss.max_health * 0.1)
+	boss._apply_scale()
+	assert_lt(boss.sprite.scale.x, scale_full, "残血体型应更小")
+	assert_lt(boss._hop_cooldown_now(), hop_full, "残血跳跃间隔应更短")
+
+func test_king_slime_spawns_minions_below_half() -> void:
+	var boss = KingSlimeScene.instantiate()
+	add_child_autofree(boss)
+	await wait_frames(1)
+	boss.current_health = int(boss.max_health * 0.4)
+	var before := get_tree().get_nodes_in_group("slimes").size()
+	boss._spawn_minions()
+	var after := get_tree().get_nodes_in_group("slimes").size()
+	assert_gt(after, before, "血<50% 召唤小史莱姆")

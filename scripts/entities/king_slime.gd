@@ -16,8 +16,12 @@ const AGGRO_RANGE_PX := 600.0
 const HOP_HEIGHT_TILES := 4.0
 const HOP_DIST_TILES := 5.0
 const HOP_COOLDOWN_FULL := 1.6
+const HOP_COOLDOWN_LOW := 0.5
 const SCALE_FULL := 4.0
 const SCALE_LOW := 2.0
+const MINION_INTERVAL := 4.0
+const MINION_PER_WAVE := 3
+const MINION_CAP := 8
 
 var max_health: int = BASE_MAX_HEALTH
 var current_health: int = BASE_MAX_HEALTH
@@ -27,6 +31,7 @@ var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _current_hop_vx: float = 0.0
+var _minion_timer: float = MINION_INTERVAL
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -59,6 +64,25 @@ func _apply_scale() -> void:
 	sprite.scale = Vector2(s, s)
 
 
+# 当前跳跃间隔: 血越少越短 (HOP_COOLDOWN_FULL → HOP_COOLDOWN_LOW)
+func _hop_cooldown_now() -> float:
+	return lerp(HOP_COOLDOWN_LOW, HOP_COOLDOWN_FULL, _hp_ratio())
+
+
+func _spawn_minions() -> void:
+	var existing := get_tree().get_nodes_in_group("slimes").size()
+	for i in MINION_PER_WAVE:
+		if existing >= MINION_CAP:
+			break
+		var m = SlimeScene.instantiate()
+		var entities: Node = get_tree().get_first_node_in_group("entities_root")
+		if entities == null:
+			entities = get_parent()
+		entities.add_child(m)
+		m.global_position = global_position + Vector2(randf_range(-20, 20), -10)
+		existing += 1
+
+
 func _find_player() -> Node2D:
 	if _cached_player != null and is_instance_valid(_cached_player):
 		return _cached_player
@@ -72,6 +96,12 @@ func _find_player() -> Node2D:
 func _physics_process(delta: float) -> void:
 	if has_meta("is_remote") or _is_dying:
 		return
+	# 阶段 2: 血 < 50% 周期召唤小兵
+	if current_health < max_health / 2:
+		_minion_timer -= delta
+		if _minion_timer <= 0.0:
+			_minion_timer = MINION_INTERVAL
+			_spawn_minions()
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color(0.6, 0.5, 1.0)
@@ -92,7 +122,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _attempt_hop() -> void:
-	_hop_timer = HOP_COOLDOWN_FULL
+	_hop_timer = _hop_cooldown_now()
 	var player := _find_player()
 	var dir: float = 0.0
 	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
