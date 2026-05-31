@@ -16,3 +16,18 @@ func test_slime_crown_and_ball_defs_exist() -> void:
 
 	assert_true(ItemDB.is_summon("slime_crown"), "is_summon 该认 slime_crown")
 	assert_false(ItemDB.is_summon("slime_ball"), "slime_ball 不是召唤道具")
+
+
+func test_slime_crown_recipe_exists() -> void:
+	var found := false
+	for r in RecipeDB._RECIPES:
+		if r.get("output_id", "") == "slime_crown":
+			found = true
+			assert_eq(r.get("requires", ""), "workbench", "王冠配方要工作台")
+			var jelly := 0
+			for row in r["pattern"]:
+				for cell in row:
+					if cell == "slime_jelly":
+						jelly += 1
+			assert_eq(jelly, 9, "王冠 = 9 个史莱姆胶")
+	assert_true(found, "应有 slime_crown 配方")

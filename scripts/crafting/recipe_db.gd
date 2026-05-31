@@ -366,6 +366,20 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# === 史莱姆王冠 (9 史莱姆胶满格, 工作台) ===
+	{
+		"id": "slime_crown",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["slime_jelly", "slime_jelly", "slime_jelly"],
+			["slime_jelly", "slime_jelly", "slime_jelly"],
+			["slime_jelly", "slime_jelly", "slime_jelly"],
+		],
+		"output_id": "slime_crown",
+		"output_count": 1,
+		"requires": "workbench",
+		"mirror_ok": true,
+	},
 	# === 平台 + 墙 ===
 	# 木平台: 2 planks 横排 → 4 个平台
 	{
