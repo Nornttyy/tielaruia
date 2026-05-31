@@ -103,6 +103,11 @@ var _image: Image
 var _texture: ImageTexture
 var _refresh_timer: float = 0.0
 
+# 进游戏时记下小地图的"老家"位置 (hud.tscn 里配的那套锚点+偏移).
+# 关大地图时原样还回去, 不然会跑偏.
+var _home_anchors: Array = [0.0, 0.0, 0.0, 0.0]   # left, top, right, bottom
+var _home_offsets: Array = [0.0, 0.0, 0.0, 0.0]
+
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT)
@@ -113,6 +118,14 @@ func _ready() -> void:
 	_texture = ImageTexture.create_from_image(_image)
 	texture_rect.texture = _texture
 	texture_rect.size = Vector2(MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT)
+	# scene 加载时已经把 hud.tscn 的锚点/偏移套到本节点上, 这里趁还没动它先记下来
+	_capture_home_layout()
+
+
+# 记下小地图当前的锚点+偏移当"老家", 给关大地图时还原用
+func _capture_home_layout() -> void:
+	_home_anchors = [anchor_left, anchor_top, anchor_right, anchor_bottom]
+	_home_offsets = [offset_left, offset_top, offset_right, offset_bottom]
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -160,6 +173,9 @@ func _toggle_fullscreen() -> void:
 
 
 func _enter_fullscreen() -> void:
+	# 打开大地图前, 小地图一定还在"老家"(右上角), 此刻记下它的锚点/偏移最稳,
+	# 不依赖 _ready 时机 (那时 layout 可能还没套上 hud 的位置).
+	_capture_home_layout()
 	_saved_zoom = pixel_per_tile
 	pixel_per_tile = FULLSCREEN_ZOOM
 	print("[minimap] enter_fullscreen zoom=", FULLSCREEN_ZOOM, " scale=", FULLSCREEN_SCALE)
@@ -178,12 +194,17 @@ func _enter_fullscreen() -> void:
 
 
 func _exit_fullscreen() -> void:
-	# 恢复到 hud.tscn 配置的右下角 192x128 位置
-	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 0)
-	offset_left = -MAP_PIXEL_WIDTH - 12
-	offset_top = -MAP_PIXEL_HEIGHT - 12
-	offset_right = -12
-	offset_bottom = -12
+	# 还原到进游戏时记下的"老家"位置.
+	# (以前这里写死成右下角, 但 hud.tscn 其实把小地图放右上角 → 开大地图再关掉就从右上跳到右下,
+	#  也就是"点开小地图再退出, 位置会变"的 bug. 现在原样还回老家就不跑偏了.)
+	anchor_left = _home_anchors[0]
+	anchor_top = _home_anchors[1]
+	anchor_right = _home_anchors[2]
+	anchor_bottom = _home_anchors[3]
+	offset_left = _home_offsets[0]
+	offset_top = _home_offsets[1]
+	offset_right = _home_offsets[2]
+	offset_bottom = _home_offsets[3]
 	pixel_per_tile = _saved_zoom
 	custom_minimum_size = Vector2(MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT)
 	_rebuild_image_at(MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT)
