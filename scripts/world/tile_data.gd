@@ -84,6 +84,9 @@ const WHEAT_3 := 69         # 熟 (黄色穗子, 可收割)
 # 装饰小草 (草地表面). 1 格高, 非实心 (玩家穿过), 长在 GRASS 上方 AIR.
 # 挖掉: 80% 啥都没有 / 20% wheat_seed (玩家拓荒, 用户要求).
 const PLANT_GRASS := 70
+const LAVA_L1 := 71         # 1/4 岩浆 (流动浅位)
+const LAVA_L2 := 72         # 2/4 岩浆
+const LAVA_L3 := 73         # 3/4 岩浆 (满格仍是 LAVA = 56)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -408,6 +411,19 @@ const _PROPS := {
 	},
 	LAVA: {
 		# 岩浆: 非实心 (玩家穿过 → 扣血), 不可挖 (没法收岩浆). 跟 WATER 同行为, 但伤害.
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	# 流动岩浆 3 个低液位 tile. 行为同 LAVA: 不实心 + 不可挖 + 玩家踩到扣血.
+	LAVA_L1: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	LAVA_L2: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	LAVA_L3: {
 		"solid": false, "mineable": false,
 		"tool_tiers": {}, "drops": [],
 	},

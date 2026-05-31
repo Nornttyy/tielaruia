@@ -37,6 +37,11 @@ func _physics_process(delta: float) -> void:
 		_check_lava_damage()
 
 
+# 判断 tile id 是否为岩浆 (含 3 个流动深度 L1/L2/L3 + 满格 LAVA)
+func _is_lava(tid: int) -> bool:
+	return tid == Tiles.LAVA or tid == Tiles.LAVA_L1 or tid == Tiles.LAVA_L2 or tid == Tiles.LAVA_L3
+
+
 # 检查玩家脚 + 头 tile 有没有 LAVA, 有就扣血. 用 chunk_manager 查 tile.
 func _check_lava_damage() -> void:
 	if not is_alive():
@@ -53,7 +58,7 @@ func _check_lava_damage() -> void:
 	# 老代码用 floor(y/12) - 1 是 bug — 漏掉脚踩在岩浆顶时的检测 (玩家站岩浆里不扣血).
 	var foot_y: int = int(floor((player.global_position.y - 1.0) / TILE_SIZE))
 	var head_y: int = int(floor((player.global_position.y - 27.5) / TILE_SIZE))
-	if cm.get_tile(tile_x, foot_y) == Tiles.LAVA or cm.get_tile(tile_x, head_y) == Tiles.LAVA:
+	if _is_lava(cm.get_tile(tile_x, foot_y)) or _is_lava(cm.get_tile(tile_x, head_y)):
 		# 直接扣血不进 iframe (环境伤害每 0.5s 一跳). clamp 飘字真实扣血.
 		var lava_loss: int = min(LAVA_DAMAGE_PER_TICK, current_health)
 		current_health = max(0, current_health - LAVA_DAMAGE_PER_TICK)
