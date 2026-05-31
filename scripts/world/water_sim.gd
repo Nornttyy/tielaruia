@@ -4,11 +4,13 @@ extends Node
 
 const TICK_INTERVAL := 0.12         # 用户要求流速快 (0.35→0.12 = 3x 更快)
 const MAX_TILES_PER_TICK := 300     # 保留 300/tick 上限防 web 单帧爆
+const LAVA_TICK_DIVISOR := 3        # 岩浆每 3 个 tick 才流一步 (≈ 0.36s, 慢吞吞)
 
 @export var world: Node2D            # 父 World (有 chunk_manager + _set_tile)
 
 var _dirty: Dictionary = {}          # Vector2i -> true
 var _t: float = 0.0
+var _tick_n: int = 0
 
 
 func _ready() -> void:
@@ -97,6 +99,7 @@ func _tile_for_level(kind: String, L: int) -> int:
 
 
 func _run_tick() -> void:
+	_tick_n += 1   # 先自增, 岩浆判 _tick_n % LAVA_TICK_DIVISOR 用它
 	var cm = world.get("chunk_manager")
 	if cm == null:
 		return
@@ -122,6 +125,10 @@ func _step_tile(cm, x: int, y: int) -> void:
 	var tid: int = cm.get_tile(x, y)
 	var kind: String = _liquid_kind(tid)
 	if kind == "":
+		return
+	# 岩浆慢: 非其 tick → 推迟 (重新标 dirty 保活), 本 tick 不流
+	if kind == "lava" and _tick_n % LAVA_TICK_DIVISOR != 0:
+		mark_dirty(x, y)
 		return
 	var L: int = _level_of(tid)
 	# 重力: 下方

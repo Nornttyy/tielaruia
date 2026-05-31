@@ -73,3 +73,18 @@ func test_lava_spreads_sideways() -> void:
 	for i in 10:
 		sim._run_tick()
 	assert_true(_lk(fw,-1,0) == "lava" or _lk(fw,1,0) == "lava", "岩浆该横向摊开")
+
+func test_lava_slower_than_water() -> void:
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0,0)] = Tiles.WATER
+	fw.tiles[Vector2i(5,0)] = Tiles.LAVA
+	var sim = _make_sim(fw)
+	# mark_dirty 而非 notify_tile_changed: 避免把 (x,y+1) 也标 dirty
+	# 否则同一 tick 内水会二次下落到 y+2, 导致 y+1 检查失败
+	sim.mark_dirty(0, 0)
+	sim.mark_dirty(5, 0)
+	# 只跑 1 个 tick: 水该已下落, 岩浆还没动 (cadence)
+	sim._run_tick()
+	assert_eq(fw.tiles.get(Vector2i(0,1), Tiles.AIR), Tiles.WATER, "水 1 tick 就下落")
+	assert_eq(fw.tiles.get(Vector2i(5,1), Tiles.AIR), Tiles.AIR, "岩浆 1 tick 还没动 (慢)")
+	assert_eq(fw.tiles.get(Vector2i(5,0), Tiles.AIR), Tiles.LAVA, "岩浆还在原位")
