@@ -5,6 +5,7 @@ extends Node
 const TICK_INTERVAL := 0.12         # 用户要求流速快 (0.35→0.12 = 3x 更快)
 const MAX_TILES_PER_TICK := 300     # 保留 300/tick 上限防 web 单帧爆
 const LAVA_TICK_DIVISOR := 3        # 岩浆每 3 个 tick 才流一步 (≈ 0.36s, 慢吞吞)
+const TILE_SIZE := 12               # 本项目格子像素尺寸 (蒸汽特效定位用)
 
 @export var world: Node2D            # 父 World (有 chunk_manager + _set_tile)
 
@@ -119,12 +120,45 @@ func _run_tick() -> void:
 		world.end_tile_batch()
 
 
+# 返回 true 表示本格已因反应被处理 (不再流动)
+func _react_water_lava(cm, x: int, y: int, kind: String) -> bool:
+	var neighbors := [Vector2i(x-1,y), Vector2i(x+1,y), Vector2i(x,y-1), Vector2i(x,y+1)]
+	if kind == "lava":
+		for n in neighbors:
+			if _liquid_kind(cm.get_tile(n.x, n.y)) == "water":
+				world._set_water_tile_fast(x, y, Tiles.STONE)
+				_reduce_liquid(cm, n.x, n.y)
+				Effects.spawn_steam_puff(Vector2((x + 0.5) * TILE_SIZE, (y + 0.5) * TILE_SIZE))
+				notify_tile_changed(x, y)
+				notify_tile_changed(n.x, n.y)
+				return true
+	elif kind == "water":
+		for n in neighbors:
+			if _liquid_kind(cm.get_tile(n.x, n.y)) == "lava":
+				world._set_water_tile_fast(n.x, n.y, Tiles.STONE)
+				_reduce_liquid(cm, x, y)
+				Effects.spawn_steam_puff(Vector2((n.x + 0.5) * TILE_SIZE, (n.y + 0.5) * TILE_SIZE))
+				notify_tile_changed(n.x, n.y)
+				notify_tile_changed(x, y)
+				return true
+	return false
+
+
+# 把 (x,y) 的水降一级 (L1 → AIR)
+func _reduce_liquid(cm, x: int, y: int) -> void:
+	var L: int = _level_of(cm.get_tile(x, y))
+	world._set_water_tile_fast(x, y, _tile_for_level("water", L - 1))
+
+
 # 单 tile 一步: 优先重力下流, 否则横向往同种低 level 邻居均衡.
 # 水和岩浆共用同一套流动物理, 但绝不互相混合 (反应留给后续 task).
 func _step_tile(cm, x: int, y: int) -> void:
 	var tid: int = cm.get_tile(x, y)
 	var kind: String = _liquid_kind(tid)
 	if kind == "":
+		return
+	# 水 / 岩浆相邻 → 岩浆变石头, 水消耗一级 (经典 Terraria 风)
+	if _react_water_lava(cm, x, y, kind):
 		return
 	# 岩浆慢: 非其 tick → 推迟 (重新标 dirty 保活), 本 tick 不流
 	if kind == "lava" and _tick_n % LAVA_TICK_DIVISOR != 0:

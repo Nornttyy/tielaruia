@@ -70,6 +70,19 @@ func spawn_land_dust(world_pos: Vector2) -> void:
 		d.setup(pos, scl)
 
 
+func spawn_steam_puff(world_pos: Vector2) -> void:
+	# 水碰岩浆冒一小撮蒸汽 (复用尘埃粒子, 向上飘散)
+	var pool: Node = get_tree().get_first_node_in_group("dust_pool")
+	for i in 5:
+		var pos: Vector2 = world_pos + Vector2(randf_range(-4, 4), randf_range(-3, 1))
+		var scl: float = randf_range(0.8, 1.2)
+		if pool != null and pool.request_dust(pos, scl):
+			continue
+		var d = DustParticleScene.instantiate()
+		_root().add_child(d)
+		d.setup(pos, scl)
+
+
 func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1, 0.9, 0.5)) -> void:
 	# 砍怪 / 玩家受伤时, 头上飘一个 "-N" 数字, 0.7s 上升 + 渐隐.
 	# color: 默认暖黄 (打怪); 玩家受伤可传 Color(1, 0.4, 0.4) 暗红.

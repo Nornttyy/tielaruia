@@ -88,3 +88,18 @@ func test_lava_slower_than_water() -> void:
 	assert_eq(fw.tiles.get(Vector2i(0,1), Tiles.AIR), Tiles.WATER, "水 1 tick 就下落")
 	assert_eq(fw.tiles.get(Vector2i(5,1), Tiles.AIR), Tiles.AIR, "岩浆 1 tick 还没动 (慢)")
 	assert_eq(fw.tiles.get(Vector2i(5,0), Tiles.AIR), Tiles.LAVA, "岩浆还在原位")
+
+func test_water_lava_makes_stone() -> void:
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0,0)] = Tiles.LAVA
+	fw.tiles[Vector2i(1,0)] = Tiles.WATER
+	fw.tiles[Vector2i(0,1)] = Tiles.STONE
+	fw.tiles[Vector2i(1,1)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim.notify_tile_changed(0, 0)
+	sim.notify_tile_changed(1, 0)
+	for i in 6:
+		sim._run_tick()
+	assert_eq(fw.tiles.get(Vector2i(0,0)), Tiles.STONE, "岩浆碰水变石头")
+	var w = fw.tiles.get(Vector2i(1,0), Tiles.AIR)
+	assert_true(w != Tiles.WATER, "水该被消耗一级")
