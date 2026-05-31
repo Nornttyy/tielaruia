@@ -21,6 +21,11 @@ var _is_open: bool = false
 var _player_inv: Node = null    # 玩家 PlayerInventory
 var _cursor_icon: TextureRect = null
 var _cursor_count: Label = null
+# i18n: 缓存切语言时要刷新的 label / button
+var _title_label: Label = null
+var _take_all_btn: Button = null
+var _inv_hint_label: Label = null
+var _close_btn: Button = null
 
 
 func _ready() -> void:
@@ -29,6 +34,20 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_ui()
 	visible = false
+	# i18n: 切语言时刷文字
+	if Locale != null and not Locale.language_changed.is_connected(_refresh_i18n):
+		Locale.language_changed.connect(_refresh_i18n)
+
+
+func _refresh_i18n(_new_lang: String) -> void:
+	if _title_label != null:
+		_title_label.text = Locale.t("chest_title")
+	if _take_all_btn != null:
+		_take_all_btn.text = Locale.t("chest_take_all")
+	if _inv_hint_label != null:
+		_inv_hint_label.text = Locale.t("chest_inv_hint")
+	if _close_btn != null:
+		_close_btn.text = Locale.t("chest_close")
 
 
 func _build_ui() -> void:
@@ -50,13 +69,13 @@ func _build_ui() -> void:
 	vbox.add_theme_constant_override("separation", 8)
 	_root.add_child(vbox)
 
-	# 标题: 箱子
-	var title := Label.new()
-	title.text = "箱子"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 18)
-	title.add_theme_color_override("font_color", Color(0.949, 0.761, 0.396))
-	vbox.add_child(title)
+	# 标题: 箱子 (i18n: 切语言时刷新)
+	_title_label = Label.new()
+	_title_label.text = Locale.t("chest_title")
+	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_title_label.add_theme_font_size_override("font_size", 18)
+	_title_label.add_theme_color_override("font_color", Color(0.949, 0.761, 0.396))
+	vbox.add_child(_title_label)
 
 	# 箱子 3x8 grid
 	var chest_grid := GridContainer.new()
@@ -70,24 +89,23 @@ func _build_ui() -> void:
 		_chest_slots_ui.append(slot)
 
 	# "全拿" 按钮: 把箱子所有物品送进玩家 inventory (一键清箱)
-	var take_all_btn := Button.new()
-	take_all_btn.text = "全拿 ⇩"
-	take_all_btn.custom_minimum_size = Vector2(0, 26)
-	take_all_btn.tooltip_text = "把箱子里所有东西送进背包 (装不下的留下)"
-	take_all_btn.pressed.connect(take_all_from_chest)
-	vbox.add_child(take_all_btn)
+	_take_all_btn = Button.new()
+	_take_all_btn.text = Locale.t("chest_take_all")
+	_take_all_btn.custom_minimum_size = Vector2(0, 26)
+	_take_all_btn.pressed.connect(take_all_from_chest)
+	vbox.add_child(_take_all_btn)
 
 	# 分隔
 	var sep := HSeparator.new()
 	vbox.add_child(sep)
 
 	# 标题: 你的背包
-	var p_title := Label.new()
-	p_title.text = "你的背包 (Shift+左键 转移单槽)"
-	p_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	p_title.add_theme_font_size_override("font_size", 14)
-	p_title.add_theme_color_override("font_color", Color(0.831, 0.71, 0.541))
-	vbox.add_child(p_title)
+	_inv_hint_label = Label.new()
+	_inv_hint_label.text = Locale.t("chest_inv_hint")
+	_inv_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_inv_hint_label.add_theme_font_size_override("font_size", 14)
+	_inv_hint_label.add_theme_color_override("font_color", Color(0.831, 0.71, 0.541))
+	vbox.add_child(_inv_hint_label)
 
 	# 玩家主背包 3x9 grid (不含 hotbar, hotbar 是 inv.slots[0..8])
 	var p_grid := GridContainer.new()
@@ -101,11 +119,11 @@ func _build_ui() -> void:
 		_player_slots_ui.append(slot)
 
 	# 关按钮
-	var close_btn := Button.new()
-	close_btn.text = "关闭 (ESC / 右键)"
-	close_btn.custom_minimum_size = Vector2(0, 32)
-	close_btn.pressed.connect(close)
-	vbox.add_child(close_btn)
+	_close_btn = Button.new()
+	_close_btn.text = Locale.t("chest_close")
+	_close_btn.custom_minimum_size = Vector2(0, 32)
+	_close_btn.pressed.connect(close)
+	vbox.add_child(_close_btn)
 	# Cursor icon: 跟鼠标飘的物品
 	_cursor_icon = TextureRect.new()
 	_cursor_icon.custom_minimum_size = Vector2(32, 32)

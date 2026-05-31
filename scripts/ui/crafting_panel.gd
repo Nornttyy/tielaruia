@@ -466,8 +466,6 @@ const _ZH_NAMES := {
 	"wood_staff": "木魔草杖", "iron_staff": "铁蓝晶杖",
 	"mana_potion": "魔力药水",
 	"sandstone": "砂岩",
-	"life_crystal": "生命水晶",
-	"mana_crystal": "魔力水晶",
 }
 
 

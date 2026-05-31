@@ -67,7 +67,11 @@ func _check_enemy_hit() -> void:
 			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX:
 				continue
 			if enemy.has_method("take_damage"):
-				enemy.take_damage(damage, global_position, 120.0)
+				# 击退源位置: 沿飞行反方向退 32px, 让 (enemy - source).normalized 指向飞行方向.
+				# 老 bug: 直接传 arrow.global_position, 而箭速度快, 命中时位置 ~= 怪物中心,
+				# to_self ≈ 0 → 走 fallback Vector2.UP → 击退永远朝上, 跟飞行方向无关.
+				var src: Vector2 = global_position - velocity.normalized() * 32.0
+				enemy.take_damage(damage, src, 120.0)
 				_destroy()
 				return
 

@@ -6,10 +6,10 @@
 # 底部中心对齐到 position 这个"手"点, 这样挥摆时手柄不离手, 像真的握住一样.
 extends Sprite2D
 
-const HAND_OFFSET_X := 4.0     # 手相对玩家中心 x 偏移 (TILE_SIZE 16→12 后跟玩家缩 0.75)
-const HAND_OFFSET_Y := -8.0    # y (玩家中部胸口位置)
-const TOOL_SIZE := 1.0         # 工具 (剑/镐/斧) 原大小 16px (用户要求"工具太小了" → 0.7→1.0)
-const BLOCK_SIZE := 0.55       # 方块/材料 缩到 55% (~9px)
+const HAND_OFFSET_X := 6.0     # 手相对玩家中心 x 偏移 (玩家 1.5x 放大后跟着外移)
+const HAND_OFFSET_Y := -12.0   # y (玩家中部胸口位置, 1.5x)
+const TOOL_SIZE := 1.5         # 工具 (剑/镐/斧) 跟玩家 1.5x 一起放大
+const BLOCK_SIZE := 0.825      # 方块/材料 = TOOL_SIZE × 0.55 (~13px)
 const SWING_ANGLE_DEG := 75.0
 const SWING_DURATION := 0.18
 
@@ -78,7 +78,7 @@ func _process(delta: float) -> void:
 	# 每 0.4 秒一次"啃咬" 循环 (2 秒共 5 口的节奏)
 	var t: float = fmod(_eat_phase, 0.4) / 0.4   # 0..1 循环
 	# 食物上下抖: 嘴边 (y - 6) ↔ 手里 (y + 0), 用正弦曲线让上下平滑
-	var lift: float = sin(t * PI) * 6.0   # 0 → 6 → 0
+	var lift: float = sin(t * PI) * 9.0   # 0 → 9 → 0 (玩家 1.5x)
 	position = Vector2(
 		HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X,
 		HAND_OFFSET_Y - lift
@@ -106,7 +106,7 @@ const THRUST_DURATION := 0.30           # 用户调: 戳要在前端"停"一下 
 const THRUST_EXTEND_RATIO := 0.20       # 前 20% = 突出去 (0.06s)
 const THRUST_HOLD_RATIO := 0.55         # 中 55% = 在前面 dwell (0.165s, 主要打击窗口)
 const THRUST_RETRACT_RATIO := 0.25      # 后 25% = 收回来 (0.075s)
-const THRUST_OFFSET_PX := 10.0   # 工具向前突进的距离 (TILE_SIZE 缩 0.75)
+const THRUST_OFFSET_PX := 15.0   # 工具向前突进的距离 (玩家 1.5x)
 const PICKAXE_ATTACK_DURATION := 1.0   # 用户改 0.7→1.0 转慢一点
 
 

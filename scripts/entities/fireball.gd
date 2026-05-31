@@ -68,7 +68,9 @@ func _check_enemy_hit() -> void:
 			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX:
 				continue
 			if enemy.has_method("take_damage"):
-				enemy.take_damage(damage, global_position, 150.0)
+				# 同 arrow: 沿飞行反方向后退 32px 算 source_pos, 避免命中点重合导致击退退化为 UP
+				var src: Vector2 = global_position - velocity.normalized() * 32.0
+				enemy.take_damage(damage, src, 150.0)
 			_destroy()
 			return
 

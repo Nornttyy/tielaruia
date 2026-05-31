@@ -17,6 +17,18 @@ var _tween: Tween = null
 func _ready() -> void:
 	visible = false
 	_respawn_button.pressed.connect(_on_respawn_pressed)
+	# i18n: 切语言时刷文字
+	if Locale != null:
+		_refresh_i18n("")
+		if not Locale.language_changed.is_connected(_refresh_i18n):
+			Locale.language_changed.connect(_refresh_i18n)
+
+
+func _refresh_i18n(_new_lang: String) -> void:
+	if _title != null:
+		_title.text = Locale.t("death_title")
+	if _respawn_button != null:
+		_respawn_button.text = Locale.t("death_respawn")
 
 
 func show_death() -> void:

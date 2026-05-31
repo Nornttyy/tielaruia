@@ -1211,9 +1211,43 @@ func _spawn_death_drop(item_id: String, count: int, pos: Vector2) -> void:
 		count -= n
 
 
+# 从存档还原 item_drop 节点 (load 路径). main.gd _apply_save_data 调用.
+# 老 bug: save_manager 把死亡掉落写进 data.entities 但没人读 → 存档 reload 全消失.
+func restore_entities_from_save(entities_arr: Array) -> void:
+	# 清掉默认 worldgen 可能已经放的 drop (避免叠加)
+	for d in get_tree().get_nodes_in_group("item_drops"):
+		d.queue_free()
+	for e in entities_arr:
+		if typeof(e) != TYPE_DICTIONARY:
+			continue
+		if e.get("type", "") != "item_drop":
+			continue
+		var iid: String = String(e.get("item_id", ""))
+		if iid == "":
+			continue
+		var drop = ItemDropScene.instantiate()
+		drop.item_id = iid
+		drop.count = int(e.get("count", 1))
+		drop.global_position = e.get("pos", Vector2.ZERO)
+		entities_root.add_child(drop)
+
+
+var _cached_player: CharacterBody2D = null  # get_player() 每帧调, 缓存避免遍历 entities_root
+
+
 func get_player() -> CharacterBody2D:
+	# 缓存命中 + 还活着 → 直接返
+	if _cached_player != null and is_instance_valid(_cached_player) and not _cached_player.is_queued_for_deletion():
+		return _cached_player
+	# 用 "player" group 一步定位, 不再遍历 entities_root (老 bug: 每帧 O(N))
+	var p = get_tree().get_first_node_in_group("player")
+	if p is CharacterBody2D:
+		_cached_player = p
+		return _cached_player
+	# 兜底: 兼容老逻辑 (有些代码可能没把 player 加 group, 测试用)
 	for child in entities_root.get_children():
 		if child is CharacterBody2D:
+			_cached_player = child
 			return child
 	return null
 

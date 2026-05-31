@@ -120,9 +120,18 @@ func save(main: Node) -> bool:
 	if save_name.is_empty():
 		save_name = "默认存档"
 	var path: String = SAVES_DIR + save_name + ".tres"
-	var err: int = ResourceSaver.save(data, path)
+	# 原子写: 先写 .tmp 再 rename. 防 1Hz autosave 时浏览器关掉 / 断电留半残 .tres
+	# (老 bug: 直接 ResourceSaver.save(path) 中途崩 → 下次启动加载失败).
+	var tmp_path: String = path + ".tmp"
+	var err: int = ResourceSaver.save(data, tmp_path)
 	if err != OK:
 		push_error("save: ResourceSaver 失败 err=%d" % err)
+		return false
+	# rename 在大多数 FS 是原子的; web (HTML5 idbfs) 也支持
+	var rename_err: int = DirAccess.rename_absolute(tmp_path, path)
+	if rename_err != OK:
+		push_error("save: rename .tmp → .tres 失败 err=%d" % rename_err)
+		DirAccess.remove_absolute(tmp_path)  # 别留垃圾
 		return false
 	save_completed.emit()
 	return true

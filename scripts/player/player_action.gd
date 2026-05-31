@@ -105,8 +105,8 @@ var _attack_combo_step: int = 0
 # spin 期间每帧算 pickaxe tip 世界位置, 距离 ≤ HIT_RADIUS 的怪扣 1 次.
 # 用户改: PICKAXE_SPIN_DURATION 0.7→1.0 慢一点; spin 起始朝鼠标 (不再总从上).
 const PICKAXE_SPIN_DURATION := 1.0
-const PICKAXE_TIP_LOCAL_Y := -16.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 1.0)
-const PICKAXE_HIT_RADIUS := 10.0     # tip 到怪中心 ≤ 10px 算碰到 (TILE_SIZE 缩 0.75)
+const PICKAXE_TIP_LOCAL_Y := -24.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 1.5)
+const PICKAXE_HIT_RADIUS := 15.0     # tip 到怪中心 ≤ 15px 算碰到 (玩家 1.5x)
 var _pickaxe_spin_active: bool = false
 var _pickaxe_spin_t: float = 0.0
 var _pickaxe_hit_this_spin: Dictionary = {}  # instance_id → true (1 spin 1 只怪 1 击)
@@ -119,12 +119,12 @@ var _pickaxe_spin_facing_right: bool = true
 # 用户改: "剑碰到怪就扣血", 不是按攻击瞬间 AoE 圆扣.
 # 注: rotation/position 自己按 _sword_attack_t 算, 不读 held.rotation —
 # tween 在 _process 更新, _physics_process 这里读可能滞后 (headless 测试 tween 可能不动).
-const SWORD_TIP_LOCAL_Y := -16.0       # tip 相对 held.position 的 y (sprite 16h)
-const SWORD_HIT_RADIUS := 14.0         # 怪中心到 grip→tip 线段 ≤ 14px. 用户调: 10 太瘦, 视觉碰到了 算法 miss
-const SWORD_POINT_BLANK_DIST := 18.0   # 怪离玩家中心 ≤ 18px 视为贴脸, 任何剑攻击一律命中 (防剑指远处但怪在身边算 miss)
-const SWORD_HAND_OFFSET_X := 4.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
-const SWORD_HAND_OFFSET_Y := -8.0      # 跟 held_item.HAND_OFFSET_Y 一致
-const SWORD_THRUST_OFFSET := 10.0      # 跟 held_item.THRUST_OFFSET_PX 一致
+const SWORD_TIP_LOCAL_Y := -24.0       # tip 相对 held.position 的 y (sprite 16h × scale 1.5)
+const SWORD_HIT_RADIUS := 21.0         # 怪中心到 grip→tip 线段 ≤ 21px (玩家 1.5x). 视觉碰到了 算法也命中
+const SWORD_POINT_BLANK_DIST := 27.0   # 怪离玩家中心 ≤ 27px 视为贴脸 (玩家 1.5x), 任何剑攻击一律命中
+const SWORD_HAND_OFFSET_X := 6.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
+const SWORD_HAND_OFFSET_Y := -12.0     # 跟 held_item.HAND_OFFSET_Y 一致
+const SWORD_THRUST_OFFSET := 15.0      # 跟 held_item.THRUST_OFFSET_PX 一致
 const SWORD_THRUST_DURATION := 0.30    # 三段: 20% 突出, 55% dwell, 25% 收回
 const SWORD_THRUST_EXTEND_END := 0.20  # 0..0.20 突出阶段结束
 const SWORD_THRUST_DWELL_END := 0.75   # 0.20..0.75 dwell, 0.75+ 收回 (主要打击在 dwell)
@@ -481,6 +481,13 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 			if s != null:
 				for _i in s.count:
 					_spawn_drop(s.item_id, tile)
+		# 如果该 chest 当前是开着的 (chest_panel.is_open + 同 tile), 关掉 — 防"幽灵箱面板".
+		var chest_p3: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
+		if chest_p3 == null:
+			chest_p3 = get_tree().root.find_child("ChestPanel", true, false)
+		if chest_p3 != null and chest_p3.has_method("is_open") and chest_p3.is_open():
+			if "_chest_tile" in chest_p3 and chest_p3._chest_tile == tile:
+				chest_p3.close()
 	# 砍 mimic_chest: 触发陷阱 (爆炸 + 弹出 Mimic), 跳过普通破方块流程
 	if tid == Tiles.MIMIC_CHEST:
 		_trigger_mimic_trap(tile, world)

@@ -1221,6 +1221,9 @@ const MINESHAFT_SHAFT_MAX_LEN := 12
 # 给定 world_seed, 返回 2-3 个 chunk_x (有金字塔的, 都在沙漠区).
 # 先扫所有 chunk 找沙漠的, 再从中随机选 2-3 个. 保证每世界都有金字塔.
 static func _pyramid_chunks(world_seed: int) -> Array:
+	# 同 world_seed 结果确定, 缓存避免每 chunk 重算 (老 bug: 28-90 chunk 扫 + 洗牌)
+	if _pyramid_chunks_cache_valid and _pyramid_chunks_cache_seed == world_seed:
+		return _pyramid_chunks_cache
 	var centers: Dictionary = _build_biome_centers(world_seed)
 	# 扫 chunk 范围按 world_size scale: 小 -10..+18, 中 -20..+36, 大 -32..+58
 	var scan_range: Array = _scan_chunk_range()
@@ -1246,7 +1249,10 @@ static func _pyramid_chunks(world_seed: int) -> Array:
 		var tmp = pool[i]
 		pool[i] = pool[j]
 		pool[j] = tmp
-	return pool.slice(0, num)
+	_pyramid_chunks_cache = pool.slice(0, num)
+	_pyramid_chunks_cache_seed = world_seed
+	_pyramid_chunks_cache_valid = true
+	return _pyramid_chunks_cache
 
 
 static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
@@ -1357,6 +1363,9 @@ static func _place_grass_decor_chunk(c: Chunk, chunk_heights: Dictionary,
 # Minecraft 风: 地下深层水平走廊 + 木支柱 + 偶发竖井 + 蜘蛛 + 宝箱.
 # 跟金字塔 / 世纪树同样 chunk-selection 模式.
 static func _mineshaft_chunks(world_seed: int) -> Array:
+	# 同 world_seed 结果确定, 缓存避免每 chunk 重算
+	if _mineshaft_chunks_cache_valid and _mineshaft_chunks_cache_seed == world_seed:
+		return _mineshaft_chunks_cache
 	var scan_range: Array = _scan_chunk_range()
 	var candidates: Array = []
 	for cx in range(scan_range[0], scan_range[1]):
@@ -1379,7 +1388,10 @@ static func _mineshaft_chunks(world_seed: int) -> Array:
 		var tmp = candidates[i]
 		candidates[i] = candidates[j]
 		candidates[j] = tmp
-	return candidates.slice(0, num)
+	_mineshaft_chunks_cache = candidates.slice(0, num)
+	_mineshaft_chunks_cache_seed = world_seed
+	_mineshaft_chunks_cache_valid = true
+	return _mineshaft_chunks_cache
 
 
 # 在该 chunk 地下 (surf + 30) 凿 36 tile 水平走廊 + 偶发竖井.
@@ -1517,6 +1529,14 @@ static func _mountain_factor(world_x: int, world_seed: int) -> float:
 # Fisher-Yates 洗牌 + RNG 分配. 同 world_seed 结果是确定的, 复用 OK.
 static var _biome_centers_cache_seed: int = 0
 static var _biome_centers_cache: Dictionary = {}
+# 金字塔 / 废弃矿井 chunk 列表也按 world_seed 缓存. 老版每 chunk 加载重算
+# (扫 28-90 chunk + biome 判断 + Fisher-Yates), 每 chunk ~0.5-2ms 浪费.
+static var _pyramid_chunks_cache_seed: int = 0
+static var _pyramid_chunks_cache: Array = []
+static var _pyramid_chunks_cache_valid: bool = false
+static var _mineshaft_chunks_cache_seed: int = 0
+static var _mineshaft_chunks_cache: Array = []
+static var _mineshaft_chunks_cache_valid: bool = false
 
 
 static func _biome_at(world_x: int, world_seed: int) -> int:

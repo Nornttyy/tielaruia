@@ -352,6 +352,10 @@ func _apply_save_data(data: Resource) -> void:
 			inv_node.pickup("wood_sword", 1)
 			if inv_node.has_signal("inventory_changed"):
 				inv_node.inventory_changed.emit()
+	# 还原死亡掉落 (老 bug: save_manager 写了但 load 没读, 导致死亡掉落 reload 后消失,
+	# 违背 Minecraft 风设定 — 死亡处该有的箱子开锁箱必须在那里).
+	if "entities" in data and w.has_method("restore_entities_from_save"):
+		w.restore_entities_from_save(data.entities)
 
 
 # 测试用 helper: 同步切到 game 状态, 不走 LoadingScreen.

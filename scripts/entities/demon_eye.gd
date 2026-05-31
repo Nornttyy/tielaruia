@@ -24,6 +24,7 @@ var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _bob_t: float = 0.0
 var _base_y: float = 0.0  # spawn 时 y 位置, 漂动以此为基
+var _force_aggro_t: float = 0.0  # 被打了强制进入 aggro 一会, 让 _base_y 跟着同步避免漂移
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -64,10 +65,11 @@ func _physics_process(delta: float) -> void:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
 	_iframe_t = max(0.0, _iframe_t - delta)
+	_force_aggro_t = max(0.0, _force_aggro_t - delta)
 	_bob_t += delta
 	# 飞行 AI: 朝玩家方向漂, 速度恒定 (不受重力)
 	var player := _find_player()
-	var in_aggro: bool = player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX
+	var in_aggro: bool = player != null and (global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX or _force_aggro_t > 0.0)
 	if in_aggro:
 		var to_player: Vector2 = player.global_position - global_position
 		var dir: Vector2 = to_player.normalized() if to_player.length() > 1.0 else Vector2.ZERO
@@ -124,12 +126,14 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
 	Effects.spawn_damage_number(global_position + Vector2(0, -8), actual_loss)
-	# 击退: 给它一点漂移
+	# 击退: 给它一点漂移. 老 bug: 直接 _base_y += dir.y * 5 → 远距离用弓多打几下
+	# _base_y 单向漂移, 眼睛飞到天上 / 钻地. 改成强制进入 aggro 2s, aggro 模式
+	# 每帧 _base_y = global_position.y 自动同步, 击退就回正常 bob 轨道.
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var to_self: Vector2 = global_position - source_pos
 		var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
-		_base_y += dir.y * knockback * 0.05   # 击退也影响 base_y, 不然立刻被 bob 拉回
 		velocity = dir * knockback
+		_force_aggro_t = 2.0
 	if current_health == 0:
 		_die()
 	return true
