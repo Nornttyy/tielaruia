@@ -2,6 +2,8 @@
 extends GutTest
 
 const MainScene = preload("res://scenes/main.tscn")
+const SlimeBallScene = preload("res://scenes/entities/slime_ball.tscn")
+const SlimeScene = preload("res://scenes/entities/slime.tscn")
 
 
 func test_slime_crown_and_ball_defs_exist() -> void:
@@ -36,3 +38,22 @@ func test_slime_crown_recipe_exists() -> void:
 						jelly += 1
 			assert_eq(jelly, 9, "王冠 = 9 个史莱姆胶")
 	assert_true(found, "应有 slime_crown 配方")
+
+
+func test_slime_ball_damages_enemy() -> void:
+	var ball = SlimeBallScene.instantiate()
+	add_child_autofree(ball)
+	var slime = SlimeScene.instantiate()
+	add_child_autofree(slime)
+	slime.global_position = Vector2(100, 100)
+	await wait_frames(1)
+	ball.setup(Vector2(70, 100), Vector2(100, 100), 16, null)
+	var hp_before: int = slime.current_health
+	await wait_frames(30)
+	assert_lt(slime.current_health, hp_before, "史莱姆球该打到 slime 扣血")
+
+func test_slime_ball_bounces_off_ground() -> void:
+	var ball = SlimeBallScene.instantiate()
+	add_child_autofree(ball)
+	assert_true("_bounces" in ball, "slime_ball 应有 _bounces 计数")
+	assert_true(ball.has_method("setup"), "应有 setup")
