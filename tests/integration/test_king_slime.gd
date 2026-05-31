@@ -18,6 +18,11 @@ func test_slime_crown_and_ball_defs_exist() -> void:
 	assert_false(ItemDB.is_summon("slime_ball"), "slime_ball 不是召唤道具")
 
 
+func test_item_icons_exist() -> void:
+	assert_not_null(ArtCache.get_inventory_icon("slime_crown"), "王冠该有 icon")
+	assert_not_null(ArtCache.get_inventory_icon("slime_ball"), "球该有 icon")
+
+
 func test_slime_crown_recipe_exists() -> void:
 	var found := false
 	for r in RecipeDB._RECIPES:

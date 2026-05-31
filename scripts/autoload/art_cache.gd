@@ -235,7 +235,9 @@ func _build_items() -> void:
 			"diamond_helmet", "diamond_chest", "diamond_pants",
 			"hell_staff", "wood_staff", "iron_staff", "mana_potion",
 			# 用户加: 小麦 / 种子 之前漏了, 收割掉地没图
-			"wheat", "wheat_seed"]:
+			"wheat", "wheat_seed",
+			# 史莱姆王 Boss 掉落 + 合成材料
+			"slime_crown", "slime_ball"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画
