@@ -22,7 +22,12 @@ const SCALE_LOW := 2.0
 const MINION_INTERVAL := 4.0
 const MINION_PER_WAVE := 3
 const MINION_CAP := 8
+const DESPAWN_DISTANCE_PX := 960.0
+const DESPAWN_AFTER_SEC := 5.0
+const JELLY_DROP_MIN := 20
+const JELLY_DROP_MAX := 40
 
+var _far_timer: float = 0.0
 var max_health: int = BASE_MAX_HEALTH
 var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null
@@ -95,6 +100,10 @@ func _find_player() -> Node2D:
 
 func _physics_process(delta: float) -> void:
 	if has_meta("is_remote") or _is_dying:
+		return
+	# 收尾: 玩家死/远离超时 → 直接消失 (不掉东西)
+	_check_despawn(delta)
+	if _is_dying:
 		return
 	# 阶段 2: 血 < 50% 周期召唤小兵
 	if current_health < max_health / 2:
@@ -174,6 +183,36 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	return true
 
 
+# 远离消失: 玩家不存在 (死了/离场) 或太远 → 累计计时, 超时直接消失 (不掉落).
+func _check_despawn(delta: float) -> void:
+	var player := _find_player()
+	var far: bool = player == null or global_position.distance_to(player.global_position) > DESPAWN_DISTANCE_PX
+	if far:
+		_far_timer += delta
+		if _far_timer >= DESPAWN_AFTER_SEC:
+			_is_dying = true
+			queue_free()
+	else:
+		_far_timer = 0.0
+
+
+# 在 boss 身上 spawn 一个掉落物 (沿用 slime.gd 的 item_id/count API)
+func _spawn_drop(item_id: String) -> void:
+	var drop = ItemDropScene.instantiate()
+	drop.item_id = item_id
+	drop.count = 1
+	drop.global_position = global_position + Vector2(randf_range(-8.0, 8.0), -6.0)
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = get_parent()
+	entities.add_child(drop)
+
+
 func _die() -> void:
 	_is_dying = true
+	# 掉 1 个 slime_ball + 一大堆 slime_jelly
+	_spawn_drop("slime_ball")
+	var n := JELLY_DROP_MIN + (randi() % (JELLY_DROP_MAX - JELLY_DROP_MIN + 1))
+	for i in n:
+		_spawn_drop("slime_jelly")
 	queue_free()

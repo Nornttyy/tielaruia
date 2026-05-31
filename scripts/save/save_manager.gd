@@ -249,6 +249,9 @@ static func apply_chunk_deltas(cm, serialized: Dictionary) -> void:
 func _serialize_entities() -> Array:
 	var out: Array = []
 	for s in get_tree().get_nodes_in_group("slimes"):
+		# Boss 也在 "slimes" 组, 但不能当普通史莱姆存 (reload 会刷成小史莱姆), 跳过
+		if s.is_in_group("boss"):
+			continue
 		out.append({"type": "slime", "pos": s.global_position})
 	for v in get_tree().get_nodes_in_group("villagers"):
 		out.append({"type": "villager", "pos": v.global_position})

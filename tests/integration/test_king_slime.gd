@@ -121,3 +121,28 @@ func test_king_slime_spawns_minions_below_half() -> void:
 	boss._spawn_minions()
 	var after := get_tree().get_nodes_in_group("slimes").size()
 	assert_gt(after, before, "血<50% 召唤小史莱姆")
+
+func test_king_slime_drops_on_death() -> void:
+	var boss = KingSlimeScene.instantiate()
+	add_child_autofree(boss)
+	await wait_frames(1)
+	var before := get_tree().get_nodes_in_group("item_drops").size()
+	boss.take_damage(boss.max_health, boss.global_position, 0.0)
+	await wait_frames(2)
+	var drops := get_tree().get_nodes_in_group("item_drops")
+	assert_gt(drops.size(), before, "Boss 死该掉东西")
+	var has_ball := false
+	for d in drops:
+		if "item_id" in d and d.item_id == "slime_ball":
+			has_ball = true
+	assert_true(has_ball, "Boss 该掉 slime_ball")
+
+func test_king_slime_despawns_when_player_far() -> void:
+	var boss = KingSlimeScene.instantiate()
+	add_child_autofree(boss)
+	boss.global_position = Vector2(0, 0)
+	await wait_frames(1)
+	boss._far_timer = boss.DESPAWN_AFTER_SEC + 1.0
+	boss._check_despawn(0.1)
+	await wait_frames(2)
+	assert_false(is_instance_valid(boss) and not boss._is_dying, "远离超时该消失")

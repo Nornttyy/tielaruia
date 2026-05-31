@@ -1183,6 +1183,9 @@ func respawn_player() -> void:
 			inv_node.inventory_changed.emit()
 	# 清掉地图上所有 slime (防止复活时聚一堆)
 	for s in get_tree().get_nodes_in_group("slimes"):
+		# Boss 在 "slimes" 组里, 但有自己的远离消失逻辑, 别在这儿误删 (会跳过掉落)
+		if s.is_in_group("boss"):
+			continue
 		s.queue_free()
 	# 重置 spawn timer, 给玩家几秒缓冲再开始刷新
 	_slime_spawn_timer = 5.0
