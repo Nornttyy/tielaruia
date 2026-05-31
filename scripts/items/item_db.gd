@@ -18,6 +18,8 @@ const _DEFS := {
 	"wood_pickaxe": {"placeable_tile_id": -1,              "tool_kind": "pickaxe", "tool_tier": 1, "max_stack": 1, "damage_mult": 0.5},
 	"wood_axe":     {"placeable_tile_id": -1,              "tool_kind": "axe",     "tool_tier": 1, "max_stack": 1, "damage_mult": 0.0},
 	"slime_jelly":  {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 40},
+	"slime_crown":  {"placeable_tile_id": -1, "tool_kind": "summon",    "tool_tier": 0, "max_stack": 1},
+	"slime_ball":   {"placeable_tile_id": -1, "tool_kind": "slimeball", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0},
 	"apple":        {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 25},
 	"stone_sword":   {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 2, "max_stack": 1, "damage_mult": 1.0},
 	"stone_pickaxe": {"placeable_tile_id": -1,                     "tool_kind": "pickaxe", "tool_tier": 2, "max_stack": 1, "damage_mult": 0.5},
@@ -178,3 +180,9 @@ func mana_refill(item_id: String) -> int:
 
 func is_mana_potion(item_id: String) -> bool:
 	return mana_refill(item_id) > 0
+
+
+# 召唤道具: 使用后触发 Boss 召唤 (如史莱姆王冠)
+func is_summon(item_id: String) -> bool:
+	var def = get_def(item_id)
+	return def != null and def.get("tool_kind", "") == "summon"
