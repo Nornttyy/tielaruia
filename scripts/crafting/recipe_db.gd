@@ -438,6 +438,20 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# 铁锅 (做饭工作站): 5 铁锭 U 形, 熔炉炼. 放下后只能叠在炉子上.
+	{
+		"id": "cooking_pot",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["iron_ingot", "",           "iron_ingot"],
+			["iron_ingot", "iron_ingot", "iron_ingot"],
+			["",           "",           ""],
+		],
+		"output_id": "cooking_pot",
+		"output_count": 1,
+		"mirror_ok": true,
+		"requires": "furnace",
+	},
 	# === 冶炼 (要求附近有 furnace) ===
 	# 3 个矿石横排 → 1 个对应锭. mirror_ok 让横/竖都能匹配
 	{

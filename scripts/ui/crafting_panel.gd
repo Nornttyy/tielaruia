@@ -737,6 +737,7 @@ func _refresh_recipes() -> void:
 		return
 	# 查附近是否有 furnace (跟 workbench 同模式)
 	var has_furnace: bool = _has_furnace_nearby()
+	var has_cooking_pot: bool = _has_cooking_pot_nearby()
 	for entry in _recipe_buttons:
 		var recipe: Dictionary = entry.recipe
 		var btn: Button = entry.button
@@ -748,6 +749,10 @@ func _refresh_recipes() -> void:
 		# 冶炼配方过滤: 要求 "furnace" 的, 玩家身边必须有 furnace
 		var requires: String = recipe.get("requires", "")
 		if requires == "furnace" and not has_furnace:
+			btn.visible = false
+			continue
+		# 料理配方过滤: 要求 "pot" 的, 玩家身边必须有铁锅
+		if requires == "pot" and not has_cooking_pot:
 			btn.visible = false
 			continue
 		# 素材是否够 → 灰显
@@ -779,6 +784,28 @@ func _has_furnace_nearby() -> bool:
 		for dy in range(-2, 3):
 			var tid: int = terrain.get_cell_source_id(pt + Vector2i(dx, dy))
 			if tid == Tiles.FURNACE:
+				return true
+	return false
+
+
+# 查附近 ±2 格有没有铁锅 (做饭工作站, 跟 furnace 同模式)
+func _has_cooking_pot_nearby() -> bool:
+	if _player_inv == null:
+		return false
+	var player: Node = _player_inv.get_parent()
+	if player == null:
+		return false
+	var pa: Node = player.get_node_or_null("PlayerAction")
+	if pa == null or not pa.has_method("player_tile"):
+		return false
+	var pt: Vector2i = pa.player_tile()
+	var terrain: TileMapLayer = get_tree().get_first_node_in_group("terrain_layer") as TileMapLayer
+	if terrain == null:
+		return false
+	for dx in range(-2, 3):
+		for dy in range(-2, 3):
+			var tid: int = terrain.get_cell_source_id(pt + Vector2i(dx, dy))
+			if tid == Tiles.COOKING_POT:
 				return true
 	return false
 

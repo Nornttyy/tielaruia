@@ -689,6 +689,12 @@ func try_place() -> bool:
 		Effects.spawn_place_bounce(tile, Tiles.DOOR)
 		SfxBank.play("place", 0.10)
 		return true
+	# 铁锅只能叠在炉子正上方 (用户设计: "锅放在炉子上才能煮")
+	if slot.item_id == "cooking_pot":
+		var below_pot: Vector2i = tile + Vector2i(0, 1)
+		if terrain.get_cell_source_id(below_pot) != Tiles.FURNACE:
+			SfxBank.play("place", 0.05)   # 轻提示: 放不上去
+			return false
 	# (移除 terrain.set_cell; world._set_tile 内部刷视觉 + 邻居)
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, def.placeable_tile_id)
