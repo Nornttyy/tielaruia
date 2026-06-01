@@ -232,6 +232,8 @@ func _setup_multiplayer_callbacks() -> void:
 		NetworkManager.remote_entity_pos_received.connect(_on_remote_entity_pos)
 	if not NetworkManager.remote_entity_die_received.is_connected(_on_remote_entity_die):
 		NetworkManager.remote_entity_die_received.connect(_on_remote_entity_die)
+	if not NetworkManager.remote_entity_damage_received.is_connected(_on_remote_entity_damage):
+		NetworkManager.remote_entity_damage_received.connect(_on_remote_entity_damage)
 	if not NetworkManager.remote_drop_pos_received.is_connected(_on_remote_drop_pos):
 		NetworkManager.remote_drop_pos_received.connect(_on_remote_drop_pos)
 	if not NetworkManager.remote_drop_pickup_received.is_connected(_on_remote_drop_pickup):
@@ -307,15 +309,19 @@ func _get_valid_remote(ent_id: int) -> Node:
 	return ent
 
 
-func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, _hp: int, facing: int, anim: String) -> void:
+func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: int, facing: int, anim: String) -> void:
 	var ent: Node = _get_valid_remote(ent_id)
 	if ent == null:
 		# 第一次见这个实体 (或旧的已被释放): 生成视觉版本
 		ent = _spawn_remote_entity(kind)
 		if ent != null:
+			ent.set_meta("remote_id", ent_id)   # client 的剑命中时回传伤害给 host 认这只怪
 			_remote_entities[ent_id] = ent
 	if ent != null:
 		ent.global_position = Vector2(x, y)
+		# 同步血量 → health_bar 每帧从 current_health 读, 自动显示对端真实血量 (之前写死 0)
+		if hp > 0 and "current_health" in ent:
+			ent.current_health = hp
 		# 同步朝向 + 动画 (之前只挪位置, 导致对方看到动物方向/动作不变在滑动)
 		var spr: AnimatedSprite2D = ent.get_node_or_null("AnimatedSprite2D")
 		if spr != null:
@@ -329,6 +335,24 @@ func _on_remote_entity_die(ent_id: int) -> void:
 	if ent != null:
 		ent.queue_free()
 	_remote_entities.erase(ent_id)
+
+
+# host 收到 client 发来的伤害 → 在自己那只真怪上扣血 (host 权威; 死亡/血量随后随广播同步回 client)
+func _on_remote_entity_damage(ent_id: int, amount: int, knockback: float, sx: float, sy: float) -> void:
+	if not NetworkManager.is_host:
+		return
+	var ent: Node = _find_local_entity_by_id(ent_id)
+	if ent != null and ent.has_method("take_damage"):
+		ent.take_damage(amount, Vector2(sx, sy), knockback)
+
+
+# 按 entity_id_for 在本地真实实体里找 (host 用; 跟广播的 id 算法一致)
+func _find_local_entity_by_id(ent_id: int) -> Node:
+	for grp in ["slimes", "animals", "villagers"]:
+		for e in get_tree().get_nodes_in_group(grp):
+			if e is Node2D and NetworkManager.entity_id_for(e) == ent_id:
+				return e
+	return null
 
 
 func _spawn_remote_entity(kind: String) -> Node:
@@ -530,7 +554,9 @@ func _process(delta: float) -> void:
 
 func _mp_broadcast_entities() -> void:
 	# 怪物 / 动物 / 村民
-	for grp in ["slimes", "zombies", "animals", "villagers"]:
+	# 注: 僵尸同时在 "slimes" 和 "zombies" 组, "slimes" 分支已按 scene_path 认出僵尸,
+	# 故这里不再单列 "zombies", 否则每个僵尸每 tick 被广播两遍 (双倍带宽).
+	for grp in ["slimes", "animals", "villagers"]:
 		for ent in get_tree().get_nodes_in_group(grp):
 			if not (ent is Node2D):
 				continue
@@ -568,10 +594,11 @@ func _mp_broadcast_entities() -> void:
 			if espr != null:
 				efacing = -1 if espr.flip_h else 1
 				eanim = String(espr.animation)
+			var ehp: int = int(n2d.get("current_health")) if "current_health" in n2d else 0
 			NetworkManager.send_entity_pos(
 				NetworkManager.entity_id_for(n2d),
 				kind,
-				n2d.global_position.x, n2d.global_position.y, 0,
+				n2d.global_position.x, n2d.global_position.y, ehp,
 				efacing, eanim
 			)
 	# 掉落物: 走单独 drop_pos (带 item_id + count)

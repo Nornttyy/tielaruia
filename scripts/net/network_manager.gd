@@ -30,6 +30,7 @@ signal remote_time_weather_received(time_val: float, weather_state: String)  # h
 signal initial_state_received(chunk_deltas: Dictionary)  # host 进游戏后广播现状, client 应用 (Phase G)
 signal remote_entity_pos_received(ent_id: int, kind: String, x: float, y: float, hp: int, facing: int, anim: String)  # 实体位置+朝向+动画 (Phase E)
 signal remote_entity_die_received(ent_id: int)  # 实体死亡 (Phase E)
+signal remote_entity_damage_received(ent_id: int, amount: int, knockback: float, sx: float, sy: float)  # client→host: 对怪造成伤害
 signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
 signal remote_drop_pickup_received(ent_id: int)  # 对端捡了某个 drop → 本端删
 signal remote_tile_batch_received(changes: PackedInt32Array)  # 批量 tile [x,y,id]*N
@@ -146,6 +147,13 @@ func _route_message(raw: String) -> void:
 		"ent_die":
 			var did: int = int(data.get("id", 0))
 			remote_entity_die_received.emit(did)
+		"ent_dmg":
+			var dmid: int = int(data.get("id", 0))
+			var dmamt: int = int(data.get("dmg", 0))
+			var dmkb: float = float(data.get("kb", 0.0))
+			var dmsx: float = float(data.get("sx", 0.0))
+			var dmsy: float = float(data.get("sy", 0.0))
+			remote_entity_damage_received.emit(dmid, dmamt, dmkb, dmsx, dmsy)
 		"drop_pos":
 			var did2: int = int(data.get("id", 0))
 			var iid: String = String(data.get("item", ""))
@@ -271,6 +279,14 @@ func send_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: int = 0,
 # Phase E: host 广播实体死亡 (移除 id)
 func send_entity_die(ent_id: int) -> void:
 	send(JSON.stringify({"type": "ent_die", "id": ent_id}))
+
+
+# client → host: 对 host 权威的怪造成伤害. host 收到后在自己那只真怪上 take_damage.
+func send_entity_damage(ent_id: int, amount: int, knockback: float, x: float, y: float) -> void:
+	send(JSON.stringify({
+		"type": "ent_dmg", "id": ent_id, "dmg": amount,
+		"kb": snappedf(knockback, 0.1), "sx": snappedf(x, 0.1), "sy": snappedf(y, 0.1),
+	}))
 
 
 # 掉落物同步: 跟 ent_pos 类似但带 item_id + count, kind 固定 drop

@@ -1158,8 +1158,21 @@ func _check_pickaxe_spin_hits() -> void:
 			if tip_world.distance_to(sn.global_position) > PICKAXE_HIT_RADIUS:
 				continue
 			_pickaxe_hit_this_spin[id] = true
-			if sn.has_method("take_damage"):
-				sn.take_damage(damage, tip_world, _pickaxe_knockback())
+			_deal_enemy_damage(sn, damage, tip_world, _pickaxe_knockback())
+
+
+# 对怪造成伤害的统一入口.
+# 联机 client: 远程怪是 host 权威的, 不在本地扣血(否则砍死的是本地副本, host 不知道又被刷回来),
+# 改成发"伤害消息"给 host, host 在真怪上扣血并广播结果. 本地怪(单机/host)直接 take_damage.
+func _deal_enemy_damage(target: Node2D, amount: int, src: Vector2, knockback: float) -> void:
+	if target.has_meta("is_remote"):
+		if NetworkManager != null and NetworkManager.connected():
+			var rid: int = int(target.get_meta("remote_id", 0))
+			if rid != 0:
+				NetworkManager.send_entity_damage(rid, amount, knockback, src.x, src.y)
+		return
+	if target.has_method("take_damage"):
+		target.take_damage(amount, src, knockback)
 
 
 # 攻击开始时调一次. 接下来 duration 秒内每帧 _check_sword_blade_hits 扫击中.
@@ -1230,8 +1243,7 @@ func _check_sword_blade_hits() -> void:
 			if not hit:
 				continue
 			_sword_hit_this_attack[id] = true
-			if sn.has_method("take_damage"):
-				sn.take_damage(_sword_attack_damage, tip_world, _sword_attack_knockback)
+			_deal_enemy_damage(sn, _sword_attack_damage, tip_world, _sword_attack_knockback)
 
 
 # 点到线段最近距离. clamp t ∈ [0,1] 让计算落在线段内, 端点外的算到端点.
