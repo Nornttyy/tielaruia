@@ -962,10 +962,11 @@ func _update_eat_or_place(delta: float) -> void:
 		return
 
 	# 持食物 + 按住 → 进入/保持 eating. 食物 food_fill 现在直接当回血量.
-	# 满血时不让吃 (用户改: 防止误点浪费食物). 吃到一半被回满也会立刻中断.
+	# 普通食物满血不让吃 (防误点浪费); 带 buff 的料理满血也能吃 (为拿 buff).
 	if holding_food and held and hp != null:
-		if hp.current_health >= hp.MAX_HEALTH:
-			# 满血: 中断进食状态, 不消耗食物
+		var has_buff: bool = ItemDB.food_has_buff(slot.item_id)
+		if hp.current_health >= hp.MAX_HEALTH and not has_buff:
+			# 满血 + 无 buff: 中断进食状态, 不消耗食物
 			if _eat_item_id != "":
 				_eat_item_id = ""
 				_eat_t = 0.0
@@ -979,6 +980,11 @@ func _update_eat_or_place(delta: float) -> void:
 		if _eat_t >= EAT_DURATION_SEC:
 			_eat_t = 0.0
 			hp.heal(ItemDB.food_fill(slot.item_id))
+			# 料理 buff: 吃完触发临时增益
+			if has_buff:
+				var buffs: Node = get_parent().get_node_or_null("PlayerBuffs")
+				if buffs != null:
+					buffs.apply(ItemDB.food_buff_kind(slot.item_id), ItemDB.food_buff_secs(slot.item_id))
 			SfxBank.play("eat", 0.10)
 			inv.consume_current(1)
 			_stop_eat_anim()  # 吃完一口, 下次按住会重新开始

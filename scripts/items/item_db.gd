@@ -153,6 +153,23 @@ func food_fill(item_id: String) -> int:
 	return 0 if def == null else def.get("food_fill", 0)
 
 
+# === 料理 buff helper ===
+# 料理吃下后给的临时增益类型: "speed"/"jump"/"mining"/"regen", 无 buff 返回 "".
+func food_buff_kind(item_id: String) -> String:
+	var def = get_def(item_id)
+	return "" if def == null else def.get("buff_kind", "")
+
+
+# 该 buff 持续秒数. 无 buff 返回 0.
+func food_buff_secs(item_id: String) -> float:
+	var def = get_def(item_id)
+	return 0.0 if def == null else def.get("buff_secs", 0.0)
+
+
+func food_has_buff(item_id: String) -> bool:
+	return food_buff_kind(item_id) != ""
+
+
 # 是否墙类物品 (放进 wall_layer, 不阻挡走路, 但能给方块"支撑"靠它)
 func is_wall(item_id: String) -> bool:
 	var def = get_def(item_id)
