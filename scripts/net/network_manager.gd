@@ -22,7 +22,7 @@ signal message_received(data: String)
 signal error_occurred(msg: String)
 
 # 高层协议事件 (parse 后):
-signal hello_received(world_seed: int)         # host → client, 双方一致的 seed
+signal hello_received(world_seed: int, world_size: int)  # host → client, seed + 世界大小 (双方一致)
 signal remote_pos_received(x: float, y: float, facing: int, anim: String)
 signal remote_tile_received(x: int, y: int, tile_id: int)  # 对方挖/放方块
 signal remote_time_weather_received(time_val: float, weather_state: String)  # host 广播时间+天气
@@ -41,6 +41,7 @@ var my_room_code: String = ""
 var is_host: bool = false
 var last_error: String = ""
 var shared_world_seed: int = 0  # host 创建房间时生成的种子, client 从 hello 拿
+var shared_world_size: int = 1  # host 的世界大小 (0小/1中/2大); client 从 hello 拿. 不传会致两端地形/大小不一致
 var pending_initial_deltas: Dictionary = {}  # client 收 hello 时存入, world 加载后取走应用
 var _pos_send_timer: float = 0.0
 
@@ -88,9 +89,9 @@ func _poll_bridge() -> void:
 		if status == "error":
 			last_error = String(_bridge.get_last_error())
 			error_occurred.emit(last_error)
-		# host 连上 client 后, 立刻发 hello (告诉对方 seed)
+		# host 连上 client 后, 立刻发 hello (告诉对方 seed + 世界大小)
 		if status == "connected" and is_host and old_status != "connected":
-			send_hello(shared_world_seed)
+			send_hello(shared_world_seed, shared_world_size)
 	# my_room_code (host 模式才有, 异步生成)
 	var rc: String = String(_bridge.get_my_id())
 	if rc != my_room_code and rc != "":
@@ -115,8 +116,10 @@ func _route_message(raw: String) -> void:
 	match msg_type:
 		"hello":
 			var seed_val: int = int(data.get("seed", 0))
+			var size_val: int = int(data.get("size", 1))  # 缺省 1=中, 向后兼容不带 size 的老 host
 			shared_world_seed = seed_val
-			hello_received.emit(seed_val)
+			shared_world_size = size_val
+			hello_received.emit(seed_val, size_val)
 		"init_state":
 			# host 在自己 world 加载后发的现状. client world 准备好就 emit, world 接收应用.
 			var deltas: Dictionary = data.get("deltas", {})
@@ -167,7 +170,7 @@ func _route_message(raw: String) -> void:
 			remote_time_weather_received.emit(t, w)
 
 
-func host(p_seed: int = 0) -> void:
+func host(p_seed: int = 0, p_size: int = 1) -> void:
 	if _bridge == null:
 		_try_reload_bridge()
 	if _bridge == null:
@@ -177,6 +180,8 @@ func host(p_seed: int = 0) -> void:
 	my_room_code = ""
 	# 共享 seed: 由调用方传 (游戏内 host 用当前世界 seed); 0 = 让 NM 随机生
 	shared_world_seed = p_seed if p_seed != 0 else randi_range(1, 999999)
+	# 共享世界大小: client 收 hello 后用它生成同样大小的世界 (不传 → 地形/大小不一致 bug)
+	shared_world_size = p_size
 	_bridge.host()
 
 
@@ -198,8 +203,12 @@ func send(data: String) -> bool:
 
 # ===== 高层协议: 发 hello / 位置 =====
 
-func send_hello(seed_val: int) -> void:
-	send(JSON.stringify({"type": "hello", "seed": seed_val}))
+func _hello_payload(seed_val: int, size_val: int) -> String:
+	return JSON.stringify({"type": "hello", "seed": seed_val, "size": size_val})
+
+
+func send_hello(seed_val: int, size_val: int) -> void:
+	send(_hello_payload(seed_val, size_val))
 
 
 func send_initial_state(chunk_deltas: Dictionary) -> void:

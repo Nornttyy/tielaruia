@@ -754,13 +754,13 @@ func _on_mp_status_changed(_s: String) -> void:
 	_refresh_multiplayer_status()
 
 
-func _on_mp_hello_received(seed_val: int) -> void:
-	# client 收到 host 的 hello → 用同 seed 启游戏
+func _on_mp_hello_received(seed_val: int, size_val: int) -> void:
+	# client 收到 host 的 hello → 用同 seed + 同世界大小 启游戏
 	if not NetworkManager.is_host:
-		_start_multiplayer_game(seed_val)
+		_start_multiplayer_game(seed_val, size_val)
 
 
-func _start_multiplayer_game(seed_val: int) -> void:
+func _start_multiplayer_game(seed_val: int, size_val: int) -> void:
 	# 淡出主菜单 → 发 start_game(opts), 进游戏. opts 带 multiplayer 标记.
 	var fade: ColorRect = $ButtonLayer/FadeOverlay
 	var vbox: VBoxContainer = $ButtonLayer/VBox
@@ -773,6 +773,7 @@ func _start_multiplayer_game(seed_val: int) -> void:
 		"world_seed": seed_val,
 		"world_name": Locale.t("mp_default_world_name"),
 		"difficulty": 1,
+		"world_size": size_val,
 		"multiplayer": true,
 	}))
 
