@@ -120,9 +120,11 @@ func save(main: Node) -> bool:
 	if save_name.is_empty():
 		save_name = "默认存档"
 	var path: String = SAVES_DIR + save_name + ".tres"
-	# 原子写: 先写 .tmp 再 rename. 防 1Hz autosave 时浏览器关掉 / 断电留半残 .tres
+	# 原子写: 先写 tmp 再 rename. 防 1Hz autosave 时浏览器关掉 / 断电留半残 .tres
 	# (老 bug: 直接 ResourceSaver.save(path) 中途崩 → 下次启动加载失败).
-	var tmp_path: String = path + ".tmp"
+	# 注意: tmp 也必须 .tres 结尾! ResourceSaver 按扩展名选格式, ".tmp" 不被识别会报
+	# ERR_FILE_UNRECOGNIZED(15) → 存档全失败 (之前就是这个 bug). 故用 ".tmp.tres".
+	var tmp_path: String = SAVES_DIR + save_name + ".tmp.tres"
 	var err: int = ResourceSaver.save(data, tmp_path)
 	if err != OK:
 		push_error("save: ResourceSaver 失败 err=%d" % err)
@@ -168,7 +170,7 @@ func list_saves() -> Array:
 	dir.list_dir_begin()
 	var file_name: String = dir.get_next()
 	while file_name != "":
-		if not dir.current_is_dir() and file_name.ends_with(".tres"):
+		if not dir.current_is_dir() and file_name.ends_with(".tres") and not file_name.ends_with(".tmp.tres"):
 			var full_path: String = SAVES_DIR + file_name
 			var res = ResourceLoader.load(full_path)
 			if res is SaveData:
