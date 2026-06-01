@@ -33,6 +33,10 @@ var world: Node2D:
 
 
 func _ready() -> void:
+	# 启动即给全局 RNG 重新播种 (按系统时间). 桌面版会自动随机化, 但网页(HTML5)
+	# 导出后不会 → 每次打开网页 randi() 从同一起点 → 新世界种子永远一样。
+	# 显式 randomize() 让桌面 + 网页都每次不同。
+	randomize()
 	_main_menu.start_game.connect(_start_game)
 	_main_menu.continue_game.connect(_continue_game)
 	_pause_menu.return_to_menu.connect(_return_to_menu)
