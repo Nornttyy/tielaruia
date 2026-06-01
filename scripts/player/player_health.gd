@@ -13,6 +13,9 @@ const IFRAMES_SEC := 0.6
 const TILE_SIZE := 12
 const LAVA_TICK_INTERVAL := 0.5     # 每 0.5s 扣一次血
 const LAVA_DAMAGE_PER_TICK := 5     # 每次扣 5 → 满血 100 在 10s 内烧死 (用户调: 20 太狠)
+const REGEN_INTERVAL := 2.0          # 自然回血: 每 2 秒回一次
+const REGEN_AMOUNT := 1             # 每次回 1 点 (~0.5 HP/s, 很慢, 背景回血)
+const REGEN_DELAY_AFTER_HIT := 4.0   # 受击后 4 秒内不回 (打架仍有紧张感)
 
 # MAX_HEALTH 现在是 var (不是 const) — 生命水晶能永久加上限.
 # 旧代码 hp.MAX_HEALTH 引用照样工作 (var 名同).
@@ -21,6 +24,8 @@ var current_health: int = BASE_MAX_HEALTH
 var _iframe_timer: float = 0.0
 var _was_in_iframe: bool = false
 var _lava_tick_t: float = 0.0
+var _regen_t: float = 0.0
+var _since_hit_t: float = 999.0      # 初始视为很久没被打 (一开始未满血就能回)
 
 
 func _physics_process(delta: float) -> void:
@@ -35,6 +40,17 @@ func _physics_process(delta: float) -> void:
 	if _lava_tick_t >= LAVA_TICK_INTERVAL:
 		_lava_tick_t = 0.0
 		_check_lava_damage()
+	# 自然慢回血: 离上次受击 >= REGEN_DELAY 且未满血 → 每 REGEN_INTERVAL 回 REGEN_AMOUNT.
+	# 直接改 current_health + emit (不走 heal(), 不碰 iframe).
+	_since_hit_t += delta
+	if is_alive() and current_health < MAX_HEALTH and _since_hit_t >= REGEN_DELAY_AFTER_HIT:
+		_regen_t += delta
+		if _regen_t >= REGEN_INTERVAL:
+			_regen_t -= REGEN_INTERVAL
+			current_health = min(MAX_HEALTH, current_health + REGEN_AMOUNT)
+			health_changed.emit(current_health, MAX_HEALTH)
+	else:
+		_regen_t = 0.0
 
 
 # 判断 tile id 是否为岩浆 (含 3 个流动深度 L1/L2/L3 + 满格 LAVA)
@@ -138,6 +154,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	var displayed_loss: int = min(final_amount, current_health)
 	current_health = max(0, current_health - final_amount)
 	_iframe_timer = IFRAMES_SEC
+	_since_hit_t = 0.0   # 受击 → 重置回血延迟计时
 	# 击退: 沿 (玩家位置 - source) 方向 + 向上 0.4 分量, 设玩家 velocity
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var player_node: Node = get_parent()
