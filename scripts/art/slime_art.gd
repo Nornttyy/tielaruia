@@ -6,9 +6,9 @@ const PixelArt = preload("res://scripts/art/pixel_art.gd")
 
 const PALETTE := {
 	".": Color(0, 0, 0, 0),
-	"g": Color8(76, 175, 80),    # 基色绿
-	"G": Color8(46, 125, 50),    # 阴影
-	"h": Color8(102, 187, 106),  # 高光
+	"g": Color8(70, 130, 205),   # 基色蓝
+	"G": Color8(40, 90, 160),    # 阴影 (深蓝)
+	"h": Color8(125, 180, 235),  # 高光 (浅蓝)
 	"e": Color8(26, 26, 26),     # 眼
 }
 

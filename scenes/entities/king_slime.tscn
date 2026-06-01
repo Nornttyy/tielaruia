@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/entities/king_slime.gd" id="1_ks"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ks"]
-size = Vector2(40, 32)
+size = Vector2(13, 11)
 
 [node name="KingSlime" type="CharacterBody2D"]
 script = ExtResource("1_ks")

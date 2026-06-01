@@ -39,6 +39,7 @@ var _current_hop_vx: float = 0.0
 var _minion_timer: float = MINION_INTERVAL
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var _collision: CollisionShape2D = $CollisionShape2D
 
 
 func _ready() -> void:
@@ -46,7 +47,7 @@ func _ready() -> void:
 	current_health = max_health
 	sprite.sprite_frames = ArtCache.slime_frames
 	sprite.play("idle")
-	sprite.modulate = Color(0.6, 0.5, 1.0)
+	sprite.modulate = Color(0.7, 0.8, 1.1)  # 偏亮蓝 (boss 比普通蓝史莱姆更亮一档, 一眼区分)
 	add_to_group("king_slime")
 	add_to_group("slimes")
 	add_to_group("boss")
@@ -67,6 +68,9 @@ func _hp_ratio() -> float:
 func _apply_scale() -> void:
 	var s: float = lerp(SCALE_LOW, SCALE_FULL, _hp_ratio())
 	sprite.scale = Vector2(s, s)
+	# 碰撞框跟着身体一起缩放. 之前固定 40×32 不跟着大, 满血大王身子大碰撞小 → 难打中.
+	if _collision != null:
+		_collision.scale = Vector2(s, s)
 
 
 # 当前跳跃间隔: 血越少越短 (HOP_COOLDOWN_FULL → HOP_COOLDOWN_LOW)
