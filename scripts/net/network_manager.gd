@@ -23,11 +23,12 @@ signal error_occurred(msg: String)
 
 # 高层协议事件 (parse 后):
 signal hello_received(world_seed: int, world_size: int)  # host → client, seed + 世界大小 (双方一致)
+signal remote_name_received(name: String)      # 对方玩家名 (改名后联机也显示真名)
 signal remote_pos_received(x: float, y: float, facing: int, anim: String)
 signal remote_tile_received(x: int, y: int, tile_id: int)  # 对方挖/放方块
 signal remote_time_weather_received(time_val: float, weather_state: String)  # host 广播时间+天气
 signal initial_state_received(chunk_deltas: Dictionary)  # host 进游戏后广播现状, client 应用 (Phase G)
-signal remote_entity_pos_received(ent_id: int, kind: String, x: float, y: float, hp: int)  # 实体位置 (Phase E)
+signal remote_entity_pos_received(ent_id: int, kind: String, x: float, y: float, hp: int, facing: int, anim: String)  # 实体位置+朝向+动画 (Phase E)
 signal remote_entity_die_received(ent_id: int)  # 实体死亡 (Phase E)
 signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
 signal remote_drop_pickup_received(ent_id: int)  # 对端捡了某个 drop → 本端删
@@ -42,6 +43,7 @@ var is_host: bool = false
 var last_error: String = ""
 var shared_world_seed: int = 0  # host 创建房间时生成的种子, client 从 hello 拿
 var shared_world_size: int = 1  # host 的世界大小 (0小/1中/2大); client 从 hello 拿. 不传会致两端地形/大小不一致
+var remote_player_name: String = ""  # 对方玩家名, 收到 name 消息后存; remote_player spawn 时取用
 var pending_initial_deltas: Dictionary = {}  # client 收 hello 时存入, world 加载后取走应用
 var _pos_send_timer: float = 0.0
 
@@ -92,6 +94,9 @@ func _poll_bridge() -> void:
 		# host 连上 client 后, 立刻发 hello (告诉对方 seed + 世界大小)
 		if status == "connected" and is_host and old_status != "connected":
 			send_hello(shared_world_seed, shared_world_size)
+		# 双方连上后互发自己的名字 (host + client 都发, 这样两边都显示真名)
+		if status == "connected" and old_status != "connected":
+			send_player_name(_local_player_name())
 	# my_room_code (host 模式才有, 异步生成)
 	var rc: String = String(_bridge.get_my_id())
 	if rc != my_room_code and rc != "":
@@ -120,6 +125,10 @@ func _route_message(raw: String) -> void:
 			shared_world_seed = seed_val
 			shared_world_size = size_val
 			hello_received.emit(seed_val, size_val)
+		"name":
+			var pname: String = String(data.get("n", ""))
+			remote_player_name = pname
+			remote_name_received.emit(pname)
 		"init_state":
 			# host 在自己 world 加载后发的现状. client world 准备好就 emit, world 接收应用.
 			var deltas: Dictionary = data.get("deltas", {})
@@ -131,7 +140,9 @@ func _route_message(raw: String) -> void:
 			var ex: float = float(data.get("x", 0.0))
 			var ey: float = float(data.get("y", 0.0))
 			var ehp: int = int(data.get("hp", 0))
-			remote_entity_pos_received.emit(eid, ekind, ex, ey, ehp)
+			var efacing: int = int(data.get("f", 1))
+			var eanim: String = String(data.get("a", ""))
+			remote_entity_pos_received.emit(eid, ekind, ex, ey, ehp, efacing, eanim)
 		"ent_die":
 			var did: int = int(data.get("id", 0))
 			remote_entity_die_received.emit(did)
@@ -211,6 +222,22 @@ func send_hello(seed_val: int, size_val: int) -> void:
 	send(_hello_payload(seed_val, size_val))
 
 
+# 从 GameSettings 安全取本地玩家名 (autoload 缺失时退回 "玩家", 不崩)
+func _local_player_name() -> String:
+	var gs: Node = get_node_or_null("/root/GameSettings")
+	if gs != null and "player_name" in gs:
+		return String(gs.player_name)
+	return "玩家"
+
+
+func _name_payload(n: String) -> String:
+	return JSON.stringify({"type": "name", "n": n})
+
+
+func send_player_name(n: String) -> void:
+	send(_name_payload(n))
+
+
 func send_initial_state(chunk_deltas: Dictionary) -> void:
 	# Phase G: host 进游戏后, 把当前 chunk 改动广播给 client.
 	# Dict<int, PackedInt32Array> → JSON Dict<str(cx), [lx,y,tid,...]>
@@ -226,10 +253,11 @@ func send_initial_state(chunk_deltas: Dictionary) -> void:
 
 
 # Phase E: host 广播单个实体当前位置 (slime/cow/zombie). client 用 id 同步.
-func send_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: int = 0) -> void:
+func send_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: int = 0, facing: int = 1, anim: String = "") -> void:
 	send(JSON.stringify({
 		"type": "ent_pos", "id": ent_id, "k": kind,
 		"x": snappedf(x, 0.1), "y": snappedf(y, 0.1), "hp": hp,
+		"f": facing, "a": anim,
 	}))
 
 

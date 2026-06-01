@@ -44,3 +44,38 @@ func test_host_stores_world_size() -> void:
 	# 无 bridge 时 host() 会走 _emit_no_bridge_error 提前 return, 不会设 shared_world_size.
 	# 所以直接验证字段存在且可写 (host 内部会写它); 用默认值确认字段已声明.
 	assert_true("shared_world_size" in nm, "NetworkManager 应有 shared_world_size 字段")
+
+
+# --- 玩家名字同步 ---
+
+# 发送端: name payload 带 type=name + 名字
+func test_name_payload_builds_message() -> void:
+	var payload: String = nm._name_payload("小明")
+	var data: Variant = JSON.parse_string(payload)
+	assert_true(data is Dictionary, "payload 应是合法 JSON")
+	assert_eq(String(data.get("type", "")), "name", "type 应为 name")
+	assert_eq(String(data.get("n", "")), "小明", "payload 要带名字")
+
+
+# 接收端: 解析 name 消息 → 存 remote_player_name + 发信号
+func test_route_name_stores_and_emits() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"name","n":"小红"}')
+	assert_eq(nm.remote_player_name, "小红", "收到 name 后存 remote_player_name")
+	assert_signal_emitted_with_parameters(nm, "remote_name_received", ["小红"])
+
+
+# --- 实体朝向/动画同步 (动物被打后对方看到动作/方向不变的 bug) ---
+
+# 接收端: ent_pos 必须带出 facing + anim
+func test_route_ent_pos_carries_facing_and_anim() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"ent_pos","id":42,"k":"cow","x":10.0,"y":20.0,"hp":5,"f":-1,"a":"walk"}')
+	assert_signal_emitted_with_parameters(nm, "remote_entity_pos_received", [42, "cow", 10.0, 20.0, 5, -1, "walk"])
+
+
+# 向后兼容: 老消息不带 f/a → facing 默认 1, anim 默认 ""
+func test_route_ent_pos_defaults_facing_anim() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"ent_pos","id":7,"k":"slime","x":1.0,"y":2.0,"hp":0}')
+	assert_signal_emitted_with_parameters(nm, "remote_entity_pos_received", [7, "slime", 1.0, 2.0, 0, 1, ""])

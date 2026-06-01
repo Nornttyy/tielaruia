@@ -238,6 +238,8 @@ func _setup_multiplayer_callbacks() -> void:
 		NetworkManager.remote_drop_pickup_received.connect(_on_remote_drop_pickup)
 	if not NetworkManager.remote_tile_batch_received.is_connected(_on_remote_tile_batch):
 		NetworkManager.remote_tile_batch_received.connect(_on_remote_tile_batch)
+	if not NetworkManager.remote_name_received.is_connected(_on_remote_name):
+		NetworkManager.remote_name_received.connect(_on_remote_name)
 	# host: 立刻广播 chunk_deltas (新 join 的 client 拿到这份现状)
 	if NetworkManager.is_host:
 		_mp_broadcast_initial_state.call_deferred()
@@ -305,7 +307,7 @@ func _get_valid_remote(ent_id: int) -> Node:
 	return ent
 
 
-func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, _hp: int) -> void:
+func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, _hp: int, facing: int, anim: String) -> void:
 	var ent: Node = _get_valid_remote(ent_id)
 	if ent == null:
 		# 第一次见这个实体 (或旧的已被释放): 生成视觉版本
@@ -314,6 +316,12 @@ func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, _hp: i
 			_remote_entities[ent_id] = ent
 	if ent != null:
 		ent.global_position = Vector2(x, y)
+		# 同步朝向 + 动画 (之前只挪位置, 导致对方看到动物方向/动作不变在滑动)
+		var spr: AnimatedSprite2D = ent.get_node_or_null("AnimatedSprite2D")
+		if spr != null:
+			spr.flip_h = facing < 0
+			if anim != "" and spr.animation != anim:
+				spr.play(anim)
 
 
 func _on_remote_entity_die(ent_id: int) -> void:
@@ -445,6 +453,9 @@ func _spawn_remote_player() -> void:
 		spawn_point.x * TILE_SIZE + TILE_SIZE / 2.0,
 		spawn_point.y * TILE_SIZE + TILE_SIZE
 	)
+	# name 消息可能先于 spawn 到达 → spawn 时补上已收到的对方名字
+	if _remote_player.has_method("set_player_name") and NetworkManager.remote_player_name != "":
+		_remote_player.set_player_name(NetworkManager.remote_player_name)
 
 
 func _on_remote_pos(x: float, y: float, facing: int, anim: String) -> void:
@@ -452,6 +463,11 @@ func _on_remote_pos(x: float, y: float, facing: int, anim: String) -> void:
 		_spawn_remote_player()
 	if _remote_player != null and _remote_player.has_method("apply_pos"):
 		_remote_player.apply_pos(x, y, facing, anim)
+
+
+func _on_remote_name(n: String) -> void:
+	if _remote_player != null and _remote_player.has_method("set_player_name"):
+		_remote_player.set_player_name(n)
 
 
 func _place_village() -> void:
@@ -546,10 +562,17 @@ func _mp_broadcast_entities() -> void:
 						kind = "penguin"
 					elif "frog" in scene_path:
 						kind = "frog"
+			var espr: AnimatedSprite2D = n2d.get_node_or_null("AnimatedSprite2D")
+			var efacing: int = 1
+			var eanim: String = ""
+			if espr != null:
+				efacing = -1 if espr.flip_h else 1
+				eanim = String(espr.animation)
 			NetworkManager.send_entity_pos(
 				NetworkManager.entity_id_for(n2d),
 				kind,
-				n2d.global_position.x, n2d.global_position.y, 0
+				n2d.global_position.x, n2d.global_position.y, 0,
+				efacing, eanim
 			)
 	# 掉落物: 走单独 drop_pos (带 item_id + count)
 	for drop in get_tree().get_nodes_in_group("item_drops"):
