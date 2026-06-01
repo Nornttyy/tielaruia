@@ -5,6 +5,7 @@ extends CanvasLayer
 @onready var health_hud: Control = $HealthHUD
 @onready var mana_hud: Control = $ManaHUD
 @onready var minimap: Control = $Minimap
+@onready var buff_hud: Control = $BuffHUD
 
 
 func bind_player(player: Node2D) -> void:
@@ -19,3 +20,6 @@ func bind_player(player: Node2D) -> void:
 		mana_hud.bind(mana)
 	if minimap != null and minimap.has_method("bind_player"):
 		minimap.bind_player(player)
+	var buffs: Node = player.get_node_or_null("PlayerBuffs")
+	if buffs != null and buff_hud != null and buff_hud.has_method("bind"):
+		buff_hud.bind(buffs)
