@@ -275,7 +275,7 @@ func _physics_process(delta: float) -> void:
 	var in_water: bool = _is_in_water()
 	var on_rope: bool = _is_on_rope() and not is_on_floor()
 	var speed_mul: float = 0.5 if in_water else 1.0
-	velocity.x = dir * SPEED * speed_mul
+	velocity.x = dir * SPEED * speed_mul * _buff_speed_mul()
 	sprite.modulate = Color(0.7, 0.85, 1.15) if in_water else Color.WHITE
 
 	var on_floor_now := is_on_floor()
@@ -299,7 +299,7 @@ func _physics_process(delta: float) -> void:
 			velocity.y = SWIM_MAX_SINK
 		# 头出水时按 jump 走普通跳跃 (强力, 能蹬上岸); 头在水里持续按走弱上浮
 		if Input.is_action_just_pressed("jump") and _is_head_above_water():
-			velocity.y = JUMP_VELOCITY
+			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
 			did_jump = true
 			SfxBank.play("jump", 0.08)
 		elif Input.is_action_pressed("jump"):
@@ -312,7 +312,7 @@ func _physics_process(delta: float) -> void:
 			_coyote_timer = COYOTE_TIME
 		# 跳跃 (仅在陆地, 水里用上浮代替)
 		if Input.is_action_just_pressed("jump") and _coyote_timer > 0.0:
-			velocity.y = JUMP_VELOCITY
+			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
 			_coyote_timer = 0.0
 			did_jump = true
 			SfxBank.play("jump", 0.08)
@@ -560,3 +560,14 @@ func _chunk_manager():
 		return null
 	_cached_chunk_manager = world.get("chunk_manager")
 	return _cached_chunk_manager
+
+
+# buff 倍数: 没 PlayerBuffs 或没对应 buff 时返回 1.0 (不影响原手感).
+func _buff_speed_mul() -> float:
+	var b: Node = get_node_or_null("PlayerBuffs")
+	return 1.0 if b == null else b.speed_mul()
+
+
+func _buff_jump_mul() -> float:
+	var b: Node = get_node_or_null("PlayerBuffs")
+	return 1.0 if b == null else b.jump_mul()

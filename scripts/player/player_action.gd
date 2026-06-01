@@ -411,7 +411,7 @@ func _update_mining(delta: float) -> void:
 		_mining_target = tile
 		_mining_progress = 0.0
 		_mining_swing_t = 0.0
-	_mining_progress += _tool_speed(tool_kind, tid) * delta
+	_mining_progress += _tool_speed(tool_kind, tid) * delta * _buff_mining_mul()
 	# 镐 + 斧 (用户改: 斧跟镐同款): 360° 旋转动画 — 每 0.7s 重启一次
 	# 其他 (徒手等): ±75° 来回挥 — 每 0.35s 挥一次
 	_mining_swing_t -= delta
@@ -1513,3 +1513,9 @@ func _consume_crystal_tile(tile: Vector2i, terrain: TileMapLayer, color: Color =
 	Effects.spawn_damage_number(center + Vector2(0, -10), 20, color)
 	Effects.spawn_explosion(center)
 	SfxBank.play("pickup", 0.25)  # 暂用拾取 SFX 表示"获得"
+
+
+# buff 倍数: 没 PlayerBuffs 时返回 1.0 (挖矿速度不受影响).
+func _buff_mining_mul() -> float:
+	var b: Node = get_parent().get_node_or_null("PlayerBuffs")
+	return 1.0 if b == null else b.mining_mul()
