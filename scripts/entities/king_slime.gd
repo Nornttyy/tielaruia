@@ -99,7 +99,11 @@ func _find_player() -> Node2D:
 
 
 func _physics_process(delta: float) -> void:
-	if has_meta("is_remote") or _is_dying:
+	if has_meta("is_remote"):
+		if not _is_dying:
+			_check_player_contact()  # 远程王仍能打伤本地(client)玩家
+		return
+	if _is_dying:
 		return
 	# 收尾: 玩家死/远离超时 → 直接消失 (不掉东西)
 	_check_despawn(delta)

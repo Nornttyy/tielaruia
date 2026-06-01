@@ -49,6 +49,7 @@ func _add_player_exception() -> void:
 
 func _physics_process(delta: float) -> void:
 	if has_meta("is_remote"):
+		_check_player_contact()  # 远程怪仍能打伤本地(client)玩家; 不跑 AI/移动 (host 权威位置)
 		return
 	if _is_dying:
 		return

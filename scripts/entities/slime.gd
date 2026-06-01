@@ -88,6 +88,7 @@ func _is_in_water() -> bool:
 func _physics_process(delta: float) -> void:
 	# 联机远程实体: 不跑 AI / 物理, 位置由 NetworkManager 直接设
 	if has_meta("is_remote"):
+		_check_player_contact()  # 远程怪仍能打伤本地(client)玩家; 不跑 AI/移动 (host 权威位置)
 		return
 	if _is_dying:
 		return
