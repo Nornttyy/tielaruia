@@ -22,7 +22,7 @@ signal message_received(data: String)
 signal error_occurred(msg: String)
 
 # 高层协议事件 (parse 后):
-signal hello_received(world_seed: int, world_size: int)  # host → client, seed + 世界大小 (双方一致)
+signal hello_received(world_seed: int, world_size: int, difficulty: int)  # host → client, seed+大小+难度 (双方一致)
 signal remote_name_received(name: String)      # 对方玩家名 (改名后联机也显示真名)
 signal remote_pos_received(x: float, y: float, facing: int, anim: String)
 signal remote_tile_received(x: int, y: int, tile_id: int)  # 对方挖/放方块
@@ -44,6 +44,7 @@ var is_host: bool = false
 var last_error: String = ""
 var shared_world_seed: int = 0  # host 创建房间时生成的种子, client 从 hello 拿
 var shared_world_size: int = 1  # host 的世界大小 (0小/1中/2大); client 从 hello 拿. 不传会致两端地形/大小不一致
+var shared_world_difficulty: int = 1  # host 难度 (0简/1普/2难); client 从 hello 拿. 不传会致怪 HP/伤害两端不一致
 var remote_player_name: String = ""  # 对方玩家名, 收到 name 消息后存; remote_player spawn 时取用
 var pending_initial_deltas: Dictionary = {}  # client 收 hello 时存入, world 加载后取走应用
 var _pos_send_timer: float = 0.0
@@ -94,7 +95,7 @@ func _poll_bridge() -> void:
 			error_occurred.emit(last_error)
 		# host 连上 client 后, 立刻发 hello (告诉对方 seed + 世界大小)
 		if status == "connected" and is_host and old_status != "connected":
-			send_hello(shared_world_seed, shared_world_size)
+			send_hello(shared_world_seed, shared_world_size, shared_world_difficulty)
 		# 双方连上后互发自己的名字 (host + client 都发, 这样两边都显示真名)
 		if status == "connected" and old_status != "connected":
 			send_player_name(_local_player_name())
@@ -123,9 +124,11 @@ func _route_message(raw: String) -> void:
 		"hello":
 			var seed_val: int = int(data.get("seed", 0))
 			var size_val: int = int(data.get("size", 1))  # 缺省 1=中, 向后兼容不带 size 的老 host
+			var diff_val: int = int(data.get("diff", 1))  # 缺省 1=普通
 			shared_world_seed = seed_val
 			shared_world_size = size_val
-			hello_received.emit(seed_val, size_val)
+			shared_world_difficulty = diff_val
+			hello_received.emit(seed_val, size_val, diff_val)
 		"name":
 			var pname: String = String(data.get("n", ""))
 			remote_player_name = pname
@@ -189,7 +192,7 @@ func _route_message(raw: String) -> void:
 			remote_time_weather_received.emit(t, w)
 
 
-func host(p_seed: int = 0, p_size: int = 1) -> void:
+func host(p_seed: int = 0, p_size: int = 1, p_diff: int = 1) -> void:
 	if _bridge == null:
 		_try_reload_bridge()
 	if _bridge == null:
@@ -201,6 +204,7 @@ func host(p_seed: int = 0, p_size: int = 1) -> void:
 	shared_world_seed = p_seed if p_seed != 0 else randi_range(1, 999999)
 	# 共享世界大小: client 收 hello 后用它生成同样大小的世界 (不传 → 地形/大小不一致 bug)
 	shared_world_size = p_size
+	shared_world_difficulty = p_diff
 	_bridge.host()
 
 
@@ -222,12 +226,12 @@ func send(data: String) -> bool:
 
 # ===== 高层协议: 发 hello / 位置 =====
 
-func _hello_payload(seed_val: int, size_val: int) -> String:
-	return JSON.stringify({"type": "hello", "seed": seed_val, "size": size_val})
+func _hello_payload(seed_val: int, size_val: int, diff_val: int) -> String:
+	return JSON.stringify({"type": "hello", "seed": seed_val, "size": size_val, "diff": diff_val})
 
 
-func send_hello(seed_val: int, size_val: int) -> void:
-	send(_hello_payload(seed_val, size_val))
+func send_hello(seed_val: int, size_val: int, diff_val: int) -> void:
+	send(_hello_payload(seed_val, size_val, diff_val))
 
 
 # 从 GameSettings 安全取本地玩家名 (autoload 缺失时退回 "玩家", 不崩)

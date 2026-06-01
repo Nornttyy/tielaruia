@@ -27,6 +27,10 @@ var time_multiplier: float = 1.0
 
 
 func _process(delta: float) -> void:
+	# 联机 client: 时间完全由 host 广播 (world._on_remote_time_weather 设 TimeOfDay.time).
+	# 本地不再自走, 否则会跟 host 的广播打架 → 昼夜来回漂移/跳变.
+	if NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host:
+		return
 	time += delta * time_multiplier / DAY_DURATION_SEC
 	if time >= 1.0:
 		time -= 1.0

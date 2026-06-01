@@ -15,20 +15,22 @@ func before_each() -> void:
 
 # 发送端: hello payload 必须同时带 seed 和 size
 func test_hello_payload_includes_world_size() -> void:
-	var payload: String = nm._hello_payload(12345, 2)
+	var payload: String = nm._hello_payload(12345, 2, 2)
 	var data: Variant = JSON.parse_string(payload)
 	assert_true(data is Dictionary, "payload 应是合法 JSON 对象")
 	assert_eq(int(data.get("seed", -1)), 12345, "payload 要带 seed")
 	assert_eq(int(data.get("size", -1)), 2, "payload 必须带 world_size")
+	assert_eq(int(data.get("diff", -1)), 2, "payload 必须带 difficulty")
 
 
 # 接收端: 解析带 size 的 hello → 存 shared_world_size + 信号带 size
 func test_route_hello_parses_size_and_emits() -> void:
 	watch_signals(nm)
-	nm._route_message('{"type":"hello","seed":777,"size":2}')
+	nm._route_message('{"type":"hello","seed":777,"size":2,"diff":2}')
 	assert_eq(nm.shared_world_seed, 777, "解析出 seed")
 	assert_eq(nm.shared_world_size, 2, "解析出 world_size 并存 shared_world_size")
-	assert_signal_emitted_with_parameters(nm, "hello_received", [777, 2])
+	assert_eq(nm.shared_world_difficulty, 2, "解析出 difficulty 并存 shared_world_difficulty")
+	assert_signal_emitted_with_parameters(nm, "hello_received", [777, 2, 2])
 
 
 # 向后兼容: 老 host 的 hello 不带 size → client 默认中 (1), 不崩
@@ -36,7 +38,8 @@ func test_route_hello_defaults_size_to_one_when_absent() -> void:
 	watch_signals(nm)
 	nm._route_message('{"type":"hello","seed":5}')
 	assert_eq(nm.shared_world_size, 1, "缺 size 时默认 1 (中)")
-	assert_signal_emitted_with_parameters(nm, "hello_received", [5, 1])
+	assert_eq(nm.shared_world_difficulty, 1, "缺 diff 时默认 1 (普通)")
+	assert_signal_emitted_with_parameters(nm, "hello_received", [5, 1, 1])
 
 
 # host(seed, size) 应把 size 暂存到 shared_world_size (供连上后 send_hello 用)

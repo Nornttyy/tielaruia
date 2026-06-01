@@ -118,7 +118,7 @@ func _on_multiplayer_pressed() -> void:
 		seed_val = int(world.world_seed)
 	_room_code_label.text = Locale.t("pause_mp_room_pending")
 	_status_label.text = Locale.t("pause_mp_room_wait")
-	NetworkManager.host(seed_val, GameSettings.current_world_size)
+	NetworkManager.host(seed_val, GameSettings.current_world_size, GameSettings.current_difficulty)
 
 
 func _on_host_close_pressed() -> void:
