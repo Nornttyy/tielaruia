@@ -79,3 +79,28 @@ func test_route_ent_pos_defaults_facing_anim() -> void:
 	watch_signals(nm)
 	nm._route_message('{"type":"ent_pos","id":7,"k":"slime","x":1.0,"y":2.0,"hp":0}')
 	assert_signal_emitted_with_parameters(nm, "remote_entity_pos_received", [7, "slime", 1.0, 2.0, 0, 1, ""])
+
+
+# --- 初始世界状态 (host 挖/放的方块同步给 client) ---
+
+# host _deltas (Dict<cx, Dict<Vector2i, tid>>) 序列化后, client 解析能还原成 [lx,y,tid]
+# (之前 send_initial_state 误当 PackedInt32Array, 序列化全废, client 看不到 host 改动)
+func test_initial_state_roundtrip_serializes_deltas() -> void:
+	var deltas: Dictionary = {0: {Vector2i(3, 5): 7}}
+	var payload: String = nm._initial_state_payload(deltas)
+	nm._route_message(payload)
+	assert_true(nm.pending_initial_deltas.has("0"), "init_state 应按 str(cx) 存")
+	var arr: Array = nm.pending_initial_deltas["0"]
+	assert_eq(arr.size(), 3, "一个 delta 拍平成 [lx, y, tid] 共 3 个数")
+	assert_eq(int(arr[0]), 3, "lx")
+	assert_eq(int(arr[1]), 5, "world y")
+	assert_eq(int(arr[2]), 7, "tile id")
+
+
+# 断线/返回菜单要清掉 pending 状态, 否则污染下一局
+func test_disconnect_clears_session_state() -> void:
+	nm.pending_initial_deltas = {"0": [1, 2, 3]}
+	nm.remote_player_name = "小明"
+	nm.disconnect_room()
+	assert_eq(nm.pending_initial_deltas.size(), 0, "断线应清 pending_initial_deltas, 防污染新游戏")
+	assert_eq(nm.remote_player_name, "", "断线应清 remote_player_name")

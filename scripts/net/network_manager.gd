@@ -238,18 +238,25 @@ func send_player_name(n: String) -> void:
 	send(_name_payload(n))
 
 
-func send_initial_state(chunk_deltas: Dictionary) -> void:
-	# Phase G: host 进游戏后, 把当前 chunk 改动广播给 client.
-	# Dict<int, PackedInt32Array> → JSON Dict<str(cx), [lx,y,tid,...]>
-	# 转 String key (JSON.stringify 不支持 int key)
+func _initial_state_payload(chunk_deltas: Dictionary) -> String:
+	# chunk_deltas 真实结构: Dict<int cx, Dict<Vector2i pos, int tid>> (见 chunk_manager._deltas)
+	# → JSON Dict<str(cx), [lx, y, tid, ...]>  (JSON 不支持 int/Vector2i key: cx 转 str, 内层拍平)
 	var stringified: Dictionary = {}
 	for cx in chunk_deltas.keys():
-		var arr: PackedInt32Array = chunk_deltas[cx]
+		var inner: Dictionary = chunk_deltas[cx]
 		var plain: Array = []
-		for i in arr.size():
-			plain.append(arr[i])
+		for pos in inner.keys():
+			plain.append(pos.x)        # lx (chunk 内局部 x)
+			plain.append(pos.y)        # world y
+			plain.append(inner[pos])   # tile id
 		stringified[str(cx)] = plain
-	send(JSON.stringify({"type": "init_state", "deltas": stringified}))
+	return JSON.stringify({"type": "init_state", "deltas": stringified})
+
+
+func send_initial_state(chunk_deltas: Dictionary) -> void:
+	# Phase G: host 进游戏后把当前 chunk 改动广播给 client (含挖/放/火把/门).
+	# 之前误把内层 Dict 当 PackedInt32Array → 序列化全废, client 看不到 host 的世界改动.
+	send(_initial_state_payload(chunk_deltas))
 
 
 # Phase E: host 广播单个实体当前位置 (slime/cow/zombie). client 用 id 同步.
@@ -329,6 +336,10 @@ func disconnect_room() -> void:
 	status = "idle"
 	my_room_code = ""
 	is_host = false
+	# 清掉本局会话状态, 否则 NetworkManager (autoload) 会把上一局的 chunk deltas / 对方名字
+	# 带到下一局, 污染新世界地形 (bug: 返回菜单再开新游戏看到旧改动)
+	pending_initial_deltas = {}
+	remote_player_name = ""
 
 
 func connected() -> bool:
