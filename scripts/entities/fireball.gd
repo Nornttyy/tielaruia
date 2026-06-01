@@ -67,9 +67,16 @@ func _check_enemy_hit() -> void:
 				continue
 			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX:
 				continue
-			if enemy.has_method("take_damage"):
-				# 同 arrow: 沿飞行反方向后退 32px 算 source_pos, 避免命中点重合导致击退退化为 UP
-				var src: Vector2 = global_position - velocity.normalized() * 32.0
+			# 同 arrow: 沿飞行反方向后退 32px 算 source_pos, 避免命中点重合导致击退退化为 UP
+			var src: Vector2 = global_position - velocity.normalized() * 32.0
+			if enemy.has_meta("is_remote"):
+				# 联机 client: 远程怪 host 权威, 发伤害消息给 host (同近战 _deal_enemy_damage),
+				# 否则只打本地视觉副本, host 不知道 → 怪被广播刷回来 = "法杖打了没用"
+				if NetworkManager != null and NetworkManager.connected():
+					var rid: int = int(enemy.get_meta("remote_id", 0))
+					if rid != 0:
+						NetworkManager.send_entity_damage(rid, damage, 150.0, src.x, src.y)
+			elif enemy.has_method("take_damage"):
 				enemy.take_damage(damage, src, 150.0)
 			_destroy()
 			return
