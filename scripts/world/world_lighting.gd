@@ -20,14 +20,14 @@ func _ready() -> void:
 
 
 func on_tile_placed(x: int, y: int, tile_id: int) -> void:
-	if tile_id == Tiles.TORCH:
+	if tile_id == Tiles.TORCH or tile_id == Tiles.COOKING_POT:
 		_spawn_torch(x, y)
 	elif tile_id == Tiles.SLIME_TORCH:
 		_slime_torch_tiles[Vector2i(x, y)] = true
 
 
 func on_tile_removed(x: int, y: int, old_tile_id: int) -> void:
-	if old_tile_id == Tiles.TORCH:
+	if old_tile_id == Tiles.TORCH or old_tile_id == Tiles.COOKING_POT:
 		_despawn_torch(x, y)
 	elif old_tile_id == Tiles.SLIME_TORCH:
 		_slime_torch_tiles.erase(Vector2i(x, y))
@@ -59,7 +59,7 @@ func on_chunk_loaded(chunk_x: int, chunk_width: int, tiles_2d: Array) -> void:
 		var world_x: int = x0 + lx
 		var col: Array = tiles_2d[lx]
 		for y in col.size():
-			if col[y] == Tiles.TORCH:
+			if col[y] == Tiles.TORCH or col[y] == Tiles.COOKING_POT:
 				_spawn_torch(world_x, y)
 			elif col[y] == Tiles.SLIME_TORCH:
 				_slime_torch_tiles[Vector2i(world_x, y)] = true
