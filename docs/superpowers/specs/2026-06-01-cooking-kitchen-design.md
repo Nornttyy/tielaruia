@@ -48,6 +48,9 @@
 | 🍄 蘑菇汤 mushroom_soup | 蘑菇 ×2 | 30 | ❤️ 慢慢回血 |
 | 🥧 苹果派 apple_pie | 苹果 ×2 + 小麦 ×1 | 45 | 🦘 跳得高 |
 | 🍢 烤肉串 meat_skewer | 生肉 ×2 + 蘑菇 ×1 | 60 | ⛏️ 挖得快 |
+| 🍲 蘑菇炖肉 mushroom_stew | 生肉 ×1 + 蘑菇 ×2 | 65 | ⛏️ 挖得快 |
+| 🍯 苹果酱 apple_jam | 苹果 ×3 | 35 | ❤️ 慢慢回血 |
+| 🍮 果冻布丁 jelly_pudding | 史莱姆果冻 ×2 + 苹果 ×1 | 40 | 🦘 跳得高 |
 | 🐟 烤鱼 grilled_fish | 鱼 ×1 | 45 | 🏃 跑得快 |
 | 🍚 米饭 cooked_rice | 米 ×2 | 25 | 无 |
 | 🐟 刺身 sashimi | 鱼片 ×2 | 50 | ❤️ 慢慢回血 |
@@ -112,14 +115,23 @@
 - **发光**：照 `Tiles.TORCH` 的发光先例，锅放置时附暖色 `PointLight2D`（橙黄、半径适中），挖掉时清除。实现任务需定位火把发光的具体挂法并复用。
 - 美术：`scripts/art` 程序画——铁锅黑灰圆肚 + 锅底橙黄火苗，暖色、可识别。
 
-### E. 5 道基础料理（recipe_db + item_db + 中文名 + 美术）
+### E. 8 道基础料理（recipe_db + item_db + 中文名 + 美术）
 
-实现 5 道：熟肉 / 面包 / 蘑菇汤 / 苹果派 / 烤肉串（材料/回血/buff 见上表）。
+实现 8 道（材料/回血/buff 见上表，均只用现有材料 生肉/小麦/苹果/蘑菇/史莱姆果冻）：
+
+1. 🍖 熟肉 cooked_meat — 生肉 ×1 — 回 50 — 无 buff
+2. 🍞 面包 bread — 小麦 ×3 — 回 30 — 🏃 跑得快
+3. 🍄 蘑菇汤 mushroom_soup — 蘑菇 ×2 — 回 30 — ❤️ 慢慢回血
+4. 🥧 苹果派 apple_pie — 苹果 ×2 + 小麦 ×1 — 回 45 — 🦘 跳得高
+5. 🍢 烤肉串 meat_skewer — 生肉 ×2 + 蘑菇 ×1 — 回 60 — ⛏️ 挖得快
+6. 🍲 蘑菇炖肉 mushroom_stew — 生肉 ×1 + 蘑菇 ×2 — 回 65 — ⛏️ 挖得快
+7. 🍯 苹果酱 apple_jam — 苹果 ×3 — 回 35 — ❤️ 慢慢回血
+8. 🍮 果冻布丁 jelly_pudding — 史莱姆果冻 ×2 + 苹果 ×1 — 回 40 — 🦘 跳得高
 
 - 熟肉：把现有 `cooked_meat` 配方的 `requires` 从 `"furnace"` 改 `"pot"`（做饭搬到锅；炉子只管炼金属）。
-- 其余 4 道：新 item（food_fill + buff_kind/secs）+ 新配方（`requires:"pot"`）+ `_ZH_NAMES` 中文名 + 程序画图标。
+- 其余 7 道：新 item（food_fill + buff_kind/secs）+ 新配方（`requires:"pot"`）+ `_ZH_NAMES` 中文名 + 程序画图标。
 - buff 时长建议：跑/跳/挖 = 60s，回血 = 30s（数值可调）。
-- **务必**给每个新 item 同步 `crafting_panel.gd` 的 `_ZH_NAMES`（面包/蘑菇汤/苹果派/烤肉串/锅），否则面板显示英文 id。
+- **务必**给每个新 item 同步 `crafting_panel.gd` 的 `_ZH_NAMES`（面包/蘑菇汤/苹果派/烤肉串/蘑菇炖肉/苹果酱/果冻布丁/锅），否则面板显示英文 id。
 
 ### F. Buff HUD（屏幕看得见）
 
@@ -130,8 +142,8 @@
 
 ### 第 1 步验收（GUT 测试）
 
-- **item_db**：5 道料理 + cooking_pot 存在；food_fill 正确；带 buff 的料理 `food_buff_kind/secs` 正确；纯食物无 buff 字段。
-- **recipe_db**：5 道料理配方可解析、`requires=="pot"`；cooking_pot 配方 `requires=="furnace"`；图案/产出正确。
+- **item_db**：8 道料理 + cooking_pot 存在；food_fill 正确；带 buff 的料理 `food_buff_kind/secs` 正确；纯食物（熟肉）无 buff 字段。
+- **recipe_db**：8 道料理配方可解析、`requires=="pot"`；cooking_pot 配方 `requires=="furnace"`；图案/产出正确。
 - **player_buffs**：`apply` 后 `is_active`；到期消失；同 kind 刷新时长；不同 kind 叠加；`speed/jump/mining_mul` 在有/无 buff 下取值正确；regen buff 随时间回血。
 - **player_health 自然回血**：被打后 `REGEN_DELAY` 内不回；之后按 `REGEN_INTERVAL` 回 `REGEN_AMOUNT`；不超过 MAX；自然回血不清除受击 iframe。
 - **集成**：吃带 buff 料理 → 回血 + buff 生效 + 消耗 1；血满也能吃 buff 料理；放置 cooking_pot 仅在炉子上方成功、别处失败；`_has_cooking_pot_nearby` 正确解锁料理配方。
