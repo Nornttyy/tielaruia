@@ -26,6 +26,7 @@ const JUNGLE_LEAVES := 48
 const SILVER_ORE := 49
 const WOOD_WALL := 50
 const FURNACE := 51
+const COOKING_POT := 74     # 铁锅 (架在炉子上的做饭台, 锅底带火)
 const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
 const GOLD_CHEST := 54      # 金宝箱 (金色金属包角)
@@ -573,6 +574,16 @@ const _P_FURNACE := {
 	"S": Color8(85, 75, 68),      # 暗灰
 	"k": Color8(40, 32, 28),      # 黑描边
 	"R": Color8(220, 90, 40),     # 火焰橙红 (内部)
+	"r": Color8(255, 160, 60),    # 火焰亮黄
+	"y": Color8(255, 230, 130),   # 火焰最亮
+}
+
+const _P_COOKING_POT := {
+	".": Color(0, 0, 0, 0),       # 透明背景
+	"k": Color8(35, 30, 28),      # 黑铁描边
+	"i": Color8(70, 66, 64),      # 铁锅身灰
+	"I": Color8(105, 100, 96),    # 锅身高光
+	"R": Color8(220, 90, 40),     # 火焰橙红
 	"r": Color8(255, 160, 60),    # 火焰亮黄
 	"y": Color8(255, 230, 130),   # 火焰最亮
 }
@@ -1916,6 +1927,26 @@ const _FURNACE := [
 ]
 
 
+const _COOKING_POT := [
+	"................",
+	"....kkkkkkkk....",
+	"...kiiIIiiiik...",
+	"..kiiIIiiiiiik..",
+	"k.kiiiiiiiiiik.k",
+	"k.kiiIiiiiiiik.k",
+	".kkiiiiiiiiiikk.",
+	"..kiiiiiiiiiik..",
+	"..kiiiiiiiiiik..",
+	"...kiiiiiiiik...",
+	"....kiiiiiik....",
+	"....kkkkkkkk....",
+	".....RrrrrR.....",
+	"....RyyrryyR....",
+	"...RryryyryrR...",
+	"..RyrRRrrRRryR..",
+]
+
+
 const _WOOD_WALL := [
 	"pppppppppppppppp",
 	"pPppppppllpppPpp",
@@ -2020,6 +2051,7 @@ const _PATTERN_MAP := {
 	STONE_WALL: [_STONE_WALL, _P_STONE_WALL],
 	WOOD_WALL: [_WOOD_WALL, _P_WOOD_WALL],
 	FURNACE: [_FURNACE, _P_FURNACE],
+	COOKING_POT: [_COOKING_POT, _P_COOKING_POT],
 	CACTUS: [_CACTUS, _P_CACTUS],
 	CACTUS_BODY: [_CACTUS_BODY, _P_CACTUS],
 	COPPER_ORE: [_COPPER_ORE, _P_COPPER_ORE],

@@ -98,6 +98,7 @@ func _build_blocks() -> void:
 		BlocksArt.JUNGLE_DIRT, BlocksArt.SNOW_DIRT, BlocksArt.JUNGLE_LEAVES,
 		BlocksArt.SILVER_ORE,
 		BlocksArt.FURNACE,
+		BlocksArt.COOKING_POT,
 		BlocksArt.MUSHROOM,
 		BlocksArt.MIMIC_CHEST,
 		BlocksArt.GOLD_CHEST,

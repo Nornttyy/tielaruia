@@ -87,6 +87,7 @@ const PLANT_GRASS := 70
 const LAVA_L1 := 71         # 1/4 岩浆 (流动浅位)
 const LAVA_L2 := 72         # 2/4 岩浆
 const LAVA_L3 := 73         # 3/4 岩浆 (满格仍是 LAVA = 56)
+const COOKING_POT := 74     # 铁锅: 玩家造, 实心, 只能叠在炉子上. 附近解锁料理配方, 发暖光
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -145,6 +146,11 @@ const _PROPS := {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
 		"drops": [["furnace", 100, 1, 1]],
+	},
+	COOKING_POT: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"drops": [["cooking_pot", 100, 1, 1]],
 	},
 	DOOR: {
 		# 门底部: 视觉占 1 格, 但和 DOOR_TOP (上一格) 配对成 2 格高门.

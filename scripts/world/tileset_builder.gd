@@ -49,6 +49,7 @@ static func build() -> TileSet:
 		Tiles.JUNGLE_DIRT, Tiles.SNOW_DIRT, Tiles.JUNGLE_LEAVES,
 		Tiles.SILVER_ORE,
 		Tiles.FURNACE,
+		Tiles.COOKING_POT,
 		Tiles.MUSHROOM,
 		Tiles.MIMIC_CHEST,
 		Tiles.GOLD_CHEST,

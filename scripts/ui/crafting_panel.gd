@@ -427,6 +427,7 @@ const _ZH_NAMES := {
 	"spider_eye": "蜘蛛眼",
 	"lens": "镜片",
 	"furnace": "熔炉",
+	"cooking_pot": "铁锅",
 	"iron_ingot": "铁锭",
 	"copper_ingot": "铜锭",
 	"tin_ingot": "锡锭",
