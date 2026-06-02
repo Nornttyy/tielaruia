@@ -31,14 +31,16 @@
   button.primary { background: var(--accent); color: #2a1c00; border-color: #b87c10; font-weight: bold; }
   .main { display: flex; gap: 12px; padding: 12px; align-items: flex-start; flex-wrap: wrap; }
   .palette {
-    width: 168px; flex-shrink: 0; background: var(--panel); border-radius: 10px; padding: 8px;
-    display: flex; flex-direction: column; gap: 5px;
+    width: 264px; flex-shrink: 0; background: var(--panel); border-radius: 10px; padding: 8px;
+    max-height: 560px; overflow-y: auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; align-content: start;
   }
-  .palette .title { font-size: 13px; opacity: .7; margin: 2px 4px 4px; }
+  .palette .title { grid-column: 1 / -1; font-size: 13px; opacity: .7; margin: 2px 4px 4px; }
   .swatch {
-    display: flex; align-items: center; gap: 8px; padding: 5px 7px; border-radius: 7px;
-    border: 2px solid transparent; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 7px;
+    border: 2px solid transparent; cursor: pointer; min-width: 0;
   }
+  .swatch .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .swatch:hover { background: var(--panel2); }
   .swatch.sel { border-color: var(--accent); background: var(--panel2); }
   .swatch .chip {
@@ -100,22 +102,75 @@
 <script>
 // 方块表: 字符 / 中文名 / 颜色. 字符跟游戏 village_prefab.char_to_tile 对齐 (P/L/W/D/C/B/F/T/_),
 // 扩展几个 (g/d/s/a/v) 留给将来导入游戏时补.
+// 颜色由 scripts/tools/gen_block_palette.gd 从游戏真贴图自动抓取 (含群系染色). 字符对齐 village_prefab.
 const BLOCKS = [
   { ch: '.', name: '空 / 橡皮', color: null },
-  { ch: 'g', name: '草',     color: '#79a44e' },
-  { ch: 'd', name: '土',     color: '#9a6f47' },
-  { ch: 'W', name: '石头',   color: '#8c8479' },
-  { ch: 's', name: '沙',     color: '#e3c777' },
-  { ch: 'a', name: '砂岩',   color: '#cdaa5c' },
-  { ch: 'P', name: '木板',   color: '#b07f43' },
-  { ch: 'L', name: '原木',   color: '#6e4a2b' },
-  { ch: '_', name: '平台',   color: '#cda064' },
-  { ch: 'v', name: '树叶',   color: '#5d9a48' },
-  { ch: 'D', name: '门',     color: '#7c5330' },
-  { ch: 'C', name: '箱子',   color: '#bd853f' },
-  { ch: 'B', name: '工作台', color: '#a06f3c' },
-  { ch: 'F', name: '熔炉',   color: '#6b635a' },
-  { ch: 'T', name: '火把',   color: '#ffb43a' },
+  // 地面
+  { ch: 'g', name: '草', color: '#94824c' },
+  { ch: 'd', name: '土', color: '#9d7350' },
+  { ch: 'W', name: '石头', color: '#9a8d84' },
+  { ch: 'e', name: '深岩', color: '#52453b' },
+  { ch: 's', name: '沙', color: '#ddbb80' },
+  { ch: 'a', name: '砂岩', color: '#cca85c' },
+  { ch: 'w', name: '雪', color: '#eef2fb' },
+  { ch: 'N', name: '冻土', color: '#836a5e' },
+  { ch: 'I', name: '冰', color: '#6c96c3' },
+  { ch: 'u', name: '泥巴', color: '#7b5031' },
+  { ch: 'j', name: '丛林草', color: '#649c35' },
+  { ch: 'J', name: '丛林土', color: '#7f7a3a' },
+  { ch: 'm', name: '沼泽草', color: '#737837' },
+  { ch: 'k', name: '基岩', color: '#363636' },
+  { ch: 'o', name: '云', color: '#ecf1f9' },
+  // 建材 / 墙
+  { ch: 'P', name: '木板', color: '#98673d' },
+  { ch: 'L', name: '原木', color: '#7b5845' },
+  { ch: '_', name: '平台', color: '#966840' },
+  { ch: 'y', name: '绳子', color: '#a68557' },
+  { ch: 'p', name: '木墙', color: '#654429' },
+  { ch: 'q', name: '草墙', color: '#443725' },
+  { ch: 'r', name: '土墙', color: '#473523' },
+  { ch: 'h', name: '石墙', color: '#453f3b' },
+  // 树叶
+  { ch: 'v', name: '树叶', color: '#6e8e54' },
+  { ch: 'V', name: '松针', color: '#3c643a' },
+  { ch: 'z', name: '秋叶', color: '#a76032' },
+  { ch: 'Z', name: '丛林叶', color: '#49ad3f' },
+  // 家具 / 箱子
+  { ch: 'D', name: '门', color: '#694b42' },
+  { ch: 'C', name: '箱子', color: '#805b34' },
+  { ch: 'G', name: '金宝箱', color: '#a97a35' },
+  { ch: 'X', name: '钻石宝箱', color: '#454a6c' },
+  { ch: 'H', name: '阴影宝箱', color: '#644444' },
+  { ch: 'x', name: '死人箱', color: '#825c35' },
+  { ch: 'B', name: '工作台', color: '#8d603b' },
+  { ch: 'F', name: '熔炉', color: '#605349' },
+  { ch: 'K', name: '铁锅', color: '#654e39' },
+  { ch: 'Y', name: '菜板', color: '#9e6b3f' },
+  { ch: 'b', name: '床', color: '#853d32' },
+  { ch: 'T', name: '火把', color: '#af692f' },
+  { ch: 't', name: '史莱姆灯', color: '#95b976' },
+  // 矿石
+  { ch: '0', name: '煤矿', color: '#615a53' },
+  { ch: '1', name: '铁矿', color: '#76675b' },
+  { ch: '2', name: '铜矿', color: '#7a6a5c' },
+  { ch: '3', name: '锡矿', color: '#767069' },
+  { ch: '4', name: '银矿', color: '#807870' },
+  { ch: '5', name: '金矿', color: '#ccaa57' },
+  { ch: '6', name: '钻石矿', color: '#79b7d5' },
+  { ch: '7', name: '地狱合金矿', color: '#5c5269' },
+  { ch: '8', name: '地狱晶体', color: '#b0842b' },
+  // 特殊 / 装饰
+  { ch: 'A', name: '仙人掌', color: '#4f793f' },
+  { ch: 'U', name: '蘑菇', color: '#475d86' },
+  { ch: 'c', name: '小草', color: '#59a940' },
+  { ch: '9', name: '地狱石', color: '#892f1d' },
+  { ch: 'O', name: '黑曜石', color: '#120c17' },
+  { ch: 'R', name: '火果', color: '#a03e21' },
+  { ch: 'E', name: '生命水晶', color: '#b9435b' },
+  { ch: 'M', name: '魔力水晶', color: '#4b3e9d' },
+  { ch: 'Q', name: '小麦', color: '#90b84c' },
+  { ch: '*', name: '岩浆', color: '#fcc849' },
+  { ch: '~', name: '水', color: '#3c82d7' },
 ];
 const BY_CH = {};
 BLOCKS.forEach(b => BY_CH[b.ch] = b);
@@ -212,7 +267,11 @@ function updateCode() { document.getElementById('code').value = genCode(); }
 function genCode() {
   const head = '=== TEILARUIA 建筑设计码 v1 (' + cols + 'x' + rows + ') ===';
   const body = grid.map(row => row.join('')).join('\n');
-  const legend = '图例 P=木板 L=原木 W=石头 D=门 C=箱子 B=工作台 F=熔炉 T=火把 _=平台 g=草 d=土 s=沙 a=砂岩 v=树叶  (.=空)';
+  // 图例只列用到的方块 (60 个全列太长)
+  const used = new Set();
+  grid.forEach(row => row.forEach(ch => { if (ch !== '.') used.add(ch); }));
+  const items = BLOCKS.filter(b => b.color && used.has(b.ch)).map(b => b.ch + '=' + b.name);
+  const legend = '图例 ' + (items.length ? items.join(' ') : '(还没画)') + '  (.=空)';
   return head + '\n' + body + '\n' + legend;
 }
 
@@ -233,8 +292,8 @@ function buildPalette() {
     chip.className = 'chip' + (b.color ? '' : ' empty');
     if (b.color) chip.style.background = b.color;
     const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = b.name;
-    const key = document.createElement('div'); key.className = 'key'; key.textContent = b.ch === '.' ? '' : b.ch;
-    el.appendChild(chip); el.appendChild(nm); el.appendChild(key);
+    el.title = b.name + (b.ch === '.' ? '' : '  (' + b.ch + ')');
+    el.appendChild(chip); el.appendChild(nm);
     el.addEventListener('click', () => {
       cur = b.ch;
       document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('sel', s.dataset.ch === cur));
