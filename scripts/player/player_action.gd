@@ -121,11 +121,12 @@ var _pickaxe_spin_damages: bool = false   # 只有"攻击"spin 扣血; 挖矿/�
 # 注: rotation/position 自己按 _sword_attack_t 算, 不读 held.rotation —
 # tween 在 _process 更新, _physics_process 这里读可能滞后 (headless 测试 tween 可能不动).
 const SWORD_TIP_LOCAL_Y := -20.0       # tip 相对 held.position 的 y (sprite 16h × scale 1.25)
+const SWORD_SWEEP_REACH_BONUS := 12.0  # 阔剑(高级剑 tier3+)半圆挥剑身比短剑(戳)长这么多 → 够得更远
 const SWORD_HIT_RADIUS := 17.5         # 怪中心到 grip→tip 线段 ≤ 17.5px (玩家 1.25x). 视觉碰到了 算法也命中
 const SWORD_POINT_BLANK_DIST := 22.5   # 怪离玩家中心 ≤ 22.5px 视为贴脸 (玩家 1.25x), 任何剑攻击一律命中
 const SWORD_HAND_OFFSET_X := 5.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
 const SWORD_HAND_OFFSET_Y := -10.0     # 跟 held_item.HAND_OFFSET_Y 一致
-const SWORD_THRUST_OFFSET := 7.0      # 跟 held_item.THRUST_OFFSET_PX 一致 (用户调: 戳太远 12.5→7)
+const SWORD_THRUST_OFFSET := 12.5      # 跟 held_item.THRUST_OFFSET_PX 一致
 const SWORD_THRUST_DURATION := 0.30    # 三段: 20% 突出, 55% dwell, 25% 收回
 const SWORD_THRUST_EXTEND_END := 0.20  # 0..0.20 突出阶段结束
 const SWORD_THRUST_DWELL_END := 0.75   # 0.20..0.75 dwell, 0.75+ 收回 (主要打击在 dwell)
@@ -1291,7 +1292,9 @@ func _check_sword_blade_hits() -> void:
 		grip_local += _sword_attack_swing_dir * (SWORD_THRUST_OFFSET * thrust_amount)
 	var grip_world: Vector2 = player.global_position + grip_local
 	# 剑尖在 sprite 中心列, 不受 facing 翻转影响, 直接用 blade_rot 算 tip 偏移.
-	var tip_world: Vector2 = grip_world + Vector2(0, SWORD_TIP_LOCAL_Y).rotated(blade_rot)
+	# 阔剑(tier3+)半圆挥剑身更长够得更远; 短剑(戳)用基础长度 (SWORD_TIP_LOCAL_Y<0, 减 bonus = 更长).
+	var tip_len: float = SWORD_TIP_LOCAL_Y - SWORD_SWEEP_REACH_BONUS if _sword_attack_is_sweep else SWORD_TIP_LOCAL_Y
+	var tip_world: Vector2 = grip_world + Vector2(0, tip_len).rotated(blade_rot)
 	# 挥(sweep): 半圆扫过的怪全打 (群伤是阔剑的卖点)。
 	# 戳(thrust): 一击只穿 1 只 (最近的), 不会顺着剑指方向连远处的也戳到。
 	var is_thrust: bool = not _sword_attack_is_sweep
