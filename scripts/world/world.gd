@@ -1127,11 +1127,14 @@ func _tick_crop_growth() -> void:
 		for lx in CHUNK_WIDTH:
 			for y in HEIGHT:
 				var tid: int = c.tiles[lx][y]
-				if tid != Tiles.WHEAT_0 and tid != Tiles.WHEAT_1 and tid != Tiles.WHEAT_2:
+				# 小麦 + 稻子 都靠 tid+1 升阶 (各自 4 阶段连续编号)
+				var is_wheat: bool = tid == Tiles.WHEAT_0 or tid == Tiles.WHEAT_1 or tid == Tiles.WHEAT_2
+				var is_rice: bool = tid == Tiles.RICE_0 or tid == Tiles.RICE_1 or tid == Tiles.RICE_2
+				if not is_wheat and not is_rice:
 					continue
 				if randf() > CROP_GROW_CHANCE:
 					continue
-				var next_id: int = tid + 1   # WHEAT_0→1, 1→2, 2→3 (顺序硬编码)
+				var next_id: int = tid + 1   # X_0→1→2→3 (顺序硬编码)
 				_set_tile(chunk_start + lx, y, next_id)
 
 

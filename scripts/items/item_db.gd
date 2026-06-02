@@ -129,6 +129,8 @@ const _DEFS := {
 	"fishing_rod":   {"placeable_tile_id": -1,                     "tool_kind": "fishing", "tool_tier": 1, "max_stack": 1},
 	"kitchen_knife": {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"cutting_board": {"placeable_tile_id": Tiles.CUTTING_BOARD,    "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
+	"rice":          {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
+	"rice_seed":     {"placeable_tile_id": -1,                     "tool_kind": "seed",    "tool_tier": 0, "max_stack": 99},
 	"chest":         {"placeable_tile_id": Tiles.CHEST,            "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"bed":           {"placeable_tile_id": Tiles.BED,              "tool_kind": "",        "tool_tier": 0, "max_stack": 1},
 	# === 菜园 v1 ===

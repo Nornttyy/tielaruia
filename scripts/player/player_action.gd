@@ -916,6 +916,22 @@ func _update_eat_or_place(delta: float) -> void:
 					SfxBank.play("place", 0.10)
 		return
 
+	# 持稻种 + 右键刚按下 → 草地上方 AIR → 种 RICE_0 (跟小麦一样)
+	if slot != null and slot.item_id == "rice_seed" and just:
+		var terrain_r := _terrain()
+		var aim_r: Vector2i = aim_tile_coord()
+		if terrain_r != null and in_reach(aim_r):
+			var aim_ir: int = terrain_r.get_cell_source_id(aim_r)
+			var below_r: Vector2i = aim_r + Vector2i(0, 1)
+			var below_ir: int = terrain_r.get_cell_source_id(below_r)
+			if aim_ir == -1 and below_ir == Tiles.GRASS:
+				var w_node_r: Node = terrain_r.get_parent()
+				if w_node_r != null and w_node_r.has_method("_set_tile"):
+					w_node_r._set_tile(aim_r.x, aim_r.y, Tiles.RICE_0)
+					inv.consume_current(1)
+					SfxBank.play("place", 0.10)
+		return
+
 	# 右键刚按下 + 鼠标对准的 tile 是 CHEST/GOLD_CHEST/DIAMOND_CHEST → 开箱
 	# (MIMIC_CHEST 走陷阱分支)
 	if just:

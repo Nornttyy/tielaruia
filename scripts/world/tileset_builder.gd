@@ -51,6 +51,7 @@ static func build() -> TileSet:
 		Tiles.FURNACE,
 		Tiles.COOKING_POT,
 		Tiles.CUTTING_BOARD,
+		Tiles.RICE_0, Tiles.RICE_1, Tiles.RICE_2, Tiles.RICE_3,
 		Tiles.MUSHROOM,
 		Tiles.MIMIC_CHEST,
 		Tiles.GOLD_CHEST,

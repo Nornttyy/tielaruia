@@ -431,6 +431,8 @@ const _ZH_NAMES := {
 	"furnace": "熔炉",
 	"cooking_pot": "铁锅",
 	"cutting_board": "菜板",
+	"rice": "米",
+	"rice_seed": "稻种",
 	"bread": "面包",
 	"mushroom_soup": "蘑菇汤",
 	"apple_pie": "苹果派",

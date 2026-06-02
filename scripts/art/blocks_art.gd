@@ -29,6 +29,10 @@ const FURNACE := 51
 const COOKING_POT := 74     # 铁锅 (架在炉子上的做饭台, 锅底带火)
 const CLOUD := 75           # 云块 (白软, 顶亮底带浅灰蓝阴影, 空岛岛体)
 const CUTTING_BOARD := 76   # 菜板 (木板 + 上面一片鱼)
+const RICE_0 := 77          # 稻子 (复用小麦图案 + 绿调色板)
+const RICE_1 := 78
+const RICE_2 := 79
+const RICE_3 := 80
 const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
 const GOLD_CHEST := 54      # 金宝箱 (金色金属包角)
@@ -1692,6 +1696,14 @@ const _BED := [
 
 
 # 小麦 4 阶段调色板: g 嫩绿 / G 深绿 / Y 黄穗 / y 浅黄
+const _P_RICE := {
+	"g": Color8(150, 210, 110),   # 嫩绿稻苗
+	"G": Color8(100, 170, 80),    # 绿稻杆
+	"Y": Color8(225, 220, 160),   # 稻穗 (淡黄绿, 比小麦浅)
+	"y": Color8(245, 245, 215),   # 稻穗高光 (近白)
+	"k": Color8(70, 110, 55),     # 深绿描边
+}
+
 const _P_WHEAT := {
 	"g": Color8(120, 200, 80),    # 嫩绿苗
 	"G": Color8(80, 160, 60),     # 深绿杆
@@ -2190,6 +2202,10 @@ const _PATTERN_MAP := {
 	WHEAT_1: [_WHEAT_1, _P_WHEAT],
 	WHEAT_2: [_WHEAT_2, _P_WHEAT],
 	WHEAT_3: [_WHEAT_3, _P_WHEAT],
+	RICE_0: [_WHEAT_0, _P_RICE],
+	RICE_1: [_WHEAT_1, _P_RICE],
+	RICE_2: [_WHEAT_2, _P_RICE],
+	RICE_3: [_WHEAT_3, _P_RICE],
 	# 装饰小草 (复用 _P_WHEAT 绿色, 几片小叶)
 	PLANT_GRASS: [_PLANT_GRASS, _P_WHEAT],
 }

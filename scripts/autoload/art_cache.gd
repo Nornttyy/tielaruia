@@ -100,6 +100,7 @@ func _build_blocks() -> void:
 		BlocksArt.FURNACE,
 		BlocksArt.COOKING_POT,
 		BlocksArt.CUTTING_BOARD,
+		BlocksArt.RICE_0, BlocksArt.RICE_1, BlocksArt.RICE_2, BlocksArt.RICE_3,
 		BlocksArt.MUSHROOM,
 		BlocksArt.MIMIC_CHEST,
 		BlocksArt.GOLD_CHEST,
@@ -259,7 +260,7 @@ func _build_items() -> void:
 			"salmon", "tuna", "octopus", "sea_urchin", "lobster",
 			"eel", "sweet_shrimp", "scallop", "seaweed",
 			# 厨房第 3 步 (逐任务加, 必须 items_art 已有图案才能加这, 否则 get_icon assert)
-			"kitchen_knife"]:
+			"kitchen_knife", "rice", "rice_seed"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画

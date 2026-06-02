@@ -90,6 +90,10 @@ const LAVA_L3 := 73         # 3/4 岩浆 (满格仍是 LAVA = 56)
 const COOKING_POT := 74     # 铁锅: 玩家造, 实心, 只能叠在炉子上. 附近解锁料理配方, 发暖光
 const CLOUD := 75           # 云块: 空岛岛体. 白软, 实心可站可挖可放, 无重力 (不像 SAND 会塌)
 const CUTTING_BOARD := 76   # 菜板: 玩家造放置工作站. 站旁边解锁切鱼片/做寿司配方
+const RICE_0 := 77          # 稻子 苗 (像小麦 4 阶段, 种子近水种, 熟了挖出米)
+const RICE_1 := 78          # 稻子 小
+const RICE_2 := 79          # 稻子 中
+const RICE_3 := 80          # 稻子 熟 (挖 → 米 + 稻种)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -516,11 +520,32 @@ const _PROPS := {
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["wheat", 100, 2, 4], ["wheat_seed", 100, 1, 2]],
 	},
-	# 装饰小草: 80% 啥都没有 / 20% wheat_seed 1 颗 (用户要求拓荒玩法).
+	# 稻子 4 阶段 (像小麦). RICE_0/1/2 挖掉只回种子; RICE_3 熟透掉米 + 种子.
+	RICE_0: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["rice_seed", 100, 1, 1]],
+	},
+	RICE_1: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["rice_seed", 100, 1, 1]],
+	},
+	RICE_2: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["rice_seed", 100, 1, 1]],
+	},
+	RICE_3: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["rice", 100, 2, 4], ["rice_seed", 100, 1, 2]],
+	},
+	# 装饰小草: 80% 啥都没有 / 20% wheat_seed / 15% rice_seed (拓荒拿种子).
 	PLANT_GRASS: {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
-		"drops": [["wheat_seed", 20, 1, 1]],
+		"drops": [["wheat_seed", 20, 1, 1], ["rice_seed", 15, 1, 1]],
 	},
 }
 
