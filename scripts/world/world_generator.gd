@@ -109,13 +109,19 @@ const OPEN_WORM_PAD_CELLS := 100     # 邻 chunk 搜索 pad
 # 水池: 矿洞洼地 BFS flood fill 填水. 沙漠列稀疏长绿洲.
 const WATER_MIN_DEPTH := 60           # 矿洞水池: surf 下 ≥60 格才算"深矿洞"
 const WATER_POOL_CHANCE := 0.45       # 洼地填水概率 (35→45%, 多点水)
-const WATER_FILL_LEVEL := 6           # 水池高 (从洼地底起填到 6 格)
-const WATER_BASIN_MAX_SIZE := 60      # BFS 单池最多 60 格 (防大房间整个变水缸)
+const WATER_FILL_LEVEL := 8           # 水池高 (从洼地底起填; 6→8 加大)
+const WATER_BASIN_MAX_SIZE := 120     # BFS 单池最多格数 (60→120 允许更大池)
 const OCEAN_DEPTH := 200              # y > 200 (接近基岩) AIR 强制水 = 地下海洋
-const OASIS_CHANCE := 0.012           # 沙漠列 1.2% 概率长绿洲
-const OASIS_WIDTH_MIN := 4            # 绿洲宽 (3→4 大点)
-const OASIS_WIDTH_MAX := 8            # 绿洲宽 (6→8 大点)
-const OASIS_DEPTH := 3                # 绿洲深 (2→3)
+const OASIS_CHANCE := 0.02            # 沙漠列长绿洲概率 (1.2%→2% 多点)
+const OASIS_WIDTH_MIN := 8            # 绿洲宽 (加大 4→8)
+const OASIS_WIDTH_MAX := 16           # 绿洲宽 (加大 8→16)
+const OASIS_DEPTH := 5                # 绿洲深 (3→5)
+# 地表水塘 (forest/jungle/swamp 平地挖碗填群系色水; 雪原不放, 沙漠走绿洲)
+const POND_CHANCE := 0.01             # 草地列当塘中心的概率 (≈每 100 列一个)
+const POND_WIDTH_MIN := 10            # 塘宽 (大)
+const POND_WIDTH_MAX := 20
+const POND_DEPTH := 5                 # 塘最深 (中心)
+const POND_MAX_SLOPE := 2             # 塘宽内地表高差 ≤ 此值才开塘 (太斜水会流走)
 
 # 树种枚举 (内部 idx) — 现在只剩 OAK (T-tree 重做)
 const _SPECIES_OAK := 0
@@ -406,13 +412,15 @@ static func _wall_for_depth(y: int, surf: int) -> int:
 static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
 	var chunk_start_x: int = chunk_x * chunk_width
+	var centers: Dictionary = _build_biome_centers(world_seed)  # 按 x 取群系 → 水色
 
-	# === 1) 地下海洋: y > OCEAN_DEPTH 的所有 AIR 强制水 ===
+	# === 1) 地下海洋: y > OCEAN_DEPTH 的所有 AIR 强制水 (按列群系上色) ===
 	for lx in range(chunk_width):
 		var col: Array = c.tiles[lx]
+		var ocean_water: int = _biome_water_tile(_biome_at_x(chunk_start_x + lx, centers))
 		for y in range(OCEAN_DEPTH, col.size() - BEDROCK_ROWS):
 			if col[y] == Tiles.AIR:
-				col[y] = Tiles.WATER
+				col[y] = ocean_water
 
 	# === 2) 沙漠绿洲: 沙地表稀疏长碗状水池 (中心深, 边缘浅, 边带锯齿) ===
 	for lx in range(chunk_width):
@@ -443,7 +451,52 @@ static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 			for dy in range(col_depth):
 				var ty: int = surf + dy
 				if ty < height - BEDROCK_ROWS:
-					c.tiles[tx][ty] = Tiles.WATER
+					c.tiles[tx][ty] = Tiles.WATER_DESERT   # 绿洲在沙漠 = 青绿松石
+
+	# === 2.5) 地表水塘: forest/jungle/swamp 平地挖碗填群系色水 (雪原跳过; 沙漠走绿洲) ===
+	for lx in range(chunk_width):
+		var wx: int = chunk_start_x + lx
+		var biome: int = _biome_at_x(wx, centers)
+		if biome != BIOME_FOREST and biome != BIOME_JUNGLE and biome != BIOME_SWAMP:
+			continue
+		var psurf: int = chunk_heights[wx]
+		# 中心列必须是该群系的草地表 (避开已是水/沙/结构)
+		if c.tiles[lx][psurf] != _biome_surface_tile(biome, false):
+			continue
+		var pond_roll: float = float(_hash3(world_seed, wx, 7777) & 0xffff) / 65535.0
+		if pond_roll >= POND_CHANCE:
+			continue
+		var pw: int = (_hash3(world_seed, wx, 7778) & 0xff) % (POND_WIDTH_MAX - POND_WIDTH_MIN + 1) + POND_WIDTH_MIN
+		var phalf: int = pw / 2
+		# 平地检查: 塘宽内地表高差 ≤ POND_MAX_SLOPE 才开 (太斜水会顺坡流走)
+		var smin: int = 99999
+		var smax: int = -99999
+		for dxf in range(-phalf, phalf + 1):
+			var txf: int = lx + dxf
+			if txf < 0 or txf >= chunk_width:
+				continue
+			var sf: int = chunk_heights[chunk_start_x + txf]
+			smin = mini(smin, sf)
+			smax = maxi(smax, sf)
+		if smax - smin > POND_MAX_SLOPE:
+			continue
+		var water_tile: int = _biome_water_tile(biome)
+		# 挖碗填水: 中心最深, 边缘渐浅 (像绿洲), 从各列自己的 surf 往下填 → 平地水面齐
+		for dx in range(-phalf, phalf + 1):
+			var tx2: int = lx + dx
+			if tx2 < 0 or tx2 >= chunk_width:
+				continue
+			var s2: int = chunk_heights[chunk_start_x + tx2]
+			var dxa: int = absi(dx)
+			var ratio2: float = 1.0 - float(dxa) / float(phalf + 1)
+			var pdepth: int = int(float(POND_DEPTH) * (0.4 + 0.6 * ratio2))
+			pdepth += (_hash3(world_seed, chunk_start_x + tx2, 7779) & 3) - 1
+			if pdepth < 1:
+				continue
+			for dy in range(pdepth):
+				var ty2: int = s2 + dy
+				if ty2 < height - BEDROCK_ROWS:
+					c.tiles[tx2][ty2] = water_tile
 
 	# === 3) 矿洞洼地 BFS flood fill ===
 	# 用一个 visited 数组避免重复处理同一片 AIR 区域.
@@ -482,7 +535,8 @@ static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 			var fill_min_y: int = bottom_y - WATER_FILL_LEVEL + 1
 			for cell in basin_cells:
 				if cell.y >= fill_min_y:
-					c.tiles[cell.x][cell.y] = Tiles.WATER
+					# 洞穴水按列上方群系上色
+					c.tiles[cell.x][cell.y] = _biome_water_tile(_biome_at_x(chunk_start_x + cell.x, centers))
 
 
 # BFS 找一个连通 AIR 区域 (不出 chunk_width, 不穿越 solid).
@@ -1767,6 +1821,15 @@ static func _biome_surface_tile(biome_id: int, is_sand_col: bool) -> int:
 		BIOME_JUNGLE: return Tiles.JUNGLE_GRASS
 		BIOME_SWAMP: return Tiles.SWAMP_GRASS
 		_: return Tiles.GRASS  # FOREST 默认
+
+
+# Biome → 水 tile (颜色按群系). 森林/雪原/默认 = 通用蓝 WATER.
+static func _biome_water_tile(biome_id: int) -> int:
+	match biome_id:
+		BIOME_DESERT: return Tiles.WATER_DESERT  # 青绿松石
+		BIOME_JUNGLE: return Tiles.WATER_JUNGLE  # 翠绿
+		BIOME_SWAMP: return Tiles.WATER_SWAMP    # 浑浊墨绿
+		_: return Tiles.WATER                    # FOREST / SNOW / 默认 = 蓝
 
 
 # Biome → 浅地下 tile (y < surf + DIRT_DEPTH).
