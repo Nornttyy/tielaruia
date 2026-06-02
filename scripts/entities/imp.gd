@@ -49,6 +49,7 @@ func _add_player_exception() -> void:
 
 func _physics_process(delta: float) -> void:
 	if has_meta("is_remote"):
+		_remote_attack(delta)  # 远程 imp 仍朝本地(client)玩家开火; 位置由 host 同步, 火球本地打本地玩家
 		return
 	if _is_dying:
 		return
@@ -107,6 +108,20 @@ func _shoot_fireball(target_pos: Vector2) -> void:
 		entities = get_parent()
 	entities.add_child(fb)
 	fb.setup(global_position, target_pos)
+
+
+# 联机 client: 远程 imp 不跑 AI/移动 (位置由 host 同步), 但仍朝本地玩家定期开火.
+# 火球本地生成本地打本地玩家 (跟接触伤害一样: 每个玩家面对自己这边的怪/火球, 不用同步火球).
+func _remote_attack(delta: float) -> void:
+	if _is_dying:
+		return
+	_attack_cooldown = max(0.0, _attack_cooldown - delta)
+	var player := _find_player()
+	if player == null:
+		return
+	if _attack_cooldown <= 0.0 and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
+		_attack_cooldown = ATTACK_COOLDOWN_SEC
+		_shoot_fireball(player.global_position)
 
 
 func _find_player() -> Node2D:
