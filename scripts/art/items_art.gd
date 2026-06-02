@@ -1320,6 +1320,25 @@ const _LENS := [
 
 
 # 蜘蛛眼: 圆形红眼 + 黑色十字瞳孔
+const _CLOUD_BOOTS := [
+	"................",
+	"....jjjj........",
+	"...jwwwWj.......",
+	"...jwwwWj.......",
+	"...jwwwWj.......",
+	"...jwwwWj.......",
+	"...jwwwWjjj.....",
+	"...jwwwwwwWj....",
+	"..jwwwwwwwWj....",
+	"..jwwwwwwwWj....",
+	"..jWWWWWWWWj....",
+	"..jjjjjjjjjj....",
+	"................",
+	"...wW..wW..wW...",
+	"..wWWw.wWw.wWw..",
+	"................",
+]
+
 const _FEATHER := [
 	"................",
 	".......jn.......",
@@ -1838,6 +1857,7 @@ const _ICONS := {
 	"bone": _BONE,
 	"spider_eye": _SPIDER_EYE,
 	"feather": _FEATHER,
+	"cloud_boots": _CLOUD_BOOTS,
 	"lens": _LENS,
 	"iron_ingot": _IRON_INGOT,
 	"copper_ingot": _COPPER_INGOT,
