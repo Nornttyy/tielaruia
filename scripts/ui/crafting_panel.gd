@@ -1068,7 +1068,15 @@ func _recompute_output() -> void:
 			var s = _cells[r][c]
 			row.append("" if s == null else String(s.item_id))
 		sub.append(row)
-	_output_preview = RecipeMatcher.find_match(sub)
+	# 工作站: 身边有哪些就允许哪些 station 配方 (在菜板边切鱼片, 在锅边烤鱼; 没站只出徒手配方)
+	var stations: Array = []
+	if _has_furnace_nearby():
+		stations.append("furnace")
+	if _has_cooking_pot_nearby():
+		stations.append("pot")
+	if _has_cutting_board_nearby():
+		stations.append("board")
+	_output_preview = RecipeMatcher.find_match(sub, stations)
 
 
 func _refresh_cells() -> void:

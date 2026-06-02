@@ -5,12 +5,23 @@ const BuffHudClass = preload("res://scripts/ui/buff_hud.gd")
 const HealthClass = preload("res://scripts/player/player_health.gd")
 const BuffsClass = preload("res://scripts/player/player_buffs.gd")
 
+# 在玩家旁边摆口锅 (料理配方现在要 requires "pot" 工作站才匹配)
+func _place_pot_near_player(main) -> void:
+	var world = main.get_node("World")
+	var pa: Node = world.get_player().get_node("PlayerAction")
+	var terrain: TileMapLayer = get_tree().get_first_node_in_group("terrain_layer") as TileMapLayer
+	var pt: Vector2i = pa.player_tile()
+	var pot: Vector2i = pt + Vector2i(1, 0)
+	world._set_tile(pot.x, pot.y, Tiles.COOKING_POT)
+	terrain.set_cell(pot, Tiles.COOKING_POT, Vector2i.ZERO)
+
 # 在合成面板里真摆材料 → 能合出料理 (验证配方图案/旋转匹配真能用)
 func test_craft_bread_from_wheat():
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
 	main.boot_to_game()
 	await wait_frames(2)
+	_place_pot_near_player(main)
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
 	cp.open(3)
 	# 面包 = 一排 3 小麦
@@ -27,6 +38,7 @@ func test_craft_apple_pie():
 	add_child_autofree(main)
 	main.boot_to_game()
 	await wait_frames(2)
+	_place_pot_near_player(main)
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
 	cp.open(3)
 	# 苹果派 = 苹果 苹果 小麦
@@ -43,6 +55,7 @@ func test_craft_mushroom_soup():
 	add_child_autofree(main)
 	main.boot_to_game()
 	await wait_frames(2)
+	_place_pot_near_player(main)
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
 	cp.open(2)
 	# 蘑菇汤 = 2 蘑菇 (2x1)

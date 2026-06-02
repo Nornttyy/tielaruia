@@ -5,8 +5,15 @@
 extends RefCounted
 
 
-static func find_match(grid: Array) -> Variant:
+# available_stations: null = 不过滤 (老行为/直接调用); Array = 只匹配 requires 在里面的
+# (或没 requires 的). 让"三文鱼"在锅边出烤鱼、在菜板边出鱼片, 不再永远第一个赢.
+static func find_match(grid: Array, available_stations = null) -> Variant:
 	for r in RecipeDB.all_recipes():
+		# 工作站过滤: 配方要求某工作站, 但玩家身边没有 → 跳过
+		if available_stations != null:
+			var req: String = r.get("requires", "")
+			if req != "" and not (req in available_stations):
+				continue
 		# 试 4 个旋转 × (镜像 / 不镜像). rotate_ok=false 时只试旋转 0°.
 		var rotations: int = 4 if r.get("rotate_ok", false) else 1
 		for rot in rotations:
