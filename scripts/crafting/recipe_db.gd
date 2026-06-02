@@ -553,6 +553,19 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# 鱼竿: 3 planks 当竿身 (斜) + 2 wool 当鱼线. 普通合成.
+	{
+		"id": "fishing_rod",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["",       "",       "planks"],
+			["",       "planks", "wool"],
+			["planks", "",       "wool"],
+		],
+		"output_id": "fishing_rod",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
 	# 魔晶锭: 3 hell_crystal → 1 ingot. 熔炉烧, 跟其他金属同形 (3 横排).
 	{
 		"id": "hell_crystal_ingot",

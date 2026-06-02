@@ -421,6 +421,7 @@ const _ZH_NAMES := {
 	"chest": "箱子",
 	"bed": "床",
 	"grappling_hook": "钩爪",
+	"fishing_rod": "鱼竿",
 	"wheat_seed": "小麦种子",
 	"wheat": "小麦",
 	"bone": "骨头",
