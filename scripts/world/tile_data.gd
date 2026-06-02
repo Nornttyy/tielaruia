@@ -42,7 +42,9 @@ const WATER_L2 := 35        # 2/4 水位 (流水 level 2)
 const WATER_L3 := 36        # 3/4 水位 (流水 level 3)
 # WATER (=28) 表示满水 level 4
 const CHEST := 37           # 箱子: 右键打开 24 格存储, 内容跟存档持久化
-const DOOR_TOP := 38        # 门上半截 (DOOR 始终是底部, DOOR_TOP 顶部). 配对成 2 格高门.
+const DOOR_TOP := 38        # 门顶 (DOOR 底 / DOOR_MID 中 / DOOR_TOP 顶, 凑成 3 格高门)
+const DOOR_MID := 84        # 门中段 (3 格门的中间一格)
+const DOOR_OPEN := 85       # 门打开态: 3 格都换成它, 无碰撞谁都能穿; 离开后换回关门
 # 新群系 tile (雪原 / 丛林 / 沼泽)
 const SNOW := 39            # 雪原地表 (替代 GRASS), 偏白带浅蓝阴影
 const ICE := 40             # 冰块 (雪原零星), 半透明蓝
@@ -176,10 +178,22 @@ const _PROPS := {
 		"drops": [["door", 100, 1, 1]],
 	},
 	DOOR_TOP: {
-		# 门顶部: 跟 DOOR 一起 2 格高. 物理同 DOOR (单独物理层挡怪不挡玩家).
+		# 门顶部: 跟 DOOR/DOOR_MID 一起 3 格高. 物理同 DOOR (单独物理层挡怪不挡玩家).
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
-		# 不掉东西 — 砍 DOOR 顶部时, 联动把底也消, 由底掉 1 个 door item.
+		# 不掉东西 — 砍门任一段, 联动消整扇, 由 DOOR 掉 1 个 door item.
+		"drops": [],
+	},
+	DOOR_MID: {
+		# 门中段: 3 格门的中间. 物理同 DOOR (挡怪不挡玩家). 砍它联动消整扇.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [],
+	},
+	DOOR_OPEN: {
+		# 门打开态: 完全可穿 (连怪也能过), 无碰撞. 砍它联动消整扇, 由 DOOR 掉落.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [],
 	},
 	BEDROCK: {

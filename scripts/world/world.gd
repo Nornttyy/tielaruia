@@ -91,6 +91,12 @@ var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
 var _crop_grow_timer: float = 60.0   # 作物生长 tick: 每 60s 一次, 每个 WHEAT_0/1/2 升一阶概率
 const CROP_GROW_INTERVAL := 60.0
 const CROP_GROW_CHANCE := 0.6        # 每次 tick 升级概率 (60% → 平均成熟 ~5 分钟)
+# 自动门: 玩家靠近 → 整扇换 DOOR_OPEN (可穿), 离开 → 换回. host/单机 跑, swap 自动同步联机.
+const DOOR_TICK_INTERVAL := 0.15     # 开关检测频率 (s)
+const DOOR_CLOSE_RANGE_X := 2.6      # 玩家水平离门 > 这么多格才关 (开范围是 ±2 格扫描盒, 滞回防抖)
+const DOOR_RANGE_Y := 3.5            # 垂直重叠范围 (门 3 格 + 玩家高)
+var _door_tick_timer: float = 0.0
+var _open_doors: Dictionary = {}     # Vector2i(门底坐标) → true: 当前开着的门
 var _last_player_chunk_x: int = 0
 var _minimap_mark_timer: float = 0.0
 
@@ -579,6 +585,10 @@ func _process(delta: float) -> void:
 		if _crop_grow_timer <= 0.0:
 			_crop_grow_timer = CROP_GROW_INTERVAL
 			_tick_crop_growth()
+		_door_tick_timer -= delta
+		if _door_tick_timer <= 0.0:
+			_door_tick_timer = DOOR_TICK_INTERVAL
+			_tick_doors()
 	# 玩家视野内 tile 标记为 minimap 可见
 	_minimap_mark_timer -= delta
 	if _minimap_mark_timer <= 0.0:
@@ -1149,6 +1159,71 @@ func _tick_crop_growth() -> void:
 					continue
 				var next_id: int = tid + 1   # X_0→1→2→3 (顺序硬编码)
 				_set_tile(chunk_start + lx, y, next_id)
+
+
+# 自动门 tick: 玩家靠近 → 整扇门换成 DOOR_OPEN (可穿); 离开 → 换回关门.
+# 只在 host/单机 跑 (调用处已 if not is_mp_client 门控); _set_tile 把开关 swap 同步给联机对方.
+func _tick_doors() -> void:
+	if chunk_manager == null:
+		return
+	var players: Array = _door_player_positions()
+	if players.is_empty():
+		for coord in _open_doors.keys():   # keys() 是快照, 边遍历边删安全
+			_close_door_at(coord)
+		return
+	# 1) 开: 每个玩家附近扫关着的门底 (DOOR), 开它 (它 + 上 2 格 → DOOR_OPEN)
+	for ppos in players:
+		var ptx: int = int(floor(ppos.x / TILE_SIZE))
+		var pfy: int = int(floor(ppos.y / TILE_SIZE))
+		for dx in range(-2, 3):
+			for dy in range(-3, 4):
+				if chunk_manager.get_tile(ptx + dx, pfy + dy) == Tiles.DOOR:
+					_open_door_at(Vector2i(ptx + dx, pfy + dy))
+	# 2) 关: 已开的门, 没玩家在近处 (滞回 CLOSE_RANGE 比开范围大, 防抖) → 换回关门
+	for coord in _open_doors.keys():
+		var near: bool = false
+		for ppos in players:
+			var dxg: float = absf(ppos.x / TILE_SIZE - (float(coord.x) + 0.5))
+			var dyg: float = absf(ppos.y / TILE_SIZE - float(coord.y))
+			if dxg <= DOOR_CLOSE_RANGE_X and dyg <= DOOR_RANGE_Y:
+				near = true
+				break
+		if not near:
+			_close_door_at(coord)
+
+
+func _door_player_positions() -> Array:
+	var out: Array = []
+	var lp = get_tree().get_first_node_in_group("player")
+	if lp != null and is_instance_valid(lp):
+		out.append(lp.global_position)
+	if _remote_player != null and is_instance_valid(_remote_player):
+		out.append(_remote_player.global_position)
+	return out
+
+
+# 开门: bottom 是门底 (DOOR) 坐标. 只在确实是完整关门 (底DOOR/中MID/顶TOP) 时开, 防开半截门.
+func _open_door_at(bottom: Vector2i) -> void:
+	if chunk_manager.get_tile(bottom.x, bottom.y) != Tiles.DOOR:
+		return
+	if chunk_manager.get_tile(bottom.x, bottom.y - 1) != Tiles.DOOR_MID:
+		return
+	if chunk_manager.get_tile(bottom.x, bottom.y - 2) != Tiles.DOOR_TOP:
+		return
+	_set_tile(bottom.x, bottom.y, Tiles.DOOR_OPEN)
+	_set_tile(bottom.x, bottom.y - 1, Tiles.DOOR_OPEN)
+	_set_tile(bottom.x, bottom.y - 2, Tiles.DOOR_OPEN)
+	_open_doors[bottom] = true
+
+
+# 关门: 换回 底DOOR/中MID/顶TOP. 只在 3 格还都是 DOOR_OPEN 时关 (被挖了就只清记录).
+func _close_door_at(bottom: Vector2i) -> void:
+	_open_doors.erase(bottom)
+	if chunk_manager.get_tile(bottom.x, bottom.y) != Tiles.DOOR_OPEN:
+		return
+	_set_tile(bottom.x, bottom.y, Tiles.DOOR)
+	_set_tile(bottom.x, bottom.y - 1, Tiles.DOOR_MID)
+	_set_tile(bottom.x, bottom.y - 2, Tiles.DOOR_TOP)
 
 
 # 废弃矿井守卫蜘蛛: 同款机制

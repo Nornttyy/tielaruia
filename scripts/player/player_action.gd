@@ -473,15 +473,19 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	if tid == Tiles.LOG and _is_tree_base(world, tile.x, tile.y):
 		_cascade_chop_tree(world, tile, tool_kind)
 		return
-	# 砍门: 联动消除另一半 (DOOR↔DOOR_TOP)
-	if tid == Tiles.DOOR:
+	# 砍门: 不管开/关, 找到整扇门 (上下连续的门 tile) 一起消, 只掉 1 个 door.
+	# (门挨着玩家会自动开成 DOOR_OPEN, 所以挖的多半是开着的门 — 一并处理)
+	if tid == Tiles.DOOR or tid == Tiles.DOOR_MID or tid == Tiles.DOOR_TOP or tid == Tiles.DOOR_OPEN:
 		if world.has_method("_set_tile"):
-			world._set_tile(tile.x, tile.y - 1, Tiles.AIR)   # 同时消顶部
-	elif tid == Tiles.DOOR_TOP:
-		if world.has_method("_set_tile"):
-			world._set_tile(tile.x, tile.y + 1, Tiles.AIR)   # 同时消底部
-			# 由底部 (Tiles.DOOR) 的 drops 出 door item, 这里改 tid 让正常流程走底的掉落
-			tid = Tiles.DOOR
+			var yy: int = tile.y - 1
+			while yy >= tile.y - 3 and _is_door_tile(world, tile.x, yy):   # 往上消
+				world._set_tile(tile.x, yy, Tiles.AIR)
+				yy -= 1
+			yy = tile.y + 1
+			while yy <= tile.y + 3 and _is_door_tile(world, tile.x, yy):   # 往下消
+				world._set_tile(tile.x, yy, Tiles.AIR)
+				yy += 1
+		tid = Tiles.DOOR   # 改 tid → 下面掉落流程出 1 个 door (点击那格由通用流程消)
 	# 砍 chest (4 个 tier 都一样行为): 内容物先撒出来 (不丢)
 	if tid == Tiles.CHEST or tid == Tiles.GOLD_CHEST or tid == Tiles.DIAMOND_CHEST or tid == Tiles.SHADOW_CHEST:
 		var contents: Array = ChestStorage.clear(tile)
@@ -513,6 +517,15 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	for item_id in drops:
 		for _i in drops[item_id]:
 			_spawn_drop(item_id, tile)
+
+
+# 这格是不是门的一部分 (底/中/顶/开). 砍门时往上下扫连续门 tile 用.
+func _is_door_tile(world: Node, x: int, y: int) -> bool:
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return false
+	var t: int = cm.get_tile(x, y)
+	return t == Tiles.DOOR or t == Tiles.DOOR_MID or t == Tiles.DOOR_TOP or t == Tiles.DOOR_OPEN
 
 
 # 树底 = 下面那格不属于树自身的部件. 其他都算 (grass/dirt/AIR/stone/glass 等).
@@ -682,14 +695,16 @@ func try_place() -> bool:
 		return false
 	var def = ItemDB.get_def(slot.item_id)
 	var world: Node = terrain.get_parent()
-	# 门: 2 格高, 占当前 tile + 上一格. 上面必须空气, 否则放不了.
+	# 门: 3 格高, 占当前 tile + 上面 2 格. 上面 2 格必须空, 否则放不了.
 	if def.placeable_tile_id == Tiles.DOOR:
-		var above: Vector2i = tile + Vector2i(0, -1)
-		if terrain.get_cell_source_id(above) != -1:
+		var mid: Vector2i = tile + Vector2i(0, -1)
+		var top: Vector2i = tile + Vector2i(0, -2)
+		if terrain.get_cell_source_id(mid) != -1 or terrain.get_cell_source_id(top) != -1:
 			return false
 		if world.has_method("_set_tile"):
-			world._set_tile(tile.x, tile.y, Tiles.DOOR)
-			world._set_tile(above.x, above.y, Tiles.DOOR_TOP)
+			world._set_tile(tile.x, tile.y, Tiles.DOOR)        # 底
+			world._set_tile(mid.x, mid.y, Tiles.DOOR_MID)      # 中
+			world._set_tile(top.x, top.y, Tiles.DOOR_TOP)      # 顶
 		inv.consume_current(1)
 		SkyLightGrid.invalidate_column(tile.x)
 		Effects.spawn_place_bounce(tile, Tiles.DOOR)

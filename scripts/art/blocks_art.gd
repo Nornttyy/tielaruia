@@ -95,7 +95,9 @@ const WATER_L1 := 34        # 1/4 水位
 const WATER_L2 := 35        # 2/4 水位
 const WATER_L3 := 36        # 3/4 水位
 const CHEST := 37           # 箱子
-const DOOR_TOP := 38        # 门上半截 (跟 DOOR=9 配对成 2 格高门)
+const DOOR_TOP := 38        # 门顶 (DOOR 底 / DOOR_MID 中 / DOOR_TOP 顶, 3 格高门)
+const DOOR_MID := 84        # 门中段
+const DOOR_OPEN := 85       # 门打开态窄条 (3 格都用它)
 
 # --- 调色板 (每方块独立) ---
 
@@ -424,7 +426,8 @@ const _P_DOOR := {
 	"d": Color8(109, 76, 65),
 	"D": Color8(78, 52, 46),
 	"l": Color8(141, 110, 99),
-	"h": Color8(200, 200, 200), # 把手
+	"h": Color8(214, 188, 120), # 把手 (暖金)
+	"w": Color8(150, 205, 230), # 窗玻璃 (浅蓝)
 }
 
 const _P_BEDROCK := {
@@ -1306,64 +1309,106 @@ const _MIMIC_CHEST := [
 	"................",
 ]
 
-# 门 (关) — 占 1 tile，门顶用 Door scene 上方延伸
+# 3 格高门 — 无缝拼接成"一整扇门": 连续竖框 + 整片凹槽嵌板, 内部不留横边框,
+# 段与段交界处花纹连续 (这才是用户要的"连起来"). DOOR=底 / DOOR_MID=中 / DOOR_TOP=顶.
+# 门底 (DOOR): 只在最下面收边, 顶上接 DOOR_MID.
 const _DOOR_CLOSED := [
-	"DDDDDDDDDDDDDDDD",
-	"DllllllllllllllD",
-	"DldddddddddddldD",
-	"DldDDDDDDDDDDldD",
-	"DldDddddddddDldD",
-	"DldDdhhdddddDldD",
-	"DldDdhhdddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDDDDDDDDDDldD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDDDDDDDDDDdlD",
 	"DllllllllllllllD",
 	"DDDDDDDDDDDDDDDD",
 ]
 
-# 门上半截 (DOOR_TOP): 顶端 + 小窗 + 木板. 跟 DOOR 接缝, 整体 2 格高门.
+# 门中 (DOOR_MID): 上下都接, 无横边框; 中间一颗暖金把手.
+const _DOOR_MID_CLOSED := [
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddhhDdlD",
+	"DldDddddddhhDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+]
+
+# 门顶 (DOOR_TOP): 最上面收边 + 小窗玻璃; 底下接 DOOR_MID.
 const _DOOR_TOP_CLOSED := [
 	"DDDDDDDDDDDDDDDD",
 	"DllllllllllllllD",
-	"DlDDDDDDDDDDDDlD",
-	"DlDddddddddddDlD",
-	"DlDdwwwwwwwwdDlD",
-	"DlDdwddddddwdDlD",
-	"DlDdwddddddwdDlD",
-	"DlDdwwwwwwwwdDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DllllllllllllllD",
-	"DDDDDDDDDDDDDDDD",
+	"DldDDDDDDDDDDdlD",
+	"DldDddddddddDdlD",
+	"DldDwwwwwwwwDdlD",
+	"DldDwwwwwwwwDdlD",
+	"DldDwwwwwwwwDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
 ]
 
-# 门 (开) — 显示为侧面窄条
+# 门 (开) — 门扇转到一侧, 只剩左边一道窄板, 其余透空 (3 格都用这张, 竖向平铺).
 const _DOOR_OPEN := [
-	"DDDDDDDDDDDD....",
-	"DllllllllllD....",
-	"DldddddddldD....",
-	"DldDDDDDDldD....",
-	"DldDdddddldD....",
-	"DldDdhhddldD....",
-	"DldDdhhddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDDDDDDldD....",
-	"DllllllllllD....",
-	"DDDDDDDDDDDD....",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+]
+
+# 背包图标: 一整扇 3 格门塞进 16×16, 用 3 条横框线分成上(窗)/中(把手)/下 三段, 一眼看出"3格".
+const _DOOR_ICON := [
+	"...DDDDDDDDDD...",
+	"...DwwwwwwwwD...",
+	"...DwwwwwwwwD...",
+	"...DwwwwwwwwD...",
+	"...DDDDDDDDDD...",
+	"...DddddddddD...",
+	"...DddddddhhD...",
+	"...DddddddhhD...",
+	"...DddddddddD...",
+	"...DDDDDDDDDD...",
+	"...DddddddddD...",
+	"...DddddddddD...",
+	"...DddddddddD...",
+	"...DddddddddD...",
+	"...DddddddddD...",
+	"...DDDDDDDDDD...",
 ]
 
 const _BEDROCK := [
@@ -2191,6 +2236,8 @@ const _PATTERN_MAP := {
 	WATER_L3: [_WATER, _P_WATER],
 	CHEST: [_CHEST, _P_CHEST],
 	DOOR_TOP: [_DOOR_TOP_CLOSED, _P_DOOR],
+	DOOR_MID: [_DOOR_MID_CLOSED, _P_DOOR],
+	DOOR_OPEN: [_DOOR_OPEN, _P_DOOR],
 	# 新群系 tile: 暂复用现有 pattern (后续可以做专属调色板)
 	SNOW: [_SNOW, _P_SNOW],
 	ICE: [_STONE, _P_STONE],
@@ -2244,6 +2291,8 @@ const _PALETTES := {
 	PLANKS:    [_P_PLANKS["p"],    _P_PLANKS["P"]],
 	WORKBENCH: [_P_WORKBENCH["p"], _P_WORKBENCH["P"]],
 	DOOR:      [_P_DOOR["d"],      _P_DOOR["D"]],
+	DOOR_MID:  [_P_DOOR["d"],      _P_DOOR["D"]],
+	DOOR_OPEN: [_P_DOOR["d"],      _P_DOOR["D"]],
 	BEDROCK:   [_P_BEDROCK["b"],   _P_BEDROCK["B"]],
 	LEAVES_PINE:   [_P_LEAVES_PINE["l"],   _P_LEAVES_PINE["L"]],
 	LEAVES_AUTUMN: [_P_LEAVES_AUTUMN["l"], _P_LEAVES_AUTUMN["L"]],
@@ -2268,6 +2317,11 @@ static func get_texture(tile_id: int) -> ImageTexture:
 
 static func get_door_open_texture() -> ImageTexture:
 	return PixelArt.grid_to_texture(_DOOR_OPEN, _P_DOOR)
+
+
+# 背包里门的图标 (整扇 3 格门压进 16×16, 看得出 3 段)
+static func get_door_icon_texture() -> ImageTexture:
+	return PixelArt.grid_to_texture(_DOOR_ICON, _P_DOOR)
 
 
 # 水动画 atlas: 4 帧水平排列, 64×16. TileSetAtlasSource 用 set_animation_frames_count 自动循环.

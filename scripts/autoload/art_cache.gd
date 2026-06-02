@@ -37,6 +37,7 @@ var block_icons: Dictionary = {}           # int (tile_id) -> 16x16 ImageTexture
 var item_icons: Dictionary = {}            # String (item_id) -> ImageTexture
 var door_closed_texture: ImageTexture
 var door_open_texture: ImageTexture
+var door_item_icon: ImageTexture           # 背包里门的图标 (整扇 3 格门, 看得出 3 段)
 var player_frames: SpriteFrames
 var slime_frames: SpriteFrames
 var slime_crown_tex: ImageTexture          # 史莱姆王专属王冠贴图 (贴在头顶)
@@ -95,7 +96,7 @@ func _build_blocks() -> void:
 		BlocksArt.BRANCH_L, BlocksArt.BRANCH_R,
 		BlocksArt.WATER_L1, BlocksArt.WATER_L2, BlocksArt.WATER_L3,
 		BlocksArt.CHEST,
-		BlocksArt.DOOR_TOP,
+		BlocksArt.DOOR_TOP, BlocksArt.DOOR_MID, BlocksArt.DOOR_OPEN,
 		BlocksArt.SNOW, BlocksArt.ICE, BlocksArt.JUNGLE_GRASS, BlocksArt.MUD, BlocksArt.SWAMP_GRASS,
 		BlocksArt.WOOD_PLATFORM, BlocksArt.ROPE,
 		BlocksArt.JUNGLE_DIRT, BlocksArt.SNOW_DIRT, BlocksArt.JUNGLE_LEAVES,
@@ -286,6 +287,7 @@ func _build_items() -> void:
 func _build_doors() -> void:
 	door_closed_texture = DoorArt.get_closed_texture()
 	door_open_texture = DoorArt.get_open_texture()
+	door_item_icon = BlocksArt.get_door_icon_texture()
 
 
 func _build_entities() -> void:
@@ -394,6 +396,8 @@ func _build_particles() -> void:
 
 
 func get_inventory_icon(item_id: String) -> ImageTexture:
+	if item_id == "door":
+		return door_item_icon   # 整扇 3 格门图标 (不用 block_icons 的单格 DOOR)
 	if _ITEM_TO_TILE.has(item_id):
 		return block_icons[_ITEM_TO_TILE[item_id]]
 	if item_icons.has(item_id):
