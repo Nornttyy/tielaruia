@@ -445,6 +445,7 @@ const _ZH_NAMES := {
 	"sweet_shrimp": "甜虾",
 	"scallop": "扇贝",
 	"seaweed": "紫菜",
+	"grilled_fish": "烤鱼",
 	"iron_ingot": "铁锭",
 	"copper_ingot": "铜锭",
 	"tin_ingot": "锡锭",

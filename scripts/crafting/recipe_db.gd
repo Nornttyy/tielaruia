@@ -539,6 +539,16 @@ const _RECIPES := [
 	{ "id": "jelly_pudding", "grid_size": Vector2i(3, 1),
 	  "pattern": [["slime_jelly", "slime_jelly", "apple"]],
 	  "output_id": "jelly_pudding", "output_count": 1, "mirror_ok": true, "rotate_ok": true, "requires": "pot" },
+	# 烤鱼: 任意一种鱼(三文鱼/金枪鱼/鳗鱼) → 烤鱼, 锅里做
+	{ "id": "grilled_fish_salmon", "grid_size": Vector2i(1, 1),
+	  "pattern": [["salmon"]],
+	  "output_id": "grilled_fish", "output_count": 1, "mirror_ok": true, "requires": "pot" },
+	{ "id": "grilled_fish_tuna", "grid_size": Vector2i(1, 1),
+	  "pattern": [["tuna"]],
+	  "output_id": "grilled_fish", "output_count": 1, "mirror_ok": true, "requires": "pot" },
+	{ "id": "grilled_fish_eel", "grid_size": Vector2i(1, 1),
+	  "pattern": [["eel"]],
+	  "output_id": "grilled_fish", "output_count": 1, "mirror_ok": true, "requires": "pot" },
 	# === 远程武器 ===
 	# 木弓: 3 planks + 3 wool (羊毛当弓弦), 3x3 弧形
 	{

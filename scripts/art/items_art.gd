@@ -1726,8 +1726,28 @@ const _SEAWEED := [
 	"................",
 ]
 
+const _GRILLED_FISH := [
+	"................",
+	"................",
+	"................",
+	"......HHHH......",
+	"....HuuuuuuH....",
+	"...kuukuuuuuH...",
+	"..HuuuuHuuuuYY..",
+	"...kuuuuHuuuY...",
+	"....HuuuuuuH....",
+	"......HHHH......",
+	".....hhhhhh.....",
+	"....h........h..",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
 const _ICONS := {
 	"fishing_rod": _FISHING_ROD,
+	"grilled_fish": _GRILLED_FISH,
 	"salmon": _SALMON,
 	"tuna": _TUNA,
 	"eel": _EEL,
