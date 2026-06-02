@@ -326,7 +326,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 在 water 之后: 绿洲水替换了 SAND 地表, 树/仙人掌不会长在水上.
 	_place_trees_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
-	# 世纪树已删 (用户要求)
+	# 世纪树: 森林 1-2 棵巨树 — 空心树干 + 楼层宝箱 + 概率水晶 + 树根竖井通地下 + 守卫.
+	# 在树之后 (覆盖普通树), 在矿洞之后 (竖井能接上已凿的 cave).
+	_place_world_tree_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height, biome_centers)
 
 	# 废弃矿井: 2-3 个/中世界, 地下深层 30 格水平木走廊 + 木支柱 + 1-2 宝箱 + 蜘蛛.
 	_place_mineshaft_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
@@ -1210,7 +1212,15 @@ const PYRAMID_BASE_WIDTH := 41   # 加大 (原 25): 41 宽 × 21 层的大金字
 const PYRAMID_LAYERS := 21       # (原 13) 跟 half_base=20 配套, 顶刚好收成尖
 const PYRAMID_ROOM_HEIGHT := 5   # 内部大厅高 5 格 (原 3), 更宽敞放宝藏 + 怪
 
-# 世纪树常量 + 函数已删 (用户要求)
+# ===== 世纪树 (World Tree) — 用户重新设计要回 =====
+# 森林里 1-2 棵巨树: 原木皮+木墙芯的空心粗树干 + 圆树冠 + 内部平台楼层 +
+# 普通/金宝箱 + 概率生命/魔力水晶 + 树根竖井通地下矿洞 + 僵尸/骷髅守卫.
+const WORLD_TREE_TRUNK_HALF := 4      # 树干半宽: ±4 = 9 宽 (LOG 两壁 + 7 宽木墙芯)
+const WORLD_TREE_HEIGHT := 32         # 树干高 (从地表往上)
+const WORLD_TREE_FLOOR_SPACING := 5   # 每 5 格一层平台
+const WORLD_TREE_CANOPY_R := 14       # 树冠半径
+const WORLD_TREE_CRYSTAL_CHANCE := 0.5  # 50% 概率树里出 1 颗生命/魔力水晶
+const WORLD_TREE_CAVE_DEPTH := 22     # 树根竖井往下挖多深 (接地下矿洞)
 
 # 废弃矿井 (Minecraft mineshaft 风): 地下深层水平走廊 + 木支柱 + 偶发竖井 + 蜘蛛 + 宝箱.
 const MINESHAFT_DEPTH_OFFSET := 30      # surf + 30 tile 深 (地下深层, 远离 surface 矿)
@@ -1336,6 +1346,155 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 		var mummy_y: int = base_y - 1   # 走廊地面
 		c.mummy_spawn_spots.append(Vector2i(mummy_x, mummy_y))
 
+
+# 给定 world_seed, 返回 1-2 个 chunk_x (有世纪树的, 都在森林区).
+# 跟金字塔同套路 (扫 biome + 缓存 + 洗牌), 只是换 FOREST + 数量 1-2.
+static func _world_tree_chunks(world_seed: int) -> Array:
+	if _world_tree_chunks_cache_valid and _world_tree_chunks_cache_seed == world_seed:
+		return _world_tree_chunks_cache
+	var centers: Dictionary = _build_biome_centers(world_seed)
+	var scan_range: Array = _scan_chunk_range()
+	var forest_chunks: Array = []
+	for cx in range(scan_range[0], scan_range[1]):
+		if cx == 0:
+			continue   # 出生点 chunk 不盖巨树, 免得挡开局
+		var chunk_center_x: int = cx * 64 + 32
+		if _biome_at_x(chunk_center_x, centers) == BIOME_FOREST:
+			forest_chunks.append(cx)
+	if forest_chunks.is_empty():
+		_world_tree_chunks_cache = []
+		_world_tree_chunks_cache_seed = world_seed
+		_world_tree_chunks_cache_valid = true
+		return []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = world_seed + 0x3e771ee   # "tree" 派生, 跟金字塔 seed 错开
+	var target_count: int = rng.randi_range(1, 2)
+	var num: int = min(target_count, forest_chunks.size())
+	var pool: Array = forest_chunks.duplicate()
+	for i in range(pool.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = pool[i]
+		pool[i] = pool[j]
+		pool[j] = tmp
+	_world_tree_chunks_cache = pool.slice(0, num)
+	_world_tree_chunks_cache_seed = world_seed
+	_world_tree_chunks_cache_valid = true
+	return _world_tree_chunks_cache
+
+
+# 在森林 chunk 上盖一棵世纪树: 空心粗树干 (LOG 皮 + WOOD_WALL 芯) + 中央 ROPE 攀爬 +
+# WOOD_PLATFORM 楼层 + 圆树冠 (LEAVES) + 普通/金宝箱 + 概率水晶 + 树根竖井通地下矿洞 + 守卫点.
+static func _place_world_tree_chunk(c: Chunk, chunk_heights: Dictionary,
+		world_seed: int, chunk_x: int, chunk_width: int, height: int, biome_centers: Dictionary) -> void:
+	var wt_chunks: Array = _world_tree_chunks(world_seed)
+	if not wt_chunks.has(chunk_x):
+		return
+	var chunk_start: int = chunk_x * chunk_width
+	var x_center_local: int = chunk_width / 2     # 32
+	var world_x_center: int = chunk_start + x_center_local
+	if _biome_at_x(world_x_center, biome_centers) != BIOME_FOREST:
+		return
+	if not chunk_heights.has(world_x_center):
+		return
+	var base_y: int = chunk_heights[world_x_center]   # 地表 (树根那一行)
+	var trunk_top: int = base_y - WORLD_TREE_HEIGHT
+	# 树冠还要再往上 R 格, 检查不顶天
+	if trunk_top - WORLD_TREE_CANOPY_R < 2:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _hash3(world_seed, chunk_x, 0x7ee21abc)
+
+	var half: int = WORLD_TREE_TRUNK_HALF   # 4 → 9 宽
+	var interior: int = half - 1            # 3 → 内壁 -3..+3 (7 宽)
+
+	# 1) 树干: LOG 两侧树皮壁 + WOOD_WALL 空心内壁 (背景可进), trunk_top .. base_y-1
+	for y in range(trunk_top, base_y):
+		for dx in range(-half, half + 1):
+			var lx: int = x_center_local + dx
+			if lx < 0 or lx >= chunk_width:
+				continue
+			if abs(dx) == half:
+				c.tiles[lx][y] = Tiles.LOG          # 树皮外壁
+			else:
+				c.tiles[lx][y] = Tiles.WOOD_WALL    # 空心内壁 (背景, 玩家能进)
+	# 1b) 中央 ROPE 攀爬脊: 跳只能上 3.5 格, 楼层隔 5 格爬不上去, 所以挂绳子
+	for y in range(trunk_top, base_y):
+		c.tiles[x_center_local][y] = Tiles.ROPE
+
+	# 2) 楼层平台: 每 FLOOR_SPACING 格一层 WOOD_PLATFORM (中央留给 ROPE, 不盖)
+	var floor_ys: Array = []
+	var fy: int = base_y - WORLD_TREE_FLOOR_SPACING
+	while fy > trunk_top + 1:
+		for dx in range(-interior, interior + 1):
+			if dx == 0:
+				continue   # 中央留 ROPE, 玩家能继续往上爬
+			var lx: int = x_center_local + dx
+			if lx >= 0 and lx < chunk_width:
+				c.tiles[lx][fy] = Tiles.WOOD_PLATFORM
+		floor_ys.append(fy)
+		fy -= WORLD_TREE_FLOOR_SPACING
+
+	# 3) 树冠: trunk_top 处一大团 LEAVES (圆形, 只盖空气不覆盖树干)
+	var canopy_cy: int = trunk_top
+	var rad: int = WORLD_TREE_CANOPY_R
+	for dy in range(-rad, rad + 1):
+		for dx in range(-rad, rad + 1):
+			if dx * dx + dy * dy > rad * rad:
+				continue
+			var lx: int = x_center_local + dx
+			var yy: int = canopy_cy + dy
+			if lx < 0 or lx >= chunk_width:
+				continue
+			if yy < 0 or yy >= height:
+				continue
+			if c.tiles[lx][yy] == Tiles.AIR:
+				c.tiles[lx][yy] = Tiles.LEAVES
+
+	# 4) 宝箱: 部分楼层放 普通(CHEST)/金(GOLD_CHEST) — 用户: 只这两种品质
+	var chest_tiers: Array = [Tiles.CHEST, Tiles.GOLD_CHEST]
+	for i in floor_ys.size():
+		if rng.randf() < 0.55:
+			var cdx: int = rng.randi_range(-interior + 1, interior - 1)
+			if cdx == 0:
+				cdx = 1   # 别盖在中央绳子上
+			var lx: int = x_center_local + cdx
+			var chest_y: int = floor_ys[i] - 1   # 站在平台上
+			if lx >= 0 and lx < chunk_width:
+				var ct: int = chest_tiers[rng.randi() % 2]
+				c.tiles[lx][chest_y] = ct
+				c.treasure_spots.append(Vector2i(chunk_start + lx, chest_y))
+
+	# 5) 水晶: 50% 概率某层放 1 颗 生命 或 魔力 水晶 (用户要求)
+	if rng.randf() < WORLD_TREE_CRYSTAL_CHANCE and not floor_ys.is_empty():
+		var f: int = floor_ys[rng.randi() % floor_ys.size()]
+		var crystal_lx: int = x_center_local + (-1 if rng.randf() < 0.5 else 1)
+		var crystal_y: int = f - 1
+		if crystal_lx >= 0 and crystal_lx < chunk_width:
+			c.tiles[crystal_lx][crystal_y] = Tiles.LIFE_CRYSTAL if rng.randf() < 0.5 else Tiles.MANA_CRYSTAL
+
+	# 6) 树根口 + 通地下竖井: 树底中央打通 (玩家从地面走进) + 往下挖 AIR 竖井接矿洞
+	for dx in range(-interior, interior + 1):
+		var lx: int = x_center_local + dx
+		if lx >= 0 and lx < chunk_width:
+			c.tiles[lx][base_y] = Tiles.AIR
+	c.tiles[x_center_local][base_y] = Tiles.ROPE   # 中央绳子贯穿地面那一格, 上下爬不断
+	var shaft_half: int = 1   # 竖井 3 宽
+	var shaft_bottom: int = min(base_y + WORLD_TREE_CAVE_DEPTH, height - 2)
+	for y in range(base_y + 1, shaft_bottom):
+		for dx in range(-shaft_half, shaft_half + 1):
+			var lx: int = x_center_local + dx
+			if lx >= 0 and lx < chunk_width:
+				c.tiles[lx][y] = Tiles.AIR
+		c.tiles[x_center_local][y] = Tiles.ROPE   # 竖井也挂绳子, 上下方便
+
+	# 7) 守卫: 2-3 个 spawn 点 (楼层上), chunk_manager 加载时召僵尸/骷髅
+	var guard_count: int = rng.randi_range(2, 3)
+	for _i in guard_count:
+		if floor_ys.is_empty():
+			break
+		var gf: int = floor_ys[rng.randi() % floor_ys.size()]
+		var gdx: int = rng.randi_range(-interior + 1, interior - 1)
+		c.world_tree_guard_spots.append(Vector2i(chunk_start + x_center_local + gdx, gf - 1))
 
 
 # ===== 装饰小草 =====
@@ -1537,6 +1696,9 @@ static var _biome_centers_cache: Dictionary = {}
 static var _pyramid_chunks_cache_seed: int = 0
 static var _pyramid_chunks_cache: Array = []
 static var _pyramid_chunks_cache_valid: bool = false
+static var _world_tree_chunks_cache_seed: int = 0
+static var _world_tree_chunks_cache: Array = []
+static var _world_tree_chunks_cache_valid: bool = false
 static var _mineshaft_chunks_cache_seed: int = 0
 static var _mineshaft_chunks_cache: Array = []
 static var _mineshaft_chunks_cache_valid: bool = false

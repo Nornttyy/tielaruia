@@ -20,6 +20,8 @@ var mummy_spawn_spots: Array = []
 var harpy_spawn_spots: Array = []    # 空岛上方哈比鸟出生点 (world tile 坐标)
 # 废弃矿井 spawn 蜘蛛位置 (世界坐标 Vector2i)
 var mineshaft_spider_spots: Array = []
+# 世纪树守卫 spawn 位置 (世界坐标 Vector2i). chunk_manager 加载时召僵尸/骷髅.
+var world_tree_guard_spots: Array = []
 
 
 func _init(p_chunk_x: int = 0) -> void:
