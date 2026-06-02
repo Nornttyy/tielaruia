@@ -139,6 +139,61 @@ func test_lava_falls_when_woken_like_a_waterfall() -> void:
 	assert_eq(fw.tiles.get(Vector2i(0, 0), Tiles.AIR), Tiles.AIR, "源处该流空")
 
 
+func test_deep_pool_pours_out_dug_wall() -> void:
+	# 复现"挖开水池墙水不流": 2 格深的满水池, 挖穿右墙底, 水该流出去.
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER
+	fw.tiles[Vector2i(0, 1)] = Tiles.WATER
+	fw.tiles[Vector2i(0, 2)] = Tiles.STONE   # 池底
+	fw.tiles[Vector2i(-1, 0)] = Tiles.STONE  # 左墙
+	fw.tiles[Vector2i(-1, 1)] = Tiles.STONE
+	fw.tiles[Vector2i(1, 0)] = Tiles.STONE   # 右墙 (上)
+	fw.tiles[Vector2i(1, 1)] = Tiles.STONE   # 右墙 (下, 待挖)
+	fw.tiles[Vector2i(1, 2)] = Tiles.STONE   # 墙外地板
+	fw.tiles[Vector2i(2, 2)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim.notify_tile_changed(0, 1)
+	for i in 5:
+		sim._run_tick()                      # 先稳定: 没洞时不该漏
+	assert_eq(_lk(fw, 1, 1), "", "没挖墙前水不该漏出去")
+	# 挖掉右墙底 (1,1) → _set_tile 会这样通知
+	fw.tiles[Vector2i(1, 1)] = Tiles.AIR
+	sim.notify_tile_changed(1, 1)
+	for i in 20:
+		sim._run_tick()
+	assert_eq(_lk(fw, 1, 1), "water", "挖开墙后水该流进洞口")
+
+
+func test_thin_water_pours_out_toward_drop() -> void:
+	# 薄水 (1 格) 旁边挖开一个有落差的洞 (洞口下面是空的) → 该流出去并落下.
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER_L1
+	fw.tiles[Vector2i(0, 1)] = Tiles.STONE   # 水脚下是地 (也是落点 1,1 的左墙)
+	fw.tiles[Vector2i(-1, 0)] = Tiles.STONE  # 左墙
+	fw.tiles[Vector2i(1, 0)] = Tiles.AIR     # 右边挖开 (1,1 是空的 → 能往下掉)
+	fw.tiles[Vector2i(1, 2)] = Tiles.STONE   # 落点地板
+	fw.tiles[Vector2i(2, 1)] = Tiles.STONE   # 落点右墙 (让水停在 1,1)
+	var sim = _make_sim(fw)
+	sim.notify_tile_changed(1, 0)
+	for i in 10:
+		sim._run_tick()
+	assert_eq(_lk(fw, 0, 0), "", "薄水该流走 (原位空)")
+	assert_eq(_lk(fw, 1, 1), "water", "薄水该流到洞口并落到落点")
+
+
+func test_thin_water_no_oscillation_on_flat() -> void:
+	# 防抖: 薄水在平地 (脚下全石头, 两边空, 无落差) → 原地不动, 不左右乱跑.
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER_L1
+	for xx in [-2, -1, 0, 1, 2]:
+		fw.tiles[Vector2i(xx, 1)] = Tiles.STONE   # 平地板
+	var sim = _make_sim(fw)
+	sim.notify_tile_changed(0, 0)
+	for i in 10:
+		sim._run_tick()
+	assert_eq(_lk(fw, 0, 0), "water", "平地薄水原地不动 (无落差不流, 防抖)")
+
+
 func test_water_lava_makes_stone() -> void:
 	var fw = FakeWorld.new()
 	fw.tiles[Vector2i(0,0)] = Tiles.LAVA

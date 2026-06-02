@@ -208,19 +208,30 @@ func _step_tile(cm, x: int, y: int) -> void:
 				world._set_water_tile_fast(x, y, Tiles.AIR)
 			notify_tile_changed(x, y + 1)
 			return
-	# 下方堵 → 横向 (L>=2 才溢)
-	if L < 2:
-		return
+	# 下方堵 → 横向溢流.
+	# L>=2 (深水): 正常往低处溢, 挖开洞会涌出去铺开.
+	# L==1 (薄水): 只往"能继续往下掉"的洞溢 (洞口下面是空气/未满液体), 否则平地上
+	#   一格薄水会左右无限抖 (perf 灾难). 有落差才流 = 挖个通往低处的出口水就淌出去.
 	var lx_tid: int = cm.get_tile(x - 1, y)
 	var rx_tid: int = cm.get_tile(x + 1, y)
 	var candidates: Array = []
 	for nx_pair in [[x - 1, lx_tid], [x + 1, rx_tid]]:
 		var nx: int = nx_pair[0]
 		var nt: int = nx_pair[1]
+		var nlev: int = -1
 		if nt == Tiles.AIR:
-			candidates.append([nx, 0])
+			nlev = 0
 		elif _liquid_kind(nt) == kind and _level_of(nt) < L:
-			candidates.append([nx, _level_of(nt)])
+			nlev = _level_of(nt)
+		if nlev < 0:
+			continue
+		# 薄水防抖: 洞口下面要能落下去 (空气 / 未满同种液体) 才流, 平地不流
+		if L < 2:
+			var bn: int = cm.get_tile(nx, y + 1)
+			var can_fall: bool = bn == Tiles.AIR or (_liquid_kind(bn) == kind and _level_of(bn) < 4)
+			if not can_fall:
+				continue
+		candidates.append([nx, nlev])
 	if candidates.is_empty():
 		return
 	candidates.sort_custom(func(a, b): return a[1] < b[1])
