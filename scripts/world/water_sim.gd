@@ -122,6 +122,18 @@ func _tile_for_level(kind: String, L: int) -> int:
 	return Tiles.AIR
 
 
+# 立刻把当前所有 dirty 液体一口气流到稳定 (chunk 加载时调: 出现即最终形态, 不看流动过程).
+# 反复跑 tick 直到没有待流的, 或撞到安全上限 (防超大水体卡死加载帧, 剩下的留给实时 sim).
+const SETTLE_MAX_TICKS := 240
+func settle_now() -> void:
+	if world == null or world.get("chunk_manager") == null:
+		return
+	var guard: int = 0
+	while not _dirty.is_empty() and guard < SETTLE_MAX_TICKS:
+		_run_tick()
+		guard += 1
+
+
 func _run_tick() -> void:
 	_tick_n += 1   # 先自增, 岩浆判 _tick_n % LAVA_TICK_DIVISOR 用它
 	var cm = world.get("chunk_manager")

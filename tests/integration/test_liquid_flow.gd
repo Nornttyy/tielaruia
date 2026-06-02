@@ -194,6 +194,39 @@ func test_thin_water_no_oscillation_on_flat() -> void:
 	assert_eq(_lk(fw, 0, 0), "water", "平地薄水原地不动 (无落差不流, 防抖)")
 
 
+func test_settle_now_flows_everything_in_one_call() -> void:
+	# 加载即定型: 标 dirty 后调一次 settle_now(), 液体该已流到最终状态 (不用手动跑 tick).
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER     # 顶部悬空水源
+	fw.tiles[Vector2i(0, 4)] = Tiles.STONE     # 竖井底
+	for yy in [1, 2, 3]:                        # 两侧封墙
+		fw.tiles[Vector2i(-1, yy)] = Tiles.STONE
+		fw.tiles[Vector2i(1, yy)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim.mark_dirty(0, 0)
+	sim.settle_now()                           # 一次调用流到底
+	assert_eq(_lk(fw, 0, 3), "water", "settle_now 后水该已落到竖井底")
+	assert_eq(_lk(fw, 0, 0), "", "源处该流空")
+	assert_true(sim._dirty.is_empty(), "settle 后不该还剩待流的 dirty")
+
+
+func test_settle_now_terminates_on_big_still_pool() -> void:
+	# 已经平衡的大水池: settle_now 该很快收手 (不卡死), 且水保持不变.
+	var fw = FakeWorld.new()
+	for xx in range(0, 8):
+		fw.tiles[Vector2i(xx, 0)] = Tiles.WATER
+		fw.tiles[Vector2i(xx, 1)] = Tiles.STONE   # 池底
+	fw.tiles[Vector2i(-1, 0)] = Tiles.STONE       # 左右墙
+	fw.tiles[Vector2i(8, 0)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	for xx in range(0, 8):
+		sim.mark_dirty(xx, 0)
+	sim.settle_now()
+	assert_eq(_lk(fw, 0, 0), "water", "平衡水池 settle 后水还在")
+	assert_eq(_lk(fw, 7, 0), "water", "平衡水池 settle 后水还在")
+	assert_true(sim._dirty.is_empty(), "settle 后 dirty 清空")
+
+
 func test_water_lava_makes_stone() -> void:
 	var fw = FakeWorld.new()
 	fw.tiles[Vector2i(0,0)] = Tiles.LAVA
