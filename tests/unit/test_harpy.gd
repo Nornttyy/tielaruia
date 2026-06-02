@@ -15,3 +15,27 @@ func test_feather_has_icon():
 func test_harpy_frames_built():
 	assert_not_null(ArtCache.harpy_frames, "哈比鸟 SpriteFrames 已建")
 	assert_true(ArtCache.harpy_frames.has_animation("move"), "有 move 动画")
+
+
+const HarpyScene = preload("res://scenes/entities/harpy.tscn")
+
+func test_harpy_instantiates_and_no_player_collision():
+	var h = HarpyScene.instantiate()
+	add_child_autofree(h)
+	await wait_frames(2)
+	assert_eq(h.collision_layer, 0, "哈比鸟 collision_layer=0 (玩家不被它挡)")
+	assert_true(h.is_in_group("slimes"), "在通用敌人组 slimes (武器能打)")
+	assert_true(h.is_in_group("harpies"), "在 harpies 组")
+
+func test_harpy_drops_feather_on_death():
+	var h = HarpyScene.instantiate()
+	add_child_autofree(h)
+	await wait_frames(2)
+	h.take_damage(9999, Vector2.ZERO, 0.0)   # 一击毙
+	await wait_frames(2)
+	var drops = get_tree().get_nodes_in_group("item_drops")
+	var has_feather := false
+	for d in drops:
+		if d.get("item_id") == "feather":
+			has_feather = true
+	assert_true(has_feather, "哈比鸟死了掉羽毛")
