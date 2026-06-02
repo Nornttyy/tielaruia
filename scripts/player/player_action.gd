@@ -113,6 +113,7 @@ var _pickaxe_hit_this_spin: Dictionary = {}  # instance_id → true (1 spin 1 �
 # spin 起始旋转 + 朝向 (跟 held_item.play_pickaxe_attack 同步, 用于 hit 检测 tip 算法)
 var _pickaxe_spin_start_rot: float = 0.0
 var _pickaxe_spin_facing_right: bool = true
+var _pickaxe_spin_damages: bool = false   # 只有"攻击"spin 扣血; 挖矿/斧的 spin 纯视觉 (修挖矿误伤旁边怪)
 
 # 剑判定: 跟镐 spin 类似, 攻击期间每帧算 grip→tip 线段, 距怪 ≤ HIT_RADIUS 就扣血.
 # 1 攻击 1 只怪 1 击 (hit set 去重). 替代原来的 AoE 矩形/圆形.
@@ -1121,6 +1122,7 @@ func _pickaxe_attack() -> void:
 	if player == null:
 		return
 	_start_pickaxe_spin()
+	_pickaxe_spin_damages = true   # 这是"攻击"(鼠标对着怪不是方块), spin 才扣血
 	SfxBank.play("swing", 0.10)
 	if player.has_method("shake"):
 		player.shake(2.0)
@@ -1141,6 +1143,7 @@ func _axe_swing() -> void:
 # 挖矿循环和单次攻击都调这个. 期间 _physics_process 每帧检查 tip 跟怪的距离.
 # 用户改: spin 起始朝鼠标 (不再总从上). 算 mouse_angle 传给 held + 存起来给 hit 检测.
 func _start_pickaxe_spin() -> void:
+	_pickaxe_spin_damages = false   # 默认纯视觉 (挖矿石头/斧砍树时不误伤怪); _pickaxe_attack 才设 true
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1171,6 +1174,8 @@ func _check_pickaxe_spin_hits() -> void:
 	var held: Node2D = player.get_node_or_null("HeldItem") as Node2D
 	if held == null or not held.visible:
 		return
+	if not _pickaxe_spin_damages:
+		return   # 挖矿/斧 的旋转: 纯视觉, 不扣血 (修"挖石头误伤旁边怪")
 	# tip 旋转角度自己算 (跟 held_item Tween 同步 — start_rot + 360° over duration),
 	# 不读 held.rotation — tween 在 _process 更新, _physics_process 这里读可能滞后.
 	var rot_delta: float = (_pickaxe_spin_t / PICKAXE_SPIN_DURATION) * TAU
@@ -1196,7 +1201,10 @@ func _check_pickaxe_spin_hits() -> void:
 				continue
 			# 大怪给身子半径 (跟剑一致), 镐转碰到大身子就算命中; 普通怪没此方法 = 0
 			var radius: float = sn.melee_hit_radius() if sn.has_method("melee_hit_radius") else 0.0
-			if tip_world.distance_to(sn.global_position) > PICKAXE_HIT_RADIUS + radius:
+			# tip 碰到 OR 贴着手(贴身怪): 任一即命中 (修贴身怪在 tip 轨道死角打不到)
+			var to_tip: float = tip_world.distance_to(sn.global_position)
+			var to_hand: float = held.global_position.distance_to(sn.global_position)
+			if to_tip > PICKAXE_HIT_RADIUS + radius and to_hand > PICKAXE_HIT_RADIUS + radius:
 				continue
 			_pickaxe_hit_this_spin[id] = true
 			_deal_enemy_damage(sn, damage, tip_world, _pickaxe_knockback())
@@ -1268,6 +1276,13 @@ func _check_sword_blade_hits() -> void:
 	var grip_world: Vector2 = player.global_position + grip_local
 	# 剑尖在 sprite 中心列, 不受 facing 翻转影响, 直接用 blade_rot 算 tip 偏移.
 	var tip_world: Vector2 = grip_world + Vector2(0, SWORD_TIP_LOCAL_Y).rotated(blade_rot)
+	# 挥(sweep): 半圆扫过的怪全打 (群伤是阔剑的卖点)。
+	# 戳(thrust): 一击只穿 1 只 (最近的), 不会顺着剑指方向连远处的也戳到。
+	var is_thrust: bool = not _sword_attack_is_sweep
+	if is_thrust and not _sword_hit_this_attack.is_empty():
+		return   # 这一戳已经命中过 1 只, 后续帧不再补刀
+	var thrust_target: Node2D = null
+	var thrust_best_dist: float = 1.0e20
 	for group in ["slimes", "animals"]:
 		for s in get_tree().get_nodes_in_group(group):
 			var sn := s as Node2D
@@ -1285,8 +1300,18 @@ func _check_sword_blade_hits() -> void:
 				hit = _dist_point_to_segment(sn.global_position, grip_world, tip_world) <= SWORD_HIT_RADIUS + radius
 			if not hit:
 				continue
-			_sword_hit_this_attack[id] = true
-			_deal_enemy_damage(sn, _sword_attack_damage, tip_world, _sword_attack_knockback)
+			if is_thrust:
+				# 戳: 先记下最近的, 循环结束后只打它一只
+				if to_player_dist < thrust_best_dist:
+					thrust_best_dist = to_player_dist
+					thrust_target = sn
+			else:
+				# 挥: 扫到的全打
+				_sword_hit_this_attack[id] = true
+				_deal_enemy_damage(sn, _sword_attack_damage, tip_world, _sword_attack_knockback)
+	if is_thrust and thrust_target != null:
+		_sword_hit_this_attack[thrust_target.get_instance_id()] = true
+		_deal_enemy_damage(thrust_target, _sword_attack_damage, tip_world, _sword_attack_knockback)
 
 
 # 点到线段最近距离. clamp t ∈ [0,1] 让计算落在线段内, 端点外的算到端点.
