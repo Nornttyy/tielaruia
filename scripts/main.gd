@@ -77,6 +77,10 @@ func _start_game(seed_or_opts = 0) -> void:
 		GameSettings.current_world_name = world_name
 	if "current_world_size" in GameSettings:
 		GameSettings.current_world_size = world_size
+	# 新游戏重置昼夜到早晨; 继续游戏稍后由 _apply_save_data 还原存档时间.
+	# TimeOfDay 是全局 autoload, 不重置的话新世界会沿用上一个世界的时间 → 不同存档时间串.
+	if _pending_save_data == null and TimeOfDay != null and "time" in TimeOfDay:
+		TimeOfDay.time = 0.35
 	_state = "game"
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.visible = false
