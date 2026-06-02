@@ -42,3 +42,22 @@ func test_normal_slime_unchanged_at_same_distance():
 	var hp0: int = slime.current_health
 	_swing_right_at(player.get_node("PlayerAction"))
 	assert_eq(slime.current_health, hp0, "小史莱姆中心在剑外 → 不命中 (行为不变)")
+
+
+# 阔剑(高级剑 tier3+)半圆挥应够得更远: 怪在右边 45px (超出基础挥砍 ~42.5px) 也能扫到.
+func test_sweep_reaches_farther_than_base():
+	var player = PlayerScene.instantiate()
+	add_child_autofree(player)
+	var slime = SlimeScene.instantiate()
+	add_child_autofree(slime)
+	await wait_frames(2)
+	player.global_position = Vector2.ZERO
+	slime.global_position = Vector2(45, -10)
+	var hp0: int = slime.current_health
+	var pa = player.get_node("PlayerAction")
+	pa._start_sword_blade_attack(true, Vector2.RIGHT, 100, 0.0)   # true = 半圆挥(阔剑)
+	# 扫整个挥砍时长, 剑转到右边那一帧应扫到怪
+	for i in range(11):
+		pa._sword_attack_t = (float(i) / 10.0) * pa._sword_attack_duration
+		pa._check_sword_blade_hits()
+	assert_lt(slime.current_health, hp0, "阔剑挥砍够得到 45px 的怪 (延长后)")
