@@ -219,3 +219,39 @@ func test_bedrock_never_air() -> void:
 			for y in range(h - 2, h):  # BEDROCK_ROWS = 2
 				assert_ne(c.tiles[x][y], Tiles.AIR,
 					"seed=%d (%d,%d) BEDROCK 不应被挖空" % [seed_v, x, y])
+
+
+func test_world_tree_generates_in_forest() -> void:
+	# 世纪树: 森林 chunk 上的空心巨树 — 树干(LOG 皮 + 木墙芯) + 中央攀爬绳 +
+	# 楼层平台 + 圆树冠 + 守卫点 2-3. 跑几个 seed, 至少一棵结构齐全.
+	var found := false
+	var checked_any_chunk := false
+	for seed_v in [42, 7, 123, 2024, 555, 999]:
+		var wt_chunks: Array = WorldGenerator._world_tree_chunks(seed_v)
+		for cx in wt_chunks:
+			checked_any_chunk = true
+			var c = WorldGenerator.generate_chunk(seed_v, cx)
+			var n_log := 0; var n_wall := 0; var n_rope := 0
+			var n_plat := 0; var n_leaf := 0
+			for lx in c.tiles.size():
+				for y in c.tiles[lx].size():
+					match c.tiles[lx][y]:
+						Tiles.LOG: n_log += 1
+						Tiles.WOOD_WALL: n_wall += 1
+						Tiles.ROPE: n_rope += 1
+						Tiles.WOOD_PLATFORM: n_plat += 1
+						Tiles.LEAVES: n_leaf += 1
+			# 该 chunk 真长了树 (LOG 够多) → 校验每个部件
+			if n_log > 8:
+				assert_gt(n_wall, 10, "seed=%d 树干内壁木墙" % seed_v)
+				assert_gt(n_rope, 5, "seed=%d 中央攀爬绳" % seed_v)
+				assert_gt(n_plat, 0, "seed=%d 楼层平台" % seed_v)
+				assert_gt(n_leaf, 20, "seed=%d 树冠叶子" % seed_v)
+				var g: int = c.world_tree_guard_spots.size()
+				assert_true(g >= 2 and g <= 3, "seed=%d 守卫点应 2-3, 实际 %d" % [seed_v, g])
+				found = true
+				break
+		if found:
+			break
+	assert_true(checked_any_chunk, "应能选出森林世纪树 chunk")
+	assert_true(found, "应至少生成一棵结构齐全的世纪树")

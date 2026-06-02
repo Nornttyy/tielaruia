@@ -832,6 +832,9 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				# 还能流 (旁边空气/边界/同种更低液位) 才标 dirty, 内部封死的不动省 CPU
 				if water_sim.tile_can_still_flow(t, nbs):
 					water_sim.mark_dirty(chunk_start + lx, y)
+		# 加载即定型: 把刚标的液体一口气流到稳定, 玩家看到的已是最终样子 (不看慢慢流的过程).
+		# 放光照重算之前, 让黑暗层按流完后的水算光. 玩家自己挖/放水仍走实时 sim 正常流动.
+		water_sim.settle_now()
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
 	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)
 	# 黑暗层: chunk 加载时全列预算光值
@@ -1104,7 +1107,23 @@ func spawn_mummies_for_chunk(chunk_x: int, spots: Array) -> void:
 		entities_root.add_child(creature)
 
 
-# 世纪树已删 (用户要求)
+# 世纪树守卫: 给一组 spawn 点召僵尸/骷髅 (用户选). 同款防同 chunk 重 spawn.
+var _world_tree_chunks_spawned: Dictionary = {}   # chunk_x int → true
+func spawn_world_tree_guards_for_chunk(chunk_x: int, spots: Array) -> void:
+	if spots.is_empty():
+		return
+	if _world_tree_chunks_spawned.has(chunk_x):
+		return
+	_world_tree_chunks_spawned[chunk_x] = true
+	for i in spots.size():
+		var spot = spots[i]
+		# 按下标交替: 一半僵尸一半骷髅, 保证两种都出
+		var creature: Node = ZombieScene.instantiate() if i % 2 == 0 else SkeletonScene.instantiate()
+		creature.global_position = Vector2(
+			spot.x * TILE_SIZE + TILE_SIZE / 2.0,
+			spot.y * TILE_SIZE + TILE_SIZE
+		)
+		entities_root.add_child(creature)
 
 # 菜园: 扫所有 loaded chunk 找 WHEAT_0/1/2, 70% 概率升一阶. 每 15s 调.
 # 平均 ~45s 从苗到熟 (15s × 3 阶段 / 0.7 概率).
