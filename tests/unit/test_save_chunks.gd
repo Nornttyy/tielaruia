@@ -30,8 +30,8 @@ func test_save_captures_chunk_deltas():
 	assert_not_null(data)
 	# chunk_x = 0 (50 / 64 = 0), local_x = 50
 	# delta 至少含 (50, 70, DIRT)
-	assert_true(data.chunk_deltas.has(0), "chunk 0 应有 delta")
-	var arr: PackedInt32Array = data.chunk_deltas[0]
+	assert_true(data.chunk_deltas.has("0"), "chunk 0 (出生点) save 后应还在 (key 是字符串绕开 .tres 丢整数0)")
+	var arr: PackedInt32Array = data.chunk_deltas["0"]
 	# 应至少有 (50, 70, DIRT) 这三元组
 	var found := false
 	var i := 0

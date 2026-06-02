@@ -251,14 +251,17 @@ func _serialize_chunk_deltas(cm) -> Dictionary:
 			arr.append(pos_v2i.x)
 			arr.append(pos_v2i.y)
 			arr.append(inner[pos_v2i])
-		out[cx] = arr
+		# 用字符串 key: Godot .tres ResourceSaver 会丢掉整数 key 0
+		# (出生点 = 0 号区块 → 出生点附近的建筑/挖掘存档后全没了!). str(cx) 绕开.
+		out[str(cx)] = arr
 	return out
 
 
 # 把序列化的 deltas 还原到 chunk_manager._deltas (供 load 后调用).
 static func apply_chunk_deltas(cm, serialized: Dictionary) -> void:
-	for cx in serialized.keys():
-		var arr: PackedInt32Array = serialized[cx]
+	for cx_key in serialized.keys():
+		var cx: int = int(cx_key)   # key 现在是 String (老存档可能是 int, int() 都兼容)
+		var arr: PackedInt32Array = serialized[cx_key]
 		var inner: Dictionary = {}
 		var i: int = 0
 		while i + 2 < arr.size():

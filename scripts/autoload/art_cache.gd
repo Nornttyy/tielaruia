@@ -254,6 +254,8 @@ func _build_items() -> void:
 			"wheat", "wheat_seed",
 			# 史莱姆王 Boss 掉落 + 合成材料
 			"slime_crown", "slime_ball",
+			# 空岛: 羽毛(哈比鸟掉) + 云靴(二段跳) — 之前漏注册, 背包没图
+			"feather", "cloud_boots",
 			# 厨房第 1 步: 8 道料理 (cooked_meat 已在上面)
 			"bread", "mushroom_soup", "apple_pie", "meat_skewer",
 			"mushroom_stew", "apple_jam", "jelly_pudding",
