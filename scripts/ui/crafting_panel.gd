@@ -430,6 +430,7 @@ const _ZH_NAMES := {
 	"lens": "镜片",
 	"furnace": "熔炉",
 	"cooking_pot": "铁锅",
+	"cutting_board": "菜板",
 	"bread": "面包",
 	"mushroom_soup": "蘑菇汤",
 	"apple_pie": "苹果派",
@@ -758,6 +759,7 @@ func _refresh_recipes() -> void:
 	# 查附近是否有 furnace (跟 workbench 同模式)
 	var has_furnace: bool = _has_furnace_nearby()
 	var has_cooking_pot: bool = _has_cooking_pot_nearby()
+	var has_cutting_board: bool = _has_cutting_board_nearby()
 	for entry in _recipe_buttons:
 		var recipe: Dictionary = entry.recipe
 		var btn: Button = entry.button
@@ -773,6 +775,10 @@ func _refresh_recipes() -> void:
 			continue
 		# 料理配方过滤: 要求 "pot" 的, 玩家身边必须有铁锅
 		if requires == "pot" and not has_cooking_pot:
+			btn.visible = false
+			continue
+		# 寿司配方过滤: 要求 "board" 的, 玩家身边必须有菜板
+		if requires == "board" and not has_cutting_board:
 			btn.visible = false
 			continue
 		# 素材是否够 → 灰显
@@ -826,6 +832,28 @@ func _has_cooking_pot_nearby() -> bool:
 		for dy in range(-2, 3):
 			var tid: int = terrain.get_cell_source_id(pt + Vector2i(dx, dy))
 			if tid == Tiles.COOKING_POT:
+				return true
+	return false
+
+
+# 查附近 ±2 格有没有菜板 (做寿司工作站, 跟 furnace/pot 同模式)
+func _has_cutting_board_nearby() -> bool:
+	if _player_inv == null:
+		return false
+	var player: Node = _player_inv.get_parent()
+	if player == null:
+		return false
+	var pa: Node = player.get_node_or_null("PlayerAction")
+	if pa == null or not pa.has_method("player_tile"):
+		return false
+	var pt: Vector2i = pa.player_tile()
+	var terrain: TileMapLayer = get_tree().get_first_node_in_group("terrain_layer") as TileMapLayer
+	if terrain == null:
+		return false
+	for dx in range(-2, 3):
+		for dy in range(-2, 3):
+			var tid: int = terrain.get_cell_source_id(pt + Vector2i(dx, dy))
+			if tid == Tiles.CUTTING_BOARD:
 				return true
 	return false
 

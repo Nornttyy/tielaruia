@@ -585,6 +585,18 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# 菜板: 2 木板 + 1 菜刀 (做寿司工作站). 普通合成.
+	{
+		"id": "cutting_board",
+		"grid_size": Vector2i(2, 2),
+		"pattern": [
+			["planks", "planks"],
+			["kitchen_knife", ""],
+		],
+		"output_id": "cutting_board",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
 	# 魔晶锭: 3 hell_crystal → 1 ingot. 熔炉烧, 跟其他金属同形 (3 横排).
 	{
 		"id": "hell_crystal_ingot",

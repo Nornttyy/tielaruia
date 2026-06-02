@@ -89,6 +89,7 @@ const LAVA_L2 := 72         # 2/4 岩浆
 const LAVA_L3 := 73         # 3/4 岩浆 (满格仍是 LAVA = 56)
 const COOKING_POT := 74     # 铁锅: 玩家造, 实心, 只能叠在炉子上. 附近解锁料理配方, 发暖光
 const CLOUD := 75           # 云块: 空岛岛体. 白软, 实心可站可挖可放, 无重力 (不像 SAND 会塌)
+const CUTTING_BOARD := 76   # 菜板: 玩家造放置工作站. 站旁边解锁切鱼片/做寿司配方
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -152,6 +153,11 @@ const _PROPS := {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
 		"drops": [["cooking_pot", 100, 1, 1]],
+	},
+	CUTTING_BOARD: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"drops": [["cutting_board", 100, 1, 1]],
 	},
 	DOOR: {
 		# 门底部: 视觉占 1 格, 但和 DOOR_TOP (上一格) 配对成 2 格高门.
