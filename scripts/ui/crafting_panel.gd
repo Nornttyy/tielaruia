@@ -433,6 +433,8 @@ const _ZH_NAMES := {
 	"cutting_board": "菜板",
 	"rice": "米",
 	"rice_seed": "稻种",
+	"cooked_rice": "米饭",
+	"fish_slice": "鱼片",
 	"bread": "面包",
 	"mushroom_soup": "蘑菇汤",
 	"apple_pie": "苹果派",

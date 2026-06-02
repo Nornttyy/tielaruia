@@ -549,6 +549,20 @@ const _RECIPES := [
 	{ "id": "grilled_fish_eel", "grid_size": Vector2i(1, 1),
 	  "pattern": [["eel"]],
 	  "output_id": "grilled_fish", "output_count": 1, "mirror_ok": true, "requires": "pot" },
+	# 米饭: 2 米 → 米饭 (锅里煮)
+	{ "id": "cooked_rice", "grid_size": Vector2i(2, 1),
+	  "pattern": [["rice", "rice"]],
+	  "output_id": "cooked_rice", "output_count": 1, "mirror_ok": true, "rotate_ok": true, "requires": "pot" },
+	# 鱼片: 三文鱼/金枪鱼/鳗鱼 → 鱼片 (菜板上切)
+	{ "id": "fish_slice_salmon", "grid_size": Vector2i(1, 1),
+	  "pattern": [["salmon"]],
+	  "output_id": "fish_slice", "output_count": 1, "mirror_ok": true, "requires": "board" },
+	{ "id": "fish_slice_tuna", "grid_size": Vector2i(1, 1),
+	  "pattern": [["tuna"]],
+	  "output_id": "fish_slice", "output_count": 1, "mirror_ok": true, "requires": "board" },
+	{ "id": "fish_slice_eel", "grid_size": Vector2i(1, 1),
+	  "pattern": [["eel"]],
+	  "output_id": "fish_slice", "output_count": 1, "mirror_ok": true, "requires": "board" },
 	# === 远程武器 ===
 	# 木弓: 3 planks + 3 wool (羊毛当弓弦), 3x3 弧形
 	{
