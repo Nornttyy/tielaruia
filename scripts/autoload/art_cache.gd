@@ -39,6 +39,7 @@ var door_closed_texture: ImageTexture
 var door_open_texture: ImageTexture
 var player_frames: SpriteFrames
 var slime_frames: SpriteFrames
+var slime_crown_tex: ImageTexture          # 史莱姆王专属王冠贴图 (贴在头顶)
 var zombie_frames: SpriteFrames
 var villager_frames: SpriteFrames
 var cow_frames: SpriteFrames
@@ -283,6 +284,7 @@ func _build_doors() -> void:
 func _build_entities() -> void:
 	player_frames = PlayerArt.build_sprite_frames()
 	slime_frames = SlimeArt.build_sprite_frames()
+	slime_crown_tex = SlimeArt.build_crown_texture()   # 史莱姆王头顶王冠 (单独贴图)
 	zombie_frames = ZombieArt.build_sprite_frames()
 	villager_frames = VillagerArt.build_sprite_frames()
 	cow_frames = CowArt.build_sprite_frames()

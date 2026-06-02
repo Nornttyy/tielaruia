@@ -40,6 +40,7 @@ var _minion_timer: float = MINION_INTERVAL
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _collision: CollisionShape2D = $CollisionShape2D
+@onready var _crown: Sprite2D = $Crown
 
 
 func _ready() -> void:
@@ -48,6 +49,7 @@ func _ready() -> void:
 	sprite.sprite_frames = ArtCache.slime_frames
 	sprite.play("idle")
 	sprite.modulate = Color(0.7, 0.8, 1.1)  # 偏亮蓝 (boss 比普通蓝史莱姆更亮一档, 一眼区分)
+	_crown.texture = ArtCache.slime_crown_tex   # 头顶金王冠 (独立贴图, 不被身体染蓝/受击闪红)
 	add_to_group("king_slime")
 	add_to_group("slimes")
 	add_to_group("boss")
@@ -71,6 +73,10 @@ func _apply_scale() -> void:
 	# 碰撞框跟着身体一起缩放. 之前固定 40×32 不跟着大, 满血大王身子大碰撞小 → 难打中.
 	if _collision != null:
 		_collision.scale = Vector2(s, s)
+	# 王冠跟着体型缩放, 坐在头顶: band 底边贴头顶 (-16-8s), 留 1px 嵌入防缝隙.
+	if _crown != null:
+		_crown.scale = Vector2(s, s)
+		_crown.position = Vector2(0.0, -16.0 - 8.0 * s)
 
 
 # 近战命中半径: 王身子巨大, 让剑/镐碰到大身子就算命中 (不只认中心一点).
