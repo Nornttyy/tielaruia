@@ -119,6 +119,7 @@ func _build_blocks() -> void:
 		BlocksArt.WHEAT_0, BlocksArt.WHEAT_1, BlocksArt.WHEAT_2, BlocksArt.WHEAT_3,
 		BlocksArt.PLANT_GRASS,
 		BlocksArt.CLOUD,
+		BlocksArt.WATER_DESERT, BlocksArt.WATER_JUNGLE, BlocksArt.WATER_SWAMP,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -140,6 +141,12 @@ func _build_blocks() -> void:
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L3:
 			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(3))
+			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
+		elif tile_id == BlocksArt.WATER_DESERT or tile_id == BlocksArt.WATER_JUNGLE \
+				or tile_id == BlocksArt.WATER_SWAMP:
+			# 群系满水: 同 WATER 的 4 帧动画 atlas, 只换调色板染色
+			var pal: Dictionary = BlocksArt.water_palette_for(tile_id)
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_animated_atlas_p(pal))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.LAVA_L1:
 			# 岩浆深浅不是 item, icon 直接复用世界贴图 (避免缺 key 崩)

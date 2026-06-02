@@ -62,6 +62,9 @@ const _TILE_COLORS := {
 	Tiles.MANA_CRYSTAL:  Color8(110, 90, 230),   # 魔力水晶: 蓝紫 (跟生命水晶粉红区分)
 	Tiles.SILVER_ORE:    Color8(220, 225, 235),  # 银亮白
 	Tiles.WATER:         Color8(60, 100, 170),   # 水蓝
+	Tiles.WATER_DESERT:  Color8(40, 165, 165),   # 绿洲青绿
+	Tiles.WATER_JUNGLE:  Color8(40, 150, 95),    # 丛林翠绿
+	Tiles.WATER_SWAMP:   Color8(70, 95, 65),     # 沼泽墨绿
 	Tiles.CHEST:         Color8(180, 120, 60),   # 箱子棕黄
 	# 群系
 	Tiles.SNOW:          Color8(230, 240, 250),  # 雪白蓝

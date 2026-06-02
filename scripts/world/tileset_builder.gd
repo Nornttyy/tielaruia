@@ -41,6 +41,7 @@ static func build() -> TileSet:
 		Tiles.LOG_TOP, Tiles.LOG_ROOT_L, Tiles.LOG_ROOT_R,
 		Tiles.BRANCH_L, Tiles.BRANCH_R,
 		Tiles.WATER_L1, Tiles.WATER_L2, Tiles.WATER_L3,
+		Tiles.WATER_DESERT, Tiles.WATER_JUNGLE, Tiles.WATER_SWAMP,
 		Tiles.CHEST,
 		Tiles.DOOR_TOP,
 		# 新群系 tile + 平台 + 绳 + 群系泥土/树叶
@@ -114,9 +115,11 @@ static func build() -> TileSet:
 					Vector2(-6, -1), Vector2(6, -1), Vector2(6, 1), Vector2(-6, 1),
 				]))
 				pprops.set_collision_polygon_one_way(2, 0, true)
-			# 水 (4 个水位) 都启用 4 帧动画
+			# 水 (4 个水位 + 3 个群系满水) 都启用 4 帧动画
 			if tile_id == Tiles.WATER or tile_id == Tiles.WATER_L1 \
-					or tile_id == Tiles.WATER_L2 or tile_id == Tiles.WATER_L3:
+					or tile_id == Tiles.WATER_L2 or tile_id == Tiles.WATER_L3 \
+					or tile_id == Tiles.WATER_DESERT or tile_id == Tiles.WATER_JUNGLE \
+					or tile_id == Tiles.WATER_SWAMP:
 				source.set_tile_animation_frames_count(Vector2i.ZERO, 4)
 				for f in range(4):
 					source.set_tile_animation_frame_duration(Vector2i.ZERO, f, 0.4)

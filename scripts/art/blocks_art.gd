@@ -33,6 +33,9 @@ const RICE_0 := 77          # 稻子 (复用小麦图案 + 绿调色板)
 const RICE_1 := 78
 const RICE_2 := 79
 const RICE_3 := 80
+const WATER_DESERT := 81    # 沙漠绿洲水 (青绿松石)
+const WATER_JUNGLE := 82    # 丛林水 (翠绿)
+const WATER_SWAMP := 83     # 沼泽水 (浑浊墨绿)
 const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
 const GOLD_CHEST := 54      # 金宝箱 (金色金属包角)
@@ -548,6 +551,22 @@ const _P_WATER := {
 	"a": Color8(60, 130, 215, 220),   # 海蓝主色 (95% 区域)
 	"b": Color8(70, 140, 220, 220),   # 微浅 (跟 a 差 10, 几乎看不出)
 	"c": Color8(85, 155, 230, 220),   # 浅一点点 (跟 a 差 20, 像水下微光)
+}
+# 群系水调色板 (同结构 a/b/c, b/c 是 a 加亮的高光). 森林/默认用上面 _P_WATER 的蓝.
+const _P_WATER_DESERT := {           # 青绿松石 (绿洲清澈)
+	"a": Color8(40, 180, 180, 215),
+	"b": Color8(58, 196, 196, 215),
+	"c": Color8(82, 212, 210, 215),
+}
+const _P_WATER_JUNGLE := {           # 翠绿 (丛林浓绿)
+	"a": Color8(40, 158, 100, 215),
+	"b": Color8(56, 174, 118, 215),
+	"c": Color8(80, 192, 140, 215),
+}
+const _P_WATER_SWAMP := {            # 浑浊墨绿 (沼泽脏水, alpha 高更浑)
+	"a": Color8(72, 96, 66, 235),
+	"b": Color8(84, 108, 78, 235),
+	"c": Color8(98, 122, 92, 235),
 }
 
 # 地狱晶体: DEEP_STONE 底 (更暗背景烘托) + h/H/y 烈火红
@@ -2157,6 +2176,10 @@ const _PATTERN_MAP := {
 	DIAMOND_ORE: [_DIAMOND_ORE, _P_DIAMOND_ORE],
 	HELL_CRYSTAL: [_HELL_CRYSTAL, _P_HELL_CRYSTAL],
 	WATER: [_WATER, _P_WATER],
+	# 群系水 icon 复用 _WATER 图案 + 各自调色板 (真正世界贴图由 ArtCache 动画 atlas 给)
+	WATER_DESERT: [_WATER, _P_WATER_DESERT],
+	WATER_JUNGLE: [_WATER, _P_WATER_JUNGLE],
+	WATER_SWAMP: [_WATER, _P_WATER_SWAMP],
 	LOG_TOP: [_LOG_TOP, _P_LOG],
 	LOG_ROOT_L: [_LOG_ROOT_L, _P_BRANCH],
 	LOG_ROOT_R: [_LOG_ROOT_R, _P_BRANCH],
@@ -2249,13 +2272,26 @@ static func get_door_open_texture() -> ImageTexture:
 
 # 水动画 atlas: 4 帧水平排列, 64×16. TileSetAtlasSource 用 set_animation_frames_count 自动循环.
 static func get_water_animated_atlas() -> ImageTexture:
+	return get_water_animated_atlas_p(_P_WATER)
+
+
+# 同上但用指定调色板 (群系水分色用). 复用同一套水帧, 只换 a/b/c 颜色.
+static func get_water_animated_atlas_p(palette: Dictionary) -> ImageTexture:
 	var frames: Array = [_WATER, _WATER_F1, _WATER_F2, _WATER_F3]
 	var dst := Image.create(64, 16, false, Image.FORMAT_RGBA8)
 	dst.fill(Color(0, 0, 0, 0))
 	for i in range(4):
-		var frame_img: Image = PixelArt.grid_to_image(frames[i], _P_WATER)
+		var frame_img: Image = PixelArt.grid_to_image(frames[i], palette)
 		dst.blit_rect(frame_img, Rect2i(0, 0, 16, 16), Vector2i(i * 16, 0))
 	return ImageTexture.create_from_image(dst)
+
+
+# 群系水的调色板 (给 ArtCache 用). tile_id 传 WATER_DESERT/JUNGLE/SWAMP.
+static func water_palette_for(tile_id: int) -> Dictionary:
+	if tile_id == WATER_DESERT: return _P_WATER_DESERT
+	if tile_id == WATER_JUNGLE: return _P_WATER_JUNGLE
+	if tile_id == WATER_SWAMP: return _P_WATER_SWAMP
+	return _P_WATER
 
 
 # 水位 (1/4, 2/4, 3/4) 动画 atlas: 同样 4 帧但顶部 (4-level)*4 行透明 (水位低).

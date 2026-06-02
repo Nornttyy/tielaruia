@@ -658,8 +658,7 @@ func try_place() -> bool:
 		return true
 	# 目标必须为空气 (或水, 水可以被填掉 — 玩家用方块塞水)
 	var target_src: int = terrain.get_cell_source_id(tile)
-	var is_water: bool = target_src == Tiles.WATER or target_src == Tiles.WATER_L1 \
-			or target_src == Tiles.WATER_L2 or target_src == Tiles.WATER_L3
+	var is_water: bool = Tiles.is_water(target_src)
 	if target_src != -1 and not is_water:
 		return false
 	# 不与玩家碰撞框重叠（玩家占 2 tile 高：脚底 tile 和上方 tile）
@@ -1622,6 +1621,5 @@ func try_fishing_click() -> void:
 	var is_water: bool = false
 	if terrain != null and in_reach(aim_t):
 		var tid: int = terrain.get_cell_source_id(aim_t)
-		is_water = tid == Tiles.WATER or tid == Tiles.WATER_L1 \
-				or tid == Tiles.WATER_L2 or tid == Tiles.WATER_L3
+		is_water = Tiles.is_water(tid)
 	pf.on_rod_click(aim_t, is_water)

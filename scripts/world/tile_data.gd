@@ -94,6 +94,10 @@ const RICE_0 := 77          # 稻子 苗 (像小麦 4 阶段, 种子近水种, �
 const RICE_1 := 78          # 稻子 小
 const RICE_2 := 79          # 稻子 中
 const RICE_3 := 80          # 稻子 熟 (挖 → 米 + 稻种)
+# 群系满水 (level 4): 颜色不同, 行为同 WATER (非实心/不可挖/4帧动画). 森林/雪原/默认用通用 WATER.
+const WATER_DESERT := 81    # 沙漠绿洲 = 青绿松石
+const WATER_JUNGLE := 82    # 丛林 = 翠绿
+const WATER_SWAMP := 83     # 沼泽 = 浑浊墨绿
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -335,6 +339,19 @@ const _PROPS := {
 		"solid": false, "mineable": false,
 		"tool_tiers": {}, "drops": [],
 	},
+	# 群系满水: 行为完全同 WATER (只是颜色不同)
+	WATER_DESERT: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	WATER_JUNGLE: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	WATER_SWAMP: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
 	CHEST: {
 		# 非实心 (玩家能站箱子里), 可挖 (任何工具都行), 砍掉 1 个 chest item
 		"solid": false, "mineable": true,
@@ -554,6 +571,13 @@ func is_solid(tile_id: int) -> bool:
 	if not _PROPS.has(tile_id):
 		return false
 	return _PROPS[tile_id].solid
+
+
+# 是不是水 (任意水位 L1-3 + 满水 + 任意群系水色). 统一判定: 加新水方块只改这里,
+# 别处 (游泳/钓鱼/小地图/模拟) 一律用 Tiles.is_water(), 别再写 == WATER or == WATER_L1...
+func is_water(tile_id: int) -> bool:
+	return tile_id == WATER or tile_id == WATER_L1 or tile_id == WATER_L2 or tile_id == WATER_L3 \
+			or tile_id == WATER_DESERT or tile_id == WATER_JUNGLE or tile_id == WATER_SWAMP
 
 
 func is_mineable(tile_id: int) -> bool:

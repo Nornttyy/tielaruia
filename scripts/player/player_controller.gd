@@ -155,8 +155,7 @@ func _get_chunk_manager():
 
 
 static func _is_water_tile(tid: int) -> bool:
-	return tid == Tiles.WATER or tid == Tiles.WATER_L1 \
-			or tid == Tiles.WATER_L2 or tid == Tiles.WATER_L3
+	return Tiles.is_water(tid)  # 统一判定 (含群系水色)
 
 
 # 玩家腰部是否在水里 (= 在游泳)
