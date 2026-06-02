@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://b1teilaruiaplayer"]
+[gd_scene load_steps=11 format=3 uid="uid://b1teilaruiaplayer"]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_ctrl"]
 [ext_resource type="Script" path="res://scripts/player/player_inventory.gd" id="2_inv"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/player/player_mana.gd" id="5_mana"]
 [ext_resource type="Script" path="res://scripts/player/held_item.gd" id="6_hi"]
 [ext_resource type="Script" path="res://scripts/player/player_buffs.gd" id="7_buffs"]
+[ext_resource type="Script" path="res://scripts/player/player_fishing.gd" id="8_fish"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(12.5, 27.5)
@@ -40,6 +41,9 @@ script = ExtResource("5_mana")
 
 [node name="PlayerBuffs" type="Node" parent="."]
 script = ExtResource("7_buffs")
+
+[node name="PlayerFishing" type="Node" parent="."]
+script = ExtResource("8_fish")
 
 [node name="PlayerAura" type="PointLight2D" parent="."]
 energy = 0.0
