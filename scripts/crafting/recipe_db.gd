@@ -563,6 +563,22 @@ const _RECIPES := [
 	{ "id": "fish_slice_eel", "grid_size": Vector2i(1, 1),
 	  "pattern": [["eel"]],
 	  "output_id": "fish_slice", "output_count": 1, "mirror_ok": true, "requires": "board" },
+	# 寿司 + 刺身 (都在菜板做, requires "board")
+	{ "id": "sushi", "grid_size": Vector2i(3, 1),
+	  "pattern": [["fish_slice", "cooked_rice", "seaweed"]],
+	  "output_id": "sushi", "output_count": 1, "mirror_ok": true, "rotate_ok": true, "requires": "board" },
+	{ "id": "sashimi", "grid_size": Vector2i(2, 1),
+	  "pattern": [["fish_slice", "fish_slice"]],
+	  "output_id": "sashimi", "output_count": 1, "mirror_ok": true, "rotate_ok": true, "requires": "board" },
+	{ "id": "onigiri", "grid_size": Vector2i(2, 1),
+	  "pattern": [["cooked_rice", "seaweed"]],
+	  "output_id": "onigiri", "output_count": 1, "mirror_ok": true, "rotate_ok": true, "requires": "board" },
+	{ "id": "shrimp_sushi", "grid_size": Vector2i(2, 1),
+	  "pattern": [["sweet_shrimp", "cooked_rice"]],
+	  "output_id": "shrimp_sushi", "output_count": 1, "mirror_ok": true, "rotate_ok": true, "requires": "board" },
+	{ "id": "uni_gunkan", "grid_size": Vector2i(3, 1),
+	  "pattern": [["sea_urchin", "cooked_rice", "seaweed"]],
+	  "output_id": "uni_gunkan", "output_count": 1, "mirror_ok": true, "rotate_ok": true, "requires": "board" },
 	# === 远程武器 ===
 	# 木弓: 3 planks + 3 wool (羊毛当弓弦), 3x3 弧形
 	{

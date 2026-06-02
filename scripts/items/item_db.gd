@@ -133,6 +133,12 @@ const _DEFS := {
 	"rice_seed":     {"placeable_tile_id": -1,                     "tool_kind": "seed",    "tool_tier": 0, "max_stack": 99},
 	"cooked_rice":   {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64, "food_fill": 25},
 	"fish_slice":    {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64, "food_fill": 18},
+	# 寿司 + 刺身 (菜板做, 吃了回血 + buff). 海鲜全是第 2 步钓来的.
+	"sushi":         {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 70, "buff_kind": "speed",  "buff_secs": 60.0},
+	"sashimi":       {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 50, "buff_kind": "regen",  "buff_secs": 30.0},
+	"onigiri":       {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 35},
+	"shrimp_sushi":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 45, "buff_kind": "speed",  "buff_secs": 60.0},
+	"uni_gunkan":    {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 55, "buff_kind": "mining", "buff_secs": 60.0},
 	"chest":         {"placeable_tile_id": Tiles.CHEST,            "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"bed":           {"placeable_tile_id": Tiles.BED,              "tool_kind": "",        "tool_tier": 0, "max_stack": 1},
 	# === 菜园 v1 ===
