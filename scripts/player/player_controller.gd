@@ -20,9 +20,9 @@ const SWIM_MAX_SINK := 135.0        # 最大下沉速度 (浮力封顶)
 const ROPE_CLIMB_SPEED := 82.0     # 绳子上下爬速度 (vs SPEED 140 — 慢点)
 const ROPE_HOLD_GRAVITY := 0.0      # 抓绳子时无重力 (松手才掉)
 # 玩家碰撞框高度 (跟 player.tscn 同步, 用于水/绳/头检测)
-const PLAYER_BODY_HEIGHT := 27      # collider y 尺寸 (1.25x 放大后, 27.5 取整)
-const PLAYER_HEAD_OFFSET := -27     # 头部 y 偏移 (脚到头)
-const PLAYER_WAIST_OFFSET := -14    # 腰部 y 偏移
+const PLAYER_BODY_HEIGHT := 30      # collider y 尺寸 = 2.5 格 × 12px (跟 player.tscn 同步)
+const PLAYER_HEAD_OFFSET := -29     # 头部 y 偏移 (脚到头, 比 30 略内缩防边界误判)
+const PLAYER_WAIST_OFFSET := -15    # 腰部 y 偏移 (身高一半)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _player_aura: PointLight2D = $PlayerAura
