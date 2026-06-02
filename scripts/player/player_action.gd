@@ -889,6 +889,11 @@ func _update_eat_or_place(delta: float) -> void:
 			player_node.fire_grappling_hook(player_node.get_global_mouse_position())
 		return
 
+	# 持鱼竿 + 右键刚按下 → 甩竿 / 收竿 (交给 PlayerFishing 按状态决定)
+	if slot != null and slot.item_id == "fishing_rod" and just:
+		try_fishing_click()
+		return
+
 	# 持召唤道具 (史莱姆王冠) + 右键刚按下 → 召唤 Boss
 	if slot != null and ItemDB.is_summon(slot.item_id) and just:
 		try_use_summon_item()
@@ -1552,3 +1557,19 @@ func _consume_crystal_tile(tile: Vector2i, terrain: TileMapLayer, color: Color =
 func _buff_mining_mul() -> float:
 	var b: Node = get_parent().get_node_or_null("PlayerBuffs")
 	return 1.0 if b == null else b.mining_mul()
+
+
+# 鱼竿右键: 把"瞄准格是不是水(且够得着)"算好, 交给 PlayerFishing 按状态决定甩竿/收竿.
+# 公开 (测试直接调, 不必在 headless 模拟真实右键).
+func try_fishing_click() -> void:
+	var pf: Node = get_parent().get_node_or_null("PlayerFishing")
+	if pf == null or not pf.has_method("on_rod_click"):
+		return
+	var aim_t: Vector2i = aim_tile_coord()
+	var terrain := _terrain()
+	var is_water: bool = false
+	if terrain != null and in_reach(aim_t):
+		var tid: int = terrain.get_cell_source_id(aim_t)
+		is_water = tid == Tiles.WATER or tid == Tiles.WATER_L1 \
+				or tid == Tiles.WATER_L2 or tid == Tiles.WATER_L3
+	pf.on_rod_click(aim_t, is_water)
