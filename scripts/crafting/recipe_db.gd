@@ -380,6 +380,19 @@ const _RECIPES := [
 		"requires": "workbench",
 		"mirror_ok": true,
 	},
+	# 云靴: 2 云块 + 2 羽毛 → 二段跳鞋 (要工作台). 羽毛打哈比鸟掉, 云块挖空岛.
+	{
+		"id": "cloud_boots",
+		"grid_size": Vector2i(2, 2),
+		"pattern": [
+			["cloud", "cloud"],
+			["feather", "feather"],
+		],
+		"output_id": "cloud_boots",
+		"output_count": 1,
+		"requires": "workbench",
+		"mirror_ok": true,
+	},
 	# === 平台 + 墙 ===
 	# 木平台: 2 planks 横排 → 4 个平台
 	{

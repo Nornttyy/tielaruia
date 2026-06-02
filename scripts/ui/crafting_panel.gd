@@ -428,6 +428,7 @@ const _ZH_NAMES := {
 	"bone": "骨头",
 	"spider_eye": "蜘蛛眼",
 	"feather": "羽毛",
+	"cloud_boots": "云靴",
 	"lens": "镜片",
 	"furnace": "熔炉",
 	"cooking_pot": "铁锅",

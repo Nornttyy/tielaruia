@@ -43,6 +43,7 @@ const SUN_ENERGY_OFF := 0.0
 const SUN_FADE_TIME := 0.3
 
 var _coyote_timer: float = 0.0
+var _double_jump_used: bool = false   # 离地后是否已用过二段跳 (云靴), 落地重置
 # 下平台: 按 S/Down 0.3s 内不撞 bit 2 (木平台), 落下
 const DROP_THROUGH_DURATION := 0.3
 var _drop_through_t: float = 0.0
@@ -310,10 +311,17 @@ func _physics_process(delta: float) -> void:
 			_coyote_timer = max(0.0, _coyote_timer - delta)
 		else:
 			_coyote_timer = COYOTE_TIME
-		# 跳跃 (仅在陆地, 水里用上浮代替)
+			_double_jump_used = false   # 落地 → 二段跳重置
+		#跳跃 (仅在陆地, 水里用上浮代替)
 		if Input.is_action_just_pressed("jump") and _coyote_timer > 0.0:
 			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
 			_coyote_timer = 0.0
+			did_jump = true
+			SfxBank.play("jump", 0.08)
+		elif Input.is_action_just_pressed("jump") and not _double_jump_used and _has_cloud_boots():
+			# 二段跳: 空中再跳一次 (穿云靴才行)
+			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
+			_double_jump_used = true
 			did_jump = true
 			SfxBank.play("jump", 0.08)
 		# 下平台: 按 S/Down 时关掉 bit 2 (木平台) 0.3s, 玩家从平台落下
@@ -571,3 +579,14 @@ func _buff_speed_mul() -> float:
 func _buff_jump_mul() -> float:
 	var b: Node = get_node_or_null("PlayerBuffs")
 	return 1.0 if b == null else b.jump_mul()
+
+
+# 持有云靴 → 解锁二段跳 (持有即生效, 不占装备槽)
+func _has_cloud_boots() -> bool:
+	var pinv: Node = get_node_or_null("PlayerInventory")
+	return pinv != null and pinv.has_method("has_item") and pinv.has_item("cloud_boots")
+
+
+# 二段跳是否可用 (供测试 + 逻辑): 在空中 + 没用过 + 有云靴
+func can_double_jump() -> bool:
+	return not is_on_floor() and not _double_jump_used and _has_cloud_boots()
