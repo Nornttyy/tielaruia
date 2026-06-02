@@ -1998,6 +1998,15 @@ static func _place_sky_island_chunk(c: Chunk, world_seed: int,
 			tdx = SKY_ISLAND_POOL_HALF + 2   # 推到水池右边 (跟宝箱分两侧)
 		_stamp_sky_tree(c, x_center_local + tdx, top_y, chunk_width, height)
 
+	# 5) 哈比鸟出生点: 岛顶上方天空 (1-2 只), 记进 chunk 供 chunk_manager 召
+	var harpy_count: int = rng.randi_range(1, 2)
+	for hi in range(harpy_count):
+		var hdx: int = rng.randi_range(-half + 3, half - 3)
+		var hy: int = top_y - 6 - (hi * 2)   # 草顶上方 6+ 格的开阔天空
+		if hy < 2:
+			hy = 2
+		c.harpy_spawn_spots.append(Vector2i(chunk_start + x_center_local + hdx, hy))
+
 
 # 在草地列 lx 上盖一棵小树 (LOG 树干 + 3×3 LEAVES 团). grass_y = 草顶那行.
 static func _stamp_sky_tree(c: Chunk, lx: int, grass_y: int, chunk_width: int, height: int) -> void:

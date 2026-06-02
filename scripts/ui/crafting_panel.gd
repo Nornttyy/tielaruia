@@ -427,6 +427,7 @@ const _ZH_NAMES := {
 	"wheat": "小麦",
 	"bone": "骨头",
 	"spider_eye": "蜘蛛眼",
+	"feather": "羽毛",
 	"lens": "镜片",
 	"furnace": "熔炉",
 	"cooking_pot": "铁锅",
