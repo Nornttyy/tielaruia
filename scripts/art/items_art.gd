@@ -1320,6 +1320,25 @@ const _LENS := [
 
 
 # 蜘蛛眼: 圆形红眼 + 黑色十字瞳孔
+const _FEATHER := [
+	"................",
+	".......jn.......",
+	"......jwwn......",
+	"......jwwn......",
+	".....jjwwn......",
+	".....jwwkn......",
+	"....jjwwkn......",
+	"....jwwwkn......",
+	"...jjwwwkn......",
+	"...jwwwwkn......",
+	"...jwwwkn.......",
+	"....jwwkn.......",
+	".....jwkn.......",
+	"......jkn.......",
+	".......kn.......",
+	"......n.........",
+]
+
 const _SPIDER_EYE := [
 	"................",
 	"................",
@@ -1789,6 +1808,7 @@ const _ICONS := {
 	"wheat": _WHEAT_ITEM,
 	"bone": _BONE,
 	"spider_eye": _SPIDER_EYE,
+	"feather": _FEATHER,
 	"lens": _LENS,
 	"iron_ingot": _IRON_INGOT,
 	"copper_ingot": _COPPER_INGOT,
