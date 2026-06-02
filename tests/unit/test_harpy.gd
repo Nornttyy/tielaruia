@@ -39,3 +39,13 @@ func test_harpy_drops_feather_on_death():
 		if d.get("item_id") == "feather":
 			has_feather = true
 	assert_true(has_feather, "哈比鸟死了掉羽毛")
+
+
+const WG = preload("res://scripts/world/world_generator.gd")
+
+func test_sky_island_records_harpy_spots():
+	var chunks = WG._sky_island_chunks(777)
+	var c = WG.generate_chunk(777, chunks[0], 256)
+	assert_gt(c.harpy_spawn_spots.size(), 0, "空岛 chunk 记了哈比鸟出生点")
+	for spot in c.harpy_spawn_spots:
+		assert_lt(spot.y, 60, "哈比鸟出生点在天空层 (y<60)")

@@ -21,6 +21,7 @@ const MimicScene = preload("res://scenes/entities/mimic.tscn")
 const SkeletonScene = preload("res://scenes/entities/skeleton.tscn")
 const ImpScene = preload("res://scenes/entities/imp.tscn")
 const HellWaspScene = preload("res://scenes/entities/hell_wasp.tscn")
+const HarpyScene = preload("res://scenes/entities/harpy.tscn")
 const MummyScene = preload("res://scenes/entities/mummy.tscn")
 const KingSlimeScene = preload("res://scenes/entities/king_slime.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
@@ -1145,6 +1146,23 @@ func spawn_mineshaft_spiders_for_chunk(chunk_x: int, spots: Array) -> void:
 	_mineshaft_chunks_spawned[chunk_x] = true
 	for spot in spots:
 		var creature := SpiderScene.instantiate()
+		creature.global_position = Vector2(
+			spot.x * TILE_SIZE + TILE_SIZE / 2.0,
+			spot.y * TILE_SIZE + TILE_SIZE
+		)
+		entities_root.add_child(creature)
+
+
+# 空岛哈比鸟: 同款 spot→spawn 机制 (dedup, chunk 重载不重生)
+var _harpy_chunks_spawned: Dictionary = {}   # chunk_x int → true
+func spawn_harpies_for_chunk(chunk_x: int, spots: Array) -> void:
+	if spots.is_empty():
+		return
+	if _harpy_chunks_spawned.has(chunk_x):
+		return
+	_harpy_chunks_spawned[chunk_x] = true
+	for spot in spots:
+		var creature := HarpyScene.instantiate()
 		creature.global_position = Vector2(
 			spot.x * TILE_SIZE + TILE_SIZE / 2.0,
 			spot.y * TILE_SIZE + TILE_SIZE
