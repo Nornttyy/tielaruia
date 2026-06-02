@@ -26,6 +26,7 @@ var _autosave_timer: Timer = null
 # 老代码用 .call_deferred 在 _run_async_load 第一个 await 就触发,
 # 那时 world.chunk_manager 还是 null, 应用就崩了 (玩家/背包/方块全没还原).
 var _pending_save_data: Resource = null
+var _want_starter: bool = false   # 本局是否该发起步包 (新游戏 true, 继续游戏 false). 一次性, 发完置 false.
 
 var world: Node2D:
 	get:
@@ -77,6 +78,8 @@ func _start_game(seed_or_opts = 0) -> void:
 		GameSettings.current_world_name = world_name
 	if "current_world_size" in GameSettings:
 		GameSettings.current_world_size = world_size
+	# 是否新游戏 (非继续): 决定发不发起步包 (此刻判, 因为 _pending_save_data 稍后会被清).
+	_want_starter = (_pending_save_data == null)
 	# 新游戏重置昼夜到早晨; 继续游戏稍后由 _apply_save_data 还原存档时间.
 	# TimeOfDay 是全局 autoload, 不重置的话新世界会沿用上一个世界的时间 → 不同存档时间串.
 	if _pending_save_data == null and TimeOfDay != null and "time" in TimeOfDay:
@@ -190,8 +193,8 @@ func _start_game_sync(world_seed: int) -> void:
 	add_child(dialogue)
 	_game_nodes.append(dialogue)
 	_wire_player.call_deferred()
-	# boot_to_game 用同步路径时也要发起步包 (异步路径会发, 同步路径以前忘了 → 空背包进游戏)
-	_grant_starter_on_new_game.call_deferred()
+	# 同步路径 (boot_to_game, 仅测试/dev 用) 不发起步包 — 让测试用空背包独立 setup
+	# (之前在这发, 会让"空手挖矿"等测试的玩家拿到木镐而误挖, 测试挂). 真实新游戏走异步才发.
 	_start_autosave()
 
 
@@ -429,6 +432,10 @@ func _wire_player() -> void:
 # 测试 helper boot_to_game / _start_game_sync 跳过, 让测试用空背包独立 setup.
 # continue 路径靠 _apply_save_data.call_deferred 在更后一帧覆盖背包, 不会留下重复.
 func _grant_starter_on_new_game() -> void:
+	# 只在真实新游戏发起步包. 继续游戏 _want_starter=false (存档背包由 _apply_save_data 还原).
+	# _want_starter 一次性, 防 deferred 跑两次重复发.
+	if not _want_starter:
+		return
 	# PlayerInventory._ready 创建 inventory, 可能跟我们 call_deferred 时机错位.
 	# 最多等 8 帧重试, 让 player + inventory 都就绪再发起步包.
 	# 每次循环重新 fetch world (await 后玩家可能 ESC 回主菜单, world freed).
@@ -440,6 +447,7 @@ func _grant_starter_on_new_game() -> void:
 		if player != null:
 			var inv_node: Node = player.get_node_or_null("PlayerInventory")
 			if inv_node != null and inv_node.inventory != null:
+				_want_starter = false   # 先置, 防同帧重入
 				_grant_starter_inventory(player)
 				return
 		await get_tree().process_frame
@@ -450,10 +458,8 @@ func _grant_starter_inventory(player: Node) -> void:
 	var inv_node: Node = player.get_node_or_null("PlayerInventory")
 	if inv_node == null or inv_node.inventory == null:
 		return
-	# 任一槽已有东西就跳过 (防 _wire_player 因 deferred 跑两次叠 buff)
-	for s in inv_node.inventory.slots:
-		if s != null:
-			return
+	# 双发由调用方 _want_starter 一次性标志保证; 这里直接发. 不再"任一槽非空就跳过" —
+	# 那个会被新游戏时抢先进背包的物品 / 联机消息误触发 → 玩家丢三件套.
 	inv_node.pickup("wood_pickaxe", 1)
 	inv_node.pickup("wood_axe", 1)
 	inv_node.pickup("wood_sword", 1)
