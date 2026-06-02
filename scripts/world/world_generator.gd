@@ -334,6 +334,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 装饰小草: GRASS 上方 AIR + 15% 概率长 PLANT_GRASS (用户要求草地点缀)
 	_place_grass_decor_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
+	# 空岛: 天空层浮岛 (云底+草顶+小水池+树+钻石宝箱), 数量按世界大小. 在 walls 前 (天空层不填墙).
+	_place_sky_island_chunk(c, world_seed, chunk_x, chunk_width, height)
+
 	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
 	_fill_walls_chunk(c, chunk_heights, chunk_width, height)
 	return c
@@ -1882,3 +1885,136 @@ static func _canopy_offsets(kind: String) -> Array:
 			offs.append(Vector2i(-2, 1)); offs.append(Vector2i(-1, 1))   # 底左翼
 			offs.append(Vector2i(1, 1)); offs.append(Vector2i(2, 1))     # 底右翼
 	return offs
+
+
+# ===== 空岛 (Sky Island) =====
+# 天空层浮岛: 透镜形 (中心厚边缘薄), 云块底 + 2 格土 + 草顶 + 中心小水池 + 树 + 钻石宝箱.
+# 单岛装进一个 chunk (宽 ≤ 44, 居中). 数量 GameSettings.skyisland_count_range().
+const SKY_ISLAND_WIDTH_MIN := 30        # 岛最窄
+const SKY_ISLAND_WIDTH_MAX := 44        # 岛最宽
+const SKY_ISLAND_TOP_Y_MIN := 20        # 草顶最高 (y 越小越高, 越飘)
+const SKY_ISLAND_TOP_Y_MAX := 36        # 草顶最低
+const SKY_ISLAND_CLOUD_DEPTH := 6       # 中心云块最厚层数 (边缘按比例减薄)
+const SKY_ISLAND_DIRT_ROWS := 2         # 草下夹土层数
+const SKY_ISLAND_POOL_HALF := 3         # 中心水池半宽 (= 7 格宽)
+const SKY_ISLAND_TREE_MIN := 2          # 岛上最少树
+const SKY_ISLAND_TREE_MAX := 4          # 最多树
+const SKY_ISLAND_TREE_TRUNK := 4        # 空岛小树干高 (短, 不戳世界顶)
+
+static var _sky_island_chunks_cache_seed: int = 0
+static var _sky_island_chunks_cache: Array = []
+static var _sky_island_chunks_cache_valid: bool = false
+
+
+# 给定 world_seed, 返回有空岛的 chunk_x 数组. 仿 _pyramid_chunks 但不限 biome (天上哪都行).
+# 数量走 GameSettings.skyisland_count_range(), 从 _scan_chunk_range() 候选里 Fisher-Yates 选.
+static func _sky_island_chunks(world_seed: int) -> Array:
+	if _sky_island_chunks_cache_valid and _sky_island_chunks_cache_seed == world_seed:
+		return _sky_island_chunks_cache
+	var scan_range: Array = _scan_chunk_range()
+	var candidates: Array = []
+	for cx in range(scan_range[0], scan_range[1]):
+		candidates.append(cx)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = world_seed + 0x5217a1
+	# 数量按世界大小 (autoload 在场才读, 不在场默认中世界 2-3)
+	var count_range: Array = [2, 3]
+	if Engine.get_main_loop() != null and Engine.get_main_loop().get_root().get_node_or_null("GameSettings") != null:
+		count_range = GameSettings.skyisland_count_range()
+	var target_count: int = rng.randi_range(count_range[0], count_range[1])
+	var num: int = min(target_count, candidates.size())
+	for i in range(candidates.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = candidates[i]
+		candidates[i] = candidates[j]
+		candidates[j] = tmp
+	_sky_island_chunks_cache = candidates.slice(0, num)
+	_sky_island_chunks_cache_seed = world_seed
+	_sky_island_chunks_cache_valid = true
+	return _sky_island_chunks_cache
+
+
+# 在选中的 chunk 中部盖一块空岛. 透镜形: 中心厚边缘薄.
+static func _place_sky_island_chunk(c: Chunk, world_seed: int,
+		chunk_x: int, chunk_width: int, height: int) -> void:
+	if not _sky_island_chunks(world_seed).has(chunk_x):
+		return
+	var chunk_start: int = chunk_x * chunk_width
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _hash3(world_seed, chunk_x, 0x5217a1)
+	var width: int = rng.randi_range(SKY_ISLAND_WIDTH_MIN, SKY_ISLAND_WIDTH_MAX)
+	var half: int = width / 2
+	var top_y: int = rng.randi_range(SKY_ISLAND_TOP_Y_MIN, SKY_ISLAND_TOP_Y_MAX)
+	var x_center_local: int = chunk_width / 2
+
+	# 1) 岛体: 每列按到中心比例算云块厚度, 顶 GRASS / 下 DIRT / 再下 CLOUD
+	for dx in range(-half, half + 1):
+		var lx: int = x_center_local + dx
+		if lx < 0 or lx >= chunk_width:
+			continue
+		var ratio: float = 1.0 - float(absi(dx)) / float(half + 1)   # 1 中心 .. ~0 边缘
+		if ratio <= 0.05:
+			continue   # 最外缘空着 → 边缘自然收窄成尖
+		var cloud_thick: int = int(round(float(SKY_ISLAND_CLOUD_DEPTH) * (0.25 + 0.75 * ratio)))
+		if cloud_thick < 1:
+			cloud_thick = 1
+		if top_y >= 0 and top_y < height:
+			c.tiles[lx][top_y] = Tiles.GRASS
+		for d in range(1, SKY_ISLAND_DIRT_ROWS + 1):
+			var yy: int = top_y + d
+			if yy >= 0 and yy < height:
+				c.tiles[lx][yy] = Tiles.DIRT
+		var cloud_start: int = top_y + SKY_ISLAND_DIRT_ROWS + 1
+		for d2 in range(0, cloud_thick):
+			var yy2: int = cloud_start + d2
+			if yy2 >= 0 and yy2 < height:
+				c.tiles[lx][yy2] = Tiles.CLOUD
+
+	# 2) 中心小水池: 挖 2 格深 (top_y, top_y+1) 填 WATER, top_y+2 保持 DIRT 当池底.
+	#    两侧 dx=±(POOL_HALF+1) 是 GRASS/DIRT 实心墙 → 水被围住不漏.
+	for dxp in range(-SKY_ISLAND_POOL_HALF, SKY_ISLAND_POOL_HALF + 1):
+		var lxp: int = x_center_local + dxp
+		if lxp < 0 or lxp >= chunk_width:
+			continue
+		for dyw in range(0, 2):
+			var yw: int = top_y + dyw
+			if yw >= 0 and yw < height:
+				c.tiles[lxp][yw] = Tiles.WATER
+
+	# 3) 宝箱: 水池左边一格草地上放钻石宝箱 (先于树放, 树要避开此列). 记 treasure_spots.
+	var chest_dx: int = -(SKY_ISLAND_POOL_HALF + 2)
+	var chest_lx: int = x_center_local + chest_dx
+	if chest_lx >= 0 and chest_lx < chunk_width:
+		var chest_y: int = top_y - 1   # 草顶上方那格
+		if chest_y >= 0 and c.tiles[chest_lx][top_y] == Tiles.GRASS and c.tiles[chest_lx][chest_y] == Tiles.AIR:
+			c.tiles[chest_lx][chest_y] = Tiles.DIAMOND_CHEST
+			c.treasure_spots.append(Vector2i(chunk_start + chest_lx, chest_y))
+
+	# 4) 树: 草地上种 2-4 棵小树, 避开水池 + 宝箱列 (树干会覆盖宝箱)
+	var tree_count: int = rng.randi_range(SKY_ISLAND_TREE_MIN, SKY_ISLAND_TREE_MAX)
+	for _i in range(tree_count):
+		var tdx: int = rng.randi_range(-half + 2, half - 2)
+		if absi(tdx) <= SKY_ISLAND_POOL_HALF + 1 or tdx == chest_dx:
+			tdx = SKY_ISLAND_POOL_HALF + 2   # 推到水池右边 (跟宝箱分两侧)
+		_stamp_sky_tree(c, x_center_local + tdx, top_y, chunk_width, height)
+
+
+# 在草地列 lx 上盖一棵小树 (LOG 树干 + 3×3 LEAVES 团). grass_y = 草顶那行.
+static func _stamp_sky_tree(c: Chunk, lx: int, grass_y: int, chunk_width: int, height: int) -> void:
+	if lx < 1 or lx >= chunk_width - 1:
+		return   # 太靠 chunk 边, 树冠会被裁 → 放弃
+	if grass_y < 0 or grass_y >= height or c.tiles[lx][grass_y] != Tiles.GRASS:
+		return
+	var trunk_top: int = grass_y - SKY_ISLAND_TREE_TRUNK
+	if trunk_top < 2:
+		return   # 太靠世界顶 → 放弃
+	for y in range(trunk_top, grass_y):
+		c.tiles[lx][y] = Tiles.LOG
+	for ddx in range(-1, 2):
+		for ddy in range(-1, 2):
+			var nx: int = lx + ddx
+			var ny: int = trunk_top + ddy
+			if nx < 0 or nx >= chunk_width or ny < 0 or ny >= height:
+				continue
+			if c.tiles[nx][ny] == Tiles.AIR:
+				c.tiles[nx][ny] = Tiles.LEAVES
