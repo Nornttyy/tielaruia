@@ -100,6 +100,14 @@ func set_armor(slot: String, val: Variant) -> void:
 	armor_changed.emit()
 
 
+# 背包 (含 hotbar) 里有没有某物品 (持有即生效类装备用, 如云靴二段跳)
+func has_item(item_id: String) -> bool:
+	for s in inventory.slots:
+		if s != null and s.item_id == item_id:
+			return true
+	return false
+
+
 # 总防御值 (sum of 3 slots)
 func total_defense() -> int:
 	var d: int = 0
