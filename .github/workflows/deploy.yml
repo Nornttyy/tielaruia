@@ -54,6 +54,8 @@ jobs:
           bash scripts/web/inject_bridge.sh
           # GitHub Pages 默认会跑 Jekyll, 加 .nojekyll 关掉它 (不然 Godot 的 _ 开头文件会被忽略)
           touch build/web/.nojekyll
+          # 建筑设计器一并发布 (用户直接开网址用, 不用拉本地文件)
+          cp building_designer.html build/web/
 
       # 检查 Pages 是 "legacy/gh-pages 分支" 模式. workflow 自带的 GITHUB_TOKEN
       # 改不了这个设置 (权限不够), 但只要一次性切对 (用户 PAT 手动 PUT 过),
