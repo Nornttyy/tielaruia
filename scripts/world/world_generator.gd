@@ -1206,9 +1206,9 @@ static func _place_hell_fruit_chunk(c: Chunk, chunk_width: int, height: int, rng
 # ===== 沙漠金字塔 =====
 # 用户要求: 典典台阶 13 层, 基底 25 宽, 顶 1 宽. 2-3 个/世界, 沙漠区随机出.
 # 内部: 底层走廊 (高 3) 横穿 + 2 个垂直入口 + 沿走廊 2-3 个 chest.
-const PYRAMID_BASE_WIDTH := 25
-const PYRAMID_LAYERS := 13
-const PYRAMID_ROOM_HEIGHT := 3   # 内部走廊高 3 格
+const PYRAMID_BASE_WIDTH := 41   # 加大 (原 25): 41 宽 × 21 层的大金字塔
+const PYRAMID_LAYERS := 21       # (原 13) 跟 half_base=20 配套, 顶刚好收成尖
+const PYRAMID_ROOM_HEIGHT := 5   # 内部大厅高 5 格 (原 3), 更宽敞放宝藏 + 怪
 
 # 世纪树常量 + 函数已删 (用户要求)
 
@@ -1303,7 +1303,7 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 	# 3) 2-3 个宝箱沿走廊摆 (用 chunk-deterministic RNG 选具体几个)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _hash3(world_seed, chunk_x, 0xfeed5cab)
-	var chest_count: int = rng.randi_range(2, 3)
+	var chest_count: int = rng.randi_range(3, 5)   # 大金字塔多放宝箱
 	var chest_xs: Array = []
 	for _i in chest_count:
 		var dx: int = rng.randi_range(-corridor_half + 1, corridor_half - 1)
@@ -1313,7 +1313,7 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 			attempt += 1
 		chest_xs.append(dx)
 	# 宝箱 tier: 第 1 个 gold, 第 2 个 diamond, 第 3 个 shadow (递增惊喜)
-	var chest_tiers: Array = [Tiles.GOLD_CHEST, Tiles.DIAMOND_CHEST, Tiles.SHADOW_CHEST]
+	var chest_tiers: Array = [Tiles.GOLD_CHEST, Tiles.DIAMOND_CHEST, Tiles.SHADOW_CHEST, Tiles.DIAMOND_CHEST, Tiles.GOLD_CHEST]
 	for i in chest_xs.size():
 		var dx: int = chest_xs[i]
 		var lx: int = x_center_local + dx
@@ -1329,7 +1329,7 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 		if shaft_x >= 0 and shaft_x < chunk_width:
 			c.tiles[shaft_x][y] = Tiles.AIR
 	# 5) 守卫木乃伊: 走廊里记 2-3 spawn 点, chunk_manager 加载时召 mummy
-	var mummy_count: int = rng.randi_range(2, 3)
+	var mummy_count: int = rng.randi_range(4, 6)   # 大金字塔更多木乃伊守卫
 	for _i in mummy_count:
 		var mdx: int = rng.randi_range(-corridor_half + 1, corridor_half - 1)
 		var mummy_x: int = chunk_start + x_center_local + mdx
