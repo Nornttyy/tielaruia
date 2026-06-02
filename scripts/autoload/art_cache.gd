@@ -27,6 +27,7 @@ const MimicArt = preload("res://scripts/art/mimic_art.gd")
 const SkeletonArt = preload("res://scripts/art/skeleton_art.gd")
 const ImpArt = preload("res://scripts/art/imp_art.gd")
 const HellWaspArt = preload("res://scripts/art/hell_wasp_art.gd")
+const HarpyArt = preload("res://scripts/art/harpy_art.gd")
 const FireballArt = preload("res://scripts/art/fireball_art.gd")
 const ArrowProjArt = preload("res://scripts/art/arrow_proj_art.gd")
 const MummyArt = preload("res://scripts/art/mummy_art.gd")
@@ -49,6 +50,7 @@ var mimic_frames: SpriteFrames
 var skeleton_frames: SpriteFrames
 var imp_frames: SpriteFrames
 var hell_wasp_frames: SpriteFrames
+var harpy_frames: SpriteFrames
 var fireball_frames: SpriteFrames
 var arrow_proj_frames: SpriteFrames
 var mummy_frames: SpriteFrames
@@ -291,6 +293,8 @@ func _build_entities() -> void:
 	imp_frames = ImpArt.build_sprite_frames()
 	# 地狱蜂: 飞行 + 冲撞
 	hell_wasp_frames = HellWaspArt.build_sprite_frames()
+	# 哈比鸟: 天空浮岛飞行怪
+	harpy_frames = HarpyArt.build_sprite_frames()
 	# 火球投射物 (Imp 用)
 	fireball_frames = FireballArt.build_sprite_frames()
 	# 玩家箭投射物 (弓用)
