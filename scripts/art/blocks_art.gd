@@ -664,6 +664,38 @@ const _GRASS := [
 	"Ddrdddrkddrdldrd",
 ]
 
+# 雪地表: 专属白雪 (之前误用绿草图案被 ArtCache 染蓝 → 变青绿"怪"). 亮白顶 + 蓝灰压实底 + 闪光.
+const _P_SNOW := {
+	"W": Color8(248, 250, 255),  # 亮白雪
+	"w": Color8(232, 238, 250),  # 白
+	"m": Color8(212, 222, 242),  # 中雪 (微蓝)
+	"s": Color8(190, 205, 232),  # 浅蓝阴影
+	"S": Color8(166, 184, 215),  # 蓝灰 (压实深处)
+	"l": Color8(255, 255, 255),  # 闪光
+	"_o": Color8(120, 140, 175),
+	"_e": Color8(166, 184, 215),
+	"_h": Color8(245, 248, 255),
+	"_H": Color8(255, 255, 255),
+}
+const _SNOW := [
+	"WWWWWWWWWWWWWWWW",
+	"WWlWWWWWlWWWWlWW",
+	"WWWWWWWWWWWWWWWW",
+	"WwWWWWwWWWWwWWWW",
+	"WWWWWWWWWWWWWWWW",
+	"WWWWwWWWWWwWWWWw",
+	"WWWWWWWWWWWWWWWW",
+	"wWWWWWWwWWWWWWWW",
+	"WWWWWmWWWWWWmWWW",
+	"WWWWWWWWWWWWWWWW",
+	"WmWWWWWWmWWWWWWm",
+	"WWWWWsWWWWWsWWWW",
+	"WWmWWWWWmWWWWmWW",
+	"WsWWWsWWWWsWWWsW",
+	"sWSsWWsWWSsWWsWS",
+	"SsSsSsSsSsSsSsSs",
+]
+
 # 泥土：暖土团块 (LL+边缘 o 暖橙) + 红棕 (r) 砂粒 + 冷棕 (p) + 深石子 (k) 细节
 const _DIRT := [
 	"dDdpdDdDdpdDdpdD",
@@ -2069,7 +2101,7 @@ const _PATTERN_MAP := {
 	CHEST: [_CHEST, _P_CHEST],
 	DOOR_TOP: [_DOOR_TOP_CLOSED, _P_DOOR],
 	# 新群系 tile: 暂复用现有 pattern (后续可以做专属调色板)
-	SNOW: [_GRASS, _P_GRASS],
+	SNOW: [_SNOW, _P_SNOW],
 	ICE: [_STONE, _P_STONE],
 	JUNGLE_GRASS: [_GRASS, _P_GRASS],
 	MUD: [_DIRT, _P_DIRT],

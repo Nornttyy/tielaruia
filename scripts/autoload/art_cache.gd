@@ -156,7 +156,6 @@ func _build_blocks() -> void:
 # 群系 tile 复用现有 pattern, 用 tint 区分. 在 atlas / 单 cell 两种路径都用.
 static func _apply_biome_tint(tile_id: int, tex: ImageTexture) -> ImageTexture:
 	match tile_id:
-		BlocksArt.SNOW:          return _tint_texture(tex, Color(0.55, 0.7, 1.6), 0.55)
 		BlocksArt.ICE:           return _tint_texture(tex, Color(0.5, 1.1, 1.8), 0.6)
 		BlocksArt.JUNGLE_GRASS:  return _tint_texture(tex, Color(0.35, 1.4, 0.4), 0.5)
 		BlocksArt.SWAMP_GRASS:   return _tint_texture(tex, Color(0.55, 0.85, 0.45), 0.5)
@@ -249,7 +248,14 @@ func _build_items() -> void:
 			# 用户加: 小麦 / 种子 之前漏了, 收割掉地没图
 			"wheat", "wheat_seed",
 			# 史莱姆王 Boss 掉落 + 合成材料
-			"slime_crown", "slime_ball"]:
+			"slime_crown", "slime_ball",
+			# 厨房第 1 步: 8 道料理 (cooked_meat 已在上面)
+			"bread", "mushroom_soup", "apple_pie", "meat_skewer",
+			"mushroom_stew", "apple_jam", "jelly_pudding",
+			# 厨房第 2 步: 鱼竿 + 9 海鲜 + 烤鱼
+			"fishing_rod", "grilled_fish",
+			"salmon", "tuna", "octopus", "sea_urchin", "lobster",
+			"eel", "sweet_shrimp", "scallop", "seaweed"]:
 		item_icons[item_id] = ItemsArt.get_icon(item_id)
 	# 剑 + 镐 + 斧: 7 tier × 3 tool, 全用 ASCII pattern (16×16)
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画
@@ -310,6 +316,7 @@ const _ITEM_TO_TILE := {
 	"planks": BlocksArt.PLANKS,
 	"workbench": BlocksArt.WORKBENCH,
 	"furnace": BlocksArt.FURNACE,
+	"cooking_pot": BlocksArt.COOKING_POT,
 	"door": BlocksArt.DOOR,
 	"slime_torch": BlocksArt.SLIME_TORCH,
 	"torch": BlocksArt.TORCH,
