@@ -114,6 +114,15 @@ func test_route_proj_emits() -> void:
 	assert_signal_emitted_with_parameters(nm, "remote_projectile_received", ["fireball", 1.0, 2.0, 3.0, 4.0])
 
 
+# --- 玩家死亡/复活通知 ---
+func test_route_player_death_and_respawn() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"pdead"}')
+	assert_signal_emitted(nm, "remote_player_death_received")
+	nm._route_message('{"type":"pres"}')
+	assert_signal_emitted(nm, "remote_player_respawn_received")
+
+
 # 断线/返回菜单要清掉 pending 状态, 否则污染下一局
 func test_disconnect_clears_session_state() -> void:
 	nm.pending_initial_deltas = {"0": [1, 2, 3]}

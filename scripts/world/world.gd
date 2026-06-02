@@ -238,6 +238,10 @@ func _setup_multiplayer_callbacks() -> void:
 		NetworkManager.remote_entity_damage_received.connect(_on_remote_entity_damage)
 	if not NetworkManager.remote_projectile_received.is_connected(_on_remote_projectile):
 		NetworkManager.remote_projectile_received.connect(_on_remote_projectile)
+	if not NetworkManager.remote_player_death_received.is_connected(_on_remote_player_death):
+		NetworkManager.remote_player_death_received.connect(_on_remote_player_death)
+	if not NetworkManager.remote_player_respawn_received.is_connected(_on_remote_player_respawn):
+		NetworkManager.remote_player_respawn_received.connect(_on_remote_player_respawn)
 	if not NetworkManager.remote_drop_pos_received.is_connected(_on_remote_drop_pos):
 		NetworkManager.remote_drop_pos_received.connect(_on_remote_drop_pos)
 	if not NetworkManager.remote_drop_pickup_received.is_connected(_on_remote_drop_pickup):
@@ -370,6 +374,16 @@ func _on_remote_projectile(kind: String, sx: float, sy: float, tx: float, ty: fl
 		proj.setup(start, target, 0, null)
 	else:
 		proj.setup(start, target, 0, true)
+
+
+func _on_remote_player_death() -> void:
+	if _remote_player != null and _remote_player.has_method("set_dead"):
+		_remote_player.set_dead(true)
+
+
+func _on_remote_player_respawn() -> void:
+	if _remote_player != null and _remote_player.has_method("set_dead"):
+		_remote_player.set_dead(false)
 
 
 func _spawn_remote_entity(kind: String) -> Node:

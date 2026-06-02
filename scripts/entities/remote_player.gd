@@ -44,3 +44,13 @@ func apply_pos(x: float, y: float, facing: int, anim: String) -> void:
 func set_player_name(n: String) -> void:
 	if _name_label != null:
 		_name_label.text = n
+
+
+# 对方死亡 → 半透明灰"幽灵"; 复活 → 恢复偏蓝. 由 world 收到 pdead/pres 调.
+func set_dead(dead: bool) -> void:
+	if _sprite == null:
+		return
+	if dead:
+		_sprite.modulate = Color(0.6, 0.6, 0.7, 0.35)
+	else:
+		_sprite.modulate = Color(0.7, 0.9, 1.0)  # 跟 _ready 一致的偏蓝

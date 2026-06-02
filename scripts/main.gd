@@ -416,6 +416,9 @@ func _wire_player() -> void:
 	if hp != null and hp.has_signal("died"):
 		if not hp.died.is_connected(_death_screen.show_death):
 			hp.died.connect(_death_screen.show_death)
+		# 联机: 本地玩家死了 → 通知对方 (对方那边 remote_player 变半透明"死亡")
+		if not hp.died.is_connected(_notify_remote_death):
+			hp.died.connect(_notify_remote_death)
 
 
 # 真实新游戏 + continue 路径 (_run_async_load) 会调用这个;
@@ -466,11 +469,19 @@ func _return_to_menu() -> void:
 	_show_menu_state()
 
 
+func _notify_remote_death() -> void:
+	if NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_player_death()
+
+
 func _on_respawn() -> void:
 	var w := world
 	if w != null:
 		w.respawn_player()
 	_death_screen.hide_death()
+	# 联机: 复活了 → 通知对方恢复显示
+	if NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_player_respawn()
 
 
 func _unhandled_input(event: InputEvent) -> void:
