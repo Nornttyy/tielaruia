@@ -14,21 +14,21 @@ const _DEFS := {
 	"planks":       {"placeable_tile_id": Tiles.PLANKS,    "tool_kind": "", "tool_tier": 0, "max_stack": 64},
 	"workbench":    {"placeable_tile_id": Tiles.WORKBENCH, "tool_kind": "", "tool_tier": 0, "max_stack": 64},
 	"door":         {"placeable_tile_id": Tiles.DOOR,      "tool_kind": "", "tool_tier": 0, "max_stack": 64},
-	"wood_sword":   {"placeable_tile_id": -1,              "tool_kind": "sword",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0},
+	"wood_sword":   {"placeable_tile_id": -1,              "tool_kind": "sword",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"wood_pickaxe": {"placeable_tile_id": -1,              "tool_kind": "pickaxe", "tool_tier": 1, "max_stack": 1, "damage_mult": 0.5},
 	"wood_axe":     {"placeable_tile_id": -1,              "tool_kind": "axe",     "tool_tier": 1, "max_stack": 1, "damage_mult": 0.0},
 	"slime_jelly":  {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 40},
 	"slime_crown":  {"placeable_tile_id": -1,              "tool_kind": "summon",    "tool_tier": 0, "max_stack": 1},
 	"slime_ball":   {"placeable_tile_id": -1,              "tool_kind": "slimeball", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0},  # Boss 掉落武器, tier 5 让伤害高于铁剑 (tier 4)
 	"apple":        {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 25},
-	"stone_sword":   {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 2, "max_stack": 1, "damage_mult": 1.0},
+	"stone_sword":   {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 2, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"stone_pickaxe": {"placeable_tile_id": -1,                     "tool_kind": "pickaxe", "tool_tier": 2, "max_stack": 1, "damage_mult": 0.5},
 	"stone_axe":     {"placeable_tile_id": -1,                     "tool_kind": "axe",     "tool_tier": 2, "max_stack": 1, "damage_mult": 0.0},
-	"copper_sword":   {"placeable_tile_id": -1,                    "tool_kind": "sword",   "tool_tier": 3, "max_stack": 1, "damage_mult": 1.0},
+	"copper_sword":   {"placeable_tile_id": -1,                    "tool_kind": "sword",   "tool_tier": 3, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"copper_pickaxe": {"placeable_tile_id": -1,                    "tool_kind": "pickaxe", "tool_tier": 3, "max_stack": 1, "damage_mult": 0.5},
 	"copper_axe":     {"placeable_tile_id": -1,                    "tool_kind": "axe",     "tool_tier": 3, "max_stack": 1, "damage_mult": 0.0},
 	"silver_ore":     {"placeable_tile_id": -1,                    "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
-	"silver_sword":   {"placeable_tile_id": -1,                    "tool_kind": "sword",   "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0},
+	"silver_sword":   {"placeable_tile_id": -1,                    "tool_kind": "sword",   "tool_tier": 5, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"silver_pickaxe": {"placeable_tile_id": -1,                    "tool_kind": "pickaxe", "tool_tier": 5, "max_stack": 1, "damage_mult": 0.5},
 	"silver_axe":     {"placeable_tile_id": -1,                    "tool_kind": "axe",     "tool_tier": 5, "max_stack": 1, "damage_mult": 0.0},
 	"slime_torch":   {"placeable_tile_id": Tiles.SLIME_TORCH,      "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
@@ -41,12 +41,12 @@ const _DEFS := {
 	"hell_crystal":  {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	"torch":         {"placeable_tile_id": Tiles.TORCH,            "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	"iron_pickaxe":  {"placeable_tile_id": -1,                     "tool_kind": "pickaxe", "tool_tier": 4, "max_stack": 1, "damage_mult": 0.5},
-	"iron_sword":    {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0},
+	"iron_sword":    {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 4, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"iron_axe":      {"placeable_tile_id": -1,                     "tool_kind": "axe",     "tool_tier": 4, "max_stack": 1, "damage_mult": 0.0},
-	"gold_sword":    {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 6, "max_stack": 1, "damage_mult": 1.0},
+	"gold_sword":    {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 6, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"gold_pickaxe":  {"placeable_tile_id": -1,                     "tool_kind": "pickaxe", "tool_tier": 6, "max_stack": 1, "damage_mult": 0.5},
 	"gold_axe":      {"placeable_tile_id": -1,                     "tool_kind": "axe",     "tool_tier": 6, "max_stack": 1, "damage_mult": 0.0},
-	"diamond_sword":   {"placeable_tile_id": -1,                   "tool_kind": "sword",   "tool_tier": 7, "max_stack": 1, "damage_mult": 1.0},
+	"diamond_sword":   {"placeable_tile_id": -1,                   "tool_kind": "sword",   "tool_tier": 7, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"diamond_pickaxe": {"placeable_tile_id": -1,                   "tool_kind": "pickaxe", "tool_tier": 7, "max_stack": 1, "damage_mult": 0.5},
 	"diamond_axe":     {"placeable_tile_id": -1,                   "tool_kind": "axe",     "tool_tier": 7, "max_stack": 1, "damage_mult": 0.0},
 	"bone":          {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
@@ -115,9 +115,18 @@ const _DEFS := {
 	"diamond_chest":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 1, "armor_slot": "chest",  "defense": 24},
 	"diamond_pants":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 1, "armor_slot": "pants",  "defense": 14},
 	# === 地狱武器 (tier 8): 用 hell_alloy_ingot + hell_crystal_ingot 合 ===
-	"hell_sword":    {"placeable_tile_id": -1, "tool_kind": "sword",   "tool_tier": 8, "max_stack": 1, "damage_mult": 1.0},
+	"hell_sword":    {"placeable_tile_id": -1, "tool_kind": "sword",   "tool_tier": 8, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"hell_pickaxe":  {"placeable_tile_id": -1, "tool_kind": "pickaxe", "tool_tier": 8, "max_stack": 1, "damage_mult": 0.5},
 	"hell_axe":      {"placeable_tile_id": -1, "tool_kind": "axe",     "tool_tier": 8, "max_stack": 1, "damage_mult": 0.0},
+	# === 短剑 (dagger): 戳·快·伤害小(0.8). 跟同名阔剑(<mat>_sword)成对, tier 一致 ===
+	"wood_dagger":    {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 1, "max_stack": 1, "damage_mult": 0.8, "sword_style": "thrust"},
+	"stone_dagger":   {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 2, "max_stack": 1, "damage_mult": 0.8, "sword_style": "thrust"},
+	"copper_dagger":  {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 3, "max_stack": 1, "damage_mult": 0.8, "sword_style": "thrust"},
+	"iron_dagger":    {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 4, "max_stack": 1, "damage_mult": 0.8, "sword_style": "thrust"},
+	"silver_dagger":  {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 5, "max_stack": 1, "damage_mult": 0.8, "sword_style": "thrust"},
+	"gold_dagger":    {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 6, "max_stack": 1, "damage_mult": 0.8, "sword_style": "thrust"},
+	"diamond_dagger": {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 7, "max_stack": 1, "damage_mult": 0.8, "sword_style": "thrust"},
+	"hell_dagger":    {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 8, "max_stack": 1, "damage_mult": 0.8, "sword_style": "thrust"},
 	# === 法杖 (Phase 7): 持杖 LMB → 消耗 mana 发火球 ===
 	# 法杖 3 tier (起步早): wood = 学徒, iron = 中期, hell = 末期
 	"wood_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 5,  "spell_damage": 8},
@@ -177,6 +186,13 @@ func is_placeable(item_id: String) -> bool:
 func max_stack(item_id: String) -> int:
 	var def = get_def(item_id)
 	return 0 if def == null else def.max_stack
+
+
+# 剑的攻击方式: "thrust"(短剑·戳) / "sweep"(阔剑·扫) / ""(非剑或没标).
+# 攻击逻辑按这个选戳还是扫, 不再按 tier.
+func sword_style(item_id: String) -> String:
+	var def = get_def(item_id)
+	return "" if def == null else def.get("sword_style", "")
 
 
 func is_food(item_id: String) -> bool:
