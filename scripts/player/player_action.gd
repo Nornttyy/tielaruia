@@ -1194,7 +1194,9 @@ func _check_pickaxe_spin_hits() -> void:
 			var id: int = sn.get_instance_id()
 			if _pickaxe_hit_this_spin.has(id):
 				continue
-			if tip_world.distance_to(sn.global_position) > PICKAXE_HIT_RADIUS:
+			# 大怪给身子半径 (跟剑一致), 镐转碰到大身子就算命中; 普通怪没此方法 = 0
+			var radius: float = sn.melee_hit_radius() if sn.has_method("melee_hit_radius") else 0.0
+			if tip_world.distance_to(sn.global_position) > PICKAXE_HIT_RADIUS + radius:
 				continue
 			_pickaxe_hit_this_spin[id] = true
 			_deal_enemy_damage(sn, damage, tip_world, _pickaxe_knockback())
@@ -1274,11 +1276,13 @@ func _check_sword_blade_hits() -> void:
 			var id: int = sn.get_instance_id()
 			if _sword_hit_this_attack.has(id):
 				continue
-			# 贴脸保险: 怪在玩家 ≤ 18px 内一律算命中 (剑指远处也保住近身怪)
+			# 大怪 (如史莱姆王) 给身子半径, 剑碰到大身子就算命中 (不只认中心一点); 普通怪没此方法 = 0
+			var radius: float = sn.melee_hit_radius() if sn.has_method("melee_hit_radius") else 0.0
+			# 贴脸保险: 怪在玩家 ≤ 22.5px(+身子半径) 内一律算命中 (剑指远处也保住近身怪)
 			var to_player_dist: float = sn.global_position.distance_to(player.global_position)
-			var hit: bool = to_player_dist <= SWORD_POINT_BLANK_DIST
+			var hit: bool = to_player_dist <= SWORD_POINT_BLANK_DIST + radius
 			if not hit:
-				hit = _dist_point_to_segment(sn.global_position, grip_world, tip_world) <= SWORD_HIT_RADIUS
+				hit = _dist_point_to_segment(sn.global_position, grip_world, tip_world) <= SWORD_HIT_RADIUS + radius
 			if not hit:
 				continue
 			_sword_hit_this_attack[id] = true
