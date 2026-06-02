@@ -107,6 +107,9 @@ func save(main: Node) -> bool:
 		var inv_node: Node = player.get_node_or_null("PlayerInventory")
 		if inv_node != null and inv_node.inventory != null:
 			data.inventory_slots = _serialize_inventory(inv_node.inventory.slots)
+			# 玩家正用鼠标拖着一摞东西 (cursor_slot) 时也要存, 否则 autosave+异常退出会丢
+			if "cursor_slot" in inv_node:
+				_fold_cursor_into(data.inventory_slots, inv_node.cursor_slot)
 			data.hotbar_selection = inv_node.hotbar_selected
 			# 盔甲槽 (3 槽, item_id 字符串. null → "")
 			data.armor_helmet_id = "" if inv_node.armor_helmet == null else String(inv_node.armor_helmet.item_id)
@@ -227,6 +230,37 @@ func delete_save_by_name(save_name: String) -> void:
 func delete_save() -> void:
 	if FileAccess.file_exists(LEGACY_SAVE_PATH):
 		DirAccess.remove_absolute(LEGACY_SAVE_PATH)
+
+
+# 把"鼠标拖拽中"的 cursor_slot 折叠进已序列化的背包数组 (绝不改数组长度, 绝不丢物品).
+# cursor 来自本背包 (拿起整槽 → 留下空槽; 拆分 → 原槽还在), 所以总能找到落点.
+func _fold_cursor_into(serialized: Array, cursor: Variant) -> void:
+	if cursor == null:
+		return
+	var cid: String = String(cursor.item_id)
+	var ccount: int = int(cursor.count)
+	if ccount <= 0:
+		return
+	var max_n: int = ItemDB.max_stack(cid)
+	# 1) 先堆进还有空间的同物品槽
+	for e in serialized:
+		if e != null and String(e.item_id) == cid and int(e.count) < max_n:
+			var add: int = mini(max_n - int(e.count), ccount)
+			e.count = int(e.count) + add
+			ccount -= add
+			if ccount <= 0:
+				return
+	# 2) 放进第一个空槽
+	for i in serialized.size():
+		if serialized[i] == null:
+			serialized[i] = {"item_id": cid, "count": ccount}
+			return
+	# 3) 满包 (拆分剩的): 堆回第一个同物品槽 (暂时超 max, 下次整理自愈), 也绝不丢
+	for e2 in serialized:
+		if e2 != null and String(e2.item_id) == cid:
+			e2.count = int(e2.count) + ccount
+			return
+	push_warning("save: 背包全满且无同物品槽, cursor %s x%d 无处安放" % [cid, ccount])
 
 
 # 把 inventory.slots (Array of Dictionary or null) 转可序列化形式.

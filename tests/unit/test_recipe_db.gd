@@ -202,10 +202,10 @@ func test_iron_pickaxe_recipe_exists():
 	assert_not_null(r, "iron_pickaxe 配方应存在")
 	assert_eq(r.output_id, "iron_pickaxe")
 	assert_eq(r.output_count, 1)
-	# 3x3: 顶三铁矿 + 中下双 planks
+	# 3x3: 顶三铁锭 (金属工具改用冶炼的锭, 非生矿) + 中下双 planks
 	assert_eq(r.grid_size, Vector2i(3, 3))
-	assert_eq(r.pattern[0][0], "iron_ore")
-	assert_eq(r.pattern[0][1], "iron_ore")
-	assert_eq(r.pattern[0][2], "iron_ore")
+	assert_eq(r.pattern[0][0], "iron_ingot")
+	assert_eq(r.pattern[0][1], "iron_ingot")
+	assert_eq(r.pattern[0][2], "iron_ingot")
 	assert_eq(r.pattern[1][1], "planks")
 	assert_eq(r.pattern[2][1], "planks")

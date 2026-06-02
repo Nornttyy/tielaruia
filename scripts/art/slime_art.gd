@@ -95,6 +95,32 @@ const _HOP_AIRBORNE := [
 const _HOP_LAND := _HOP_ANTICIPATE
 
 
+# 史莱姆王专属王冠 (16×8). 单独一张图, 贴在王头顶 — 自己的金色, 不受身体染蓝/受击闪红影响.
+# 3 个尖顶 (各 2 px) + 红宝石尖 + 带高光阴影的金底座 + 3 颗内嵌红宝石.
+const CROWN_PALETTE := {
+	".": Color(0, 0, 0, 0),
+	"y": Color8(232, 190, 72),    # 金 (暖色)
+	"Y": Color8(255, 226, 130),   # 金高光
+	"G": Color8(168, 124, 44),    # 金阴影
+	"O": Color8(214, 58, 72),     # 红宝石
+}
+
+const _CROWN := [
+	"...OO..OO..OO...",
+	"...yy..yy..yy...",
+	"...yy..yy..yy...",
+	"...yy..yy..yy...",
+	"...YyyyyyyyyG...",
+	"...yOyyOyyOyy...",
+	"...yyyyyyyyyy...",
+	"...GGGGGGGGGG...",
+]
+
+
+static func build_crown_texture() -> ImageTexture:
+	return PixelArt.grid_to_texture(_CROWN, CROWN_PALETTE)
+
+
 static func build_sprite_frames() -> SpriteFrames:
 	return PixelArt.build_sprite_frames({
 		"idle": {"frames": [_IDLE_A, _IDLE_B], "fps": 2.5, "loop": true},

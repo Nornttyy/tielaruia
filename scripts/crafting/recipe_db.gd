@@ -576,6 +576,16 @@ const _RECIPES := [
 	{ "id": "fish_slice_eel", "grid_size": Vector2i(1, 1),
 	  "pattern": [["eel"]],
 	  "output_id": "fish_slice", "output_count": 1, "mirror_ok": true, "requires": "board" },
+	# 章鱼/龙虾/扇贝 也能在菜板切成鱼片 (之前钓上来没用, 约 1/3 鱼获白钓)
+	{ "id": "fish_slice_octopus", "grid_size": Vector2i(1, 1),
+	  "pattern": [["octopus"]],
+	  "output_id": "fish_slice", "output_count": 1, "mirror_ok": true, "requires": "board" },
+	{ "id": "fish_slice_lobster", "grid_size": Vector2i(1, 1),
+	  "pattern": [["lobster"]],
+	  "output_id": "fish_slice", "output_count": 2, "mirror_ok": true, "requires": "board" },
+	{ "id": "fish_slice_scallop", "grid_size": Vector2i(1, 1),
+	  "pattern": [["scallop"]],
+	  "output_id": "fish_slice", "output_count": 1, "mirror_ok": true, "requires": "board" },
 	# 寿司 + 刺身 (都在菜板做, requires "board")
 	{ "id": "sushi", "grid_size": Vector2i(3, 1),
 	  "pattern": [["fish_slice", "cooked_rice", "seaweed"]],

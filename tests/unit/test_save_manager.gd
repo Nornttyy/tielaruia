@@ -90,6 +90,27 @@ func test_save_captures_inventory():
 	assert_true("log" in ids)
 
 
+func test_save_preserves_cursor_item():
+	# 老 bug: 玩家在背包里"用鼠标拖着"一摞物品 (cursor_slot) 时, 自动存档 + 异常退出
+	# → cursor_slot 没进存档, 那摞物品凭空消失. 存档应把 cursor 上的东西也保住.
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	main.boot_to_game()
+	await wait_frames(3)
+	var world = main.get_node("World")
+	var player = world.get_player()
+	var inv_node = player.get_node("PlayerInventory")
+	# 模拟拖拽中: 鼠标上拿着 7 颗钻石
+	inv_node.cursor_slot = {"item_id": "diamond", "count": 7}
+	SaveManager.save(main)
+	var data = SaveManager.load_save()
+	var total_diamond: int = 0
+	for s in data.inventory_slots:
+		if s != null and s.item_id == "diamond":
+			total_diamond += int(s.count)
+	assert_eq(total_diamond, 7, "拖拽中的 7 颗钻石存档后应回到背包, 不能丢")
+
+
 func test_load_save_by_name():
 	# 创建一个有名字的存档
 	GameSettings.current_world_name = "测试世界A"

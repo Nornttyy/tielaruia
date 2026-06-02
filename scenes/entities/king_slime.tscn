@@ -17,3 +17,6 @@ centered = true
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -16)
 shape = SubResource("RectangleShape2D_ks")
+
+[node name="Crown" type="Sprite2D" parent="."]
+z_index = 1

@@ -46,6 +46,23 @@ var _line: Line2D = null
 var _bobber_base_y: float = 0.0   # 浮标静止 y (咬钩时往下沉)
 
 
+func _ready() -> void:
+	# 切走鱼竿 → 取消钓鱼 (否则浮标卡在水里, 收不回也取消不了)
+	var inv: Node = get_parent().get_node_or_null("PlayerInventory") if get_parent() != null else null
+	if inv != null and inv.has_signal("hotbar_selection_changed"):
+		inv.hotbar_selection_changed.connect(_on_hotbar_changed)
+
+
+# 注意: 同步信号处理, 不加 await (CLAUDE.md). 只做轻量 _reset.
+func _on_hotbar_changed(_idx: int) -> void:
+	if not is_fishing():
+		return
+	var inv: Node = get_parent().get_node_or_null("PlayerInventory")
+	var slot = null if inv == null else inv.current_hotbar_slot()
+	if slot == null or slot.item_id != "fishing_rod":
+		_reset()
+
+
 func state() -> String:
 	return _state
 
