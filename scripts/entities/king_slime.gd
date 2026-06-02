@@ -73,6 +73,13 @@ func _apply_scale() -> void:
 		_collision.scale = Vector2(s, s)
 
 
+# 近战命中半径: 王身子巨大, 让剑/镐碰到大身子就算命中 (不只认中心一点).
+# = 碰撞框半宽 (6.5) × 当前体型 scale. 满血 scale 4 → 26px; 血少体型小 → 半径也小.
+# player_action 近战命中检测把这半径加到判定距离上 (普通小怪没此方法 = 半径 0, 行为不变).
+func melee_hit_radius() -> float:
+	return 6.5 * sprite.scale.x
+
+
 # 当前跳跃间隔: 血越少越短 (HOP_COOLDOWN_FULL → HOP_COOLDOWN_LOW)
 func _hop_cooldown_now() -> float:
 	return lerp(HOP_COOLDOWN_LOW, HOP_COOLDOWN_FULL, _hp_ratio())
