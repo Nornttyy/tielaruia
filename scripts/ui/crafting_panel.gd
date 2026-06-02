@@ -485,6 +485,7 @@ const _ZH_NAMES := {
 	"wood_staff": "木魔草杖", "iron_staff": "铁蓝晶杖",
 	"mana_potion": "魔力药水",
 	"sandstone": "砂岩",
+	"cloud": "云块",
 	"slime_crown": "史莱姆王冠",
 	"slime_ball": "史莱姆球",
 }
