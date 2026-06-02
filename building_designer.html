@@ -40,7 +40,8 @@
     display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 7px;
     border: 2px solid transparent; cursor: pointer; min-width: 0;
   }
-  .swatch .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .swatch .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .swatch .badge { font-size: 11px; opacity: .85; flex-shrink: 0; }
   .swatch:hover { background: var(--panel2); }
   .swatch.sel { border-color: var(--accent); background: var(--panel2); }
   .swatch .chip {
@@ -80,6 +81,8 @@
   <button id="wMinus">宽 −</button><button id="wPlus">宽 +</button>
   <button id="hMinus">高 −</button><button id="hPlus">高 +</button>
   <span id="sizeLbl" class="lbl"></span>
+  <span class="lbl" style="margin-left:12px">选中方块碰撞:</span>
+  <button id="btnCollide" title="切换选中方块能不能穿过 (实心=挡路, 可穿过=能走过去, 比如门/暗墙)">🧱</button>
 </header>
 
 <div class="main">
@@ -174,6 +177,10 @@ const BLOCKS = [
 ];
 const BY_CH = {};
 BLOCKS.forEach(b => BY_CH[b.ch] = b);
+// 实心(挡路)的方块 — 来自游戏 Tiles.is_solid (gen_block_palette.gd 抓的). 其余可穿过(墙/门/火把/水等).
+// b.solid 是默认值, 玩家可在设计器里逐个切换 (导出会记下).
+const SOLID_CHARS = new Set('gdWesawNIujJmkoPBFKY0123456789OEM'.split(''));
+BLOCKS.forEach(b => { if (b.color) b.solid = SOLID_CHARS.has(b.ch); });
 
 let cols = 24, rows = 16;
 const CELL = 26;
@@ -227,6 +234,16 @@ function drawCell(r, c) {
     if (ch === 'T') { ctx.fillStyle = '#fff0a0'; ctx.fillRect(x + CELL/2 - 2, y + 5, 4, 6); }
     // 门: 画个把手
     if (ch === 'D') { ctx.fillStyle = '#ffe08a'; ctx.fillRect(x + CELL - 8, y + CELL/2 - 1, 3, 3); }
+    // 可穿过(无碰撞)的方块画斜线, 一眼看出能走过去 (门/火把/墙/水等)
+    if (BY_CH[ch] && !BY_CH[ch].solid) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x, y, CELL, CELL); ctx.clip();
+      ctx.strokeStyle = 'rgba(255,255,255,0.30)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let dd = -CELL; dd <= CELL; dd += 6) { ctx.moveTo(x + dd, y + CELL); ctx.lineTo(x + dd + CELL, y); }
+      ctx.stroke();
+      ctx.restore();
+    }
   }
   ctx.strokeStyle = 'rgba(0,0,0,0.28)';
   ctx.strokeRect(x + 0.5, y + 0.5, CELL, CELL);
@@ -272,7 +289,10 @@ function genCode() {
   grid.forEach(row => row.forEach(ch => { if (ch !== '.') used.add(ch); }));
   const items = BLOCKS.filter(b => b.color && used.has(b.ch)).map(b => b.ch + '=' + b.name);
   const legend = '图例 ' + (items.length ? items.join(' ') : '(还没画)') + '  (.=空)';
-  return head + '\n' + body + '\n' + legend;
+  // 碰撞: 列出用到的、设成"可穿过(无碰撞)"的方块, 其余都实心挡路
+  const passable = BLOCKS.filter(b => b.color && used.has(b.ch) && !b.solid).map(b => b.ch + '=' + b.name);
+  const passLine = '可穿过(无碰撞): ' + (passable.length ? passable.join(' ') : '无 (全部实心)');
+  return head + '\n' + body + '\n' + legend + '\n' + passLine;
 }
 
 function toast(msg) {
@@ -294,11 +314,34 @@ function buildPalette() {
     const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = b.name;
     el.title = b.name + (b.ch === '.' ? '' : '  (' + b.ch + ')');
     el.appendChild(chip); el.appendChild(nm);
+    if (b.color) {
+      const badge = document.createElement('span'); badge.className = 'badge';
+      badge.textContent = b.solid ? '🧱' : '👻';
+      el.appendChild(badge);
+    }
     el.addEventListener('click', () => {
       cur = b.ch;
       document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('sel', s.dataset.ch === cur));
+      updateCollideBtn();
     });
     pal.appendChild(el);
+  });
+}
+
+function updateCollideBtn() {
+  const btn = document.getElementById('btnCollide');
+  const b = BY_CH[cur];
+  if (!b || !b.color) { btn.textContent = '🧱 —'; btn.disabled = true; return; }
+  btn.disabled = false;
+  btn.textContent = b.solid ? '🧱 实心(挡路)' : '👻 可穿过';
+}
+
+function updateSwatchBadge(ch) {
+  document.querySelectorAll('.swatch').forEach(s => {
+    if (s.dataset.ch === ch) {
+      const badge = s.querySelector('.badge');
+      if (badge) badge.textContent = BY_CH[ch].solid ? '🧱' : '👻';
+    }
   });
 }
 
@@ -332,8 +375,20 @@ document.getElementById('btnImg').addEventListener('click', () => {
   });
 });
 
+// 碰撞切换: 翻转当前选中方块的实心/可穿过, 更新徽章 + 画板 + 设计码
+document.getElementById('btnCollide').addEventListener('click', () => {
+  const b = BY_CH[cur];
+  if (!b || !b.color) return;
+  b.solid = !b.solid;
+  updateCollideBtn();
+  updateSwatchBadge(cur);
+  redraw();
+  toast(b.name + ' → ' + (b.solid ? '实心(挡路)' : '可穿过'));
+});
+
 // 启动
 buildPalette();
+updateCollideBtn();
 initGrid();
 setupCanvas();
 redraw();

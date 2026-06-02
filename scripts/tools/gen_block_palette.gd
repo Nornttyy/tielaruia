@@ -4,6 +4,8 @@
 extends SceneTree
 
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
+const TileProps = preload("res://scripts/world/tile_data.gd")
+var _td = TileProps.new()   # 直接实例化, 绕过 autoload (--script 里 Tiles 取不到)
 
 func _init() -> void:
 	# [tile_id, 中文名, 字符]  — 字符须唯一; '.'=空(橡皮)由 HTML 单独加
@@ -42,7 +44,8 @@ func _init() -> void:
 	for d in defs:
 		var tid: int = d[0]
 		var col: String = _avg_hex(tid)
-		lines.append("  { ch: '%s', name: '%s', color: '%s' }," % [d[2], d[1], col])
+		var solid: String = "true" if _td.is_solid(tid) else "false"
+		lines.append("  { ch: '%s', name: '%s', color: '%s', solid: %s }," % [d[2], d[1], col, solid])
 	print("===PALETTE_JS_START===")
 	print("\n".join(lines))
 	print("===PALETTE_JS_END===  共 %d 个方块" % defs.size())
