@@ -113,6 +113,7 @@ func _build_blocks() -> void:
 		BlocksArt.BED,
 		BlocksArt.WHEAT_0, BlocksArt.WHEAT_1, BlocksArt.WHEAT_2, BlocksArt.WHEAT_3,
 		BlocksArt.PLANT_GRASS,
+		BlocksArt.CLOUD,
 	]
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -337,6 +338,7 @@ const _ITEM_TO_TILE := {
 	"life_crystal": BlocksArt.LIFE_CRYSTAL,
 	"mana_crystal": BlocksArt.MANA_CRYSTAL,
 	"sandstone": BlocksArt.SANDSTONE,
+	"cloud": BlocksArt.CLOUD,
 	# 新群系
 	"snow": BlocksArt.SNOW,
 	"ice": BlocksArt.ICE,

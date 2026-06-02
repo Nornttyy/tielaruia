@@ -49,6 +49,14 @@ func mineshaft_count_range() -> Array:
 		2: return [3, 5]
 		_: return [2, 3]
 
+
+# 空岛数量: 小 1 / 中 2-3 / 大 3-5 (跟金字塔/废弃矿井同款缩放)
+func skyisland_count_range() -> Array:
+	match current_world_size:
+		0: return [1, 1]
+		2: return [3, 5]
+		_: return [2, 3]
+
 # ===== 图形开关 (用户在设置面板里勾选, 持久化) =====
 # show_parallax: 远景视差 (云 + 远山 + 矿洞远景), 关掉省 draw_call
 var show_parallax: bool = true:

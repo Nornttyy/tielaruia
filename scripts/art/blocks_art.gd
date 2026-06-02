@@ -27,6 +27,7 @@ const SILVER_ORE := 49
 const WOOD_WALL := 50
 const FURNACE := 51
 const COOKING_POT := 74     # 铁锅 (架在炉子上的做饭台, 锅底带火)
+const CLOUD := 75           # 云块 (白软, 顶亮底带浅灰蓝阴影, 空岛岛体)
 const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
 const GOLD_CHEST := 54      # 金宝箱 (金色金属包角)
@@ -336,6 +337,13 @@ const _P_OBSIDIAN := {
 }
 
 # 砂岩: 暖黄基 + 水平层纹 + 偶发裂纹. 比 SAND 暗 + 有结构感, 适合做"古老金字塔".
+const _P_CLOUD := {
+	"c": Color8(248, 250, 255),   # 云白 (主)
+	"C": Color8(255, 255, 255),   # 纯白高光
+	"s": Color8(212, 222, 240),   # 浅灰蓝阴影
+	"d": Color8(186, 198, 222),   # 底部深阴影
+}
+
 const _P_SANDSTONE := {
 	"s": Color8(210, 175, 95),    # 砂岩主色 (暖黄)
 	"S": Color8(165, 130, 60),    # 阴影
@@ -1522,6 +1530,26 @@ const _P_SILVER_ORE := {
 
 # 地狱晶体: DEEP_STONE 骨架更暗 + h 烈火红 + H 深岩浆 + y 黄红发光
 # 砂岩 pattern: 横向层纹 (像古埃及石材) + 偶发小裂纹 + 暖色调
+# 云块: 圆鼓鼓的云团, 顶部白亮 (c/C), 底部浅灰蓝阴影 (s/d) → 有体积感, 不是随机散点
+const _CLOUD := [
+	"ccCCccccccCCcccc",
+	"cCCCCcccCCCCccCc",
+	"CCccccCCccccCCCc",
+	"cccccccccccccccc",
+	"ccccCcccccccCccc",
+	"cccccccccccccccc",
+	"sccccccccccccccs",
+	"cccccccccccccccc",
+	"ccccsccccccccCcc",
+	"sccccccccccccccs",
+	"ssccccccccccccss",
+	"sssccccccccccsss",
+	"dsssccccccccsssd",
+	"ddsssscccsssssdd",
+	"dddsssssssssdddd",
+	"ddddssssssssdddd",
+]
+
 const _SANDSTONE := [
 	"slslslslslslslsl",
 	"smmmmmmmmommmmms",
@@ -2127,6 +2155,7 @@ const _PATTERN_MAP := {
 	MANA_CRYSTAL: [_MANA_CRYSTAL, _P_MANA_CRYSTAL],   # 星形蓝紫结晶, 矿洞偶发
 	HELL_ALLOY_ORE: [_HELL_ALLOY_ORE, _P_HELL_ALLOY_ORE],   # 地狱合金矿 (紫黑+银)
 	SANDSTONE: [_SANDSTONE, _P_SANDSTONE],                  # 砂岩 (暖黄+层纹)
+	CLOUD: [_CLOUD, _P_CLOUD],                              # 云块 (白软, 空岛岛体)
 	BED: [_BED, _P_BED],                                    # 床 (木框 + 红被 + 白枕)
 	# 菜园: 小麦 4 阶段 (共用调色板, pattern 不同)
 	WHEAT_0: [_WHEAT_0, _P_WHEAT],

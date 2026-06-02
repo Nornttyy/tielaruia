@@ -88,6 +88,7 @@ const LAVA_L1 := 71         # 1/4 岩浆 (流动浅位)
 const LAVA_L2 := 72         # 2/4 岩浆
 const LAVA_L3 := 73         # 3/4 岩浆 (满格仍是 LAVA = 56)
 const COOKING_POT := 74     # 铁锅: 玩家造, 实心, 只能叠在炉子上. 附近解锁料理配方, 发暖光
+const CLOUD := 75           # 云块: 空岛岛体. 白软, 实心可站可挖可放, 无重力 (不像 SAND 会塌)
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -468,6 +469,12 @@ const _PROPS := {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
 		"drops": [["sandstone", 100, 1, 1]],
+	},
+	CLOUD: {
+		# 云块: 实心 (能站), 木镐就能挖, 掉 cloud 物品. 不是 SAND → 不受沙重力, 挖了上面不塌.
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"drops": [["cloud", 100, 1, 1]],
 	},
 	MANA_CRYSTAL: {
 		# 魔力水晶: 跟生命水晶同款, 不能挖 (右键吃), 实心防穿过.

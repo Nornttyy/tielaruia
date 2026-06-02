@@ -93,6 +93,7 @@ const _DEFS := {
 	"hell_crystal_ingot": {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	"hell_alloy_ore":     {"placeable_tile_id": Tiles.HELL_ALLOY_ORE, "tool_kind": "",     "tool_tier": 0, "max_stack": 99},
 	"sandstone":          {"placeable_tile_id": Tiles.SANDSTONE,     "tool_kind": "",     "tool_tier": 0, "max_stack": 99},
+	"cloud":              {"placeable_tile_id": Tiles.CLOUD,         "tool_kind": "",     "tool_tier": 0, "max_stack": 99},
 	"hell_alloy_ingot":   {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	# === 盔甲 (Phase 6): 3 槽位 (helmet/chest/pants) × 5 tier (copper/iron/silver/gold/diamond) ===
 	# 1 防御 = 0.5 减伤 (减伤后下限 1). hover 显示防御值.
