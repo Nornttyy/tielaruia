@@ -817,27 +817,20 @@ func _on_chunk_loaded(c: Chunk) -> void:
 			var col: Array = c.tiles[lx]
 			for y in col.size():
 				var t: int = col[y]
-				if t != Tiles.WATER and t != Tiles.WATER_L1 \
-						and t != Tiles.WATER_L2 and t != Tiles.WATER_L3:
+				# 水和岩浆都要唤醒. 以前只认水, 岩浆被漏掉 → 世界生成的悬空岩浆瀑布冻在空中不流.
+				if not water_sim.is_liquid(t):
 					continue
-				# 检 4 个邻居, 全是水(同 level)/实心 -> 内部水, 跳过
-				var has_flow: bool = false
+				# 收 4 邻居 tile (越界用 -1 = chunk 边界开口, 保守唤醒)
+				var nbs: Array = []
 				for nb in [Vector2i(0, 1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(1, 0)]:
 					var nx_local: int = lx + nb.x
 					var ny: int = y + nb.y
 					if nx_local < 0 or nx_local >= w or ny < 0 or ny >= h:
-						has_flow = true
-						break
-					var nt: int = col[ny] if nb.x == 0 else c.tiles[nx_local][ny]
-					if nt == Tiles.AIR:
-						has_flow = true
-						break
-					# 邻居是更低水位 -> 可流
-					if nt == Tiles.WATER_L1 or nt == Tiles.WATER_L2 or nt == Tiles.WATER_L3:
-						if t == Tiles.WATER:
-							has_flow = true
-							break
-				if has_flow:
+						nbs.append(-1)
+					else:
+						nbs.append(col[ny] if nb.x == 0 else c.tiles[nx_local][ny])
+				# 还能流 (旁边空气/边界/同种更低液位) 才标 dirty, 内部封死的不动省 CPU
+				if water_sim.tile_can_still_flow(t, nbs):
 					water_sim.mark_dirty(chunk_start + lx, y)
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
 	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)

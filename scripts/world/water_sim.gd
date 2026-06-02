@@ -85,6 +85,29 @@ func _level_of(tid: int) -> int:
 	return 0
 
 
+# chunk 加载唤醒用 ----
+# 是不是液体 (水或岩浆任意 level)
+func is_liquid(tid: int) -> bool:
+	return _liquid_kind(tid) != ""
+
+
+# 这个液体 tile 还能不能流 (chunk 加载时判断该不该唤醒).
+# 之前世界生成的悬空岩浆源没人叫醒 → 瀑布冻在空中; 现在水和岩浆一视同仁.
+# neighbors = 4 邻居 tile id (顺序无所谓); 越界邻居传 -1 (chunk 边界开口, 保守唤醒).
+# 能流 = 旁边有空气 / chunk 边界 / 同种更低液位 (要往低处均衡).
+func tile_can_still_flow(tid: int, neighbors: Array) -> bool:
+	var kind: String = _liquid_kind(tid)
+	if kind == "":
+		return false
+	var L: int = _level_of(tid)
+	for nt in neighbors:
+		if nt == -1 or nt == Tiles.AIR:
+			return true
+		if _liquid_kind(nt) == kind and _level_of(nt) < L:
+			return true
+	return false
+
+
 func _tile_for_level(kind: String, L: int) -> int:
 	if kind == "lava":
 		if L >= 4: return Tiles.LAVA

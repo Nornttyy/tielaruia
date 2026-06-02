@@ -89,6 +89,56 @@ func test_lava_slower_than_water() -> void:
 	assert_eq(fw.tiles.get(Vector2i(5,1), Tiles.AIR), Tiles.AIR, "岩浆 1 tick 还没动 (慢)")
 	assert_eq(fw.tiles.get(Vector2i(5,0), Tiles.AIR), Tiles.LAVA, "岩浆还在原位")
 
+func test_is_liquid() -> void:
+	var fw = FakeWorld.new()
+	var sim = _make_sim(fw)
+	assert_true(sim.is_liquid(Tiles.LAVA), "LAVA 是液体")
+	assert_true(sim.is_liquid(Tiles.LAVA_L2), "LAVA_L2 是液体")
+	assert_true(sim.is_liquid(Tiles.WATER), "WATER 是液体")
+	assert_true(sim.is_liquid(Tiles.WATER_L1), "WATER_L1 是液体")
+	assert_false(sim.is_liquid(Tiles.STONE), "石头不是液体")
+	assert_false(sim.is_liquid(Tiles.AIR), "空气不是液体")
+
+
+func test_tile_can_still_flow_wakes_lava() -> void:
+	# 这是修复核心: chunk 加载唤醒判断之前只认水, 岩浆瀑布冻在空中.
+	var fw = FakeWorld.new()
+	var sim = _make_sim(fw)
+	# 下方空气的岩浆 → 该被唤醒 (能往下流, 形成瀑布)
+	assert_true(sim.tile_can_still_flow(Tiles.LAVA, [Tiles.AIR, Tiles.STONE, Tiles.STONE, Tiles.STONE]),
+		"下方空气的岩浆该被唤醒")
+	# 四周封死的岩浆 → 不唤醒 (省 CPU)
+	assert_false(sim.tile_can_still_flow(Tiles.LAVA, [Tiles.STONE, Tiles.STONE, Tiles.STONE, Tiles.STONE]),
+		"封死的岩浆不唤醒")
+	# chunk 边界 (越界邻居 -1) → 保守唤醒
+	assert_true(sim.tile_can_still_flow(Tiles.LAVA, [-1, Tiles.STONE, Tiles.STONE, Tiles.STONE]),
+		"chunk 边界的岩浆保守唤醒")
+	# 满水旁边是低水位 → 唤醒 (要横向均衡)
+	assert_true(sim.tile_can_still_flow(Tiles.WATER, [Tiles.STONE, Tiles.STONE, Tiles.WATER_L1, Tiles.STONE]),
+		"旁边低水位的满水该唤醒")
+	# 非液体 → 不唤醒
+	assert_false(sim.tile_can_still_flow(Tiles.STONE, [Tiles.AIR, Tiles.AIR, Tiles.AIR, Tiles.AIR]),
+		"石头不是液体, 不唤醒")
+
+
+func test_lava_falls_when_woken_like_a_waterfall() -> void:
+	# 还原世界生成的"岩浆瀑布": 顶部悬空岩浆源, 下面是空气竖井, 被唤醒后该一路流下.
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.LAVA      # 悬空源
+	fw.tiles[Vector2i(0, 4)] = Tiles.STONE     # 竖井底
+	for yy in [1, 2, 3]:                        # 两侧封墙, 只能直落
+		fw.tiles[Vector2i(-1, yy)] = Tiles.STONE
+		fw.tiles[Vector2i(1, yy)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	# 模拟 chunk 加载: 用唤醒判断决定标不标 dirty
+	if sim.tile_can_still_flow(Tiles.LAVA, [Tiles.AIR, Tiles.AIR, Tiles.STONE, Tiles.STONE]):
+		sim.mark_dirty(0, 0)
+	for i in 20:
+		sim._run_tick()
+	assert_eq(fw.tiles.get(Vector2i(0, 3), Tiles.AIR), Tiles.LAVA, "岩浆该流到竖井底")
+	assert_eq(fw.tiles.get(Vector2i(0, 0), Tiles.AIR), Tiles.AIR, "源处该流空")
+
+
 func test_water_lava_makes_stone() -> void:
 	var fw = FakeWorld.new()
 	fw.tiles[Vector2i(0,0)] = Tiles.LAVA
