@@ -1219,7 +1219,7 @@ const WORLD_TREE_TRUNK_HALF := 4      # 树干半宽: ±4 = 9 宽 (LOG 两壁 + 
 const WORLD_TREE_HEIGHT := 32         # 树干高 (从地表往上)
 const WORLD_TREE_FLOOR_SPACING := 5   # 每 5 格一层平台
 const WORLD_TREE_CANOPY_R := 14       # 树冠半径
-const WORLD_TREE_CRYSTAL_CHANCE := 0.5  # 50% 概率树里出 1 颗生命/魔力水晶
+const WORLD_TREE_CRYSTAL_CHANCE := 0.4  # 40% 概率树里出 1 颗生命/魔力水晶
 const WORLD_TREE_CAVE_DEPTH := 22     # 树根竖井往下挖多深 (接地下矿洞)
 
 # 废弃矿井 (Minecraft mineshaft 风): 地下深层水平走廊 + 木支柱 + 偶发竖井 + 蜘蛛 + 宝箱.

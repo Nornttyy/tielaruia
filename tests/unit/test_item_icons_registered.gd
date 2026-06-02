@@ -14,6 +14,8 @@ func test_food_and_fishing_items_have_inventory_icon():
 		"eel", "sweet_shrimp", "scallop", "seaweed",
 		# 做饭工作站 (放置物)
 		"cooking_pot",
+		# 空岛 (audit 发现漏注册)
+		"feather", "cloud_boots",
 	]
 	for id in ids:
 		var tex = ArtCache.get_inventory_icon(id)

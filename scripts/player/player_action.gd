@@ -977,6 +977,13 @@ func _update_eat_or_place(delta: float) -> void:
 	var holding_potion: bool = slot != null and ItemDB.is_mana_potion(slot.item_id)
 	var mana_node: Node = get_parent().get_node_or_null("PlayerMana")
 	if holding_potion and held and mana_node != null:
+		# 满蓝不让喝 (防误点浪费, 跟食物满血不让吃一致)
+		if mana_node.current_mana >= mana_node.MAX_MANA:
+			if _eat_item_id != "":
+				_eat_item_id = ""
+				_eat_t = 0.0
+				_stop_eat_anim()
+			return
 		if _eat_item_id != slot.item_id:
 			_eat_item_id = slot.item_id
 			_eat_t = 0.0

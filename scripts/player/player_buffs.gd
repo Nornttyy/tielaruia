@@ -43,8 +43,10 @@ func _process(delta: float) -> void:
 func apply(kind: String, secs: float) -> void:
 	if kind == "" or secs <= 0.0:
 		return
-	_active[kind] = secs
-	_total[kind] = secs
+	# 取最长 (再吃个短 buff 不该缩短已有的长 buff)
+	var new_secs: float = maxf(_active.get(kind, 0.0), secs)
+	_active[kind] = new_secs
+	_total[kind] = maxf(_total.get(kind, 0.0), new_secs)
 	buffs_changed.emit()
 
 
