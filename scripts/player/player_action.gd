@@ -96,7 +96,7 @@ var _mining_swing_t: float = 0.0  # 挖矿挥镐动画节流
 
 # 战斗
 const SWORD_RANGE_PX := 27.0
-const SWORD_COOLDOWN := 0.3
+const SWORD_COOLDOWN := 0.42   # 阔剑(扫)较慢较重; 短剑(戳)快 0.3
 var _attack_cooldown: float = 0.0
 # 剑的戳/挥交替: 0 = 下一击戳, 1 = 下一击挥. 切工具时归零.
 var _attack_combo_step: int = 0
@@ -184,13 +184,13 @@ func _physics_process(delta: float) -> void:
 	if _crafting_open():
 		return
 	_attack_cooldown = max(0.0, _attack_cooldown - delta)
-	# 持剑 LMB: 用户改 — tier 1-2 (木/石) 戳, tier 3+ (铜/铁/银/金/钻) 半圆挥 (Terraria 风格)
+	# 持剑 LMB: 按剑的种类选 — 短剑(dagger)永远戳, 阔剑(sword)永远半圆挥. 不再按 tier.
 	var kind: String = _current_tool_kind()
 	if kind == "sword":
 		_reset_mining()
 		var primary_pressed: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed and _attack_cooldown <= 0.0:
-			if _current_tool_tier() <= 2:
+			if _current_sword_style_is_thrust():
 				_thrust_sword()
 			else:
 				_sweep_sword()
@@ -844,6 +844,23 @@ func _current_tool_tier() -> int:
 	return def.tool_tier
 
 
+# 当前手持剑该戳还是扫: 读 item 的 sword_style. 短剑=thrust(戳), 阔剑=sweep(扫).
+# 老存档/没标 sword_style 的剑 → 按老规则 tier<=2 戳兜底 (不崩).
+func _current_sword_style_is_thrust() -> bool:
+	var inv: Node = _inventory_node()
+	if inv == null:
+		return false
+	var slot = inv.current_hotbar_slot()
+	if slot == null:
+		return false
+	var style: String = ItemDB.sword_style(slot.item_id)
+	if style == "thrust":
+		return true
+	if style == "sweep":
+		return false
+	return _current_tool_tier() <= 2   # 兜底
+
+
 func _effective_sword_damage() -> int:
 	var base: int = _sword_damage()
 	if base <= 0:
@@ -1336,10 +1353,10 @@ func _is_in_swing_arc(target_pos: Vector2, origin: Vector2, dir: Vector2) -> boo
 
 
 # 戳的常量
-const THRUST_COOLDOWN := 0.5    # 用户改 0.18→0.5: 戳太快了, 慢一档
+const THRUST_COOLDOWN := 0.3    # 短剑(戳)出手快, 比阔剑(扫 0.42)快一档
 const THRUST_LENGTH_MULT := 1.2      # 戳长 = SWORD_RANGE_PX * 1.2 ≈ 43px (比挥更远)
 const THRUST_HALF_WIDTH := 4.5       # 戳带半宽 6px (总宽 12), 鼠标偏一点也命中
-const THRUST_DAMAGE_MULT := 0.8
+# 注: 短剑弱由 item 的 damage_mult=0.8 决定 (阔剑 1.2), 戳不再额外乘削弱系数
 
 
 # 戳: 直线突刺, 范围远 / 伤害 0.8x / 只命中最近 1 个目标
@@ -1369,7 +1386,7 @@ func _thrust_sword() -> void:
 	var dmg_mult: float = _tool_damage_mult()
 	if dmg_mult <= 0.0:
 		return
-	var damage: int = max(1, int(round(float(base) * dmg_mult * THRUST_DAMAGE_MULT)))
+	var damage: int = max(1, int(round(float(base) * dmg_mult)))
 	# 用户改: 不再瞬时矩形 AoE, 改成 SWORD_THRUST_DURATION 内每帧扫剑身线段命中.
 	# 戳动画 held.position 三段式 (extend + dwell + retract), 我们 sync 算位置打怪.
 	_start_sword_blade_attack(false, swing_dir, damage, _thrust_knockback())

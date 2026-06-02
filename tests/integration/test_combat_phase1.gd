@@ -203,10 +203,10 @@ func test_sweep_hits_all_in_arc() -> void:
 
 
 # T6: 戳前方两只 slime 排成线, 只有近的扣血 (戳只命中 1 个)
-# 用 wood_sword (tier 1, 只戳).
+# 用 wood_dagger (短剑, sword_style=thrust, 永远戳).
 func test_thrust_hits_only_nearest() -> void:
 	var ctx: Dictionary = await _setup_game()
-	_equip_tool(ctx, "wood_sword")
+	_equip_tool(ctx, "wood_dagger")
 	var near = _spawn_slime_near(ctx, Vector2(20, 0))
 	var far  = _spawn_slime_near(ctx, Vector2(40, 0))
 	var near_hp = near.current_health
@@ -219,6 +219,31 @@ func test_thrust_hits_only_nearest() -> void:
 	ctx["action"].primary_override = false
 	assert_lt(near.current_health, near_hp, "近的 slime 应扣血")
 	assert_eq(far.current_health, far_hp, "远的 slime 不应扣血 (戳只命中 1)")
+
+
+# 剑分家: 攻击方式按 sword_style 定 (短剑永远戳, 阔剑永远扫), 不再看 tier.
+func test_dagger_thrusts_not_sweep() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "iron_dagger")   # 短剑 (sword_style=thrust)
+	ctx["action"].mouse_world_override = ctx["player"].global_position + Vector2(20, 0)
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(4)
+	ctx["action"].primary_override = false
+	assert_true(ctx["action"]._sword_attack_active, "短剑应触发攻击")
+	assert_false(ctx["action"]._sword_attack_is_sweep, "短剑应该戳 (不是扫)")
+
+
+func test_broadsword_sweeps_not_thrust() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "iron_sword")    # 阔剑 (sword_style=sweep), tier 4 跟短剑同 tier
+	ctx["action"].mouse_world_override = ctx["player"].global_position + Vector2(20, 0)
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(4)
+	ctx["action"].primary_override = false
+	assert_true(ctx["action"]._sword_attack_active, "阔剑应触发攻击")
+	assert_true(ctx["action"]._sword_attack_is_sweep, "阔剑应该扫 (不是戳)")
 
 
 # 老 combo 测试 (test_sword_combo_alternates / test_combo_resets_on_hotbar_switch)
