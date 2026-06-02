@@ -63,3 +63,26 @@ func test_non_solid_tile_does_not_block():
 	mock_cm.tiles[Vector2i(1, 3)] = Tiles.LEAVES  # leaves 不实心
 	# leaves 不挡光: 下方仍亮
 	assert_true(grid.is_sky_exposed(1, 5))
+
+
+func test_floating_island_does_not_shadow_to_ground():
+	# 空岛 (浮岛): 高空一薄层实心 (y 5..7), 下面一大段空气, y 90 才是真地面.
+	# 阳光该绕过空岛 → 空岛和地面之间仍有天光, 不该一路黑到底.
+	for y in range(5, 8):
+		mock_cm.tiles[Vector2i(10, y)] = Tiles.STONE
+	mock_cm.tiles[Vector2i(10, 90)] = Tiles.STONE  # 真地面
+	# 空岛正上方 → 有天光
+	assert_true(grid.is_sky_exposed(10, 2), "空岛上方该有天光")
+	# 空岛和地面之间 (y 40) → 阳光绕过空岛, 该有天光 (修复前这里会是黑的)
+	assert_true(grid.is_sky_exposed(10, 40), "空岛下方、地面上方该被阳光照到")
+	# 真地面下方 (y 95) → 仍该是黑 (地下)
+	assert_false(grid.is_sky_exposed(10, 95), "真地面下方该是黑的")
+
+
+func test_real_ground_with_cave_below_still_shadows():
+	# 保险: 真地面 (y 90 起一层土) 下面有个浅洞 (y 92 空气), 不能被误判成浮岛.
+	# 地面在 y<50 之外 → 不进浮岛判断 → 地表下方照常变黑.
+	mock_cm.tiles[Vector2i(20, 90)] = Tiles.DIRT
+	mock_cm.tiles[Vector2i(20, 91)] = Tiles.DIRT
+	# y 92 起是空气 (洞) → 但这不是高空浮岛, 不能让阳光灌进洞
+	assert_false(grid.is_sky_exposed(20, 93), "地表下的洞仍该是黑的")
