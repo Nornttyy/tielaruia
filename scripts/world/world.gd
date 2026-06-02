@@ -242,6 +242,8 @@ func _setup_multiplayer_callbacks() -> void:
 		NetworkManager.remote_player_death_received.connect(_on_remote_player_death)
 	if not NetworkManager.remote_player_respawn_received.is_connected(_on_remote_player_respawn):
 		NetworkManager.remote_player_respawn_received.connect(_on_remote_player_respawn)
+	if not NetworkManager.remote_drop_request_received.is_connected(_on_remote_drop_request):
+		NetworkManager.remote_drop_request_received.connect(_on_remote_drop_request)
 	if not NetworkManager.remote_drop_pos_received.is_connected(_on_remote_drop_pos):
 		NetworkManager.remote_drop_pos_received.connect(_on_remote_drop_pos)
 	if not NetworkManager.remote_drop_pickup_received.is_connected(_on_remote_drop_pickup):
@@ -384,6 +386,17 @@ func _on_remote_player_death() -> void:
 func _on_remote_player_respawn() -> void:
 	if _remote_player != null and _remote_player.has_method("set_dead"):
 		_remote_player.set_dead(false)
+
+
+# host 收到 client 挖矿掉落请求 → 权威生成 (随后 _mp_broadcast_entities 广播给两边)
+func _on_remote_drop_request(item_id: String, count: int, x: float, y: float) -> void:
+	if not NetworkManager.is_host:
+		return
+	var drop = ItemDropScene.instantiate()
+	drop.item_id = item_id
+	drop.count = count
+	drop.global_position = Vector2(x, y)
+	entities_root.add_child(drop)
 
 
 func _spawn_remote_entity(kind: String) -> Node:

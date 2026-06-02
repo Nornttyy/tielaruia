@@ -123,6 +123,13 @@ func test_route_player_death_and_respawn() -> void:
 	assert_signal_emitted(nm, "remote_player_respawn_received")
 
 
+# --- client→host 掉落请求 ---
+func test_route_drop_request() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"drop_req","item":"stone","n":2,"x":5.0,"y":6.0}')
+	assert_signal_emitted_with_parameters(nm, "remote_drop_request_received", ["stone", 2, 5.0, 6.0])
+
+
 # 断线/返回菜单要清掉 pending 状态, 否则污染下一局
 func test_disconnect_clears_session_state() -> void:
 	nm.pending_initial_deltas = {"0": [1, 2, 3]}

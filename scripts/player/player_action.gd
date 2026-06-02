@@ -586,13 +586,18 @@ func _do_cascade_chop(world: Node, cm, base: Vector2i, tool_kind: String) -> voi
 
 
 func _spawn_drop(item_id: String, tile: Vector2i) -> void:
-	var drop = ItemDropScene.instantiate()
-	drop.item_id = item_id
-	drop.count = 1
-	drop.global_position = Vector2(
+	var pos := Vector2(
 		tile.x * TILE_SIZE + TILE_SIZE / 2.0 + randf_range(-3.0, 3.0),
 		tile.y * TILE_SIZE + TILE_SIZE / 2.0
 	)
+	# 联机 client: 掉落交 host 权威生成 (host 再广播回两边), 否则本地刷出 host 看不到的孤儿掉落
+	if NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host:
+		NetworkManager.send_drop_request(item_id, 1, pos.x, pos.y)
+		return
+	var drop = ItemDropScene.instantiate()
+	drop.item_id = item_id
+	drop.count = 1
+	drop.global_position = pos
 	var entities: Node = get_tree().get_first_node_in_group("entities_root")
 	if entities == null:
 		entities = get_parent().get_parent()

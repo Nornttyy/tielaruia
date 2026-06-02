@@ -34,6 +34,7 @@ signal remote_entity_damage_received(ent_id: int, amount: int, knockback: float,
 signal remote_projectile_received(kind: String, sx: float, sy: float, tx: float, ty: float)  # 投射物(箭/火球)画面同步
 signal remote_player_death_received()    # 对方玩家死了
 signal remote_player_respawn_received()  # 对方玩家复活了
+signal remote_drop_request_received(item_id: String, count: int, x: float, y: float)  # client→host: 请求生成掉落
 signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
 signal remote_drop_pickup_received(ent_id: int)  # 对端捡了某个 drop → 本端删
 signal remote_tile_batch_received(changes: PackedInt32Array)  # 批量 tile [x,y,id]*N
@@ -169,6 +170,10 @@ func _route_message(raw: String) -> void:
 			remote_player_death_received.emit()
 		"pres":
 			remote_player_respawn_received.emit()
+		"drop_req":
+			remote_drop_request_received.emit(
+				String(data.get("item", "")), int(data.get("n", 1)),
+				float(data.get("x", 0.0)), float(data.get("y", 0.0)))
 		"drop_pos":
 			var did2: int = int(data.get("id", 0))
 			var iid: String = String(data.get("item", ""))
@@ -320,6 +325,14 @@ func send_player_death() -> void:
 
 func send_player_respawn() -> void:
 	send(JSON.stringify({"type": "pres"}))
+
+
+# client → host: 请求在 (x,y) 生成掉落. host 权威 spawn 后经 drop_pos 广播给两边.
+func send_drop_request(item_id: String, count: int, x: float, y: float) -> void:
+	send(JSON.stringify({
+		"type": "drop_req", "item": item_id, "n": count,
+		"x": snappedf(x, 0.1), "y": snappedf(y, 0.1),
+	}))
 
 
 # 掉落物同步: 跟 ent_pos 类似但带 item_id + count, kind 固定 drop
