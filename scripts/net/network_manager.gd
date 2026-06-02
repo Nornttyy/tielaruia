@@ -35,6 +35,7 @@ signal remote_projectile_received(kind: String, sx: float, sy: float, tx: float,
 signal remote_player_death_received()    # 对方玩家死了
 signal remote_player_respawn_received()  # 对方玩家复活了
 signal remote_drop_request_received(item_id: String, count: int, x: float, y: float)  # client→host: 请求生成掉落
+signal remote_chest_received(x: int, y: int, slots: Array)  # 箱子内容同步 (一人改两人见)
 signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
 signal remote_drop_pickup_received(ent_id: int)  # 对端捡了某个 drop → 本端删
 signal remote_tile_batch_received(changes: PackedInt32Array)  # 批量 tile [x,y,id]*N
@@ -174,6 +175,10 @@ func _route_message(raw: String) -> void:
 			remote_drop_request_received.emit(
 				String(data.get("item", "")), int(data.get("n", 1)),
 				float(data.get("x", 0.0)), float(data.get("y", 0.0)))
+		"chest":
+			var cslots: Variant = data.get("s", [])
+			if cslots is Array:
+				remote_chest_received.emit(int(data.get("x", 0)), int(data.get("y", 0)), cslots)
 		"drop_pos":
 			var did2: int = int(data.get("id", 0))
 			var iid: String = String(data.get("item", ""))
@@ -333,6 +338,11 @@ func send_drop_request(item_id: String, count: int, x: float, y: float) -> void:
 		"type": "drop_req", "item": item_id, "n": count,
 		"x": snappedf(x, 0.1), "y": snappedf(y, 0.1),
 	}))
+
+
+# 箱子内容改动后广播整箱 (slots = Array[24] of null/{item_id,count})
+func send_chest(tile: Vector2i, slots: Array) -> void:
+	send(JSON.stringify({"type": "chest", "x": tile.x, "y": tile.y, "s": slots}))
 
 
 # 掉落物同步: 跟 ent_pos 类似但带 item_id + count, kind 固定 drop

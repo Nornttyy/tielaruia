@@ -37,6 +37,9 @@ func _ready() -> void:
 	# i18n: 切语言时刷文字
 	if Locale != null and not Locale.language_changed.is_connected(_refresh_i18n):
 		Locale.language_changed.connect(_refresh_i18n)
+	# 联机: 对端改了箱子 → 更新本地存储 + 若正开着同一个箱子就刷新显示
+	if NetworkManager != null and not NetworkManager.remote_chest_received.is_connected(_on_remote_chest):
+		NetworkManager.remote_chest_received.connect(_on_remote_chest)
 
 
 func _refresh_i18n(_new_lang: String) -> void:
@@ -204,6 +207,20 @@ func _refresh_all() -> void:
 			_refresh_slot(_player_slots_ui[i], data)
 
 
+# 联机: 改完箱子广播整箱内容给对方 (24 槽全发, 箱子操作不频繁, 简单稳)
+func _broadcast_chest() -> void:
+	if NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_chest(_chest_tile, ChestStorage.get_slots(_chest_tile))
+
+
+# 联机: 收到对端的箱子内容 → 覆盖本地存储; 若正开着这个箱子就刷新显示
+func _on_remote_chest(x: int, y: int, slots: Array) -> void:
+	var tile := Vector2i(x, y)
+	ChestStorage.set_slots(tile, slots)
+	if is_open() and _chest_tile == tile:
+		_refresh_all()
+
+
 # 拖动状态: 严格"按住拖" — press 只拿起 / release 才放下, 没有 click-click
 var _drag_active: bool = false           # 当前是否在 drag 中 (press 后 release 前)
 var _drag_picked_up_this_press: bool = false  # 这次 press 是不是从空 cursor 拿起的
@@ -275,6 +292,7 @@ func _apply_click(idx: int, is_chest: bool) -> void:
 	if _player_inv.has_signal("inventory_changed"):
 		_player_inv.inventory_changed.emit()
 	_refresh_all()
+	_broadcast_chest()
 
 
 # Shift+左键: 把指定槽内容 transfer 到另一边 (chest → 玩家主背包, 玩家 → chest).
@@ -305,6 +323,7 @@ func _shift_transfer(idx: int, is_chest: bool) -> void:
 		if _player_inv.has_signal("inventory_changed"):
 			_player_inv.inventory_changed.emit()
 		_refresh_all()
+		_broadcast_chest()
 
 
 # 把 item 加到另一边 inventory. 返回还塞不下的数量 (>=0).
@@ -359,6 +378,7 @@ func take_all_from_chest() -> void:
 	if _player_inv.has_signal("inventory_changed"):
 		_player_inv.inventory_changed.emit()
 	_refresh_all()
+	_broadcast_chest()
 
 
 # 查鼠标下是哪个 slot. 返回 {idx, is_chest}, idx=-1 表示不在任何 slot 上

@@ -24,6 +24,19 @@ func get_slots(tile_coord: Vector2i) -> Array:
 	return _chests[tile_coord]
 
 
+# 联机: 用对端发来的整箱内容覆盖本地 (JSON 过来 count 是 float, 这里归一化成 int).
+func set_slots(tile_coord: Vector2i, slots: Array) -> void:
+	var arr: Array = []
+	arr.resize(SLOTS_PER_CHEST)
+	for i in SLOTS_PER_CHEST:
+		var s = slots[i] if i < slots.size() else null
+		if s is Dictionary and s.has("item_id"):
+			arr[i] = {"item_id": String(s["item_id"]), "count": int(s.get("count", 1))}
+		else:
+			arr[i] = null
+	_chests[tile_coord] = arr
+
+
 # 箱子方块被破坏时调: 把里面的内容当 ItemDrop 撒出来, 删字典 entry.
 func clear(tile_coord: Vector2i) -> Array:
 	if not _chests.has(tile_coord):

@@ -130,6 +130,17 @@ func test_route_drop_request() -> void:
 	assert_signal_emitted_with_parameters(nm, "remote_drop_request_received", ["stone", 2, 5.0, 6.0])
 
 
+# --- 箱子内容同步 ---
+func test_route_chest_emits() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"chest","x":3,"y":4,"s":[null,{"item_id":"stone","count":5}]}')
+	assert_signal_emitted(nm, "remote_chest_received")
+	var params: Array = get_signal_parameters(nm, "remote_chest_received")
+	assert_eq(int(params[0]), 3, "箱子 x")
+	assert_eq(int(params[1]), 4, "箱子 y")
+	assert_eq((params[2] as Array).size(), 2, "槽数组传过来")
+
+
 # 断线/返回菜单要清掉 pending 状态, 否则污染下一局
 func test_disconnect_clears_session_state() -> void:
 	nm.pending_initial_deltas = {"0": [1, 2, 3]}
