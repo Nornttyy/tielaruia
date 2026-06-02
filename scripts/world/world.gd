@@ -30,6 +30,8 @@ const PigScene = preload("res://scenes/entities/pig.tscn")
 const PenguinScene = preload("res://scenes/entities/penguin.tscn")
 const FrogScene = preload("res://scenes/entities/frog.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
+const FireballScene = preload("res://scenes/entities/fireball.tscn")
+const ArrowScene = preload("res://scenes/entities/arrow.tscn")
 const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
 const HealthBarScript = preload("res://scripts/entities/health_bar.gd")
 
@@ -234,6 +236,8 @@ func _setup_multiplayer_callbacks() -> void:
 		NetworkManager.remote_entity_die_received.connect(_on_remote_entity_die)
 	if not NetworkManager.remote_entity_damage_received.is_connected(_on_remote_entity_damage):
 		NetworkManager.remote_entity_damage_received.connect(_on_remote_entity_damage)
+	if not NetworkManager.remote_projectile_received.is_connected(_on_remote_projectile):
+		NetworkManager.remote_projectile_received.connect(_on_remote_projectile)
 	if not NetworkManager.remote_drop_pos_received.is_connected(_on_remote_drop_pos):
 		NetworkManager.remote_drop_pos_received.connect(_on_remote_drop_pos)
 	if not NetworkManager.remote_drop_pickup_received.is_connected(_on_remote_drop_pickup):
@@ -353,6 +357,19 @@ func _find_local_entity_by_id(ent_id: int) -> Node:
 			if e is Node2D and NetworkManager.entity_id_for(e) == ent_id:
 				return e
 	return null
+
+
+# 对方发的投射物 → 本端生成纯视觉副本 (飞同样轨迹, is_remote 标记让它不造成伤害)
+func _on_remote_projectile(kind: String, sx: float, sy: float, tx: float, ty: float) -> void:
+	var proj: Node2D = ArrowScene.instantiate() if kind == "arrow" else FireballScene.instantiate()
+	proj.set_meta("is_remote", true)
+	entities_root.add_child(proj)
+	var start := Vector2(sx, sy)
+	var target := Vector2(tx, ty)
+	if kind == "arrow":
+		proj.setup(start, target, 0, null)
+	else:
+		proj.setup(start, target, 0, true)
 
 
 func _spawn_remote_entity(kind: String) -> Node:

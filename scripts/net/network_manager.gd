@@ -31,6 +31,7 @@ signal initial_state_received(chunk_deltas: Dictionary)  # host 进游戏后广�
 signal remote_entity_pos_received(ent_id: int, kind: String, x: float, y: float, hp: int, facing: int, anim: String)  # 实体位置+朝向+动画 (Phase E)
 signal remote_entity_die_received(ent_id: int)  # 实体死亡 (Phase E)
 signal remote_entity_damage_received(ent_id: int, amount: int, knockback: float, sx: float, sy: float)  # client→host: 对怪造成伤害
+signal remote_projectile_received(kind: String, sx: float, sy: float, tx: float, ty: float)  # 投射物(箭/火球)画面同步
 signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
 signal remote_drop_pickup_received(ent_id: int)  # 对端捡了某个 drop → 本端删
 signal remote_tile_batch_received(changes: PackedInt32Array)  # 批量 tile [x,y,id]*N
@@ -157,6 +158,11 @@ func _route_message(raw: String) -> void:
 			var dmsx: float = float(data.get("sx", 0.0))
 			var dmsy: float = float(data.get("sy", 0.0))
 			remote_entity_damage_received.emit(dmid, dmamt, dmkb, dmsx, dmsy)
+		"proj":
+			remote_projectile_received.emit(
+				String(data.get("k", "fireball")),
+				float(data.get("sx", 0.0)), float(data.get("sy", 0.0)),
+				float(data.get("tx", 0.0)), float(data.get("ty", 0.0)))
 		"drop_pos":
 			var did2: int = int(data.get("id", 0))
 			var iid: String = String(data.get("item", ""))
@@ -290,6 +296,15 @@ func send_entity_damage(ent_id: int, amount: int, knockback: float, x: float, y:
 	send(JSON.stringify({
 		"type": "ent_dmg", "id": ent_id, "dmg": amount,
 		"kb": snappedf(knockback, 0.1), "sx": snappedf(x, 0.1), "sy": snappedf(y, 0.1),
+	}))
+
+
+# 广播投射物 spawn (箭/火球), 对端生成纯视觉副本飞同样轨迹 (不造成伤害)
+func send_projectile(kind: String, sx: float, sy: float, tx: float, ty: float) -> void:
+	send(JSON.stringify({
+		"type": "proj", "k": kind,
+		"sx": snappedf(sx, 0.1), "sy": snappedf(sy, 0.1),
+		"tx": snappedf(tx, 0.1), "ty": snappedf(ty, 0.1),
 	}))
 
 

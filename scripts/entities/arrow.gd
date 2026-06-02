@@ -52,8 +52,9 @@ func _physics_process(delta: float) -> void:
 			_destroy()
 			return
 	global_position = next
-	# 手动撞怪: 怪物 collision_layer=0 用不了 body_entered, 用距离检测
-	_check_enemy_hit()
+	# 手动撞怪. 联机视觉副本 (is_remote) 不撞, 伤害由发起端 host 算.
+	if not has_meta("is_remote"):
+		_check_enemy_hit()
 
 
 func _check_enemy_hit() -> void:
@@ -66,14 +67,18 @@ func _check_enemy_hit() -> void:
 				continue
 			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX:
 				continue
-			if enemy.has_method("take_damage"):
-				# 击退源位置: 沿飞行反方向退 32px, 让 (enemy - source).normalized 指向飞行方向.
-				# 老 bug: 直接传 arrow.global_position, 而箭速度快, 命中时位置 ~= 怪物中心,
-				# to_self ≈ 0 → 走 fallback Vector2.UP → 击退永远朝上, 跟飞行方向无关.
-				var src: Vector2 = global_position - velocity.normalized() * 32.0
+			# 击退源位置: 沿飞行反方向退 32px, 让 (enemy - source).normalized 指向飞行方向.
+			var src: Vector2 = global_position - velocity.normalized() * 32.0
+			if enemy.has_meta("is_remote"):
+				# 联机 client: 远程怪 host 权威, 发伤害给 host (同近战/法杖), 不本地打视觉副本
+				if NetworkManager != null and NetworkManager.connected():
+					var rid: int = int(enemy.get_meta("remote_id", 0))
+					if rid != 0:
+						NetworkManager.send_entity_damage(rid, damage, 120.0, src.x, src.y)
+			elif enemy.has_method("take_damage"):
 				enemy.take_damage(damage, src, 120.0)
-				_destroy()
-				return
+			_destroy()
+			return
 
 
 func _destroy() -> void:

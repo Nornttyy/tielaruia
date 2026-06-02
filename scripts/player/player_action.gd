@@ -1410,6 +1410,8 @@ func _try_fire_bow() -> void:
 	# 弓 tier 加伤: tier1 ×1.0, 后续 tier 加 (留口子未来 add bow tier 2-7)
 	dmg = int(round(float(dmg) * _tool_damage_mult()))
 	arrow.setup(start, target, dmg, parent)
+	if NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_projectile("arrow", start.x, start.y, target.x, target.y)
 	SfxBank.play("break", 0.10)  # 暂用破方块声当弓弦声; 以后加专属
 
 
@@ -1443,6 +1445,8 @@ func _try_cast_staff() -> void:
 	# damage_mult 让未来高 tier 法杖加伤
 	var final_dmg: int = int(round(float(spell_dmg) * _tool_damage_mult()))
 	fb.setup(start, target, final_dmg, true)   # true = player_cast
+	if NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_projectile("fireball", start.x, start.y, target.x, target.y)
 	SfxBank.play("break", 0.12)
 
 

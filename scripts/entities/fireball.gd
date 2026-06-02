@@ -54,8 +54,8 @@ func _physics_process(delta: float) -> void:
 			_destroy()
 			return
 	global_position = next
-	# 玩家发的火球: 手动扫怪 (因为怪 collision_layer=0, Area2D body_entered 收不到)
-	if is_player_cast:
+	# 玩家发的火球: 手动扫怪. 联机视觉副本 (is_remote) 不扫, 伤害由发起端 host 算.
+	if is_player_cast and not has_meta("is_remote"):
 		_check_enemy_hit()
 
 

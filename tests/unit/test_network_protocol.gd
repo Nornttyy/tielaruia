@@ -107,6 +107,13 @@ func test_route_ent_dmg_carries_fields() -> void:
 	assert_signal_emitted_with_parameters(nm, "remote_entity_damage_received", [99, 5, 120.0, 3.0, 4.0])
 
 
+# --- 投射物画面同步 (箭/火球) ---
+func test_route_proj_emits() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"proj","k":"fireball","sx":1.0,"sy":2.0,"tx":3.0,"ty":4.0}')
+	assert_signal_emitted_with_parameters(nm, "remote_projectile_received", ["fireball", 1.0, 2.0, 3.0, 4.0])
+
+
 # 断线/返回菜单要清掉 pending 状态, 否则污染下一局
 func test_disconnect_clears_session_state() -> void:
 	nm.pending_initial_deltas = {"0": [1, 2, 3]}
