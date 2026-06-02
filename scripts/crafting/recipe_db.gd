@@ -576,6 +576,15 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# 菜刀: 铁锭 + 木板 (做菜板的材料). 普通合成.
+	{
+		"id": "kitchen_knife",
+		"grid_size": Vector2i(1, 2),
+		"pattern": [["iron_ingot"], ["planks"]],
+		"output_id": "kitchen_knife",
+		"output_count": 1,
+		"mirror_ok": true,
+	},
 	# 魔晶锭: 3 hell_crystal → 1 ingot. 熔炉烧, 跟其他金属同形 (3 横排).
 	{
 		"id": "hell_crystal_ingot",

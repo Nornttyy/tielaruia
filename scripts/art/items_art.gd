@@ -1535,6 +1535,25 @@ const _JELLY_PUDDING := [
 	"................",
 ]
 
+const _KITCHEN_KNIFE := [
+	"................",
+	"........b.......",
+	".......Bb.......",
+	".......BBb......",
+	"......BBBb......",
+	"......BBBBb.....",
+	".....BBBBBb.....",
+	".....BBBBBBb....",
+	"....BBBBBBBb....",
+	"....KKKKKKKk....",
+	".......hh.......",
+	".......hh.......",
+	".......hh.......",
+	".......kk.......",
+	"................",
+	"................",
+]
+
 const _FISHING_ROD := [
 	"................",
 	"..............h.",
@@ -1747,6 +1766,7 @@ const _GRILLED_FISH := [
 
 const _ICONS := {
 	"fishing_rod": _FISHING_ROD,
+	"kitchen_knife": _KITCHEN_KNIFE,
 	"grilled_fish": _GRILLED_FISH,
 	"salmon": _SALMON,
 	"tuna": _TUNA,
