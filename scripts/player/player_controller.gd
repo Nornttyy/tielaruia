@@ -228,6 +228,9 @@ func _is_inventory_ui_open() -> bool:
 
 
 func _on_damaged(_amount: int, source_pos: Vector2) -> void:
+	# 受击先取消钩爪: 否则钩爪拉拽优先级高于受击, 被怪/岩浆打时击退失效 + 被一直拉进岩浆烧死挣不脱
+	if _hook_active or _hook_flying:
+		_release_hook()
 	_hurt_timer = HURT_DURATION
 	# 击退: 远离 source
 	var dx: float = global_position.x - source_pos.x
@@ -275,6 +278,9 @@ func _physics_process(delta: float) -> void:
 		_was_on_floor = is_on_floor()
 		_previous_vy = velocity.y
 		return
+	# 创造模式优先于钩爪: 切创造时取消钩爪, 否则被钩拽着没法自由飞 / 甚至被拖进岩浆
+	if GameSettings != null and GameSettings.creative_mode and (_hook_active or _hook_flying):
+		_release_hook()
 	# 钩爪拉拽中: 跳过普通物理, 直接朝锚点匀速冲过去
 	if _hook_active:
 		_update_hook_pull(delta)
@@ -459,6 +465,8 @@ func shake(amount: float = 4.0) -> void:
 # 进入飞行阶段: 钩头从玩家中心朝鼠标方向飞, 撞实心 tile 锚定 + 切到拉拽.
 # 已在飞行 / 已锚定时再调 = 立刻释放 (玩家中断).
 func fire_grappling_hook(target_world: Vector2) -> void:
+	if GameSettings != null and GameSettings.creative_mode:
+		return   # 创造模式能飞, 不用钩爪 (也防钩爪跟飞行状态机打架)
 	if _hook_active or _hook_flying:
 		_release_hook()
 		return

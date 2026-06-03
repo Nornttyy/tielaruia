@@ -240,7 +240,9 @@ func _step_tile(cm, x: int, y: int) -> void:
 		var nlev: int = -1
 		if nt == Tiles.AIR:
 			nlev = 0
-		elif _liquid_kind(nt) == kind and _level_of(nt) < L:
+		elif _liquid_kind(nt) == kind and _level_of(nt) <= L - 2:
+			# 必须低 ≥2 级才横向流: 否则 L2↔L1 这种差 1 级会无限来回倒 (平地永久震荡 + 耗CPU).
+			# 差 1 级视作已稳定 (整数液位下相邻差 1 是最平的可达状态).
 			nlev = _level_of(nt)
 		if nlev < 0:
 			continue
