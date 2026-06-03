@@ -93,6 +93,9 @@ var secondary_held_override: Variant = null  # null = 真实输入；bool = 强�
 var _mining_target: Vector2i = INVALID_TILE
 var _mining_progress: float = 0.0
 var _mining_swing_t: float = 0.0  # 挖矿挥镐动画节流
+# 每个方块保留挖掘进度: Vector2i → [tid, progress]. 松手/切目标不清零, 回来接着挖.
+# tid 一起存 → 那格方块换了 (挖掉重放/变了) 就不续旧进度.
+var _mine_saved: Dictionary = {}
 
 # 战斗
 const SWORD_RANGE_PX := 27.0
@@ -409,11 +412,19 @@ func _update_mining(delta: float) -> void:
 		_mining_target = tile
 		return
 	if tile != _mining_target:
-		_clear_crack(_mining_target)
+		# 切到新目标: 不清旧裂纹 (旧方块半挖状态保留显示), 读出新目标存档进度.
 		_mining_target = tile
-		_mining_progress = 0.0
+		var saved: Array = _mine_saved.get(tile, [])
+		if saved.size() == 2 and saved[0] == tid:
+			_mining_progress = saved[1]   # tid 对得上 → 续上次进度
+		else:
+			_mining_progress = 0.0        # 那格方块变了 / 没挖过 → 从头
+			if saved.size() == 2:
+				_clear_crack(tile)        # 清掉过期裂纹
+				_mine_saved.erase(tile)
 		_mining_swing_t = 0.0
 	_mining_progress += _tool_speed(tool_kind, tid) * delta * _buff_mining_mul()
+	_mine_saved[tile] = [tid, _mining_progress]   # 存进度: 松手/切目标后还在
 	# 镐 + 斧 (用户改: 斧跟镐同款): 360° 旋转动画 — 每 0.7s 重启一次
 	# 其他 (徒手等): ±75° 来回挥 — 每 0.35s 挥一次
 	_mining_swing_t -= delta
@@ -434,13 +445,13 @@ func _update_mining(delta: float) -> void:
 	if _mining_progress >= _hardness(tid):
 		_finish_mine(tile, tid, tool_kind, terrain)
 		_clear_crack(tile)
+		_mine_saved.erase(tile)   # 挖完了, 清这格存档
 		_mining_target = INVALID_TILE
 		_mining_progress = 0.0
 
 
 func _reset_mining() -> void:
-	if _mining_target != INVALID_TILE:
-		_clear_crack(_mining_target)
+	# 松手 / 切走: 不清裂纹、不丢进度 — 半挖的方块进度存在 _mine_saved, 裂纹留着, 回来接着挖.
 	_mining_target = INVALID_TILE
 	_mining_progress = 0.0
 
