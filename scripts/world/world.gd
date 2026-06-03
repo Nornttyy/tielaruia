@@ -416,6 +416,7 @@ func _spawn_remote_entity(kind: String) -> Node:
 	var scene: PackedScene = null
 	match kind:
 		"king": scene = KingSlimeScene   # 史莱姆王 Boss: client 也用真 scene → 有王冠/大体型/进 group boss → 顶部血条显示
+		"skeleton_king": scene = SkeletonKingScene   # 骷髅王 Boss: client 也用真 scene (王冠/大体型/boss 血条)
 		"slime": scene = SlimeScene
 		"zombie": scene = ZombieScene
 		"spider": scene = SpiderScene
@@ -629,6 +630,8 @@ func _mp_broadcast_entities() -> void:
 					var scene_path_s: String = n2d.scene_file_path if n2d.scene_file_path != null else ""
 					if "king_slime" in scene_path_s:
 						kind = "king"   # 史莱姆王 Boss (路径含 slime, 必须先认 king 否则当普通史莱姆)
+					elif "skeleton_king" in scene_path_s:
+						kind = "skeleton_king"   # 骷髅王 Boss (在 slimes 组, 路径区分, 否则当普通史莱姆广播)
 					elif "spider" in scene_path_s:
 						kind = "spider"
 					elif "demon_eye" in scene_path_s:

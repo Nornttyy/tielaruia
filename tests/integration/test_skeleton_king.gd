@@ -95,6 +95,25 @@ func test_skull_summon_spawns_skeleton_king_and_consumes() -> void:
 	assert_true(slot == null or slot.item_id != "skull_summon", "头骨应被消耗")
 
 
+# 关键: 玩家挥剑能真打到骷髅王 (走真实近战命中路径, 不是直接 take_damage).
+# 防回归: boss 必须在 "slimes" 组 (玩家近战只扫 slimes/animals), 否则剑打不到=无敌。
+func test_player_sword_actually_hits_boss() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var boss = SkeletonKingScene.instantiate()
+	ctx["world"].add_child(boss)
+	boss.global_position = ctx["player"].global_position + Vector2(18, 0)
+	await wait_frames(2)
+	_equip(ctx, "iron_sword")   # 阔剑(横扫)
+	var hp_before: int = boss.current_health
+	ctx["action"].mouse_world_override = boss.global_position
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(15)
+	ctx["action"].primary_override = false
+	assert_lt(boss.current_health, hp_before, "玩家挥剑该打到骷髅王扣血 (它必须在 slimes 组才能被近战命中)")
+	boss.queue_free()
+
+
 func test_no_double_skeleton_king() -> void:
 	var ctx: Dictionary = await _setup_game()
 	_equip(ctx, "skull_summon")

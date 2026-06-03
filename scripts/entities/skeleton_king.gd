@@ -49,6 +49,8 @@ func _ready() -> void:
 	add_to_group("skeleton_king")
 	add_to_group("skeletons")
 	add_to_group("boss")
+	# 必须进 "slimes" 组: 玩家近战命中检测只扫 ["slimes","animals"], 不加这个剑打不到王!
+	add_to_group("slimes")
 	call_deferred("_add_player_exception")
 
 
