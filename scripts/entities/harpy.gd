@@ -55,6 +55,8 @@ func _physics_process(delta: float) -> void:
 	# 天空 despawn: 掉到 spawn 下方太远 (到地面了)
 	var y_tile: int = int(floor(global_position.y / TILE_SIZE))
 	if y_tile > _spawn_y_tile + DESPAWN_BELOW_TILES:
+		if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+			NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))   # 越界 despawn 也告诉 client, 防残留幽灵
 		queue_free()
 		return
 	if _hit_flash > 0.0:

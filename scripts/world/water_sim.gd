@@ -131,6 +131,10 @@ const SETTLE_MAX_TICKS := 240
 func settle_now() -> void:
 	if world == null or world.get("chunk_manager") == null:
 		return
+	# 联机 client 不模拟液体 (host 权威): 否则 client 每次加载 chunk 都本地流 + 把 tile 改动乱发给 host
+	if NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host:
+		_dirty.clear()
+		return
 	var guard: int = 0
 	while not _dirty.is_empty() and guard < SETTLE_MAX_TICKS:
 		_run_tick()

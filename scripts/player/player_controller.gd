@@ -238,6 +238,10 @@ func _on_damaged(_amount: int, source_pos: Vector2) -> void:
 
 # 创造模式自由飞: 无重力. A/D 左右, W/空格 上升, S/下 下降, 不按竖直键则悬停. 仍会被实心方块挡住.
 func _creative_fly(delta: float) -> void:
+	# 复位下平台状态: 否则从"按S穿平台中"切创造, _drop_through_t/collision_mask 会卡住穿所有平台
+	_drop_through_t = 0.0
+	if collision_mask != 5:
+		collision_mask = 5
 	var dir := Input.get_axis("move_left", "move_right")
 	velocity.x = dir * SPEED * 1.4
 	var up: bool = Input.is_action_pressed("jump")

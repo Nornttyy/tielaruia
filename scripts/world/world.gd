@@ -425,6 +425,8 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"imp": scene = ImpScene
 		"hell_wasp": scene = HellWaspScene
 		"mummy": scene = MummyScene
+		"harpy": scene = HarpyScene
+		"mimic": scene = MimicScene
 		"cow": scene = CowScene
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
@@ -638,6 +640,18 @@ func _mp_broadcast_entities() -> void:
 						kind = "demon_eye"
 					elif "zombie" in scene_path_s:
 						kind = "zombie"
+					elif "skeleton" in scene_path_s:
+						kind = "skeleton"
+					elif "hell_wasp" in scene_path_s:
+						kind = "hell_wasp"
+					elif "imp" in scene_path_s:
+						kind = "imp"
+					elif "mummy" in scene_path_s:
+						kind = "mummy"
+					elif "harpy" in scene_path_s:
+						kind = "harpy"
+					elif "mimic" in scene_path_s:
+						kind = "mimic"
 					else:
 						kind = "slime"
 				"zombies": kind = "zombie"

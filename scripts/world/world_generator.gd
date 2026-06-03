@@ -744,7 +744,7 @@ static func _carve_circle(c: Chunk, center: Vector2, radius: float,
 			var t: int = c.tiles[lx][wy]
 			if t == Tiles.BEDROCK or t == Tiles.AIR:
 				continue
-			if t == Tiles.COAL_ORE or t == Tiles.IRON_ORE:
+			if Tiles.is_ore(t):   # 所有矿石别被挖洞吞 (以前只护煤/铁, 铜锡银金钻被吃掉)
 				continue
 			if t == Tiles.GRASS:
 				continue  # 不破坏地表 (避免随机竖井裸露)
@@ -970,7 +970,7 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 				if y < 0 or y >= height - BEDROCK_ROWS:
 					continue
 				var t: int = c.tiles[lx][y]
-				if t == Tiles.BEDROCK or t == Tiles.COAL_ORE or t == Tiles.IRON_ORE:
+				if t == Tiles.BEDROCK or Tiles.is_ore(t):   # 矿石别被吞 (以前只护煤/铁)
 					continue
 				c.tiles[lx][y] = Tiles.AIR
 

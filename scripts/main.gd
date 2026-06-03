@@ -259,6 +259,8 @@ func _apply_save_data(data: Resource) -> void:
 		for cx in data.processed_chunks:
 			w.chunk_manager.processed_chunks[int(cx)] = true
 		# positions 扁平存还原: [x0,y0, x1,y1, ...]
+		# 先清: 首批 chunk 加载时 _cap 已 append 过, 不清会双填 → 列表过长 → 间距误判 → 水晶越刷越少
+		w.chunk_manager.life_crystal_positions.clear()
 		var pos_arr: PackedInt32Array = data.life_crystal_positions
 		var i: int = 0
 		while i + 1 < pos_arr.size():
@@ -268,6 +270,7 @@ func _apply_save_data(data: Resource) -> void:
 		if "mana_crystals_spawned" in data:
 			w.chunk_manager.mana_crystals_spawned = data.mana_crystals_spawned
 		if "mana_crystal_positions" in data:
+			w.chunk_manager.mana_crystal_positions.clear()   # 同上, 先清防双填
 			var mc_pos: PackedInt32Array = data.mana_crystal_positions
 			var j: int = 0
 			while j + 1 < mc_pos.size():
