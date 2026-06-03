@@ -47,6 +47,16 @@ static func color_for_depth(depth_below_surf: int, rng: RandomNumberGenerator) -
 		return 2
 	return 3
 
+
+# 刷怪随机大小: 40% 大 / 40% 中 / 20% 小 (偏大给分裂乐趣).
+static func random_spawn_size(rng: RandomNumberGenerator) -> int:
+	var r: float = rng.randf()
+	if r < 0.40:
+		return 2
+	elif r < 0.80:
+		return 1
+	return 0
+
 var max_health: int = BASE_MAX_HEALTH      # _ready 里按 tier+难度缩放
 var current_health: int = BASE_MAX_HEALTH
 var color_tier: int = 1   # 0绿/1蓝/2红/3紫, 默认蓝 (不调 setup = 旧行为)
@@ -73,10 +83,14 @@ func _is_hostile() -> bool:
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
-# spawn / 分裂时设颜色+大小. 必须在 add_child(_ready) 之前调. 只设 int 字段, 不碰 sprite.
+# spawn / 分裂时设颜色+大小.
+# add_child 前调: sprite 还没好, 等 _ready 里 _apply_tier 应用 (分裂 / 测试这么用).
+# add_child 后调: 已 _ready 过 (默认蓝中已应用), 立即 _apply_tier 重应用新色/大小 (地表刷怪这么用).
 func setup(p_color: int, p_size: int) -> void:
 	color_tier = clampi(p_color, 0, 3)
 	size = clampi(p_size, 0, 2)
+	if is_inside_tree() and sprite != null:
+		_apply_tier()
 
 
 # 按 color_tier + size 算 HP/接触伤 (× 难度) + 染色 + 缩放. _ready 调 (sprite 已就绪).

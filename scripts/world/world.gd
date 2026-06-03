@@ -14,6 +14,7 @@ const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
 const VillagePlacer = preload("res://scripts/world/village_placer.gd")
 const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
+const SlimeClass = preload("res://scripts/entities/slime.gd")  # 用静态 color_for_depth / random_spawn_size
 const ZombieScene = preload("res://scenes/entities/zombie.tscn")
 const SpiderScene = preload("res://scenes/entities/spider.tscn")
 const DemonEyeScene = preload("res://scenes/entities/demon_eye.tscn")
@@ -927,7 +928,12 @@ func _try_spawn_slime() -> void:
 	var slimes := get_tree().get_nodes_in_group("slimes")
 	if slimes.size() >= MAX_SLIMES:
 		return
-	_spawn_surface_creature(SlimeScene)
+	var s = _spawn_surface_creature(SlimeScene)
+	if s != null and s.has_method("setup"):
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		# 地表深度≈0 → color_for_depth 给 70绿/30蓝
+		s.setup(SlimeClass.color_for_depth(0, rng), SlimeClass.random_spawn_size(rng))
 
 
 func _try_spawn_zombie() -> void:
@@ -1261,10 +1267,10 @@ func spawn_harpies_for_chunk(chunk_x: int, spots: Array) -> void:
 
 
 # 在玩家附近地表随机刷一个 creature (slime/zombie 共用站位逻辑)
-func _spawn_surface_creature(scene: PackedScene) -> void:
+func _spawn_surface_creature(scene: PackedScene) -> Node:
 	var player := get_player()
 	if player == null:
-		return
+		return null
 	var px: int = int(floor(player.global_position.x / TILE_SIZE))
 	for _i in 10:
 		var sign_x: int = 1 if randf() < 0.5 else -1
@@ -1287,7 +1293,8 @@ func _spawn_surface_creature(scene: PackedScene) -> void:
 			(surf_y - 1) * TILE_SIZE + TILE_SIZE
 		)
 		entities_root.add_child(creature)
-		return
+		return creature
+	return null
 
 
 func _spawn_player() -> void:

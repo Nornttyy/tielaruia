@@ -49,3 +49,11 @@ func test_setup_default_is_blue_medium():
 	assert_eq(s.color_tier, 1, "默认蓝")
 	assert_eq(s.size, 1, "默认中")
 	assert_almost_eq(s.sprite.scale.x, 1.0, 0.01, "中 scale 1.0")
+
+
+func test_random_size_in_range():
+	var r := RandomNumberGenerator.new()
+	r.seed = 7
+	for i in 50:
+		var sz := Slime.random_spawn_size(r)
+		assert_true(sz in [0, 1, 2], "大小 0/1/2, 实际 %d" % sz)
