@@ -47,8 +47,12 @@ static func color_for_depth(depth_below_surf: int, rng: RandomNumberGenerator) -
 		return 2
 	return 3
 
-var max_health: int = BASE_MAX_HEALTH      # _ready 里按难度缩放
+var max_health: int = BASE_MAX_HEALTH      # _ready 里按 tier+难度缩放
 var current_health: int = BASE_MAX_HEALTH
+var color_tier: int = 1   # 0绿/1蓝/2红/3紫, 默认蓝 (不调 setup = 旧行为)
+var size: int = 1         # 0小/1中/2大, 默认中
+var contact_damage: int = CONTACT_DAMAGE   # _apply_tier 按 tier 缩放; CONTACT_DAMAGE 常量当基准
+var _base_tint: Color = Color(1, 1, 1)     # tier 染色; 受击闪光后恢复到它
 var _cached_player: Node2D = null  # 缓存 player ref, 每帧避免 get_nodes_in_group
 var _cached_cm: Node = null  # 缓存 chunk_manager (每帧 _is_in_water 不用查 3 层)
 var _hop_timer: float = 0.5
@@ -69,12 +73,28 @@ func _is_hostile() -> bool:
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
-func _ready() -> void:
-	# 难度缩放: 简单 ×0.7 / 普通 ×1.0 / 困难 ×1.4 (见 GameSettings.enemy_hp_multiplier)
-	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
+# spawn / 分裂时设颜色+大小. 必须在 add_child(_ready) 之前调. 只设 int 字段, 不碰 sprite.
+func setup(p_color: int, p_size: int) -> void:
+	color_tier = clampi(p_color, 0, 3)
+	size = clampi(p_size, 0, 2)
+
+
+# 按 color_tier + size 算 HP/接触伤 (× 难度) + 染色 + 缩放. _ready 调 (sprite 已就绪).
+func _apply_tier() -> void:
+	var hp_f: float = float(BASE_MAX_HEALTH) * _COLOR_HP_MULT[color_tier] * _SIZE_HP_MULT[size]
+	max_health = max(1, int(round(hp_f * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
+	contact_damage = max(1, int(round(float(CONTACT_DAMAGE) * _COLOR_DMG_MULT[color_tier] * _SIZE_DMG_MULT[size])))
+	_base_tint = _COLOR_TINT[color_tier]
+	sprite.modulate = _base_tint
+	sprite.scale = Vector2(_SIZE_SCALE[size], _SIZE_SCALE[size])
+
+
+func _ready() -> void:
 	sprite.sprite_frames = ArtCache.slime_frames
 	sprite.play("idle")
+	# 按 color_tier + size 算血量/伤害 + 染色 + 缩放 (含难度缩放). 不调 setup → 默认蓝中.
+	_apply_tier()
 	# hop 动画不循环, 播完会停在最后那个"压扁落地"帧, 看着像被压扁
 	# 接 animation_finished, 落地后切回 idle
 	sprite.animation_finished.connect(_on_anim_done)
@@ -126,7 +146,7 @@ func _physics_process(delta: float) -> void:
 			return
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
-		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
+		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else _base_tint
 	_iframe_t = max(0.0, _iframe_t - delta)
 
 	# 史莱姆怕水: 碰到水继续正常重力下沉 + 每 0.5s 扣 1 HP (玩家可用水陷阱杀)
@@ -244,7 +264,7 @@ func _check_player_contact() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
 		return
-	hp.take_damage(CONTACT_DAMAGE, global_position, 75.0)
+	hp.take_damage(contact_damage, global_position, 75.0)
 
 
 # 返回 true 表示本次造成有效伤害
@@ -271,10 +291,11 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 		dir = dir.normalized()
 		velocity = dir * knockback
 		_hop_timer = 0.5   # 击退后冷却再跳
-	# 压缩弹动: sprite scale Y 压扁
+	# 压缩弹动: sprite scale Y 压扁 (按体型 base scale 缩放, 不然大史莱姆弹完会缩回 1.0)
+	var base_s: float = _SIZE_SCALE[size]
 	var tween := create_tween()
-	tween.tween_property(sprite, "scale", Vector2(1.25, 0.75), 0.06)
-	tween.tween_property(sprite, "scale", Vector2.ONE, 0.12)
+	tween.tween_property(sprite, "scale", Vector2(base_s * 1.25, base_s * 0.75), 0.06)
+	tween.tween_property(sprite, "scale", Vector2(base_s, base_s), 0.12)
 	if current_health == 0:
 		_die()
 	return true
