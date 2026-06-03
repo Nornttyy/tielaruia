@@ -1423,7 +1423,7 @@ func _is_in_swing_arc(target_pos: Vector2, origin: Vector2, dir: Vector2) -> boo
 
 
 # 戳的常量
-const THRUST_COOLDOWN := 0.3    # 短剑(戳)出手快, 比阔剑(扫 0.42)快一档
+const THRUST_COOLDOWN := 0.38   # 短剑(戳)出手快, 但要 > 动画 0.30 (SWORD_THRUST_DURATION), 否则戳没收回就重触发→抽搐
 const THRUST_LENGTH_MULT := 1.2      # 戳长 = SWORD_RANGE_PX * 1.2 ≈ 43px (比挥更远)
 const THRUST_HALF_WIDTH := 4.5       # 戳带半宽 6px (总宽 12), 鼠标偏一点也命中
 # 注: 短剑弱由 item 的 damage_mult=0.8 决定 (阔剑 1.2), 戳不再额外乘削弱系数

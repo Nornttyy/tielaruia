@@ -183,7 +183,11 @@ func play_swing_directional(target_angle: float) -> void:
 	var end_a:   float = base + deg_to_rad(90.0)
 	rotation = start_a
 	_tween = create_tween()
+	# 挥 (打击窗口, 跟 player_action 命中判定的 180°/SWING_DURATION 同步)
 	_tween.tween_property(self, "rotation", end_a, SWING_DURATION)
+	# 挥完归位到 0 (休息位), 别卡在 end_a — 否则连挥时下一刀从 end_a 瞬弹回 start_a = 抽搐.
+	# 归位在打击窗口之后跑 (冷却间隙内), 不影响命中判定; facing 锁也顺延到归位完才松.
+	_tween.tween_property(self, "rotation", 0.0, SWING_DURATION * 0.7)
 	_tween.tween_callback(func(): _attack_locked = false)
 
 

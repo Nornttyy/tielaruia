@@ -246,6 +246,32 @@ func test_broadsword_sweeps_not_thrust() -> void:
 	assert_true(ctx["action"]._sword_attack_is_sweep, "阔剑应该扫 (不是戳)")
 
 
+# 防抽搐 1: 短剑冷却必须 > 戳动画时长, 否则戳没收回就重触发 → 发抖.
+func test_thrust_cooldown_longer_than_animation() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var a = ctx["action"]
+	assert_gt(a.THRUST_COOLDOWN, a.SWORD_THRUST_DURATION,
+		"短剑冷却(%.2f)要 > 戳动画(%.2f), 否则连戳抽搐" % [a.THRUST_COOLDOWN, a.SWORD_THRUST_DURATION])
+
+
+# 防抽搐 2: 阔剑挥完后手持剑要归位 (rotation≈0), 不能卡在挥末角度 → 否则连挥瞬弹=发抖.
+func test_broadsword_held_returns_to_rest_after_swing() -> void:
+	var ctx: Dictionary = await _setup_game()
+	_equip_tool(ctx, "iron_sword")
+	var held = ctx["player"].get_node_or_null("HeldItem")
+	assert_not_null(held, "玩家应有 HeldItem 手持节点")
+	# 戳一刀就松手 (只触发 1 次)
+	ctx["action"].mouse_world_override = ctx["player"].global_position + Vector2(20, 0)
+	ctx["action"]._attack_cooldown = 0.0
+	ctx["action"].primary_override = true
+	await wait_frames(2)
+	ctx["action"].primary_override = false
+	# 等挥(0.18)+归位(0.126)+余量 全跑完
+	await wait_frames(35)
+	assert_almost_eq(held.rotation, 0.0, 0.15,
+		"阔剑挥完手持剑该归位 rotation≈0, 实际 %.3f (卡在挥末=连挥抽搐根源)" % held.rotation)
+
+
 # 老 combo 测试 (test_sword_combo_alternates / test_combo_resets_on_hotbar_switch)
 # 用户改: 删了戳挥交替, tier 1-2 永远戳, tier 3+ 永远挥. 测试不再适用, 删.
 
