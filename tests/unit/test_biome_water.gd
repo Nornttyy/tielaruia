@@ -56,3 +56,15 @@ func test_generation_places_biome_colored_water() -> void:
 		if found:
 			break
 	assert_true(found, "1600 宽世界 (含 600/1200 槽位) 里该有群系色的水")
+
+
+func test_forest_surface_has_ponds() -> void:
+	# 出生点在森林, 用户该在地表看到水. 数森林区地表带 [80,150) 的水格.
+	var w: Dictionary = WorldGenerator.generate(11, 800, 256)
+	var surface_water: int = 0
+	for x in range(50, 480):   # 森林区 (非森林槽位在 x>=500)
+		var col: Array = w.tiles[x]
+		for y in range(80, 150):
+			if Tiles.is_water(col[y]):
+				surface_water += 1
+	assert_gt(surface_water, 120, "森林地表该有成片的水塘 (实际 %d 格)" % surface_water)

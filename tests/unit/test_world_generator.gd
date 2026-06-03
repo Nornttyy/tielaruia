@@ -59,6 +59,9 @@ func test_grass_on_surface_dirt_below():
 	for x in [10, 50, 100, 150, 200]:
 		for y in 128:
 			var t = w.tiles[x][y]
+			# 这列有地表水塘 → 地表是水/池底是土, 不是本测试要验的草地表, 跳过整列
+			if Tiles.is_water(t):
+				break
 			# 跳过空气、树身/树叶/树枝/树顶/树根、仙人掌、装饰小草, 找首个地面 tile
 			if t == Tiles.AIR \
 					or t == Tiles.LOG or t == Tiles.LOG_TOP \

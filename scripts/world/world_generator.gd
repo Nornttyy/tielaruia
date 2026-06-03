@@ -108,20 +108,20 @@ const OPEN_WORM_PAD_CELLS := 100     # 邻 chunk 搜索 pad
 
 # 水池: 矿洞洼地 BFS flood fill 填水. 沙漠列稀疏长绿洲.
 const WATER_MIN_DEPTH := 60           # 矿洞水池: surf 下 ≥60 格才算"深矿洞"
-const WATER_POOL_CHANCE := 0.45       # 洼地填水概率 (35→45%, 多点水)
+const WATER_POOL_CHANCE := 0.6        # 洼地填水概率 (45%→60% 更密)
 const WATER_FILL_LEVEL := 8           # 水池高 (从洼地底起填; 6→8 加大)
 const WATER_BASIN_MAX_SIZE := 120     # BFS 单池最多格数 (60→120 允许更大池)
 const OCEAN_DEPTH := 200              # y > 200 (接近基岩) AIR 强制水 = 地下海洋
-const OASIS_CHANCE := 0.02            # 沙漠列长绿洲概率 (1.2%→2% 多点)
+const OASIS_CHANCE := 0.035           # 沙漠列长绿洲概率 (2%→3.5% 更密)
 const OASIS_WIDTH_MIN := 8            # 绿洲宽 (加大 4→8)
 const OASIS_WIDTH_MAX := 16           # 绿洲宽 (加大 8→16)
 const OASIS_DEPTH := 5                # 绿洲深 (3→5)
-# 地表水塘 (forest/jungle/swamp 平地挖碗填群系色水; 雪原不放, 沙漠走绿洲)
-const POND_CHANCE := 0.01             # 草地列当塘中心的概率 (≈每 100 列一个)
-const POND_WIDTH_MIN := 10            # 塘宽 (大)
-const POND_WIDTH_MAX := 20
-const POND_DEPTH := 5                 # 塘最深 (中心)
-const POND_MAX_SLOPE := 2             # 塘宽内地表高差 ≤ 此值才开塘 (太斜水会流走)
+# 地表水塘 (forest/jungle/swamp 挖碗填群系色水; 雪原不放, 沙漠走绿洲)
+const POND_CHANCE := 0.02             # 草地列当塘中心的概率 (1%→2%, 出生点看得到但不淹成水世界)
+const POND_WIDTH_MIN := 12            # 塘宽 (加大)
+const POND_WIDTH_MAX := 24
+const POND_DEPTH := 6                 # 塘最深 (中心)
+const POND_MAX_SLOPE := 6             # 塘宽内地表高差 ≤ 此值才开 (2→6 放宽, 否则起伏地形全毙)
 
 # 树种枚举 (内部 idx) — 现在只剩 OAK (T-tree 重做)
 const _SPECIES_OAK := 0
@@ -481,21 +481,22 @@ static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 		if smax - smin > POND_MAX_SLOPE:
 			continue
 		var water_tile: int = _biome_water_tile(biome)
-		# 挖碗填水: 中心最深, 边缘渐浅 (像绿洲), 从各列自己的 surf 往下填 → 平地水面齐
+		# 统一水面 = 中心地表高度 → 池面齐平像真水塘 (不跟着斜坡走, 配合加载时 settle 自动找平)
+		var level_y: int = psurf
 		for dx in range(-phalf, phalf + 1):
 			var tx2: int = lx + dx
 			if tx2 < 0 or tx2 >= chunk_width:
 				continue
-			var s2: int = chunk_heights[chunk_start_x + tx2]
 			var dxa: int = absi(dx)
 			var ratio2: float = 1.0 - float(dxa) / float(phalf + 1)
-			var pdepth: int = int(float(POND_DEPTH) * (0.4 + 0.6 * ratio2))
+			var pdepth: int = int(float(POND_DEPTH) * (0.35 + 0.65 * ratio2))
 			pdepth += (_hash3(world_seed, chunk_start_x + tx2, 7779) & 3) - 1
 			if pdepth < 1:
 				continue
+			# 从统一水面往下挖碗填水 (中心深边缘浅)
 			for dy in range(pdepth):
-				var ty2: int = s2 + dy
-				if ty2 < height - BEDROCK_ROWS:
+				var ty2: int = level_y + dy
+				if ty2 >= 0 and ty2 < height - BEDROCK_ROWS:
 					c.tiles[tx2][ty2] = water_tile
 
 	# === 3) 矿洞洼地 BFS flood fill ===
