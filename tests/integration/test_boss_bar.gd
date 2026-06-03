@@ -30,3 +30,23 @@ func test_boss_bar_shows_then_hides() -> void:
 	await wait_frames(2)
 	boss_bar._process(0.1)
 	assert_false(boss_bar.visible, "boss 消失后血条应隐藏")
+
+
+func test_remote_king_spawns_as_real_boss() -> void:
+	# 联机: client 收到 host 的 king ent_pos → 应生成真·史莱姆王 (进 group boss + 同步血量),
+	# 而不是当普通史莱姆 — 否则 client 看不到 boss 大血条/王冠/大体型.
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	main.boot_to_game()
+	await wait_frames(2)
+	var world = main.get_node("World")
+	world._on_remote_entity_pos(99, "king", 200.0, 200.0, 500, 1, "idle")
+	await wait_frames(2)
+	var ent = world._remote_entities.get(99)
+	assert_not_null(ent, "应生成远程 king 实体")
+	assert_true(ent.is_in_group("boss"), "远程 king 应在 group boss")
+	assert_eq(int(ent.current_health), 500, "远程 king 血量应同步")
+	var boss_bar = main.find_child("BossBar", true, false)
+	boss_bar._process(0.1)
+	assert_true(boss_bar.visible, "client 端也应显示 boss 血条")
+	assert_eq(boss_bar._boss, ent, "血条应绑定远程 king")
