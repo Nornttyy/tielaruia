@@ -23,6 +23,30 @@ const AGGRO_RANGE_PX := 120.0   # 10 tiles
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
+const SlimeScene = preload("res://scenes/entities/slime.tscn")  # 分裂用 (自引用 preload, Godot 允许)
+
+# 颜色 tier 0绿/1蓝/2红/3紫: modulate 染色(乘色, 蓝=原色不染) + HP/伤害乘数 + 掉 jelly 数.
+const _COLOR_TINT := [Color(0.55, 1.25, 0.55), Color(1, 1, 1), Color(1.5, 0.55, 0.55), Color(1.2, 0.6, 1.5)]
+const _COLOR_HP_MULT := [0.6, 1.0, 1.8, 2.8]
+const _COLOR_DMG_MULT := [0.7, 1.0, 1.5, 2.2]
+const _COLOR_JELLY := [1, 1, 2, 3]
+# 大小 0小/1中/2大: sprite scale + HP/伤害乘数.
+const _SIZE_SCALE := [0.65, 1.0, 1.5]
+const _SIZE_HP_MULT := [0.5, 1.0, 1.5]
+const _SIZE_DMG_MULT := [0.8, 1.0, 1.2]
+
+
+# 按"地表下深度 (tile_y - 地表 surf)" 选颜色. rng 让地表绿/蓝按概率.
+# 地表(<8): 70% 绿 / 30% 蓝. 浅(8-80): 蓝. 深(80-150): 红. 极深(>=150): 紫.
+static func color_for_depth(depth_below_surf: int, rng: RandomNumberGenerator) -> int:
+	if depth_below_surf < 8:
+		return 0 if rng.randf() < 0.7 else 1
+	elif depth_below_surf < 80:
+		return 1
+	elif depth_below_surf < 150:
+		return 2
+	return 3
+
 var max_health: int = BASE_MAX_HEALTH      # _ready 里按难度缩放
 var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null  # 缓存 player ref, 每帧避免 get_nodes_in_group
