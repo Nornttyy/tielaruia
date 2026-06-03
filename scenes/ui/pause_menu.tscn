@@ -39,6 +39,10 @@ text = "继续游戏"
 custom_minimum_size = Vector2(240, 40)
 text = "多人游戏"
 
+[node name="CreativeButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(240, 40)
+text = "创造模式: 关"
+
 [node name="ReturnToMenuButton" type="Button" parent="VBox"]
 custom_minimum_size = Vector2(240, 40)
 text = "回主菜单"

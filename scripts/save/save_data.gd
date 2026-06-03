@@ -14,6 +14,7 @@ const CURRENT_VERSION := 4
 @export var world_name: String = ""
 @export var difficulty: int = 1   # 0=简单 1=普通 2=困难
 @export var world_size: int = 1   # 0=小 1=中 2=大 (影响 biome 间距 + 金字塔数)
+@export var creative_mode: bool = false   # 创造模式: 飞行/秒挖秒放/无限方块/不掉血
 @export var spawn_point: Vector2i = Vector2i.ZERO
 # 床复活点 (玩家睡过床后设的). (-99999, -99999) = 没设过, 用 spawn_point.
 @export var bed_spawn_point: Vector2i = Vector2i(-99999, -99999)

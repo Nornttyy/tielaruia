@@ -95,6 +95,10 @@ var scroll_wheel_zoom: bool = false:
 		scroll_wheel_zoom = v
 		_save_and_emit()
 
+# creative_mode: 创造模式 (飞行/秒挖秒放/无限方块/不掉血). 会话变量 — 按"每个世界"存在
+# save_data 里, 不写全局 settings.cfg. 读档/新建/暂停切时由 main / pause_menu 设置它.
+var creative_mode: bool = false
+
 # current_language: UI 语言. "zh" / "en" / "ja" / "ko". 默认中文.
 # Locale autoload 读这个值 + 发 language_changed 信号让 UI 刷新.
 var current_language: String = "zh":

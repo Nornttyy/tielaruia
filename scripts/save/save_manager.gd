@@ -47,6 +47,7 @@ func save(main: Node) -> bool:
 	data.world_name = GameSettings.current_world_name if GameSettings != null else ""
 	data.difficulty = GameSettings.current_difficulty if GameSettings != null else 1
 	data.world_size = GameSettings.current_world_size if GameSettings != null else 1
+	data.creative_mode = GameSettings.creative_mode if GameSettings != null else false
 	data.spawn_point = world.spawn_point
 	# 床复活点 (玩家睡过床后才有意义)
 	if "bed_spawn_point" in world:

@@ -236,6 +236,29 @@ func _on_damaged(_amount: int, source_pos: Vector2) -> void:
 	velocity.y = KNOCKBACK_VY
 
 
+# 创造模式自由飞: 无重力. A/D 左右, W/空格 上升, S/下 下降, 不按竖直键则悬停. 仍会被实心方块挡住.
+func _creative_fly(delta: float) -> void:
+	var dir := Input.get_axis("move_left", "move_right")
+	velocity.x = dir * SPEED * 1.4
+	var up: bool = Input.is_action_pressed("jump")
+	var down: bool = Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)
+	var v_fly: float = SPEED * 1.2
+	if up and not down:
+		velocity.y = -v_fly
+	elif down and not up:
+		velocity.y = v_fly
+	else:
+		velocity.y = 0.0
+	move_and_slide()
+	if dir != 0:
+		sprite.flip_h = dir < 0
+	var anim: String = "walk" if absf(velocity.x) > 1.0 else "idle"
+	if sprite.animation != anim:
+		sprite.play(anim)
+	_was_on_floor = is_on_floor()
+	_previous_vy = velocity.y
+
+
 func _physics_process(delta: float) -> void:
 	# 背包/合成/箱子 UI 打开时: 玩家停止 input, 只保留重力 (用户要求)
 	if _is_inventory_ui_open():
@@ -268,6 +291,11 @@ func _physics_process(delta: float) -> void:
 			sprite.play("hurt")
 		_was_on_floor = is_on_floor()
 		_previous_vy = velocity.y
+		return
+
+	# 创造模式: 自由飞行 (无重力, 左右平移, jump/W 上升, S/下 下降, 否则悬停)
+	if GameSettings != null and GameSettings.creative_mode:
+		_creative_fly(delta)
 		return
 
 	var dir := Input.get_axis("move_left", "move_right")

@@ -64,12 +64,14 @@ func _start_game(seed_or_opts = 0) -> void:
 	var world_name: String = ""
 	var difficulty: int = 1
 	var world_size: int = 1   # 0=小 1=中 2=大
+	var creative_mode: bool = false
 	if seed_or_opts is Dictionary:
 		var opts: Dictionary = seed_or_opts
 		world_seed = int(opts.get("world_seed", 0))
 		world_name = String(opts.get("world_name", ""))
 		difficulty = int(opts.get("difficulty", 1))
 		world_size = int(opts.get("world_size", 1))
+		creative_mode = bool(opts.get("creative_mode", false))
 	else:
 		world_seed = int(seed_or_opts)
 	if "current_difficulty" in GameSettings:
@@ -78,6 +80,7 @@ func _start_game(seed_or_opts = 0) -> void:
 		GameSettings.current_world_name = world_name
 	if "current_world_size" in GameSettings:
 		GameSettings.current_world_size = world_size
+	GameSettings.creative_mode = creative_mode   # 新建=按选择(默认生存); 读档=存档里的值
 	# 是否新游戏 (非继续): 决定发不发起步包 (此刻判, 因为 _pending_save_data 稍后会被清).
 	_want_starter = (_pending_save_data == null)
 	# 新游戏重置昼夜到早晨; 继续游戏稍后由 _apply_save_data 还原存档时间.
@@ -162,6 +165,7 @@ func _run_async_load(world_seed: int) -> void:
 
 # 同步路径: 测试 + boot_to_game 用. 不走 LoadingScreen, World defer_init=false 自动跑完
 func _start_game_sync(world_seed: int) -> void:
+	GameSettings.creative_mode = false   # boot/测试默认生存 (测试要创造自己设)
 	var w = WorldScene.instantiate()
 	w.name = "World"
 	if world_seed != 0:
@@ -232,6 +236,7 @@ func _continue_game(data: Resource) -> void:
 		"world_name": String(data.world_name) if "world_name" in data else "",
 		"difficulty": int(data.difficulty) if "difficulty" in data else 1,
 		"world_size": int(data.world_size) if "world_size" in data else 1,
+		"creative_mode": bool(data.creative_mode) if "creative_mode" in data else false,
 	})
 
 

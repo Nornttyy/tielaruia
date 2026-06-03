@@ -368,6 +368,33 @@ func _update_mining(delta: float) -> void:
 	if not pressed:
 		_reset_mining()
 		return
+	# 创造模式: 秒挖 — 对准任意"可挖"方块瞬间破 (不要工具/不管树支撑). 基岩等不可挖的仍挡住.
+	if GameSettings != null and GameSettings.creative_mode:
+		var ct: Vector2i = aim_tile_coord()
+		var cterrain := _terrain()
+		if cterrain == null:
+			return
+		if not in_reach(ct):
+			_reset_mining()
+			return
+		var ctid: int = cterrain.get_cell_source_id(ct)
+		if ctid == -1 or not Tiles.is_mineable(ctid):
+			_reset_mining()
+			return
+		_mining_swing_t -= delta
+		if _mining_swing_t <= 0.0:   # 挥一下手 (秒挖也给点动作反馈)
+			_mining_swing_t = 0.25
+			var held: Node = _held_item_node()
+			if held != null:
+				if held.has_method("play_pickaxe_attack"):
+					_start_pickaxe_spin()
+				elif held.has_method("play_swing"):
+					held.play_swing()
+		_finish_mine(ct, ctid, _current_tool_kind(), cterrain)
+		_clear_crack(ct)
+		_mining_target = INVALID_TILE
+		_mining_progress = 0.0
+		return
 	# 斧只能砍 LOG / 仙人掌, 别的 tile 早 return 不播挖矿摆动 (防 "斧对空气挥" 视觉 bug)
 	if _current_tool_kind() == "axe":
 		var ax_tile: Vector2i = aim_tile_coord()
@@ -571,6 +598,13 @@ func _drop_unsupported_plants_above(world: Node, tile: Vector2i, tool_kind: Stri
 		y -= 1
 
 
+# 放置消耗 1 个: 创造模式不消耗 (无限方块), 否则正常扣库存.
+func _consume_one(inv: Node) -> void:
+	if GameSettings != null and GameSettings.creative_mode:
+		return
+	inv.consume_current(1)
+
+
 # 这格是不是门的一部分 (底/中/顶/开). 砍门时往上下扫连续门 tile 用.
 func _is_door_tile(world: Node, x: int, y: int) -> bool:
 	var cm = world.get("chunk_manager")
@@ -718,7 +752,7 @@ func try_place() -> bool:
 						Autotile.refresh_tile(wall_layer, npos, nsid, nq)
 		else:
 			wall_layer.set_cell(tile, wid, Vector2i.ZERO)
-		inv.consume_current(1)
+		_consume_one(inv)
 		Effects.spawn_place_bounce(tile, wid)
 		SfxBank.play("place", 0.10)
 		return true
@@ -732,7 +766,8 @@ func try_place() -> bool:
 	if tile == pt or tile == pt - Vector2i(0, 1):
 		return false
 	# 支撑判定: 上下左右至少有 1 个相邻方块 OR 当前格背景有墙 (允许靠墙挂方块).
-	var has_support: bool = false
+	# 创造模式随处放 (无需支撑).
+	var has_support: bool = GameSettings != null and GameSettings.creative_mode
 	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		if terrain.get_cell_source_id(tile + offset) != -1:
 			has_support = true
@@ -757,7 +792,7 @@ func try_place() -> bool:
 			world._set_tile(tile.x, tile.y, Tiles.DOOR)        # 底
 			world._set_tile(mid.x, mid.y, Tiles.DOOR_MID)      # 中
 			world._set_tile(top.x, top.y, Tiles.DOOR_TOP)      # 顶
-		inv.consume_current(1)
+		_consume_one(inv)
 		SkyLightGrid.invalidate_column(tile.x)
 		Effects.spawn_place_bounce(tile, Tiles.DOOR)
 		SfxBank.play("place", 0.10)
@@ -771,7 +806,7 @@ func try_place() -> bool:
 	# (移除 terrain.set_cell; world._set_tile 内部刷视觉 + 邻居)
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, def.placeable_tile_id)
-	inv.consume_current(1)
+	_consume_one(inv)
 	SkyLightGrid.invalidate_column(tile.x)
 	# P1.5 hook: 放下弹动
 	Effects.spawn_place_bounce(tile, def.placeable_tile_id)
