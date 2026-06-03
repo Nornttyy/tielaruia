@@ -61,6 +61,14 @@ const _TREE_PARTS := {
 	Tiles.BRANCH_R: true,
 }
 
+# 长在地上、需要下方有支撑的"植物": 下面方块被挖掉 → 它也跟着没 (防悬空). 仙人掌可叠 → 往上连消.
+const _PLANT_NEEDS_GROUND := {
+	Tiles.PLANT_GRASS: true, Tiles.MUSHROOM: true,
+	Tiles.CACTUS: true, Tiles.CACTUS_BODY: true,
+	Tiles.WHEAT_0: true, Tiles.WHEAT_1: true, Tiles.WHEAT_2: true, Tiles.WHEAT_3: true,
+	Tiles.RICE_0: true, Tiles.RICE_1: true, Tiles.RICE_2: true, Tiles.RICE_3: true,
+}
+
 # 镐挖不了的"植物"类 tile (叶子 / 仙人掌 / 蘑菇 / 火果 / 火把等小物).
 # 镐只破坏"方块". 不挡 axe (砍 LOG/仙人掌) / sword (无挖矿). 也不挡徒手 / 别工具.
 const _PICKAXE_BLACKLIST := {
@@ -391,6 +399,10 @@ func _update_mining(delta: float) -> void:
 	if tid == -1 or not Tiles.is_mineable(tid):
 		_reset_mining()
 		return
+	# 树支撑块保护: 正上方是"树底 LOG" → 这格在撑着树, 不许挖 (要砍树得砍树干; 别的方块照常)
+	if not _TREE_PARTS.has(tid) and _blocks_support_tree(terrain.get_parent(), tile.x, tile.y):
+		_reset_mining()
+		return
 	# 树部件特殊规则: 只有树底 LOG 能直接挖. LOG_TOP/BRANCH/ROOT 不能直接挖,
 	# 中段 LOG 也不能 — 必须从最底下砍, 整棵爆.
 	if _TREE_PARTS.has(tid):
@@ -528,6 +540,35 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	for item_id in drops:
 		for _i in drops[item_id]:
 			_spawn_drop(item_id, tile)
+	# 草/植物联动: 挖掉这格后, 上方失去支撑的小草/植物也一起破坏 (+掉自己的东西)
+	_drop_unsupported_plants_above(world, tile, tool_kind)
+
+
+# (x,y) 是不是在撑着一棵树: 正上方是"树底 LOG". 是的话这格不许挖.
+func _blocks_support_tree(world: Node, x: int, y: int) -> bool:
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return false
+	if cm.get_tile(x, y - 1) != Tiles.LOG:
+		return false
+	return _is_tree_base(world, x, y - 1)
+
+
+# 挖掉 (tile) 后, 上方失去支撑的小草/植物联动消除 + 掉落. 仙人掌可叠 → 往上连消.
+func _drop_unsupported_plants_above(world: Node, tile: Vector2i, tool_kind: String) -> void:
+	var cm = world.get("chunk_manager")
+	if cm == null or not world.has_method("_set_tile"):
+		return
+	var y: int = tile.y - 1
+	while _PLANT_NEEDS_GROUND.has(cm.get_tile(tile.x, y)):
+		var ptid: int = cm.get_tile(tile.x, y)
+		world._set_tile(tile.x, y, Tiles.AIR)
+		Effects.spawn_block_break(Vector2i(tile.x, y), ptid)
+		var pdrops: Dictionary = Tiles.drops_for(ptid, tool_kind)
+		for item_id in pdrops:
+			for _i in pdrops[item_id]:
+				_spawn_drop(item_id, Vector2i(tile.x, y))
+		y -= 1
 
 
 # 这格是不是门的一部分 (底/中/顶/开). 砍门时往上下扫连续门 tile 用.
