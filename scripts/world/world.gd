@@ -24,6 +24,7 @@ const HellWaspScene = preload("res://scenes/entities/hell_wasp.tscn")
 const HarpyScene = preload("res://scenes/entities/harpy.tscn")
 const MummyScene = preload("res://scenes/entities/mummy.tscn")
 const KingSlimeScene = preload("res://scenes/entities/king_slime.tscn")
+const SkeletonKingScene = preload("res://scenes/entities/skeleton_king.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
@@ -86,6 +87,7 @@ const _MP_ENTITY_SYNC_INTERVAL := 0.2
 var weather: Node
 var village_villager_spawns: Array = []
 var _active_king_slime: Node = null  # 当前存活的史莱姆王 Boss (一次只准一个)
+var _active_skeleton_king: Node = null  # 当前存活的骷髅王 Boss (一次只准一个)
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
 var _crop_grow_timer: float = 60.0   # 作物生长 tick: 每 60s 一次, 每个 WHEAT_0/1/2 升一阶概率
@@ -833,7 +835,7 @@ func _on_chunk_loaded(c: Chunk) -> void:
 			var col: Array = c.tiles[lx]
 			for y in col.size():
 				var t: int = col[y]
-				# 水和岩浆都要唤醒. 以前只认水, 岩浆被漏掉 → 世界生成的悬空岩浆瀑布冻在空中不流.
+				# 水和岩浆都要唤醒 (以前只认水, 岩浆瀑布冻空中).
 				if not water_sim.is_liquid(t):
 					continue
 				# 收 4 邻居 tile (越界用 -1 = chunk 边界开口, 保守唤醒)
@@ -848,8 +850,7 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				# 还能流 (旁边空气/边界/同种更低液位) 才标 dirty, 内部封死的不动省 CPU
 				if water_sim.tile_can_still_flow(t, nbs):
 					water_sim.mark_dirty(chunk_start + lx, y)
-		# 加载即定型: 把刚标的液体一口气流到稳定, 玩家看到的已是最终样子 (不看慢慢流的过程).
-		# 放光照重算之前, 让黑暗层按流完后的水算光. 玩家自己挖/放水仍走实时 sim 正常流动.
+		# 加载即定型: 一口气流到稳. 实时流动残留的"悬空孤儿水"由 water_sim 定期巡检兜底.
 		water_sim.settle_now()
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
 	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)
@@ -1103,6 +1104,26 @@ func spawn_king_slime(pos: Vector2) -> bool:
 	boss.global_position = pos
 	_active_king_slime = boss
 	return true
+
+
+# 召唤骷髅王到 pos 附近 (跟 spawn_king_slime 同款单例守卫).
+func spawn_skeleton_king(pos: Vector2) -> bool:
+	if _active_skeleton_king != null and is_instance_valid(_active_skeleton_king):
+		return false
+	var boss = SkeletonKingScene.instantiate()
+	entities_root.add_child(boss)
+	boss.global_position = pos
+	_active_skeleton_king = boss
+	return true
+
+
+# Boss 召唤总入口: 召唤道具的 summon_boss 字段 → 派发到具体 spawn. 新 Boss 加 case 即可。
+func spawn_boss(boss_id: String, pos: Vector2) -> bool:
+	match boss_id:
+		"skeleton_king":
+			return spawn_skeleton_king(pos)
+		_:
+			return spawn_king_slime(pos)
 
 
 # 金字塔守卫: 给一组 spawn 点 (世界坐标) 召 mummy. chunk_manager 在

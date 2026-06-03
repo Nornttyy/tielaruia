@@ -1642,10 +1642,13 @@ func try_use_summon_item() -> bool:
 	if player == null:
 		return false
 	var world: Node = _find_world()
-	if world == null or not world.has_method("spawn_king_slime"):
+	if world == null or not world.has_method("spawn_boss"):
 		return false
+	# 召谁由召唤道具的 summon_boss 字段定 (slime_crown→king_slime, skull_summon→skeleton_king)
+	var def: Variant = ItemDB.get_def(slot.item_id)
+	var boss_id: String = String(def.get("summon_boss", "king_slime")) if def != null else "king_slime"
 	var spawn_pos: Vector2 = player.global_position + Vector2(40, -24)
-	if not world.spawn_king_slime(spawn_pos):
+	if not world.spawn_boss(boss_id, spawn_pos):
 		return false
 	inv.consume_current(1)
 	SfxBank.play("break", 0.2)
