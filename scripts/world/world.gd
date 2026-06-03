@@ -1144,23 +1144,7 @@ func spawn_mummies_for_chunk(chunk_x: int, spots: Array) -> void:
 		entities_root.add_child(creature)
 
 
-# 世纪树守卫: 给一组 spawn 点召僵尸/骷髅 (用户选). 同款防同 chunk 重 spawn.
-var _world_tree_chunks_spawned: Dictionary = {}   # chunk_x int → true
-func spawn_world_tree_guards_for_chunk(chunk_x: int, spots: Array) -> void:
-	if spots.is_empty():
-		return
-	if _world_tree_chunks_spawned.has(chunk_x):
-		return
-	_world_tree_chunks_spawned[chunk_x] = true
-	for i in spots.size():
-		var spot = spots[i]
-		# 按下标交替: 一半僵尸一半骷髅, 保证两种都出
-		var creature: Node = ZombieScene.instantiate() if i % 2 == 0 else SkeletonScene.instantiate()
-		creature.global_position = Vector2(
-			spot.x * TILE_SIZE + TILE_SIZE / 2.0,
-			spot.y * TILE_SIZE + TILE_SIZE
-		)
-		entities_root.add_child(creature)
+# 世纪树已删 (用户要求)
 
 # 菜园: 扫所有 loaded chunk 找 WHEAT_0/1/2, 70% 概率升一阶. 每 15s 调.
 # 平均 ~45s 从苗到熟 (15s × 3 阶段 / 0.7 概率).
