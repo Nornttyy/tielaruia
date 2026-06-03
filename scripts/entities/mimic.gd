@@ -18,7 +18,7 @@ const JUMP_VY := -340.0       # 跳得高 (像章鱼)
 const ENEMY_IFRAME_SEC := 0.2
 
 # 死人箱可掉的奖励 (打死后随机 1-2 种)
-const DROP_POOL := ["gold_ingot", "iron_ingot", "copper_ingot", "diamond_ore", "cooked_meat"]
+const DROP_POOL := ["gold_ingot", "iron_ingot", "copper_ingot", "diamond", "cooked_meat"]  # 修: diamond_ore→diamond (前者 item_db 不存在, 掉了捡不起)
 
 var max_health: int = BASE_MAX_HEALTH
 var current_health: int = BASE_MAX_HEALTH
