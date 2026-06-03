@@ -897,6 +897,9 @@ func _on_chunk_unloaded(cx: int) -> void:
 	# 注意: villager 用专门 group, 由村庄系统管, 这里不清
 	for group in ["slimes", "zombies", "animals", "item_drops"]:
 		for ent in get_tree().get_nodes_in_group(group):
+			# Boss 在 "slimes" 组里, 但有自己的远离消失逻辑 — chunk 卸载别误删 (否则用钩爪/传送拉开距离让王那列卸载, 王凭空消失+血条空挂)
+			if ent.is_in_group("boss"):
+				continue
 			if ent.global_position.x >= chunk_start_px and ent.global_position.x < chunk_end_px:
 				ent.queue_free()
 	# 清该 chunk 范围内所有火把光
