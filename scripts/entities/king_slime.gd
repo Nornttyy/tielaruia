@@ -67,6 +67,11 @@ func _hp_ratio() -> float:
 	return clamp(float(current_health) / float(max_health), 0.0, 1.0)
 
 
+# 屏幕顶部 Boss 血条用的名字
+func boss_display_name() -> String:
+	return "史莱姆王"
+
+
 func _apply_scale() -> void:
 	var s: float = lerp(SCALE_LOW, SCALE_FULL, _hp_ratio())
 	sprite.scale = Vector2(s, s)

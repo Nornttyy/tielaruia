@@ -146,6 +146,9 @@ func _on_entity_added_for_bar(child: Node) -> void:
 func _attach_health_bar(target: Node) -> void:
 	if target == null or not is_instance_valid(target):
 		return
+	# boss 用屏幕顶部专属大血条 (HUD/BossBar), 不挂头顶小条. (此处 deferred, boss _ready 已跑完入组)
+	if target.is_in_group("boss"):
+		return
 	var bar := HealthBarScript.new()
 	bar.name = "HealthBar"
 	target.add_child(bar)
