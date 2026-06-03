@@ -113,3 +113,14 @@ func test_dagger_weaker_broadsword_stronger():
 	# 短剑伤害小 (0.8), 阔剑伤害大 (1.2)
 	assert_almost_eq(float(db.get_def("iron_dagger").damage_mult), 0.8, 0.001, "短剑 0.8")
 	assert_almost_eq(float(db.get_def("iron_sword").damage_mult), 1.2, 0.001, "阔剑 1.2")
+
+
+# 骨剑 (骷髅王掉落, 阔剑·强) + 有游戏内图标
+func test_bone_sword_is_strong_broadsword():
+	var def = db.get_def("bone_sword")
+	assert_not_null(def, "骨剑应存在")
+	assert_eq(def.tool_kind, "sword", "骨剑是剑")
+	assert_eq(db.sword_style("bone_sword"), "sweep", "骨剑是阔剑(横扫)")
+	assert_almost_eq(float(def.damage_mult), 1.3, 0.001, "骨剑比普通阔剑(1.2)更强")
+	assert_eq(def.max_stack, 1, "骨剑不可叠")
+	assert_not_null(ArtCache.get_inventory_icon("bone_sword"), "骨剑应有游戏内图标")

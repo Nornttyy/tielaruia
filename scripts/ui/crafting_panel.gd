@@ -509,6 +509,7 @@ const _ZH_NAMES := {
 	"cloud": "云块",
 	"slime_crown": "史莱姆王冠",
 	"slime_ball": "史莱姆球",
+	"bone_sword": "骨剑",
 }
 
 
