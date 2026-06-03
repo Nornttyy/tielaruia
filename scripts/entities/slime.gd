@@ -306,11 +306,29 @@ func _die() -> void:
 	# 联机: host 通知 client 这个实体死了 (client 端那个 slime 也会消失)
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
-	# 掉 1-2 个 slime_jelly
-	var n := 1 + (randi() % 2)
-	for i in n:
+	# 按颜色 tier 掉 slime_jelly (绿1/蓝1/红2/紫3)
+	for i in _COLOR_JELLY[color_tier]:
 		_spawn_drop("slime_jelly")
+	# 大/中: 裂成 2 只同色小一档 (小不裂)
+	if size > 0:
+		_split()
 	queue_free()
+
+
+# 在死亡点附近 spawn 2 只同色 size-1 的史莱姆, 给点散开横速 (像泰拉瑞亚炸开).
+func _split() -> void:
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = get_parent()
+	if entities == null:
+		return
+	for i in 2:
+		var child = SlimeScene.instantiate()
+		child.setup(color_tier, size - 1)   # 同色, 小一档
+		entities.add_child(child)
+		child.global_position = global_position + Vector2(randf_range(-6.0, 6.0), -4.0)
+		if "velocity" in child:
+			child.velocity = Vector2(randf_range(-50.0, 50.0), -130.0)   # 弹开
 
 
 func _spawn_drop(item_id: String) -> void:
