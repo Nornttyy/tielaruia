@@ -384,6 +384,12 @@ const _RECIPES := [
 		"output_id": "hell_dagger", "output_count": 1, "mirror_ok": true,
 	},
 	{
+		# 骷髅头骨 (召唤骷髅王): 8 个骨头围成头骨形 (空心)
+		"id": "skull_summon", "grid_size": Vector2i(3, 3),
+		"pattern": [["bone", "bone", "bone"], ["bone", "", "bone"], ["bone", "bone", "bone"]],
+		"output_id": "skull_summon", "output_count": 1, "mirror_ok": true,
+	},
+	{
 		"id": "diamond_pickaxe",
 		"grid_size": Vector2i(3, 3),
 		"pattern": [

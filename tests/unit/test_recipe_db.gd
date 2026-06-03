@@ -237,3 +237,16 @@ func test_matcher_iron_dagger():
 	assert_not_null(hit, "铁锭+planks 应能合成铁短剑")
 	if hit != null:
 		assert_eq(hit.output_id, "iron_dagger")
+
+
+func test_skull_summon_recipe():
+	# 8 骨头围成头骨 (空心) = 召唤骷髅王的头骨
+	var r = db.get_recipe("skull_summon")
+	assert_not_null(r, "骷髅头骨配方应存在")
+	if r != null:
+		assert_eq(r.output_id, "skull_summon")
+	var g = [["bone", "bone", "bone"], ["bone", "", "bone"], ["bone", "bone", "bone"]]
+	var hit = RecipeMatcher.find_match(g)
+	assert_not_null(hit, "8 骨头围圈应能合成骷髅头骨")
+	if hit != null:
+		assert_eq(hit.output_id, "skull_summon")

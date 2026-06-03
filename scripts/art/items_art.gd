@@ -1972,7 +1972,29 @@ const _BONE_SWORD := [
 	"................",
 ]
 
+
+# 骷髅头骨 (召唤骷髅王): 骨白头骨 + 黑眼窝 + 牙
+const _SKULL_SUMMON := [
+	"................",
+	"................",
+	"....nnnnnn......",
+	"...n$wwww$n.....",
+	"..n$wjjjjw$n....",
+	"..n$wjjjjw$n....",
+	"..n$nnwwnn$n....",
+	"..n$nnwwnn$n....",
+	"..n$wjwwjw$n....",
+	"...n$wwww$n.....",
+	"....nwwwwn......",
+	"....nwnwnwn.....",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
 const _ICONS := {
+	"skull_summon": _SKULL_SUMMON,
 	"bone_sword": _BONE_SWORD,
 	"wood_dagger": _WOOD_DAGGER,
 	"stone_dagger": _STONE_DAGGER,

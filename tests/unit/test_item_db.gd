@@ -124,3 +124,12 @@ func test_bone_sword_is_strong_broadsword():
 	assert_almost_eq(float(def.damage_mult), 1.3, 0.001, "骨剑比普通阔剑(1.2)更强")
 	assert_eq(def.max_stack, 1, "骨剑不可叠")
 	assert_not_null(ArtCache.get_inventory_icon("bone_sword"), "骨剑应有游戏内图标")
+
+
+# 骷髅头骨 (召唤骷髅王的召唤道具)
+func test_skull_summon_is_summon_for_skeleton_king():
+	var def = db.get_def("skull_summon")
+	assert_not_null(def, "骷髅头骨应存在")
+	assert_true(db.is_summon("skull_summon"), "骷髅头骨是召唤道具")
+	assert_eq(def.get("summon_boss", ""), "skeleton_king", "召唤的是骷髅王")
+	assert_not_null(ArtCache.get_inventory_icon("skull_summon"), "骷髅头骨应有图标")
