@@ -439,9 +439,12 @@ func _grant_starter_on_new_game() -> void:
 	if not _want_starter:
 		return
 	# PlayerInventory._ready 创建 inventory, 可能跟我们 call_deferred 时机错位.
-	# 最多等 8 帧重试, 让 player + inventory 都就绪再发起步包.
+	# 轮询等 player + inventory 就绪再发起步包. 找到就发 + 立即 return (正常 1-3 帧就成).
+	# 老版只等 8 帧 → 异步加载(LoadingScreen 几秒) + 大世界 spawn 步骤靠后时, 8 帧内玩家
+	# 还没 spawn → 静默丢三件套 (用户反馈"大/小世界没三件套"). 放宽到覆盖整个加载.
 	# 每次循环重新 fetch world (await 后玩家可能 ESC 回主菜单, world freed).
-	for i in 8:
+	const STARTER_GRANT_MAX_FRAMES := 900   # ~15s @60fps, 兜底防慢加载丢包; 找到即提前 return
+	for i in STARTER_GRANT_MAX_FRAMES:
 		var w := world
 		if w == null or not is_instance_valid(w):
 			return  # world 没了 (回主菜单), 放弃
@@ -453,7 +456,7 @@ func _grant_starter_on_new_game() -> void:
 				_grant_starter_inventory(player)
 				return
 		await get_tree().process_frame
-	push_warning("starter 没发出去: player/inventory 8 帧内没就绪")
+	push_warning("starter 没发出去: player/inventory %d 帧内没就绪" % STARTER_GRANT_MAX_FRAMES)
 
 
 func _grant_starter_inventory(player: Node) -> void:
