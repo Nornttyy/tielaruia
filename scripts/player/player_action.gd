@@ -1448,7 +1448,7 @@ func _thrust_sword() -> void:
 		held.play_thrust(swing_dir.angle())
 	elif held != null and held.has_method("play_swing"):
 		held.play_swing()
-	SfxBank.play("swing", 0.10)
+	# 用户改: 删剑挥/戳音效 (只留命中怪的打击音, 见 effects.spawn_damage_number)
 	# 伤害 = sword_damage * damage_mult * 0.8
 	var base: int = _sword_damage()
 	if base <= 0:
@@ -1460,8 +1460,7 @@ func _thrust_sword() -> void:
 	# 用户改: 不再瞬时矩形 AoE, 改成 SWORD_THRUST_DURATION 内每帧扫剑身线段命中.
 	# 戳动画 held.position 三段式 (extend + dwell + retract), 我们 sync 算位置打怪.
 	_start_sword_blade_attack(false, swing_dir, damage, _thrust_knockback())
-	if player.has_method("shake"):
-		player.shake(2.0)
+	# 用户改: 删剑攻击的屏幕抖动
 
 
 func _sweep_sword() -> void:
@@ -1485,16 +1484,14 @@ func _sweep_sword() -> void:
 			held.play_swing_directional(swing_dir.angle())
 		elif held.has_method("play_swing"):
 			held.play_swing()
-	SfxBank.play("swing", 0.10)
+	# 用户改: 删剑挥/戳音效 (只留命中怪的打击音)
 	var damage: int = _effective_sword_damage()
 	if damage <= 0:
 		return
 	# 用户改: 不再瞬时弧 AoE, 改成 SWORD_SWING_DURATION 内每帧扫剑身线段命中.
 	# 挥半圆 180° rotation, 剑尖按 progress 扫弧 — 实际碰才扣血.
 	_start_sword_blade_attack(true, swing_dir, damage, _sweep_knockback())
-	# 用户改: 删了月牙拖尾 (剑影). 留 shake.
-	if player.has_method("shake"):
-		player.shake(3.0)
+	# 用户改: 删剑攻击的屏幕抖动 (之前留着, 现在用户要求删)
 
 
 func _inventory_node() -> Node:
