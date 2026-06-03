@@ -33,6 +33,9 @@ const RICE_0 := 77          # 稻子 (复用小麦图案 + 绿调色板)
 const RICE_1 := 78
 const RICE_2 := 79
 const RICE_3 := 80
+const WATER_DESERT := 81    # 沙漠绿洲水 (青绿松石)
+const WATER_JUNGLE := 82    # 丛林水 (翠绿)
+const WATER_SWAMP := 83     # 沼泽水 (浑浊墨绿)
 const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
 const GOLD_CHEST := 54      # 金宝箱 (金色金属包角)
@@ -92,7 +95,9 @@ const WATER_L1 := 34        # 1/4 水位
 const WATER_L2 := 35        # 2/4 水位
 const WATER_L3 := 36        # 3/4 水位
 const CHEST := 37           # 箱子
-const DOOR_TOP := 38        # 门上半截 (跟 DOOR=9 配对成 2 格高门)
+const DOOR_TOP := 38        # 门顶 (DOOR 底 / DOOR_MID 中 / DOOR_TOP 顶, 3 格高门)
+const DOOR_MID := 84        # 门中段
+const DOOR_OPEN := 85       # 门打开态窄条 (3 格都用它)
 
 # --- 调色板 (每方块独立) ---
 
@@ -421,7 +426,8 @@ const _P_DOOR := {
 	"d": Color8(109, 76, 65),
 	"D": Color8(78, 52, 46),
 	"l": Color8(141, 110, 99),
-	"h": Color8(200, 200, 200), # 把手
+	"h": Color8(214, 188, 120), # 把手 (暖金)
+	"w": Color8(150, 205, 230), # 窗玻璃 (浅蓝)
 }
 
 const _P_BEDROCK := {
@@ -548,6 +554,22 @@ const _P_WATER := {
 	"a": Color8(60, 130, 215, 220),   # 海蓝主色 (95% 区域)
 	"b": Color8(70, 140, 220, 220),   # 微浅 (跟 a 差 10, 几乎看不出)
 	"c": Color8(85, 155, 230, 220),   # 浅一点点 (跟 a 差 20, 像水下微光)
+}
+# 群系水调色板 (同结构 a/b/c, b/c 是 a 加亮的高光). 森林/默认用上面 _P_WATER 的蓝.
+const _P_WATER_DESERT := {           # 青绿松石 (绿洲清澈)
+	"a": Color8(40, 180, 180, 215),
+	"b": Color8(58, 196, 196, 215),
+	"c": Color8(82, 212, 210, 215),
+}
+const _P_WATER_JUNGLE := {           # 翠绿 (丛林浓绿)
+	"a": Color8(40, 158, 100, 215),
+	"b": Color8(56, 174, 118, 215),
+	"c": Color8(80, 192, 140, 215),
+}
+const _P_WATER_SWAMP := {            # 浑浊墨绿 (沼泽脏水, alpha 高更浑)
+	"a": Color8(72, 96, 66, 235),
+	"b": Color8(84, 108, 78, 235),
+	"c": Color8(98, 122, 92, 235),
 }
 
 # 地狱晶体: DEEP_STONE 底 (更暗背景烘托) + h/H/y 烈火红
@@ -1287,64 +1309,106 @@ const _MIMIC_CHEST := [
 	"................",
 ]
 
-# 门 (关) — 占 1 tile，门顶用 Door scene 上方延伸
+# 3 格高门 — 无缝拼接成"一整扇门": 连续竖框 + 整片凹槽嵌板, 内部不留横边框,
+# 段与段交界处花纹连续 (这才是用户要的"连起来"). DOOR=底 / DOOR_MID=中 / DOOR_TOP=顶.
+# 门底 (DOOR): 只在最下面收边, 顶上接 DOOR_MID.
 const _DOOR_CLOSED := [
-	"DDDDDDDDDDDDDDDD",
-	"DllllllllllllllD",
-	"DldddddddddddldD",
-	"DldDDDDDDDDDDldD",
-	"DldDddddddddDldD",
-	"DldDdhhdddddDldD",
-	"DldDdhhdddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDddddddddDldD",
-	"DldDDDDDDDDDDldD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDDDDDDDDDDdlD",
 	"DllllllllllllllD",
 	"DDDDDDDDDDDDDDDD",
 ]
 
-# 门上半截 (DOOR_TOP): 顶端 + 小窗 + 木板. 跟 DOOR 接缝, 整体 2 格高门.
+# 门中 (DOOR_MID): 上下都接, 无横边框; 中间一颗暖金把手.
+const _DOOR_MID_CLOSED := [
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddhhDdlD",
+	"DldDddddddhhDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+]
+
+# 门顶 (DOOR_TOP): 最上面收边 + 小窗玻璃; 底下接 DOOR_MID.
 const _DOOR_TOP_CLOSED := [
 	"DDDDDDDDDDDDDDDD",
 	"DllllllllllllllD",
-	"DlDDDDDDDDDDDDlD",
-	"DlDddddddddddDlD",
-	"DlDdwwwwwwwwdDlD",
-	"DlDdwddddddwdDlD",
-	"DlDdwddddddwdDlD",
-	"DlDdwwwwwwwwdDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DlDddddddddddDlD",
-	"DllllllllllllllD",
-	"DDDDDDDDDDDDDDDD",
+	"DldDDDDDDDDDDdlD",
+	"DldDddddddddDdlD",
+	"DldDwwwwwwwwDdlD",
+	"DldDwwwwwwwwDdlD",
+	"DldDwwwwwwwwDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
+	"DldDddddddddDdlD",
 ]
 
-# 门 (开) — 显示为侧面窄条
+# 门 (开) — 门扇转到一侧, 只剩左边一道窄板, 其余透空 (3 格都用这张, 竖向平铺).
 const _DOOR_OPEN := [
-	"DDDDDDDDDDDD....",
-	"DllllllllllD....",
-	"DldddddddldD....",
-	"DldDDDDDDldD....",
-	"DldDdddddldD....",
-	"DldDdhhddldD....",
-	"DldDdhhddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDdddddldD....",
-	"DldDDDDDDldD....",
-	"DllllllllllD....",
-	"DDDDDDDDDDDD....",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+	"DddlD...........",
+]
+
+# 背包图标: 一整扇 3 格门塞进 16×16, 用 3 条横框线分成上(窗)/中(把手)/下 三段, 一眼看出"3格".
+const _DOOR_ICON := [
+	"...DDDDDDDDDD...",
+	"...DwwwwwwwwD...",
+	"...DwwwwwwwwD...",
+	"...DwwwwwwwwD...",
+	"...DDDDDDDDDD...",
+	"...DddddddddD...",
+	"...DddddddhhD...",
+	"...DddddddhhD...",
+	"...DddddddddD...",
+	"...DDDDDDDDDD...",
+	"...DddddddddD...",
+	"...DddddddddD...",
+	"...DddddddddD...",
+	"...DddddddddD...",
+	"...DddddddddD...",
+	"...DDDDDDDDDD...",
 ]
 
 const _BEDROCK := [
@@ -2157,6 +2221,10 @@ const _PATTERN_MAP := {
 	DIAMOND_ORE: [_DIAMOND_ORE, _P_DIAMOND_ORE],
 	HELL_CRYSTAL: [_HELL_CRYSTAL, _P_HELL_CRYSTAL],
 	WATER: [_WATER, _P_WATER],
+	# 群系水 icon 复用 _WATER 图案 + 各自调色板 (真正世界贴图由 ArtCache 动画 atlas 给)
+	WATER_DESERT: [_WATER, _P_WATER_DESERT],
+	WATER_JUNGLE: [_WATER, _P_WATER_JUNGLE],
+	WATER_SWAMP: [_WATER, _P_WATER_SWAMP],
 	LOG_TOP: [_LOG_TOP, _P_LOG],
 	LOG_ROOT_L: [_LOG_ROOT_L, _P_BRANCH],
 	LOG_ROOT_R: [_LOG_ROOT_R, _P_BRANCH],
@@ -2168,6 +2236,8 @@ const _PATTERN_MAP := {
 	WATER_L3: [_WATER, _P_WATER],
 	CHEST: [_CHEST, _P_CHEST],
 	DOOR_TOP: [_DOOR_TOP_CLOSED, _P_DOOR],
+	DOOR_MID: [_DOOR_MID_CLOSED, _P_DOOR],
+	DOOR_OPEN: [_DOOR_OPEN, _P_DOOR],
 	# 新群系 tile: 暂复用现有 pattern (后续可以做专属调色板)
 	SNOW: [_SNOW, _P_SNOW],
 	ICE: [_STONE, _P_STONE],
@@ -2221,6 +2291,8 @@ const _PALETTES := {
 	PLANKS:    [_P_PLANKS["p"],    _P_PLANKS["P"]],
 	WORKBENCH: [_P_WORKBENCH["p"], _P_WORKBENCH["P"]],
 	DOOR:      [_P_DOOR["d"],      _P_DOOR["D"]],
+	DOOR_MID:  [_P_DOOR["d"],      _P_DOOR["D"]],
+	DOOR_OPEN: [_P_DOOR["d"],      _P_DOOR["D"]],
 	BEDROCK:   [_P_BEDROCK["b"],   _P_BEDROCK["B"]],
 	LEAVES_PINE:   [_P_LEAVES_PINE["l"],   _P_LEAVES_PINE["L"]],
 	LEAVES_AUTUMN: [_P_LEAVES_AUTUMN["l"], _P_LEAVES_AUTUMN["L"]],
@@ -2247,15 +2319,33 @@ static func get_door_open_texture() -> ImageTexture:
 	return PixelArt.grid_to_texture(_DOOR_OPEN, _P_DOOR)
 
 
+# 背包里门的图标 (整扇 3 格门压进 16×16, 看得出 3 段)
+static func get_door_icon_texture() -> ImageTexture:
+	return PixelArt.grid_to_texture(_DOOR_ICON, _P_DOOR)
+
+
 # 水动画 atlas: 4 帧水平排列, 64×16. TileSetAtlasSource 用 set_animation_frames_count 自动循环.
 static func get_water_animated_atlas() -> ImageTexture:
+	return get_water_animated_atlas_p(_P_WATER)
+
+
+# 同上但用指定调色板 (群系水分色用). 复用同一套水帧, 只换 a/b/c 颜色.
+static func get_water_animated_atlas_p(palette: Dictionary) -> ImageTexture:
 	var frames: Array = [_WATER, _WATER_F1, _WATER_F2, _WATER_F3]
 	var dst := Image.create(64, 16, false, Image.FORMAT_RGBA8)
 	dst.fill(Color(0, 0, 0, 0))
 	for i in range(4):
-		var frame_img: Image = PixelArt.grid_to_image(frames[i], _P_WATER)
+		var frame_img: Image = PixelArt.grid_to_image(frames[i], palette)
 		dst.blit_rect(frame_img, Rect2i(0, 0, 16, 16), Vector2i(i * 16, 0))
 	return ImageTexture.create_from_image(dst)
+
+
+# 群系水的调色板 (给 ArtCache 用). tile_id 传 WATER_DESERT/JUNGLE/SWAMP.
+static func water_palette_for(tile_id: int) -> Dictionary:
+	if tile_id == WATER_DESERT: return _P_WATER_DESERT
+	if tile_id == WATER_JUNGLE: return _P_WATER_JUNGLE
+	if tile_id == WATER_SWAMP: return _P_WATER_SWAMP
+	return _P_WATER
 
 
 # 水位 (1/4, 2/4, 3/4) 动画 atlas: 同样 4 帧但顶部 (4-level)*4 行透明 (水位低).

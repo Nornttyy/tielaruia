@@ -73,7 +73,7 @@ func _is_in_water() -> bool:
 			return false
 	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
 	var ty: int = int(floor((global_position.y - 6.0) / float(TILE_SIZE)))  # 腰部 (高度比玩家小)
-	return _cached_cm.get_tile(tx, ty) == Tiles.WATER
+	return Tiles.is_water(_cached_cm.get_tile(tx, ty))  # 统一判定 (含群系水色)
 
 
 func _physics_process(delta: float) -> void:

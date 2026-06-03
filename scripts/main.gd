@@ -282,11 +282,13 @@ func _apply_save_data(data: Resource) -> void:
 		ChestStorage.restore(data.chest_contents)
 	# 把已经加载的 chunk 也重新刷一遍 tile 视觉 — 简单做法: 让 chunk_manager 重载
 	# 否则玩家挖过的方块在 load 时不会显示
-	for cx in data.chunk_deltas.keys():
+	for cx_key in data.chunk_deltas.keys():
+		# key 是 String (.tres 存档会丢整数 key 0 = 出生点区块, 故序列化用 str). get_chunk 要 int.
+		var cx: int = int(cx_key)
 		var ch = w.chunk_manager.get_chunk(cx)
 		if ch != null:
 			# 应用 delta 到 chunk.tiles
-			var arr: PackedInt32Array = data.chunk_deltas[cx]
+			var arr: PackedInt32Array = data.chunk_deltas[cx_key]
 			var i: int = 0
 			while i + 2 < arr.size():
 				ch.set_tile(arr[i], arr[i + 1], arr[i + 2])

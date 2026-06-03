@@ -42,7 +42,9 @@ const WATER_L2 := 35        # 2/4 水位 (流水 level 2)
 const WATER_L3 := 36        # 3/4 水位 (流水 level 3)
 # WATER (=28) 表示满水 level 4
 const CHEST := 37           # 箱子: 右键打开 24 格存储, 内容跟存档持久化
-const DOOR_TOP := 38        # 门上半截 (DOOR 始终是底部, DOOR_TOP 顶部). 配对成 2 格高门.
+const DOOR_TOP := 38        # 门顶 (DOOR 底 / DOOR_MID 中 / DOOR_TOP 顶, 凑成 3 格高门)
+const DOOR_MID := 84        # 门中段 (3 格门的中间一格)
+const DOOR_OPEN := 85       # 门打开态: 3 格都换成它, 无碰撞谁都能穿; 离开后换回关门
 # 新群系 tile (雪原 / 丛林 / 沼泽)
 const SNOW := 39            # 雪原地表 (替代 GRASS), 偏白带浅蓝阴影
 const ICE := 40             # 冰块 (雪原零星), 半透明蓝
@@ -94,6 +96,10 @@ const RICE_0 := 77          # 稻子 苗 (像小麦 4 阶段, 种子近水种, �
 const RICE_1 := 78          # 稻子 小
 const RICE_2 := 79          # 稻子 中
 const RICE_3 := 80          # 稻子 熟 (挖 → 米 + 稻种)
+# 群系满水 (level 4): 颜色不同, 行为同 WATER (非实心/不可挖/4帧动画). 森林/雪原/默认用通用 WATER.
+const WATER_DESERT := 81    # 沙漠绿洲 = 青绿松石
+const WATER_JUNGLE := 82    # 丛林 = 翠绿
+const WATER_SWAMP := 83     # 沼泽 = 浑浊墨绿
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -172,10 +178,22 @@ const _PROPS := {
 		"drops": [["door", 100, 1, 1]],
 	},
 	DOOR_TOP: {
-		# 门顶部: 跟 DOOR 一起 2 格高. 物理同 DOOR (单独物理层挡怪不挡玩家).
+		# 门顶部: 跟 DOOR/DOOR_MID 一起 3 格高. 物理同 DOOR (单独物理层挡怪不挡玩家).
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
-		# 不掉东西 — 砍 DOOR 顶部时, 联动把底也消, 由底掉 1 个 door item.
+		# 不掉东西 — 砍门任一段, 联动消整扇, 由 DOOR 掉 1 个 door item.
+		"drops": [],
+	},
+	DOOR_MID: {
+		# 门中段: 3 格门的中间. 物理同 DOOR (挡怪不挡玩家). 砍它联动消整扇.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [],
+	},
+	DOOR_OPEN: {
+		# 门打开态: 完全可穿 (连怪也能过), 无碰撞. 砍它联动消整扇, 由 DOOR 掉落.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [],
 	},
 	BEDROCK: {
@@ -332,6 +350,19 @@ const _PROPS := {
 		"tool_tiers": {}, "drops": [],
 	},
 	WATER_L3: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	# 群系满水: 行为完全同 WATER (只是颜色不同)
+	WATER_DESERT: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	WATER_JUNGLE: {
+		"solid": false, "mineable": false,
+		"tool_tiers": {}, "drops": [],
+	},
+	WATER_SWAMP: {
 		"solid": false, "mineable": false,
 		"tool_tiers": {}, "drops": [],
 	},
@@ -554,6 +585,13 @@ func is_solid(tile_id: int) -> bool:
 	if not _PROPS.has(tile_id):
 		return false
 	return _PROPS[tile_id].solid
+
+
+# 是不是水 (任意水位 L1-3 + 满水 + 任意群系水色). 统一判定: 加新水方块只改这里,
+# 别处 (游泳/钓鱼/小地图/模拟) 一律用 Tiles.is_water(), 别再写 == WATER or == WATER_L1...
+func is_water(tile_id: int) -> bool:
+	return tile_id == WATER or tile_id == WATER_L1 or tile_id == WATER_L2 or tile_id == WATER_L3 \
+			or tile_id == WATER_DESERT or tile_id == WATER_JUNGLE or tile_id == WATER_SWAMP
 
 
 func is_mineable(tile_id: int) -> bool:

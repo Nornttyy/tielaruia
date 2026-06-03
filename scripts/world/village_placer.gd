@@ -39,6 +39,11 @@ static func place(
 					continue
 				var pos: Vector2i = house_anchor + Vector2i(cx, ry)
 				chunk_manager.set_tile(pos.x, pos.y, tid)
+				# 门: 'D' 占 3 格 (底 DOOR + 中 DOOR_MID + 顶 DOOR_TOP).
+				# 玩家 2.5 格高, 门洞必须 3 格才进得去; 上 2 格盖掉原墙形成门洞.
+				if tid == Tiles.DOOR:
+					chunk_manager.set_tile(pos.x, pos.y - 1, Tiles.DOOR_MID)
+					chunk_manager.set_tile(pos.x, pos.y - 2, Tiles.DOOR_TOP)
 		if house.get("villager_offset", null) != null:
 			var off = house.villager_offset
 			villager_spawns.append(house_anchor + Vector2i(off[0], off[1]))

@@ -68,9 +68,9 @@ func add_water(x: int, y: int) -> bool:
 
 # 内部 ----
 
-# 液种: "water" / "lava" / "" (非流体)
+# 液种: "water" / "lava" / "" (非流体). 群系水 (沙漠/丛林/沼泽) 也算 water.
 func _liquid_kind(tid: int) -> String:
-	if tid == Tiles.WATER or tid == Tiles.WATER_L1 or tid == Tiles.WATER_L2 or tid == Tiles.WATER_L3:
+	if Tiles.is_water(tid):
 		return "water"
 	if tid == Tiles.LAVA or tid == Tiles.LAVA_L1 or tid == Tiles.LAVA_L2 or tid == Tiles.LAVA_L3:
 		return "lava"
@@ -78,7 +78,10 @@ func _liquid_kind(tid: int) -> String:
 
 
 func _level_of(tid: int) -> int:
-	if tid == Tiles.WATER or tid == Tiles.LAVA: return 4
+	# 满水 (含 3 个群系水) + 满岩浆 = 4
+	if tid == Tiles.WATER or tid == Tiles.LAVA \
+			or tid == Tiles.WATER_DESERT or tid == Tiles.WATER_JUNGLE or tid == Tiles.WATER_SWAMP:
+		return 4
 	if tid == Tiles.WATER_L3 or tid == Tiles.LAVA_L3: return 3
 	if tid == Tiles.WATER_L2 or tid == Tiles.LAVA_L2: return 2
 	if tid == Tiles.WATER_L1 or tid == Tiles.LAVA_L1: return 1

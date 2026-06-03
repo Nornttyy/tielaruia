@@ -44,7 +44,7 @@ func _lk(fw, x, y) -> String:
 	var t = fw.tiles.get(Vector2i(x,y), Tiles.AIR)
 	if t == Tiles.LAVA or t == Tiles.LAVA_L1 or t == Tiles.LAVA_L2 or t == Tiles.LAVA_L3:
 		return "lava"
-	if t == Tiles.WATER or t == Tiles.WATER_L1 or t == Tiles.WATER_L2 or t == Tiles.WATER_L3:
+	if Tiles.is_water(t):   # 含群系水色
 		return "water"
 	return ""
 
@@ -225,6 +225,21 @@ func test_settle_now_terminates_on_big_still_pool() -> void:
 	assert_eq(_lk(fw, 0, 0), "water", "平衡水池 settle 后水还在")
 	assert_eq(_lk(fw, 7, 0), "water", "平衡水池 settle 后水还在")
 	assert_true(sim._dirty.is_empty(), "settle 后 dirty 清空")
+
+
+func test_biome_water_flows_like_water() -> void:
+	# 群系水 (沙漠绿洲色) 该跟普通水一样被模拟认出来、会流动.
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER_DESERT
+	fw.tiles[Vector2i(0, 2)] = Tiles.STONE
+	fw.tiles[Vector2i(-1, 1)] = Tiles.STONE
+	fw.tiles[Vector2i(1, 1)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim.notify_tile_changed(0, 0)
+	for i in 5:
+		sim._run_tick()
+	assert_eq(_lk(fw, 0, 1), "water", "群系水该像普通水一样下落")
+	assert_eq(_lk(fw, 0, 0), "", "源处该流空")
 
 
 func test_water_lava_makes_stone() -> void:

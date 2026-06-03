@@ -82,3 +82,34 @@ func test_iron_pickaxe_item():
 	# tier 1-7 progressive: wood/stone/copper/iron/silver/gold/diamond
 	assert_eq(def.tool_tier, 4)
 	assert_eq(def.max_stack, 1)
+
+
+# === 剑分家: 8 短剑(dagger) + 8 阔剑(sword) ===
+const _SWORD_MATS := ["wood", "stone", "copper", "iron", "silver", "gold", "diamond", "hell"]
+const _SWORD_TIERS := {"wood": 1, "stone": 2, "copper": 3, "iron": 4, "silver": 5, "gold": 6, "diamond": 7, "hell": 8}
+
+
+func test_8_daggers_exist():
+	for mat in _SWORD_MATS:
+		var def = db.get_def(mat + "_dagger")
+		assert_not_null(def, "短剑应存在: %s_dagger" % mat)
+		assert_eq(def.tool_kind, "sword", "%s_dagger 是 sword 类" % mat)
+		assert_eq(def.tool_tier, _SWORD_TIERS[mat], "%s_dagger tier" % mat)
+		assert_eq(def.max_stack, 1, "%s_dagger 不可叠" % mat)
+
+
+func test_sword_style_dagger_is_thrust_sword_is_sweep():
+	# 短剑永远戳, 阔剑永远扫 (不再按 tier)
+	assert_eq(db.sword_style("wood_dagger"), "thrust", "短剑=戳")
+	assert_eq(db.sword_style("hell_dagger"), "thrust", "高级短剑也戳")
+	assert_eq(db.sword_style("wood_sword"), "sweep", "阔剑=扫")
+	assert_eq(db.sword_style("diamond_sword"), "sweep", "高级阔剑也扫")
+	# 非剑 / 未知 → 空字符串 (兜底不崩)
+	assert_eq(db.sword_style("dirt"), "", "非剑返回空")
+	assert_eq(db.sword_style("nonexistent"), "", "未知返回空")
+
+
+func test_dagger_weaker_broadsword_stronger():
+	# 短剑伤害小 (0.8), 阔剑伤害大 (1.2)
+	assert_almost_eq(float(db.get_def("iron_dagger").damage_mult), 0.8, 0.001, "短剑 0.8")
+	assert_almost_eq(float(db.get_def("iron_sword").damage_mult), 1.2, 0.001, "阔剑 1.2")

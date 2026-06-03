@@ -96,7 +96,7 @@ var _mining_swing_t: float = 0.0  # 挖矿挥镐动画节流
 
 # 战斗
 const SWORD_RANGE_PX := 27.0
-const SWORD_COOLDOWN := 0.3
+const SWORD_COOLDOWN := 0.42   # 阔剑(扫)较慢较重; 短剑(戳)快 0.3
 var _attack_cooldown: float = 0.0
 # 剑的戳/挥交替: 0 = 下一击戳, 1 = 下一击挥. 切工具时归零.
 var _attack_combo_step: int = 0
@@ -185,13 +185,13 @@ func _physics_process(delta: float) -> void:
 	if _crafting_open():
 		return
 	_attack_cooldown = max(0.0, _attack_cooldown - delta)
-	# 持剑 LMB: 用户改 — tier 1-2 (木/石) 戳, tier 3+ (铜/铁/银/金/钻) 半圆挥 (Terraria 风格)
+	# 持剑 LMB: 按剑的种类选 — 短剑(dagger)永远戳, 阔剑(sword)永远半圆挥. 不再按 tier.
 	var kind: String = _current_tool_kind()
 	if kind == "sword":
 		_reset_mining()
 		var primary_pressed: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed and _attack_cooldown <= 0.0:
-			if _current_tool_tier() <= 2:
+			if _current_sword_style_is_thrust():
 				_thrust_sword()
 			else:
 				_sweep_sword()
@@ -473,15 +473,19 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	if tid == Tiles.LOG and _is_tree_base(world, tile.x, tile.y):
 		_cascade_chop_tree(world, tile, tool_kind)
 		return
-	# 砍门: 联动消除另一半 (DOOR↔DOOR_TOP)
-	if tid == Tiles.DOOR:
+	# 砍门: 不管开/关, 找到整扇门 (上下连续的门 tile) 一起消, 只掉 1 个 door.
+	# (门挨着玩家会自动开成 DOOR_OPEN, 所以挖的多半是开着的门 — 一并处理)
+	if tid == Tiles.DOOR or tid == Tiles.DOOR_MID or tid == Tiles.DOOR_TOP or tid == Tiles.DOOR_OPEN:
 		if world.has_method("_set_tile"):
-			world._set_tile(tile.x, tile.y - 1, Tiles.AIR)   # 同时消顶部
-	elif tid == Tiles.DOOR_TOP:
-		if world.has_method("_set_tile"):
-			world._set_tile(tile.x, tile.y + 1, Tiles.AIR)   # 同时消底部
-			# 由底部 (Tiles.DOOR) 的 drops 出 door item, 这里改 tid 让正常流程走底的掉落
-			tid = Tiles.DOOR
+			var yy: int = tile.y - 1
+			while yy >= tile.y - 3 and _is_door_tile(world, tile.x, yy):   # 往上消
+				world._set_tile(tile.x, yy, Tiles.AIR)
+				yy -= 1
+			yy = tile.y + 1
+			while yy <= tile.y + 3 and _is_door_tile(world, tile.x, yy):   # 往下消
+				world._set_tile(tile.x, yy, Tiles.AIR)
+				yy += 1
+		tid = Tiles.DOOR   # 改 tid → 下面掉落流程出 1 个 door (点击那格由通用流程消)
 	# 砍 chest (4 个 tier 都一样行为): 内容物先撒出来 (不丢)
 	if tid == Tiles.CHEST or tid == Tiles.GOLD_CHEST or tid == Tiles.DIAMOND_CHEST or tid == Tiles.SHADOW_CHEST:
 		var contents: Array = ChestStorage.clear(tile)
@@ -513,6 +517,15 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	for item_id in drops:
 		for _i in drops[item_id]:
 			_spawn_drop(item_id, tile)
+
+
+# 这格是不是门的一部分 (底/中/顶/开). 砍门时往上下扫连续门 tile 用.
+func _is_door_tile(world: Node, x: int, y: int) -> bool:
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return false
+	var t: int = cm.get_tile(x, y)
+	return t == Tiles.DOOR or t == Tiles.DOOR_MID or t == Tiles.DOOR_TOP or t == Tiles.DOOR_OPEN
 
 
 # 树底 = 下面那格不属于树自身的部件. 其他都算 (grass/dirt/AIR/stone/glass 等).
@@ -659,8 +672,7 @@ func try_place() -> bool:
 		return true
 	# 目标必须为空气 (或水, 水可以被填掉 — 玩家用方块塞水)
 	var target_src: int = terrain.get_cell_source_id(tile)
-	var is_water: bool = target_src == Tiles.WATER or target_src == Tiles.WATER_L1 \
-			or target_src == Tiles.WATER_L2 or target_src == Tiles.WATER_L3
+	var is_water: bool = Tiles.is_water(target_src)
 	if target_src != -1 and not is_water:
 		return false
 	# 不与玩家碰撞框重叠（玩家占 2 tile 高：脚底 tile 和上方 tile）
@@ -683,14 +695,16 @@ func try_place() -> bool:
 		return false
 	var def = ItemDB.get_def(slot.item_id)
 	var world: Node = terrain.get_parent()
-	# 门: 2 格高, 占当前 tile + 上一格. 上面必须空气, 否则放不了.
+	# 门: 3 格高, 占当前 tile + 上面 2 格. 上面 2 格必须空, 否则放不了.
 	if def.placeable_tile_id == Tiles.DOOR:
-		var above: Vector2i = tile + Vector2i(0, -1)
-		if terrain.get_cell_source_id(above) != -1:
+		var mid: Vector2i = tile + Vector2i(0, -1)
+		var top: Vector2i = tile + Vector2i(0, -2)
+		if terrain.get_cell_source_id(mid) != -1 or terrain.get_cell_source_id(top) != -1:
 			return false
 		if world.has_method("_set_tile"):
-			world._set_tile(tile.x, tile.y, Tiles.DOOR)
-			world._set_tile(above.x, above.y, Tiles.DOOR_TOP)
+			world._set_tile(tile.x, tile.y, Tiles.DOOR)        # 底
+			world._set_tile(mid.x, mid.y, Tiles.DOOR_MID)      # 中
+			world._set_tile(top.x, top.y, Tiles.DOOR_TOP)      # 顶
 		inv.consume_current(1)
 		SkyLightGrid.invalidate_column(tile.x)
 		Effects.spawn_place_bounce(tile, Tiles.DOOR)
@@ -844,6 +858,23 @@ func _current_tool_tier() -> int:
 	if def == null:
 		return 0
 	return def.tool_tier
+
+
+# 当前手持剑该戳还是扫: 读 item 的 sword_style. 短剑=thrust(戳), 阔剑=sweep(扫).
+# 老存档/没标 sword_style 的剑 → 按老规则 tier<=2 戳兜底 (不崩).
+func _current_sword_style_is_thrust() -> bool:
+	var inv: Node = _inventory_node()
+	if inv == null:
+		return false
+	var slot = inv.current_hotbar_slot()
+	if slot == null:
+		return false
+	var style: String = ItemDB.sword_style(slot.item_id)
+	if style == "thrust":
+		return true
+	if style == "sweep":
+		return false
+	return _current_tool_tier() <= 2   # 兜底
 
 
 func _effective_sword_damage() -> int:
@@ -1340,10 +1371,10 @@ func _is_in_swing_arc(target_pos: Vector2, origin: Vector2, dir: Vector2) -> boo
 
 
 # 戳的常量
-const THRUST_COOLDOWN := 0.5    # 用户改 0.18→0.5: 戳太快了, 慢一档
+const THRUST_COOLDOWN := 0.3    # 短剑(戳)出手快, 比阔剑(扫 0.42)快一档
 const THRUST_LENGTH_MULT := 1.2      # 戳长 = SWORD_RANGE_PX * 1.2 ≈ 43px (比挥更远)
 const THRUST_HALF_WIDTH := 4.5       # 戳带半宽 6px (总宽 12), 鼠标偏一点也命中
-const THRUST_DAMAGE_MULT := 0.8
+# 注: 短剑弱由 item 的 damage_mult=0.8 决定 (阔剑 1.2), 戳不再额外乘削弱系数
 
 
 # 戳: 直线突刺, 范围远 / 伤害 0.8x / 只命中最近 1 个目标
@@ -1373,7 +1404,7 @@ func _thrust_sword() -> void:
 	var dmg_mult: float = _tool_damage_mult()
 	if dmg_mult <= 0.0:
 		return
-	var damage: int = max(1, int(round(float(base) * dmg_mult * THRUST_DAMAGE_MULT)))
+	var damage: int = max(1, int(round(float(base) * dmg_mult)))
 	# 用户改: 不再瞬时矩形 AoE, 改成 SWORD_THRUST_DURATION 内每帧扫剑身线段命中.
 	# 戳动画 held.position 三段式 (extend + dwell + retract), 我们 sync 算位置打怪.
 	_start_sword_blade_attack(false, swing_dir, damage, _thrust_knockback())
@@ -1625,6 +1656,5 @@ func try_fishing_click() -> void:
 	var is_water: bool = false
 	if terrain != null and in_reach(aim_t):
 		var tid: int = terrain.get_cell_source_id(aim_t)
-		is_water = tid == Tiles.WATER or tid == Tiles.WATER_L1 \
-				or tid == Tiles.WATER_L2 or tid == Tiles.WATER_L3
+		is_water = Tiles.is_water(tid)
 	pf.on_rod_click(aim_t, is_water)
