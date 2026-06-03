@@ -481,21 +481,21 @@ static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 		if smax - smin > POND_MAX_SLOPE:
 			continue
 		var water_tile: int = _biome_water_tile(biome)
-		# 统一水面 = 中心地表高度 → 池面齐平像真水塘 (不跟着斜坡走, 配合加载时 settle 自动找平)
-		var level_y: int = psurf
+		# 贴地填: 从每列自己的地表往下挖碗填水 → 水永远坐在实地上, 不会悬空 (悬空水的根源).
+		# 起伏由加载时 settle 自动找平成水塘.
 		for dx in range(-phalf, phalf + 1):
 			var tx2: int = lx + dx
 			if tx2 < 0 or tx2 >= chunk_width:
 				continue
+			var s2: int = chunk_heights[chunk_start_x + tx2]
 			var dxa: int = absi(dx)
 			var ratio2: float = 1.0 - float(dxa) / float(phalf + 1)
 			var pdepth: int = int(float(POND_DEPTH) * (0.35 + 0.65 * ratio2))
 			pdepth += (_hash3(world_seed, chunk_start_x + tx2, 7779) & 3) - 1
 			if pdepth < 1:
 				continue
-			# 从统一水面往下挖碗填水 (中心深边缘浅)
 			for dy in range(pdepth):
-				var ty2: int = level_y + dy
+				var ty2: int = s2 + dy
 				if ty2 >= 0 and ty2 < height - BEDROCK_ROWS:
 					c.tiles[tx2][ty2] = water_tile
 
