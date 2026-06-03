@@ -429,6 +429,25 @@ custom_minimum_size = Vector2(82, 0)
 toggle_mode = true
 text = "大"
 
+[node name="ModeRow" type="HBoxContainer" parent="NewGamePanel/VBox"]
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="NewGamePanel/VBox/ModeRow"]
+custom_minimum_size = Vector2(80, 0)
+text = "模式"
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="SurvivalButton" type="Button" parent="NewGamePanel/VBox/ModeRow"]
+custom_minimum_size = Vector2(124, 0)
+toggle_mode = true
+button_pressed = true
+text = "生存"
+
+[node name="CreativeButton" type="Button" parent="NewGamePanel/VBox/ModeRow"]
+custom_minimum_size = Vector2(124, 0)
+toggle_mode = true
+text = "创造"
+
 [node name="ButtonRow" type="HBoxContainer" parent="NewGamePanel/VBox"]
 alignment = 1
 theme_override_constants/separation = 16
