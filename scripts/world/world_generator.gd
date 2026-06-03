@@ -406,19 +406,11 @@ static func _wall_for_depth(y: int, surf: int) -> int:
 # ===== 水池 + 沙漠绿洲 + 地下海洋 =====
 # 矿洞洼地 BFS flood fill: 找连通 AIR 区域底部填 WATER_FILL_LEVEL 格水, 像真湖.
 # 沙漠绿洲: 沙地表稀疏长大水池.
-# 地下海洋: y > OCEAN_DEPTH 的 AIR 直接全填水 (深矿挖到底是大海).
+# (旧"地下海洋 y>OCEAN_DEPTH 全填水"已删 — 它会淹掉地狱 + 挖到底一片水, 用户要去掉.)
 static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
 	var chunk_start_x: int = chunk_x * chunk_width
 	var centers: Dictionary = _build_biome_centers(world_seed)  # 按 x 取群系 → 水色
-
-	# === 1) 地下海洋: y > OCEAN_DEPTH 的所有 AIR 强制水 (按列群系上色) ===
-	for lx in range(chunk_width):
-		var col: Array = c.tiles[lx]
-		var ocean_water: int = _biome_water_tile(_biome_at_x(chunk_start_x + lx, centers))
-		for y in range(OCEAN_DEPTH, col.size() - BEDROCK_ROWS):
-			if col[y] == Tiles.AIR:
-				col[y] = ocean_water
 
 	# === 2) 沙漠绿洲: 沙地表稀疏长碗状水池 (中心深, 边缘浅, 边带锯齿) ===
 	for lx in range(chunk_width):
