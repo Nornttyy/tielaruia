@@ -88,6 +88,17 @@ var camera_zoom: float = 0.8:
 		camera_zoom = clamped
 		_save_and_emit()
 
+# scroll_wheel_zoom: 鼠标滚轮干啥. false=切换快捷栏物品 (默认), true=缩放摄像头.
+var scroll_wheel_zoom: bool = false:
+	set(v):
+		if scroll_wheel_zoom == v: return
+		scroll_wheel_zoom = v
+		_save_and_emit()
+
+# creative_mode: 创造模式 (飞行/秒挖秒放/无限方块/不掉血). 会话变量 — 按"每个世界"存在
+# save_data 里, 不写全局 settings.cfg. 读档/新建/暂停切时由 main / pause_menu 设置它.
+var creative_mode: bool = false
+
 # current_language: UI 语言. "zh" / "en" / "ja" / "ko". 默认中文.
 # Locale autoload 读这个值 + 发 language_changed 信号让 UI 刷新.
 var current_language: String = "zh":
@@ -167,6 +178,7 @@ func _save() -> void:
 	cfg.set_value("player", "name", player_name)
 	cfg.set_value("hud", "enemy_hp_bar", show_enemy_hp_bar)
 	cfg.set_value("hud", "enemy_hp_number", show_enemy_hp_number)
+	cfg.set_value("input", "scroll_wheel_zoom", scroll_wheel_zoom)
 	cfg.save(SETTINGS_PATH)
 
 
@@ -189,3 +201,4 @@ func _load() -> void:
 	# 怪物血条/数字开关: 默认都开
 	show_enemy_hp_bar = bool(cfg.get_value("hud", "enemy_hp_bar", true))
 	show_enemy_hp_number = bool(cfg.get_value("hud", "enemy_hp_number", true))
+	scroll_wheel_zoom = bool(cfg.get_value("input", "scroll_wheel_zoom", false))

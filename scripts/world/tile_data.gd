@@ -587,6 +587,13 @@ func is_solid(tile_id: int) -> bool:
 	return _PROPS[tile_id].solid
 
 
+# 是不是矿石 (洞穴/火山挖掘时跳过, 别把稀有矿吞掉). 加新矿石只改这里.
+func is_ore(tile_id: int) -> bool:
+	return tile_id == COAL_ORE or tile_id == IRON_ORE or tile_id == COPPER_ORE \
+			or tile_id == TIN_ORE or tile_id == SILVER_ORE or tile_id == GOLD_ORE \
+			or tile_id == DIAMOND_ORE or tile_id == HELL_CRYSTAL or tile_id == HELL_ALLOY_ORE
+
+
 # 是不是水 (任意水位 L1-3 + 满水 + 任意群系水色). 统一判定: 加新水方块只改这里,
 # 别处 (游泳/钓鱼/小地图/模拟) 一律用 Tiles.is_water(), 别再写 == WATER or == WATER_L1...
 func is_water(tile_id: int) -> bool:

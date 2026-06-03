@@ -123,11 +123,7 @@ func _load_chunk(cx: int) -> void:
 		var world_node4: Node = get_tree().get_first_node_in_group("world")
 		if world_node4 != null and world_node4.has_method("spawn_harpies_for_chunk"):
 			world_node4.spawn_harpies_for_chunk(cx, c.harpy_spawn_spots)
-	# 世纪树守卫僵尸/骷髅: 同款机制
-	if not c.world_tree_guard_spots.is_empty():
-		var world_node5: Node = get_tree().get_first_node_in_group("world")
-		if world_node5 != null and world_node5.has_method("spawn_world_tree_guards_for_chunk"):
-			world_node5.spawn_world_tree_guards_for_chunk(cx, c.world_tree_guard_spots)
+	# 世纪树已删 (用户要求)
 	_loaded[cx] = c
 	chunk_loaded.emit(c)
 

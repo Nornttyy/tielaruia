@@ -27,12 +27,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			set_hotbar_selection(key - KEY_1)
 			get_viewport().set_input_as_handled()
 			return
-	# 滚轮切换
+	# 滚轮: 设置里选 — 切快捷栏物品 (默认) 或 缩放摄像头
 	if event is InputEventMouseButton and event.pressed:
+		var zoom_mode: bool = GameSettings != null and GameSettings.scroll_wheel_zoom
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			set_hotbar_selection((hotbar_selected - 1 + 9) % 9)
+			if zoom_mode:
+				GameSettings.camera_zoom = GameSettings.camera_zoom + 0.1   # 上滚 = 拉近 (放大)
+			else:
+				set_hotbar_selection((hotbar_selected - 1 + 9) % 9)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			set_hotbar_selection((hotbar_selected + 1) % 9)
+			if zoom_mode:
+				GameSettings.camera_zoom = GameSettings.camera_zoom - 0.1   # 下滚 = 拉远 (缩小)
+			else:
+				set_hotbar_selection((hotbar_selected + 1) % 9)
 
 
 func set_hotbar_selection(idx: int) -> void:

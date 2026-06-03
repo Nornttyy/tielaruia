@@ -61,6 +61,14 @@ const _TREE_PARTS := {
 	Tiles.BRANCH_R: true,
 }
 
+# 长在地上、需要下方有支撑的"植物": 下面方块被挖掉 → 它也跟着没 (防悬空). 仙人掌可叠 → 往上连消.
+const _PLANT_NEEDS_GROUND := {
+	Tiles.PLANT_GRASS: true, Tiles.MUSHROOM: true,
+	Tiles.CACTUS: true, Tiles.CACTUS_BODY: true,
+	Tiles.WHEAT_0: true, Tiles.WHEAT_1: true, Tiles.WHEAT_2: true, Tiles.WHEAT_3: true,
+	Tiles.RICE_0: true, Tiles.RICE_1: true, Tiles.RICE_2: true, Tiles.RICE_3: true,
+}
+
 # 镐挖不了的"植物"类 tile (叶子 / 仙人掌 / 蘑菇 / 火果 / 火把等小物).
 # 镐只破坏"方块". 不挡 axe (砍 LOG/仙人掌) / sword (无挖矿). 也不挡徒手 / 别工具.
 const _PICKAXE_BLACKLIST := {
@@ -360,6 +368,33 @@ func _update_mining(delta: float) -> void:
 	if not pressed:
 		_reset_mining()
 		return
+	# 创造模式: 秒挖 — 对准任意"可挖"方块瞬间破 (不要工具/不管树支撑). 基岩等不可挖的仍挡住.
+	if GameSettings != null and GameSettings.creative_mode:
+		var ct: Vector2i = aim_tile_coord()
+		var cterrain := _terrain()
+		if cterrain == null:
+			return
+		if not in_reach(ct):
+			_reset_mining()
+			return
+		var ctid: int = cterrain.get_cell_source_id(ct)
+		if ctid == -1 or not Tiles.is_mineable(ctid):
+			_reset_mining()
+			return
+		_mining_swing_t -= delta
+		if _mining_swing_t <= 0.0:   # 挥一下手 (秒挖也给点动作反馈)
+			_mining_swing_t = 0.25
+			var held: Node = _held_item_node()
+			if held != null:
+				if held.has_method("play_pickaxe_attack"):
+					_start_pickaxe_spin()
+				elif held.has_method("play_swing"):
+					held.play_swing()
+		_finish_mine(ct, ctid, _current_tool_kind(), cterrain)
+		_clear_crack(ct)
+		_mining_target = INVALID_TILE
+		_mining_progress = 0.0
+		return
 	# 斧只能砍 LOG / 仙人掌, 别的 tile 早 return 不播挖矿摆动 (防 "斧对空气挥" 视觉 bug)
 	if _current_tool_kind() == "axe":
 		var ax_tile: Vector2i = aim_tile_coord()
@@ -389,6 +424,10 @@ func _update_mining(delta: float) -> void:
 		return
 	var tid: int = terrain.get_cell_source_id(tile)
 	if tid == -1 or not Tiles.is_mineable(tid):
+		_reset_mining()
+		return
+	# 树支撑块保护: 正上方是"树底 LOG" → 这格在撑着树, 不许挖 (要砍树得砍树干; 别的方块照常)
+	if not _TREE_PARTS.has(tid) and _blocks_support_tree(terrain.get_parent(), tile.x, tile.y):
 		_reset_mining()
 		return
 	# 树部件特殊规则: 只有树底 LOG 能直接挖. LOG_TOP/BRANCH/ROOT 不能直接挖,
@@ -528,6 +567,42 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	for item_id in drops:
 		for _i in drops[item_id]:
 			_spawn_drop(item_id, tile)
+	# 草/植物联动: 挖掉这格后, 上方失去支撑的小草/植物也一起破坏 (+掉自己的东西)
+	_drop_unsupported_plants_above(world, tile, tool_kind)
+
+
+# (x,y) 是不是在撑着一棵树: 正上方是"树底 LOG". 是的话这格不许挖.
+func _blocks_support_tree(world: Node, x: int, y: int) -> bool:
+	var cm = world.get("chunk_manager")
+	if cm == null:
+		return false
+	if cm.get_tile(x, y - 1) != Tiles.LOG:
+		return false
+	return _is_tree_base(world, x, y - 1)
+
+
+# 挖掉 (tile) 后, 上方失去支撑的小草/植物联动消除 + 掉落. 仙人掌可叠 → 往上连消.
+func _drop_unsupported_plants_above(world: Node, tile: Vector2i, tool_kind: String) -> void:
+	var cm = world.get("chunk_manager")
+	if cm == null or not world.has_method("_set_tile"):
+		return
+	var y: int = tile.y - 1
+	while _PLANT_NEEDS_GROUND.has(cm.get_tile(tile.x, y)):
+		var ptid: int = cm.get_tile(tile.x, y)
+		world._set_tile(tile.x, y, Tiles.AIR)
+		Effects.spawn_block_break(Vector2i(tile.x, y), ptid)
+		var pdrops: Dictionary = Tiles.drops_for(ptid, tool_kind)
+		for item_id in pdrops:
+			for _i in pdrops[item_id]:
+				_spawn_drop(item_id, Vector2i(tile.x, y))
+		y -= 1
+
+
+# 放置消耗 1 个: 创造模式不消耗 (无限方块), 否则正常扣库存.
+func _consume_one(inv: Node) -> void:
+	if GameSettings != null and GameSettings.creative_mode:
+		return
+	inv.consume_current(1)
 
 
 # 这格是不是门的一部分 (底/中/顶/开). 砍门时往上下扫连续门 tile 用.
@@ -677,7 +752,7 @@ func try_place() -> bool:
 						Autotile.refresh_tile(wall_layer, npos, nsid, nq)
 		else:
 			wall_layer.set_cell(tile, wid, Vector2i.ZERO)
-		inv.consume_current(1)
+		_consume_one(inv)
 		Effects.spawn_place_bounce(tile, wid)
 		SfxBank.play("place", 0.10)
 		return true
@@ -691,7 +766,8 @@ func try_place() -> bool:
 	if tile == pt or tile == pt - Vector2i(0, 1):
 		return false
 	# 支撑判定: 上下左右至少有 1 个相邻方块 OR 当前格背景有墙 (允许靠墙挂方块).
-	var has_support: bool = false
+	# 创造模式随处放 (无需支撑).
+	var has_support: bool = GameSettings != null and GameSettings.creative_mode
 	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		if terrain.get_cell_source_id(tile + offset) != -1:
 			has_support = true
@@ -716,7 +792,7 @@ func try_place() -> bool:
 			world._set_tile(tile.x, tile.y, Tiles.DOOR)        # 底
 			world._set_tile(mid.x, mid.y, Tiles.DOOR_MID)      # 中
 			world._set_tile(top.x, top.y, Tiles.DOOR_TOP)      # 顶
-		inv.consume_current(1)
+		_consume_one(inv)
 		SkyLightGrid.invalidate_column(tile.x)
 		Effects.spawn_place_bounce(tile, Tiles.DOOR)
 		SfxBank.play("place", 0.10)
@@ -730,7 +806,7 @@ func try_place() -> bool:
 	# (移除 terrain.set_cell; world._set_tile 内部刷视觉 + 邻居)
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, def.placeable_tile_id)
-	inv.consume_current(1)
+	_consume_one(inv)
 	SkyLightGrid.invalidate_column(tile.x)
 	# P1.5 hook: 放下弹动
 	Effects.spawn_place_bounce(tile, def.placeable_tile_id)
@@ -1382,7 +1458,7 @@ func _is_in_swing_arc(target_pos: Vector2, origin: Vector2, dir: Vector2) -> boo
 
 
 # 戳的常量
-const THRUST_COOLDOWN := 0.3    # 短剑(戳)出手快, 比阔剑(扫 0.42)快一档
+const THRUST_COOLDOWN := 0.38   # 短剑(戳)出手快, 但要 > 动画 0.30 (SWORD_THRUST_DURATION), 否则戳没收回就重触发→抽搐
 const THRUST_LENGTH_MULT := 1.2      # 戳长 = SWORD_RANGE_PX * 1.2 ≈ 43px (比挥更远)
 const THRUST_HALF_WIDTH := 4.5       # 戳带半宽 6px (总宽 12), 鼠标偏一点也命中
 # 注: 短剑弱由 item 的 damage_mult=0.8 决定 (阔剑 1.2), 戳不再额外乘削弱系数
@@ -1566,10 +1642,13 @@ func try_use_summon_item() -> bool:
 	if player == null:
 		return false
 	var world: Node = _find_world()
-	if world == null or not world.has_method("spawn_king_slime"):
+	if world == null or not world.has_method("spawn_boss"):
 		return false
+	# 召谁由召唤道具的 summon_boss 字段定 (slime_crown→king_slime, skull_summon→skeleton_king)
+	var def: Variant = ItemDB.get_def(slot.item_id)
+	var boss_id: String = String(def.get("summon_boss", "king_slime")) if def != null else "king_slime"
 	var spawn_pos: Vector2 = player.global_position + Vector2(40, -24)
-	if not world.spawn_king_slime(spawn_pos):
+	if not world.spawn_boss(boss_id, spawn_pos):
 		return false
 	inv.consume_current(1)
 	SfxBank.play("break", 0.2)

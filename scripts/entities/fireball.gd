@@ -65,7 +65,9 @@ func _check_enemy_hit() -> void:
 		for enemy in get_tree().get_nodes_in_group(group):
 			if not is_instance_valid(enemy) or not enemy is Node2D:
 				continue
-			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX:
+			# 大怪/Boss 给身子半径 (跟近战一致), 否则火球只认中心一点
+			var radius: float = enemy.melee_hit_radius() if enemy.has_method("melee_hit_radius") else 0.0
+			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX + radius:
 				continue
 			# 同 arrow: 沿飞行反方向后退 32px 算 source_pos, 避免命中点重合导致击退退化为 UP
 			var src: Vector2 = global_position - velocity.normalized() * 32.0

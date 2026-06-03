@@ -263,6 +263,8 @@ func _build_items() -> void:
 			"wheat", "wheat_seed",
 			# 史莱姆王 Boss 掉落 + 合成材料
 			"slime_crown", "slime_ball",
+			# 骷髅王 Boss: 召唤头骨 + 掉落骨剑 (阔剑)
+			"skull_summon", "bone_sword",
 			# 空岛: 羽毛(哈比鸟掉) + 云靴(二段跳) — 之前漏注册, 背包没图
 			"feather", "cloud_boots",
 			# 厨房第 1 步: 8 道料理 (cooked_meat 已在上面)
@@ -280,6 +282,7 @@ func _build_items() -> void:
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画
 	for tier in ["wood", "stone", "copper", "iron", "silver", "gold", "diamond", "hell"]:
 		item_icons["%s_sword" % tier] = ItemsArt.get_icon("%s_sword" % tier)
+		item_icons["%s_dagger" % tier] = ItemsArt.get_icon("%s_dagger" % tier)
 		item_icons["%s_pickaxe" % tier] = ItemsArt.get_icon("%s_pickaxe" % tier)
 		item_icons["%s_axe" % tier] = ItemsArt.get_icon("%s_axe" % tier)
 

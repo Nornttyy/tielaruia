@@ -37,6 +37,7 @@ var _armor_slot_nodes: Array = []  # 3 个盔甲槽 PanelContainer (helmet/chest
 
 # 内部 _cells 初始化用
 func _ready() -> void:
+	add_to_group("crafting_panel")   # 让别处 (箱子面板互斥 / 暂停菜单) 用 group 找得到
 	_cells.resize(3)
 	_cell_nodes.resize(3)
 	for r in 3:
@@ -509,6 +510,8 @@ const _ZH_NAMES := {
 	"cloud": "云块",
 	"slime_crown": "史莱姆王冠",
 	"slime_ball": "史莱姆球",
+	"bone_sword": "骨剑",
+	"skull_summon": "骷髅头骨",
 }
 
 
@@ -528,6 +531,10 @@ func bind_inventory(player_inv: Node) -> void:
 
 
 func open(grid_n: int) -> void:
+	# 互斥: 开合成前先关箱子面板 (防两个面板同时开 → 点击穿透 + 双光标)
+	var chest_p: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
+	if chest_p != null and chest_p.has_method("is_open") and chest_p.is_open() and chest_p.has_method("close"):
+		chest_p.close()
 	_mode = grid_n
 	# 重建旧网格 (测试用)
 	for child in grid.get_children():

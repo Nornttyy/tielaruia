@@ -60,6 +60,8 @@ func _physics_process(delta: float) -> void:
 	# 同时绝对地狱顶 (y < 180) 保险 despawn
 	var y_tile: int = int(floor(global_position.y / TILE_SIZE))
 	if y_tile < 180 or y_tile < _spawn_y_tile - 32:
+		if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+			NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))   # 越界 despawn 也告诉 client, 防残留幽灵
 		queue_free()
 		return
 	if _hit_flash > 0.0:

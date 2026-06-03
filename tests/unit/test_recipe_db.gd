@@ -209,3 +209,44 @@ func test_iron_pickaxe_recipe_exists():
 	assert_eq(r.pattern[0][2], "iron_ingot")
 	assert_eq(r.pattern[1][1], "planks")
 	assert_eq(r.pattern[2][1], "planks")
+
+
+# === 短剑(dagger)配方: 8 把都要能合成, 否则合成栏看不到 ===
+func test_all_8_daggers_have_recipe():
+	for mat in ["wood", "stone", "copper", "iron", "silver", "gold", "diamond", "hell"]:
+		var did: String = mat + "_dagger"
+		var r = db.get_recipe(did)
+		assert_not_null(r, "短剑配方应存在: %s (没配方就不显示在合成栏)" % did)
+		if r != null:
+			assert_eq(r.output_id, did, "%s 产出应是自己" % did)
+
+
+func test_matcher_wood_dagger_not_broadsword():
+	# 2 planks 竖排 = 木短剑; 3 planks 才是木阔剑. 不能错配
+	var g = [["", "planks", ""], ["", "planks", ""], ["", "", ""]]
+	var hit = RecipeMatcher.find_match(g)
+	assert_not_null(hit, "2 planks 竖排应能合成木短剑")
+	if hit != null:
+		assert_eq(hit.output_id, "wood_dagger", "2 planks = 木短剑 (不是 3 planks 的木阔剑)")
+
+
+func test_matcher_iron_dagger():
+	# 1 铁锭 + 1 planks = 铁短剑 (阔剑要 2 铁锭)
+	var g = [["", "iron_ingot", ""], ["", "planks", ""], ["", "", ""]]
+	var hit = RecipeMatcher.find_match(g)
+	assert_not_null(hit, "铁锭+planks 应能合成铁短剑")
+	if hit != null:
+		assert_eq(hit.output_id, "iron_dagger")
+
+
+func test_skull_summon_recipe():
+	# 8 骨头围成头骨 (空心) = 召唤骷髅王的头骨
+	var r = db.get_recipe("skull_summon")
+	assert_not_null(r, "骷髅头骨配方应存在")
+	if r != null:
+		assert_eq(r.output_id, "skull_summon")
+	var g = [["bone", "bone", "bone"], ["bone", "", "bone"], ["bone", "bone", "bone"]]
+	var hit = RecipeMatcher.find_match(g)
+	assert_not_null(hit, "8 骨头围圈应能合成骷髅头骨")
+	if hit != null:
+		assert_eq(hit.output_id, "skull_summon")

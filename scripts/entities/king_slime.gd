@@ -67,6 +67,11 @@ func _hp_ratio() -> float:
 	return clamp(float(current_health) / float(max_health), 0.0, 1.0)
 
 
+# 屏幕顶部 Boss 血条用的名字
+func boss_display_name() -> String:
+	return "史莱姆王"
+
+
 func _apply_scale() -> void:
 	var s: float = lerp(SCALE_LOW, SCALE_FULL, _hp_ratio())
 	sprite.scale = Vector2(s, s)
@@ -212,6 +217,8 @@ func _check_despawn(delta: float) -> void:
 		_far_timer += delta
 		if _far_timer >= DESPAWN_AFTER_SEC:
 			_is_dying = true
+			if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+				NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 			queue_free()
 	else:
 		_far_timer = 0.0
@@ -231,9 +238,14 @@ func _spawn_drop(item_id: String) -> void:
 
 func _die() -> void:
 	_is_dying = true
+	# 联机: 通知 client 删掉它那只远程王 (漏发会让客机看到死掉的王卡住/残留)
+	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 	# 掉 1 个 slime_ball + 一大堆 slime_jelly
 	_spawn_drop("slime_ball")
 	var n := JELLY_DROP_MIN + (randi() % (JELLY_DROP_MAX - JELLY_DROP_MIN + 1))
 	for i in n:
 		_spawn_drop("slime_jelly")
+	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 	queue_free()

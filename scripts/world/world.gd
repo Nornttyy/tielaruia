@@ -25,6 +25,7 @@ const HellWaspScene = preload("res://scenes/entities/hell_wasp.tscn")
 const HarpyScene = preload("res://scenes/entities/harpy.tscn")
 const MummyScene = preload("res://scenes/entities/mummy.tscn")
 const KingSlimeScene = preload("res://scenes/entities/king_slime.tscn")
+const SkeletonKingScene = preload("res://scenes/entities/skeleton_king.tscn")
 const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
@@ -88,6 +89,7 @@ const _MP_ENTITY_SYNC_INTERVAL := 0.2
 var weather: Node
 var village_villager_spawns: Array = []
 var _active_king_slime: Node = null  # 当前存活的史莱姆王 Boss (一次只准一个)
+var _active_skeleton_king: Node = null  # 当前存活的骷髅王 Boss (一次只准一个)
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
 var _crop_grow_timer: float = 60.0   # 作物生长 tick: 每 60s 一次, 每个 WHEAT_0/1/2 升一阶概率
@@ -147,6 +149,9 @@ func _on_entity_added_for_bar(child: Node) -> void:
 
 func _attach_health_bar(target: Node) -> void:
 	if target == null or not is_instance_valid(target):
+		return
+	# boss 用屏幕顶部专属大血条 (HUD/BossBar), 不挂头顶小条. (此处 deferred, boss _ready 已跑完入组)
+	if target.is_in_group("boss"):
 		return
 	var bar := HealthBarScript.new()
 	bar.name = "HealthBar"
@@ -412,6 +417,8 @@ func _spawn_remote_entity(kind: String) -> Node:
 	# 用现成的 scene, 加入 entities_root, 但禁用 AI (slime 等会检测 is_remote 跳过逻辑)
 	var scene: PackedScene = null
 	match kind:
+		"king": scene = KingSlimeScene   # 史莱姆王 Boss: client 也用真 scene → 有王冠/大体型/进 group boss → 顶部血条显示
+		"skeleton_king": scene = SkeletonKingScene   # 骷髅王 Boss: client 也用真 scene (王冠/大体型/boss 血条)
 		"slime": scene = SlimeScene
 		"zombie": scene = ZombieScene
 		"spider": scene = SpiderScene
@@ -420,6 +427,8 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"imp": scene = ImpScene
 		"hell_wasp": scene = HellWaspScene
 		"mummy": scene = MummyScene
+		"harpy": scene = HarpyScene
+		"mimic": scene = MimicScene
 		"cow": scene = CowScene
 		"sheep": scene = SheepScene
 		"pig": scene = PigScene
@@ -625,12 +634,28 @@ func _mp_broadcast_entities() -> void:
 				"slimes":
 					# spider / demon_eye 也在 slimes 组 (共享剑挥). 用 scene_path 区分.
 					var scene_path_s: String = n2d.scene_file_path if n2d.scene_file_path != null else ""
-					if "spider" in scene_path_s:
+					if "king_slime" in scene_path_s:
+						kind = "king"   # 史莱姆王 Boss (路径含 slime, 必须先认 king 否则当普通史莱姆)
+					elif "skeleton_king" in scene_path_s:
+						kind = "skeleton_king"   # 骷髅王 Boss (在 slimes 组, 路径区分, 否则当普通史莱姆广播)
+					elif "spider" in scene_path_s:
 						kind = "spider"
 					elif "demon_eye" in scene_path_s:
 						kind = "demon_eye"
 					elif "zombie" in scene_path_s:
 						kind = "zombie"
+					elif "skeleton" in scene_path_s:
+						kind = "skeleton"
+					elif "hell_wasp" in scene_path_s:
+						kind = "hell_wasp"
+					elif "imp" in scene_path_s:
+						kind = "imp"
+					elif "mummy" in scene_path_s:
+						kind = "mummy"
+					elif "harpy" in scene_path_s:
+						kind = "harpy"
+					elif "mimic" in scene_path_s:
+						kind = "mimic"
 					else:
 						kind = "slime"
 				"zombies": kind = "zombie"
@@ -831,7 +856,7 @@ func _on_chunk_loaded(c: Chunk) -> void:
 			var col: Array = c.tiles[lx]
 			for y in col.size():
 				var t: int = col[y]
-				# 水和岩浆都要唤醒. 以前只认水, 岩浆被漏掉 → 世界生成的悬空岩浆瀑布冻在空中不流.
+				# 水和岩浆都要唤醒 (以前只认水, 岩浆瀑布冻空中).
 				if not water_sim.is_liquid(t):
 					continue
 				# 收 4 邻居 tile (越界用 -1 = chunk 边界开口, 保守唤醒)
@@ -846,8 +871,7 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				# 还能流 (旁边空气/边界/同种更低液位) 才标 dirty, 内部封死的不动省 CPU
 				if water_sim.tile_can_still_flow(t, nbs):
 					water_sim.mark_dirty(chunk_start + lx, y)
-		# 加载即定型: 把刚标的液体一口气流到稳定, 玩家看到的已是最终样子 (不看慢慢流的过程).
-		# 放光照重算之前, 让黑暗层按流完后的水算光. 玩家自己挖/放水仍走实时 sim 正常流动.
+		# 加载即定型: 一口气流到稳. 实时流动残留的"悬空孤儿水"由 water_sim 定期巡检兜底.
 		water_sim.settle_now()
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
 	world_lighting.on_chunk_loaded(c.chunk_x, ChunkConstants.CHUNK_WIDTH, c.tiles)
@@ -891,6 +915,9 @@ func _on_chunk_unloaded(cx: int) -> void:
 	# 注意: villager 用专门 group, 由村庄系统管, 这里不清
 	for group in ["slimes", "zombies", "animals", "item_drops"]:
 		for ent in get_tree().get_nodes_in_group(group):
+			# Boss 在 "slimes" 组里, 但有自己的远离消失逻辑 — chunk 卸载别误删 (否则用钩爪/传送拉开距离让王那列卸载, 王凭空消失+血条空挂)
+			if ent.is_in_group("boss"):
+				continue
 			if ent.global_position.x >= chunk_start_px and ent.global_position.x < chunk_end_px:
 				ent.queue_free()
 	# 清该 chunk 范围内所有火把光
@@ -1168,6 +1195,26 @@ func spawn_king_slime(pos: Vector2) -> bool:
 	return true
 
 
+# 召唤骷髅王到 pos 附近 (跟 spawn_king_slime 同款单例守卫).
+func spawn_skeleton_king(pos: Vector2) -> bool:
+	if _active_skeleton_king != null and is_instance_valid(_active_skeleton_king):
+		return false
+	var boss = SkeletonKingScene.instantiate()
+	entities_root.add_child(boss)
+	boss.global_position = pos
+	_active_skeleton_king = boss
+	return true
+
+
+# Boss 召唤总入口: 召唤道具的 summon_boss 字段 → 派发到具体 spawn. 新 Boss 加 case 即可。
+func spawn_boss(boss_id: String, pos: Vector2) -> bool:
+	match boss_id:
+		"skeleton_king":
+			return spawn_skeleton_king(pos)
+		_:
+			return spawn_king_slime(pos)
+
+
 # 金字塔守卫: 给一组 spawn 点 (世界坐标) 召 mummy. chunk_manager 在
 # chunk 加载时调. 用 _pyramid_chunks_spawned 防同 chunk 重 spawn.
 var _pyramid_chunks_spawned: Dictionary = {}   # chunk_x int → true
@@ -1186,23 +1233,7 @@ func spawn_mummies_for_chunk(chunk_x: int, spots: Array) -> void:
 		entities_root.add_child(creature)
 
 
-# 世纪树守卫: 给一组 spawn 点召僵尸/骷髅 (用户选). 同款防同 chunk 重 spawn.
-var _world_tree_chunks_spawned: Dictionary = {}   # chunk_x int → true
-func spawn_world_tree_guards_for_chunk(chunk_x: int, spots: Array) -> void:
-	if spots.is_empty():
-		return
-	if _world_tree_chunks_spawned.has(chunk_x):
-		return
-	_world_tree_chunks_spawned[chunk_x] = true
-	for i in spots.size():
-		var spot = spots[i]
-		# 按下标交替: 一半僵尸一半骷髅, 保证两种都出
-		var creature: Node = ZombieScene.instantiate() if i % 2 == 0 else SkeletonScene.instantiate()
-		creature.global_position = Vector2(
-			spot.x * TILE_SIZE + TILE_SIZE / 2.0,
-			spot.y * TILE_SIZE + TILE_SIZE
-		)
-		entities_root.add_child(creature)
+# 世纪树已删 (用户要求)
 
 # 菜园: 扫所有 loaded chunk 找 WHEAT_0/1/2, 70% 概率升一阶. 每 15s 调.
 # 平均 ~45s 从苗到熟 (15s × 3 阶段 / 0.7 概率).

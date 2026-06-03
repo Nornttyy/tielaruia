@@ -9,6 +9,7 @@ signal return_to_menu
 @onready var _resume_button: Button = $VBox/ResumeButton
 @onready var _multiplayer_button: Button = $VBox/MultiplayerButton
 @onready var _return_button: Button = $VBox/ReturnToMenuButton
+@onready var _creative_button: Button = $VBox/CreativeButton
 @onready var _vbox: VBoxContainer = $VBox
 @onready var _host_panel: Panel = $HostPanel
 @onready var _room_code_label: Label = $HostPanel/VBox/RoomCodeLabel
@@ -21,6 +22,7 @@ func _ready() -> void:
 	_resume_button.pressed.connect(_on_resume_pressed)
 	_multiplayer_button.pressed.connect(_on_multiplayer_pressed)
 	_return_button.pressed.connect(_on_return_to_menu_pressed)
+	_creative_button.pressed.connect(_on_creative_pressed)
 	_close_button.pressed.connect(_on_host_close_pressed)
 	# NetworkManager 信号 (autoload, 一直在). 用 host 反馈房间码 + 状态.
 	if NetworkManager != null:
@@ -72,6 +74,18 @@ func open() -> void:
 	# 每次开都回到主面板 (要看房间码再点一下 多人游戏 即可)
 	_vbox.visible = true
 	_host_panel.visible = false
+	_refresh_creative_text()
+
+
+func _on_creative_pressed() -> void:
+	if GameSettings != null:
+		GameSettings.creative_mode = not GameSettings.creative_mode
+	_refresh_creative_text()
+
+
+func _refresh_creative_text() -> void:
+	if _creative_button != null and GameSettings != null:
+		_creative_button.text = "创造模式: 开" if GameSettings.creative_mode else "创造模式: 关"
 
 
 func close() -> void:

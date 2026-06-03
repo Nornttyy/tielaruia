@@ -625,6 +625,8 @@ func _setup_new_game_panel() -> void:
 	var small_btn: Button = panel.get_node("VBox/SizeRow/SmallButton")
 	var medium_btn: Button = panel.get_node("VBox/SizeRow/MediumButton")
 	var large_btn: Button = panel.get_node("VBox/SizeRow/LargeButton")
+	var survival_btn: Button = panel.get_node("VBox/ModeRow/SurvivalButton")
+	var creative_btn: Button = panel.get_node("VBox/ModeRow/CreativeButton")
 	var cancel_btn: Button = panel.get_node("VBox/ButtonRow/CancelButton")
 	var start_btn: Button = panel.get_node("VBox/ButtonRow/StartButton")
 	_apply_button_style(random_btn)
@@ -634,6 +636,8 @@ func _setup_new_game_panel() -> void:
 	_apply_button_style(small_btn)
 	_apply_button_style(medium_btn)
 	_apply_button_style(large_btn)
+	_apply_button_style(survival_btn)
+	_apply_button_style(creative_btn)
 	_apply_button_style(cancel_btn)
 	_apply_button_style(start_btn)
 	# 难度: 3 个互斥 toggle (像 radio button)
@@ -659,6 +663,18 @@ func _setup_new_game_panel() -> void:
 			for j in size_btns.size():
 				if j != idx:
 					size_btns[j].button_pressed = false
+		)
+	# 模式: 生存/创造 同款互斥 toggle
+	var mode_btns: Array = [survival_btn, creative_btn]
+	for i in mode_btns.size():
+		var btn: Button = mode_btns[i]
+		var idx: int = i
+		btn.toggled.connect(func(on: bool):
+			if not on:
+				return
+			for j in mode_btns.size():
+				if j != idx:
+					mode_btns[j].button_pressed = false
 		)
 	# 随机种子按钮
 	random_btn.pressed.connect(func():
@@ -695,6 +711,7 @@ func _setup_new_game_panel() -> void:
 		elif large_btn.button_pressed:
 			ws = 2
 		opts["world_size"] = ws
+		opts["creative_mode"] = creative_btn.button_pressed   # 创造按钮亮 = 创造模式
 		_emit_start_game_with(opts)
 	)
 
@@ -838,6 +855,10 @@ func _setup_settings_panel() -> void:
 	var hp_num_cb: CheckBox = $SettingsPanel/VBox/EnemyHpNumberRow/CheckBox
 	hp_num_cb.button_pressed = GameSettings.show_enemy_hp_number
 	hp_num_cb.toggled.connect(func(p: bool): GameSettings.show_enemy_hp_number = p)
+	# 滚轮: 勾上 = 缩放摄像头, 不勾 = 切换快捷栏物品 (默认)
+	var scroll_cb: CheckBox = $SettingsPanel/VBox/ScrollWheelRow/CheckBox
+	scroll_cb.button_pressed = GameSettings.scroll_wheel_zoom
+	scroll_cb.toggled.connect(func(p: bool): GameSettings.scroll_wheel_zoom = p)
 	_apply_button_style(back_btn)
 	back_btn.pressed.connect(_on_settings_back_pressed)
 

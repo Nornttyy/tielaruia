@@ -71,10 +71,20 @@ func _check_enemy_hit() -> void:
 				continue
 			if not enemy is Node2D:
 				continue
-			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX:
+			# 大怪/Boss 给身子半径 (跟近战一致), 否则只认中心一点
+			var radius: float = enemy.melee_hit_radius() if enemy.has_method("melee_hit_radius") else 0.0
+			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX + radius:
 				continue
-			if enemy.has_method("take_damage"):
-				var src: Vector2 = global_position - velocity.normalized() * 32.0
+			var src: Vector2 = global_position - velocity.normalized() * 32.0
+			if enemy.has_meta("is_remote"):
+				# 联机 client: 远程怪 host 权威, 发伤害给 host (同 arrow/fireball), 否则打了没用
+				if NetworkManager != null and NetworkManager.connected():
+					var rid: int = int(enemy.get_meta("remote_id", 0))
+					if rid != 0:
+						NetworkManager.send_entity_damage(rid, damage, 120.0, src.x, src.y)
+				_destroy()
+				return
+			elif enemy.has_method("take_damage"):
 				enemy.take_damage(damage, src, 120.0)
 				_destroy()
 				return

@@ -60,6 +60,8 @@ func _physics_process(delta: float) -> void:
 	# 同时绝对地狱顶 (y < 180) 保险 despawn — 玩家拉到地表也不带上去
 	var y_tile: int = int(floor(global_position.y / TILE_SIZE))
 	if y_tile < 180 or y_tile < _spawn_y_tile - 32:
+		if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+			NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))   # 越界 despawn 也要告诉 client, 否则残留幽灵
 		queue_free()
 		return
 	if _hit_flash > 0.0:
@@ -159,13 +161,13 @@ func _die() -> void:
 	_is_dying = true
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
-	# 必掉 1-2 hell_stone + 25% obsidian + 10% diamond_ore
+	# 必掉 1-2 hell_stone + 25% obsidian + 10% diamond
 	for _i in randi_range(1, 2):
 		_spawn_drop("hell_stone")
 	if randf() < 0.25:
 		_spawn_drop("obsidian")
 	if randf() < 0.10:
-		_spawn_drop("diamond_ore")
+		_spawn_drop("diamond")   # 修: 原写 "diamond_ore" item_db 里没有 → 掉了捡不起来
 	queue_free()
 
 

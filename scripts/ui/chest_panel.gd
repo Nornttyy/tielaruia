@@ -404,6 +404,10 @@ func _find_first_empty(arr: Array, start: int, end: int) -> int:
 
 # 由 player_action 调: 右键箱子打开
 func open(tile_coord: Vector2i, player_inv: Node) -> void:
+	# 互斥: 开箱子前先关合成面板 (防两个面板同时开 → 点击穿透 + 双光标)
+	var craft_p: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
+	if craft_p != null and craft_p.has_method("is_open") and craft_p.is_open() and craft_p.has_method("close"):
+		craft_p.close()
 	_chest_tile = tile_coord
 	_player_inv = player_inv
 	visible = true

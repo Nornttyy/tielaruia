@@ -228,12 +228,42 @@ func _is_inventory_ui_open() -> bool:
 
 
 func _on_damaged(_amount: int, source_pos: Vector2) -> void:
+	# 受击先取消钩爪: 否则钩爪拉拽优先级高于受击, 被怪/岩浆打时击退失效 + 被一直拉进岩浆烧死挣不脱
+	if _hook_active or _hook_flying:
+		_release_hook()
 	_hurt_timer = HURT_DURATION
 	# 击退: 远离 source
 	var dx: float = global_position.x - source_pos.x
 	var kb_dir: float = signf(dx) if abs(dx) > 0.1 else 1.0
 	velocity.x = kb_dir * KNOCKBACK_VX
 	velocity.y = KNOCKBACK_VY
+
+
+# 创造模式自由飞: 无重力. A/D 左右, W/空格 上升, S/下 下降, 不按竖直键则悬停. 仍会被实心方块挡住.
+func _creative_fly(delta: float) -> void:
+	# 复位下平台状态: 否则从"按S穿平台中"切创造, _drop_through_t/collision_mask 会卡住穿所有平台
+	_drop_through_t = 0.0
+	if collision_mask != 5:
+		collision_mask = 5
+	var dir := Input.get_axis("move_left", "move_right")
+	velocity.x = dir * SPEED * 1.4
+	var up: bool = Input.is_action_pressed("jump")
+	var down: bool = Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)
+	var v_fly: float = SPEED * 1.2
+	if up and not down:
+		velocity.y = -v_fly
+	elif down and not up:
+		velocity.y = v_fly
+	else:
+		velocity.y = 0.0
+	move_and_slide()
+	if dir != 0:
+		sprite.flip_h = dir < 0
+	var anim: String = "walk" if absf(velocity.x) > 1.0 else "idle"
+	if sprite.animation != anim:
+		sprite.play(anim)
+	_was_on_floor = is_on_floor()
+	_previous_vy = velocity.y
 
 
 func _physics_process(delta: float) -> void:
@@ -248,6 +278,9 @@ func _physics_process(delta: float) -> void:
 		_was_on_floor = is_on_floor()
 		_previous_vy = velocity.y
 		return
+	# 创造模式优先于钩爪: 切创造时取消钩爪, 否则被钩拽着没法自由飞 / 甚至被拖进岩浆
+	if GameSettings != null and GameSettings.creative_mode and (_hook_active or _hook_flying):
+		_release_hook()
 	# 钩爪拉拽中: 跳过普通物理, 直接朝锚点匀速冲过去
 	if _hook_active:
 		_update_hook_pull(delta)
@@ -268,6 +301,11 @@ func _physics_process(delta: float) -> void:
 			sprite.play("hurt")
 		_was_on_floor = is_on_floor()
 		_previous_vy = velocity.y
+		return
+
+	# 创造模式: 自由飞行 (无重力, 左右平移, jump/W 上升, S/下 下降, 否则悬停)
+	if GameSettings != null and GameSettings.creative_mode:
+		_creative_fly(delta)
 		return
 
 	var dir := Input.get_axis("move_left", "move_right")
@@ -427,6 +465,8 @@ func shake(amount: float = 4.0) -> void:
 # 进入飞行阶段: 钩头从玩家中心朝鼠标方向飞, 撞实心 tile 锚定 + 切到拉拽.
 # 已在飞行 / 已锚定时再调 = 立刻释放 (玩家中断).
 func fire_grappling_hook(target_world: Vector2) -> void:
+	if GameSettings != null and GameSettings.creative_mode:
+		return   # 创造模式能飞, 不用钩爪 (也防钩爪跟飞行状态机打架)
 	if _hook_active or _hook_flying:
 		_release_hook()
 		return

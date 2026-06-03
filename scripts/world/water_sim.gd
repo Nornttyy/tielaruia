@@ -131,6 +131,10 @@ const SETTLE_MAX_TICKS := 240
 func settle_now() -> void:
 	if world == null or world.get("chunk_manager") == null:
 		return
+	# 联机 client 不模拟液体 (host 权威): 否则 client 每次加载 chunk 都本地流 + 把 tile 改动乱发给 host
+	if NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host:
+		_dirty.clear()
+		return
 	var guard: int = 0
 	while not _dirty.is_empty() and guard < SETTLE_MAX_TICKS:
 		_run_tick()
@@ -236,7 +240,9 @@ func _step_tile(cm, x: int, y: int) -> void:
 		var nlev: int = -1
 		if nt == Tiles.AIR:
 			nlev = 0
-		elif _liquid_kind(nt) == kind and _level_of(nt) < L:
+		elif _liquid_kind(nt) == kind and _level_of(nt) <= L - 2:
+			# 必须低 ≥2 级才横向流: 否则 L2↔L1 这种差 1 级会无限来回倒 (平地永久震荡 + 耗CPU).
+			# 差 1 级视作已稳定 (整数液位下相邻差 1 是最平的可达状态).
 			nlev = _level_of(nt)
 		if nlev < 0:
 			continue

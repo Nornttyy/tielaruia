@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://b6teilaruiahud"]
+[gd_scene load_steps=8 format=3 uid="uid://b6teilaruiahud"]
 
 [ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
 [ext_resource type="Script" path="res://scripts/ui/hotbar_view.gd" id="2_hbar"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/ui/mana_hud.gd" id="4_mana"]
 [ext_resource type="PackedScene" path="res://scenes/ui/minimap.tscn" id="5_minimap"]
 [ext_resource type="Script" path="res://scripts/ui/buff_hud.gd" id="6_buff"]
+[ext_resource type="Script" path="res://scripts/ui/boss_bar.gd" id="7_boss"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -67,6 +68,15 @@ offset_top = 66.0
 offset_right = 372.0
 offset_bottom = 110.0
 script = ExtResource("6_buff")
+
+[node name="BossBar" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+visible = false
+script = ExtResource("7_boss")
 
 [node name="Minimap" parent="." instance=ExtResource("5_minimap")]
 anchors_preset = 1

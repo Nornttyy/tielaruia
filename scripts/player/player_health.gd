@@ -139,6 +139,8 @@ func is_invulnerable() -> bool:
 func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
 	if amount <= 0 or not is_alive() or is_invulnerable():
 		return false
+	if GameSettings != null and GameSettings.creative_mode:
+		return false   # 创造模式无敌, 不掉血
 	# 难度乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x
 	var dm: float = 1.0
 	if GameSettings != null and GameSettings.has_method("damage_multiplier"):

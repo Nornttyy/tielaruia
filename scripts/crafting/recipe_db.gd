@@ -342,6 +342,53 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": true,
 	},
+	# === 短剑(dagger): 比对应阔剑省 1 格 (短刀身). 材料在上, 柄在下, 2 格高. ===
+	{
+		"id": "wood_dagger", "grid_size": Vector2i(3, 3),
+		"pattern": [["", "planks", ""], ["", "planks", ""], ["", "", ""]],
+		"output_id": "wood_dagger", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "stone_dagger", "grid_size": Vector2i(3, 3),
+		"pattern": [["", "stone", ""], ["", "planks", ""], ["", "", ""]],
+		"output_id": "stone_dagger", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "copper_dagger", "grid_size": Vector2i(3, 3),
+		"pattern": [["", "copper_ingot", ""], ["", "planks", ""], ["", "", ""]],
+		"output_id": "copper_dagger", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "iron_dagger", "grid_size": Vector2i(3, 3),
+		"pattern": [["", "iron_ingot", ""], ["", "planks", ""], ["", "", ""]],
+		"output_id": "iron_dagger", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "silver_dagger", "grid_size": Vector2i(3, 3),
+		"pattern": [["", "silver_ingot", ""], ["", "planks", ""], ["", "", ""]],
+		"output_id": "silver_dagger", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "gold_dagger", "grid_size": Vector2i(3, 3),
+		"pattern": [["", "gold_ingot", ""], ["", "planks", ""], ["", "", ""]],
+		"output_id": "gold_dagger", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "diamond_dagger", "grid_size": Vector2i(3, 3),
+		"pattern": [["", "diamond", ""], ["", "planks", ""], ["", "", ""]],
+		"output_id": "diamond_dagger", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "hell_dagger", "grid_size": Vector2i(3, 3),
+		"pattern": [["", "hell_alloy_ingot", ""], ["", "hell_crystal_ingot", ""], ["", "", ""]],
+		"output_id": "hell_dagger", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		# 骷髅头骨 (召唤骷髅王): 8 个骨头围成头骨形 (空心)
+		"id": "skull_summon", "grid_size": Vector2i(3, 3),
+		"pattern": [["bone", "bone", "bone"], ["bone", "", "bone"], ["bone", "bone", "bone"]],
+		"output_id": "skull_summon", "output_count": 1, "mirror_ok": true,
+	},
 	{
 		"id": "diamond_pickaxe",
 		"grid_size": Vector2i(3, 3),

@@ -65,7 +65,9 @@ func _check_enemy_hit() -> void:
 				continue
 			if not enemy is Node2D:
 				continue
-			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX:
+			# 大怪/Boss 给身子半径 (跟近战一致), 否则箭只认中心一点, 从大身子上飞过去不算命中
+			var radius: float = enemy.melee_hit_radius() if enemy.has_method("melee_hit_radius") else 0.0
+			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX + radius:
 				continue
 			# 击退源位置: 沿飞行反方向退 32px, 让 (enemy - source).normalized 指向飞行方向.
 			var src: Vector2 = global_position - velocity.normalized() * 32.0

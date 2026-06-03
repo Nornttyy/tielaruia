@@ -256,3 +256,19 @@ func test_water_lava_makes_stone() -> void:
 	assert_eq(fw.tiles.get(Vector2i(0,0)), Tiles.STONE, "岩浆碰水变石头")
 	var w = fw.tiles.get(Vector2i(1,0), Tiles.AIR)
 	assert_true(w != Tiles.WATER, "水该被消耗一级")
+
+
+# 回归: 平地上 L2 紧挨 L1, 差 1 级以前会无限来回倒 (settle 永不收敛 + 耗CPU). 现在应收敛.
+func test_no_lateral_oscillation_on_flat_ground() -> void:
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER_L2
+	fw.tiles[Vector2i(1, 0)] = Tiles.WATER_L1
+	fw.tiles[Vector2i(0, 1)] = Tiles.STONE   # 平地 (水落不下去)
+	fw.tiles[Vector2i(1, 1)] = Tiles.STONE
+	fw.tiles[Vector2i(-1, 0)] = Tiles.STONE  # 两侧封死, 只剩这两格之间能流
+	fw.tiles[Vector2i(2, 0)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim.mark_dirty(0, 0)
+	sim.mark_dirty(1, 0)
+	sim.settle_now()
+	assert_true(sim._dirty.is_empty(), "平地 L2/L1 应收敛 (差1级稳定, 不再无限震荡)")
