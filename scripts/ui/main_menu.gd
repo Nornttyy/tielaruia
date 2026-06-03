@@ -838,6 +838,10 @@ func _setup_settings_panel() -> void:
 	var hp_num_cb: CheckBox = $SettingsPanel/VBox/EnemyHpNumberRow/CheckBox
 	hp_num_cb.button_pressed = GameSettings.show_enemy_hp_number
 	hp_num_cb.toggled.connect(func(p: bool): GameSettings.show_enemy_hp_number = p)
+	# 滚轮: 勾上 = 缩放摄像头, 不勾 = 切换快捷栏物品 (默认)
+	var scroll_cb: CheckBox = $SettingsPanel/VBox/ScrollWheelRow/CheckBox
+	scroll_cb.button_pressed = GameSettings.scroll_wheel_zoom
+	scroll_cb.toggled.connect(func(p: bool): GameSettings.scroll_wheel_zoom = p)
 	_apply_button_style(back_btn)
 	back_btn.pressed.connect(_on_settings_back_pressed)
 

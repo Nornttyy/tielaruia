@@ -257,6 +257,17 @@ theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
 [node name="CheckBox" type="CheckBox" parent="SettingsPanel/VBox/EnemyHpNumberRow"]
 button_pressed = true
 
+[node name="ScrollWheelRow" type="HBoxContainer" parent="SettingsPanel/VBox"]
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="SettingsPanel/VBox/ScrollWheelRow"]
+custom_minimum_size = Vector2(140, 0)
+text = "滚轮缩放镜头"
+theme_override_colors/font_color = Color(0.831, 0.71, 0.541, 1)
+
+[node name="CheckBox" type="CheckBox" parent="SettingsPanel/VBox/ScrollWheelRow"]
+button_pressed = false
+
 [node name="BackButton" type="Button" parent="SettingsPanel/VBox"]
 custom_minimum_size = Vector2(0, 36)
 text = "返回"
