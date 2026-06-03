@@ -1,48 +1,54 @@
-# 诊断: 大/小世界 玩家是否埋地里 + 是否拿到起步三件套 (用户反馈小地图显示玩家在地里).
 extends GutTest
 
+# 复现"选世界大小进游戏后出问题": 三种大小各跑几个种子, 验证玩家出生点合理。
+# 坏 spawn = 出生点埋在方块里 (不是空气) 或脚下悬空 (一直往下掉)。
+# 代码里多处"大世界 spawn bug"救命 hack → 高度怀疑大世界 spawn 还有坑。
+
 const MainScene = preload("res://scenes/main.tscn")
-const TILE_SIZE := 12
 
 
-func _boot_world(world_size: int, seed_v: int):
-	GameSettings.current_world_size = world_size
+# 启一个指定大小+种子的世界, 返回出生点 + 那格/脚下 tile。
+func _spawn_info(size: int, seed_val: int) -> Dictionary:
+	GameSettings.current_world_size = size
 	var main = MainScene.instantiate()
-	add_child_autofree(main)
-	main.boot_to_game(seed_v)
-	await wait_frames(20)   # 等世界加载 + spawn
-	return main
-
-
-func _check(world_size: int, label: String) -> void:
-	var main = await _boot_world(world_size, 12345)
+	add_child(main)
+	main.boot_to_game(seed_val)
+	await wait_frames(8)   # 等世界生成 + spawn (大世界 chunk 多, 多等几帧)
 	var world = main.get_node("World")
-	var player = world.get_player()
-	assert_not_null(player, "%s 应有玩家" % label)
-	if player == null:
-		return
-	for i in 150:
-		if player.is_on_floor():
-			break
-		await wait_frames(1)
-	var ptx: int = int(floor(player.global_position.x / TILE_SIZE))
-	var pty: int = int(floor(player.global_position.y / TILE_SIZE))
+	var sp: Vector2i = world.spawn_point
 	var cm = world.chunk_manager
-	var at_feet: int = cm.get_tile(ptx, pty)
-	var at_head: int = cm.get_tile(ptx, pty - 1)
-	var on_floor: bool = player.is_on_floor()
-	gut.p("[%s] tile=(%d,%d) feet_tile=%d head_tile=%d on_floor=%s" % [label, ptx, pty, at_feet, at_head, str(on_floor)])
-	# 玩家应落在地表 (头顶空气, 站得住), 不能埋石头里 → 小地图才不会显示"玩家在地里".
-	# (注: 起步三件套走 _start_game 异步路径发, boot_to_game/_start_game_sync 故意不发, 这里不验.)
-	assert_eq(at_head, Tiles.AIR, "%s 玩家头顶应是空气(没埋地里), 实际 %d" % [label, at_head])
-	assert_true(on_floor, "%s 玩家应站在地表 (on_floor)" % label)
+	var at: int = cm.get_tile(sp.x, sp.y)         # 出生点这格 — 玩家身体所在, 应可穿过
+	var head: int = cm.get_tile(sp.x, sp.y - 1)   # 头顶 — 玩家 2.5 格高, 也得空
+	var below: int = cm.get_tile(sp.x, sp.y + 1)  # 脚下 — 应实心地, 不然一直掉
+	main.queue_free()
+	await wait_frames(2)
+	return {"sp": sp, "at": at, "head": head, "below": below}
 
 
-func test_big_world_spawn():
-	await _check(2, "大世界")
-	GameSettings.current_world_size = 1
+# 好 spawn: 出生点空气(没埋方块) + 头顶空(玩家 2.5 格高) + 脚下实心(不悬空/不淹水)
+func _assert_good_spawn(size_name: String, seed_val: int, info: Dictionary) -> void:
+	var ctx: String = "%s世界 seed=%d 出生点 %s" % [size_name, seed_val, info["sp"]]
+	assert_eq(info["at"], Tiles.AIR, "%s 该是空气, 实际 tile=%d (玩家埋方块里!)" % [ctx, info["at"]])
+	assert_eq(info["head"], Tiles.AIR, "%s 头顶该是空气, 实际 tile=%d (玩家 2.5 格高顶进方块!)" % [ctx, info["head"]])
+	# 脚下不能是空气/水 → 不然玩家一直往下掉 / 掉水里淹死
+	assert_false(info["below"] == Tiles.AIR or Tiles.is_water(info["below"]),
+		"%s 脚下该是实心地, 实际 tile=%d (悬空/落水!)" % [ctx, info["below"]])
 
 
-func test_small_world_spawn():
-	await _check(0, "小世界")
-	GameSettings.current_world_size = 1
+func test_small_world_spawn_good() -> void:
+	for seed_val in [1, 42, 777]:
+		var info = await _spawn_info(0, seed_val)
+		_assert_good_spawn("小", seed_val, info)
+
+
+func test_medium_world_spawn_good() -> void:
+	for seed_val in [1, 42, 777]:
+		var info = await _spawn_info(1, seed_val)
+		_assert_good_spawn("中", seed_val, info)
+
+
+func test_big_world_spawn_good() -> void:
+	# 重点怀疑对象: 大世界 (1.6x biome 拉远, chunk 0 容易落进非草地表 / 海洋)
+	for seed_val in [1, 42, 100, 777, 2026, 5, 13, 88]:
+		var info = await _spawn_info(2, seed_val)
+		_assert_good_spawn("大", seed_val, info)
