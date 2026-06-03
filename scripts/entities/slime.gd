@@ -100,19 +100,22 @@ func _apply_tier() -> void:
 	current_health = max_health
 	contact_damage = max(1, int(round(float(CONTACT_DAMAGE) * _COLOR_DMG_MULT[color_tier] * _SIZE_DMG_MULT[size])))
 	_base_tint = _COLOR_TINT[color_tier]
-	sprite.modulate = _base_tint
-	sprite.scale = Vector2(_SIZE_SCALE[size], _SIZE_SCALE[size])
+	if sprite != null:  # 裸实例 (测试 Slime.new()) 没 sprite, 只算数值不染色/缩放
+		sprite.modulate = _base_tint
+		sprite.scale = Vector2(_SIZE_SCALE[size], _SIZE_SCALE[size])
 
 
 func _ready() -> void:
-	sprite.sprite_frames = ArtCache.slime_frames
-	sprite.play("idle")
-	# 按 color_tier + size 算血量/伤害 + 染色 + 缩放 (含难度缩放). 不调 setup → 默认蓝中.
+	# 数值先行: 血量/伤害/染色 (含难度缩放) 不依赖 sprite, 必须先算.
+	# 测试里 Slime.new() 是裸实例 (没 AnimatedSprite2D 子节点), sprite 为 null;
+	# 之前 sprite.sprite_frames 在 _apply_tier 前崩 → max_health 没算 → 难度缩放失效.
 	_apply_tier()
-	# hop 动画不循环, 播完会停在最后那个"压扁落地"帧, 看着像被压扁
-	# 接 animation_finished, 落地后切回 idle
-	sprite.animation_finished.connect(_on_anim_done)
 	add_to_group("slimes")
+	if sprite != null:
+		sprite.sprite_frames = ArtCache.slime_frames
+		sprite.play("idle")
+		# hop 动画不循环, 播完停在"压扁落地"帧; 接 animation_finished 落地后切回 idle
+		sprite.animation_finished.connect(_on_anim_done)
 	# slime 不跟玩家物理碰撞 (玩家能穿过 slime, 像 Terraria/MC).
 	# 接触伤害靠 _check_player_contact 距离判断, 不依赖物理碰撞.
 	call_deferred("_add_player_exception")
