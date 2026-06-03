@@ -280,6 +280,7 @@ func _build_items() -> void:
 	# V3: 不再用外部 PNG (尺寸不对头), 改回 items_art.gd 手画像素画
 	for tier in ["wood", "stone", "copper", "iron", "silver", "gold", "diamond", "hell"]:
 		item_icons["%s_sword" % tier] = ItemsArt.get_icon("%s_sword" % tier)
+		item_icons["%s_dagger" % tier] = ItemsArt.get_icon("%s_dagger" % tier)
 		item_icons["%s_pickaxe" % tier] = ItemsArt.get_icon("%s_pickaxe" % tier)
 		item_icons["%s_axe" % tier] = ItemsArt.get_icon("%s_axe" % tier)
 
