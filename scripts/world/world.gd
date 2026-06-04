@@ -81,7 +81,6 @@ var _sleeping: bool = false
 var _sleep_anchor_x: float = 0.0     # 睡时玩家 x, 移动超过 8px 醒
 var _sleep_armed: bool = false       # 触发睡觉那次点击松开后才"武装"按键唤醒 (防同一下立刻醒)
 var _sleep_zzz: Node = null          # 头顶 "Zzz" 提示
-var _sleep_fast: bool = false        # true = 晚上睡, 时间 10x 快进到天亮自动醒; 白天睡只躺着歇 (不秒醒)
 var chunk_manager: ChunkManager
 var water_sim: Node
 var minimap_data: Node
@@ -744,13 +743,12 @@ func _physics_process(_delta: float) -> void:
 
 
 # 上床睡觉: 设复活点 + 躺下. tile 是床的世界坐标.
-# 晚上睡 → 时间 10x 快进到天亮; 白天睡 → 只躺着歇 (不快进、不秒醒), 看得到睡觉动作。
+# 什么时间都能睡; 在床上时间永远 10x 加速; 按任意键下床。
 func sleep_in_bed(tile: Vector2i) -> void:
 	bed_spawn_point = tile
 	_sleeping = true
-	_sleep_fast = TimeOfDay != null and not TimeOfDay.is_day()   # 只有非白天才快进
 	if TimeOfDay != null:
-		TimeOfDay.time_multiplier = 10.0 if _sleep_fast else 1.0
+		TimeOfDay.time_multiplier = 10.0   # 在床上时间永远 10x (不分白天黑夜)
 	var player := get_player()
 	if player != null:
 		# 把玩家挪到床上 (否则站床边躺, 看着不像"躺床上")
@@ -769,15 +767,10 @@ func sleep_in_bed(tile: Vector2i) -> void:
 		_spawn_zzz(player)
 
 
-# 睡觉醒条件: (晚上睡)快进到天亮自动醒 / 按任意键下床.
+# 睡觉醒条件: 只看"按任意键". 时间永远 10x, 不会因天亮自动醒 (玩家自己按键下床)。
 # 触发睡觉那次右键得先松开 (_sleep_armed) 才认按键, 否则同一下点击立刻把你叫醒。
-# 白天睡 (_sleep_fast=false) 不会因 is_day 秒醒, 这样看得到睡觉动作。
 func _check_sleep_wake() -> void:
-	if TimeOfDay == null or get_player() == null:
-		_wake_up()
-		return
-	# 晚上睡的: 快进到天亮 → 自动醒
-	if _sleep_fast and TimeOfDay.is_day():
+	if get_player() == null:
 		_wake_up()
 		return
 	if not _sleep_armed:

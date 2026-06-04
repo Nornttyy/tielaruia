@@ -1,4 +1,4 @@
-# 床睡觉: 上床 → 躺下 + 挪到床上; 晚上睡快进、白天睡只歇(不秒醒); 下床全复位。
+# 床睡觉: 什么时间都能睡 → 躺下 + 挪到床上 + 时间永远 10x; 不自动醒 (按任意键下床); 下床全复位。
 extends GutTest
 
 const MainScene = preload("res://scenes/main.tscn")
@@ -22,37 +22,25 @@ func after_each() -> void:
 		TimeOfDay.time = 0.35
 
 
-func test_day_sleep_lies_down_and_no_instant_wake() -> void:
+func test_sleep_anytime_10x_lies_down_no_autowake() -> void:
 	var ctx: Dictionary = await _setup()
 	var world = ctx["world"]
-	TimeOfDay.time = 0.4   # 白天
+	TimeOfDay.time = 0.4   # 白天 — 也该能睡 + 10x
 	world.sleep_in_bed(Vector2i(5, 5))
-	assert_true(world._sleeping, "白天也能躺下")
-	assert_almost_eq(TimeOfDay.time_multiplier, 1.0, 0.01, "白天睡不快进 (1x)")
+	assert_true(world._sleeping, "什么时间都能睡")
+	assert_almost_eq(TimeOfDay.time_multiplier, 10.0, 0.01, "在床上时间永远 10x")
 	assert_almost_eq(ctx["sprite"].rotation, -PI / 2.0, 0.01, "睡觉动作: 躺下")
 	assert_not_null(world._sleep_zzz, "头顶有 Zzz")
-	assert_almost_eq(ctx["player"].global_position.x, (5.0 + 0.5) * TILE, 1.5, "玩家挪到床 x")
-	# 关键: 白天睡不该秒醒 (这样才看得到躺下)
+	assert_almost_eq(ctx["player"].global_position.x, (5.0 + 0.5) * TILE, 1.5, "玩家挪到床上")
+	# 不自动醒 (没按键): 等几帧仍在睡 (10x 时间会跑, 但不该把人叫醒)
 	await wait_frames(3)
-	assert_true(world._sleeping, "白天睡不该被 is_day 秒醒")
-	world._wake_up()
-
-
-func test_night_sleep_fast_forwards() -> void:
-	var ctx: Dictionary = await _setup()
-	var world = ctx["world"]
-	TimeOfDay.time = 0.85   # 夜里
-	world.sleep_in_bed(Vector2i(5, 5))
-	assert_true(world._sleeping)
-	assert_true(world._sleep_fast, "晚上睡 = 快进模式")
-	assert_almost_eq(TimeOfDay.time_multiplier, 10.0, 0.01, "晚上睡 10x 快进")
+	assert_true(world._sleeping, "不按键不该醒 (白天也是, 按任意键才下床)")
 	world._wake_up()
 
 
 func test_wake_restores_everything() -> void:
 	var ctx: Dictionary = await _setup()
 	var world = ctx["world"]
-	TimeOfDay.time = 0.85
 	world.sleep_in_bed(Vector2i(5, 5))
 	world._wake_up()
 	assert_false(world._sleeping, "下床 → 不睡了")
