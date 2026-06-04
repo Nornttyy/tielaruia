@@ -69,12 +69,13 @@ func _check_lava_damage() -> void:
 	if cm == null:
 		return
 	var tile_x: int = int(floor(player.global_position.x / TILE_SIZE))
-	# 玩家 collision: pos (0,-13.75) size (12.5, 27.5) (1.25x), 脚底在 global_position.y, 头在 y - 27.5.
-	# 脚 tile y = floor((y - 1) / 12), 用 y-1 防贴底时算到下面那格. 头 tile = floor((y-27.5) / 12).
-	# 老代码用 floor(y/12) - 1 是 bug — 漏掉脚踩在岩浆顶时的检测 (玩家站岩浆里不扣血).
+	# 玩家碰撞框 14.4×30 (2.5 格高), 脚底在 global_position.y, 头在 y-30.
+	# 采 脚(y-1) / 腰(y-15) / 头(y-29) 三点: 玩家 2.5 格高, 只采脚+头会漏中间那格的岩浆.
 	var foot_y: int = int(floor((player.global_position.y - 1.0) / TILE_SIZE))
-	var head_y: int = int(floor((player.global_position.y - 27.5) / TILE_SIZE))
-	if _is_lava(cm.get_tile(tile_x, foot_y)) or _is_lava(cm.get_tile(tile_x, head_y)):
+	var waist_y: int = int(floor((player.global_position.y - 15.0) / TILE_SIZE))
+	var head_y: int = int(floor((player.global_position.y - 29.0) / TILE_SIZE))
+	if _is_lava(cm.get_tile(tile_x, foot_y)) or _is_lava(cm.get_tile(tile_x, waist_y)) \
+			or _is_lava(cm.get_tile(tile_x, head_y)):
 		# 直接扣血不进 iframe (环境伤害每 0.5s 一跳). clamp 飘字真实扣血.
 		var lava_loss: int = min(LAVA_DAMAGE_PER_TICK, current_health)
 		current_health = max(0, current_health - LAVA_DAMAGE_PER_TICK)

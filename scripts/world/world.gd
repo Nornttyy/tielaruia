@@ -276,6 +276,20 @@ func _setup_multiplayer_callbacks() -> void:
 func _on_mp_status_changed(s: String) -> void:
 	if s == "connected":
 		_setup_multiplayer_callbacks()
+	elif s == "disconnected" or s == "error":
+		_cleanup_remote_on_disconnect()
+
+
+# 对方掉线: 清掉对方角色 + 所有从对端同步来的怪/实体, 否则残留"幽灵"继续接触伤害本地玩家.
+func _cleanup_remote_on_disconnect() -> void:
+	if _remote_player != null and is_instance_valid(_remote_player):
+		_remote_player.queue_free()
+	_remote_player = null
+	for id in _remote_entities.keys():
+		var ent = _remote_entities[id]
+		if ent != null and is_instance_valid(ent):
+			ent.queue_free()
+	_remote_entities.clear()
 
 
 func _mp_broadcast_initial_state() -> void:
