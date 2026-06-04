@@ -8,12 +8,12 @@ const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 
 const SURFACE_BASE := 0.45       # 地表平均高度 (相对世界 0..1)
-const SURFACE_AMP := 0.10        # 地表小起伏振幅 (普通山丘)
+const SURFACE_AMP := 0.15        # 地表起伏振幅 (0.10→0.15: 更大的丘和谷, 更泰拉瑞亚)
 const DIRT_DEPTH := 6            # 地表下泥土层厚度
-# 山区 noise: 低频 → 30-60 列宽的山区, max(0, n) 作为山高度系数 (实测 Perlin max ~0.31)
-# MOUNTAIN_BOOST 对世界高度的比例: 0.40 × 0.31 × 256 = 最高峰比平均地表再高 ~32 格
+# 山区 noise: 低频 → 宽山区, max(0, n) 作为山高度系数 (实测 Perlin max ~0.31)
+# MOUNTAIN_BOOST 对世界高度的比例: 0.80 × 0.31 × 256 = 最高峰比平均地表再高 ~63 格 (大山)
 const MOUNTAIN_NOISE_FREQ := 0.008
-const MOUNTAIN_BOOST := 0.40
+const MOUNTAIN_BOOST := 0.80     # 0.40→0.80: 山明显更高更壮观 (用户嫌山矮)
 const MOUNTAIN_PIT_THRESHOLD := 0.12  # mountain_factor > 0.12 = 山区 (实测约占 16% 列)
 
 # Biome (生态群系) — 泰拉瑞亚风: 每种 biome 全世界只有一块, 固定方位.
