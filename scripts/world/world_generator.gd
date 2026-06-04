@@ -122,7 +122,7 @@ const POND_WIDTH_MIN := 12            # 塘宽 (加大)
 const POND_WIDTH_MAX := 24
 const POND_DEPTH := 6                 # 塘最深 (中心)
 const POND_MAX_SLOPE := 6             # 塘宽内地表高差 ≤ 此值才开 (2→6 放宽, 否则起伏地形全毙)
-const WATERFALL_CHANCE := 0.22        # 崖唇列放瀑布水源的概率 (调到能逛到, 但仍是景观不泛滥)
+const WATERFALL_CHANCE := 0.08        # 崖唇列放瀑布水源的概率 (0.22→0.08: 用户嫌密, 调成偶尔遇到的景观)
 const WATERFALL_MIN_DROP := 8         # 崖唇到崖底落差 ≥ 这么多 tile 才放
 const WATERFALL_SPAN := 4             # 在 ±这么多列内看落差 (= 崖陡不陡)
 
