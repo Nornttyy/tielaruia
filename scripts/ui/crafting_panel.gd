@@ -687,6 +687,9 @@ func _on_recipe_pressed(recipe_id: String) -> void:
 	# 检查模式: 3x3 配方需要工作台 (_mode == 3)
 	if max(recipe.grid_size.x, recipe.grid_size.y) > _mode:
 		return
+	# 要求工作台的配方 (如云靴): 必须在工作台模式, 防徒手合
+	if recipe.get("requires", "") == "workbench" and _mode < 3:
+		return
 	if _player_inv == null:
 		return
 	var inv = _player_inv.inventory
@@ -805,6 +808,10 @@ func _refresh_recipes() -> void:
 			continue
 		# 寿司配方过滤: 要求 "board" 的, 玩家身边必须有菜板
 		if requires == "board" and not has_cutting_board:
+			btn.visible = false
+			continue
+		# 工作台配方过滤: 要求 "workbench" 的必须在工作台模式 (_mode==3); 否则徒手能合云靴等
+		if requires == "workbench" and _mode < 3:
 			btn.visible = false
 			continue
 		# 素材是否够 → 灰显

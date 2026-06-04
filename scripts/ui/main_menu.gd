@@ -92,6 +92,7 @@ func _refresh_localized_text() -> void:
 	$SettingsPanel/VBox/NameRow/LineEdit.placeholder_text = Locale.t("settings_player_name_placeholder")
 	$SettingsPanel/VBox/EnemyHpBarRow/Label.text = Locale.t("settings_enemy_hp_bar")
 	$SettingsPanel/VBox/EnemyHpNumberRow/Label.text = Locale.t("settings_enemy_hp_number")
+	$SettingsPanel/VBox/ScrollWheelRow/Label.text = Locale.t("settings_scroll_zoom")
 	$SettingsPanel/VBox/BackButton.text = Locale.t("settings_back")
 
 	# 世界选择面板
@@ -111,6 +112,9 @@ func _refresh_localized_text() -> void:
 	$NewGamePanel/VBox/DifficultyRow/EasyButton.text = Locale.t("newgame_difficulty_easy")
 	$NewGamePanel/VBox/DifficultyRow/NormalButton.text = Locale.t("newgame_difficulty_normal")
 	$NewGamePanel/VBox/DifficultyRow/HardButton.text = Locale.t("newgame_difficulty_hard")
+	$NewGamePanel/VBox/ModeRow/Label.text = Locale.t("newgame_mode_label")
+	$NewGamePanel/VBox/ModeRow/SurvivalButton.text = Locale.t("newgame_mode_survival")
+	$NewGamePanel/VBox/ModeRow/CreativeButton.text = Locale.t("newgame_mode_creative")
 	$NewGamePanel/VBox/ButtonRow/CancelButton.text = Locale.t("newgame_cancel")
 	$NewGamePanel/VBox/ButtonRow/StartButton.text = Locale.t("newgame_start")
 
@@ -823,10 +827,12 @@ func _setup_settings_panel() -> void:
 	var back_btn: Button = $SettingsPanel/VBox/BackButton
 	slider.value = GameSettings.master_volume * 100.0
 	value_label.text = "%d" % int(slider.value)
+	# 拖动只 live 应用音频 (不落盘), 松手 (drag_ended) 才存一次 — 防拖一下写几十次盘
 	slider.value_changed.connect(func(v: float):
-		GameSettings.master_volume = v / 100.0
+		GameSettings.set_master_volume_live(v / 100.0)
 		value_label.text = "%d" % int(v)
 	)
+	slider.drag_ended.connect(func(_vc: bool): GameSettings.save_now())
 	# 摄像机大小 slider: 0.5 (远视野) ~ 2.5 (近距离), 默认 1.2
 	var zoom_slider: HSlider = $SettingsPanel/VBox/ZoomRow/Slider
 	var zoom_value_label: Label = $SettingsPanel/VBox/ZoomRow/ValueLabel

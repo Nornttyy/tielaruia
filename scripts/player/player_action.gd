@@ -464,6 +464,11 @@ func _update_mining(delta: float) -> void:
 		_mining_swing_t = 0.0
 	_mining_progress += _tool_speed(tool_kind, tid) * delta * _buff_mining_mul()
 	_mine_saved[tile] = [tid, _mining_progress]   # 存进度: 松手/切目标后还在
+	# 防字典无限涨: 半挖后走开不回来的格子会一直留着. 超 64 条丢最早一条 (不丢当前这格).
+	if _mine_saved.size() > 64:
+		var oldest: Vector2i = _mine_saved.keys()[0]
+		if oldest != tile:
+			_mine_saved.erase(oldest)
 	# 镐 + 斧 (用户改: 斧跟镐同款): 360° 旋转动画 — 每 0.7s 重启一次
 	# 其他 (徒手等): ±75° 来回挥 — 每 0.35s 挥一次
 	_mining_swing_t -= delta
@@ -787,6 +792,9 @@ func try_place() -> bool:
 		var mid: Vector2i = tile + Vector2i(0, -1)
 		var top: Vector2i = tile + Vector2i(0, -2)
 		if terrain.get_cell_source_id(mid) != -1 or terrain.get_cell_source_id(top) != -1:
+			return false
+		# 别把门的 3 格 (底/中/顶) 盖进玩家身体 (玩家 2.5 格高占 pt..pt-2): 同列且 y 差≤2 就挡
+		if tile.x == pt.x and absi(tile.y - pt.y) <= 2:
 			return false
 		if world.has_method("_set_tile"):
 			world._set_tile(tile.x, tile.y, Tiles.DOOR)        # 底
@@ -1195,7 +1203,13 @@ func _mouse_on_mineable_tile() -> bool:
 	if terrain == null:
 		return false
 	var tid: int = terrain.get_cell_source_id(tile)
-	return tid != -1 and Tiles.is_mineable(tid)
+	if tid == -1 or not Tiles.is_mineable(tid):
+		return false
+	# 持镐对准镐挖不动的植物 (叶/仙人掌/火把/小草) → 不算"可挖", 让左键落到攻击模式
+	# (否则镐进挖矿分支却啥也挖不动, 旁边有怪也打不到 = 卡住)
+	if _current_tool_kind() == "pickaxe" and _PICKAXE_BLACKLIST.has(tid):
+		return false
+	return true
 
 
 # 鼠标对的 tile 是不是斧能砍的目标 (LOG / 仙人掌). 用来分发斧的"砍" vs "空挥"

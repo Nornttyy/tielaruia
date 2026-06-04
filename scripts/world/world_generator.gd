@@ -1636,6 +1636,16 @@ static var _mineshaft_chunks_cache: Array = []
 static var _mineshaft_chunks_cache_valid: bool = false
 
 
+# 清掉所有"按 seed 缓存"的结构选址 + biome 中心. 它们其实也依赖 world_size, 但只用 seed 当 key,
+# 所以同种子不同大小的世界 (同进程不重启) 会命中旧缓存 → 金字塔/矿井/空岛/biome 位置错位.
+# 换世界 (chunk_manager.setup) 时调一次, 强制按当前 world_size 重算.
+static func clear_structure_caches() -> void:
+	_pyramid_chunks_cache_valid = false
+	_mineshaft_chunks_cache_valid = false
+	_sky_island_chunks_cache_valid = false
+	_biome_centers_cache.clear()
+
+
 static func _biome_at(world_x: int, world_seed: int) -> int:
 	if _biome_centers_cache.is_empty() or _biome_centers_cache_seed != world_seed:
 		_biome_centers_cache = _build_biome_centers(world_seed)

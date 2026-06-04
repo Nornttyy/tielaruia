@@ -26,3 +26,23 @@ const _CROWN_PAL := {
 
 static func build_crown() -> ImageTexture:
 	return PixelArt.grid_to_texture(_CROWN, _CROWN_PAL)
+
+
+# 飞骨头投射物 (骷髅王远程攻击): 狗骨头形, 白骨色
+const _BONE_PROJ := [
+	"nWWn...nWWn",
+	"WBBWn.nWBBW",
+	".nWWWWWWWn.",
+	"WBBWn.nWBBW",
+	"nWWn...nWWn",
+]
+const _BONE_PROJ_PAL := {
+	".": Color(0, 0, 0, 0),
+	"n": Color8(22, 18, 20),      # 黑描边
+	"W": Color8(232, 228, 215),   # 骨白
+	"B": Color8(180, 175, 160),   # 骨阴影
+}
+
+
+static func build_bone_proj() -> ImageTexture:
+	return PixelArt.grid_to_texture(_BONE_PROJ, _BONE_PROJ_PAL)

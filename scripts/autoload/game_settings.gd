@@ -7,11 +7,23 @@ const SETTINGS_PATH := "user://settings.cfg"
 # 任何 graphics 字段变 → 这个信号广播. world.gd 等会接住重新 apply.
 signal settings_changed()
 
+var _suppress_save: bool = false   # 拖音量滑条时临时置位: 应用音频但不落盘 (松手再存)
 var master_volume: float = 1.0:
 	set(v):
 		master_volume = clamp(v, 0.0, 1.0)
 		_apply_to_audio_server()
-		_save()
+		if not _suppress_save:
+			_save()
+
+# 拖动音量滑条时用: 立即应用音频但不落盘 (滑条 value_changed 每像素一次, 不然拖一下写几十次盘).
+func set_master_volume_live(v: float) -> void:
+	_suppress_save = true
+	master_volume = v
+	_suppress_save = false
+
+# 松手时调: 真正存盘一次.
+func save_now() -> void:
+	_save()
 
 # 当前游戏会话的世界配置 (主菜单 "新游戏" 配置面板写入)
 # difficulty: 0=简单, 1=普通, 2=困难

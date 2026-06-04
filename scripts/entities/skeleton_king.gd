@@ -6,6 +6,8 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const SkeletonKingArt = preload("res://scripts/art/skeleton_king_art.gd")
+const BoneProj = preload("res://scripts/entities/bone_projectile.gd")
+const SkeletonScene = preload("res://scenes/entities/skeleton.tscn")
 
 const BASE_MAX_HEALTH := 1200
 const CONTACT_DAMAGE := 15      # 摸到身子
@@ -22,6 +24,26 @@ const BONE_DROP_MIN := 15
 const BONE_DROP_MAX := 25
 const BODY_SCALE := 2.0         # 普通骷髅 16px → 32px ≈ 玩家(30px)高一点
 
+# === 4 招 (按距离选: 远扔骨头 / 中冲刺 / 近横扫; 血<50% 周期召唤小骷髅) ===
+const ATTACK_COOLDOWN_FULL := 2.2    # 满血出招间隔
+const ATTACK_COOLDOWN_LOW := 1.2     # 残血更频 (压迫感)
+const RANGE_CLOSE_PX := 3.0 * TILE_SIZE   # < 这个 → 横扫
+const RANGE_FAR_PX := 7.0 * TILE_SIZE     # > 这个 → 扔骨头; 中间 → 冲刺
+const THROW_DAMAGE := 12
+const THROW_WINDUP := 0.35           # 前摇 (举手, 给玩家反应时间)
+const THROW_COUNT := 2               # 一次扔几根
+const DASH_DAMAGE := 18
+const DASH_WINDUP := 0.35            # 前摇 (蹲一下蓄力)
+const DASH_DURATION := 0.35
+const DASH_SPEED := 240.0
+const SWEEP_DAMAGE := 22
+const SWEEP_WINDUP := 0.25           # 举刀前摇
+const SWEEP_ACTIVE := 0.22           # 打击窗口
+const SWEEP_RANGE_PX := 26.0
+const MINION_INTERVAL := 5.0
+const MINION_PER_WAVE := 2
+const MINION_CAP := 6
+
 var max_health: int = BASE_MAX_HEALTH
 var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null
@@ -30,6 +52,13 @@ var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _far_timer: float = 0.0
 var _jump_cooldown: float = 0.0
+# 攻击状态机
+var _attack_timer: float = ATTACK_COOLDOWN_FULL
+var _state: String = ""        # "" 平时 / "throw" / "dash" / "sweep"
+var _state_t: float = 0.0
+var _state_done: bool = false  # 这次攻击是否已结算伤害 (防一招多次)
+var _dash_dir: float = 1.0
+var _minion_timer: float = MINION_INTERVAL
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _crown: Sprite2D = $Crown
@@ -101,24 +130,156 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	var player := _find_player()
-	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
+	var aggro: bool = player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX
+	# 血 < 50% 周期召唤小骷髅 (独立于出招)
+	if current_health < max_health / 2 and player != null:
+		_minion_timer -= delta
+		if _minion_timer <= 0.0:
+			_minion_timer = MINION_INTERVAL
+			_spawn_minions()
+	# 攻击状态机优先; 平时走向玩家攒招
+	if _state != "":
+		_run_attack(delta, player)
+	elif aggro:
 		var dir: float = signf(player.global_position.x - global_position.x)
 		velocity.x = dir * WALK_SPEED
-		if sprite != null:
-			sprite.flip_h = dir < 0
-			if sprite.animation != "walk":
-				sprite.play("walk")
+		_face(dir)
+		_play("walk")
+		_attack_timer -= delta
+		if _attack_timer <= 0.0:
+			_pick_attack(player)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta)
-		if sprite != null and sprite.animation != "idle":
-			sprite.play("idle")
+		_play("idle")
 	move_and_slide()
-	# 撞墙落地 → 跳 (爬台阶过坎); 玩家在下方时不跳 (防砸头顶躲)
-	if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
+	# 撞墙落地 → 跳 (爬台阶过坎); 攻击中不跳; 玩家在下方时不跳 (防砸头顶躲)
+	if _state == "" and is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
 		if player == null or player.global_position.y - global_position.y <= float(TILE_SIZE) * 1.5:
 			velocity.y = JUMP_VY
 			_jump_cooldown = 0.8
 	_check_player_contact()
+
+
+# === 4 招攻击 ===
+
+func _attack_cooldown_now() -> float:
+	var ratio: float = clamp(float(current_health) / float(max_health), 0.0, 1.0)
+	return lerp(ATTACK_COOLDOWN_LOW, ATTACK_COOLDOWN_FULL, ratio)
+
+
+# 按距离选招进入对应状态: 远扔骨头 / 中冲刺 / 近横扫
+func _pick_attack(player: Node2D) -> void:
+	if player == null:
+		return
+	var dist: float = global_position.distance_to(player.global_position)
+	var dir: float = signf(player.global_position.x - global_position.x)
+	_face(dir)
+	if dist > RANGE_FAR_PX:
+		_state = "throw"
+	elif dist < RANGE_CLOSE_PX:
+		_state = "sweep"
+	else:
+		_state = "dash"
+		_dash_dir = dir if dir != 0.0 else 1.0
+	_state_t = 0.0
+	_state_done = false
+	_play("attack")
+
+
+func _run_attack(delta: float, player: Node2D) -> void:
+	_state_t += delta
+	match _state:
+		"throw":
+			velocity.x = move_toward(velocity.x, 0.0, 320.0 * delta)   # 站定扔
+			if not _state_done and _state_t >= THROW_WINDUP:
+				_state_done = true
+				_throw_bones(player)
+			if _state_t >= THROW_WINDUP + 0.25:
+				_end_attack()
+		"sweep":
+			velocity.x = move_toward(velocity.x, 0.0, 320.0 * delta)
+			if not _state_done and _state_t >= SWEEP_WINDUP and _state_t < SWEEP_WINDUP + SWEEP_ACTIVE:
+				_do_sweep_hit(player)   # 打击窗口里结算一次
+				_state_done = true
+			if _state_t >= SWEEP_WINDUP + SWEEP_ACTIVE:
+				_end_attack()
+		"dash":
+			if _state_t < DASH_WINDUP:
+				velocity.x = move_toward(velocity.x, 0.0, 320.0 * delta)   # 前摇蓄力 (telegraph)
+			elif _state_t < DASH_WINDUP + DASH_DURATION:
+				velocity.x = _dash_dir * DASH_SPEED   # 冲!
+			else:
+				_end_attack()
+
+
+func _end_attack() -> void:
+	_state = ""
+	_state_t = 0.0
+	_state_done = false
+	_attack_timer = _attack_cooldown_now()
+
+
+# 扔 THROW_COUNT 根飞骨头, 朝玩家身子中心 (略带散布)
+func _throw_bones(player: Node2D) -> void:
+	if player == null:
+		return
+	var hand: Vector2 = global_position + Vector2(0.0, -22.0)
+	var target: Vector2 = player.global_position + Vector2(0.0, -14.0)
+	var entities: Node = _entities_root()
+	for i in THROW_COUNT:
+		var b = BoneProj.new()
+		entities.add_child(b)
+		var spread: float = deg_to_rad((float(i) - float(THROW_COUNT - 1) / 2.0) * 12.0)
+		var aimed: Vector2 = hand + (target - hand).rotated(spread)
+		b.setup(hand, aimed, THROW_DAMAGE)
+
+
+# 横扫: 玩家在面朝方向 + 范围内 + 高度合适 → 扣血
+func _do_sweep_hit(player: Node2D) -> void:
+	if player == null:
+		return
+	var dx: float = player.global_position.x - global_position.x
+	var dy: float = player.global_position.y - global_position.y
+	var facing: float = -1.0 if (sprite != null and sprite.flip_h) else 1.0
+	# 玩家在背后且不贴脸 → 扫不到
+	if signf(dx) != facing and absf(dx) > 5.0:
+		return
+	if absf(dx) > SWEEP_RANGE_PX or dy < -36.0 or dy > 22.0:
+		return
+	var hp: Node = player.get_node_or_null("PlayerHealth")
+	if hp != null and hp.has_method("take_damage"):
+		hp.take_damage(SWEEP_DAMAGE, global_position, 160.0)
+
+
+# 召唤小骷髅 (复用普通骷髅). 只数普通骷髅小兵 (排除自己这个 boss)。
+func _spawn_minions() -> void:
+	var existing: int = 0
+	for s in get_tree().get_nodes_in_group("skeletons"):
+		if not s.is_in_group("boss"):
+			existing += 1
+	var entities: Node = _entities_root()
+	for i in MINION_PER_WAVE:
+		if existing >= MINION_CAP:
+			break
+		var m = SkeletonScene.instantiate()
+		entities.add_child(m)
+		m.global_position = global_position + Vector2(randf_range(-24.0, 24.0), -8.0)
+		existing += 1
+
+
+func _entities_root() -> Node:
+	var e: Node = get_tree().get_first_node_in_group("entities_root")
+	return e if e != null else get_parent()
+
+
+func _face(dir: float) -> void:
+	if sprite != null and dir != 0.0:
+		sprite.flip_h = dir < 0
+
+
+func _play(anim: String) -> void:
+	if sprite != null and sprite.animation != anim:
+		sprite.play(anim)
 
 
 func _check_player_contact() -> void:
@@ -132,7 +293,10 @@ func _check_player_contact() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
 		return
-	hp.take_damage(CONTACT_DAMAGE, global_position, 140.0)
+	# 冲刺中撞到玩家 = 冲刺伤害 (18), 平时摸到 = 接触伤害 (15)
+	var is_dashing: bool = _state == "dash" and _state_t >= DASH_WINDUP
+	var dmg: int = DASH_DAMAGE if is_dashing else CONTACT_DAMAGE
+	hp.take_damage(dmg, global_position, 160.0 if is_dashing else 140.0)
 
 
 func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:

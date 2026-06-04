@@ -17,6 +17,7 @@ const S := {
 	"settings_title": "设 置",         # 标题: 中文用宽空字距修饰, 英文/日文/韩文不用
 	"settings_master_volume": "主音量",
 	"settings_camera_zoom": "镜头",
+	"settings_scroll_zoom": "滚轮缩放镜头",
 	"settings_player_name": "玩家名",
 	"settings_player_name_placeholder": "玩家",
 	"settings_enemy_hp_bar": "怪物血条",
@@ -43,6 +44,9 @@ const S := {
 	"newgame_difficulty_easy": "简单",
 	"newgame_difficulty_normal": "普通",
 	"newgame_difficulty_hard": "困难",
+	"newgame_mode_label": "模式",
+	"newgame_mode_survival": "生存",
+	"newgame_mode_creative": "创造",
 	"newgame_cancel": "取消",
 	"newgame_start": "开始",
 	"newgame_default_world_name": "我的世界",     # 名字输入框留空时的默认 + placeholder

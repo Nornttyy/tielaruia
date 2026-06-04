@@ -31,6 +31,8 @@ var mana_crystal_positions: Array = []
 func setup(p_seed: int) -> void:
 	world_seed = p_seed
 	add_to_group("chunk_manager")
+	# 清结构/biome 缓存: 它们按 seed 缓存但也依赖 world_size, 换世界必须重算 (防同种子不同大小错位)
+	WorldGenerator.clear_structure_caches()
 
 
 # 联机里把水晶按 deterministic 哈希分配 owner (0 或 1).

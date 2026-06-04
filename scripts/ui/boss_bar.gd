@@ -20,15 +20,38 @@ var _boss: Node = null
 
 
 func _process(_delta: float) -> void:
-	var b: Node = get_tree().get_first_node_in_group("boss")
-	var ok: bool = b != null and is_instance_valid(b) and ("current_health" in b) and int(b.current_health) > 0
-	if ok:
+	var b: Node = _pick_boss()
+	if b != null:
 		_boss = b
 		visible = true
 		queue_redraw()
 	elif visible:
 		_boss = null
 		visible = false
+
+
+# 选要显示血条的 boss: 活着的里挑离本地玩家最近的那个.
+# (同时有俩 boss — 比如史莱姆王 + 骷髅王 — 时显示你正在打的那个, 而不是先生成的那个)
+func _pick_boss() -> Node:
+	# 本地玩家 (联机对端的影子玩家有 is_remote meta, 跳过)
+	var player: Node2D = null
+	for p in get_tree().get_nodes_in_group("player"):
+		if p is Node2D and not p.has_meta("is_remote"):
+			player = p
+			break
+	var best: Node = null
+	var best_d: float = INF
+	for boss in get_tree().get_nodes_in_group("boss"):
+		if not is_instance_valid(boss) or not ("current_health" in boss) or int(boss.current_health) <= 0:
+			continue
+		if player != null and boss is Node2D:
+			var d: float = player.global_position.distance_squared_to((boss as Node2D).global_position)
+			if d < best_d:
+				best_d = d
+				best = boss
+		elif best == null:
+			best = boss   # 没玩家参照 → 退回"第一个活着的"
+	return best
 
 
 func _draw() -> void:
