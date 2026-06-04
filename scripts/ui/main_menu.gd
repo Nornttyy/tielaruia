@@ -92,6 +92,7 @@ func _refresh_localized_text() -> void:
 	$SettingsPanel/VBox/NameRow/LineEdit.placeholder_text = Locale.t("settings_player_name_placeholder")
 	$SettingsPanel/VBox/EnemyHpBarRow/Label.text = Locale.t("settings_enemy_hp_bar")
 	$SettingsPanel/VBox/EnemyHpNumberRow/Label.text = Locale.t("settings_enemy_hp_number")
+	$SettingsPanel/VBox/ScrollWheelRow/Label.text = Locale.t("settings_scroll_zoom")
 	$SettingsPanel/VBox/BackButton.text = Locale.t("settings_back")
 
 	# 世界选择面板
@@ -111,6 +112,9 @@ func _refresh_localized_text() -> void:
 	$NewGamePanel/VBox/DifficultyRow/EasyButton.text = Locale.t("newgame_difficulty_easy")
 	$NewGamePanel/VBox/DifficultyRow/NormalButton.text = Locale.t("newgame_difficulty_normal")
 	$NewGamePanel/VBox/DifficultyRow/HardButton.text = Locale.t("newgame_difficulty_hard")
+	$NewGamePanel/VBox/ModeRow/Label.text = Locale.t("newgame_mode_label")
+	$NewGamePanel/VBox/ModeRow/SurvivalButton.text = Locale.t("newgame_mode_survival")
+	$NewGamePanel/VBox/ModeRow/CreativeButton.text = Locale.t("newgame_mode_creative")
 	$NewGamePanel/VBox/ButtonRow/CancelButton.text = Locale.t("newgame_cancel")
 	$NewGamePanel/VBox/ButtonRow/StartButton.text = Locale.t("newgame_start")
 

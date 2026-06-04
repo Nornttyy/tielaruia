@@ -464,6 +464,11 @@ func _update_mining(delta: float) -> void:
 		_mining_swing_t = 0.0
 	_mining_progress += _tool_speed(tool_kind, tid) * delta * _buff_mining_mul()
 	_mine_saved[tile] = [tid, _mining_progress]   # 存进度: 松手/切目标后还在
+	# 防字典无限涨: 半挖后走开不回来的格子会一直留着. 超 64 条丢最早一条 (不丢当前这格).
+	if _mine_saved.size() > 64:
+		var oldest: Vector2i = _mine_saved.keys()[0]
+		if oldest != tile:
+			_mine_saved.erase(oldest)
 	# 镐 + 斧 (用户改: 斧跟镐同款): 360° 旋转动画 — 每 0.7s 重启一次
 	# 其他 (徒手等): ±75° 来回挥 — 每 0.35s 挥一次
 	_mining_swing_t -= delta
