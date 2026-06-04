@@ -8,7 +8,7 @@ const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 
 const SURFACE_BASE := 0.45       # 地表平均高度 (相对世界 0..1)
-const SURFACE_AMP := 0.15        # 地表起伏振幅 (0.10→0.15: 更大的丘和谷, 更泰拉瑞亚)
+const SURFACE_AMP := 0.11        # 地表起伏振幅 (大丘大谷但顺滑; 山高主要靠 MOUNTAIN_BOOST 撑)
 const DIRT_DEPTH := 6            # 地表下泥土层厚度
 # 山区 noise: 低频 → 宽山区, max(0, n) 作为山高度系数 (实测 Perlin max ~0.31)
 # MOUNTAIN_BOOST 对世界高度的比例: 0.80 × 0.31 × 256 = 最高峰比平均地表再高 ~63 格 (大山)
@@ -177,7 +177,8 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	noise.seed = world_seed
 	noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	noise.frequency = 0.015
-	noise.fractal_octaves = 3
+	noise.fractal_octaves = 2   # 2 层 → 地表顺滑 (3 层细节多=尖刺). 注意: worm/露天矿洞/瀑布
+	                            # 里复制的 surf_noise 也必须 octaves=2 (同一地表公式), 否则洞口对不齐=歪七扭八.
 
 	var sand_noise := FastNoiseLite.new()
 	sand_noise.seed = world_seed + 1
@@ -640,7 +641,7 @@ static func _carve_worms_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 	surf_noise.seed = world_seed
 	surf_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	surf_noise.frequency = 0.015
-	surf_noise.fractal_octaves = 3
+	surf_noise.fractal_octaves = 2
 
 	# 山高 noise: 同 generate_chunk, 让 _surf_at 能算出真实山头位置 (山里 worm 才贴近山头)
 	var mountain_noise := FastNoiseLite.new()
@@ -1007,7 +1008,7 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 	surf_noise.seed = world_seed
 	surf_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	surf_noise.frequency = 0.015
-	surf_noise.fractal_octaves = 3
+	surf_noise.fractal_octaves = 2
 
 	var mountain_noise := FastNoiseLite.new()
 	mountain_noise.seed = world_seed + 5
@@ -1644,7 +1645,7 @@ static func _estimate_surf(world_x: int, world_seed: int, height: int) -> int:
 	n.seed = world_seed
 	n.noise_type = FastNoiseLite.TYPE_PERLIN
 	n.frequency = 0.015
-	n.fractal_octaves = 3
+	n.fractal_octaves = 2
 	var v: float = n.get_noise_1d(float(world_x))
 	# 山高度系数 (跟 generate_chunk 完全一致)
 	var mtn: float = _mountain_factor(world_x, world_seed)
