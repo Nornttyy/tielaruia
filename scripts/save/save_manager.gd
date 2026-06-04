@@ -93,6 +93,13 @@ func save(main: Node) -> bool:
 			ms_arr.append(int(cx))
 	data.mineshaft_chunks_spawned = ms_arr
 	var player: Node2D = world.get_player()
+	# 玩家/背包没就绪 (加载窗口期 autosave fire) → 别写档. 否则写出"有效世界 + 空背包"覆盖好档,
+	# 下次 continue 读到空背包 = 丢三件套 (用户反复报). 等就绪再存 (autosave 下一拍会再来).
+	if player == null:
+		return false
+	var _inv_ready: Node = player.get_node_or_null("PlayerInventory")
+	if _inv_ready == null or _inv_ready.inventory == null:
+		return false
 	if player != null:
 		data.player_position = player.global_position
 		var hp: Node = player.get_node_or_null("PlayerHealth")

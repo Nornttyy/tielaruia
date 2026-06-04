@@ -12,6 +12,7 @@ const ChestPanelScene = preload("res://scenes/ui/chest_panel.tscn")
 const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
 const LoadingScreenScene = preload("res://scenes/ui/loading_screen.tscn")
 const TouchControlsScript = preload("res://scripts/ui/touch_controls.gd")
+const _ChunkClass = preload("res://scripts/world/chunk.gd")   # 读档后算玩家落点 chunk_x 用
 
 @onready var _main_menu: CanvasLayer = $MainMenu
 @onready var _pause_menu: CanvasLayer = $PauseMenu
@@ -148,7 +149,6 @@ func _run_async_load(world_seed: int) -> void:
 	_game_nodes.append(dialogue)
 	_wire_player.call_deferred()
 	_grant_starter_on_new_game.call_deferred()
-	_start_autosave()
 	await get_tree().process_frame
 
 	# 100%: 完成 + 0.5s 淡出 → queue_free LoadingScreen
@@ -161,6 +161,10 @@ func _run_async_load(world_seed: int) -> void:
 	if _pending_save_data != null:
 		_apply_save_data(_pending_save_data)
 		_pending_save_data = null
+	# autosave 推迟到这里才启动 (不在前面 Step F): 否则 continue 路径 autosave 可能赶在
+	# _apply_save_data 恢复背包之前 fire, 把"空背包"写盘覆盖好档 → 下次读档丢三件套.
+	# 现在玩家 + 背包都就绪了再开自动存档.
+	_start_autosave()
 
 
 # 同步路径: 测试 + boot_to_game 用. 不走 LoadingScreen, World defer_init=false 自动跑完
@@ -334,6 +338,10 @@ func _apply_save_data(data: Resource) -> void:
 					int(floor(player.global_position.y / 12.0)))
 	else:
 		player.global_position = saved_pos
+	# 玩家瞬移到存档位置后立刻同步加载落点 chunk: 否则这一帧 ScenicDirector 查不到地表(背景误显地底)
+	# + minimap 把那片当 AIR(显地底). ensure_loaded 是同步的, 当帧就有 surfaces/tile 数据.
+	if w.chunk_manager != null:
+		w.chunk_manager.ensure_loaded(_ChunkClass.chunk_x_of(int(floor(player.global_position.x / 12.0))))
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and "current_health" in hp:
 		# v0 → v1: 老存档 player_hp 0-20 刻度, ×5 缩放到 0-100.
