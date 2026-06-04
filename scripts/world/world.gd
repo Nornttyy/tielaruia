@@ -751,30 +751,36 @@ func sleep_in_bed(tile: Vector2i) -> void:
 	var player := get_player()
 	if player != null:
 		_sleep_anchor_x = player.global_position.x
+		_sleep_armed = false   # 等触发睡觉那次点击松开才允许按键唤醒
 		# 睡觉期间禁止玩家移动 + 给一个安全 iframe (老 bug: 没锁, 怪打过来 = 任挨打死)
 		player.set_physics_process(false)
 		var hp = player.get_node_or_null("PlayerHealth")
 		if hp != null:
 			hp._iframe_timer = 999.0  # 睡觉期间无敌, _wake_up 时清
+		# 睡觉动作: 人物躺下 (sprite 转 90°) + 头顶飘 Zzz
+		var spr = player.get_node_or_null("AnimatedSprite2D")
+		if spr != null:
+			spr.rotation = -PI / 2.0
+		_spawn_zzz(player)
 
 
-# 睡觉醒条件: 天亮 (is_day) / 玩家走出 8px / 玩家按主键攻击.
+# 睡觉醒条件: 天亮 (is_day) / 按任意键下床.
+# 触发睡觉那次右键得先松开 (_sleep_armed) 才认按键, 否则同一下点击立刻把你叫醒。
 # 醒 → time_multiplier = 1.0, _sleeping = false.
 func _check_sleep_wake() -> void:
-	if TimeOfDay == null:
+	if TimeOfDay == null or TimeOfDay.is_day():
 		_wake_up()
 		return
-	if TimeOfDay.is_day():
+	if get_player() == null:
 		_wake_up()
 		return
-	var player := get_player()
-	if player == null:
-		_wake_up()
+	if not _sleep_armed:
+		# 等所有按键/鼠标都松开, 才"武装" (防睡觉那一下点击立刻醒)
+		if not Input.is_anything_pressed():
+			_sleep_armed = true
 		return
-	if abs(player.global_position.x - _sleep_anchor_x) > 8.0:
-		_wake_up()
-		return
-	if Input.is_action_pressed("primary"):
+	# 武装后: 按任意键/鼠标 → 下床
+	if Input.is_anything_pressed():
 		_wake_up()
 
 
@@ -789,6 +795,30 @@ func _wake_up() -> void:
 		var hp = player.get_node_or_null("PlayerHealth")
 		if hp != null and hp._iframe_timer > 100.0:
 			hp._iframe_timer = 0.5  # 短 iframe 防醒了立刻被怪打
+		# 起身: sprite 复位 (跟睡觉动作对应)
+		var spr = player.get_node_or_null("AnimatedSprite2D")
+		if spr != null:
+			spr.rotation = 0.0
+	_remove_zzz()
+
+
+# 头顶 Zzz 提示 (睡觉时)
+func _spawn_zzz(player: Node2D) -> void:
+	_remove_zzz()
+	var lbl := Label.new()
+	lbl.text = "Zzz"
+	lbl.add_theme_font_size_override("font_size", 11)
+	lbl.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0))
+	lbl.position = Vector2(2, -36)   # 头顶上方
+	lbl.z_index = 20
+	player.add_child(lbl)
+	_sleep_zzz = lbl
+
+
+func _remove_zzz() -> void:
+	if _sleep_zzz != null and is_instance_valid(_sleep_zzz):
+		_sleep_zzz.queue_free()
+	_sleep_zzz = null
 
 
 # world 被 free 时 (回主菜单 / 切场景) 必须 reset autoload 的 time_multiplier,
