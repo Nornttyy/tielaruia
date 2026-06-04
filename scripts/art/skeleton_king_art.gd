@@ -95,13 +95,86 @@ const _KING_IDLE := [
 	"........................",
 ]
 
+
+
+# 走路帧 (迈步) + 攻击帧 (举刀过头)
+const _KING_WALK := [
+	"........................",
+	".......nnnnnn...........",
+	"......nbbbbbbn..........",
+	".....nbbHHHHbbn.........",
+	".....nbrrnnrrbn....nn...",
+	".....nbrrnnrrbn...nbbn..",
+	".....nbbHnnHbbn...nbBn..",
+	"......nbbnnbbn....nbBn..",
+	"....ccnbbbbbbncc..nbBn..",
+	"...cccnbnbbnbnccc.nbBn..",
+	"..ccCCnbbbbbbnCCcc.nbBn.",
+	"..cCCCnbBbBbbnCCCc.nbBn.",
+	"..cCCnbBbBbBbbnCCc.nbBn.",
+	"..cCCnbBbBbBbbnCCcnbBn..",
+	"..cCCnbBbBbBbbnCCnbbBn..",
+	"..cCCCnbbbbbbnCCCnggBn..",
+	"..cCCCCnbbbbnCCCCcnkn...",
+	"..cCCCCnbnnbnCCCCc.nn...",
+	"...cCCCnbbbbnCCCc.......",
+	"...cCCnbbn.nbnCCc.......",
+	"..ccCnbbn...nbbnCc......",
+	".ccCnbbn.....nbnCc......",
+	".cnbbn.......nbnCc......",
+	"ccnbn........nbbnc......",
+	"cnbn.........nbnc.......",
+	"nbbn.........nCcc.......",
+	".nn..........nbn........",
+	".............nbbn.......",
+	".............nnn........",
+	"........................",
+]
+const _KING_ATTACK := [
+	".....nn.................",
+	".....nbn....nnnnnn......",
+	".....nbn...nbbbbbbn.....",
+	".....nbBn.nbbHHHHbbn....",
+	"....nbBn..nbrrnnrrbn....",
+	"...nbBn...nbrrnnrrbn....",
+	"..nbBn....nbbHnnHbbn....",
+	"..nggn.....nbbnnbbn.....",
+	"..nkn....ccnbbbbbbncc...",
+	"...n....cccnbnbbnbnccc..",
+	"......ccCCnbbbbbbnCCcc..",
+	"......cCCCnbBbBbbnCCCc..",
+	"......cCCnbBbBbBbbnCCc..",
+	"......cCCnbBbBbBbbnCCc..",
+	"......cCCnbBbBbBbbnCCc..",
+	"......cCCCnbbbbbbnCCC...",
+	"......cCCCCnbbbbnCCCC...",
+	"......cCCCCnbnnbnCCCCc..",
+	".......cCCCnbbbbnCCCc...",
+	".......cCCnbn..nbnCCc...",
+	".......cCnbbn..nbbnCc...",
+	".......cCnbbn..nbbnCc...",
+	".......cnbbn....nbbnc...",
+	".......cnbn......nbnc...",
+	"......ccCn........nCcc..",
+	".......nbn........nbn...",
+	"......nbbn........nbbn..",
+	"......nnn..........nnn..",
+	"........................",
+	"........................",
+]
+
 # 骷髅王身体帧 (idle/walk/attack 暂共用这一精细帧, 走位靠状态机不靠帧)
 static func build_frames() -> SpriteFrames:
-	var tex: ImageTexture = PixelArt.grid_to_texture(_KING_IDLE, _KING_PAL)
+	var idle_tex: ImageTexture = PixelArt.grid_to_texture(_KING_IDLE, _KING_PAL)
+	var walk_tex: ImageTexture = PixelArt.grid_to_texture(_KING_WALK, _KING_PAL)
+	var atk_tex: ImageTexture = PixelArt.grid_to_texture(_KING_ATTACK, _KING_PAL)
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	for anim in ["idle", "walk", "attack"]:
-		sf.add_animation(anim)
-		sf.set_animation_loop(anim, true)
-		sf.add_frame(anim, tex)
+	sf.add_animation("idle"); sf.set_animation_loop("idle", true); sf.add_frame("idle", idle_tex)
+	# 走: idle ↔ 迈步 两帧轮播
+	sf.add_animation("walk"); sf.set_animation_speed("walk", 5.0); sf.set_animation_loop("walk", true)
+	sf.add_frame("walk", idle_tex); sf.add_frame("walk", walk_tex)
+	# 打: idle ↔ 举刀 两帧轮播
+	sf.add_animation("attack"); sf.set_animation_speed("attack", 7.0); sf.set_animation_loop("attack", true)
+	sf.add_frame("attack", idle_tex); sf.add_frame("attack", atk_tex)
 	return sf
