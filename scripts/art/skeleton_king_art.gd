@@ -46,3 +46,62 @@ const _BONE_PROJ_PAL := {
 
 static func build_bone_proj() -> ImageTexture:
 	return PixelArt.grid_to_texture(_BONE_PROJ, _BONE_PROJ_PAL)
+
+
+# === 专属骷髅骑士帧 (Phase: 美化, 24×30, 不再用放大的小骷髅) ===
+# 头骨+红眼 / 暗红斗篷(裹身) / 肋骨 / 右手大骨刀 / 双腿. 王冠仍单独贴头顶.
+const _KING_PAL := {
+	".": Color(0, 0, 0, 0),
+	"n": Color8(22, 18, 20),
+	"b": Color8(232, 228, 215),
+	"B": Color8(180, 175, 160),
+	"H": Color8(248, 245, 235),
+	"r": Color8(235, 60, 50),
+	"c": Color8(130, 30, 38),
+	"C": Color8(85, 18, 24),
+	"g": Color8(150, 150, 162),
+	"k": Color8(67, 40, 24),
+}
+const _KING_IDLE := [
+	"........................",
+	".......nnnnnn...........",
+	"......nbbbbbbn..........",
+	".....nbbHHHHbbn.........",
+	".....nbrrnnrrbn....nn...",
+	".....nbrrnnrrbn...nbbn..",
+	".....nbbHnnHbbn...nbBn..",
+	"......nbbnnbbn....nbBn..",
+	"....ccnbbbbbbncc..nbBn..",
+	"...cccnbnbbnbnccc.nbBn..",
+	"..ccCCnbbbbbbnCCcc.nbBn.",
+	"..cCCCnbBbBbbnCCCc.nbBn.",
+	"..cCCnbBbBbBbbnCCc.nbBn.",
+	"..cCCnbBbBbBbbnCCcnbBn..",
+	"..cCCnbBbBbBbbnCCnbbBn..",
+	"..cCCCnbbbbbbnCCCnggBn..",
+	"..cCCCCnbbbbnCCCCcnkn...",
+	"..cCCCCnbnnbnCCCCc.nn...",
+	"...cCCCnbbbbnCCCc.......",
+	"...cCCnbn..nbnCCc.......",
+	"...cCnbbn..nbbnCc.......",
+	"...cCnbbn..nbbnCc.......",
+	"...cnbbn....nbbnc.......",
+	"...cnbn......nbnc.......",
+	"..ccCn........nCcc......",
+	"...nbn........nbn.......",
+	"..nbbn........nbbn......",
+	"..nnn..........nnn......",
+	"........................",
+	"........................",
+]
+
+# 骷髅王身体帧 (idle/walk/attack 暂共用这一精细帧, 走位靠状态机不靠帧)
+static func build_frames() -> SpriteFrames:
+	var tex: ImageTexture = PixelArt.grid_to_texture(_KING_IDLE, _KING_PAL)
+	var sf := SpriteFrames.new()
+	sf.remove_animation("default")
+	for anim in ["idle", "walk", "attack"]:
+		sf.add_animation(anim)
+		sf.set_animation_loop(anim, true)
+		sf.add_frame(anim, tex)
+	return sf

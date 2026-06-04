@@ -24,7 +24,7 @@ const BONE_DROP_MIN := 15
 const BONE_DROP_MAX := 25
 const ARMOR_DROP_CHANCE := 0.40   # 每件骷髅盔甲掉落几率 (多打几次凑齐一套)
 const STAFF_DROP_CHANCE := 0.25   # 骷髅法杖掉落几率 (稀有奖励)
-const BODY_SCALE := 2.0         # 普通骷髅 16px → 32px ≈ 玩家(30px)高一点
+const BODY_SCALE := 1.3         # 专属骑士帧 24×30 → ~35px ≈ 玩家(30px)高一点
 
 # === 4 招 (按距离选: 远扔骨头 / 中冲刺 / 近横扫; 血<50% 周期召唤小骷髅) ===
 const ATTACK_COOLDOWN_FULL := 2.2    # 满血出招间隔
@@ -71,9 +71,9 @@ func _ready() -> void:
 	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
 	if sprite != null:
-		sprite.sprite_frames = ArtCache.skeleton_frames   # 复用普通骷髅帧 (它本来就握剑)
+		sprite.sprite_frames = SkeletonKingArt.build_frames()   # 专属骷髅骑士帧 (头骨+斗篷+骨刀)
 		sprite.scale = Vector2(BODY_SCALE, BODY_SCALE)
-		sprite.modulate = Color(1.15, 0.82, 0.82)         # 偏红, 跟普通白骷髅一眼区分
+		sprite.modulate = Color.WHITE                           # 专属帧已上好色, 不再染
 		sprite.play("idle")
 	if _crown != null:
 		_crown.texture = SkeletonKingArt.build_crown()    # 头顶破铁王冠 (独立, 不被身体染红)
@@ -125,7 +125,7 @@ func _physics_process(delta: float) -> void:
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		if _hit_flash <= 0.0 and sprite != null:
-			sprite.modulate = Color(1.15, 0.82, 0.82)
+			sprite.modulate = Color.WHITE
 	_iframe_t = max(0.0, _iframe_t - delta)
 	if _jump_cooldown > 0.0:
 		_jump_cooldown -= delta
