@@ -137,7 +137,9 @@ const SWORD_HIT_RADIUS := 17.5         # 怪中心到 grip→tip 线段 ≤ 17.5
 const SWORD_POINT_BLANK_DIST := 22.5   # 怪离玩家中心 ≤ 22.5px 视为贴脸 (玩家 1.25x), 任何剑攻击一律命中
 const SWORD_HAND_OFFSET_X := 5.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
 const SWORD_HAND_OFFSET_Y := -10.0     # 跟 held_item.HAND_OFFSET_Y 一致
-const SWORD_THRUST_OFFSET := 12.5      # 跟 held_item.THRUST_OFFSET_PX 一致
+const SWORD_THRUST_OFFSET := 8.0       # 跟 held_item.THRUST_OFFSET_PX 一致 (用户: 短剑戳太远 → 12.5→8)
+const DAGGER_BLADE_SHORTEN := 6.0      # 短剑(戳)命中剑身比阔剑短这么多 → 戳得更近 (剑短)
+const DAGGER_HIT_RADIUS := 13.0        # 短剑命中半径比阔剑(17.5)小, 更"贴"不糊到远处怪
 const SWORD_THRUST_DURATION := 0.30    # 三段: 20% 突出, 55% dwell, 25% 收回
 const SWORD_THRUST_EXTEND_END := 0.20  # 0..0.20 突出阶段结束
 const SWORD_THRUST_DWELL_END := 0.75   # 0.20..0.75 dwell, 0.75+ 收回 (主要打击在 dwell)
@@ -1413,8 +1415,10 @@ func _check_sword_blade_hits() -> void:
 	var grip_world: Vector2 = player.global_position + grip_local
 	# 剑尖在 sprite 中心列, 不受 facing 翻转影响, 直接用 blade_rot 算 tip 偏移.
 	# 阔剑(tier3+)半圆挥剑身更长够得更远; 短剑(戳)用基础长度 (SWORD_TIP_LOCAL_Y<0, 减 bonus = 更长).
-	var tip_len: float = SWORD_TIP_LOCAL_Y - SWORD_SWEEP_REACH_BONUS if _sword_attack_is_sweep else SWORD_TIP_LOCAL_Y
+	var tip_len: float = SWORD_TIP_LOCAL_Y - SWORD_SWEEP_REACH_BONUS if _sword_attack_is_sweep else SWORD_TIP_LOCAL_Y + DAGGER_BLADE_SHORTEN
 	var tip_world: Vector2 = grip_world + Vector2(0, tip_len).rotated(blade_rot)
+	# 短剑(戳)命中半径比阔剑小 → 命中更"贴", 不糊到远处怪 (用户: 戳得太远)
+	var hit_r: float = SWORD_HIT_RADIUS if _sword_attack_is_sweep else DAGGER_HIT_RADIUS
 	# 挥(sweep): 半圆扫过的怪全打 (群伤是阔剑的卖点)。
 	# 戳(thrust): 一击只穿 1 只 (最近的), 不会顺着剑指方向连远处的也戳到。
 	var is_thrust: bool = not _sword_attack_is_sweep
@@ -1436,7 +1440,7 @@ func _check_sword_blade_hits() -> void:
 			var to_player_dist: float = sn.global_position.distance_to(player.global_position)
 			var hit: bool = to_player_dist <= SWORD_POINT_BLANK_DIST + radius
 			if not hit:
-				hit = _dist_point_to_segment(sn.global_position, grip_world, tip_world) <= SWORD_HIT_RADIUS + radius
+				hit = _dist_point_to_segment(sn.global_position, grip_world, tip_world) <= hit_r + radius
 			if not hit:
 				continue
 			if is_thrust:

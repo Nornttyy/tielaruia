@@ -106,7 +106,7 @@ const THRUST_DURATION := 0.30           # 用户调: 戳要在前端"停"一下 
 const THRUST_EXTEND_RATIO := 0.20       # 前 20% = 突出去 (0.06s)
 const THRUST_HOLD_RATIO := 0.55         # 中 55% = 在前面 dwell (0.165s, 主要打击窗口)
 const THRUST_RETRACT_RATIO := 0.25      # 后 25% = 收回来 (0.075s)
-const THRUST_OFFSET_PX := 12.5   # 工具向前突进的距离 (玩家 1.25x)
+const THRUST_OFFSET_PX := 8.0    # 工具向前突进的距离 (用户: 短剑戳得太远 → 12.5 调到 8)
 const PICKAXE_ATTACK_DURATION := 1.0   # 用户改 0.7→1.0 转慢一点
 
 
