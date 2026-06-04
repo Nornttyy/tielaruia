@@ -23,8 +23,46 @@ const AGGRO_RANGE_PX := 120.0   # 10 tiles
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := 12
 
-var max_health: int = BASE_MAX_HEALTH      # _ready 里按难度缩放
+const SlimeScene = preload("res://scenes/entities/slime.tscn")  # 分裂用 (自引用 preload, Godot 允许)
+
+# 颜色 tier 0绿/1蓝/2红/3紫: modulate 染色(乘色, 蓝=原色不染) + HP/伤害乘数 + 掉 jelly 数.
+const _COLOR_TINT := [Color(0.55, 1.25, 0.55), Color(1, 1, 1), Color(1.5, 0.55, 0.55), Color(1.2, 0.6, 1.5)]
+const _COLOR_HP_MULT := [0.6, 1.0, 1.8, 2.8]
+const _COLOR_DMG_MULT := [0.7, 1.0, 1.5, 2.2]
+const _COLOR_JELLY := [1, 1, 2, 3]
+# 大小 0小/1中/2大: sprite scale + HP/伤害乘数.
+const _SIZE_SCALE := [0.65, 1.0, 1.5]
+const _SIZE_HP_MULT := [0.5, 1.0, 1.5]
+const _SIZE_DMG_MULT := [0.8, 1.0, 1.2]
+
+
+# 按"地表下深度 (tile_y - 地表 surf)" 选颜色. rng 让地表绿/蓝按概率.
+# 地表(<8): 70% 绿 / 30% 蓝. 浅(8-80): 蓝. 深(80-150): 红. 极深(>=150): 紫.
+static func color_for_depth(depth_below_surf: int, rng: RandomNumberGenerator) -> int:
+	if depth_below_surf < 8:
+		return 0 if rng.randf() < 0.7 else 1
+	elif depth_below_surf < 80:
+		return 1
+	elif depth_below_surf < 150:
+		return 2
+	return 3
+
+
+# 刷怪随机大小: 40% 大 / 40% 中 / 20% 小 (偏大给分裂乐趣).
+static func random_spawn_size(rng: RandomNumberGenerator) -> int:
+	var r: float = rng.randf()
+	if r < 0.40:
+		return 2
+	elif r < 0.80:
+		return 1
+	return 0
+
+var max_health: int = BASE_MAX_HEALTH      # _ready 里按 tier+难度缩放
 var current_health: int = BASE_MAX_HEALTH
+var color_tier: int = 1   # 0绿/1蓝/2红/3紫, 默认蓝 (不调 setup = 旧行为)
+var size: int = 1         # 0小/1中/2大, 默认中
+var contact_damage: int = CONTACT_DAMAGE   # _apply_tier 按 tier 缩放; CONTACT_DAMAGE 常量当基准
+var _base_tint: Color = Color(1, 1, 1)     # tier 染色; 受击闪光后恢复到它
 var _cached_player: Node2D = null  # 缓存 player ref, 每帧避免 get_nodes_in_group
 var _cached_cm: Node = null  # 缓存 chunk_manager (每帧 _is_in_water 不用查 3 层)
 var _hop_timer: float = 0.5
@@ -45,16 +83,39 @@ func _is_hostile() -> bool:
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
-func _ready() -> void:
-	# 难度缩放: 简单 ×0.7 / 普通 ×1.0 / 困难 ×1.4 (见 GameSettings.enemy_hp_multiplier)
-	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
+# spawn / 分裂时设颜色+大小.
+# add_child 前调: sprite 还没好, 等 _ready 里 _apply_tier 应用 (分裂 / 测试这么用).
+# add_child 后调: 已 _ready 过 (默认蓝中已应用), 立即 _apply_tier 重应用新色/大小 (地表刷怪这么用).
+func setup(p_color: int, p_size: int) -> void:
+	color_tier = clampi(p_color, 0, 3)
+	size = clampi(p_size, 0, 2)
+	if is_inside_tree() and sprite != null:
+		_apply_tier()
+
+
+# 按 color_tier + size 算 HP/接触伤 (× 难度) + 染色 + 缩放. _ready 调 (sprite 已就绪).
+func _apply_tier() -> void:
+	var hp_f: float = float(BASE_MAX_HEALTH) * _COLOR_HP_MULT[color_tier] * _SIZE_HP_MULT[size]
+	max_health = max(1, int(round(hp_f * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
-	sprite.sprite_frames = ArtCache.slime_frames
-	sprite.play("idle")
-	# hop 动画不循环, 播完会停在最后那个"压扁落地"帧, 看着像被压扁
-	# 接 animation_finished, 落地后切回 idle
-	sprite.animation_finished.connect(_on_anim_done)
+	contact_damage = max(1, int(round(float(CONTACT_DAMAGE) * _COLOR_DMG_MULT[color_tier] * _SIZE_DMG_MULT[size])))
+	_base_tint = _COLOR_TINT[color_tier]
+	if sprite != null:  # 裸实例 (测试 Slime.new()) 没 sprite, 只算数值不染色/缩放
+		sprite.modulate = _base_tint
+		sprite.scale = Vector2(_SIZE_SCALE[size], _SIZE_SCALE[size])
+
+
+func _ready() -> void:
+	# 数值先行: 血量/伤害/染色 (含难度缩放) 不依赖 sprite, 必须先算.
+	# 测试里 Slime.new() 是裸实例 (没 AnimatedSprite2D 子节点), sprite 为 null;
+	# 之前 sprite.sprite_frames 在 _apply_tier 前崩 → max_health 没算 → 难度缩放失效.
+	_apply_tier()
 	add_to_group("slimes")
+	if sprite != null:
+		sprite.sprite_frames = ArtCache.slime_frames
+		sprite.play("idle")
+		# hop 动画不循环, 播完停在"压扁落地"帧; 接 animation_finished 落地后切回 idle
+		sprite.animation_finished.connect(_on_anim_done)
 	# slime 不跟玩家物理碰撞 (玩家能穿过 slime, 像 Terraria/MC).
 	# 接触伤害靠 _check_player_contact 距离判断, 不依赖物理碰撞.
 	call_deferred("_add_player_exception")
@@ -102,7 +163,7 @@ func _physics_process(delta: float) -> void:
 			return
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
-		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
+		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else _base_tint
 	_iframe_t = max(0.0, _iframe_t - delta)
 
 	# 史莱姆怕水: 碰到水继续正常重力下沉 + 每 0.5s 扣 1 HP (玩家可用水陷阱杀)
@@ -220,7 +281,7 @@ func _check_player_contact() -> void:
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
 		return
-	hp.take_damage(CONTACT_DAMAGE, global_position, 75.0)
+	hp.take_damage(contact_damage, global_position, 75.0)
 
 
 # 返回 true 表示本次造成有效伤害
@@ -247,10 +308,11 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 		dir = dir.normalized()
 		velocity = dir * knockback
 		_hop_timer = 0.5   # 击退后冷却再跳
-	# 压缩弹动: sprite scale Y 压扁
+	# 压缩弹动: sprite scale Y 压扁 (按体型 base scale 缩放, 不然大史莱姆弹完会缩回 1.0)
+	var base_s: float = _SIZE_SCALE[size]
 	var tween := create_tween()
-	tween.tween_property(sprite, "scale", Vector2(1.25, 0.75), 0.06)
-	tween.tween_property(sprite, "scale", Vector2.ONE, 0.12)
+	tween.tween_property(sprite, "scale", Vector2(base_s * 1.25, base_s * 0.75), 0.06)
+	tween.tween_property(sprite, "scale", Vector2(base_s, base_s), 0.12)
 	if current_health == 0:
 		_die()
 	return true
@@ -261,11 +323,29 @@ func _die() -> void:
 	# 联机: host 通知 client 这个实体死了 (client 端那个 slime 也会消失)
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
-	# 掉 1-2 个 slime_jelly
-	var n := 1 + (randi() % 2)
-	for i in n:
+	# 按颜色 tier 掉 slime_jelly (绿1/蓝1/红2/紫3)
+	for i in _COLOR_JELLY[color_tier]:
 		_spawn_drop("slime_jelly")
+	# 大/中: 裂成 2 只同色小一档 (小不裂)
+	if size > 0:
+		_split()
 	queue_free()
+
+
+# 在死亡点附近 spawn 2 只同色 size-1 的史莱姆, 给点散开横速 (像泰拉瑞亚炸开).
+func _split() -> void:
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = get_parent()
+	if entities == null:
+		return
+	for i in 2:
+		var child = SlimeScene.instantiate()
+		child.setup(color_tier, size - 1)   # 同色, 小一档
+		entities.add_child(child)
+		child.global_position = global_position + Vector2(randf_range(-6.0, 6.0), -4.0)
+		if "velocity" in child:
+			child.velocity = Vector2(randf_range(-50.0, 50.0), -130.0)   # 弹开
 
 
 func _spawn_drop(item_id: String) -> void:

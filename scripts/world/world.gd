@@ -14,6 +14,7 @@ const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
 const VillagePlacer = preload("res://scripts/world/village_placer.gd")
 const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
+const SlimeClass = preload("res://scripts/entities/slime.gd")  # 用静态 color_for_depth / random_spawn_size
 const ZombieScene = preload("res://scenes/entities/zombie.tscn")
 const SpiderScene = preload("res://scenes/entities/spider.tscn")
 const DemonEyeScene = preload("res://scenes/entities/demon_eye.tscn")
@@ -38,6 +39,7 @@ const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
 const HealthBarScript = preload("res://scripts/entities/health_bar.gd")
 
 const MAX_SLIMES := 4              # 白天上限 (slime)
+const UNDERGROUND_SLIME_MAX := 6  # 地下史莱姆额外上限 (跟地表分开算)
 # 夜间怪 (zombie + spider 共享) 上限按难度: 简单 8 / 普通 15 / 困难 25
 const NIGHT_CAP_BY_DIFFICULTY := [8, 15, 25]
 const MAX_ANIMALS := 3             # 动物上限 (牛+羊+猪+企鹅+豹+青蛙 总和)
@@ -596,7 +598,9 @@ func _process(delta: float) -> void:
 		if _slime_spawn_timer <= 0.0:
 			_slime_spawn_timer = SPAWN_INTERVAL
 			if TimeOfDay.is_night():
-				_try_spawn_zombie()
+				_try_spawn_zombie()      # 夜间(含地下)走僵尸/蜘蛛/地狱怪那套
+			elif _player_is_deep():
+				_try_spawn_underground_slime()  # 白天地下: 按深度配色史莱姆刷在玩家旁
 			else:
 				_try_spawn_slime()
 		_animal_spawn_timer -= delta
@@ -968,7 +972,72 @@ func _try_spawn_slime() -> void:
 	var slimes := get_tree().get_nodes_in_group("slimes")
 	if slimes.size() >= MAX_SLIMES:
 		return
-	_spawn_surface_creature(SlimeScene)
+	var s = _spawn_surface_creature(SlimeScene)
+	if s != null and s.has_method("setup"):
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		# 地表深度≈0 → color_for_depth 给 70绿/30蓝
+		s.setup(SlimeClass.color_for_depth(0, rng), SlimeClass.random_spawn_size(rng))
+
+
+# 玩家是否在地下 (地表往下 >=8 格). 地下白天刷史莱姆而不是地表那只.
+func _player_is_deep() -> bool:
+	var player := get_player()
+	if player == null:
+		return false
+	var px: int = int(floor(player.global_position.x / TILE_SIZE))
+	var py: int = int(floor(player.global_position.y / TILE_SIZE))
+	return py - _surf_at_x(px) >= 8
+
+
+# 某列地表 y (从上往下第一个非 AIR). 全空返回 0.
+func _surf_at_x(x: int) -> int:
+	for y in ChunkConstants.WORLD_HEIGHT:
+		if chunk_manager.get_tile(x, y) != Tiles.AIR:
+			return y
+	return 0
+
+
+# 地下刷史莱姆: 玩家附近找 AIR(头顶空+脚下实心) 刷一只按深度配色的史莱姆.
+# 越深越强 (深度决定颜色: 浅蓝→深红→极深紫). 仿 _spawn_hell_creature 的找坑逻辑.
+func _try_spawn_underground_slime() -> void:
+	var player := get_player()
+	if player == null:
+		return
+	var slimes := get_tree().get_nodes_in_group("slimes")
+	if slimes.size() >= MAX_SLIMES + UNDERGROUND_SLIME_MAX:
+		return
+	var px: int = int(floor(player.global_position.x / TILE_SIZE))
+	var py: int = int(floor(player.global_position.y / TILE_SIZE))
+	for _i in 12:
+		var sign_x: int = 1 if randf() < 0.5 else -1
+		var dx: int = sign_x * randi_range(SPAWN_RANGE_MIN, SPAWN_RANGE_MAX)
+		var cand_x: int = px + dx
+		var cand_y: int = py + randi_range(-3, 3)
+		# 地狱(>=220)留给地狱怪, 不在这刷
+		if cand_y >= 220 or cand_y >= ChunkConstants.WORLD_HEIGHT - 2:
+			continue
+		var depth: int = cand_y - _surf_at_x(cand_x)
+		if depth < 8:
+			continue  # 太浅算地表, 跳过
+		if chunk_manager.get_tile(cand_x, cand_y) != Tiles.AIR:
+			continue  # 站位要空
+		if chunk_manager.get_tile(cand_x, cand_y - 1) != Tiles.AIR:
+			continue  # 头顶要空
+		var below: int = chunk_manager.get_tile(cand_x, cand_y + 1)
+		if below == Tiles.AIR or below == Tiles.LAVA:
+			continue  # 脚下要实心
+		var s := SlimeScene.instantiate()
+		s.global_position = Vector2(
+			cand_x * TILE_SIZE + TILE_SIZE / 2.0,
+			(cand_y + 1) * TILE_SIZE
+		)
+		# setup 在 add_child 前调: _ready 里按颜色/大小应用一次, 不重复
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		s.setup(SlimeClass.color_for_depth(depth, rng), SlimeClass.random_spawn_size(rng))
+		entities_root.add_child(s)
+		return
 
 
 func _try_spawn_zombie() -> void:
@@ -1306,10 +1375,10 @@ func spawn_harpies_for_chunk(chunk_x: int, spots: Array) -> void:
 
 
 # 在玩家附近地表随机刷一个 creature (slime/zombie 共用站位逻辑)
-func _spawn_surface_creature(scene: PackedScene) -> void:
+func _spawn_surface_creature(scene: PackedScene) -> Node:
 	var player := get_player()
 	if player == null:
-		return
+		return null
 	var px: int = int(floor(player.global_position.x / TILE_SIZE))
 	for _i in 10:
 		var sign_x: int = 1 if randf() < 0.5 else -1
@@ -1332,7 +1401,8 @@ func _spawn_surface_creature(scene: PackedScene) -> void:
 			(surf_y - 1) * TILE_SIZE + TILE_SIZE
 		)
 		entities_root.add_child(creature)
-		return
+		return creature
+	return null
 
 
 func _spawn_player() -> void:

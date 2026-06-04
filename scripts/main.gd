@@ -204,6 +204,10 @@ func _start_game_sync(world_seed: int) -> void:
 
 # 实时存档: 每 AUTO_SAVE_INTERVAL 秒自动保存. 进游戏时启动 Timer.
 func _start_autosave() -> void:
+	# GUT 测试环境不开自动存档: 全量回归里十几个 booting-game 测试各带一个 1s 定时存档,
+	# 会跟 test_save_* 抢存档文件 → 偶发 chunk0 丢 / 存档计数对不上. 真实游戏+网页版照常.
+	if _running_under_gut():
+		return
 	if _autosave_timer != null:
 		return
 	_autosave_timer = Timer.new()
@@ -221,6 +225,14 @@ func _stop_autosave() -> void:
 	if _autosave_timer != null:
 		_autosave_timer.queue_free()
 		_autosave_timer = null
+
+
+# 是否在 GUT 测试里跑 (命令行带 gut_cmdln.gd). 测试里关掉抢文件的自动存档.
+func _running_under_gut() -> bool:
+	for a in OS.get_cmdline_args():
+		if a.contains("gut_cmdln"):
+			return true
+	return false
 
 
 # 走"继续" 路径: 用存档 seed 启 world + 还原玩家/背包/方块改动
