@@ -143,7 +143,7 @@ const DAGGER_HIT_RADIUS := 13.0        # 短剑命中半径比阔剑(17.5)小, �
 const SWORD_THRUST_DURATION := 0.30    # 三段: 20% 突出, 55% dwell, 25% 收回
 const SWORD_THRUST_EXTEND_END := 0.20  # 0..0.20 突出阶段结束
 const SWORD_THRUST_DWELL_END := 0.75   # 0.20..0.75 dwell, 0.75+ 收回 (主要打击在 dwell)
-const SWORD_SWING_DURATION := 0.18     # 半圆旋转
+const SWORD_SWING_DURATION := 0.30     # 剑挥旋转时长 (用户调: 转速降低 0.18→0.30; 跟 held_item.SWING_DURATION 一致)
 var _sword_attack_active: bool = false
 var _sword_attack_t: float = 0.0
 var _sword_attack_duration: float = 0.0
@@ -1377,7 +1377,7 @@ func _start_sword_blade_attack(is_sweep: bool, swing_dir: Vector2, damage: int, 
 	# 挥剑时剑尖在中心列, 翻转不影响剑尖方向, 不用 s * 反向 (跟最新 play_thrust 同逻辑).
 	if is_sweep:
 		var base: float = wrapf(_sword_attack_target_angle + PI / 2.0, -PI, PI)
-		_sword_attack_start_rot = base - deg_to_rad(90.0)
+		_sword_attack_start_rot = base - deg_to_rad(110.0)
 	_sword_attack_damage = max(1, damage)
 	_sword_attack_knockback = knockback
 	_sword_hit_this_attack.clear()
@@ -1396,7 +1396,7 @@ func _check_sword_blade_hits() -> void:
 	if _sword_attack_is_sweep:
 		# 半圆挥: rotation 从 start_a 线性插值到 start_a + 180° over SWORD_SWING_DURATION.
 		var progress: float = clamp(t / SWORD_SWING_DURATION, 0.0, 1.0)
-		blade_rot = _sword_attack_start_rot + deg_to_rad(180.0) * progress
+		blade_rot = _sword_attack_start_rot + deg_to_rad(220.0) * progress
 	else:
 		# 戳: rotation 静止指向鼠标 (target_angle + PI/2). position 三段式动.
 		blade_rot = wrapf(_sword_attack_target_angle + PI / 2.0, -PI, PI)
