@@ -13,6 +13,7 @@ const TILE_SIZE := 12               # 本项目格子像素尺寸 (蒸汽特效�
 var _dirty: Dictionary = {}          # Vector2i -> true
 var _t: float = 0.0
 var _tick_n: int = 0
+var _in_settle: bool = false         # settle_now (chunk加载瞬间找平) 期间不喷水花
 
 
 func _ready() -> void:
@@ -142,9 +143,11 @@ func settle_now() -> void:
 		_dirty.clear()
 		return
 	var guard: int = 0
+	_in_settle = true   # 瞬间找平, 不喷水花 (一次性 spawn 几百粒子)
 	while not _dirty.is_empty() and guard < SETTLE_MAX_TICKS:
 		_run_tick()
 		guard += 1
+	_in_settle = false
 
 
 func _run_tick() -> void:
@@ -237,6 +240,10 @@ func _step_tile(cm, x: int, y: int) -> void:
 		world._set_water_tile_fast(x, y + 1, _tile_for_level(kind, L))
 		world._set_water_tile_fast(x, y, Tiles.AIR)
 		notify_tile_changed(x, y + 1)
+		# 落水溅花: 实时(非settle) + 桌面 + 限频; 落点正下方是实心/液体 = 砸到底了
+		if kind == "water" and not _in_settle and _tick_n % 4 == 0 and not OS.has_feature("web"):
+			if cm.get_tile(x, y + 2) != Tiles.AIR:
+				Effects.spawn_splash(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE))
 		return
 	if _liquid_kind(below_tid) == kind:
 		var below_L: int = _level_of(below_tid)
