@@ -87,6 +87,11 @@ const WORM_DEPTH_SHALLOW_MAX := 40  # 地表 40 格内安全, 不会"踩进去"
 const WORM_DEPTH_MID_MAX := 110     # surf+110 起密集
 const WORM_SURFACE_BUFFER := 20     # worm 路径距地表至少 20 格 (走近就 break, 防止深层 worm 窜到地表)
 
+# 大洞厅 (Terraria cavern): 深层用一张低频噪声, 超过阈值的连片格挖成 AIR → 大开阔洞.
+const CAVERN_NOISE_FREQ := 0.05    # 越小洞越大块 (波长 ~20 → 12-25 格宽洞)
+const CAVERN_THRESHOLD := 0.33     # noise > 此 → 挖空 (越低洞越多; 实测 Perlin 多在 ±0.5)
+const CAVERN_MIN_DEPTH := 45       # 地表下 ≥45 才挖大洞 (浅层留给 worm, 不戳穿地表)
+
 # 露天矿洞 (Terraria 山坡侧面洞穴): 山坡侧面挖个洞口, 朝左/右开, 不是天坑.
 # 在斜坡 (terrain slope) 上找一个低边, 朝高边方向挖横向隧道进山 + 工程师分叉.
 # 山区 (mountain_factor > MOUNTAIN_PIT_THRESHOLD) 不生成.
@@ -322,6 +327,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 
 	# 洞穴: Perlin Worms — 隧道 + 偶发大房间, 跨 chunk 一致
 	_carve_worms_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+
+	# 大洞厅: 深层用低频噪声挖大块开阔洞 (泰拉瑞亚 cavern 味, 跟 worm 连通). 不碰地狱.
+	_carve_caverns_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
 	# 露天矿洞: 漏斗坑 (pit) 或 窄缝 (crack) 直通地表, 玩家能跳下去
 	_carve_open_pits_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
@@ -937,6 +945,40 @@ static func _try_place_mushroom_patch(c: Chunk, world_x_center: int, start_y: in
 		var top_y: int = floor_y - 1
 		if top_y >= 0 and c.tiles[lx][top_y] == Tiles.AIR and rng.randf() < 0.60:
 			c.tiles[lx][top_y] = Tiles.MUSHROOM
+
+
+# ===== 大洞厅 (Terraria cavern) =====
+# 深层用一张低频 2D 噪声, 阈值以上的连片格挖成 AIR → 大块开阔洞 (能在里面跑).
+# 只挖石头/矿 (不动基岩/地狱/水/已空), 地表下 CAVERN_MIN_DEPTH 起 (浅层留 worm, 不戳地表).
+static func _carve_caverns_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: int,
+		chunk_x: int, chunk_width: int, height: int) -> void:
+	var cavern_noise := FastNoiseLite.new()
+	cavern_noise.seed = world_seed + 71
+	cavern_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	cavern_noise.frequency = CAVERN_NOISE_FREQ
+	var chunk_start: int = chunk_x * chunk_width
+	var bottom: int = mini(height - BEDROCK_ROWS, HELL_DEPTH)   # 不挖地狱区
+	for lx in chunk_width:
+		var wx: int = chunk_start + lx
+		var top: int = chunk_heights[wx] + CAVERN_MIN_DEPTH
+		if top >= bottom:
+			continue
+		var col: Array = c.tiles[lx]
+		for y in range(top, bottom):
+			var t: int = col[y]
+			# 只挖石头/矿 (深层这一段就只有这些; 别动 bedrock/特殊/已空)
+			if not _is_cavern_carveable(t):
+				continue
+			if cavern_noise.get_noise_2d(float(wx), float(y)) > CAVERN_THRESHOLD:
+				col[y] = Tiles.AIR
+
+
+# 大洞厅能挖掉的 tile: 石头 + 各种矿 (挖了露出洞壁, 矿脉留在洞边).
+static func _is_cavern_carveable(t: int) -> bool:
+	return t == Tiles.STONE or t == Tiles.DEEP_STONE \
+			or t == Tiles.COAL_ORE or t == Tiles.IRON_ORE or t == Tiles.COPPER_ORE \
+			or t == Tiles.TIN_ORE or t == Tiles.GOLD_ORE or t == Tiles.SILVER_ORE \
+			or t == Tiles.DIAMOND_ORE
 
 
 # ===== 露天矿洞 (Terraria 山坡侧面洞穴) =====
