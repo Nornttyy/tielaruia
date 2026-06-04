@@ -5,6 +5,7 @@ extends Node
 const TICK_INTERVAL := 0.12         # 用户要求流速快 (0.35→0.12 = 3x 更快)
 const MAX_TILES_PER_TICK := 300     # 保留 300/tick 上限防 web 单帧爆
 const LAVA_TICK_DIVISOR := 3        # 岩浆每 3 个 tick 才流一步 (≈ 0.36s, 慢吞吞)
+const SOURCE_TICK_DIVISOR := 2      # 水源块每 2 拍灌一次 (温柔水流 + 省 CPU)
 const TILE_SIZE := 12               # 本项目格子像素尺寸 (蒸汽特效定位用)
 
 @export var world: Node2D            # 父 World (有 chunk_manager + _set_tile)
@@ -192,10 +193,28 @@ func _reduce_liquid(cm, x: int, y: int) -> void:
 	world._set_water_tile_fast(x, y, _tile_for_level("water", L - 1))
 
 
+# 水源块: 每 N 拍往正下方灌一格满水, 自己永不变少. 下方满/堵 → 不灌不重标 = 歇着 (self-limiting).
+func _step_source(cm, x: int, y: int) -> void:
+	if _tick_n % SOURCE_TICK_DIVISOR != 0:
+		mark_dirty(x, y)   # 非本拍: 保活, 不灌
+		return
+	var below: int = cm.get_tile(x, y + 1)
+	var can_fill: bool = below == Tiles.AIR \
+			or (_liquid_kind(below) == "water" and _level_of(below) < 4)
+	if can_fill:
+		world._set_water_tile_fast(x, y + 1, Tiles.WATER)
+		notify_tile_changed(x, y + 1)
+		mark_dirty(x, y)   # 还有活, 继续醒着
+	# 下方满水/实心/岩浆 → 啥也不做, dirty 不重标 → 自然歇下
+
+
 # 单 tile 一步: 优先重力下流, 否则横向往同种低 level 邻居均衡.
 # 水和岩浆共用同一套流动物理, 但绝不互相混合 (反应留给后续 task).
 func _step_tile(cm, x: int, y: int) -> void:
 	var tid: int = cm.get_tile(x, y)
+	if tid == Tiles.WATER_SOURCE:
+		_step_source(cm, x, y)   # 水源块: 往下灌水, 不流不耗
+		return
 	var kind: String = _liquid_kind(tid)
 	if kind == "":
 		return
