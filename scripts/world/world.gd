@@ -883,8 +883,8 @@ func _on_chunk_loaded(c: Chunk) -> void:
 			var col: Array = c.tiles[lx]
 			for y in col.size():
 				var t: int = col[y]
-				# 水和岩浆都要唤醒 (以前只认水, 岩浆瀑布冻空中).
-				if not water_sim.is_liquid(t):
+				# 水和岩浆都要唤醒 (以前只认水, 岩浆瀑布冻空中); 水源块也要 (不然冻崖顶不流).
+				if not water_sim.wakes_on_chunk_load(t):
 					continue
 				# 收 4 邻居 tile (越界用 -1 = chunk 边界开口, 保守唤醒)
 				var nbs: Array = []

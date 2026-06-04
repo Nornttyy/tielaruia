@@ -95,6 +95,7 @@ func _build_blocks() -> void:
 		BlocksArt.LOG_TOP, BlocksArt.LOG_ROOT_L, BlocksArt.LOG_ROOT_R,
 		BlocksArt.BRANCH_L, BlocksArt.BRANCH_R,
 		BlocksArt.WATER_L1, BlocksArt.WATER_L2, BlocksArt.WATER_L3,
+		BlocksArt.WATER_SOURCE,
 		BlocksArt.CHEST,
 		BlocksArt.DOOR_TOP, BlocksArt.DOOR_MID, BlocksArt.DOOR_OPEN,
 		BlocksArt.SNOW, BlocksArt.ICE, BlocksArt.JUNGLE_GRASS, BlocksArt.MUD, BlocksArt.SWAMP_GRASS,

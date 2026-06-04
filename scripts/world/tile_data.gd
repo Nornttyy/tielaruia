@@ -100,6 +100,7 @@ const RICE_3 := 80          # 稻子 熟 (挖 → 米 + 稻种)
 const WATER_DESERT := 81    # 沙漠绿洲 = 青绿松石
 const WATER_JUNGLE := 82    # 丛林 = 翠绿
 const WATER_SWAMP := 83     # 沼泽 = 浑浊墨绿
+const WATER_SOURCE := 86    # 水源块: 永远冒水的泉眼 (瀑布). 实心可挖, 挖掉就停; 不掉物=不可造, 防无限水
 
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
@@ -365,6 +366,12 @@ const _PROPS := {
 	WATER_SWAMP: {
 		"solid": false, "mineable": false,
 		"tool_tiers": {}, "drops": [],
+	},
+	WATER_SOURCE: {
+		# 实心 (水从底下冒, 能站能挖), 木镐挖. 不掉物品 (世界生成专属, 玩家拿不到 → 不会无限水).
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"drops": [],
 	},
 	CHEST: {
 		# 非实心 (玩家能站箱子里), 可挖 (任何工具都行), 砍掉 1 个 chest item

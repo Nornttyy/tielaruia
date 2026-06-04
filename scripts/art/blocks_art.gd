@@ -36,6 +36,7 @@ const RICE_3 := 80
 const WATER_DESERT := 81    # 沙漠绿洲水 (青绿松石)
 const WATER_JUNGLE := 82    # 丛林水 (翠绿)
 const WATER_SWAMP := 83     # 沼泽水 (浑浊墨绿)
+const WATER_SOURCE := 86    # 水源块 (湿石泉眼, 瀑布)
 const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
 const GOLD_CHEST := 54      # 金宝箱 (金色金属包角)
@@ -571,6 +572,34 @@ const _P_WATER_SWAMP := {            # 浑浊墨绿 (沼泽脏水, alpha 高更�
 	"b": Color8(84, 108, 78, 235),
 	"c": Color8(98, 122, 92, 235),
 }
+# 水源块: 湿石框 + 中间发亮的蓝色泉眼 + 底部往下滴 (暗示水从底下冒)
+const _P_WATER_SOURCE := {
+	"S": Color8(70, 78, 88),         # 暗湿石边
+	"s": Color8(96, 104, 114),       # 湿石身
+	"d": Color8(52, 58, 66),         # 底部阴影
+	"a": Color8(45, 110, 200, 235),  # 深蓝水
+	"m": Color8(60, 130, 215, 230),  # 中蓝
+	"w": Color8(85, 160, 230, 230),  # 亮蓝水面
+	"l": Color8(150, 210, 245, 240), # 泉涌高光
+}
+const _WATER_SOURCE := [
+	"SSSSSSSSSSSSSSSS",
+	"SssssssssssssssS",
+	"SssssssssssssssS",
+	"SsssmmwwwwmmsssS",
+	"SssswwllllwwsssS",
+	"SssswllwwllwsssS",
+	"SssswllwwllwsssS",
+	"SssswwllllwwsssS",
+	"SsssaawwwwaasssS",
+	"SssssssaassssssS",
+	"SssssssaassssssS",
+	"SssssssasssssssS",
+	"SssssssasssssssS",
+	"SssssssssssssssS",
+	"SddddddddddddddS",
+	"SSSSSSSSSSSSSSSS",
+]
 
 # 地狱晶体: DEEP_STONE 底 (更暗背景烘托) + h/H/y 烈火红
 const _P_HELL_CRYSTAL := {
@@ -2234,6 +2263,7 @@ const _PATTERN_MAP := {
 	WATER_L1: [_WATER, _P_WATER],
 	WATER_L2: [_WATER, _P_WATER],
 	WATER_L3: [_WATER, _P_WATER],
+	WATER_SOURCE: [_WATER_SOURCE, _P_WATER_SOURCE],   # 水源块: 湿石泉眼 (实心, 瀑布)
 	CHEST: [_CHEST, _P_CHEST],
 	DOOR_TOP: [_DOOR_TOP_CLOSED, _P_DOOR],
 	DOOR_MID: [_DOOR_MID_CLOSED, _P_DOOR],

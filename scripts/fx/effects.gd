@@ -83,6 +83,19 @@ func spawn_steam_puff(world_pos: Vector2) -> void:
 		d.setup(pos, scl)
 
 
+func spawn_splash(world_pos: Vector2) -> void:
+	# 落水溅水花: 8 颗蓝色水滴向上扇形飞散 + 落回 (复用 block_break 粒子, 够明显)
+	var parent: Node = _root()
+	var drops := [Color(0.55, 0.8, 0.96, 0.95), Color(0.72, 0.9, 1.0, 0.95), Color(0.38, 0.64, 0.92, 0.92)]
+	for i in 8:
+		var chip = BlockBreakParticleScene.instantiate()
+		parent.add_child(chip)
+		var angle: float = randf_range(-PI * 0.85, -PI * 0.15)  # 向上扇形 (含两侧)
+		var speed: float = randf_range(70.0, 150.0)
+		var vel := Vector2(cos(angle), sin(angle)) * speed
+		chip.setup(world_pos + Vector2(randf_range(-3, 3), -2.0), drops[i % drops.size()], vel)
+
+
 func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1, 0.9, 0.5)) -> void:
 	# 砍怪 / 玩家受伤时, 头上飘一个 "-N" 数字, 0.7s 上升 + 渐隐.
 	# color: 默认暖黄 (打怪); 玩家受伤可传 Color(1, 0.4, 0.4) 暗红.

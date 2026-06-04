@@ -5,6 +5,7 @@ extends Node
 const TICK_INTERVAL := 0.12         # 用户要求流速快 (0.35→0.12 = 3x 更快)
 const MAX_TILES_PER_TICK := 300     # 保留 300/tick 上限防 web 单帧爆
 const LAVA_TICK_DIVISOR := 3        # 岩浆每 3 个 tick 才流一步 (≈ 0.36s, 慢吞吞)
+const SOURCE_TICK_DIVISOR := 2      # 水源块每 2 拍灌一次 (温柔水流 + 省 CPU)
 const TILE_SIZE := 12               # 本项目格子像素尺寸 (蒸汽特效定位用)
 
 @export var world: Node2D            # 父 World (有 chunk_manager + _set_tile)
@@ -12,6 +13,7 @@ const TILE_SIZE := 12               # 本项目格子像素尺寸 (蒸汽特效�
 var _dirty: Dictionary = {}          # Vector2i -> true
 var _t: float = 0.0
 var _tick_n: int = 0
+var _in_settle: bool = false         # settle_now (chunk加载瞬间找平) 期间不喷水花
 
 
 func _ready() -> void:
@@ -94,6 +96,11 @@ func is_liquid(tid: int) -> bool:
 	return _liquid_kind(tid) != ""
 
 
+# chunk 加载时该不该唤醒这个 tile: 流动液体 + 水源块都要醒 (水源不是 liquid, 不特判就冻崖顶不流).
+func wakes_on_chunk_load(tid: int) -> bool:
+	return is_liquid(tid) or tid == Tiles.WATER_SOURCE
+
+
 # 这个液体 tile 还能不能流 (chunk 加载时判断该不该唤醒).
 # 之前世界生成的悬空岩浆源没人叫醒 → 瀑布冻在空中; 现在水和岩浆一视同仁.
 # neighbors = 4 邻居 tile id (顺序无所谓); 越界邻居传 -1 (chunk 边界开口, 保守唤醒).
@@ -136,9 +143,11 @@ func settle_now() -> void:
 		_dirty.clear()
 		return
 	var guard: int = 0
+	_in_settle = true   # 瞬间找平, 不喷水花 (一次性 spawn 几百粒子)
 	while not _dirty.is_empty() and guard < SETTLE_MAX_TICKS:
 		_run_tick()
 		guard += 1
+	_in_settle = false
 
 
 func _run_tick() -> void:
@@ -192,10 +201,28 @@ func _reduce_liquid(cm, x: int, y: int) -> void:
 	world._set_water_tile_fast(x, y, _tile_for_level("water", L - 1))
 
 
+# 水源块: 每 N 拍往正下方灌一格满水, 自己永不变少. 下方满/堵 → 不灌不重标 = 歇着 (self-limiting).
+func _step_source(cm, x: int, y: int) -> void:
+	if _tick_n % SOURCE_TICK_DIVISOR != 0:
+		mark_dirty(x, y)   # 非本拍: 保活, 不灌
+		return
+	var below: int = cm.get_tile(x, y + 1)
+	var can_fill: bool = below == Tiles.AIR \
+			or (_liquid_kind(below) == "water" and _level_of(below) < 4)
+	if can_fill:
+		world._set_water_tile_fast(x, y + 1, Tiles.WATER)
+		notify_tile_changed(x, y + 1)
+		mark_dirty(x, y)   # 还有活, 继续醒着
+	# 下方满水/实心/岩浆 → 啥也不做, dirty 不重标 → 自然歇下
+
+
 # 单 tile 一步: 优先重力下流, 否则横向往同种低 level 邻居均衡.
 # 水和岩浆共用同一套流动物理, 但绝不互相混合 (反应留给后续 task).
 func _step_tile(cm, x: int, y: int) -> void:
 	var tid: int = cm.get_tile(x, y)
+	if tid == Tiles.WATER_SOURCE:
+		_step_source(cm, x, y)   # 水源块: 往下灌水, 不流不耗
+		return
 	var kind: String = _liquid_kind(tid)
 	if kind == "":
 		return
@@ -213,6 +240,10 @@ func _step_tile(cm, x: int, y: int) -> void:
 		world._set_water_tile_fast(x, y + 1, _tile_for_level(kind, L))
 		world._set_water_tile_fast(x, y, Tiles.AIR)
 		notify_tile_changed(x, y + 1)
+		# 落水溅花: 实时(非settle) + 桌面 + 限频; 落点正下方是实心/液体 = 砸到底了
+		if kind == "water" and not _in_settle and _tick_n % 4 == 0 and not OS.has_feature("web"):
+			if cm.get_tile(x, y + 2) != Tiles.AIR:
+				Effects.spawn_splash(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE))
 		return
 	if _liquid_kind(below_tid) == kind:
 		var below_L: int = _level_of(below_tid)
