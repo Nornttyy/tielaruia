@@ -42,6 +42,7 @@ static func build() -> TileSet:
 		Tiles.BRANCH_L, Tiles.BRANCH_R,
 		Tiles.WATER_L1, Tiles.WATER_L2, Tiles.WATER_L3,
 		Tiles.WATER_DESERT, Tiles.WATER_JUNGLE, Tiles.WATER_SWAMP,
+		Tiles.WATER_SOURCE,   # 水源块 (实心, 走普通方块渲染, 不进下面的水视觉分支)
 		Tiles.CHEST,
 		Tiles.DOOR_TOP, Tiles.DOOR_MID, Tiles.DOOR_OPEN,
 		# 新群系 tile + 平台 + 绳 + 群系泥土/树叶
