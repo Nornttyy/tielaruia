@@ -12,6 +12,7 @@ const ChestPanelScene = preload("res://scenes/ui/chest_panel.tscn")
 const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
 const LoadingScreenScene = preload("res://scenes/ui/loading_screen.tscn")
 const TouchControlsScript = preload("res://scripts/ui/touch_controls.gd")
+const LoadPlanner = preload("res://scripts/world/load_planner.gd")
 const _ChunkClass = preload("res://scripts/world/chunk.gd")   # 读档后算玩家落点 chunk_x 用
 
 @onready var _main_menu: CanvasLayer = $MainMenu
@@ -150,6 +151,28 @@ func _run_async_load(world_seed: int) -> void:
 	_wire_player.call_deferred()
 	_grant_starter_on_new_game.call_deferred()
 	await get_tree().process_frame
+
+	# 自适应预载 (仅新游戏): 测设备速度 → 按速度/平台/核数定半径 → 分帧把出生点一大片先生成好.
+	# continue (读档) 不动: 保持默认半径, 不碰延迟敏感的读档路径 (玩家稍后瞬移到存档位置).
+	if _pending_save_data == null:
+		var cm = w.chunk_manager
+		loading.set_progress(0.90, "正在测速...")
+		var t0: int = Time.get_ticks_msec()
+		# 基准: 生成出生点两侧 8 个新 chunk (这些也是真要预载的, 不浪费)
+		for bcx in [3, 4, 5, 6, -3, -4, -5, -6]:
+			cm.load_one(bcx)
+		var per: float = float(Time.get_ticks_msec() - t0) / 8.0
+		cm.view_radius = LoadPlanner.plan_view_radius(per, OS.has_feature("web"), OS.get_processor_count())
+		# 分帧预载 ±view_radius (跳过已载的), 进度 0.90 → 0.98
+		var r: int = cm.view_radius
+		var total: int = 2 * r + 1
+		var done: int = 0
+		for cx in range(-r, r + 1):
+			cm.load_one(cx)
+			done += 1
+			if done % 3 == 0:
+				loading.set_progress(0.90 + 0.08 * float(done) / float(total), "正在预生成世界 (%d/%d)..." % [done, total])
+				await get_tree().process_frame
 
 	# 100%: 完成 + 0.5s 淡出 → queue_free LoadingScreen
 	loading.set_progress(1.0, "进入世界!")

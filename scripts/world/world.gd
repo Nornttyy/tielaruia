@@ -835,7 +835,7 @@ func _check_chunk_load() -> void:
 	if pcx != _last_player_chunk_x:
 		_last_player_chunk_x = pcx
 		chunk_manager.ensure_loaded(pcx)
-		chunk_manager.unload_far_from(pcx, ChunkConstants.VIEW_RADIUS + 1)
+		chunk_manager.unload_far_from(pcx, chunk_manager.view_radius + 1)
 
 
 func _on_chunk_loaded(c: Chunk) -> void:
