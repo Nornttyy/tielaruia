@@ -95,6 +95,11 @@ func is_liquid(tid: int) -> bool:
 	return _liquid_kind(tid) != ""
 
 
+# chunk 加载时该不该唤醒这个 tile: 流动液体 + 水源块都要醒 (水源不是 liquid, 不特判就冻崖顶不流).
+func wakes_on_chunk_load(tid: int) -> bool:
+	return is_liquid(tid) or tid == Tiles.WATER_SOURCE
+
+
 # 这个液体 tile 还能不能流 (chunk 加载时判断该不该唤醒).
 # 之前世界生成的悬空岩浆源没人叫醒 → 瀑布冻在空中; 现在水和岩浆一视同仁.
 # neighbors = 4 邻居 tile id (顺序无所谓); 越界邻居传 -1 (chunk 边界开口, 保守唤醒).

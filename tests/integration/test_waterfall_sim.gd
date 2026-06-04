@@ -55,3 +55,11 @@ func test_dug_source_stops():
 	sim.mark_dirty(0, 0)
 	sim.settle_now()
 	assert_false(sim.is_liquid(_t(fw, 0, 1)), "没水源 → 下方不该有水")
+
+
+func test_source_wakes_on_chunk_load():
+	# chunk 加载唤醒扫描要认水源 (它不是 liquid, 不特判就冻崖顶不流)
+	var sim = _make_sim(FakeWorld.new())
+	assert_true(sim.wakes_on_chunk_load(Tiles.WATER_SOURCE), "水源块 chunk 加载时要被唤醒")
+	assert_true(sim.wakes_on_chunk_load(Tiles.WATER), "水照常唤醒")
+	assert_false(sim.wakes_on_chunk_load(Tiles.STONE), "石头不唤醒")
