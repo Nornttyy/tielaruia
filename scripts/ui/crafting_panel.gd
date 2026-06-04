@@ -338,6 +338,7 @@ func _on_armor_slot_input(event: InputEvent, slot_kind: String) -> void:
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		if _player_inv.has_method("unequip_armor"):
 			_player_inv.unequip_armor(slot_kind)
+			_refresh_all()   # 修: 卸下后刷新, 否则盔甲槽图标残留
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT:
 		return
@@ -352,6 +353,7 @@ func _on_armor_slot_input(event: InputEvent, slot_kind: String) -> void:
 		if equipped != null:
 			_player_inv.cursor_slot = equipped
 			_player_inv.set_armor(slot_kind, null)
+			_refresh_all()   # 修: 拿到 cursor 后刷新, 否则盔甲槽图标残留
 		return
 	# cursor 有东西: 必须是匹配 slot 的盔甲
 	if ItemDB.armor_slot(String(cursor.item_id)) != slot_kind:
@@ -359,6 +361,7 @@ func _on_armor_slot_input(event: InputEvent, slot_kind: String) -> void:
 	# 匹配: swap. 槽里旧装备 → cursor, cursor 内装上
 	_player_inv.set_armor(slot_kind, {"item_id": String(cursor.item_id), "count": 1})
 	_player_inv.cursor_slot = equipped   # null 或旧装备, 都直接赋
+	_refresh_all()   # 修: swap 后刷新盔甲槽
 
 
 func _refresh_armor_slots() -> void:
