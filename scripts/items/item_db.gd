@@ -180,6 +180,11 @@ func get_def(item_id: String) -> Variant:
 	return _DEFS.get(item_id, null)
 
 
+# 全部物品 id (创造模式"物品大全"用)
+func all_item_ids() -> Array:
+	return _DEFS.keys()
+
+
 func is_placeable(item_id: String) -> bool:
 	var def = get_def(item_id)
 	return def != null and def.placeable_tile_id != -1

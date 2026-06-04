@@ -34,6 +34,7 @@ var _recipe_buttons: Array = []  # [{recipe_dict, button, cost_label}]
 var _inv_grid: GridContainer
 var _inv_slot_nodes: Array = []  # 36 个 PanelContainer
 var _armor_slot_nodes: Array = []  # 3 个盔甲槽 PanelContainer (helmet/chest/pants 顺序)
+var _creative_section: VBoxContainer = null  # 创造模式"物品大全"区 (只创造模式显示)
 
 # 内部 _cells 初始化用
 func _ready() -> void:
@@ -110,6 +111,9 @@ func _build_ui() -> void:
 	scroll.add_child(_recipe_container)
 	_build_recipe_buttons()
 
+	# 创造模式"物品大全"区 (点任何物品免费拿一组), 只创造模式显示
+	_build_creative_section()
+
 	# Row (旧 input grid, 测试用) 放在最末尾且隐藏
 	row_old.visible = false
 
@@ -126,6 +130,66 @@ func _build_recipe_buttons() -> void:
 		var entry := _make_recipe_row(r)
 		_recipe_buttons.append(entry)
 		_recipe_container.add_child(entry.button)
+
+
+# 创造模式"物品大全": 一个可滚动网格, 每个物品一个图标按钮, 点一下免费拿一整组。
+# 只创造模式显示 (生存模式整块隐藏)。
+func _build_creative_section() -> void:
+	_creative_section = VBoxContainer.new()
+	_creative_section.add_theme_constant_override("separation", 3)
+	recipe_vbox.add_child(_creative_section)
+
+	var title := Label.new()
+	title.text = "物品大全 (创造·点了免费拿)"
+	title.add_theme_font_size_override("font_size", 13)
+	title.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0))
+	_creative_section.add_child(title)
+
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(200, 220)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_creative_section.add_child(scroll)
+
+	var grid_c := GridContainer.new()
+	grid_c.columns = 6
+	grid_c.add_theme_constant_override("h_separation", 2)
+	grid_c.add_theme_constant_override("v_separation", 2)
+	scroll.add_child(grid_c)
+
+	for item_id in ItemDB.all_item_ids():
+		var tex: Texture2D = ArtCache.get_inventory_icon(item_id)
+		if tex == null:
+			continue   # 没图标的跳过 (不该有, 但保险)
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(30, 30)
+		btn.tooltip_text = _zh_name(item_id)
+		var icon := TextureRect.new()
+		icon.texture = tex
+		icon.custom_minimum_size = Vector2(26, 26)
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+		btn.add_child(icon)
+		btn.pressed.connect(_on_creative_grab.bind(item_id))
+		grid_c.add_child(btn)
+
+
+# 点了"物品大全"里的物品: 免费拿一整组进背包
+func _on_creative_grab(item_id: String) -> void:
+	if _player_inv == null or not _player_inv.has_method("pickup"):
+		return
+	var n: int = ItemDB.max_stack(item_id)
+	if n <= 0:
+		n = 1
+	_player_inv.pickup(item_id, n)
+	_refresh_inv()
+	_refresh_recipes()   # 拿了料, 可合成的配方可能变了
+
+
+func _refresh_creative_section() -> void:
+	if _creative_section != null:
+		_creative_section.visible = GameSettings != null and GameSettings.creative_mode
 
 
 func _make_recipe_row(recipe: Dictionary) -> Dictionary:
@@ -758,6 +822,7 @@ func _remove_from_inv(inv, item_id: String, count: int) -> void:
 func _refresh_all() -> void:
 	_refresh_wb_label()
 	_refresh_recipes()
+	_refresh_creative_section()
 	_refresh_inv()
 	_refresh_armor_slots()
 	_refresh_cells()
