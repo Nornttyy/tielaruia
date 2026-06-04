@@ -29,6 +29,8 @@ var _cursor_item: Variant = null
 
 # 新 UI 节点 (由 _ready 程序化构建)
 var _wb_label: Label
+var _recipe_title: Label              # "合成" 标题 (创造模式隐藏)
+var _recipe_scroll: ScrollContainer   # 配方列表滚动容器 (创造模式隐藏)
 var _recipe_container: VBoxContainer
 var _recipe_buttons: Array = []  # [{recipe_dict, button, cost_label}]
 var _inv_grid: GridContainer
@@ -85,12 +87,12 @@ func _build_ui() -> void:
 	_build_inv_slots()
 
 	# ===== 配方面板 (左下) =====
-	var rec_title := Label.new()
-	rec_title.text = "合成"
-	rec_title.add_theme_font_size_override("font_size", 16)
-	rec_title.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
-	recipe_vbox.add_child(rec_title)
-	recipe_vbox.move_child(rec_title, 0)
+	_recipe_title = Label.new()
+	_recipe_title.text = "合成"
+	_recipe_title.add_theme_font_size_override("font_size", 16)
+	_recipe_title.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
+	recipe_vbox.add_child(_recipe_title)
+	recipe_vbox.move_child(_recipe_title, 0)
 
 	_wb_label = Label.new()
 	_wb_label.add_theme_font_size_override("font_size", 12)
@@ -98,17 +100,17 @@ func _build_ui() -> void:
 	recipe_vbox.move_child(_wb_label, 1)
 
 	# 配方列表用 ScrollContainer 包起来 (现在配方数 > 6 时会溢出, 加滚动条解决)
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(200, 320)  # 窄宽不撑面板, 高 320 自动垂直滚
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	recipe_vbox.add_child(scroll)
-	recipe_vbox.move_child(scroll, 2)
+	_recipe_scroll = ScrollContainer.new()
+	_recipe_scroll.custom_minimum_size = Vector2(200, 320)  # 窄宽不撑面板, 高 320 自动垂直滚
+	_recipe_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_recipe_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	recipe_vbox.add_child(_recipe_scroll)
+	recipe_vbox.move_child(_recipe_scroll, 2)
 
 	_recipe_container = VBoxContainer.new()
 	_recipe_container.add_theme_constant_override("separation", 4)
 	_recipe_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(_recipe_container)
+	_recipe_scroll.add_child(_recipe_container)
 	_build_recipe_buttons()
 
 	# 创造模式"物品大全"区 (点任何物品免费拿一组), 只创造模式显示
@@ -188,8 +190,17 @@ func _on_creative_grab(item_id: String) -> void:
 
 
 func _refresh_creative_section() -> void:
+	var creative: bool = GameSettings != null and GameSettings.creative_mode
 	if _creative_section != null:
-		_creative_section.visible = GameSettings != null and GameSettings.creative_mode
+		_creative_section.visible = creative
+	# 创造模式不需要合成 (方块直接从"物品大全"免费拿) → 隐藏整个合成配方区.
+	# 既满足"创造不要合成", 又把物品大全顶上来 — 否则它被 320 高的配方列表挤到屏幕外 = 看不到/拿不到方块.
+	if _recipe_title != null:
+		_recipe_title.visible = not creative
+	if _wb_label != null:
+		_wb_label.visible = not creative
+	if _recipe_scroll != null:
+		_recipe_scroll.visible = not creative
 
 
 func _make_recipe_row(recipe: Dictionary) -> Dictionary:

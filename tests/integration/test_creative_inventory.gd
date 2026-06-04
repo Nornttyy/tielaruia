@@ -47,3 +47,24 @@ func test_creative_section_hidden_in_survival() -> void:
 	panel.open(2)
 	await wait_frames(1)
 	assert_false(panel._creative_section.visible, "生存模式该隐藏物品大全区 (不能白拿)")
+
+
+func test_creative_hides_crafting() -> void:
+	# 创造模式不要合成: 隐藏配方列表 + 标题, 只留物品大全
+	var ctx: Dictionary = await _setup(true)
+	var panel = ctx["panel"]
+	panel.open(2)
+	await wait_frames(1)
+	assert_true(panel._creative_section.visible, "创造模式: 显示物品大全")
+	assert_false(panel._recipe_scroll.visible, "创造模式: 隐藏合成配方列表")
+	assert_false(panel._recipe_title.visible, "创造模式: 隐藏'合成'标题")
+
+
+func test_survival_shows_crafting() -> void:
+	# 生存模式照旧: 显示配方, 不显示物品大全
+	var ctx: Dictionary = await _setup(false)
+	var panel = ctx["panel"]
+	panel.open(2)
+	await wait_frames(1)
+	assert_false(panel._creative_section.visible, "生存模式: 隐藏物品大全")
+	assert_true(panel._recipe_scroll.visible, "生存模式: 显示合成配方列表")
