@@ -1657,6 +1657,9 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 	# 流水: 通知 water_sim, 让它评估 (x,y) 和 4 邻居是否要流
 	if water_sim != null:
 		water_sim.notify_tile_changed(x, y)
+	# 小地图实时更新: 挖/放方块立刻刷新这格的地图色 (已探索的才刷, 不揭迷雾)
+	if minimap_data != null:
+		minimap_data.update_if_explored(x, y, tile_id)
 	# 沙子物理: 这格变 AIR → 上方 SAND 整柱下落
 	if tile_id == Tiles.AIR and not skip_sand:
 		_apply_sand_fall(x, y)
@@ -1736,3 +1739,6 @@ func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = fals
 			NetworkManager.send_tile_change(x, y, tile_id)
 	if water_sim != null:
 		water_sim.notify_tile_changed(x, y)
+	# 小地图实时更新: 水流改了这格也立刻刷新地图色 (已探索的才刷)
+	if minimap_data != null:
+		minimap_data.update_if_explored(x, y, tile_id)

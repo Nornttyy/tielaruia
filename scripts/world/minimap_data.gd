@@ -69,6 +69,13 @@ func mark_rect(chunk_mgr: Node, world_x0: int, world_y0: int, world_x1: int, wor
 			mark(wx, wy, tid)
 
 
+# tile 变了 (挖/放/水流): 若该格已探索, 立即刷新缓存色 → 小地图实时更新.
+# 未探索的不揭开 (保持迷雾, 水流到没去过的地方不会偷偷暴露地形).
+func update_if_explored(world_x: int, world_y: int, tile_id: int) -> void:
+	if is_explored(world_x, world_y):
+		mark(world_x, world_y, tile_id)
+
+
 # 查询: 此 tile 是否已探索 (不管当前 chunk 是否 loaded)
 func is_explored(world_x: int, world_y: int) -> bool:
 	if world_y < 0 or world_y >= ChunkConstants.WORLD_HEIGHT:
