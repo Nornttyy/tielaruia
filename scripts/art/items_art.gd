@@ -1993,7 +1993,67 @@ const _SKULL_SUMMON := [
 	"................",
 ]
 
+
+# === 骷髅盔甲 (骷髅王几率掉, 骨白色): 复用盔甲形状换骨色 $/w/j ===
+const _SKELETON_HELMET := [
+	"................",
+	"................",
+	".....nnnnnn.....",
+	"....n$wwww$n....",
+	"...n$wjjjjw$n...",
+	"...n$wwwwww$n...",
+	"...n$wwwwww$n...",
+	"...n$wKKKKw$n...",
+	"...n$wKKKKw$n...",
+	"....n$wwww$n....",
+	".....n$$$$n.....",
+	".....nKKKKn.....",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+const _SKELETON_CHEST := [
+	"................",
+	"................",
+	"...nnnnnnnnnn...",
+	"..n$wwwwwwww$n..",
+	"..n$wjjjjjjw$n..",
+	"..n$wwwwwwww$n..",
+	".n$wwKwwwwKww$n.",
+	".n$wwKwwwwKww$n.",
+	".n$wwKwwwwKww$n.",
+	".n$wwwwwwwwww$n.",
+	".n$wwwKKKKwww$n.",
+	"..n$wwwwwwww$n..",
+	"...nKKKKKKKKn...",
+	"................",
+	"................",
+	"................",
+]
+const _SKELETON_PANTS := [
+	"................",
+	"................",
+	"................",
+	"....nnnnnnnn....",
+	"...n$wwwwww$n...",
+	"...n$wjjjjw$n...",
+	"...n$wwwwww$n...",
+	"...n$nnnnnn$n...",
+	"...n$nwwwwn$n...",
+	"...n$nwwwwn$n...",
+	"...n$nwwwwn$n...",
+	"...n$nwwwwn$n...",
+	"...nKnnnnnnKn...",
+	"................",
+	"................",
+	"................",
+]
+
 const _ICONS := {
+	"skeleton_helmet": _SKELETON_HELMET,
+	"skeleton_chest": _SKELETON_CHEST,
+	"skeleton_pants": _SKELETON_PANTS,
 	"skull_summon": _SKULL_SUMMON,
 	"bone_sword": _BONE_SWORD,
 	"wood_dagger": _WOOD_DAGGER,

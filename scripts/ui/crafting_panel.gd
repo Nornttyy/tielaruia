@@ -576,6 +576,9 @@ const _ZH_NAMES := {
 	"slime_ball": "史莱姆球",
 	"bone_sword": "骨剑",
 	"skull_summon": "骷髅头骨",
+	"skeleton_helmet": "骷髅头盔",
+	"skeleton_chest": "骷髅胸甲",
+	"skeleton_pants": "骷髅腿甲",
 }
 
 

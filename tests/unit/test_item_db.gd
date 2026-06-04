@@ -133,3 +133,15 @@ func test_skull_summon_is_summon_for_skeleton_king():
 	assert_true(db.is_summon("skull_summon"), "骷髅头骨是召唤道具")
 	assert_eq(def.get("summon_boss", ""), "skeleton_king", "召唤的是骷髅王")
 	assert_not_null(ArtCache.get_inventory_icon("skull_summon"), "骷髅头骨应有图标")
+
+
+# 骷髅盔甲 3 件 (骷髅王几率掉): 槽位 + 防御 + 图标
+func test_skeleton_armor_set() -> void:
+	var pieces := {"skeleton_helmet": "helmet", "skeleton_chest": "chest", "skeleton_pants": "pants"}
+	for id in pieces:
+		var def = db.get_def(id)
+		assert_not_null(def, "%s 应存在" % id)
+		if def != null:
+			assert_eq(def.get("armor_slot", ""), pieces[id], "%s 槽位应是 %s" % [id, pieces[id]])
+			assert_gt(int(def.get("defense", 0)), 0, "%s 该有防御" % id)
+		assert_not_null(ArtCache.get_inventory_icon(id), "%s 该有游戏内图标" % id)

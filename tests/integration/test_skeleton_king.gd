@@ -208,3 +208,21 @@ func test_dash_deals_higher_damage() -> void:
 	boss._check_player_contact()
 	assert_eq(before - hp.current_health, boss.DASH_DAMAGE, "冲刺撞玩家 = 18 (高于接触 15)")
 	boss.queue_free()
+
+
+# Phase 2: 几率掉骷髅盔甲 (各 40%). 杀 8 次, 应至少掉到一件 (P(全没)≈0.6^24≈5e-6)
+func test_drops_skeleton_armor_sometimes() -> void:
+	var armor := {"skeleton_helmet": true, "skeleton_chest": true, "skeleton_pants": true}
+	var seen_any := false
+	for run in 8:
+		var boss = SkeletonKingScene.instantiate()
+		add_child(boss)
+		await wait_frames(1)
+		boss.take_damage(boss.max_health, boss.global_position, 0.0)
+		await wait_frames(1)
+		for d in get_tree().get_nodes_in_group("item_drops"):
+			if "item_id" in d and armor.has(d.item_id):
+				seen_any = true
+			d.queue_free()   # 清这轮掉落 (含骨头), 防累积
+		await wait_frames(1)
+	assert_true(seen_any, "杀 8 次骷髅王该至少掉到一件骷髅盔甲")

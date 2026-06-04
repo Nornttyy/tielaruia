@@ -22,6 +22,7 @@ const DESPAWN_DISTANCE_PX := 1100.0
 const DESPAWN_AFTER_SEC := 5.0
 const BONE_DROP_MIN := 15
 const BONE_DROP_MAX := 25
+const ARMOR_DROP_CHANCE := 0.40   # 每件骷髅盔甲掉落几率 (多打几次凑齐一套)
 const BODY_SCALE := 2.0         # 普通骷髅 16px → 32px ≈ 玩家(30px)高一点
 
 # === 4 招 (按距离选: 远扔骨头 / 中冲刺 / 近横扫; 血<50% 周期召唤小骷髅) ===
@@ -353,9 +354,16 @@ func _die() -> void:
 	_is_dying = true
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
-	# 必掉: 一大堆骨头 + 骨剑 (阔剑). 几率盔甲/法杖在 Phase 2/3 加。
+	# 必掉: 一大堆骨头 + 骨剑 (阔剑)
 	var n := BONE_DROP_MIN + (randi() % (BONE_DROP_MAX - BONE_DROP_MIN + 1))
 	for i in n:
 		_spawn_drop("bone")
 	_spawn_drop("bone_sword")
+	# 几率掉骷髅盔甲 (各 40%, 多打几次凑齐一套). 法杖 Phase 3 加。
+	if randf() < ARMOR_DROP_CHANCE:
+		_spawn_drop("skeleton_helmet")
+	if randf() < ARMOR_DROP_CHANCE:
+		_spawn_drop("skeleton_chest")
+	if randf() < ARMOR_DROP_CHANCE:
+		_spawn_drop("skeleton_pants")
 	queue_free()
