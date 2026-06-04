@@ -107,7 +107,7 @@ var _mine_saved: Dictionary = {}
 
 # 战斗
 const SWORD_RANGE_PX := 27.0
-const SWORD_COOLDOWN := 0.42   # 阔剑(扫)较慢较重; 短剑(戳)快 0.3
+const SWORD_COOLDOWN := 0.50   # 阔剑(扫): 跟挥击时长 0.5s 对齐, 一刀完整挥完才能再挥 (防连挥重叠抽搐); 短剑(戳)快 0.3
 var _attack_cooldown: float = 0.0
 # 剑的戳/挥交替: 0 = 下一击戳, 1 = 下一击挥. 切工具时归零.
 var _attack_combo_step: int = 0
