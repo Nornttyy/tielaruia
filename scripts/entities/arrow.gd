@@ -1,10 +1,11 @@
-# 玩家箭投射物. Area2D, 直线飞 (无重力, v1 简化).
+# 玩家箭投射物. Area2D, 抛物线飞 (受重力下坠, 像真实弓箭).
 # 命中怪 → 造成伤害 + 销毁. 命中实心方块 → 销毁. 3s 自销.
 # 跟 fireball 同结构, 但反方向 (玩家发, 击中怪).
 extends Area2D
 
 const TILE_SIZE := 12
 const SPEED := 260.0
+const GRAVITY := 200.0          # 箭飞行中往下坠的加速度 → 抛物线弧度 (越大越弯, 弓越要抬高瞄准)
 const LIFETIME_SEC := 3.0
 const BASE_DAMAGE := 5
 
@@ -41,6 +42,7 @@ func _physics_process(delta: float) -> void:
 	if _life_t >= LIFETIME_SEC:
 		_destroy()
 		return
+	velocity.y += GRAVITY * delta   # 重力: 箭一边飞一边往下坠 → 走抛物线
 	# 撞墙 (查 chunk_manager 实心)
 	var next: Vector2 = global_position + velocity * delta
 	var cm = _get_cm()
@@ -52,6 +54,7 @@ func _physics_process(delta: float) -> void:
 			_destroy()
 			return
 	global_position = next
+	rotation = velocity.angle()   # 箭头随飞行方向转 (下坠时朝下), 抛物线才自然
 	# 手动撞怪. 联机视觉副本 (is_remote) 不撞, 伤害由发起端 host 算.
 	if not has_meta("is_remote"):
 		_check_enemy_hit()

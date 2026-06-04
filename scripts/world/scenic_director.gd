@@ -183,10 +183,11 @@ func _player_depth_below_surface_tiles() -> float:
 	var px_tile: int = int(floor(p.global_position.x / float(TILE_SIZE)))
 	var surf_y_tile: int = _find_surface_y_tile(px_tile)
 	if surf_y_tile < 0:
-		# fallback: 用平均 surface_y
-		var avg_y: float = WorldGenerator.SURFACE_BASE \
-			* float(ChunkConstants.WORLD_HEIGHT)
-		return p.global_position.y / float(TILE_SIZE) - avg_y
+		# chunk 未加载 / 地表未知 → 当作"在地表"(depth 0, 天空背景).
+		# 不能用固定平均地表 (0.45×256≈115 格) 算 depth: 玩家在谷地, 或读档刚瞬移过来那列还没加载时,
+		# 假地表比真地表浅 → 把地表玩家误算成"深 20-40 格" → 错误显示矿洞背景 (用户反复报"背景在地底").
+	# 等 chunk 下一帧加载好, 自然走下面正确分支.
+		return 0.0
 	var player_y_tile: float = p.global_position.y / float(TILE_SIZE)
 	return player_y_tile - float(surf_y_tile)
 

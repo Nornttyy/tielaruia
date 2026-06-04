@@ -42,12 +42,19 @@ func mark_rect(chunk_mgr: Node, world_x0: int, world_y0: int, world_x1: int, wor
 	# 缓存 chunk 范围: 一个 chunk 内的 tile 共用同一 _tiles[cx] buffer, 不必每 tile 重查 dict
 	var prev_cx: int = -999999
 	var prev_bm: PackedByteArray
+	var prev_loaded: bool = false
+	var has_loaded_check: bool = chunk_mgr.has_method("is_chunk_loaded")
 	for wx in range(world_x0, world_x1 + 1):
 		var cx: int = Chunk.chunk_x_of(wx)
 		var lx: int = Chunk.local_x_of(wx)
 		if cx != prev_cx:
 			prev_cx = cx
 			prev_bm = _tiles.get(cx, PackedByteArray())
+			# chunk 没加载时 get_tile 对它一律返 AIR → 把实心地面误存成洞穴色, 且"已探索就跳过"
+			# 会让这个错误永久粘住. 整列跳过 (保持未探索), 等 chunk 真加载了再标. 修"小地图显示地底".
+			prev_loaded = (not has_loaded_check) or chunk_mgr.is_chunk_loaded(cx)
+		if not prev_loaded:
+			continue
 		var lx_offset: int = lx * ChunkConstants.WORLD_HEIGHT
 		for wy in range(world_y0, world_y1 + 1):
 			if wy < 0 or wy >= ChunkConstants.WORLD_HEIGHT:
