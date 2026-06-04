@@ -231,11 +231,15 @@ func _physics_process(delta: float) -> void:
 		if primary_pressed_b and _attack_cooldown <= 0.0:
 			_try_fire_bow()
 	elif kind == "staff":
-		# 法杖: LMB 按下 → 消耗 mana 发火球 (撞怪不撞玩家). cd 0.5s.
+		# 法杖: LMB 按下 → 火球 (普通法杖) 或 召唤友方骷髅 (骷髅法杖 summons_minion).
 		_reset_mining()
 		var primary_pressed_s: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed_s and _attack_cooldown <= 0.0:
-			_try_cast_staff()
+			var sdef: Variant = _current_tool_def()
+			if sdef != null and sdef.get("summons_minion", false):
+				_summon_friendly()
+			else:
+				_try_cast_staff()
 	elif kind == "slimeball":
 		# 史莱姆球: LMB 按下 → 朝鼠标投弹跳球. cd 0.45s. 无弹药 (Boss 武器).
 		_reset_mining()
@@ -1566,9 +1570,12 @@ func in_reach(tile: Vector2i) -> bool:
 const ArrowScene = preload("res://scenes/entities/arrow.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
 const SlimeBallScene = preload("res://scenes/entities/slime_ball.tscn")
+const FriendlySkeletonScene = preload("res://scenes/entities/friendly_skeleton.tscn")
 const BOW_COOLDOWN := 0.4
 const BOW_ARROW_DAMAGE := 5    # base, 后续乘 tier multiplier
 const STAFF_COOLDOWN := 0.5    # 法杖 cd (mana 限制为主, cd 防自动连发)
+const SUMMON_STAFF_COOLDOWN := 0.6   # 骷髅法杖召唤 cd
+const FRIENDLY_CAP := 3              # 场上最多几个友方骷髅
 const SLIMEBALL_COOLDOWN := 0.45
 const SLIMEBALL_DAMAGE := 16   # 高于 iron 剑 (tier4 ≈ 10)
 
@@ -1642,6 +1649,33 @@ func _try_cast_staff() -> void:
 	if NetworkManager != null and NetworkManager.connected():
 		NetworkManager.send_projectile("fireball", start.x, start.y, target.x, target.y)
 	SfxBank.play("break", 0.12)
+
+
+# 骷髅法杖: 消耗 mana → 在玩家旁召唤 1 个友方骷髅 (上限 FRIENDLY_CAP). 不发火球。
+func _summon_friendly() -> void:
+	var def: Variant = _current_tool_def()
+	if def == null:
+		return
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	# 上限: 场上友方骷髅别太多
+	if get_tree().get_nodes_in_group("friendly_minions").size() >= FRIENDLY_CAP:
+		return
+	# 扣 mana (不够就不召)
+	var mana: Node = player.get_node_or_null("PlayerMana")
+	var cost: int = int(def.get("mana_cost", 18))
+	if mana != null and mana.has_method("try_consume"):
+		if not mana.try_consume(cost):
+			return
+	_attack_cooldown = SUMMON_STAFF_COOLDOWN
+	var fs = FriendlySkeletonScene.instantiate()
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = player.get_parent()
+	entities.add_child(fs)
+	fs.global_position = player.global_position + Vector2(randf_range(-16.0, 16.0), -4.0)
+	SfxBank.play("place", 0.15)
 
 
 # 手持召唤道具 (slime_crown) 使用 → 在玩家附近召唤 Boss, 成功则消耗 1.

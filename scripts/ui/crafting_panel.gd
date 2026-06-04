@@ -579,6 +579,7 @@ const _ZH_NAMES := {
 	"skeleton_helmet": "骷髅头盔",
 	"skeleton_chest": "骷髅胸甲",
 	"skeleton_pants": "骷髅腿甲",
+	"skull_staff": "骷髅法杖",
 }
 
 

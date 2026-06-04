@@ -23,6 +23,7 @@ const DESPAWN_AFTER_SEC := 5.0
 const BONE_DROP_MIN := 15
 const BONE_DROP_MAX := 25
 const ARMOR_DROP_CHANCE := 0.40   # 每件骷髅盔甲掉落几率 (多打几次凑齐一套)
+const STAFF_DROP_CHANCE := 0.25   # 骷髅法杖掉落几率 (稀有奖励)
 const BODY_SCALE := 2.0         # 普通骷髅 16px → 32px ≈ 玩家(30px)高一点
 
 # === 4 招 (按距离选: 远扔骨头 / 中冲刺 / 近横扫; 血<50% 周期召唤小骷髅) ===
@@ -359,11 +360,14 @@ func _die() -> void:
 	for i in n:
 		_spawn_drop("bone")
 	_spawn_drop("bone_sword")
-	# 几率掉骷髅盔甲 (各 40%, 多打几次凑齐一套). 法杖 Phase 3 加。
+	# 几率掉骷髅盔甲 (各 40%, 多打几次凑齐一套)
 	if randf() < ARMOR_DROP_CHANCE:
 		_spawn_drop("skeleton_helmet")
 	if randf() < ARMOR_DROP_CHANCE:
 		_spawn_drop("skeleton_chest")
 	if randf() < ARMOR_DROP_CHANCE:
 		_spawn_drop("skeleton_pants")
+	# 稀有: 25% 掉骷髅法杖 (召唤友方骷髅帮打)
+	if randf() < STAFF_DROP_CHANCE:
+		_spawn_drop("skull_staff")
 	queue_free()

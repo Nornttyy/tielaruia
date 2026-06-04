@@ -138,6 +138,8 @@ const _DEFS := {
 	"wood_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 5,  "spell_damage": 8},
 	"iron_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 12, "spell_damage": 15},
 	"hell_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 20, "spell_damage": 22},
+	# 骷髅法杖 (骷髅王几率掉): 不发火球, 而是召唤友方小骷髅帮打 (summons_minion 标记)
+	"skull_staff":   {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "mana_cost": 18, "summons_minion": true},
 	# 魔力药水: 喝下 → 立刻 +30 mana (类似食物回血但回魔)
 	"mana_potion":   {"placeable_tile_id": -1, "tool_kind": "",        "tool_tier": 0, "max_stack": 16, "mana_refill": 30},
 	"leather":       {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},

@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://b_friendly_skel_2026"]
+
+[ext_resource type="Script" path="res://scripts/entities/friendly_skeleton.gd" id="1_fs"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fs"]
+size = Vector2(10, 16)
+
+[node name="FriendlySkeleton" type="CharacterBody2D"]
+collision_layer = 0
+collision_mask = 3
+script = ExtResource("1_fs")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -8)
+centered = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -8)
+shape = SubResource("RectangleShape2D_fs")

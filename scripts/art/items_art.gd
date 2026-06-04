@@ -2050,7 +2050,29 @@ const _SKELETON_PANTS := [
 	"................",
 ]
 
+
+# 骷髅法杖 (召唤友方骷髅): 顶骷髅头 + 棕杖身
+const _SKULL_STAFF := [
+	"................",
+	"....nnnnnn......",
+	"...n$wwww$n.....",
+	"...n$wnnw$n.....",
+	"...n$wwww$n.....",
+	"...n$wnnw$n.....",
+	"....n$ww$n......",
+	".....nrrn.......",
+	".....nrrn.......",
+	".....nrrn.......",
+	".....nrrn.......",
+	".....nrrn.......",
+	".....nrrn.......",
+	".....nrrn.......",
+	"......nn........",
+	"................",
+]
+
 const _ICONS := {
+	"skull_staff": _SKULL_STAFF,
 	"skeleton_helmet": _SKELETON_HELMET,
 	"skeleton_chest": _SKELETON_CHEST,
 	"skeleton_pants": _SKELETON_PANTS,
