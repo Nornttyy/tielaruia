@@ -96,8 +96,8 @@ func test_pickaxe_damage_is_half_of_sword() -> void:
 	ctx["action"].mouse_world_override = slime_a.global_position
 	ctx["action"]._attack_cooldown = 0.0
 	ctx["action"].primary_override = true
-	# 用户改: 剑判定改成每帧扫剑身, 攻击 0.18s ≈ 11 帧才完成. 等 15 帧覆盖整个挥.
-	await wait_frames(15)
+	# 剑判定每帧扫剑身, 挥击 0.5s = 30 帧才扫完整弧. 等 35 帧覆盖整个挥.
+	await wait_frames(35)
 	ctx["action"].primary_override = false
 	var sword_dmg: int = hp_a - slime_a.current_health
 	# 切到铜镐
@@ -174,8 +174,8 @@ func test_sweep_misses_behind() -> void:
 	ctx["action"].mouse_world_override = front.global_position
 	ctx["action"]._attack_cooldown = 0.0
 	ctx["action"].primary_override = true
-	# 用户改: 剑判定改每帧扫, 等 15 帧让挥完整跑完
-	await wait_frames(15)
+	# 剑判定每帧扫, 挥击 0.5s = 30 帧; 等 35 帧让挥完整跑完
+	await wait_frames(35)
 	ctx["action"].primary_override = false
 	assert_lt(front.current_health, front_hp, "正前 slime 应扣血")
 	assert_eq(back.current_health, back_hp, "身后 slime 不该扣血 (半圆 180° 仍不含正后)")
@@ -194,8 +194,8 @@ func test_sweep_hits_all_in_arc() -> void:
 	ctx["action"].mouse_world_override = center.global_position
 	ctx["action"]._attack_cooldown = 0.0
 	ctx["action"].primary_override = true
-	# 用户改: 剑判定每帧扫, 等 15 帧让挥扫完整 180° (中→上→下都过)
-	await wait_frames(15)
+	# 剑判定每帧扫, 挥击 0.5s = 30 帧; 等 35 帧让挥扫完整 220° (中→上→下都过)
+	await wait_frames(35)
 	ctx["action"].primary_override = false
 	assert_lt(center.current_health, hp0)
 	assert_lt(up.current_health, hp1, "弧内上方应扣血")
@@ -266,8 +266,8 @@ func test_broadsword_held_returns_to_rest_after_swing() -> void:
 	ctx["action"].primary_override = true
 	await wait_frames(2)
 	ctx["action"].primary_override = false
-	# 等挥(0.18)+归位(0.126)+余量 全跑完
-	await wait_frames(35)
+	# 等挥(0.5)+归位(0.35=SWING_DURATION×0.7)+余量 全跑完 (~51 帧)
+	await wait_frames(60)
 	assert_almost_eq(held.rotation, 0.0, 0.15,
 		"阔剑挥完手持剑该归位 rotation≈0, 实际 %.3f (卡在挥末=连挥抽搐根源)" % held.rotation)
 

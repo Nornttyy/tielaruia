@@ -11,7 +11,7 @@ const HAND_OFFSET_Y := -10.0   # y (玩家中部胸口位置, 1.25x)
 const TOOL_SIZE := 1.25        # 工具 (剑/镐/斧) 跟玩家 1.25x 一起放大
 const BLOCK_SIZE := 0.6875     # 方块/材料 = TOOL_SIZE × 0.55 (~11px)
 const SWING_ANGLE_DEG := 75.0
-const SWING_DURATION := 0.30   # 用户调: 剑挥转速降低 (0.18→0.30, 挥得更慢更有分量)
+const SWING_DURATION := 0.50   # 用户调: 剑挥转速降低 (挥得更慢更有分量, 现 0.5s)
 
 var _player_inventory: Node = null
 var _facing_right: bool = true
