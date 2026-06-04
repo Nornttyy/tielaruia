@@ -56,9 +56,13 @@ func _physics_process(delta: float) -> void:
 func _find_player() -> Node2D:
 	if _cached_player != null and is_instance_valid(_cached_player):
 		return _cached_player
-	var players := get_tree().get_nodes_in_group("player")
-	_cached_player = players[0] if not players.is_empty() else null
-	return _cached_player
+	# 只认本地玩家 (跳过联机对端的影子 remote_player): 骨头瞄谁就在谁那端命中谁 —
+	# host 的骨头打 host 玩家, client 的 remote 骨头打 client 玩家 (每端各管自己玩家接触伤害)
+	for p in get_tree().get_nodes_in_group("player"):
+		if p is Node2D and not p.has_meta("is_remote"):
+			_cached_player = p
+			return p
+	return null
 
 
 func _destroy() -> void:

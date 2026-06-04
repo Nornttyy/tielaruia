@@ -232,6 +232,9 @@ func _throw_bones(player: Node2D) -> void:
 		var spread: float = deg_to_rad((float(i) - float(THROW_COUNT - 1) / 2.0) * 12.0)
 		var aimed: Vector2 = hand + (target - hand).rotated(spread)
 		b.setup(hand, aimed, THROW_DAMAGE)
+		# 联机 host: 广播让 client 重建这根骨头 (client 那根打 client 自己的玩家)
+		if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+			NetworkManager.send_projectile("bone", hand.x, hand.y, aimed.x, aimed.y)
 
 
 # 横扫: 玩家在面朝方向 + 范围内 + 高度合适 → 扣血
@@ -327,6 +330,9 @@ func _check_despawn(delta: float) -> void:
 		_far_timer += delta
 		if _far_timer >= DESPAWN_AFTER_SEC:
 			_is_dying = true
+			# 联机: 通知 client 删它那只远程王 (照 _die; 漏发 = 客机看到王凭空卡住 + 血条空挂)
+			if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+				NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 			queue_free()
 	else:
 		_far_timer = 0.0

@@ -62,6 +62,9 @@ func _is_lava(tid: int) -> bool:
 func _check_lava_damage() -> void:
 	if not is_alive():
 		return
+	# 创造模式无敌: 岩浆伤害走独立路径 (不经 take_damage), 这里也得挡, 否则创造玩家会被岩浆烧死
+	if GameSettings != null and GameSettings.creative_mode:
+		return
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return

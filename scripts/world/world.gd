@@ -35,6 +35,7 @@ const FrogScene = preload("res://scenes/entities/frog.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
 const ArrowScene = preload("res://scenes/entities/arrow.tscn")
+const BoneProjClass = preload("res://scripts/entities/bone_projectile.gd")   # 骷髅王飞骨头 (脚本直接 new, 无 .tscn)
 const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
 const HealthBarScript = preload("res://scripts/entities/health_bar.gd")
 
@@ -292,6 +293,8 @@ func _cleanup_remote_on_disconnect() -> void:
 		if ent != null and is_instance_valid(ent):
 			ent.queue_free()
 	_remote_entities.clear()
+	# client 已捡 drop 的 id 记录也清掉, 否则重连后 host 重新广播这些 drop 会被当"已捡"拒绝创建 → 隐身
+	_picked_up_drop_ids.clear()
 
 
 func _mp_broadcast_initial_state() -> void:
@@ -395,11 +398,19 @@ func _find_local_entity_by_id(ent_id: int) -> Node:
 
 # 对方发的投射物 → 本端生成纯视觉副本 (飞同样轨迹, is_remote 标记让它不造成伤害)
 func _on_remote_projectile(kind: String, sx: float, sy: float, tx: float, ty: float) -> void:
+	var start := Vector2(sx, sy)
+	var target := Vector2(tx, ty)
+	# 骨头是"怪打玩家"的弹, 跟 arrow/fireball (玩家打怪, host 算伤害, 副本 dmg=0) 相反:
+	# 接触玩家伤害每端各管自己, 所以 client 这根 remote 骨头要真扣血, 且只命中本地玩家 (见 bone _find_player).
+	if kind == "bone":
+		var b = BoneProjClass.new()
+		b.set_meta("is_remote", true)
+		entities_root.add_child(b)
+		b.setup(start, target, 12)   # 12 = SkeletonKing.THROW_DAMAGE
+		return
 	var proj: Node2D = ArrowScene.instantiate() if kind == "arrow" else FireballScene.instantiate()
 	proj.set_meta("is_remote", true)
 	entities_root.add_child(proj)
-	var start := Vector2(sx, sy)
-	var target := Vector2(tx, ty)
 	if kind == "arrow":
 		proj.setup(start, target, 0, null)
 	else:
@@ -932,7 +943,9 @@ func _on_chunk_unloaded(cx: int) -> void:
 	for group in ["slimes", "zombies", "animals", "item_drops"]:
 		for ent in get_tree().get_nodes_in_group(group):
 			# Boss 在 "slimes" 组里, 但有自己的远离消失逻辑 — chunk 卸载别误删 (否则用钩爪/传送拉开距离让王那列卸载, 王凭空消失+血条空挂)
-			if ent.is_in_group("boss"):
+			# 结构守卫 (空岛哈比/金字塔木乃伊/矿井蜘蛛) 同理: 它们有 per-chunk "已召" 永久标志 (设计是杀完才清空),
+			# chunk 卸载删活守卫但标志还在 → 玩家没杀就离开, 回来守卫凭空消失. 一并跳过 (只能被杀清除).
+			if ent.is_in_group("boss") or ent.is_in_group("harpies") or ent.is_in_group("mummies") or ent.is_in_group("spiders"):
 				continue
 			if ent.global_position.x >= chunk_start_px and ent.global_position.x < chunk_end_px:
 				ent.queue_free()
