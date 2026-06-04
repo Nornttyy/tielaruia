@@ -132,7 +132,7 @@ var _pickaxe_spin_damages: bool = false   # 只有"攻击"spin 扣血; 挖矿/�
 # 注: rotation/position 自己按 _sword_attack_t 算, 不读 held.rotation —
 # tween 在 _process 更新, _physics_process 这里读可能滞后 (headless 测试 tween 可能不动).
 const SWORD_TIP_LOCAL_Y := -20.0       # tip 相对 held.position 的 y (sprite 16h × scale 1.25)
-const SWORD_SWEEP_REACH_BONUS := 12.0  # 阔剑(高级剑 tier3+)半圆挥剑身比短剑(戳)长这么多 → 够得更远
+const SWORD_SWEEP_REACH_BONUS := 20.0  # 阔剑挥剑身比基础长这么多 → 够得更远 (用户嫌阔剑太短, 12→20)
 const SWORD_HIT_RADIUS := 17.5         # 怪中心到 grip→tip 线段 ≤ 17.5px (玩家 1.25x). 视觉碰到了 算法也命中
 const SWORD_POINT_BLANK_DIST := 22.5   # 怪离玩家中心 ≤ 22.5px 视为贴脸 (玩家 1.25x), 任何剑攻击一律命中
 const SWORD_HAND_OFFSET_X := 5.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
