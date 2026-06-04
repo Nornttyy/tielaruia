@@ -187,49 +187,49 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	var coal_noise := FastNoiseLite.new()
 	coal_noise.seed = world_seed + 3
 	coal_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	coal_noise.frequency = 0.12
+	coal_noise.frequency = 0.095   # 矿脉(常见矿不连巨块)
 
 	var iron_noise := FastNoiseLite.new()
 	iron_noise.seed = world_seed + 4
 	iron_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	iron_noise.frequency = 0.10
+	iron_noise.frequency = 0.085   # 矿脉
 
 	# 银矿 noise (跟 gold 一档深, 但用独立 seed → 不跟 gold 重叠)
 	var silver_noise := FastNoiseLite.new()
 	silver_noise.seed = world_seed + 15
 	silver_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	silver_noise.frequency = 0.09
+	silver_noise.frequency = 0.05  # 降频成矿脉
 
 	# 新矿噪声 (T26): 每种独立 seed, 不同 frequency 让斑块大小有差异
 	var copper_noise := FastNoiseLite.new()
 	copper_noise.seed = world_seed + 10
 	copper_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	copper_noise.frequency = 0.13
+	copper_noise.frequency = 0.075  # 矿脉
 
 	var tin_noise := FastNoiseLite.new()
 	tin_noise.seed = world_seed + 11
 	tin_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	tin_noise.frequency = 0.13
+	tin_noise.frequency = 0.075   # 矿脉
 
 	var gold_noise := FastNoiseLite.new()
 	gold_noise.seed = world_seed + 12
 	gold_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	gold_noise.frequency = 0.09
+	gold_noise.frequency = 0.05   # 降频成矿脉
 
 	var diamond_noise := FastNoiseLite.new()
 	diamond_noise.seed = world_seed + 13
 	diamond_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	diamond_noise.frequency = 0.08
+	diamond_noise.frequency = 0.05  # 降频成矿脉
 
 	var hell_noise := FastNoiseLite.new()
 	hell_noise.seed = world_seed + 14
 	hell_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	hell_noise.frequency = 0.07
+	hell_noise.frequency = 0.05   # 降频成矿脉
 	# 地狱合金矿 noise: 独立种子, 跟 hell_crystal 不重叠
 	var hell_alloy_noise := FastNoiseLite.new()
 	hell_alloy_noise.seed = world_seed + 19
 	hell_alloy_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	hell_alloy_noise.frequency = 0.08
+	hell_alloy_noise.frequency = 0.05  # 降频成矿脉
 
 	# 山区 noise: 低频, 决定哪些列是高山 (factor>0) 哪些是平地 (factor=0)
 	var mountain_noise := FastNoiseLite.new()
