@@ -246,6 +246,4 @@ func _die() -> void:
 	var n := JELLY_DROP_MIN + (randi() % (JELLY_DROP_MAX - JELLY_DROP_MIN + 1))
 	for i in n:
 		_spawn_drop("slime_jelly")
-	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
-		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 	queue_free()
