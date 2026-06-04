@@ -122,6 +122,22 @@ const POND_WIDTH_MIN := 12            # 塘宽 (加大)
 const POND_WIDTH_MAX := 24
 const POND_DEPTH := 6                 # 塘最深 (中心)
 const POND_MAX_SLOPE := 6             # 塘宽内地表高差 ≤ 此值才开 (2→6 放宽, 否则起伏地形全毙)
+const WATERFALL_CHANCE := 0.22        # 崖唇列放瀑布水源的概率 (调到能逛到, 但仍是景观不泛滥)
+const WATERFALL_MIN_DROP := 8         # 崖唇到崖底落差 ≥ 这么多 tile 才放
+const WATERFALL_SPAN := 4             # 在 ±这么多列内看落差 (= 崖陡不陡)
+
+
+# 某列是不是"崖唇": 往右 (或左) span 列内地表掉 ≥ min_drop. 返回掉落方向 (+1右 / -1左 / 0 不是).
+# heights = world_x → surf_y 的 Dictionary (y 越大越低); 邻列缺失 (chunk 边界) → 安全跳过.
+static func _is_cliff(heights: Dictionary, x: int, span: int, min_drop: int) -> int:
+	if not heights.has(x):
+		return 0
+	var here: int = heights[x]
+	if heights.has(x + span) and heights[x + span] - here >= min_drop:
+		return 1
+	if heights.has(x - span) and heights[x - span] - here >= min_drop:
+		return -1
+	return 0
 
 # 树种枚举 (内部 idx) — 现在只剩 OAK (T-tree 重做)
 const _SPECIES_OAK := 0
@@ -488,6 +504,35 @@ static func _fill_water_pools_chunk(c: Chunk, chunk_heights: Dictionary,
 				var ty2: int = s2 + dy
 				if ty2 >= 0 and ty2 < height - BEDROCK_ROWS:
 					c.tiles[tx2][ty2] = water_tile
+
+	# === 2.6) 瀑布: forest/jungle 陡崖唇稀有放水源, 水顺崖面流下 ===
+	for wflx in range(chunk_width):
+		var wfx: int = chunk_start_x + wflx
+		var wfbiome: int = _biome_at_x(wfx, centers)
+		if wfbiome != BIOME_FOREST and wfbiome != BIOME_JUNGLE:
+			continue
+		var wf_dir: int = _is_cliff(chunk_heights, wfx, WATERFALL_SPAN, WATERFALL_MIN_DROP)
+		if wf_dir == 0:
+			continue
+		var wf_roll: float = float(_hash3(world_seed, wfx, 7790) & 0xffff) / 65535.0
+		if wf_roll >= WATERFALL_CHANCE:
+			continue
+		var lip_surf: int = chunk_heights[wfx]
+		# 从崖唇朝低边扫, 找第一列"崖面" (崖唇高度处已是 AIR = 该列地表更低)
+		var edge_lx: int = -1
+		for step in range(1, WATERFALL_SPAN + 1):
+			var clx: int = wflx + wf_dir * step
+			if clx < 0 or clx >= chunk_width:
+				break
+			if lip_surf >= 0 and lip_surf < c.tiles[clx].size() and c.tiles[clx][lip_surf] == Tiles.AIR:
+				edge_lx = clx
+				break
+		if edge_lx < 0:
+			continue
+		# 水源放崖面上沿: 脚下 (lip_surf) 是崖面 AIR → 水能直落到崖底积潭
+		var wf_sy: int = lip_surf - 1
+		if wf_sy >= 1 and c.tiles[edge_lx][wf_sy] == Tiles.AIR and c.tiles[edge_lx][lip_surf] == Tiles.AIR:
+			c.tiles[edge_lx][wf_sy] = Tiles.WATER_SOURCE
 
 	# === 3) 矿洞洼地 BFS flood fill ===
 	# 用一个 visited 数组避免重复处理同一片 AIR 区域.
