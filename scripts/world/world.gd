@@ -670,6 +670,8 @@ func _mp_broadcast_entities() -> void:
 						kind = "harpy"
 					elif "mimic" in scene_path_s:
 						kind = "mimic"
+					elif "frog" in scene_path_s:
+						continue   # 青蛙继承 slime 也在 slimes 组, 但由 "animals" 分支广播 → 这里跳过防双发
 					else:
 						kind = "slime"
 				"zombies": kind = "zombie"

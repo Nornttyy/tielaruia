@@ -823,10 +823,12 @@ func _setup_settings_panel() -> void:
 	var back_btn: Button = $SettingsPanel/VBox/BackButton
 	slider.value = GameSettings.master_volume * 100.0
 	value_label.text = "%d" % int(slider.value)
+	# 拖动只 live 应用音频 (不落盘), 松手 (drag_ended) 才存一次 — 防拖一下写几十次盘
 	slider.value_changed.connect(func(v: float):
-		GameSettings.master_volume = v / 100.0
+		GameSettings.set_master_volume_live(v / 100.0)
 		value_label.text = "%d" % int(v)
 	)
+	slider.drag_ended.connect(func(_vc: bool): GameSettings.save_now())
 	# 摄像机大小 slider: 0.5 (远视野) ~ 2.5 (近距离), 默认 1.2
 	var zoom_slider: HSlider = $SettingsPanel/VBox/ZoomRow/Slider
 	var zoom_value_label: Label = $SettingsPanel/VBox/ZoomRow/ValueLabel
