@@ -76,9 +76,11 @@ const STEP_LABELS := [
 var spawn_point: Vector2i
 # 床复活点: 玩家睡过床后从这里复活. (-99999, -99999) = 没设过, 用默认 spawn_point.
 var bed_spawn_point: Vector2i = Vector2i(-99999, -99999)
-# 睡觉状态: true = 时间 10x 加速中 (玩家在床位置, 不动). 醒条件: 天亮 / 玩家移动 / 攻击键.
+# 睡觉状态: true = 时间 10x 加速中 (玩家躺床上, 不动). 醒条件: 天亮 / 按任意键.
 var _sleeping: bool = false
 var _sleep_anchor_x: float = 0.0     # 睡时玩家 x, 移动超过 8px 醒
+var _sleep_armed: bool = false       # 触发睡觉那次点击松开后才"武装"按键唤醒 (防同一下立刻醒)
+var _sleep_zzz: Node = null          # 头顶 "Zzz" 提示
 var chunk_manager: ChunkManager
 var water_sim: Node
 var minimap_data: Node
@@ -898,6 +900,24 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				# 还能流 (旁边空气/边界/同种更低液位) 才标 dirty, 内部封死的不动省 CPU
 				if water_sim.tile_can_still_flow(t, nbs):
 					water_sim.mark_dirty(chunk_start + lx, y)
+		# 跨 chunk 边界: 也唤醒相邻"已加载" chunk 紧挨本 chunk 的那 1 列水. 本 chunk 一出现,
+		# 这些边界水可能能流进来 — 一起放进本次 settle 流稳, 否则会在玩家眼前实时流那一下.
+		for edge_wx in [chunk_start - 1, chunk_start + w]:
+			var ncx: int = Chunk.chunk_x_of(edge_wx)
+			if not chunk_manager.is_chunk_loaded(ncx):
+				continue
+			for y in h:
+				var et: int = chunk_manager.get_tile(edge_wx, y)
+				if not water_sim.wakes_on_chunk_load(et):
+					continue
+				var enbs: Array = [
+					chunk_manager.get_tile(edge_wx, y + 1) if y + 1 < h else -1,
+					chunk_manager.get_tile(edge_wx, y - 1) if y - 1 >= 0 else -1,
+					chunk_manager.get_tile(edge_wx - 1, y),
+					chunk_manager.get_tile(edge_wx + 1, y),
+				]
+				if water_sim.tile_can_still_flow(et, enbs):
+					water_sim.mark_dirty(edge_wx, y)
 		# 加载即定型: 一口气流到稳. 实时流动残留的"悬空孤儿水"由 water_sim 定期巡检兜底.
 		water_sim.settle_now()
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
