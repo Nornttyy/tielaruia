@@ -123,3 +123,88 @@ func test_no_double_skeleton_king() -> void:
 	var ok2: bool = ctx["action"].try_use_summon_item()
 	assert_false(ok2, "已有骷髅王时不该再召唤")
 	assert_eq(get_tree().get_nodes_in_group("skeleton_king").size(), 1, "场上只 1 个骷髅王")
+
+
+# === T5: 4 招 ===
+const BoneProjScript = preload("res://scripts/entities/bone_projectile.gd")
+
+
+# 招1 扔飞骨头: 生成飞骨头投射物
+func test_throw_bones_spawns_projectiles() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var boss = SkeletonKingScene.instantiate()
+	ctx["world"].add_child(boss)
+	boss.global_position = ctx["player"].global_position + Vector2(120, 0)
+	await wait_frames(2)
+	var before := get_tree().get_nodes_in_group("enemy_projectiles").size()
+	boss._throw_bones(ctx["player"])
+	await wait_frames(1)
+	assert_gt(get_tree().get_nodes_in_group("enemy_projectiles").size(), before, "扔骨头该生成飞骨头投射物")
+	boss.queue_free()
+
+
+# 飞骨头碰到玩家扣血
+func test_bone_projectile_damages_player() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var hp: Node = ctx["player"].get_node("PlayerHealth")
+	var before: int = hp.current_health
+	var b = BoneProjScript.new()
+	ctx["world"].add_child(b)
+	var center: Vector2 = ctx["player"].global_position + Vector2(0, -14)
+	b.setup(center, center + Vector2(1, 0), 12)   # 直接放命中点
+	await wait_frames(3)
+	assert_lt(hp.current_health, before, "飞骨头碰到玩家该扣血")
+
+
+# 招4 召唤: 血<50% 叫出小骷髅 (不把自己数进去)
+func test_summons_skeletons_below_half_hp() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var boss = SkeletonKingScene.instantiate()
+	ctx["world"].add_child(boss)
+	boss.global_position = ctx["player"].global_position + Vector2(60, 0)
+	await wait_frames(2)
+	boss.current_health = int(boss.max_health * 0.4)
+	var before := 0
+	for s in get_tree().get_nodes_in_group("skeletons"):
+		if not s.is_in_group("boss"): before += 1
+	boss._spawn_minions()
+	await wait_frames(1)
+	var after := 0
+	for s in get_tree().get_nodes_in_group("skeletons"):
+		if not s.is_in_group("boss"): after += 1
+	assert_gt(after, before, "血<50% 该召唤小骷髅")
+	boss.queue_free()
+
+
+# 招3 横扫: 面前近处的玩家扣血
+func test_sweep_damages_close_player() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var boss = SkeletonKingScene.instantiate()
+	ctx["world"].add_child(boss)
+	boss.set_physics_process(false)   # 冻住: 否则它会走过去先 contact 玩家(触发无敌帧挡住横扫测试)
+	boss.global_position = ctx["player"].global_position + Vector2(-16, 0)   # 玩家在王右侧, 近
+	await wait_frames(2)
+	if boss.sprite != null:
+		boss.sprite.flip_h = false   # 面朝右 (朝玩家)
+	var hp: Node = ctx["player"].get_node("PlayerHealth")
+	var before: int = hp.current_health
+	boss._do_sweep_hit(ctx["player"])
+	assert_lt(hp.current_health, before, "横扫面前近处玩家该扣血")
+	boss.queue_free()
+
+
+# 招2 冲刺: 冲刺中撞玩家 = 冲刺伤害 (比接触高)
+func test_dash_deals_higher_damage() -> void:
+	var ctx: Dictionary = await _setup_game()
+	var boss = SkeletonKingScene.instantiate()
+	ctx["world"].add_child(boss)
+	boss.set_physics_process(false)   # 冻住: 防它先走过去 contact 触发无敌帧
+	boss.global_position = ctx["player"].global_position + Vector2(10, 0)   # 贴近 (接触范围内)
+	await wait_frames(2)
+	boss._state = "dash"
+	boss._state_t = boss.DASH_WINDUP + 0.1   # 冲刺进行中
+	var hp: Node = ctx["player"].get_node("PlayerHealth")
+	var before: int = hp.current_health
+	boss._check_player_contact()
+	assert_eq(before - hp.current_health, boss.DASH_DAMAGE, "冲刺撞玩家 = 18 (高于接触 15)")
+	boss.queue_free()
