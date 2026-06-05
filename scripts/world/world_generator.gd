@@ -8,12 +8,12 @@ const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 
 const SURFACE_BASE := 0.45       # 地表平均高度 (相对世界 0..1)
-const SURFACE_AMP := 0.10        # 地表小起伏振幅 (普通山丘)
+const SURFACE_AMP := 0.11        # 地表起伏振幅 (大丘大谷但顺滑; 山高主要靠 MOUNTAIN_BOOST 撑)
 const DIRT_DEPTH := 6            # 地表下泥土层厚度
-# 山区 noise: 低频 → 30-60 列宽的山区, max(0, n) 作为山高度系数 (实测 Perlin max ~0.31)
-# MOUNTAIN_BOOST 对世界高度的比例: 0.40 × 0.31 × 256 = 最高峰比平均地表再高 ~32 格
+# 山区 noise: 低频 → 宽山区, max(0, n) 作为山高度系数 (实测 Perlin max ~0.31)
+# MOUNTAIN_BOOST 对世界高度的比例: 0.80 × 0.31 × 256 = 最高峰比平均地表再高 ~63 格 (大山)
 const MOUNTAIN_NOISE_FREQ := 0.008
-const MOUNTAIN_BOOST := 0.40
+const MOUNTAIN_BOOST := 0.80     # 0.40→0.80: 山明显更高更壮观 (用户嫌山矮)
 const MOUNTAIN_PIT_THRESHOLD := 0.12  # mountain_factor > 0.12 = 山区 (实测约占 16% 列)
 
 # Biome (生态群系) — 泰拉瑞亚风: 每种 biome 全世界只有一块, 固定方位.
@@ -86,6 +86,11 @@ const WORM_CHANCE_DEEP := 0.92     # 深层密如蛛网 (玩家"主动下矿"区
 const WORM_DEPTH_SHALLOW_MAX := 40  # 地表 40 格内安全, 不会"踩进去"
 const WORM_DEPTH_MID_MAX := 110     # surf+110 起密集
 const WORM_SURFACE_BUFFER := 20     # worm 路径距地表至少 20 格 (走近就 break, 防止深层 worm 窜到地表)
+
+# 大洞厅 (Terraria cavern): 深层用一张低频噪声, 超过阈值的连片格挖成 AIR → 大开阔洞.
+const CAVERN_NOISE_FREQ := 0.05    # 越小洞越大块 (波长 ~20 → 12-25 格宽洞)
+const CAVERN_THRESHOLD := 0.33     # noise > 此 → 挖空 (越低洞越多; 实测 Perlin 多在 ±0.5)
+const CAVERN_MIN_DEPTH := 45       # 地表下 ≥45 才挖大洞 (浅层留给 worm, 不戳穿地表)
 
 # 露天矿洞 (Terraria 山坡侧面洞穴): 山坡侧面挖个洞口, 朝左/右开, 不是天坑.
 # 在斜坡 (terrain slope) 上找一个低边, 朝高边方向挖横向隧道进山 + 工程师分叉.
@@ -172,7 +177,8 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	noise.seed = world_seed
 	noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	noise.frequency = 0.015
-	noise.fractal_octaves = 3
+	noise.fractal_octaves = 2   # 2 层 → 地表顺滑 (3 层细节多=尖刺). 注意: worm/露天矿洞/瀑布
+	                            # 里复制的 surf_noise 也必须 octaves=2 (同一地表公式), 否则洞口对不齐=歪七扭八.
 
 	var sand_noise := FastNoiseLite.new()
 	sand_noise.seed = world_seed + 1
@@ -182,49 +188,49 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	var coal_noise := FastNoiseLite.new()
 	coal_noise.seed = world_seed + 3
 	coal_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	coal_noise.frequency = 0.12
+	coal_noise.frequency = 0.095   # 矿脉(常见矿不连巨块)
 
 	var iron_noise := FastNoiseLite.new()
 	iron_noise.seed = world_seed + 4
 	iron_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	iron_noise.frequency = 0.10
+	iron_noise.frequency = 0.085   # 矿脉
 
 	# 银矿 noise (跟 gold 一档深, 但用独立 seed → 不跟 gold 重叠)
 	var silver_noise := FastNoiseLite.new()
 	silver_noise.seed = world_seed + 15
 	silver_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	silver_noise.frequency = 0.09
+	silver_noise.frequency = 0.05  # 降频成矿脉
 
 	# 新矿噪声 (T26): 每种独立 seed, 不同 frequency 让斑块大小有差异
 	var copper_noise := FastNoiseLite.new()
 	copper_noise.seed = world_seed + 10
 	copper_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	copper_noise.frequency = 0.13
+	copper_noise.frequency = 0.075  # 矿脉
 
 	var tin_noise := FastNoiseLite.new()
 	tin_noise.seed = world_seed + 11
 	tin_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	tin_noise.frequency = 0.13
+	tin_noise.frequency = 0.075   # 矿脉
 
 	var gold_noise := FastNoiseLite.new()
 	gold_noise.seed = world_seed + 12
 	gold_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	gold_noise.frequency = 0.09
+	gold_noise.frequency = 0.05   # 降频成矿脉
 
 	var diamond_noise := FastNoiseLite.new()
 	diamond_noise.seed = world_seed + 13
 	diamond_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	diamond_noise.frequency = 0.08
+	diamond_noise.frequency = 0.05  # 降频成矿脉
 
 	var hell_noise := FastNoiseLite.new()
 	hell_noise.seed = world_seed + 14
 	hell_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	hell_noise.frequency = 0.07
+	hell_noise.frequency = 0.05   # 降频成矿脉
 	# 地狱合金矿 noise: 独立种子, 跟 hell_crystal 不重叠
 	var hell_alloy_noise := FastNoiseLite.new()
 	hell_alloy_noise.seed = world_seed + 19
 	hell_alloy_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	hell_alloy_noise.frequency = 0.08
+	hell_alloy_noise.frequency = 0.05  # 降频成矿脉
 
 	# 山区 noise: 低频, 决定哪些列是高山 (factor>0) 哪些是平地 (factor=0)
 	var mountain_noise := FastNoiseLite.new()
@@ -322,6 +328,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 
 	# 洞穴: Perlin Worms — 隧道 + 偶发大房间, 跨 chunk 一致
 	_carve_worms_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+
+	# 大洞厅: 深层用低频噪声挖大块开阔洞 (泰拉瑞亚 cavern 味, 跟 worm 连通). 不碰地狱.
+	_carve_caverns_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
 	# 露天矿洞: 漏斗坑 (pit) 或 窄缝 (crack) 直通地表, 玩家能跳下去
 	_carve_open_pits_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
@@ -632,7 +641,7 @@ static func _carve_worms_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 	surf_noise.seed = world_seed
 	surf_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	surf_noise.frequency = 0.015
-	surf_noise.fractal_octaves = 3
+	surf_noise.fractal_octaves = 2
 
 	# 山高 noise: 同 generate_chunk, 让 _surf_at 能算出真实山头位置 (山里 worm 才贴近山头)
 	var mountain_noise := FastNoiseLite.new()
@@ -939,6 +948,40 @@ static func _try_place_mushroom_patch(c: Chunk, world_x_center: int, start_y: in
 			c.tiles[lx][top_y] = Tiles.MUSHROOM
 
 
+# ===== 大洞厅 (Terraria cavern) =====
+# 深层用一张低频 2D 噪声, 阈值以上的连片格挖成 AIR → 大块开阔洞 (能在里面跑).
+# 只挖石头/矿 (不动基岩/地狱/水/已空), 地表下 CAVERN_MIN_DEPTH 起 (浅层留 worm, 不戳地表).
+static func _carve_caverns_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: int,
+		chunk_x: int, chunk_width: int, height: int) -> void:
+	var cavern_noise := FastNoiseLite.new()
+	cavern_noise.seed = world_seed + 71
+	cavern_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	cavern_noise.frequency = CAVERN_NOISE_FREQ
+	var chunk_start: int = chunk_x * chunk_width
+	var bottom: int = mini(height - BEDROCK_ROWS, HELL_DEPTH)   # 不挖地狱区
+	for lx in chunk_width:
+		var wx: int = chunk_start + lx
+		var top: int = chunk_heights[wx] + CAVERN_MIN_DEPTH
+		if top >= bottom:
+			continue
+		var col: Array = c.tiles[lx]
+		for y in range(top, bottom):
+			var t: int = col[y]
+			# 只挖石头/矿 (深层这一段就只有这些; 别动 bedrock/特殊/已空)
+			if not _is_cavern_carveable(t):
+				continue
+			if cavern_noise.get_noise_2d(float(wx), float(y)) > CAVERN_THRESHOLD:
+				col[y] = Tiles.AIR
+
+
+# 大洞厅能挖掉的 tile: 石头 + 各种矿 (挖了露出洞壁, 矿脉留在洞边).
+static func _is_cavern_carveable(t: int) -> bool:
+	return t == Tiles.STONE or t == Tiles.DEEP_STONE \
+			or t == Tiles.COAL_ORE or t == Tiles.IRON_ORE or t == Tiles.COPPER_ORE \
+			or t == Tiles.TIN_ORE or t == Tiles.GOLD_ORE or t == Tiles.SILVER_ORE \
+			or t == Tiles.DIAMOND_ORE
+
+
 # ===== 露天矿洞 (Terraria 山坡侧面洞穴) =====
 # 洞口朝山坡的高侧开 (横向), 不是从顶部直插下去. 玩家沿地表走能看到山腰里的洞口.
 # 流程: 1) spawn_x 找斜坡方向 (左/右哪边 surf 高) 2) 朝高侧挖横向隧道 (在低 surf 高度水平)
@@ -965,7 +1008,7 @@ static func _carve_open_pits_chunk(c: Chunk, chunk_heights: Dictionary,
 	surf_noise.seed = world_seed
 	surf_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	surf_noise.frequency = 0.015
-	surf_noise.fractal_octaves = 3
+	surf_noise.fractal_octaves = 2
 
 	var mountain_noise := FastNoiseLite.new()
 	mountain_noise.seed = world_seed + 5
@@ -1602,7 +1645,7 @@ static func _estimate_surf(world_x: int, world_seed: int, height: int) -> int:
 	n.seed = world_seed
 	n.noise_type = FastNoiseLite.TYPE_PERLIN
 	n.frequency = 0.015
-	n.fractal_octaves = 3
+	n.fractal_octaves = 2
 	var v: float = n.get_noise_1d(float(world_x))
 	# 山高度系数 (跟 generate_chunk 完全一致)
 	var mtn: float = _mountain_factor(world_x, world_seed)

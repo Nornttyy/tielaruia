@@ -11,7 +11,7 @@ const HAND_OFFSET_Y := -10.0   # y (玩家中部胸口位置, 1.25x)
 const TOOL_SIZE := 1.25        # 工具 (剑/镐/斧) 跟玩家 1.25x 一起放大
 const BLOCK_SIZE := 0.6875     # 方块/材料 = TOOL_SIZE × 0.55 (~11px)
 const SWING_ANGLE_DEG := 75.0
-const SWING_DURATION := 0.18
+const SWING_DURATION := 0.50   # 用户调: 剑挥转速降低 (挥得更慢更有分量, 现 0.5s)
 
 var _player_inventory: Node = null
 var _facing_right: bool = true
@@ -106,7 +106,7 @@ const THRUST_DURATION := 0.30           # 用户调: 戳要在前端"停"一下 
 const THRUST_EXTEND_RATIO := 0.20       # 前 20% = 突出去 (0.06s)
 const THRUST_HOLD_RATIO := 0.55         # 中 55% = 在前面 dwell (0.165s, 主要打击窗口)
 const THRUST_RETRACT_RATIO := 0.25      # 后 25% = 收回来 (0.075s)
-const THRUST_OFFSET_PX := 12.5   # 工具向前突进的距离 (玩家 1.25x)
+const THRUST_OFFSET_PX := 8.0    # 工具向前突进的距离 (用户: 短剑戳得太远 → 12.5 调到 8)
 const PICKAXE_ATTACK_DURATION := 1.0   # 用户改 0.7→1.0 转慢一点
 
 
@@ -179,8 +179,8 @@ func play_swing_directional(target_angle: float) -> void:
 	var s: float = 1.0 if _facing_right else -1.0
 	# wrapf 把 base 归一到 [-PI, PI), 防止 facing_left + target_left 的 -7PI/4 那种值
 	var base: float = wrapf(s * (target_angle + PI / 2.0), -PI, PI)
-	var start_a: float = base - deg_to_rad(90.0)
-	var end_a:   float = base + deg_to_rad(90.0)
+	var start_a: float = base - deg_to_rad(110.0)
+	var end_a:   float = base + deg_to_rad(110.0)
 	rotation = start_a
 	_tween = create_tween()
 	# 挥 (打击窗口, 跟 player_action 命中判定的 180°/SWING_DURATION 同步)

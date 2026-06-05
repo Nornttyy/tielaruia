@@ -114,6 +114,11 @@ func _update_iframe_flash() -> void:
 	var sprite: Node = _player_sprite()
 	if sprite == null:
 		return
+	# 睡觉无敌借用了 i-frame (iframe 设成 999), 但那不是受伤 → 别红闪.
+	# 只有正常受伤无敌 (≤ IFRAMES_SEC) 才闪红; 睡觉(远超)保持正常白色.
+	if _iframe_timer > IFRAMES_SEC:
+		sprite.modulate = Color.WHITE
+		return
 	var t: float = (IFRAMES_SEC - _iframe_timer) * 10.0
 	sprite.modulate = Color(1.6, 0.6, 0.6) if int(t) % 2 == 0 else Color.WHITE
 

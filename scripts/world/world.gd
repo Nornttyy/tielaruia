@@ -76,9 +76,11 @@ const STEP_LABELS := [
 var spawn_point: Vector2i
 # 床复活点: 玩家睡过床后从这里复活. (-99999, -99999) = 没设过, 用默认 spawn_point.
 var bed_spawn_point: Vector2i = Vector2i(-99999, -99999)
-# 睡觉状态: true = 时间 10x 加速中 (玩家在床位置, 不动). 醒条件: 天亮 / 玩家移动 / 攻击键.
+# 睡觉状态: true = 时间 10x 加速中 (玩家躺床上, 不动). 醒条件: 天亮 / 按任意键.
 var _sleeping: bool = false
 var _sleep_anchor_x: float = 0.0     # 睡时玩家 x, 移动超过 8px 醒
+var _sleep_armed: bool = false       # 触发睡觉那次点击松开后才"武装"按键唤醒 (防同一下立刻醒)
+var _sleep_zzz: Node = null          # 头顶 "Zzz" 提示
 var chunk_manager: ChunkManager
 var water_sim: Node
 var minimap_data: Node
@@ -740,39 +742,44 @@ func _physics_process(_delta: float) -> void:
 		_check_sleep_wake()
 
 
-# 上床睡觉: 设复活点 + 启动 10x 时间. tile 是床的世界坐标.
+# 上床睡觉: 设复活点 + 躺下. tile 是床的世界坐标.
+# 什么时间都能睡; 在床上时间永远 10x 加速; 按任意键下床。
 func sleep_in_bed(tile: Vector2i) -> void:
 	bed_spawn_point = tile
 	_sleeping = true
 	if TimeOfDay != null:
-		TimeOfDay.time_multiplier = 10.0
+		TimeOfDay.time_multiplier = 10.0   # 在床上时间永远 10x (不分白天黑夜)
 	var player := get_player()
 	if player != null:
+		# 把玩家挪到床上 (否则站床边躺, 看着不像"躺床上")
+		player.global_position = Vector2((float(tile.x) + 0.5) * TILE_SIZE, (float(tile.y) + 1.0) * TILE_SIZE)
 		_sleep_anchor_x = player.global_position.x
+		_sleep_armed = false   # 等触发睡觉那次点击松开才允许按键唤醒
 		# 睡觉期间禁止玩家移动 + 给一个安全 iframe (老 bug: 没锁, 怪打过来 = 任挨打死)
 		player.set_physics_process(false)
 		var hp = player.get_node_or_null("PlayerHealth")
 		if hp != null:
 			hp._iframe_timer = 999.0  # 睡觉期间无敌, _wake_up 时清
+		# 睡觉动作: 人物躺下 (sprite 转 90°) + 头顶飘 Zzz
+		var spr = player.get_node_or_null("AnimatedSprite2D")
+		if spr != null:
+			spr.rotation = -PI / 2.0
+		_spawn_zzz(player)
 
 
-# 睡觉醒条件: 天亮 (is_day) / 玩家走出 8px / 玩家按主键攻击.
-# 醒 → time_multiplier = 1.0, _sleeping = false.
+# 睡觉醒条件: 只看"按任意键". 时间永远 10x, 不会因天亮自动醒 (玩家自己按键下床)。
+# 触发睡觉那次右键得先松开 (_sleep_armed) 才认按键, 否则同一下点击立刻把你叫醒。
 func _check_sleep_wake() -> void:
-	if TimeOfDay == null:
+	if get_player() == null:
 		_wake_up()
 		return
-	if TimeOfDay.is_day():
-		_wake_up()
+	if not _sleep_armed:
+		# 等所有按键/鼠标都松开, 才"武装" (防睡觉那一下点击立刻醒)
+		if not Input.is_anything_pressed():
+			_sleep_armed = true
 		return
-	var player := get_player()
-	if player == null:
-		_wake_up()
-		return
-	if abs(player.global_position.x - _sleep_anchor_x) > 8.0:
-		_wake_up()
-		return
-	if Input.is_action_pressed("primary"):
+	# 武装后: 按任意键/鼠标 → 下床
+	if Input.is_anything_pressed():
 		_wake_up()
 
 
@@ -787,6 +794,30 @@ func _wake_up() -> void:
 		var hp = player.get_node_or_null("PlayerHealth")
 		if hp != null and hp._iframe_timer > 100.0:
 			hp._iframe_timer = 0.5  # 短 iframe 防醒了立刻被怪打
+		# 起身: sprite 复位 (跟睡觉动作对应)
+		var spr = player.get_node_or_null("AnimatedSprite2D")
+		if spr != null:
+			spr.rotation = 0.0
+	_remove_zzz()
+
+
+# 头顶 Zzz 提示 (睡觉时)
+func _spawn_zzz(player: Node2D) -> void:
+	_remove_zzz()
+	var lbl := Label.new()
+	lbl.text = "Zzz"
+	lbl.add_theme_font_size_override("font_size", 11)
+	lbl.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0))
+	lbl.position = Vector2(2, -36)   # 头顶上方
+	lbl.z_index = 20
+	player.add_child(lbl)
+	_sleep_zzz = lbl
+
+
+func _remove_zzz() -> void:
+	if _sleep_zzz != null and is_instance_valid(_sleep_zzz):
+		_sleep_zzz.queue_free()
+	_sleep_zzz = null
 
 
 # world 被 free 时 (回主菜单 / 切场景) 必须 reset autoload 的 time_multiplier,
@@ -898,6 +929,24 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				# 还能流 (旁边空气/边界/同种更低液位) 才标 dirty, 内部封死的不动省 CPU
 				if water_sim.tile_can_still_flow(t, nbs):
 					water_sim.mark_dirty(chunk_start + lx, y)
+		# 跨 chunk 边界: 也唤醒相邻"已加载" chunk 紧挨本 chunk 的那 1 列水. 本 chunk 一出现,
+		# 这些边界水可能能流进来 — 一起放进本次 settle 流稳, 否则会在玩家眼前实时流那一下.
+		for edge_wx in [chunk_start - 1, chunk_start + w]:
+			var ncx: int = Chunk.chunk_x_of(edge_wx)
+			if not chunk_manager.is_chunk_loaded(ncx):
+				continue
+			for y in h:
+				var et: int = chunk_manager.get_tile(edge_wx, y)
+				if not water_sim.wakes_on_chunk_load(et):
+					continue
+				var enbs: Array = [
+					chunk_manager.get_tile(edge_wx, y + 1) if y + 1 < h else -1,
+					chunk_manager.get_tile(edge_wx, y - 1) if y - 1 >= 0 else -1,
+					chunk_manager.get_tile(edge_wx - 1, y),
+					chunk_manager.get_tile(edge_wx + 1, y),
+				]
+				if water_sim.tile_can_still_flow(et, enbs):
+					water_sim.mark_dirty(edge_wx, y)
 		# 加载即定型: 一口气流到稳. 实时流动残留的"悬空孤儿水"由 water_sim 定期巡检兜底.
 		water_sim.settle_now()
 	# 火把光源: 扫描 chunk 内所有 TORCH tile, 在 TorchLights 下重建光
@@ -1598,9 +1647,13 @@ func get_player() -> CharacterBody2D:
 	if p is CharacterBody2D:
 		_cached_player = p
 		return _cached_player
-	# 兜底: 兼容老逻辑 (有些代码可能没把 player 加 group, 测试用)
+	# 兜底: 只认"真玩家"= 带 PlayerInventory 子节点的 CharacterBody2D (只有玩家有).
+	# 不能抓任意 CharacterBody2D —— 哈比鸟/史莱姆等怪也是 CharacterBody2D, 且空岛 chunk 一加载
+	# 就先于玩家刷进 entities_root. 加载窗口期玩家还没 add_to_group("player") 时, 旧兜底会把
+	# 第一个怪当玩家缓存住 → HUD/小地图/背景/背包全绑到怪身上 (丢三件套 + 地图/背景显示地底).
+	# 这是用户反复报"进世界 bug"的真根因. 怪没 PlayerInventory → 跳过, 找不到就返 null (调用方自会重试).
 	for child in entities_root.get_children():
-		if child is CharacterBody2D:
+		if child is CharacterBody2D and child.has_node("PlayerInventory"):
 			_cached_player = child
 			return child
 	return null
@@ -1661,6 +1714,9 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 	# 流水: 通知 water_sim, 让它评估 (x,y) 和 4 邻居是否要流
 	if water_sim != null:
 		water_sim.notify_tile_changed(x, y)
+	# 小地图实时更新: 挖/放方块立刻刷新这格的地图色 (已探索的才刷, 不揭迷雾)
+	if minimap_data != null:
+		minimap_data.update_if_explored(x, y, tile_id)
 	# 沙子物理: 这格变 AIR → 上方 SAND 整柱下落
 	if tile_id == Tiles.AIR and not skip_sand:
 		_apply_sand_fall(x, y)
@@ -1740,3 +1796,6 @@ func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = fals
 			NetworkManager.send_tile_change(x, y, tile_id)
 	if water_sim != null:
 		water_sim.notify_tile_changed(x, y)
+	# 小地图实时更新: 水流改了这格也立刻刷新地图色 (已探索的才刷)
+	if minimap_data != null:
+		minimap_data.update_if_explored(x, y, tile_id)

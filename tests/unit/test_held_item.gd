@@ -15,31 +15,31 @@ func _make_held() -> Sprite2D:
 
 func test_play_swing_directional_target_right():
 	var held: Sprite2D = _make_held()
-	# 用户改 sweep arc 90°→180° 半圆. half = 90°.
+	# 用户改 sweep arc 180°→220° (half = 110°).
 	# 目标朝正右 (target_angle=0), facing_right. base = 1 * (0+PI/2) = PI/2
-	# start = PI/2 - 90° = 0
+	# start = PI/2 - 110° = -20°
 	held.play_swing_directional(0.0)
-	assert_almost_eq(held.rotation, 0.0, 0.05,
-		"facing_right + mouse_right: 起手 0 (180° 半圆 90° half)")
+	assert_almost_eq(held.rotation, deg_to_rad(-20.0), 0.05,
+		"facing_right + mouse_right: 起手 base-110° = -20°")
 
 
 func test_play_swing_directional_target_up():
 	var held: Sprite2D = _make_held()
-	# 目标朝正上 (-PI/2). mouse_on_right=true. base = 0, start = -PI/2
+	# 目标朝正上 (-PI/2). mouse_on_right=true. base = 0, start = 0 - 110° = -110°
 	held.play_swing_directional(-PI / 2.0)
-	assert_almost_eq(held.rotation, -PI / 2.0, 0.05,
-		"target=正上时, 起手 -PI/2")
+	assert_almost_eq(held.rotation, deg_to_rad(-110.0), 0.05,
+		"target=正上时, 起手 base-110° = -110°")
 
 
 func test_play_swing_directional_target_left_flips_facing():
 	var held: Sprite2D = _make_held()
 	# 目标朝正左 (PI). facing_left, s=-1.
 	# base = -1 * (PI + PI/2) = -3PI/2 ≈ wrapf → PI/2
-	# start = PI/2 - PI/2 = 0
+	# start = PI/2 - 110° = -20°
 	held.play_swing_directional(PI)
 	assert_eq(held._facing_right, false, "mouse 在左时应翻到 facing_left")
-	assert_almost_eq(held.rotation, 0.0, 0.05,
-		"facing_left + target_left: 起手 0 (镜像后是正左半圆中点)")
+	assert_almost_eq(held.rotation, deg_to_rad(-20.0), 0.05,
+		"facing_left + target_left: 起手 base-110° = -20°")
 
 
 func test_play_swing_directional_skips_when_invisible():
