@@ -565,9 +565,19 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	if tid == Tiles.MIMIC_CHEST:
 		_trigger_mimic_trap(tile, world)
 		return
-	# 砍床: 清复活点 (老 bug: 不清, 复活时还指着已变空气的床位置, 玩家从天上掉下)
-	if tid == Tiles.BED and "bed_spawn_point" in world:
-		world.bed_spawn_point = Vector2i(-99999, -99999)
+	# 砍床: 2 格宽 (BED 左 + BED_RIGHT 右). 砍任一半 → 联动消另一半 + 清复活点 + 只掉 1 床.
+	# (清复活点防老 bug: 不清的话复活时还指着已变空气的床位置, 玩家从天上掉下)
+	if tid == Tiles.BED or tid == Tiles.BED_RIGHT:
+		var bcm = world.get("chunk_manager")
+		if world.has_method("_set_tile") and bcm != null:
+			# 左砍消右 (x+1); 右砍消左 (x-1). 先确认那格真是另一半再消 (防误删邻居).
+			if tid == Tiles.BED and bcm.get_tile(tile.x + 1, tile.y) == Tiles.BED_RIGHT:
+				world._set_tile(tile.x + 1, tile.y, Tiles.AIR)
+			elif tid == Tiles.BED_RIGHT and bcm.get_tile(tile.x - 1, tile.y) == Tiles.BED:
+				world._set_tile(tile.x - 1, tile.y, Tiles.AIR)
+		if "bed_spawn_point" in world:
+			world.bed_spawn_point = Vector2i(-99999, -99999)
+		tid = Tiles.BED   # 改 tid → 掉落流程出 1 个 bed (点击那格由通用流程消)
 	# 普通破: 单格
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, Tiles.AIR)
@@ -809,6 +819,21 @@ func try_place() -> bool:
 		_consume_one(inv)
 		SkyLightGrid.invalidate_column(tile.x)
 		Effects.spawn_place_bounce(tile, Tiles.DOOR)
+		SfxBank.play("place", 0.10)
+		return true
+	# 床: 2 格宽, 占当前 tile (左/床头) + 右边 1 格 (右/床尾). 右格必须空 (或水), 否则放不了.
+	if def.placeable_tile_id == Tiles.BED:
+		var bed_right: Vector2i = tile + Vector2i(1, 0)
+		var br_src: int = terrain.get_cell_source_id(bed_right)
+		if br_src != -1 and not Tiles.is_water(br_src):
+			return false
+		if world.has_method("_set_tile"):
+			world._set_tile(tile.x, tile.y, Tiles.BED)                  # 左 (床头, 锚点)
+			world._set_tile(bed_right.x, bed_right.y, Tiles.BED_RIGHT)  # 右 (床尾)
+		_consume_one(inv)
+		SkyLightGrid.invalidate_column(tile.x)
+		SkyLightGrid.invalidate_column(bed_right.x)
+		Effects.spawn_place_bounce(tile, Tiles.BED)
 		SfxBank.play("place", 0.10)
 		return true
 	# 铁锅只能叠在炉子正上方 (用户设计: "锅放在炉子上才能煮")
@@ -1100,11 +1125,14 @@ func _update_eat_or_place(delta: float) -> void:
 						if mn.try_extend_max():
 							_consume_crystal_tile(aim_tile, terrain, Color(0.55, 0.45, 1.0))
 					return
-				elif aim_tid == Tiles.BED:
-					# 床: 右键 → 复活点设到床, 时间 10x 加速直到白天 / 玩家移动.
+				elif aim_tid == Tiles.BED or aim_tid == Tiles.BED_RIGHT:
+					# 床 (2 格宽): 点任一半都能睡. 锚点归一到左格 (BED), 让玩家躺床中央.
+					var bed_anchor: Vector2i = aim_tile
+					if aim_tid == Tiles.BED_RIGHT:
+						bed_anchor = aim_tile - Vector2i(1, 0)   # 点右半 → 用左格做锚
 					var w: Node = terrain.get_parent()
 					if w != null and w.has_method("sleep_in_bed"):
-						w.sleep_in_bed(aim_tile)
+						w.sleep_in_bed(bed_anchor)
 					return
 
 	# 持魔力药水 + 按住 → 喝下立刻 +30 mana (跟食物同流程, 进度条满后消耗)

@@ -751,8 +751,8 @@ func sleep_in_bed(tile: Vector2i) -> void:
 		TimeOfDay.time_multiplier = 10.0   # 在床上时间永远 10x (不分白天黑夜)
 	var player := get_player()
 	if player != null:
-		# 把玩家挪到床上 (否则站床边躺, 看着不像"躺床上")
-		player.global_position = Vector2((float(tile.x) + 0.5) * TILE_SIZE, (float(tile.y) + 1.0) * TILE_SIZE)
+		# 把玩家挪到床中央 (2 格宽: tile 是左格, +1.0 = 左右两格接缝 = 床正中)
+		player.global_position = Vector2((float(tile.x) + 1.0) * TILE_SIZE, (float(tile.y) + 1.0) * TILE_SIZE)
 		_sleep_anchor_x = player.global_position.x
 		_sleep_armed = false   # 等触发睡觉那次点击松开才允许按键唤醒
 		# 睡觉期间禁止玩家移动 + 给一个安全 iframe (老 bug: 没锁, 怪打过来 = 任挨打死)

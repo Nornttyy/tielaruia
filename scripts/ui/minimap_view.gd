@@ -85,7 +85,8 @@ const _TILE_COLORS := {
 	Tiles.CACTUS:        Color8(80, 140, 70),    # 仙人掌
 	Tiles.CACTUS_BODY:   Color8(70, 125, 60),
 	# 床 + 水晶 + 装饰
-	Tiles.BED:           Color8(180, 60, 70),    # 床: 红被显眼
+	Tiles.BED:           Color8(180, 60, 70),    # 床·左: 红被显眼
+	Tiles.BED_RIGHT:     Color8(180, 60, 70),    # 床·右: 同色
 	Tiles.LIFE_CRYSTAL:  Color8(230, 80, 110),   # 生命水晶: 粉红
 	Tiles.PLANT_GRASS:   Color8(110, 180, 70),   # 装饰草: 跟 GRASS 微差
 	Tiles.WHEAT_0:       Color8(140, 200, 90),   # 小麦苗: 嫩绿

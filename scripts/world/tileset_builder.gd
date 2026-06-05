@@ -65,7 +65,7 @@ static func build() -> TileSet:
 		Tiles.HELL_ALLOY_ORE,
 		Tiles.SANDSTONE,
 		Tiles.MANA_CRYSTAL,
-		Tiles.BED,
+		Tiles.BED, Tiles.BED_RIGHT,
 		# 菜园 + 装饰
 		Tiles.WHEAT_0, Tiles.WHEAT_1, Tiles.WHEAT_2, Tiles.WHEAT_3,
 		Tiles.PLANT_GRASS,

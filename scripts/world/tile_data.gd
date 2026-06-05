@@ -76,7 +76,8 @@ const LIFE_CRYSTAL := 61    # 生命水晶 (Terraria 风): 矿洞偶发, 右键�
 const HELL_ALLOY_ORE := 62  # 地狱合金矿: 深紫黑底 + 银闪点. 金/钻镐挖, 熔炉炼锭, 造 tier 8 武器主金属
 const SANDSTONE := 63       # 砂岩: 金字塔骨架. 实心不掉 (跟 SAND 区分, 无重力 bug)
 const MANA_CRYSTAL := 64    # 魔力水晶 (蓝紫星形): 矿洞偶发, 右键吃 → 永久 +20 MAX MANA (上限 200)
-const BED := 65             # 床: 玩家造 (3 planks + 3 wool). 右键 → 夜跳到早晨 + 复活点设到床位置
+const BED := 65             # 床·左半 (床头): 双击睡觉 + 复活点. 跟 BED_RIGHT 凑成 2 格宽床
+const BED_RIGHT := 87       # 床·右半 (床尾): 砍任一半联动消整张, 点任一半都能睡
 # 小麦作物 4 阶段 (菜园 v1). 玩家右键 GRASS + 持 wheat_seed → 种 WHEAT_0.
 # world.gd 每 15s tick 一次, 每个 WHEAT_0/1/2 有概率升一阶. WHEAT_3 挖 → 小麦 + 种子.
 const WHEAT_0 := 66         # 苗 (刚种, 小绿点)
@@ -531,10 +532,17 @@ const _PROPS := {
 		"drops": [],
 	},
 	BED: {
-		# 床: 玩家造装饰 + 复活点. 非实心 (玩家穿过), 徒手即可拆 → 1 床物品.
+		# 床·左半 (床头): 玩家造装饰 + 复活点. 非实心 (玩家穿过), 徒手即可拆.
+		# 砍它由 player_action 联动消掉右半 + 掉 1 床物品 (右半 drops 空, 不重复掉).
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [["bed", 100, 1, 1]],
+	},
+	BED_RIGHT: {
+		# 床·右半 (床尾): 不掉东西 — 砍任一半, 由 player_action 联动消整张, 左半 BED 掉 1 床.
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [],
 	},
 	# 小麦 4 阶段: 全非实心 (玩家踩过), 徒手即可挖. 未熟 (0/1/2) 挖只掉种子, 熟 (3) 挖掉小麦 + 种子.
 	WHEAT_0: {
