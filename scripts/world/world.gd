@@ -1643,9 +1643,13 @@ func get_player() -> CharacterBody2D:
 	if p is CharacterBody2D:
 		_cached_player = p
 		return _cached_player
-	# 兜底: 兼容老逻辑 (有些代码可能没把 player 加 group, 测试用)
+	# 兜底: 只认"真玩家"= 带 PlayerInventory 子节点的 CharacterBody2D (只有玩家有).
+	# 不能抓任意 CharacterBody2D —— 哈比鸟/史莱姆等怪也是 CharacterBody2D, 且空岛 chunk 一加载
+	# 就先于玩家刷进 entities_root. 加载窗口期玩家还没 add_to_group("player") 时, 旧兜底会把
+	# 第一个怪当玩家缓存住 → HUD/小地图/背景/背包全绑到怪身上 (丢三件套 + 地图/背景显示地底).
+	# 这是用户反复报"进世界 bug"的真根因. 怪没 PlayerInventory → 跳过, 找不到就返 null (调用方自会重试).
 	for child in entities_root.get_children():
-		if child is CharacterBody2D:
+		if child is CharacterBody2D and child.has_node("PlayerInventory"):
 			_cached_player = child
 			return child
 	return null

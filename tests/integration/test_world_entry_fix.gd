@@ -247,3 +247,58 @@ func test_continue_restores_three_kit() -> void:
 		_count(new_inv, "wood_sword"), _count(new_inv, "dirt")])
 	assert_true(_has_three_kit(new_inv), "continue 后三件套还在")
 	assert_eq(_count(new_inv, "dirt"), 10, "其他物品也在")
+
+
+# ===== 症状根因 E (反复复发): get_player() 兜底误把怪当玩家 =====
+# 加载窗口期玩家还没进 "player" 组时, get_player() 旧兜底遍历 entities_root 取第一个
+# CharacterBody2D — 哈比鸟/史莱姆也是 CharacterBody2D 且常先于玩家生成 (空岛 chunk 一加载就刷哈比鸟).
+# 结果把怪当玩家缓存住 → HUD/小地图/背景/背包全绑到怪身上 (丢三件套 + 地图/背景显示地底).
+# 修复: 兜底只认带 "PlayerInventory" 子节点的 CharacterBody2D (只有真玩家有).
+const WorldScene = preload("res://scenes/world/world.tscn")
+
+
+func _make_fake_creature(node_name: String) -> CharacterBody2D:
+	# 模拟哈比鸟/史莱姆: CharacterBody2D, 不在 "player" 组, 没有 PlayerInventory 子节点.
+	var c := CharacterBody2D.new()
+	c.name = node_name
+	return c
+
+
+func _make_fake_player() -> CharacterBody2D:
+	# 模拟真玩家: CharacterBody2D + PlayerInventory 子节点, 但还没 add_to_group("player")
+	# (加载窗口期玩家 _ready 还没跑).
+	var p := CharacterBody2D.new()
+	p.name = "Player"
+	var inv := Node.new()
+	inv.name = "PlayerInventory"
+	p.add_child(inv)
+	return p
+
+
+func test_get_player_ignores_creature_in_load_window() -> void:
+	var w = WorldScene.instantiate()
+	w.defer_init = true
+	add_child_autofree(w)
+	await wait_frames(1)
+	# 先放怪 (像空岛 chunk 加载先刷的哈比鸟), 再放真玩家 — 玩家都还没进 "player" 组.
+	var harpy := _make_fake_creature("Harpy")
+	w.entities_root.add_child(harpy)
+	var player := _make_fake_player()
+	w.entities_root.add_child(player)
+	await wait_frames(1)
+	var got = w.get_player()
+	gut.p("[fix-E] get_player() returned: %s" % (got.name if got != null else "null"))
+	assert_eq(got, player, "get_player() 必须返回真玩家, 不能把哈比鸟当玩家")
+
+
+func test_get_player_null_when_only_creatures() -> void:
+	# 玩家完全没生成时 (只有怪), get_player() 应返回 null — 而不是抓个怪.
+	var w = WorldScene.instantiate()
+	w.defer_init = true
+	add_child_autofree(w)
+	await wait_frames(1)
+	w.entities_root.add_child(_make_fake_creature("Harpy"))
+	w.entities_root.add_child(_make_fake_creature("Slime"))
+	await wait_frames(1)
+	var got = w.get_player()
+	assert_null(got, "只有怪没玩家 → get_player() 返 null (不能误返怪)")
