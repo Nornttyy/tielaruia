@@ -25,15 +25,18 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int = DEFAULT_DAMAGE, p
 	damage = dmg
 	is_player_cast = player_cast
 	rotation = velocity.angle()
+	# body_entered 的连接必须在这里 (setup) 判, 不能在 _ready:
+	# add_child 会立刻触发 _ready, 那时 setup 还没跑, is_player_cast 还是默认 false →
+	# 玩家法杖发的火球也会误连 body_entered, 一生成就撞到施法者自己 (不飞/原地炸/按法伤扣自己血).
+	# Imp 发的 (player_cast=false): 撞玩家 (body 在 player 组) — 连 body_entered.
+	# 玩家法杖发的 (player_cast=true): 撞怪 (slimes 组 collision_layer=0, 改 _check_enemy_hit 手动距离判), 不连.
+	if not is_player_cast and not body_entered.is_connected(_on_body_entered):
+		body_entered.connect(_on_body_entered)
 
 
 func _ready() -> void:
 	sprite.sprite_frames = ArtCache.fireball_frames
 	sprite.play("fly")
-	# Imp 发的 (player_cast=false): 撞玩家 (body 在 player 组) — body_entered 信号
-	# 玩家法杖发的 (player_cast=true): 撞怪 (slimes 组 collision_layer=0 收不到 body_entered, 改手动距离判)
-	if not is_player_cast:
-		body_entered.connect(_on_body_entered)
 
 
 func _physics_process(delta: float) -> void:
