@@ -45,6 +45,8 @@ const WATER_L4 := 88        # 4/8 水位
 const WATER_L5 := 89        # 5/8 水位
 const WATER_L6 := 90        # 6/8 水位
 const WATER_L7 := 91        # 7/8 水位
+const GRASS_SLOPE_R := 92   # 草斜坡·升向右 ◢ (实心右下三角). 地表自动削坡, 玩家走上去
+const GRASS_SLOPE_L := 93   # 草斜坡·升向左 ◣ (实心左下三角)
 const CHEST := 37           # 箱子: 右键打开 24 格存储, 内容跟存档持久化
 const DOOR_TOP := 38        # 门顶 (DOOR 底 / DOOR_MID 中 / DOOR_TOP 顶, 凑成 3 格高门)
 const DOOR_MID := 84        # 门中段 (3 格门的中间一格)
@@ -553,6 +555,17 @@ const _PROPS := {
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [],
 	},
+	GRASS_SLOPE_R: {
+		# 草斜砖: 实心(撑住玩家走斜面) + 可挖. 掉 dirt 跟草地一致. 不可玩家放置 (无 item 映射).
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["dirt", 100, 1, 1]],
+	},
+	GRASS_SLOPE_L: {
+		"solid": true, "mineable": true,
+		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
+		"drops": [["dirt", 100, 1, 1]],
+	},
 	# 小麦 4 阶段: 全非实心 (玩家踩过), 徒手即可挖. 未熟 (0/1/2) 挖只掉种子, 熟 (3) 挖掉小麦 + 种子.
 	WHEAT_0: {
 		"solid": false, "mineable": true,
@@ -609,6 +622,11 @@ func is_solid(tile_id: int) -> bool:
 	if not _PROPS.has(tile_id):
 		return false
 	return _PROPS[tile_id].solid
+
+
+# 是不是斜砖 (45° 斜坡). tileset 加三角碰撞 / 生成器铺坡 / autotile 排除 都用它.
+func is_slope(tile_id: int) -> bool:
+	return tile_id == GRASS_SLOPE_R or tile_id == GRASS_SLOPE_L
 
 
 # 植物 / 非实心装饰 (树·叶·草·仙人掌·蘑菇·火把·庄稼等). 生成背景墙时跳过这些格 (用户: 墙除了植物).
