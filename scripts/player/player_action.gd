@@ -374,6 +374,10 @@ func _update_mining(delta: float) -> void:
 	if not pressed:
 		_reset_mining()
 		return
+	# 锤子: 破坏背景墙 (不挖方块). 独立分支, 创造模式也在里面处理.
+	if _current_tool_kind() == "hammer":
+		_update_wall_mining(delta)
+		return
 	# 创造模式: 秒挖 — 对准任意"可挖"方块瞬间破 (不要工具/不管树支撑). 基岩等不可挖的仍挡住.
 	if GameSettings != null and GameSettings.creative_mode:
 		var ct: Vector2i = aim_tile_coord()
@@ -504,6 +508,80 @@ func _reset_mining() -> void:
 	# 松手 / 切走: 不清裂纹、不丢进度 — 半挖的方块进度存在 _mine_saved, 裂纹留着, 回来接着挖.
 	_mining_target = INVALID_TILE
 	_mining_progress = 0.0
+
+
+# 锤子破墙. 瞄准格前景必须空 (墙在方块后面, 得先挖掉方块才能砸墙). 该格有墙才砸.
+# 进度按 tier 加速; 砸完 → world._set_wall(AIR) + 掉对应墙料.
+const WALL_HARDNESS := 1.5
+func _update_wall_mining(delta: float) -> void:
+	var tile: Vector2i = aim_tile_coord()
+	if not in_reach(tile):
+		_reset_mining()
+		return
+	var terrain := _terrain()
+	if terrain == null:
+		return
+	var world: Node = terrain.get_parent()
+	var cm = world.get("chunk_manager") if world != null else null
+	if cm == null:
+		_reset_mining()
+		return
+	# 前景有方块挡着 → 不能砸墙 (先挖方块)
+	if terrain.get_cell_source_id(tile) != -1:
+		_reset_mining()
+		return
+	var wid: int = cm.get_wall(tile.x, tile.y)
+	if wid == Tiles.AIR:
+		_reset_mining()
+		return
+	# 创造模式: 秒砸
+	if GameSettings != null and GameSettings.creative_mode:
+		_break_wall(world, tile, wid)
+		_mining_target = INVALID_TILE
+		_mining_progress = 0.0
+		return
+	if tile != _mining_target:
+		_mining_target = tile
+		_mining_progress = 0.0
+		_mining_swing_t = 0.0
+	_mining_progress += _hammer_speed(_current_tool_tier()) * delta * _buff_mining_mul()
+	# 摆动: 复用镐子 360° 旋转
+	_mining_swing_t -= delta
+	if _mining_swing_t <= 0.0:
+		_mining_swing_t = 0.7
+		var held: Node = _held_item_node()
+		if held != null and held.has_method("play_pickaxe_attack"):
+			_start_pickaxe_spin()
+	var ratio: float = clamp(_mining_progress / WALL_HARDNESS, 0.0, 1.0)
+	_set_crack(tile, ratio)
+	if _mining_progress >= WALL_HARDNESS:
+		_break_wall(world, tile, wid)
+		_clear_crack(tile)
+		_mining_target = INVALID_TILE
+		_mining_progress = 0.0
+
+
+# 真正破墙: 改数据 (持久) + 碎裂特效 + 掉对应墙料.
+func _break_wall(world: Node, tile: Vector2i, wid: int) -> void:
+	world._set_wall(tile.x, tile.y, Tiles.AIR)
+	Effects.spawn_block_break(tile, wid)
+	SfxBank.play("break", 0.15)
+	var drop_id: String = Tiles.wall_drop_item(wid)
+	if drop_id != "":
+		_spawn_drop(drop_id, tile)
+
+
+# 锤子破墙速度 (硬度 1.5). tier 越高越快: tier1 ~1.5s → tier8 ~0.3s.
+func _hammer_speed(tier: int) -> float:
+	match tier:
+		1: return 1.0    # 1.5s
+		2: return 1.25   # 1.2s
+		3: return 1.5    # 1.0s
+		4: return 2.0    # 0.75s
+		5: return 2.5    # 0.6s
+		6: return 3.0    # 0.5s
+		7: return 3.75   # 0.4s
+		_: return 5.0    # 0.3s (tier 8 地狱)
 
 
 func _set_crack(tile: Vector2i, ratio: float) -> void:
@@ -740,41 +818,19 @@ func try_place() -> bool:
 	var tile: Vector2i = aim_tile_coord()
 	if not in_reach(tile):
 		return false
-	# === 墙 (wall item): 放进 wall_layer, 不挡走路. 跟方块独立放置规则 ===
+	# === 墙 (wall item): 走 world._set_wall (持久化 + autotile + 存档), 不挡走路 ===
 	if ItemDB.is_wall(slot.item_id):
 		var w_node: Node = terrain.get_parent()
-		var wall_layer: TileMapLayer = w_node.get_node_or_null("WallLayer") if w_node != null else null
-		if wall_layer == null:
+		var cm = w_node.get("chunk_manager") if w_node != null else null
+		if cm == null or not w_node.has_method("_set_wall"):
 			return false
 		# 已经有墙 → 不重叠放
-		if wall_layer.get_cell_source_id(tile) != -1:
+		if cm.get_wall(tile.x, tile.y) != Tiles.AIR:
 			return false
 		var w_def = ItemDB.get_def(slot.item_id)
-		var wid: int = w_def.placeable_tile_id
-		# autotile 接邻居: 让墙跟相邻墙连接边缘
-		const Autotile = preload("res://scripts/world/autotile.gd")
-		const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
-		var w_node2: Node = terrain.get_parent()
-		var cm = w_node2.get("chunk_manager") if w_node2 != null else null
-		if EdgeTemplates.FAMILY_OF.has(wid) and cm != null:
-			var wq := Autotile.make_wall_query(wid, cm)
-			Autotile.refresh_tile(wall_layer, tile, wid, wq)
-			# 刷邻居 8 个 (它们 mask 变了)
-			for dy in [-1, 0, 1]:
-				for dx in [-1, 0, 1]:
-					if dx == 0 and dy == 0:
-						continue
-					var npos: Vector2i = tile + Vector2i(dx, dy)
-					var nsid: int = wall_layer.get_cell_source_id(npos)
-					if nsid == -1:
-						continue
-					if EdgeTemplates.FAMILY_OF.has(nsid):
-						var nq := Autotile.make_wall_query(nsid, cm)
-						Autotile.refresh_tile(wall_layer, npos, nsid, nq)
-		else:
-			wall_layer.set_cell(tile, wid, Vector2i.ZERO)
+		w_node._set_wall(tile.x, tile.y, w_def.placeable_tile_id)
 		_consume_one(inv)
-		Effects.spawn_place_bounce(tile, wid)
+		Effects.spawn_place_bounce(tile, w_def.placeable_tile_id)
 		SfxBank.play("place", 0.10)
 		return true
 	# 目标必须为空气 (或水, 水可以被填掉 — 玩家用方块塞水)

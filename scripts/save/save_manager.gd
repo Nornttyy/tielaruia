@@ -56,6 +56,7 @@ func save(main: Node) -> bool:
 	if TimeOfDay != null and "time" in TimeOfDay:
 		data.world_time = TimeOfDay.time
 	data.chunk_deltas = _serialize_chunk_deltas(world.chunk_manager)
+	data.wall_deltas = _serialize_wall_deltas(world.chunk_manager)
 	data.entities = _serialize_entities()
 	data.chest_contents = ChestStorage.dump()
 	# 生命水晶世界限: 累计已放数 + 已处理 chunk 列表 + 已放位置 (防间距重新算)
@@ -310,6 +311,33 @@ static func apply_chunk_deltas(cm, serialized: Dictionary) -> void:
 			inner[Vector2i(arr[i], arr[i + 1])] = arr[i + 2]
 			i += 3
 		cm._deltas[cx] = inner
+
+
+# 背景墙 delta 序列化 (结构同 tile delta, 读 _wall_deltas). str(cx) key 防 .tres 丢 0 号区块.
+func _serialize_wall_deltas(cm) -> Dictionary:
+	var out: Dictionary = {}
+	for cx in cm._wall_deltas.keys():
+		var inner: Dictionary = cm._wall_deltas[cx]
+		var arr := PackedInt32Array()
+		for pos_v2i in inner.keys():
+			arr.append(pos_v2i.x)
+			arr.append(pos_v2i.y)
+			arr.append(inner[pos_v2i])
+		out[str(cx)] = arr
+	return out
+
+
+# 还原墙 delta 到 chunk_manager._wall_deltas (供 load 后调用). 跟 apply_chunk_deltas 平行.
+static func apply_wall_deltas(cm, serialized: Dictionary) -> void:
+	for cx_key in serialized.keys():
+		var cx: int = int(cx_key)
+		var arr: PackedInt32Array = serialized[cx_key]
+		var inner: Dictionary = {}
+		var i: int = 0
+		while i + 2 < arr.size():
+			inner[Vector2i(arr[i], arr[i + 1])] = arr[i + 2]
+			i += 3
+		cm._wall_deltas[cx] = inner
 
 
 # 收集 slime/villager/item_drop 位置 + 状态.

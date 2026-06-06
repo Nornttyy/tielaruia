@@ -2,6 +2,11 @@
 extends GutTest
 
 const WG = preload("res://scripts/world/world_generator.gd")
+const ChunkManagerClass = preload("res://scripts/world/chunk_manager.gd")
+const CraftingPanel = preload("res://scripts/ui/crafting_panel.gd")
+
+const _HAMMERS := ["wood_hammer", "stone_hammer", "copper_hammer", "iron_hammer",
+		"silver_hammer", "gold_hammer", "diamond_hammer", "hell_hammer"]
 
 
 func test_is_plant_basic() -> void:
@@ -48,3 +53,75 @@ func test_surface_blocks_have_walls_sky_does_not() -> void:
 	assert_gt(surf_with_wall, 40, "大部分地表块背后该有墙 (64 列)")
 	assert_eq(sky_with_wall, 0, "天空不该有墙")
 	assert_eq(plant_with_wall, 0, "植物格背后不该有墙")
+
+
+func test_hammers_exist_with_tiers() -> void:
+	for i in _HAMMERS.size():
+		var id: String = _HAMMERS[i]
+		var def = ItemDB.get_def(id)
+		assert_not_null(def, "%s 该有定义" % id)
+		assert_eq(def.tool_kind, "hammer", "%s tool_kind=hammer" % id)
+		assert_eq(def.tool_tier, i + 1, "%s tier 该=%d" % [id, i + 1])
+
+
+func test_hammer_icons_present_and_distinct() -> void:
+	# 游戏内图标走 ArtCache.get_inventory_icon, 漏注册=背包空白
+	var prev_data = null
+	for id in _HAMMERS:
+		var tex = ArtCache.get_inventory_icon(id)
+		assert_not_null(tex, "%s 该有游戏内图标" % id)
+	# 锤子造型该不同于同材质镐 (不能拿镐图当锤图)
+	var hammer_tex = ArtCache.get_inventory_icon("iron_hammer")
+	var pick_tex = ArtCache.get_inventory_icon("iron_pickaxe")
+	if hammer_tex != null and pick_tex != null:
+		assert_ne(hammer_tex.get_image().get_data(), pick_tex.get_image().get_data(),
+			"锤子造型该跟镐不一样")
+
+
+func test_wall_items_placeable_with_icons() -> void:
+	for id in ["dirt_wall", "grass_wall", "stone_wall", "wood_wall"]:
+		assert_true(ItemDB.is_wall(id), "%s 该是墙物品" % id)
+		assert_true(ItemDB.is_placeable(id), "%s 该可放置" % id)
+		assert_not_null(ArtCache.get_inventory_icon(id), "%s 该有图标" % id)
+
+
+func test_hammer_recipes_exist() -> void:
+	for id in _HAMMERS:
+		var r = RecipeDB.get_recipe(id)
+		assert_not_null(r, "%s 该有合成配方" % id)
+		assert_eq(r.output_id, id, "%s 配方产出该是自己" % id)
+
+
+func test_hammer_and_wall_have_chinese_names() -> void:
+	for id in _HAMMERS:
+		assert_true(CraftingPanel._ZH_NAMES.has(id), "%s 该有中文名 (漏了显英文)" % id)
+	for id in ["dirt_wall", "grass_wall"]:
+		assert_true(CraftingPanel._ZH_NAMES.has(id), "%s 该有中文名" % id)
+
+
+func test_wall_delta_persists_through_unload_reload() -> void:
+	var cm = ChunkManagerClass.new()
+	add_child_autofree(cm)
+	cm.setup(99)
+	cm.ensure_loaded(0)
+	# 找 chunk 0 里一个有墙的格 (地表往下), 砸掉它
+	var found := false
+	var test_x := 0
+	var test_y := 0
+	for x in range(0, 30):
+		for y in range(100, 200):
+			if cm.get_wall(x, y) != Tiles.AIR:
+				test_x = x
+				test_y = y
+				found = true
+				break
+		if found:
+			break
+	assert_true(found, "chunk 0 该有墙可测")
+	cm.set_wall(test_x, test_y, Tiles.AIR)   # 砸墙
+	assert_eq(cm.get_wall(test_x, test_y), Tiles.AIR, "砸完该没墙")
+	# 卸载再加载 → 墙该还是被砸掉的 (delta 持久)
+	cm.unload_far_from(999, 1)   # 把 chunk 0 卸了
+	assert_false(cm.is_chunk_loaded(0), "chunk 0 该已卸载")
+	cm.ensure_loaded(0)          # 重新加载
+	assert_eq(cm.get_wall(test_x, test_y), Tiles.AIR, "重载后砸掉的墙不该回来 (wall delta 生效)")

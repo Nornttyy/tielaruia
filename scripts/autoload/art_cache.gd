@@ -301,6 +301,7 @@ func _build_items() -> void:
 		item_icons["%s_dagger" % tier] = ItemsArt.get_icon("%s_dagger" % tier)
 		item_icons["%s_pickaxe" % tier] = ItemsArt.get_icon("%s_pickaxe" % tier)
 		item_icons["%s_axe" % tier] = ItemsArt.get_icon("%s_axe" % tier)
+		item_icons["%s_hammer" % tier] = ItemsArt.get_icon("%s_hammer" % tier)
 
 
 func _build_doors() -> void:
@@ -391,6 +392,8 @@ const _ITEM_TO_TILE := {
 	"wood_platform": BlocksArt.WOOD_PLATFORM,
 	"wood_wall": BlocksArt.WOOD_WALL,    # 木墙: 真木板纹路
 	"stone_wall": BlocksArt.STONE_WALL,
+	"dirt_wall": BlocksArt.DIRT_WALL,
+	"grass_wall": BlocksArt.GRASS_WALL,
 	"rope": BlocksArt.ROPE,
 	"jungle_dirt": BlocksArt.JUNGLE_DIRT,
 	"snow_dirt": BlocksArt.SNOW_DIRT,

@@ -50,6 +50,8 @@ const CURRENT_VERSION := 4
 @export var hotbar_selection: int = 0
 # chunk_x → Dictionary<Vector2i, tid>。Vector2i 是 (local_x, world_y)。
 @export var chunk_deltas: Dictionary = {}
+# 玩家改过的背景墙 (砸墙/放墙). 结构同 chunk_deltas, 但存墙 id. 独立存防跟 tile 串.
+@export var wall_deltas: Dictionary = {}
 # 实体快照: [{"type": "slime"|"villager"|"item_drop", "position": Vector2, ...}]
 @export var entities: Array = []
 # 箱子内容: "x,y" (tile world coord) → Array<24>{item_id, count} or null

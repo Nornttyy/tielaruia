@@ -860,6 +860,48 @@ const _RECIPES := [
 		"output_count": 4,
 		"mirror_ok": false,
 	},
+	# === 锤子 (破墙): 形状 X X X / X X . / . X . (区别于镐 XXX/.X./.X. 和斧 XX./XX./.X.)
+	# 头=材质, 柄=planks. 木锤全 planks 也不撞木镐 (silhouette 不同).
+	{
+		"id": "wood_hammer", "grid_size": Vector2i(3, 3),
+		"pattern": [["planks","planks","planks"], ["planks","planks",""], ["","planks",""]],
+		"output_id": "wood_hammer", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "stone_hammer", "grid_size": Vector2i(3, 3),
+		"pattern": [["stone","stone","stone"], ["stone","stone",""], ["","planks",""]],
+		"output_id": "stone_hammer", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "copper_hammer", "grid_size": Vector2i(3, 3),
+		"pattern": [["copper_ingot","copper_ingot","copper_ingot"], ["copper_ingot","copper_ingot",""], ["","planks",""]],
+		"output_id": "copper_hammer", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "iron_hammer", "grid_size": Vector2i(3, 3),
+		"pattern": [["iron_ingot","iron_ingot","iron_ingot"], ["iron_ingot","iron_ingot",""], ["","planks",""]],
+		"output_id": "iron_hammer", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "silver_hammer", "grid_size": Vector2i(3, 3),
+		"pattern": [["silver_ingot","silver_ingot","silver_ingot"], ["silver_ingot","silver_ingot",""], ["","planks",""]],
+		"output_id": "silver_hammer", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "gold_hammer", "grid_size": Vector2i(3, 3),
+		"pattern": [["gold_ingot","gold_ingot","gold_ingot"], ["gold_ingot","gold_ingot",""], ["","planks",""]],
+		"output_id": "gold_hammer", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "diamond_hammer", "grid_size": Vector2i(3, 3),
+		"pattern": [["diamond","diamond","diamond"], ["diamond","diamond",""], ["","planks",""]],
+		"output_id": "diamond_hammer", "output_count": 1, "mirror_ok": true,
+	},
+	{
+		"id": "hell_hammer", "grid_size": Vector2i(3, 3),
+		"pattern": [["hell_alloy_ingot","hell_alloy_ingot","hell_alloy_ingot"], ["hell_alloy_ingot","hell_crystal_ingot",""], ["","hell_alloy_ingot",""]],
+		"output_id": "hell_hammer", "output_count": 1, "mirror_ok": true,
+	},
 ]
 
 
