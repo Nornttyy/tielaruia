@@ -362,6 +362,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 废弃矿井: 2-3 个/中世界, 地下深层 30 格水平木走廊 + 木支柱 + 1-2 宝箱 + 蜘蛛.
 	_place_mineshaft_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
+	# 草斜坡: 1 格台阶拐角铺斜砖 (在装饰草前, 装饰草检测 AIR 不会铺到斜砖上)
+	_place_slopes_chunk(c, chunk_heights, chunk_x, chunk_width, height)
+
 	# 装饰小草: GRASS 上方 AIR + 15% 概率长 PLANT_GRASS (用户要求草地点缀)
 	_place_grass_decor_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
@@ -1472,6 +1475,30 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 # ===== 装饰小草 =====
 # 草地表面 (GRASS + 上方 AIR) 偶发长 PLANT_GRASS. 用户要求 "增大平原 + 加小草".
 # 概率: 每列 15%. 挖掉: 80% 啥都没 / 20% wheat_seed (tile_data PROPS 已配)
+# 草地表 1 格台阶 → 拐角铺草斜砖 (Phase 2a). 只本 chunk 内相邻对 (跨 chunk 缝留 2b).
+# h 越小越高. h1=h0-1 (向右升) → ◢ 放低列(x)上方; h1=h0+1 (向左升) → ◣ 放低列(x+1)上方.
+static func _place_slopes_chunk(c, chunk_heights: Dictionary,
+		chunk_x: int, chunk_width: int, height: int) -> void:
+	var chunk_start: int = chunk_x * chunk_width
+	for local_x in range(chunk_width - 1):
+		var wx: int = chunk_start + local_x
+		var h0: int = chunk_heights.get(wx, -1)
+		var h1: int = chunk_heights.get(wx + 1, -1)
+		if h0 < 2 or h1 < 2:
+			continue
+		# 只草地表削坡 (两列顶都是 GRASS)
+		if c.tiles[local_x][h0] != Tiles.GRASS or c.tiles[local_x + 1][h1] != Tiles.GRASS:
+			continue
+		if h1 == h0 - 1:
+			# 向右升: ◢ 放低列 (local_x) 地表上方那格 (y = h1 = h0-1), 仅当是空气
+			if c.tiles[local_x][h1] == Tiles.AIR:
+				c.tiles[local_x][h1] = Tiles.GRASS_SLOPE_R
+		elif h1 == h0 + 1:
+			# 向左升: ◣ 放低列 (local_x+1) 地表上方那格 (y = h0 = h1-1)
+			if c.tiles[local_x + 1][h0] == Tiles.AIR:
+				c.tiles[local_x + 1][h0] = Tiles.GRASS_SLOPE_L
+
+
 static func _place_grass_decor_chunk(c: Chunk, chunk_heights: Dictionary,
 		world_seed: int, chunk_x: int, chunk_width: int, height: int) -> void:
 	var chunk_start: int = chunk_x * chunk_width
