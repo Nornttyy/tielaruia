@@ -119,6 +119,7 @@ func _build_blocks() -> void:
 		BlocksArt.SANDSTONE,
 		BlocksArt.MANA_CRYSTAL,
 		BlocksArt.BED, BlocksArt.BED_RIGHT,
+		BlocksArt.GRASS_SLOPE_R, BlocksArt.GRASS_SLOPE_L,
 		BlocksArt.WHEAT_0, BlocksArt.WHEAT_1, BlocksArt.WHEAT_2, BlocksArt.WHEAT_3,
 		BlocksArt.PLANT_GRASS,
 		BlocksArt.CLOUD,

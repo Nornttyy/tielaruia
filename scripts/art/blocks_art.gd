@@ -53,6 +53,8 @@ const SANDSTONE := 63       # 砂岩 (暖黄, 有层纹, 金字塔骨架)
 const MANA_CRYSTAL := 64    # 魔力水晶 (蓝紫五角星, 矿洞偶发)
 const BED := 65             # 床·左半 (床头柱+枕头, 锚点/掉落/复活点)
 const BED_RIGHT := 87       # 床·右半 (床尾柱+被子), 跟 BED 凑成 2 格宽床
+const GRASS_SLOPE_R := 92   # 草斜坡·升向右 ◢
+const GRASS_SLOPE_L := 93   # 草斜坡·升向左 ◣
 # 小麦 4 阶段 (菜园 v1)
 const WHEAT_0 := 66         # 苗 (1-2 高小绿点)
 const WHEAT_1 := 67         # 小 (3 高小芽)
@@ -2244,8 +2246,50 @@ const _CACTUS_BODY := [
 	"....dGgyhgGd.w..",
 ]
 
+# 草斜砖 ◢ 升向右: 左上透明(.), 沿对角一条 2px 草带(g 暖绿基/m 中暖绿), 右下泥身(d).
+# 每行 = (15-y) 个 '.' + "gm" + 其余 'd' (y=0 行只有 1 格 grass). 泥身先纯 d, 速度斑点留 2c.
+const _GRASS_SLOPE_R := [
+	"...............g",
+	"..............gm",
+	".............gmd",
+	"............gmdd",
+	"...........gmddd",
+	"..........gmdddd",
+	".........gmddddd",
+	"........gmdddddd",
+	".......gmddddddd",
+	"......gmdddddddd",
+	".....gmddddddddd",
+	"....gmdddddddddd",
+	"...gmddddddddddd",
+	"..gmdddddddddddd",
+	".gmddddddddddddd",
+	"gmdddddddddddddd",
+]
+# 草斜砖 ◣ 升向左: 右上透明, 对角草带在右, 左下泥身. = _GRASS_SLOPE_R 每行水平镜像.
+const _GRASS_SLOPE_L := [
+	"g...............",
+	"mg..............",
+	"dmg.............",
+	"ddmg............",
+	"dddmg...........",
+	"ddddmg..........",
+	"dddddmg.........",
+	"ddddddmg........",
+	"dddddddmg.......",
+	"ddddddddmg......",
+	"dddddddddmg.....",
+	"ddddddddddmg....",
+	"dddddddddddmg...",
+	"ddddddddddddmg..",
+	"dddddddddddddmg.",
+	"ddddddddddddddmg",
+]
+
 const _PATTERN_MAP := {
 	GRASS: [_GRASS, _P_GRASS],
+	GRASS_SLOPE_R: [_GRASS_SLOPE_R, _P_GRASS],
+	GRASS_SLOPE_L: [_GRASS_SLOPE_L, _P_GRASS],
 	DIRT: [_DIRT, _P_DIRT],
 	STONE: [_STONE, _P_STONE],
 	SAND: [_SAND, _P_SAND],
