@@ -29,6 +29,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 	# 滚轮: 设置里选 — 切快捷栏物品 (默认) 或 缩放摄像头
 	if event is InputEventMouseButton and event.pressed:
+		# 合成/箱子(含创造物品大全)面板开着时, 滚轮留给面板里的列表滚动, 别缩放摄像机/切快捷栏
+		if _is_inventory_ui_open():
+			return
 		var zoom_mode: bool = GameSettings != null and GameSettings.scroll_wheel_zoom
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			if zoom_mode:
@@ -40,6 +43,17 @@ func _unhandled_input(event: InputEvent) -> void:
 				GameSettings.camera_zoom = GameSettings.camera_zoom - 0.1   # 下滚 = 拉远 (缩小)
 			else:
 				set_hotbar_selection((hotbar_selected + 1) % 9)
+
+
+# 合成/箱子面板任一打开 → 滚轮归面板里的列表滚动 (不缩放摄像机, 不切快捷栏)
+func _is_inventory_ui_open() -> bool:
+	var c: Node = get_tree().get_first_node_in_group("crafting_panel")
+	var ch: Node = get_tree().get_first_node_in_group("chest_panel")
+	if c != null and c.has_method("is_open") and c.is_open():
+		return true
+	if ch != null and ch.has_method("is_open") and ch.is_open():
+		return true
+	return false
 
 
 func set_hotbar_selection(idx: int) -> void:
