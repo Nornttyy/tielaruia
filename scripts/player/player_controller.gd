@@ -82,6 +82,8 @@ func _ready() -> void:
 	sprite.sprite_frames = ArtCache.player_frames
 	sprite.play("idle")
 	add_to_group("player")
+	# 斜坡: 默认 floor_max_angle=45° 正好卡边界, 45° 斜砖会被当墙. 调到 ~51° 让斜面算地面能走上去.
+	floor_max_angle = 0.90
 	# 连受击信号
 	var hp: Node = get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_signal("damaged"):
