@@ -27,6 +27,6 @@ func test_camera_zoom_setting_applies_to_camera() -> void:
 	GameSettings.camera_zoom = 1.6   # 拉近
 	await wait_frames(2)
 	assert_almost_eq(camera.zoom.x, 1.6, 0.01, "改 camera_zoom → 摄像机 zoom 跟着变 (拉近)")
-	GameSettings.camera_zoom = 0.6   # 拉远
+	GameSettings.camera_zoom = 0.8   # 拉远到最小档 (范围已改 0.8~2.0, 0.6 会被夹到 0.8)
 	await wait_frames(2)
-	assert_almost_eq(camera.zoom.x, 0.6, 0.01, "改 camera_zoom → 摄像机 zoom 跟着变 (拉远)")
+	assert_almost_eq(camera.zoom.x, 0.8, 0.01, "改 camera_zoom → 摄像机 zoom 跟着变 (拉远)")
