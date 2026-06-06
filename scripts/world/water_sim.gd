@@ -2,7 +2,7 @@
 # 外部 (挖方块/放水/下雨) 标 dirty, 下次 tick 重新计算重力 + 横向均衡. 体积守恒.
 extends Node
 
-const TICK_INTERVAL := 0.12         # 用户要求流速快 (0.35→0.12 = 3x 更快)
+const TICK_INTERVAL := 0.05         # 流速: 每 0.05s 流一步 (0.12→0.05, 再快 ~2.4x; 用户嫌慢)
 const MAX_TILES_PER_TICK := 300     # 保留 300/tick 上限防 web 单帧爆
 const LAVA_TICK_DIVISOR := 3        # 岩浆每 3 个 tick 才流一步 (≈ 0.36s, 慢吞吞)
 const SOURCE_TICK_DIVISOR := 2      # 水源块每 2 拍灌一次 (温柔水流 + 省 CPU)
