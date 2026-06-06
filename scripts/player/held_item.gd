@@ -176,9 +176,9 @@ func play_swing_directional(target_angle: float) -> void:
 	var mouse_on_right: bool = cos(target_angle) >= 0.0
 	set_facing(mouse_on_right)  # 跟鼠标走, 不跟玩家走路方向
 	_attack_locked = true
-	var s: float = 1.0 if _facing_right else -1.0
-	# wrapf 把 base 归一到 [-PI, PI), 防止 facing_left + target_left 的 -7PI/4 那种值
-	var base: float = wrapf(s * (target_angle + PI / 2.0), -PI, PI)
+	# 不乘 facing 符号: 剑尖在中心列, 水平翻转不改变剑尖方向; 乘 s 会让"瞄左"和"瞄右"算出同一个
+	# base → 永远往同一边挥 (= 用户报的"瞄左却往右挥" bug, 跟 play_thrust 早先修过的同款 s 反向 bug).
+	var base: float = wrapf(target_angle + PI / 2.0, -PI, PI)
 	var start_a: float = base - deg_to_rad(110.0)
 	var end_a:   float = base + deg_to_rad(110.0)
 	rotation = start_a
