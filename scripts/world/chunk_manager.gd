@@ -15,6 +15,7 @@ const MANA_CRYSTAL_PER_PLAYER := 5    # 每玩家 5 颗 (100 base + 5×20 = 200 
 const MANA_CRYSTAL_MIN_DIST := 60     # 比 life_crystal 离得更远 (更稀有)
 
 var world_seed: int = 0
+var view_radius: int = ChunkConstants.VIEW_RADIUS   # 可调: 加载界面按设备测速调大 (默认 2 = 老行为)
 var _loaded: Dictionary = {}    # chunk_x: int → Chunk
 var _deltas: Dictionary = {}    # chunk_x: int → Dict[Vector2i → tid]
 # 生命水晶世界限制: 跨 chunk 总量上限 + 最小间距.
@@ -75,10 +76,30 @@ func current_mana_crystal_cap() -> int:
 
 # 加载 center_cx ± VIEW_RADIUS 范围内的 chunks
 func ensure_loaded(center_cx: int) -> void:
-	var radius: int = ChunkConstants.VIEW_RADIUS
+	var radius: int = view_radius
 	for cx in range(center_cx - radius, center_cx + radius + 1):
 		if not _loaded.has(cx):
 			_load_chunk(cx)
+
+
+func loaded_count() -> int:
+	return _loaded.size()
+
+
+func is_loaded(cx: int) -> bool:
+	return _loaded.has(cx)
+
+
+# 生成单个 chunk (没载过才生成). 加载界面分帧预载用.
+func load_one(cx: int) -> void:
+	if not _loaded.has(cx):
+		_load_chunk(cx)
+
+
+# 一次生成 center ± radius 全部 chunk (同步; 测试 + 同步预载用; 分帧版在加载界面循环 load_one).
+func preload_around(center_cx: int, radius: int) -> void:
+	for cx in range(center_cx - radius, center_cx + radius + 1):
+		load_one(cx)
 
 
 # 卸载超出 keep_radius 的 chunks

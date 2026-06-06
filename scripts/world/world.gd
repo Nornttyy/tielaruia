@@ -867,7 +867,7 @@ func _check_chunk_load() -> void:
 	if pcx != _last_player_chunk_x:
 		_last_player_chunk_x = pcx
 		chunk_manager.ensure_loaded(pcx)
-		chunk_manager.unload_far_from(pcx, ChunkConstants.VIEW_RADIUS + 1)
+		chunk_manager.unload_far_from(pcx, chunk_manager.view_radius + 1)
 
 
 func _on_chunk_loaded(c: Chunk) -> void:
@@ -1008,27 +1008,31 @@ func _on_chunk_unloaded(cx: int) -> void:
 # 找任何地表 (草/沙/雪/丛林/沼泽) 上方 3 格空气. 先 chunk 0, 再扫 ±2 chunk.
 # 大世界 (world_size=2) biome 拉远 1.6x, chunk 0 可能落进雪/丛林/沼泽, 之前只认
 # GRASS/SAND → 找不到 → 玩家埋在 (0, 100) 石头里 → 拿不到 starter + 不能动 + 小地图不扩.
-func _find_spawn_in_loaded() -> Vector2i:
-	var surface_tiles := {
-		Tiles.GRASS: true, Tiles.SAND: true,
-		Tiles.SNOW: true, Tiles.JUNGLE_GRASS: true,
-		Tiles.SWAMP_GRASS: true, Tiles.MUD: true,
+# 该列"真地表" y: 最顶上的实心 tile, 且它是地表类 (草/沙/雪/泥); 否则 -1.
+# 关键: 只看"最顶实心" → 洞里的方块 (顶上还压着实心地) 永远不会被误选 →
+# 修"出生在矿洞" bug: 老逻辑扫到第一个"地表类+上面3格空"就用, 会把洞里被挖空的深处沙/泥当地表.
+static func _surface_y_of_column(col: Array) -> int:
+	var surf := {
+		Tiles.GRASS: true, Tiles.SAND: true, Tiles.SNOW: true,
+		Tiles.JUNGLE_GRASS: true, Tiles.SWAMP_GRASS: true, Tiles.MUD: true,
 	}
+	for y in range(1, col.size()):
+		if col[y] != Tiles.AIR:
+			return y if surf.has(col[y]) else -1   # 最顶实心: 是地表类才出生, 否则跳过这列
+	return -1
+
+
+func _find_spawn_in_loaded() -> Vector2i:
 	for cx in [0, -1, 1, -2, 2]:
 		var ch: Chunk = chunk_manager.get_chunk(cx)
 		if ch == null:
 			continue
 		for lx in ch.tiles.size():
-			var col: Array = ch.tiles[lx]
-			for y in range(3, col.size() - 1):
-				if not surface_tiles.has(col[y]):
-					continue
-				if col[y - 1] != Tiles.AIR \
-						or col[y - 2] != Tiles.AIR \
-						or col[y - 3] != Tiles.AIR:
-					continue
-				var wx: int = cx * ChunkConstants.CHUNK_WIDTH + lx
-				return Vector2i(wx, y - 1)
+			var sy: int = _surface_y_of_column(ch.tiles[lx])
+			if sy < 0:
+				continue
+			var wx: int = cx * ChunkConstants.CHUNK_WIDTH + lx
+			return Vector2i(wx, sy - 1)
 	# 兜底: (0, 50) 比 (0, 100) 安全 — 至少在地表附近高空, 落下到地面
 	return Vector2i(0, 50)
 
