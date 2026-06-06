@@ -53,6 +53,7 @@ const TILE_SIZE := 12
 
 const MINIMAP_VIEW_TILES_X := 60  # 屏幕能看到的横向 tile (1280px / 0.8 zoom / 12 ≈ 133, 用 60 覆盖近视野)
 const MINIMAP_VIEW_TILES_Y := 40  # 纵向 (覆盖屏幕高度)
+const MINIMAP_REVEAL_ADJ := 4     # 玩家旁边 ±这么多格永远露 (黑暗里也看得到脚下一圈); 其余要被天光照到才露
 const MINIMAP_MARK_INTERVAL := 0.25  # 每 0.25s 标记一次玩家周围. 玩家 0.25s 走 ~1 tile,
                                      # minimap 也跟得上, 但循环 18x14 tile 的成本省 60%
 
@@ -736,7 +737,13 @@ func _mark_explored_around_player() -> void:
 	var pty: int = int(floor(player.global_position.y / TILE_SIZE))
 	var hx: int = MINIMAP_VIEW_TILES_X / 2
 	var hy: int = MINIMAP_VIEW_TILES_Y / 2
-	minimap_data.mark_rect(chunk_manager, ptx - hx, pty - hy, ptx + hx, pty + hy)
+	# 只露"被天光照到的方块" + "玩家旁边一圈" (像探照灯/迷雾; 黑暗深处没走近不露).
+	for wx in range(ptx - hx, ptx + hx + 1):
+		for wy in range(pty - hy, pty + hy + 1):
+			if absi(wx - ptx) <= MINIMAP_REVEAL_ADJ and absi(wy - pty) <= MINIMAP_REVEAL_ADJ:
+				minimap_data.mark_one(chunk_manager, wx, wy)        # 玩家旁边一圈
+			elif SkyLightGrid.is_sky_exposed(wx, wy):
+				minimap_data.mark_one(chunk_manager, wx, wy)        # 被天光照到
 
 
 func _physics_process(_delta: float) -> void:

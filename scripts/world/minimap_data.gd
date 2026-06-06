@@ -31,6 +31,22 @@ func mark(world_x: int, world_y: int, tile_id: int) -> void:
 	_tiles[cx] = bm
 
 
+# 单格揭图 (按光照/玩家旁边逐格揭用). 含 chunk未载跳过 / 已探索跳过 / 联机别人水晶藏 (跟 mark_rect 一致).
+func mark_one(chunk_mgr: Node, world_x: int, world_y: int) -> void:
+	if world_y < 0 or world_y >= ChunkConstants.WORLD_HEIGHT:
+		return
+	var cx: int = Chunk.chunk_x_of(world_x)
+	if chunk_mgr.has_method("is_chunk_loaded") and not chunk_mgr.is_chunk_loaded(cx):
+		return   # chunk 没载, 别拿 AIR 误标成洞穴
+	if is_explored(world_x, world_y):
+		return   # 已探索, 省一次 get_tile
+	var tid: int = chunk_mgr.get_tile(world_x, world_y)
+	if (tid == Tiles.LIFE_CRYSTAL or tid == Tiles.MANA_CRYSTAL) \
+			and chunk_mgr.has_method("is_my_crystal") and not chunk_mgr.is_my_crystal(Vector2i(world_x, world_y)):
+		tid = Tiles.AIR
+	mark(world_x, world_y, tid)
+
+
 # 标记矩形范围 (玩家移动时一次刷一片). 用 chunk_mgr 查每格 tile_id 写入缓存.
 # 联机: 别人家的水晶在小地图也别露馅, 替换成 AIR.
 # perf:

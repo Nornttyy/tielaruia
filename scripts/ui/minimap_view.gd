@@ -16,8 +16,7 @@ var view_tiles_x: int = MAP_PIXEL_WIDTH / ZOOM_DEFAULT
 var view_tiles_y: int = MAP_PIXEL_HEIGHT / ZOOM_DEFAULT
 
 # 大地图相关 (尺寸固定不可调; 滚轮在大地图状态不生效)
-const FULLSCREEN_ZOOM := 8     # 大地图每 tile 8px (视野约 160x90 tile, 比角落小地图广得多 = 扩张看更多)
-                              # (原 24 太大: 大地图反而比小地图更放大, 只看到玩家旁边一小片)
+const FULLSCREEN_ZOOM := 24    # 大地图每 tile 24px (tile 大显示, 视野约 50x30 tile)
 const FULLSCREEN_SCALE := 1.0  # 大地图占整个屏幕
 var _fullscreen: bool = false
 var _saved_zoom: int = ZOOM_DEFAULT
