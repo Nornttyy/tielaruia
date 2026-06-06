@@ -10,9 +10,15 @@ const TileLightGrid = preload("res://scripts/world/tile_light_grid.gd")
 
 const TILE_SIZE := 12
 # 纹理大小动态算: viewport_size / (camera_zoom * TILE_SIZE) + buffer.
-# 最小 zoom 0.5 (摄像机调小看更远) → 视野 ~160×90 tiles, 我们准备 200×120 上限.
-const MAX_W := 180             # zoom 0.5 视野 160 tile + buffer
-const MAX_H := 116              # 720/(0.5*16) = 90 + buffer
+# 上限必须盖住"拉到最远"(camera_zoom 最小 0.5) 的整屏, 否则屏幕边缘那圈没黑暗层覆盖 =
+# 中间有阴影、边上却太亮没阴影 (用户报). 注意 TILE_SIZE=12 不是 16:
+#   宽: 1280/(0.5*12) = 214 tile, + BUFFER*2(16) = 230  → 取 240 留余量
+#   高:  720/(0.5*12) = 120 tile, + BUFFER*2(16) = 136  → 取 144 留余量
+# (旧值 180×116 是按 TILE=16 误算的, 比实际视野小 → 边缘漏盖.)
+# 重算是 4Hz 节流 (UPDATE_INTERVAL), 且默认 zoom 0.8 只需 ~149×91 远小于上限,
+# 故调大上限不影响正常游玩开销, 只在真拉到最远时才用满。
+const MAX_W := 240
+const MAX_H := 144
 const BUFFER_TILES := 8
 const UPDATE_INTERVAL := 0.25   # 原值 (用户要求调回 4Hz)
 
