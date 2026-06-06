@@ -95,6 +95,7 @@ func _build_blocks() -> void:
 		BlocksArt.LOG_TOP, BlocksArt.LOG_ROOT_L, BlocksArt.LOG_ROOT_R,
 		BlocksArt.BRANCH_L, BlocksArt.BRANCH_R,
 		BlocksArt.WATER_L1, BlocksArt.WATER_L2, BlocksArt.WATER_L3,
+		BlocksArt.WATER_L4, BlocksArt.WATER_L5, BlocksArt.WATER_L6, BlocksArt.WATER_L7,
 		BlocksArt.WATER_SOURCE,
 		BlocksArt.CHEST,
 		BlocksArt.DOOR_TOP, BlocksArt.DOOR_MID, BlocksArt.DOOR_OPEN,
@@ -143,6 +144,18 @@ func _build_blocks() -> void:
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L3:
 			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(3))
+			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
+		elif tile_id == BlocksArt.WATER_L4:
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(4))
+			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
+		elif tile_id == BlocksArt.WATER_L5:
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(5))
+			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
+		elif tile_id == BlocksArt.WATER_L6:
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(6))
+			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
+		elif tile_id == BlocksArt.WATER_L7:
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(7))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_DESERT or tile_id == BlocksArt.WATER_JUNGLE \
 				or tile_id == BlocksArt.WATER_SWAMP:
