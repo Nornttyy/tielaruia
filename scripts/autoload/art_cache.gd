@@ -117,7 +117,7 @@ func _build_blocks() -> void:
 		BlocksArt.HELL_ALLOY_ORE,
 		BlocksArt.SANDSTONE,
 		BlocksArt.MANA_CRYSTAL,
-		BlocksArt.BED,
+		BlocksArt.BED, BlocksArt.BED_RIGHT,
 		BlocksArt.WHEAT_0, BlocksArt.WHEAT_1, BlocksArt.WHEAT_2, BlocksArt.WHEAT_3,
 		BlocksArt.PLANT_GRASS,
 		BlocksArt.CLOUD,

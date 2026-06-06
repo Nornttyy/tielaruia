@@ -51,7 +51,8 @@ const LIFE_CRYSTAL := 61    # 生命水晶 (用户加, _PATTERN_MAP 引用了, �
 const HELL_ALLOY_ORE := 62  # 地狱合金矿 (深紫黑 + 银闪点)
 const SANDSTONE := 63       # 砂岩 (暖黄, 有层纹, 金字塔骨架)
 const MANA_CRYSTAL := 64    # 魔力水晶 (蓝紫五角星, 矿洞偶发)
-const BED := 65             # 床 (木框 + 红被 + 白枕)
+const BED := 65             # 床·左半 (床头柱+枕头, 锚点/掉落/复活点)
+const BED_RIGHT := 87       # 床·右半 (床尾柱+被子), 跟 BED 凑成 2 格宽床
 # 小麦 4 阶段 (菜园 v1)
 const WHEAT_0 := 66         # 苗 (1-2 高小绿点)
 const WHEAT_1 := 67         # 小 (3 高小芽)
@@ -1767,23 +1768,43 @@ const _P_BED := {
 }
 
 
-# 床: 16x16 横放矩形, 透明上半 + 下方床体. 左端白枕头, 中右红被子, 木框.
+# 床·左半 16x16: 床头柱 + 大白枕 + 红被起 + 左脚 (右沿不封口, 接右半)
 const _BED := [
-	"................",
+	".BB.............",
 	".BB.............",
 	".Bb.............",
 	".Bb.............",
 	".Bb.............",
-	".Bb.............",
-	".BBBBBBBBBBBBBB.",
-	"BbWWwRRHRRRRRRrB",
-	"BbWWWRRRRRRHRRrB",
-	"BbWWwRRRRRRRRRrB",
-	"BbRRRrrrrrrrrrrB",
-	".BBBBBBBBBBBBBB.",
-	".B............B.",
-	".B............B.",
-	"BB............BB",
+	".BBBBBBBBBBBBBBB",
+	".BbWWWwwRRHRRRRR",
+	".BbWWWWWRRRRRRRR",
+	".BbWWWwwRRRRRRRR",
+	".BbRRRRrrrrrrrrr",
+	".BBBBBBBBBBBBBBB",
+	".B..............",
+	".B..............",
+	"BB..............",
+	"................",
+	"................",
+]
+
+# 床·右半 16x16: 红被续 + 床尾柱 + 右脚 (左沿不封口, 接左半)
+const _BED_RIGHT := [
+	".............BB.",
+	".............Bb.",
+	".............Bb.",
+	".............Bb.",
+	".............Bb.",
+	"BBBBBBBBBBBBBBB.",
+	"RRRRRRRRRHRRRRrB",
+	"HRRRRRRRRRRRRRrB",
+	"RRRRRHRRRRRRRRrB",
+	"rrrrrrrrrrrrrrrB",
+	"BBBBBBBBBBBBBBB.",
+	"..............B.",
+	"..............B.",
+	".............BB.",
+	"................",
 	"................",
 ]
 
@@ -2296,7 +2317,8 @@ const _PATTERN_MAP := {
 	HELL_ALLOY_ORE: [_HELL_ALLOY_ORE, _P_HELL_ALLOY_ORE],   # 地狱合金矿 (紫黑+银)
 	SANDSTONE: [_SANDSTONE, _P_SANDSTONE],                  # 砂岩 (暖黄+层纹)
 	CLOUD: [_CLOUD, _P_CLOUD],                              # 云块 (白软, 空岛岛体)
-	BED: [_BED, _P_BED],                                    # 床 (木框 + 红被 + 白枕)
+	BED: [_BED, _P_BED],                                    # 床·左半 (床头+枕)
+	BED_RIGHT: [_BED_RIGHT, _P_BED],                        # 床·右半 (被子+床尾)
 	# 菜园: 小麦 4 阶段 (共用调色板, pattern 不同)
 	WHEAT_0: [_WHEAT_0, _P_WHEAT],
 	WHEAT_1: [_WHEAT_1, _P_WHEAT],

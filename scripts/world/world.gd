@@ -751,8 +751,8 @@ func sleep_in_bed(tile: Vector2i) -> void:
 		TimeOfDay.time_multiplier = 10.0   # 在床上时间永远 10x (不分白天黑夜)
 	var player := get_player()
 	if player != null:
-		# 把玩家挪到床上 (否则站床边躺, 看着不像"躺床上")
-		player.global_position = Vector2((float(tile.x) + 0.5) * TILE_SIZE, (float(tile.y) + 1.0) * TILE_SIZE)
+		# 把玩家挪到床中央 (2 格宽: tile 是左格, +1.0 = 左右两格接缝 = 床正中)
+		player.global_position = Vector2((float(tile.x) + 1.0) * TILE_SIZE, (float(tile.y) + 1.0) * TILE_SIZE)
 		_sleep_anchor_x = player.global_position.x
 		_sleep_armed = false   # 等触发睡觉那次点击松开才允许按键唤醒
 		# 睡觉期间禁止玩家移动 + 给一个安全 iframe (老 bug: 没锁, 怪打过来 = 任挨打死)
@@ -849,10 +849,11 @@ func _apply_graphics_settings() -> void:
 	# 流水模拟: 关掉 _process 就够了 (水方块还在, 但不流)
 	if water_sim != null:
 		water_sim.set_process(GameSettings.water_sim_enabled)
-	# 摄像机大小: GameSettings.camera_zoom 直接同步到 Camera2D.zoom
-	var cam := get_node_or_null("Camera2D") as Camera2D
-	if cam != null:
-		cam.zoom = Vector2(GameSettings.camera_zoom, GameSettings.camera_zoom)
+	# 摄像机大小: GameSettings.camera_zoom 同步到 Camera2D.zoom.
+	# 用 camera 成员引用, 不能用 get_node("Camera2D") — spawn 时 camera 已 reparent 到玩家下,
+	# 路径查不到 → 缩放设置(滑块/滚轮)全失效. (修"滚轮不缩放"的真根因.)
+	if camera != null:
+		camera.zoom = Vector2(GameSettings.camera_zoom, GameSettings.camera_zoom)
 
 
 # _on_lightning_flash 已删 (跟雨一起)

@@ -31,7 +31,7 @@ func test_sleep_anytime_10x_lies_down_no_autowake() -> void:
 	assert_almost_eq(TimeOfDay.time_multiplier, 10.0, 0.01, "在床上时间永远 10x")
 	assert_almost_eq(ctx["sprite"].rotation, -PI / 2.0, 0.01, "睡觉动作: 躺下")
 	assert_not_null(world._sleep_zzz, "头顶有 Zzz")
-	assert_almost_eq(ctx["player"].global_position.x, (5.0 + 0.5) * TILE, 1.5, "玩家挪到床上")
+	assert_almost_eq(ctx["player"].global_position.x, (5.0 + 1.0) * TILE, 1.5, "玩家挪到床中央 (2格宽床, +1.0=接缝)")
 	# 不自动醒 (没按键): 等几帧仍在睡 (10x 时间会跑, 但不该把人叫醒)
 	await wait_frames(3)
 	assert_true(world._sleeping, "不按键不该醒 (白天也是, 按任意键才下床)")
