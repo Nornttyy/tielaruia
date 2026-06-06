@@ -70,13 +70,14 @@ func test_grass_on_surface_dirt_below():
 					or t == Tiles.LEAVES or t == Tiles.LEAVES_PINE \
 					or t == Tiles.LEAVES_AUTUMN \
 					or t == Tiles.CACTUS or t == Tiles.CACTUS_BODY \
-					or t == Tiles.PLANT_GRASS \
-					or Tiles.is_slope(t):
+					or t == Tiles.PLANT_GRASS:
 				continue
+			# 斜砖自带草顶, 本身就是合法草地表 (它下面已换成泥土), 直接收
 			assert_true(
 				t == Tiles.GRASS or t == Tiles.SAND \
-					or t == Tiles.SNOW or t == Tiles.JUNGLE_GRASS or t == Tiles.SWAMP_GRASS,
-				"列 %d 的地表 tile 应是 grass/sand/snow/jungle_grass/swamp_grass，实际 %d" % [x, t]
+					or t == Tiles.SNOW or t == Tiles.JUNGLE_GRASS or t == Tiles.SWAMP_GRASS \
+					or Tiles.is_slope(t),
+				"列 %d 的地表 tile 应是 grass/sand/snow/jungle_grass/swamp_grass/斜砖，实际 %d" % [x, t]
 			)
 			break
 

@@ -1499,10 +1499,16 @@ static func _place_slopes_chunk(c, chunk_heights: Dictionary,
 			# 向右升: ◢ 放低列 (local_x) 地表上方那格 (y = h1 = h0-1), 仅当是空气
 			if c.tiles[local_x][h1] == Tiles.AIR:
 				c.tiles[local_x][h1] = Tiles.GRASS_SLOPE_R
+				# 斜砖下面那格原本是低列的草地表, 换成泥土 (斜坡从泥坎里斜出来, 不留夹层草)
+				if c.tiles[local_x][h0] == Tiles.GRASS:
+					c.tiles[local_x][h0] = Tiles.DIRT
 		elif h1 == h0 + 1:
 			# 向左升: ◣ 放低列 (local_x+1) 地表上方那格 (y = h0 = h1-1)
 			if c.tiles[local_x + 1][h0] == Tiles.AIR:
 				c.tiles[local_x + 1][h0] = Tiles.GRASS_SLOPE_L
+				# 斜砖下面那格 (= 低列 h1 草地表) 换成泥土
+				if c.tiles[local_x + 1][h1] == Tiles.GRASS:
+					c.tiles[local_x + 1][h1] = Tiles.DIRT
 
 
 static func _place_grass_decor_chunk(c: Chunk, chunk_heights: Dictionary,

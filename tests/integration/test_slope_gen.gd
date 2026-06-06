@@ -30,6 +30,8 @@ func test_step_up_right_places_slope_r() -> void:
 	WorldGenerator._place_slopes_chunk(c, heights, 0, 4, H)
 	# ◢ 应放在低列(0)地表上方那格 (0, 19)
 	assert_eq(c.tiles[0][19], Tiles.GRASS_SLOPE_R, "向右升 → ◢ 放 (0,19)")
+	# 斜砖下面那格 (0,20) 原是草地表, 应换成泥土
+	assert_eq(c.tiles[0][20], Tiles.DIRT, "◢ 下面那格换成泥土")
 
 func test_step_up_left_places_slope_l() -> void:
 	var H := 40
@@ -43,6 +45,8 @@ func test_step_up_left_places_slope_l() -> void:
 	WorldGenerator._place_slopes_chunk(c, heights, 0, 4, H)
 	# 列1(h=19) vs 列2(h=20): h1=h0+1 → ◣ 放低列(2)地表上方那格 (2,19)
 	assert_eq(c.tiles[2][19], Tiles.GRASS_SLOPE_L, "向左升 → ◣ 放 (2,19)")
+	# 斜砖下面那格 (2,20) 原是草地表, 应换成泥土
+	assert_eq(c.tiles[2][20], Tiles.DIRT, "◣ 下面那格换成泥土")
 
 func test_flat_no_slope() -> void:
 	var H := 40
