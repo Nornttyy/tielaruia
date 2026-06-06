@@ -92,10 +92,10 @@ var water_sim_enabled: bool = true:
 		_save_and_emit()
 
 # camera_zoom: 摄像机大小 (越小看得越远, 越大看得越近). World 的 Camera2D 同步.
-# 默认 0.8 (跟原值一致). 范围 0.5 (远视野) ~ 2.5 (近距离).
+# 默认 0.8. 范围 0.8 (远视野/最缩) ~ 2.0 (近距离/最放大) — 用户要求. 滚轮/滑块都走这个 clamp.
 var camera_zoom: float = 0.8:
 	set(v):
-		var clamped: float = clampf(v, 0.5, 2.5)
+		var clamped: float = clampf(v, 0.8, 2.0)
 		if camera_zoom == clamped: return
 		camera_zoom = clamped
 		_save_and_emit()
@@ -204,7 +204,7 @@ func _load() -> void:
 	show_parallax = true   # 远山+矿洞背景, 不卡
 	show_flocks = false    # 鸟蝠 perf: 36 sprite × 2 每帧 sin 扑翼, 默认关
 	water_sim_enabled = true
-	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 0.8)), 0.5, 2.5)
+	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 0.8)), 0.8, 2.0)
 	# 语言: 只接受 4 个支持的代码, 其他值退回中文
 	var saved_lang: String = String(cfg.get_value("locale", "language", "zh"))
 	current_language = saved_lang if ["zh", "en", "ja", "ko"].has(saved_lang) else "zh"
