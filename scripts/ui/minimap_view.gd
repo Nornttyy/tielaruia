@@ -26,6 +26,8 @@ const _TILE_COLORS := {
 	# air 在地下 = 洞 (深紫), 视觉上区分 "已探索的实心" vs "已探索的空洞"
 	Tiles.AIR:           Color8(20, 18, 28),     # 深紫黑 = 洞穴
 	Tiles.GRASS:         Color8(90, 165, 70),    # 草绿
+	Tiles.GRASS_SLOPE_R: Color8(90, 165, 70),    # 草斜坡: 跟草同色
+	Tiles.GRASS_SLOPE_L: Color8(90, 165, 70),
 	Tiles.DIRT:          Color8(120, 88, 60),    # 泥棕
 	Tiles.STONE:         Color8(135, 130, 125),  # 石灰
 	Tiles.DEEP_STONE:    Color8(85, 80, 78),     # 深石更深灰
