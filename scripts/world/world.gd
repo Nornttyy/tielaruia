@@ -849,10 +849,11 @@ func _apply_graphics_settings() -> void:
 	# 流水模拟: 关掉 _process 就够了 (水方块还在, 但不流)
 	if water_sim != null:
 		water_sim.set_process(GameSettings.water_sim_enabled)
-	# 摄像机大小: GameSettings.camera_zoom 直接同步到 Camera2D.zoom
-	var cam := get_node_or_null("Camera2D") as Camera2D
-	if cam != null:
-		cam.zoom = Vector2(GameSettings.camera_zoom, GameSettings.camera_zoom)
+	# 摄像机大小: GameSettings.camera_zoom 同步到 Camera2D.zoom.
+	# 用 camera 成员引用, 不能用 get_node("Camera2D") — spawn 时 camera 已 reparent 到玩家下,
+	# 路径查不到 → 缩放设置(滑块/滚轮)全失效. (修"滚轮不缩放"的真根因.)
+	if camera != null:
+		camera.zoom = Vector2(GameSettings.camera_zoom, GameSettings.camera_zoom)
 
 
 # _on_lightning_flash 已删 (跟雨一起)
