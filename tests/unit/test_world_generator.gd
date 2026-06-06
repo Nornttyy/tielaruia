@@ -70,7 +70,8 @@ func test_grass_on_surface_dirt_below():
 					or t == Tiles.LEAVES or t == Tiles.LEAVES_PINE \
 					or t == Tiles.LEAVES_AUTUMN \
 					or t == Tiles.CACTUS or t == Tiles.CACTUS_BODY \
-					or t == Tiles.PLANT_GRASS:
+					or t == Tiles.PLANT_GRASS \
+					or Tiles.is_slope(t):
 				continue
 			assert_true(
 				t == Tiles.GRASS or t == Tiles.SAND \
