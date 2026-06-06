@@ -1495,7 +1495,7 @@ static func _place_grass_decor_chunk(c: Chunk, chunk_heights: Dictionary,
 		var above_y: int = surf - 1
 		if above_y < 0 or c.tiles[local_x][above_y] != Tiles.AIR:
 			continue
-		if rng.randf() < 0.15:
+		if rng.randf() < 0.5:   # 草地大面积长草须 (0.15→0.5, 用户要"更像泰拉瑞亚不那么方")
 			c.tiles[local_x][above_y] = Tiles.PLANT_GRASS
 
 
