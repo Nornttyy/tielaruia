@@ -191,16 +191,19 @@ func _step_chunks() -> void:
 	chunk_manager.setup(world_seed)
 	chunk_manager.chunk_loaded.connect(_on_chunk_loaded)
 	chunk_manager.chunk_unloaded.connect(_on_chunk_unloaded)
+	# water_sim 必须在 ensure_loaded 之前建好: 否则初始区块加载触发的 _on_chunk_loaded 里
+	# "if water_sim != null" 唤醒+settle 整块被跳过 → 出生点周围生成的悬空水永远没被叫醒不流
+	# (修 test_water_settles). water_sim 只依赖 world=self, 提前建无副作用.
+	water_sim = WaterSimClass.new()
+	water_sim.name = "WaterSim"
+	water_sim.world = self
+	add_child(water_sim)
 	# 初始加载中心 ±VIEW_RADIUS
 	chunk_manager.ensure_loaded(0)
 
 
 func _step_fx_layers() -> void:
-	# 流水模拟: dirty 列表驱动, 接 chunk_manager + _set_tile
-	water_sim = WaterSimClass.new()
-	water_sim.name = "WaterSim"
-	water_sim.world = self
-	add_child(water_sim)
+	# 流水模拟 water_sim 已在 _step_chunks 里 (ensure_loaded 之前) 创建, 这里不再重复建.
 	minimap_data = MinimapDataClass.new()
 	minimap_data.name = "MinimapData"
 	add_child(minimap_data)
