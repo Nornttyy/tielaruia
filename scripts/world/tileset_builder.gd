@@ -67,6 +67,7 @@ static func build() -> TileSet:
 		Tiles.SANDSTONE,
 		Tiles.MANA_CRYSTAL,
 		Tiles.BED, Tiles.BED_RIGHT,
+		Tiles.GRASS_SLOPE_R, Tiles.GRASS_SLOPE_L,
 		# 菜园 + 装饰
 		Tiles.WHEAT_0, Tiles.WHEAT_1, Tiles.WHEAT_2, Tiles.WHEAT_3,
 		Tiles.PLANT_GRASS,
@@ -96,7 +97,17 @@ static func build() -> TileSet:
 		else:
 			# 非 autotile: 单 cell
 			source.create_tile(Vector2i.ZERO)
-			if Tiles.is_solid(tile_id):
+			if Tiles.is_slope(tile_id):
+				# 斜砖: 三角形碰撞 (实心半边). ◢ 右下三角 / ◣ 左下三角.
+				var spts: PackedVector2Array
+				if tile_id == Tiles.GRASS_SLOPE_R:
+					spts = PackedVector2Array([Vector2(-6, 6), Vector2(6, 6), Vector2(6, -6)])
+				else:  # GRASS_SLOPE_L ◣
+					spts = PackedVector2Array([Vector2(-6, 6), Vector2(6, 6), Vector2(-6, -6)])
+				var sprops = source.get_tile_data(Vector2i.ZERO, 0)
+				sprops.add_collision_polygon(0)
+				sprops.set_collision_polygon_points(0, 0, spts)
+			elif Tiles.is_solid(tile_id):
 				var props = source.get_tile_data(Vector2i.ZERO, 0)
 				props.add_collision_polygon(0)
 				props.set_collision_polygon_points(0, 0, PackedVector2Array([
