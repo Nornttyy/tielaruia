@@ -611,6 +611,34 @@ func is_solid(tile_id: int) -> bool:
 	return _PROPS[tile_id].solid
 
 
+# 植物 / 非实心装饰 (树·叶·草·仙人掌·蘑菇·火把·庄稼等). 生成背景墙时跳过这些格 (用户: 墙除了植物).
+const _PLANT_TILES := {
+	LOG: true, LOG_TOP: true, LOG_ROOT_L: true, LOG_ROOT_R: true, BRANCH_L: true, BRANCH_R: true,
+	LEAVES: true, LEAVES_PINE: true, LEAVES_AUTUMN: true, JUNGLE_LEAVES: true,
+	CACTUS: true, CACTUS_BODY: true, MUSHROOM: true, HELL_FRUIT: true,
+	TORCH: true, SLIME_TORCH: true, ROPE: true, PLANT_GRASS: true,
+	WHEAT_0: true, WHEAT_1: true, WHEAT_2: true, WHEAT_3: true,
+	RICE_0: true, RICE_1: true, RICE_2: true, RICE_3: true,
+}
+func is_plant(tile_id: int) -> bool:
+	return _PLANT_TILES.has(tile_id)
+
+
+# 是不是背景墙 tile (4 种). 加新墙改这里.
+func is_wall_tile(tile_id: int) -> bool:
+	return tile_id == GRASS_WALL or tile_id == DIRT_WALL \
+			or tile_id == STONE_WALL or tile_id == WOOD_WALL
+
+
+# 砸墙掉落的物品 id (锤子破墙用). 无对应返 "".
+const _WALL_DROP := {
+	GRASS_WALL: "grass_wall", DIRT_WALL: "dirt_wall",
+	STONE_WALL: "stone_wall", WOOD_WALL: "wood_wall",
+}
+func wall_drop_item(wall_id: int) -> String:
+	return _WALL_DROP.get(wall_id, "")
+
+
 # 是不是矿石 (洞穴/火山挖掘时跳过, 别把稀有矿吞掉). 加新矿石只改这里.
 func is_ore(tile_id: int) -> bool:
 	return tile_id == COAL_ORE or tile_id == IRON_ORE or tile_id == COPPER_ORE \
