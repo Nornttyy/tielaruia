@@ -292,6 +292,9 @@ func _apply_save_data(data: Resource) -> void:
 		w.bed_spawn_point = data.bed_spawn_point
 	# 恢复玩家挖/放的 chunk 改动 (写 _deltas, 之后 chunk 加载时会应用)
 	SaveManager.apply_chunk_deltas(w.chunk_manager, data.chunk_deltas)
+	# 恢复玩家砸/放的背景墙 (老存档没字段则跳过)
+	if "wall_deltas" in data:
+		SaveManager.apply_wall_deltas(w.chunk_manager, data.wall_deltas)
 	# 恢复生命水晶世界限计数 + 已处理 chunk 列表 + 位置 (防 chunk 重载又 cap)
 	if data.version >= 2 and w.chunk_manager != null:
 		w.chunk_manager.life_crystals_spawned = data.life_crystals_spawned

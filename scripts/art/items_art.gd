@@ -2200,13 +2200,53 @@ const _GRAPPLING_HOOK := [
 ]
 
 
+# === 锤子 (8 tier): 一个模板 + 按材质换色字母批量生成, 不手画 8 个 ===
+# 每项 = [暗(边), 主(填), 亮(高光)] 调色板字母 (复用各材质镐用的字母).
+const _HAMMER_MATS := {
+	"wood_hammer":    ["I", "y", "Y"],
+	"stone_hammer":   ["x", "V", "v"],
+	"copper_hammer":  ["J", "C", "p"],
+	"iron_hammer":    ["e", "E", "F"],
+	"silver_hammer":  ["s", "d", "d"],
+	"gold_hammer":    ["R", "Z", "P"],
+	"diamond_hammer": ["T", "N", "Q"],
+	"hell_hammer":    ["#", "@", "Z"],
+}
+
+# 锤子 16×16: 上方大方头 (n 描边 + 高光带 + 主体 + 暗底) + 垂直木柄.
+static func _hammer_grid(mats: Array) -> Array:
+	var d: String = mats[0]
+	var m: String = mats[1]
+	var h: String = mats[2]
+	return [
+		"................",
+		"..nnnnnnnnnnnn..",
+		"..n" + h.repeat(10) + "n..",
+		"..n" + m.repeat(10) + "n..",
+		"..n" + m.repeat(10) + "n..",
+		"..n" + d.repeat(10) + "n..",
+		"..nnnnnnnnnnnn..",
+		"......nhin......",
+		"......nhin......",
+		"......nhin......",
+		"......nhin......",
+		"......nhin......",
+		"......nhin......",
+		"......nKKn......",
+		"................",
+		"................",
+	]
+
+
 static func get_icon(item_id: String) -> ImageTexture:
+	if _HAMMER_MATS.has(item_id):
+		return PixelArt.grid_to_texture(_hammer_grid(_HAMMER_MATS[item_id]), PALETTE)
 	assert(_ICONS.has(item_id), "未知物品 icon: %s" % item_id)
 	return PixelArt.grid_to_texture(_ICONS[item_id], PALETTE)
 
 
 static func has_icon(item_id: String) -> bool:
-	return _ICONS.has(item_id)
+	return _ICONS.has(item_id) or _HAMMER_MATS.has(item_id)
 
 
 # 钩爪飞行时显示的小钩头 (16x16, 默认朝右; sprite 用 rotation 跟方向).

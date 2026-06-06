@@ -18,6 +18,7 @@ var world_seed: int = 0
 var view_radius: int = ChunkConstants.VIEW_RADIUS   # 可调: 加载界面按设备测速调大 (默认 2 = 老行为)
 var _loaded: Dictionary = {}    # chunk_x: int → Chunk
 var _deltas: Dictionary = {}    # chunk_x: int → Dict[Vector2i → tid]
+var _wall_deltas: Dictionary = {}  # chunk_x → Dict[Vector2i → wall_id]; 独立于 _deltas (同 key 不串)
 # 生命水晶世界限制: 跨 chunk 总量上限 + 最小间距.
 # spawned = 已放出数 (含被吃的). processed_chunks = 已查过 cap 的 chunk_x.
 # positions = 所有已放水晶世界坐标 (用 Vector2i 存 — 即使被吃也保留, 防 "原位置再生").
@@ -117,6 +118,8 @@ func _load_chunk(cx: int) -> void:
 	# 应用之前累积的 delta (如果有). 玩家挖过的 chest tile delta 优先, 不会再 spawn 物品.
 	if _deltas.has(cx):
 		c.apply_delta(_deltas[cx])
+	if _wall_deltas.has(cx):
+		c.apply_wall_delta(_wall_deltas[cx])
 	# 生命水晶上限检查: chunk 第一次加载时扫所有 LIFE_CRYSTAL, 超量的换成 AIR + 记 delta.
 	# 已 processed 的 chunk 跳过 (避免重载时重复计数).
 	if not processed_chunks.has(cx):
@@ -246,6 +249,17 @@ func set_tile(world_x: int, world_y: int, tid: int) -> void:
 	if not _deltas.has(cx):
 		_deltas[cx] = {}
 	_deltas[cx][Vector2i(lx, world_y)] = tid
+
+
+# 写背景墙 + 记 wall delta (砸墙/放墙后卸载再加载能恢复). 跟 set_tile 平行.
+func set_wall(world_x: int, world_y: int, wid: int) -> void:
+	var cx: int = Chunk.chunk_x_of(world_x)
+	var lx: int = Chunk.local_x_of(world_x)
+	if _loaded.has(cx):
+		_loaded[cx].set_wall(lx, world_y, wid)
+	if not _wall_deltas.has(cx):
+		_wall_deltas[cx] = {}
+	_wall_deltas[cx][Vector2i(lx, world_y)] = wid
 
 
 func is_chunk_loaded(cx: int) -> bool:

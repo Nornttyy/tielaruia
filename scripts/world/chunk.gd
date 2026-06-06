@@ -76,6 +76,13 @@ func apply_delta(delta: Dictionary) -> void:
 		set_tile(v.x, v.y, delta[k])
 
 
+# 玩家改过的背景墙 (砸墙/放墙) 重放. 跟 tile delta 独立 (各存各的).
+func apply_wall_delta(delta: Dictionary) -> void:
+	for k in delta:
+		var v: Vector2i = k
+		set_wall(v.x, v.y, delta[k])
+
+
 static func chunk_x_of(world_x: int) -> int:
 	return int(floor(float(world_x) / float(ChunkConstants.CHUNK_WIDTH)))
 

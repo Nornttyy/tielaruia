@@ -1740,6 +1740,32 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 		_apply_sand_fall(x, y)
 
 
+# 改背景墙 (锤子砸墙 / 放墙). 更新 chunk_manager 墙数据 (含 wall delta 存档) +
+# wall_layer 视觉 + 邻居 autotile. 墙无碰撞, 不动 terrain/光照/流水.
+func _set_wall(x: int, y: int, wid: int) -> void:
+	const Autotile = preload("res://scripts/world/autotile.gd")
+	const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
+	chunk_manager.set_wall(x, y, wid)
+	var pos := Vector2i(x, y)
+	if wid == Tiles.AIR:
+		wall_layer.erase_cell(pos)
+	elif EdgeTemplates.FAMILY_OF.has(wid):
+		var wq := Autotile.make_wall_query(wid, chunk_manager)
+		Autotile.refresh_tile(wall_layer, pos, wid, wq)
+	else:
+		wall_layer.set_cell(pos, wid, Vector2i.ZERO)
+	# 刷 8 邻居 (它们的 autotile 边缘 mask 可能因这格变化)
+	for dy in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+			var npos: Vector2i = pos + Vector2i(dx, dy)
+			var nsid: int = wall_layer.get_cell_source_id(npos)
+			if nsid != -1 and EdgeTemplates.FAMILY_OF.has(nsid):
+				var nq := Autotile.make_wall_query(nsid, chunk_manager)
+				Autotile.refresh_tile(wall_layer, npos, nsid, nq)
+
+
 # 沙子物理: (x, y_air) 这格变 AIR 后, 上方第一格如果是 SAND 就下落 1 格,
 # 然后新空出来的格继续找 SAND, 链式直到上方没沙了.
 # 每次落, 生成一个 0.15s 的下落动画 (沙色方块从原位 tween 到新位).
