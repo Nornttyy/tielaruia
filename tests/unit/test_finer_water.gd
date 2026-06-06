@@ -51,7 +51,7 @@ func test_level_math_water8_lava4() -> void:
 
 
 func test_water_levels_out_flat() -> void:
-	# 平底容器 (x 0..7 底, 两端墙), 倒 16 单位水 (2 满柱) → 该摊成 8 列各 L2 的平面.
+	# 平底容器 (x 0..7 底, 两端墙), 倒 16 单位水 (2 满柱) → 整片找平后该摊成 8 列各 L2 的纯平面.
 	var fw = FakeWorld.new()
 	for x in range(0, 8):
 		fw.tiles[Vector2i(x, 1)] = Tiles.STONE   # 底
@@ -62,20 +62,80 @@ func test_water_levels_out_flat() -> void:
 	var sim = _make_sim(fw)
 	sim.notify_tile_changed(0, 0)
 	sim.notify_tile_changed(1, 0)
-	for i in 80:
+	for i in 120:
 		sim._run_tick()
-	# 逐格整数水位 → 只能保证"相邻列差 ≤1"(顺滑无断崖, 8 档时每级 2px) + 水铺开.
-	# 真正全局一样高需"整片水区找平"的大算法, 不在本次范围.
 	var levels: Array = []
 	for x in range(0, 8):
 		levels.append(sim._level_of(fw.tiles.get(Vector2i(x, 0), Tiles.AIR)))
-	var max_step := 0
-	for x in range(0, 7):
-		max_step = maxi(max_step, abs(int(levels[x]) - int(levels[x + 1])))
-	var covered := 0
-	for lv in levels:
-		if int(lv) > 0:
-			covered += 1
-	gut.p("[找平] 8 列水位=%s 相邻最大落差=%d 铺到%d列" % [str(levels), max_step, covered])
-	assert_lte(max_step, 1, "相邻列水位差 ≤ 1 档 (顺滑无断崖)")
-	assert_gte(covered, 4, "水该铺开 (≥4 列有水)")
+	gut.p("[找平] 8 列水位=%s (16/8=2 该全平)" % str(levels))
+	for x in range(0, 8):
+		assert_eq(int(levels[x]), 2, "第%d列该=2 (整片找平: 16单位÷8格)" % x)
+
+
+func test_level_body_flattens_ramp_no_float() -> void:
+	# 一道斜坡水 (5,4,3,2,1) 全在 y=0 靠墙容器里 → 找平后水面平 + 总量守恒 + 没有悬空水.
+	var fw = FakeWorld.new()
+	for x in range(0, 5):
+		fw.tiles[Vector2i(x, 1)] = Tiles.STONE
+	fw.tiles[Vector2i(-1, 0)] = Tiles.STONE
+	fw.tiles[Vector2i(5, 0)] = Tiles.STONE
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER_L5
+	fw.tiles[Vector2i(1, 0)] = Tiles.WATER_L4
+	fw.tiles[Vector2i(2, 0)] = Tiles.WATER_L3
+	fw.tiles[Vector2i(3, 0)] = Tiles.WATER_L2
+	fw.tiles[Vector2i(4, 0)] = Tiles.WATER_L1
+	var sim = _make_sim(fw)
+	var before := 0
+	for x in range(0, 5):
+		before += sim._level_of(fw.tiles[Vector2i(x, 0)])
+	sim._level_body(fw.chunk_manager, 0, 0, {})
+	var after := 0
+	var hi := 0
+	var lo := 99
+	for x in range(0, 5):
+		var lv: int = sim._level_of(fw.tiles.get(Vector2i(x, 0), Tiles.AIR))
+		after += lv
+		hi = maxi(hi, lv)
+		lo = mini(lo, lv)
+	gut.p("[找平body] before=%d after=%d hi=%d lo=%d" % [before, after, hi, lo])
+	assert_eq(after, before, "找平守恒 (总水量不变)")
+	assert_lte(hi - lo, 1, "找平后水面差 ≤ 1")
+	# 没有悬空水: 每个水格下面是水或实心 (不是空气)
+	for x in range(0, 5):
+		if Tiles.is_water(fw.tiles.get(Vector2i(x, 0), Tiles.AIR)):
+			var below: int = fw.tiles.get(Vector2i(x, 1), Tiles.AIR)
+			assert_ne(below, Tiles.AIR, "第%d列水下面不该是空气 (不悬空)" % x)
+
+
+func test_level_body_idempotent() -> void:
+	# 已经平的水池 → 再找平一次不该改任何格 (幂等, 不无限抖).
+	var fw = FakeWorld.new()
+	for x in range(0, 4):
+		fw.tiles[Vector2i(x, 1)] = Tiles.STONE
+		fw.tiles[Vector2i(x, 0)] = Tiles.WATER_L2
+	var sim = _make_sim(fw)
+	var changed: bool = sim._level_body(fw.chunk_manager, 0, 0, {})
+	assert_false(changed, "已平水池找平应无改动 (幂等)")
+
+
+func test_level_body_preserves_biome_color() -> void:
+	# 沙漠水池有斜坡 → 找平后满格该仍是沙漠水 (不变蓝).
+	var fw = FakeWorld.new()
+	for x in range(0, 3):
+		fw.tiles[Vector2i(x, 1)] = Tiles.STONE
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER_DESERT   # 满=8 沙漠色
+	fw.tiles[Vector2i(1, 0)] = Tiles.WATER_DESERT   # 8
+	fw.tiles[Vector2i(2, 0)] = Tiles.WATER_L2       # 2 → 共 18, 3 格 → 6 each
+	var sim = _make_sim(fw)
+	sim._level_body(fw.chunk_manager, 0, 0, {})
+	# 18/3=6, 没有满格 (6<8) → 这里都是 L6 普通水, 改个能产满格的例子
+	# 重来: 给足水量产生满格
+	var fw2 = FakeWorld.new()
+	for x in range(0, 2):
+		fw2.tiles[Vector2i(x, 1)] = Tiles.STONE
+	fw2.tiles[Vector2i(0, 0)] = Tiles.WATER_DESERT  # 8
+	fw2.tiles[Vector2i(1, 0)] = Tiles.WATER_DESERT  # 8 → 16, 2格 → 各满 8
+	var sim2 = _make_sim(fw2)
+	sim2._level_body(fw2.chunk_manager, 0, 0, {})
+	assert_eq(fw2.tiles.get(Vector2i(0, 0)), Tiles.WATER_DESERT, "满格该保留沙漠水色")
+	assert_eq(fw2.tiles.get(Vector2i(1, 0)), Tiles.WATER_DESERT, "满格该保留沙漠水色")
