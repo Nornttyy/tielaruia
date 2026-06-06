@@ -362,8 +362,9 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 废弃矿井: 2-3 个/中世界, 地下深层 30 格水平木走廊 + 木支柱 + 1-2 宝箱 + 蜘蛛.
 	_place_mineshaft_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
-	# 草斜坡: 1 格台阶拐角铺斜砖 (在装饰草前, 装饰草检测 AIR 不会铺到斜砖上)
-	_place_slopes_chunk(c, chunk_heights, chunk_x, chunk_width, height)
+	# 草斜坡: 1 格台阶拐角铺斜砖 (在装饰草前, 装饰草检测 AIR 不会铺到斜砖上).
+	# 出生点附近 16 格保持平整 (玩家在地表最高 tile 出生, 不要踩斜坡).
+	_place_slopes_chunk(c, chunk_heights, chunk_x, chunk_width, height, 16)
 
 	# 装饰小草: GRASS 上方 AIR + 15% 概率长 PLANT_GRASS (用户要求草地点缀)
 	_place_grass_decor_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
@@ -1477,11 +1478,16 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 # 概率: 每列 15%. 挖掉: 80% 啥都没 / 20% wheat_seed (tile_data PROPS 已配)
 # 草地表 1 格台阶 → 拐角铺草斜砖 (Phase 2a). 只本 chunk 内相邻对 (跨 chunk 缝留 2b).
 # h 越小越高. h1=h0-1 (向右升) → ◢ 放低列(x)上方; h1=h0+1 (向左升) → ◣ 放低列(x+1)上方.
+# spawn_flat_cells>0: 出生点 (world_x≈0) 附近 |wx|<spawn_flat_cells 不铺坡, 保持平整 —
+# 玩家在地表最高 tile 出生, 斜砖会顶成出生点导致玩家踩斜坡 (蚯蚓挖洞也有同款 spawn 保护).
 static func _place_slopes_chunk(c, chunk_heights: Dictionary,
-		chunk_x: int, chunk_width: int, height: int) -> void:
+		chunk_x: int, chunk_width: int, height: int, spawn_flat_cells: int = 0) -> void:
 	var chunk_start: int = chunk_x * chunk_width
 	for local_x in range(chunk_width - 1):
 		var wx: int = chunk_start + local_x
+		# 出生区保持平地 (两列任一落在 flat 带就跳过这对)
+		if spawn_flat_cells > 0 and (absi(wx) < spawn_flat_cells or absi(wx + 1) < spawn_flat_cells):
+			continue
 		var h0: int = chunk_heights.get(wx, -1)
 		var h1: int = chunk_heights.get(wx + 1, -1)
 		if h0 < 2 or h1 < 2:
