@@ -93,9 +93,13 @@ const LOG_ROOT_L := 30      # 树根 左
 const LOG_ROOT_R := 31      # 树根 右
 const BRANCH_L := 32        # 侧枝 向左 (带末端小叶簇)
 const BRANCH_R := 33        # 侧枝 向右
-const WATER_L1 := 34        # 1/4 水位
-const WATER_L2 := 35        # 2/4 水位
-const WATER_L3 := 36        # 3/4 水位
+const WATER_L1 := 34        # 1/8 水位
+const WATER_L2 := 35        # 2/8 水位
+const WATER_L3 := 36        # 3/8 水位
+const WATER_L4 := 88        # 4/8 水位 (细水位升级)
+const WATER_L5 := 89        # 5/8 水位
+const WATER_L6 := 90        # 6/8 水位
+const WATER_L7 := 91        # 7/8 水位
 const CHEST := 37           # 箱子
 const DOOR_TOP := 38        # 门顶 (DOOR 底 / DOOR_MID 中 / DOOR_TOP 顶, 3 格高门)
 const DOOR_MID := 84        # 门中段
@@ -2284,6 +2288,10 @@ const _PATTERN_MAP := {
 	WATER_L1: [_WATER, _P_WATER],
 	WATER_L2: [_WATER, _P_WATER],
 	WATER_L3: [_WATER, _P_WATER],
+	WATER_L4: [_WATER, _P_WATER],
+	WATER_L5: [_WATER, _P_WATER],
+	WATER_L6: [_WATER, _P_WATER],
+	WATER_L7: [_WATER, _P_WATER],
 	WATER_SOURCE: [_WATER_SOURCE, _P_WATER_SOURCE],   # 水源块: 湿石泉眼 (实心, 瀑布)
 	CHEST: [_CHEST, _P_CHEST],
 	DOOR_TOP: [_DOOR_TOP_CLOSED, _P_DOOR],
@@ -2403,8 +2411,8 @@ static func water_palette_for(tile_id: int) -> Dictionary:
 # 水位 (1/4, 2/4, 3/4) 动画 atlas: 同样 4 帧但顶部 (4-level)*4 行透明 (水位低).
 # level: 1 = 1/4 满 (顶 12 行透明), 2 = 1/2 满 (顶 8 行透明), 3 = 3/4 满 (顶 4 行透明)
 static func get_water_level_atlas(level: int) -> ImageTexture:
-	assert(level >= 1 and level <= 3, "level 必须 1-3")
-	var clip_rows: int = (4 - level) * 4  # 顶部清除多少行
+	assert(level >= 1 and level <= 7, "level 必须 1-7 (8 档体系)")
+	var clip_rows: int = (8 - level) * 2  # 顶部清除多少行 (16px/8档 = 每档 2px)
 	var frames: Array = [_WATER, _WATER_F1, _WATER_F2, _WATER_F3]
 	var dst := Image.create(64, 16, false, Image.FORMAT_RGBA8)
 	var transparent := Color(0, 0, 0, 0)

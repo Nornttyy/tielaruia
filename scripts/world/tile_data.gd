@@ -37,10 +37,14 @@ const LOG_ROOT_L := 30      # 树根 左侧
 const LOG_ROOT_R := 31      # 树根 右侧
 const BRANCH_L := 32        # 树干侧枝 向左伸
 const BRANCH_R := 33        # 树干侧枝 向右伸
-const WATER_L1 := 34        # 1/4 水位 (流水 level 1)
-const WATER_L2 := 35        # 2/4 水位 (流水 level 2)
-const WATER_L3 := 36        # 3/4 水位 (流水 level 3)
-# WATER (=28) 表示满水 level 4
+const WATER_L1 := 34        # 1/8 水位 (流水 level 1)
+const WATER_L2 := 35        # 2/8 水位 (流水 level 2)
+const WATER_L3 := 36        # 3/8 水位 (流水 level 3)
+# 细水位升级: 水从 4 档→8 档 (更平更顺). WATER (=28) = 满水 level 8.
+const WATER_L4 := 88        # 4/8 水位
+const WATER_L5 := 89        # 5/8 水位
+const WATER_L6 := 90        # 6/8 水位
+const WATER_L7 := 91        # 7/8 水位
 const CHEST := 37           # 箱子: 右键打开 24 格存储, 内容跟存档持久化
 const DOOR_TOP := 38        # 门顶 (DOOR 底 / DOOR_MID 中 / DOOR_TOP 顶, 凑成 3 格高门)
 const DOOR_MID := 84        # 门中段 (3 格门的中间一格)
@@ -355,6 +359,11 @@ const _PROPS := {
 		"solid": false, "mineable": false,
 		"tool_tiers": {}, "drops": [],
 	},
+	# 细水位 4-7 档: 行为同 WATER (非实心/不可挖)
+	WATER_L4: { "solid": false, "mineable": false, "tool_tiers": {}, "drops": [] },
+	WATER_L5: { "solid": false, "mineable": false, "tool_tiers": {}, "drops": [] },
+	WATER_L6: { "solid": false, "mineable": false, "tool_tiers": {}, "drops": [] },
+	WATER_L7: { "solid": false, "mineable": false, "tool_tiers": {}, "drops": [] },
 	# 群系满水: 行为完全同 WATER (只是颜色不同)
 	WATER_DESERT: {
 		"solid": false, "mineable": false,
@@ -613,6 +622,7 @@ func is_ore(tile_id: int) -> bool:
 # 别处 (游泳/钓鱼/小地图/模拟) 一律用 Tiles.is_water(), 别再写 == WATER or == WATER_L1...
 func is_water(tile_id: int) -> bool:
 	return tile_id == WATER or tile_id == WATER_L1 or tile_id == WATER_L2 or tile_id == WATER_L3 \
+			or tile_id == WATER_L4 or tile_id == WATER_L5 or tile_id == WATER_L6 or tile_id == WATER_L7 \
 			or tile_id == WATER_DESERT or tile_id == WATER_JUNGLE or tile_id == WATER_SWAMP
 
 

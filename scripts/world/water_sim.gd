@@ -61,7 +61,7 @@ func add_water(x: int, y: int) -> bool:
 		notify_tile_changed(x, y)
 		return true
 	var L: int = _level_of(tid)
-	if L > 0 and L < 4:
+	if L > 0 and L < 8:   # 水满档=8
 		world._set_water_tile_fast(x, y, _tile_for_level("water", L + 1))
 		notify_tile_changed(x, y)
 		return true
@@ -79,15 +79,30 @@ func _liquid_kind(tid: int) -> String:
 	return ""
 
 
+# 水 8 档 (满=8), 岩浆 4 档 (满=4). 数值 = 体积单位.
 func _level_of(tid: int) -> int:
-	# 满水 (含 3 个群系水) + 满岩浆 = 4
-	if tid == Tiles.WATER or tid == Tiles.LAVA \
+	# 满水 (含 3 个群系水) = 8
+	if tid == Tiles.WATER \
 			or tid == Tiles.WATER_DESERT or tid == Tiles.WATER_JUNGLE or tid == Tiles.WATER_SWAMP:
-		return 4
-	if tid == Tiles.WATER_L3 or tid == Tiles.LAVA_L3: return 3
-	if tid == Tiles.WATER_L2 or tid == Tiles.LAVA_L2: return 2
-	if tid == Tiles.WATER_L1 or tid == Tiles.LAVA_L1: return 1
+		return 8
+	if tid == Tiles.WATER_L7: return 7
+	if tid == Tiles.WATER_L6: return 6
+	if tid == Tiles.WATER_L5: return 5
+	if tid == Tiles.WATER_L4: return 4
+	if tid == Tiles.WATER_L3: return 3
+	if tid == Tiles.WATER_L2: return 2
+	if tid == Tiles.WATER_L1: return 1
+	# 岩浆 4 档
+	if tid == Tiles.LAVA: return 4
+	if tid == Tiles.LAVA_L3: return 3
+	if tid == Tiles.LAVA_L2: return 2
+	if tid == Tiles.LAVA_L1: return 1
 	return 0
+
+
+# 某液种的满档数: 水 8, 岩浆 4.
+func _max_level(kind: String) -> int:
+	return 8 if kind == "water" else 4
 
 
 # chunk 加载唤醒用 ----
@@ -125,7 +140,12 @@ func _tile_for_level(kind: String, L: int) -> int:
 		if L == 2: return Tiles.LAVA_L2
 		if L == 1: return Tiles.LAVA_L1
 		return Tiles.AIR
-	if L >= 4: return Tiles.WATER
+	# 水 8 档
+	if L >= 8: return Tiles.WATER
+	if L == 7: return Tiles.WATER_L7
+	if L == 6: return Tiles.WATER_L6
+	if L == 5: return Tiles.WATER_L5
+	if L == 4: return Tiles.WATER_L4
 	if L == 3: return Tiles.WATER_L3
 	if L == 2: return Tiles.WATER_L2
 	if L == 1: return Tiles.WATER_L1
@@ -208,7 +228,7 @@ func _step_source(cm, x: int, y: int) -> void:
 		return
 	var below: int = cm.get_tile(x, y + 1)
 	var can_fill: bool = below == Tiles.AIR \
-			or (_liquid_kind(below) == "water" and _level_of(below) < 4)
+			or (_liquid_kind(below) == "water" and _level_of(below) < 8)   # 水满档=8
 	if can_fill:
 		world._set_water_tile_fast(x, y + 1, Tiles.WATER)
 		notify_tile_changed(x, y + 1)
@@ -234,6 +254,7 @@ func _step_tile(cm, x: int, y: int) -> void:
 		mark_dirty(x, y)
 		return
 	var L: int = _level_of(tid)
+	var maxlv: int = _max_level(kind)   # 水 8 / 岩浆 4
 	# 重力: 下方
 	var below_tid: int = cm.get_tile(x, y + 1)
 	if below_tid == Tiles.AIR:
@@ -247,8 +268,8 @@ func _step_tile(cm, x: int, y: int) -> void:
 		return
 	if _liquid_kind(below_tid) == kind:
 		var below_L: int = _level_of(below_tid)
-		if below_L < 4:
-			var xfer: int = mini(L, 4 - below_L)
+		if below_L < maxlv:
+			var xfer: int = mini(L, maxlv - below_L)
 			world._set_water_tile_fast(x, y + 1, _tile_for_level(kind, below_L + xfer))
 			var new_L: int = L - xfer
 			if new_L > 0:
@@ -258,43 +279,72 @@ func _step_tile(cm, x: int, y: int) -> void:
 				world._set_water_tile_fast(x, y, Tiles.AIR)
 			notify_tile_changed(x, y + 1)
 			return
-	# 下方堵 → 横向溢流.
-	# L>=2 (深水): 正常往低处溢, 挖开洞会涌出去铺开.
-	# L==1 (薄水): 只往"能继续往下掉"的洞溢 (洞口下面是空气/未满液体), 否则平地上
-	#   一格薄水会左右无限抖 (perf 灾难). 有落差才流 = 挖个通往低处的出口水就淌出去.
-	var lx_tid: int = cm.get_tile(x - 1, y)
-	var rx_tid: int = cm.get_tile(x + 1, y)
-	var candidates: Array = []
-	for nx_pair in [[x - 1, lx_tid], [x + 1, rx_tid]]:
-		var nx: int = nx_pair[0]
-		var nt: int = nx_pair[1]
+	# 下方堵 → 横向. 水: 找平 (摊平铺开像真水); 岩浆: 黏稠 (慢慢挪 1 格, 不像水那样快铺).
+	if kind == "water":
+		_step_water_lateral(cm, x, y, L, maxlv)
+	else:
+		_step_lava_lateral(cm, x, y, L)
+
+
+# 水横向: 往最低的"低≥2 档"邻居挪 1 格 (整数水位下相邻差 1 视为已平 → 不震荡).
+# 8 档 → 阶梯每级 2px, 看着接近平滑. 薄水(L1)只朝有落差的洞流 (挖洞排水, 平地不乱跑).
+# 通知源+目标四邻 → 高水位邻居知道我变低了, 会继续往低处流 (尽量铺平, 不卡住).
+func _step_water_lateral(cm, x: int, y: int, L: int, maxlv: int) -> void:
+	var best_nx: int = -999999
+	var best_nl: int = 99
+	for nx in [x - 1, x + 1]:
+		var nt: int = cm.get_tile(nx, y)
 		var nlev: int = -1
 		if nt == Tiles.AIR:
 			nlev = 0
-		elif _liquid_kind(nt) == kind and _level_of(nt) <= L - 2:
-			# 必须低 ≥2 级才横向流: 否则 L2↔L1 这种差 1 级会无限来回倒 (平地永久震荡 + 耗CPU).
-			# 差 1 级视作已稳定 (整数液位下相邻差 1 是最平的可达状态).
+		elif _liquid_kind(nt) == "water" and _level_of(nt) <= L - 2:
 			nlev = _level_of(nt)
 		if nlev < 0:
 			continue
-		# 薄水防抖: 洞口下面要能落下去 (空气 / 未满同种液体) 才流, 平地不流
 		if L < 2:
 			var bn: int = cm.get_tile(nx, y + 1)
-			var can_fall: bool = bn == Tiles.AIR or (_liquid_kind(bn) == kind and _level_of(bn) < 4)
-			if not can_fall:
+			if not (bn == Tiles.AIR or (_liquid_kind(bn) == "water" and _level_of(bn) < maxlv)):
 				continue
-		candidates.append([nx, nlev])
-	if candidates.is_empty():
+		if nlev < best_nl:
+			best_nl = nlev
+			best_nx = nx
+	if best_nx == -999999:
 		return
-	candidates.sort_custom(func(a, b): return a[1] < b[1])
-	var target: Array = candidates[0]
-	var tx: int = int(target[0])
-	var tL: int = int(target[1])
-	world._set_water_tile_fast(tx, y, _tile_for_level(kind, tL + 1))
-	var nl: int = L - 1
-	if nl > 0:
-		world._set_water_tile_fast(x, y, _tile_for_level(kind, nl))
+	world._set_water_tile_fast(best_nx, y, _tile_for_level("water", best_nl + 1))
+	if L - 1 > 0:
+		world._set_water_tile_fast(x, y, _tile_for_level("water", L - 1))
+	else:
+		world._set_water_tile_fast(x, y, Tiles.AIR)
+	notify_tile_changed(best_nx, y)
+	notify_tile_changed(x, y)
+
+
+# 岩浆横向: 黏稠 — 只往一个最低邻居挪 1 格 (差≥2 才溢; 薄岩浆只朝落差). 不快铺.
+func _step_lava_lateral(cm, x: int, y: int, L: int) -> void:
+	var best_nx: int = -999999
+	var best_nl: int = 99
+	for nx in [x - 1, x + 1]:
+		var nt: int = cm.get_tile(nx, y)
+		var nlev: int = -1
+		if nt == Tiles.AIR:
+			nlev = 0
+		elif _liquid_kind(nt) == "lava" and _level_of(nt) <= L - 2:
+			nlev = _level_of(nt)
+		if nlev < 0:
+			continue
+		if L < 2:
+			var bn: int = cm.get_tile(nx, y + 1)
+			if not (bn == Tiles.AIR or (_liquid_kind(bn) == "lava" and _level_of(bn) < 4)):
+				continue
+		if nlev < best_nl:
+			best_nl = nlev
+			best_nx = nx
+	if best_nx == -999999:
+		return
+	world._set_water_tile_fast(best_nx, y, _tile_for_level("lava", best_nl + 1))
+	if L - 1 > 0:
+		world._set_water_tile_fast(x, y, _tile_for_level("lava", L - 1))
 		mark_dirty(x, y)
 	else:
 		world._set_water_tile_fast(x, y, Tiles.AIR)
-	notify_tile_changed(tx, y)
+	notify_tile_changed(best_nx, y)
