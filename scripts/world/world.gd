@@ -760,10 +760,20 @@ func sleep_in_bed(tile: Vector2i) -> void:
 		var hp = player.get_node_or_null("PlayerHealth")
 		if hp != null:
 			hp._iframe_timer = 999.0  # 睡觉期间无敌, _wake_up 时清
-		# 睡觉动作: 人物躺下 (sprite 转 90°) + 头顶飘 Zzz
+		# 睡觉动作: 人物躺下 + 头顶飘 Zzz
 		var spr = player.get_node_or_null("AnimatedSprite2D")
 		if spr != null:
+			# centered=true 让旋转绕身体中心. 默认 centered=false 是绕角点转, 躺下后身体会甩到
+			# 节点右上方 = "睡觉位置歪". 配合下面 position 把身体中心摆到床面正中.
+			# 醒来 _wake_up 复位成 player.tscn 的站立配置 (centered/offset/position).
+			spr.centered = true
+			spr.offset = Vector2.ZERO
+			spr.position = Vector2(0, -6)   # 身体中心落到床格竖直中部 (节点原点=脚底, 在床格下沿)
 			spr.rotation = -PI / 2.0
+		# 睡觉时藏起手里拿的东西 (躺着还举着剑/方块很怪)
+		var held = player.get_node_or_null("HeldItem")
+		if held != null:
+			held.visible = false
 		_spawn_zzz(player)
 
 
@@ -794,10 +804,17 @@ func _wake_up() -> void:
 		var hp = player.get_node_or_null("PlayerHealth")
 		if hp != null and hp._iframe_timer > 100.0:
 			hp._iframe_timer = 0.5  # 短 iframe 防醒了立刻被怪打
-		# 起身: sprite 复位 (跟睡觉动作对应)
+		# 起身: sprite 复位成 player.tscn 站立配置 (跟 sleep_in_bed 躺下动作一一对应)
 		var spr = player.get_node_or_null("AnimatedSprite2D")
 		if spr != null:
 			spr.rotation = 0.0
+			spr.centered = false
+			spr.offset = Vector2(-6, 0)
+			spr.position = Vector2(0, -30)
+		# 恢复手持物显示 (按当前 hotbar 重新判定显不显示)
+		var held = player.get_node_or_null("HeldItem")
+		if held != null and held.has_method("_refresh"):
+			held._refresh()
 	_remove_zzz()
 
 
