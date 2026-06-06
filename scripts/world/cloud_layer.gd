@@ -22,7 +22,8 @@ func _ready() -> void:
 	scroll_ignore_camera_zoom = true   # 锁屏幕空间, 任何 zoom 都盖满
 	for layer_def in _LAYERS:
 		var pl := ParallaxLayer.new()
-		pl.motion_scale = Vector2(layer_def.motion_scale, layer_def.motion_scale * 0.2)
+		# 云只跟 X 视差, Y=0 → 玩家上下走时云不上下飘 (跟远山一致, 用户要求远背景只左右动)
+		pl.motion_scale = Vector2(layer_def.motion_scale, 0.0)
 		# 极大 mirroring 让云在任何相机位置都能见
 		pl.motion_mirroring = Vector2(2000, 0)
 		add_child(pl)
