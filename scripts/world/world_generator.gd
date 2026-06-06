@@ -401,23 +401,17 @@ static func _protect_sand_caves(c: Chunk, chunk_heights: Dictionary,
 				c.tiles[lx][y] = Tiles.STONE
 
 
-# 按深度给本 chunk 每列填背景墙. 只在"自然矿洞"里 (含周围的岩石) 填墙.
-# - 矿洞 AIR 格: 直接填墙
-# - 矿洞 AIR 周围 R 格内的岩石: 也填墙 (玩家挖矿洞旁边的石头仍能看到墙)
-# - 玩家挖出来的孤立洞 (远离自然矿洞): 背后无墙, 看到的是天空/纯背景色
-# - 地表上方 + 浅层 (前 WALL_HIDE_TOP_TILES 格): 仍无墙
-const WALL_HIDE_TOP_TILES := 3
-const WALL_EXTEND_RADIUS := 3   # 矿洞 AIR 外扩 R 格岩石也填墙 (像泰拉瑞亚)
+# 给本 chunk 每列从地表 surf 往下全填背景墙 (含地表块背后). 天上无墙, 植物格不放墙.
 static func _fill_walls_chunk(c: Chunk, chunk_heights: Dictionary, chunk_width: int, height: int) -> void:
 	var chunk_start_x: int = c.chunk_x * chunk_width
-	# 用户要求: 地底所有方块后面都有墙 (不论 AIR 还是 SOLID)
-	# 唯一例外: 浅层 (surf + WALL_HIDE_TOP_TILES 之上) 仍无墙 — 这样地表才能透天空
+	# 用户要求: 所有方块后面都有墙 (含地表块) — 从地表 surf 往下全铺. 例外:
+	#  - 天上 (y < surf): 无墙, 透天空.
+	#  - 前景是植物 (草/叶/仙人掌/蘑菇/庄稼...): 那格不放墙 (用户: 墙除了植物).
 	for local_x in chunk_width:
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
-		var wall_start: int = surf + WALL_HIDE_TOP_TILES
-		for y in height:
-			if y < wall_start:
+		for y in range(surf, height):
+			if Tiles.is_plant(c.tiles[local_x][y]):
 				continue
 			c.walls[local_x][y] = _wall_for_depth(y, surf)
 
@@ -1495,7 +1489,7 @@ static func _place_grass_decor_chunk(c: Chunk, chunk_heights: Dictionary,
 		var above_y: int = surf - 1
 		if above_y < 0 or c.tiles[local_x][above_y] != Tiles.AIR:
 			continue
-		if rng.randf() < 0.5:   # 草地大面积长草须 (0.15→0.5, 用户要"更像泰拉瑞亚不那么方")
+		if rng.randf() < 0.6:   # 草地大面积长草须 (0.15→0.6, 用户要"更像泰拉瑞亚不那么方")
 			c.tiles[local_x][above_y] = Tiles.PLANT_GRASS
 
 

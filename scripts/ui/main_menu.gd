@@ -833,7 +833,7 @@ func _setup_settings_panel() -> void:
 		value_label.text = "%d" % int(v)
 	)
 	slider.drag_ended.connect(func(_vc: bool): GameSettings.save_now())
-	# 摄像机大小 slider: 0.5 (远视野) ~ 2.5 (近距离), 默认 1.2
+	# 摄像机大小 slider: 0.8 (远视野) ~ 2.0 (近距离). 范围跟 game_settings.camera_zoom clamp 一致.
 	var zoom_slider: HSlider = $SettingsPanel/VBox/ZoomRow/Slider
 	var zoom_value_label: Label = $SettingsPanel/VBox/ZoomRow/ValueLabel
 	zoom_slider.value = GameSettings.camera_zoom

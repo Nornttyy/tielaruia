@@ -4,8 +4,8 @@ extends GutTest
 
 const DarknessLayer = preload("res://scripts/world/darkness_layer.gd")
 
-# camera_zoom 下限 (game_settings.gd clampf 到 0.5..2.5) + project.godot 基准视口.
-const MIN_ZOOM := 0.5
+# camera_zoom 下限 (game_settings.gd clampf 到 0.8..2.0) + project.godot 基准视口.
+const MIN_ZOOM := 0.8
 const VIEWPORT_W := 1280.0
 const VIEWPORT_H := 720.0
 
