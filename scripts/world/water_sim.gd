@@ -249,7 +249,8 @@ func _level_body(cm, sx: int, sy: int, visited: Dictionary) -> bool:
 
 # 立刻把当前所有 dirty 液体一口气流到稳定 (chunk 加载时调: 出现即最终形态, 不看流动过程).
 # 反复跑 tick 直到没有待流的, 或撞到安全上限 (防极端情况卡死加载帧, 剩下的留给实时 sim).
-const SETTLE_MAX_TICKS := 400
+const SETTLE_MAX_TICKS := 1200   # 加载时一次性流到稳的预算 (400→1200): 修时序bug后初始区块的水
+                                 # 终于会苏醒流动, 400 拍排不完会留下水在玩家眼前流; 加载是同步一次性, 宁可稍慢
 func settle_now() -> void:
 	if world == null or world.get("chunk_manager") == null:
 		return
@@ -262,7 +263,7 @@ func settle_now() -> void:
 	var touched: Dictionary = {}   # 这次 settle 碰过的所有格 → 找平时当种子
 	# 逐格流到稳定, 再整片找平; 找平会让边缘冒落差 → 再流再找平, 几轮收敛到纯平.
 	var rounds: int = 0
-	while rounds < 12 and guard < SETTLE_MAX_TICKS:
+	while rounds < 30 and guard < SETTLE_MAX_TICKS:
 		while not _dirty.is_empty() and guard < SETTLE_MAX_TICKS:
 			for k in _dirty.keys():
 				touched[k] = true
@@ -377,6 +378,9 @@ func _step_tile(cm, x: int, y: int) -> void:
 		world._set_water_tile_fast(x, y + 1, _tile_for_level(kind, L))
 		world._set_water_tile_fast(x, y, Tiles.AIR)
 		notify_tile_changed(x, y + 1)
+		# 源变空 → 还要叫醒源正上方的液体 (x,y-1): notify_tile_changed(x,y) 会标到它.
+		# 否则它下面刚空出来却没人重标 dirty → 悬空不流 (修 test_water_settles, 跟横向流分支对称).
+		notify_tile_changed(x, y)
 		# 落水溅花: 实时(非settle) + 桌面 + 限频; 落点正下方是实心/液体 = 砸到底了
 		if kind == "water" and not _in_settle and _tick_n % 4 == 0 and not OS.has_feature("web"):
 			if cm.get_tile(x, y + 2) != Tiles.AIR:
