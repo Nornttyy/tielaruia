@@ -7,7 +7,12 @@ class_name SaveData extends Resource
 # v1 → v2: 加生命水晶, player_max_hp 字段记录吃了几个 crystal 后的上限.
 # v2 → v3: 加 3 件盔甲槽持久化 (armor_helmet/chest/pants item_id). 老存档默认空.
 # v3 → v4: 加魔力 (current+max) + 魔力水晶 spawned/positions.
-const CURRENT_VERSION := 4
+# v4 → v5: 角色系统上线 — 玩家状态 (player_position/hp/max_hp/mana/max_mana/armor_*/
+#          inventory_slots/hotbar_selection) 移到 CharacterData (user://characters/),
+#          由 CharacterManager 管, 跟着角色跨世界。下面这些玩家字段保留定义 (防老 .tres
+#          读不了) 但**作废**: 新存档权威来源是角色卡, main 加载时从 CharacterManager.current
+#          还原玩家, 不再信世界存档里的这些值 (位置仍用世界 spawn/bed)。
+const CURRENT_VERSION := 5
 
 @export var version: int = CURRENT_VERSION
 @export var world_seed: int = 0
@@ -20,6 +25,7 @@ const CURRENT_VERSION := 4
 @export var bed_spawn_point: Vector2i = Vector2i(-99999, -99999)
 # 世界时间 [0, 1) — 0=午夜, 0.35=早晨默认, 0.5=正午, 0.75=傍晚
 @export var world_time: float = 0.35
+# ===== v5 起作废: 以下玩家字段由 CharacterData 接管 (跟角色走), 世界存档不再是权威来源 =====
 @export var player_position: Vector2 = Vector2.ZERO
 @export var player_hp: float = 100.0       # 当前血量
 @export var player_max_hp: int = 100        # 永久上限 (吃水晶能涨到 400)
