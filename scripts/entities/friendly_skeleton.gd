@@ -9,7 +9,7 @@ const AGGRO_RANGE_PX := 280.0
 const CONTACT_DAMAGE := 12
 const HIT_INTERVAL := 0.4         # 同一下别每帧狂扣 (自管节流)
 const LIFETIME_SEC := 15.0        # 临时帮手, 15 秒后消失
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 const JUMP_VY := -220.0
 
 var _life_t: float = 0.0

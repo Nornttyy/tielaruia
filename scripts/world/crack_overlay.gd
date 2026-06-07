@@ -2,7 +2,7 @@
 # 用 dict 索引避免重复 instantiate。
 extends Node2D
 
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 var _active: Dictionary = {}  # Vector2i → Sprite2D
 

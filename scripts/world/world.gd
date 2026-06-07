@@ -50,7 +50,7 @@ const ANIMAL_SPAWN_INTERVAL := 12.0  # 动物刷新更慢
 const SPAWN_RANGE_MIN := 12  # tiles
 const SPAWN_RANGE_MAX := 22
 
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 const MINIMAP_VIEW_TILES_X := 60  # 屏幕能看到的横向 tile (1280px / 0.8 zoom / 12 ≈ 133, 用 60 覆盖近视野)
 const MINIMAP_VIEW_TILES_Y := 40  # 纵向 (覆盖屏幕高度)

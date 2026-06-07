@@ -6,7 +6,7 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 # Terraria 风地狱精英: HP 80 / 18 dmg. 钻剑 4 击, 100HP 玩家被打 6 击死 (含 i-frame).
 const BASE_MAX_HEALTH := 80

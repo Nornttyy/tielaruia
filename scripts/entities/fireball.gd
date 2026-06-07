@@ -5,7 +5,7 @@ extends Area2D
 const DEFAULT_DAMAGE := 14
 const SPEED := 180.0
 const LIFETIME_SEC := 2.0
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 const HIT_RADIUS_PX := 8.0   # 玩家方向手动碰怪距离
 
 var velocity: Vector2 = Vector2.ZERO

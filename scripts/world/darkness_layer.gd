@@ -8,7 +8,7 @@ extends Sprite2D
 
 const TileLightGrid = preload("res://scripts/world/tile_light_grid.gd")
 
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 # 纹理大小动态算: viewport_size / (camera_zoom * TILE_SIZE) + buffer.
 # 上限必须盖住"拉到最远"(camera_zoom 最小 0.5) 的整屏, 否则屏幕边缘那圈没黑暗层覆盖 =
 # 中间有阴影、边上却太亮没阴影 (用户报). 注意 TILE_SIZE=12 不是 16:

@@ -5,7 +5,7 @@ extends CharacterBody2D
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 const BASE_MAX_HEALTH := 20    # 钻剑 20 一击, 木剑 3 × 7 击. 难度缩放见 _ready.
 const CONTACT_DAMAGE := 8

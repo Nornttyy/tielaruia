@@ -21,7 +21,7 @@ const HOP_COOLDOWN_MIN := 0.8
 const HOP_COOLDOWN_MAX := 1.8
 const AGGRO_RANGE_PX := 120.0   # 10 tiles
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 const SlimeScene = preload("res://scenes/entities/slime.tscn")  # 分裂用 (自引用 preload, Godot 允许)
 

@@ -6,7 +6,7 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 # 用户调: 玻璃大炮 v2 — 伤害收一点, 血量给一点.
 # HP 20 (木剑 7 击 / 钻剑 1 击).

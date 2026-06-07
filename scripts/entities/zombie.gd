@@ -10,7 +10,7 @@ const SWIM_MAX_SINK := 52.0
 const SWIM_UP_SPEED := -34.0
 const JUMP_VY := -195.0
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 # 子类可覆盖 (jaguar 等). 用 var 不用 const.
 # Terraria 风: 木剑 3 × 20 击 / 钻剑 20 × 3 击. 100HP 玩家被打 12 击死.

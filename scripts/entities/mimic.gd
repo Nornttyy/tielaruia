@@ -7,7 +7,7 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 # 木剑 30 击, 钻剑 5 击. 接触 16 dmg → 100HP 玩家 6 击死, 鼓励远战.
 const BASE_MAX_HEALTH := 90

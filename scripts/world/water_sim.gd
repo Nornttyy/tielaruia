@@ -6,7 +6,7 @@ const TICK_INTERVAL := 0.05         # 流速: 每 0.05s 流一步 (0.12→0.05, 
 const MAX_TILES_PER_TICK := 300     # 保留 300/tick 上限防 web 单帧爆
 const LAVA_TICK_DIVISOR := 3        # 岩浆每 3 个 tick 才流一步 (≈ 0.36s, 慢吞吞)
 const SOURCE_TICK_DIVISOR := 2      # 水源块每 2 拍灌一次 (温柔水流 + 省 CPU)
-const TILE_SIZE := 12               # 本项目格子像素尺寸 (蒸汽特效定位用)
+const TILE_SIZE := ChunkConstants.TILE_SIZE               # 本项目格子像素尺寸 (蒸汽特效定位用)
 
 @export var world: Node2D            # 父 World (有 chunk_manager + _set_tile)
 

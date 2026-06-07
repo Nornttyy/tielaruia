@@ -1,7 +1,7 @@
 # F3 切换显示；显示 FPS、玩家世界坐标、玩家所在 tile 坐标、tile 上的暗格状态。
 extends CanvasLayer
 
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 @onready var label: Label = $Panel/Label
 var _player: Node2D

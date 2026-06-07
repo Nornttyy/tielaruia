@@ -6,7 +6,7 @@ extends CharacterBody2D
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 # Terraria 风: HP 30 / 接触 12 dmg (冲刺扎人). 木剑 10 击, 钻剑 2 击.
 const BASE_MAX_HEALTH := 30

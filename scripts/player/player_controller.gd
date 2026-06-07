@@ -12,7 +12,7 @@ const GRAVITY := 675.0
 const COYOTE_TIME := 0.10
 const LAND_VY_THRESHOLD := 150.0    # 落地时 vy 超此值才扬大灰
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 # 游泳物理: 水里重力 ~22%, 按 Space/W 持续上浮.
 const SWIM_GRAVITY := 150.0         # 水里重力 (vs GRAVITY 900 → 慢慢沉)
 const SWIM_UP_SPEED := -82.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -320 → 弱跳)

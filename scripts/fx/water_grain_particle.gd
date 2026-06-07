@@ -6,7 +6,7 @@ extends Sprite2D
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 const GRAVITY := 520.0
 const LIFETIME := 0.6
-const TILE_SIZE := 12               # 本项目格子像素 (落地碰撞查询用)
+const TILE_SIZE := ChunkConstants.TILE_SIZE               # 本项目格子像素 (落地碰撞查询用)
 
 var velocity: Vector2 = Vector2.ZERO
 var _age: float = 0.0

@@ -3,7 +3,7 @@
 # 跟 fireball 同结构, 但反方向 (玩家发, 击中怪).
 extends Area2D
 
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 const SPEED := 260.0
 const GRAVITY := 200.0          # 箭飞行中往下坠的加速度 → 抛物线弧度 (越大越弯, 弓越要抬高瞄准)
 const LIFETIME_SEC := 3.0

@@ -3,7 +3,7 @@ extends Node2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const VillagerLines = preload("res://scripts/npc/villager_lines.gd")
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 const REACH_TILES := 4
 const INVALID_TILE := Vector2i(-1, -1)
 

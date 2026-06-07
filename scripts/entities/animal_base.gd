@@ -13,7 +13,7 @@ const FLEE_SPEED_MULT := 1.8
 const WANDER_SWITCH_MIN := 2.0
 const WANDER_SWITCH_MAX := 5.0
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 # Auto-step: 撞 1 格台阶时自动抬上去 (避免动物在山坡/小台阶前来回踱步).
 # 抬 17 = TILE_SIZE+1: Godot test_move 有 0.08 px safe_margin, 多抬 1 px 避免误判碰撞.
 const AUTO_STEP_LIFT := TILE_SIZE + 1

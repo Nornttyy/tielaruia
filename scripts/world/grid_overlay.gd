@@ -3,7 +3,7 @@
 # _draw 直接用世界坐标画, 跟着相机移动 (每帧 queue_redraw)。
 extends Node2D
 
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 const LINE_COLOR := Color(1.0, 0.97, 0.9, 0.22)    # 柔白暖调网格线, 淡 (不抢戏)
 const HILITE_FILL := Color(1.0, 0.95, 0.7, 0.18)   # 鼠标所在格填充
 const HILITE_EDGE := Color(1.0, 0.92, 0.55, 0.75)  # 鼠标所在格边框 (亮黄, 看清放哪)

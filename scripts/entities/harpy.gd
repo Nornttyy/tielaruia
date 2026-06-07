@@ -5,7 +5,7 @@ extends CharacterBody2D
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := 12
+const TILE_SIZE := ChunkConstants.TILE_SIZE
 const BASE_MAX_HEALTH := 24
 const CONTACT_DAMAGE := 8
 const PATROL_SPEED := 55.0
