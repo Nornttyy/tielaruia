@@ -95,19 +95,22 @@ func has_any() -> bool
 
 ### C. 分层可定制美术 (改 `player_art.gd`)
 
+**画风改成泰拉瑞亚式侧面 (用户要求)**: 重画后的小人是**侧身朝右的侧视图, 只露一只眼睛** (不再是现在正对屏幕、两只眼的正面)。朝左用运行时 `Sprite2D.flip_h` (现状已是此机制, 见 `player_art.gd` 顶部注释, 无需改朝向逻辑)。**所有层 (身体/头发/衣服/披风) 都按侧面画**。这是整体画风变更, 连不捏人的默认角色也是新侧面样子 (见「不变项」更新)。
+
 把「烤死一套」改成「**按长相拼 4 层再烤**」。`player_art.gd` 重构成:
 
 ```gdscript
 # 旧: build_sprite_frames() 无参, 用常量 PALETTE + 固定 ascii
 # 新: build_sprite_frames(appearance: Dictionary) -> SpriteFrames
-#   appearance = {gender, hair_style, shirt_style, pants_style,
-#                 skin_color, hair_color, shirt_color, pants_color}
+#   appearance = {gender, hair_style, shirt_style, pants_style, cape_style,
+#                 skin_color, hair_color, shirt_color, pants_color, cape_color}
 ```
 
 **分层结构** (每个动画帧由 5 层 ascii 叠出来, 后画的盖前画的; 第 0 层在最底/最后面):
 0. **披风层 (CAPE)** — 画在**最底 (身体后面)**: 按 `cape_style` 选 (0 无 / 1 短披风 / 2 长披风)。`0` 时整层透明。颜色 `cape_color`。
 1. **身体层 (BODY)**: 按 `gender` 选模板组。只画**皮肤 + 靴**, 躯干/腿留空 (`.`)。男/女**各一套完整全帧** (idle_a/idle_b/walk_a/walk_c/jump/fall/hurt; walk_b=idle_a 复用)。
-   - **男女身材比例不同 (用户要大区别)**: 男版 = 现状小人 (肩宽、躯干直); 女版 = **重画身材比例** —— 肩略窄、腰更收、胸口加一点点圆弧 (约 1px, 卡通风, 自然区分身形)、腿型略不同, 脸加睫毛/大眼一眼区分。
+   - **侧面视角 + 单眼**: 脸是侧面, 只画**一只眼睛** (朝右那侧), 一张侧脸轮廓 (鼻尖可 1px)。`PALETTE` 的 `e`(眼)/`m`(嘴) 改成侧脸位置。
+   - **男女身材比例不同 (用户要大区别)**: 男版 = 侧面、肩宽、躯干直; 女版 = **重画身材比例** —— 肩略窄、腰更收、胸口侧面加一点点圆弧 (约 1px, 卡通风, 自然区分身形)、腿型略不同, 脸加睫毛/大眼一眼区分。
    - **关键约束 (省美术 + 保对齐)**: 两套身体**同画布 (12×24)**, 且**头部行段、手臂行、腿/靴锚点行保持一致** —— 这样头发层和大多数衣服层在男女上都能用同一锚点对齐, 不必每件衣服画两遍。只有**躯干/腿宽窄**男女不同。
 2. **裤子层 (PANTS)**: 按 `pants_style` 选。覆盖腿部区域, 跟随每帧腿的姿态 (走路帧腿分开)。
 3. **衬衫层 (SHIRT)**: 按 `shirt_style` 选。覆盖躯干区域。
@@ -177,7 +180,7 @@ func has_any() -> bool
 
 - 世界生成 / 水晶刷新世界上限 / 怪 / 战斗 / 箱子 / 墙 / 小地图 / 钓鱼 / 料理 —— 全不动。
 - 世界存档的地形/箱子/实体格式不变 (只是玩家字段作废)。
-- 不捏人 (老玩家迁移出的默认角色) 长相 = 现状小人, 像素逐格一致。
+- 玩家画风从正面两眼**改成泰拉瑞亚式侧面单眼** (用户要求的整体变更), 故**不再保证「= 现状小人」**。改为: 默认角色 = **新的侧面基准小人** (默认款: 男/短发/T恤/长裤/无披风/暖棕发/红衫/蓝裤), 用像素基准测试锁住这个**新基准** (防后续款式/重构把默认款画歪)。朝向仍用 `flip_h`, 不改移动/朝向代码。
 - 死亡复活 = Minecraft 风 (回出生点 + 死亡点掉物品), 不变。
 
 ## 测试策略
@@ -187,7 +190,7 @@ func has_any() -> bool
 **单元 (`tests/unit/`)**:
 - `test_character_data.gd`: `CharacterData` 存读往返 (写 .tres → 读回, 所有字段相等); 默认值正确。
 - `test_character_manager.gd`: save/list/load_by_name/delete 往返; 重名覆盖; 非法名拒绝 (路径注入); 空目录 `has_any()=false`。用临时 `user://` 路径或 mock。
-- `test_player_art_appearance.gd`: `build_sprite_frames(appearance)` 给定颜色 → 取某已知坐标像素 (如衬衫格) 断言等于所选 shirt_color; 换 hair_style 头顶像素变化; 默认 appearance 画出的 idle 第 0 帧与「现状基准」逐格一致 (锁住「不捏=老样子」)。
+- `test_player_art_appearance.gd`: `build_sprite_frames(appearance)` 给定颜色 → 取某已知坐标像素 (如衬衫格) 断言等于所选 shirt_color; 换 hair_style 头顶像素变化; 默认 appearance 画出的 idle 第 0 帧与**新侧面基准**逐格一致 (锁住默认款不被后续改歪); 侧脸只有一只眼 (断言朝右那侧有 `e` 眼色、另一侧无)。
 - `test_save_migration.gd`: 构造一个含玩家数据的老 world `SaveData` + 空 characters 目录 → 跑迁移 → 断言生成了一张默认角色且背包/hp 等于老存档玩家数据。
 
 **集成 (`tests/integration/`)**:
@@ -228,7 +231,7 @@ func has_any() -> bool
 1. A `CharacterData` (含 cape 字段) + 单测 (能独立存读)。
 2. B `CharacterManager` autoload + 单测 (`--rebuild` 建索引)。
 3. C `player_art.gd` 分层重构 —— **分批**:
-   - C1 5 层框架 + 男身体 + 默认款 (短发/T恤/长裤/无披风) + 逐格基准测试 (锁「不捏=老样子」)。
+   - C1 5 层框架 + **侧面单眼男身体** + 默认款 (短发/T恤/长裤/无披风) + 逐格基准测试 (锁住新侧面基准)。
    - C2 女身体 (重画身材比例) + 4 发型 + 颜色替换跑通; 默认款做出女版 fit。
    - C3 日常款 (背带/连帽/海魂衫 · 短裤/裙子/工装裤), 每款男女 fit 各一版。
    - C4 泳衣 (2 上装 + 2 下装) + 披风层 (短/长披风)。
