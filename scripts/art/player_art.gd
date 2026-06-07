@@ -29,31 +29,31 @@ const _OUTLINE := Color8(28, 24, 30)   # 泰拉瑞亚式黑描边 (略暖的近�
 # ---- 积木块 (朝右; 大写=阴影) ----
 # 头 (皮肤 s / 阴影 k); 侧脸朝右, 眼在偏右 (W 眼白 / i 眼珠 / e 睫毛瞳); 鼻在最右; 嘴 m。
 const _HEAD := [
-	"..sssss..",
-	".sssssss.",
-	".ssssssss",
-	".ssssWii.",
-	".ssssWii.",
-	".ssssWii.",
-	".kssssss.",
-	".kssssss.",
-	"..kssss..",
-	"...sss...",
-	"...kss...",
+	"..ssssss...",
+	".ssssssss..",
+	".sssssssss.",
+	".ssssssWii.",
+	".ssssssWii.",
+	".ssssssWii.",
+	".kssssssss.",
+	".kssssssss.",
+	"..ksssss...",
+	"...ssss....",
+	"...ksss....",
 ]
 # 女头: 同尺寸, 加睫毛 (眼上一排 e) + 眼珠大一点, 一眼区分。
 const _HEAD_F := [
-	"..sssss..",
-	".sssssss.",
-	".sssseee.",
-	".ssssWii.",
-	".ssssWii.",
-	".ssssWii.",
-	".kssssss.",
-	".kssssss.",
-	"..kssss..",
-	"...sss...",
-	"...kss...",
+	"..ssssss...",
+	".ssssssss..",
+	".sssssseee.",
+	".ssssssWii.",
+	".ssssssWii.",
+	".ssssssWii.",
+	".kssssssss.",
+	".kssssssss.",
+	"..ksssss...",
+	"...ssss....",
+	"...ksss....",
 ]
 # 短发: 盖头顶 + 后脑 (朝右 → 后脑在左)。
 # 自然顺滑短发: 顺着头顶弧线, 前额一缕斜下, 后侧自然垂, 不是死板圆球。
@@ -105,21 +105,19 @@ const _HAIR_AHOGE := [
 # 躯干 (衬衫 w / 阴影 D), 8 宽 × 15 高 (肩到腰)。
 # 阴影沿后侧(左)一整列 + 衣摆一条, 立体感 (不再散点像波点)。
 const _TORSO := [
-	".wwwwwww.",
-	"Dwwwwwww.",
-	"Dwwwwwwww",
-	"Dwwwwwwww",
-	"Dwwwwwwww",
-	"Dwwwwwwww",
-	"Dwwwwwwww",
-	"Dwwwwwwww",
-	"Dwwwwwwww",
-	"Dwwwwwwww",
-	"Dwwwwwwww",
-	"Dwwwwwwww",
-	"DDDDDDDDw",
-	".wwwwww..",
-	".wwwwww..",
+	".wwwwwwwww.",
+	"Dwwwwwwwww.",
+	"Dwwwwwwwwww",
+	"Dwwwwwwwwww",
+	"Dwwwwwwwwww",
+	"Dwwwwwwwwww",
+	"Dwwwwwwwwww",
+	"Dwwwwwwwwww",
+	"Dwwwwwwwwww",
+	"Dwwwwwwwwww",
+	"DDDDDDDDDDw",
+	".wwwwwwww..",
+	".wwwwwwww..",
 ]
 # 前臂 + 手 (皮肤; T恤短袖露小臂), 2 宽
 const _ARM := [
@@ -133,63 +131,51 @@ const _ARM := [
 ]
 # 单腿 (裤子 b / 阴影 B), 3 宽 × 15 高。后侧(左)一列阴影, 立体 (不再中间散点)。
 const _LEG := [
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
-	"Bbbb",
+	"Bbbbb",
+	"Bbbbb",
+	"Bbbbb",
+	"Bbbbb",
+	"Bbbbb",
+	"Bbbbb",
+	"Bbbbb",
+	"Bbbbb",
+	"Bbbbb",
+	"Bbbbb",
+	"Bbbbb",
 ]
 # 迈步腿: 往前迈 (髋在左上→脚在右下, 脚朝前)。走路用, 脚一前一后落地, 不上下抖。
 const _LEG_FWD := [
-	"Bbb..",
-	"Bbb..",
-	"Bbb..",
-	".Bbb.",
-	".Bbb.",
-	".Bbb.",
-	".Bbb.",
-	".Bbb.",
-	".Bbb.",
-	"..bbb",
-	"..bbb",
-	"..bbb",
-	"..bbb",
-	"..bbb",
-	"..bbb",
+	"Bbbb..",
+	"Bbbb..",
+	".Bbbb.",
+	".Bbbb.",
+	".Bbbb.",
+	".Bbbb.",
+	"..bbbb",
+	"..bbbb",
+	"..bbbb",
+	"..bbbb",
+	"..bbbb",
 ]
 # 迈步腿: 往后蹬 (髋在右上→脚在左下, 脚朝后)。
 const _LEG_BACK := [
-	"..bbb",
-	"..bbb",
-	"..bbb",
-	".bbb.",
-	".bbb.",
-	".bbb.",
-	".bbb.",
-	".bbb.",
-	".bbb.",
-	"Bbb..",
-	"Bbb..",
-	"Bbb..",
-	"Bbb..",
-	"Bbb..",
-	"Bbb..",
+	"..bbbb",
+	"..bbbb",
+	".bbbb.",
+	".bbbb.",
+	".bbbb.",
+	".bbbb.",
+	"Bbbb..",
+	"Bbbb..",
+	"Bbbb..",
+	"Bbbb..",
+	"Bbbb..",
 ]
-# 靴 (o / 阴影 O), 4 宽
+# 靴 (o / 阴影 O), 5 宽
 const _BOOT_B := [
-	"ooo.",
-	"oooo",
-	"OOOO",
+	"ooooo",
+	"OOOOO",
+	"OOOOO",
 ]
 
 
@@ -272,17 +258,17 @@ static func _body_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var dy := _dy(pose)
 	var head: Array = _HEAD_F if int(ap.get("gender", 0)) == 1 else _HEAD
-	_place(g, 3 + dy, 7, head)
+	_place(g, 8 + dy, 5, head)
 	# 前臂: 跟姿势。受击/跳手抬高; 走路时前后摆 (手会动); 其余垂在体侧前方。
 	match pose:
 		"hurt", "jump":
-			_place(g, 11 + dy, 17, _ARM)
+			_place(g, 16 + dy, 17, _ARM)
 		"walk_a":   # 手往前上摆
-			_place(g, 15 + dy, 17, _ARM)
+			_place(g, 20 + dy, 17, _ARM)
 		"walk_c":   # 手往后下摆
-			_place(g, 19 + dy, 16, _ARM)
+			_place(g, 24 + dy, 16, _ARM)
 		_:
-			_place(g, 17 + dy, 17, _ARM)
+			_place(g, 22 + dy, 17, _ARM)
 	# 靴: 跟腿姿。
 	_place_boots(g, pose, dy)
 	return g
@@ -294,20 +280,20 @@ static func _pants_layer(_ap: Dictionary, pose: String) -> Array:
 	var dy := _dy(pose)
 	match pose:
 		"walk_a":   # 迈步: 前腿往前迈(脚在右), 后腿往后蹬(脚在左); 脚都落地, 不上下抖
-			_place(g, 27 + dy, 10, _LEG_FWD)
-			_place(g, 27 + dy, 6, _LEG_BACK)
+			_place(g, 31 + dy, 11, _LEG_FWD)
+			_place(g, 31 + dy, 3, _LEG_BACK)
 		"walk_c":   # 反相迈步 (前后腿对调, 看着像交替迈步)
-			_place(g, 27 + dy, 9, _LEG_FWD)
-			_place(g, 27 + dy, 5, _LEG_BACK)
+			_place(g, 31 + dy, 10, _LEG_FWD)
+			_place(g, 31 + dy, 2, _LEG_BACK)
 		"jump":     # 收腿 (短)
-			_place(g, 27 + dy, 8, _slice(_LEG, 0, 10))
-			_place(g, 27 + dy, 12, _slice(_LEG, 0, 10))
+			_place(g, 31 + dy, 7, _slice(_LEG, 0, 8))
+			_place(g, 31 + dy, 12, _slice(_LEG, 0, 8))
 		"fall":     # 展腿
-			_place(g, 27 + dy, 6, _LEG)
-			_place(g, 27 + dy, 14, _LEG)
+			_place(g, 31 + dy, 5, _LEG)
+			_place(g, 31 + dy, 14, _LEG)
 		_:          # idle: 双腿并拢
-			_place(g, 27 + dy, 8, _LEG)
-			_place(g, 27 + dy, 12, _LEG)
+			_place(g, 31 + dy, 7, _LEG)
+			_place(g, 31 + dy, 12, _LEG)
 	return g
 
 
@@ -316,9 +302,9 @@ static func _shirt_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var dy := _dy(pose)
 	if int(ap.get("gender", 0)) == 1:
-		_place(g, 13 + dy, 8, _female_torso(int(ap.get("chest_size", 1))))
+		_place(g, 18 + dy, 7, _female_torso(int(ap.get("chest_size", 1))))
 	else:
-		_place(g, 13 + dy, 7, _TORSO)
+		_place(g, 18 + dy, 6, _TORSO)
 	return g
 
 
@@ -356,14 +342,13 @@ static func _hair_layer(ap: Dictionary, pose: String) -> Array:
 	var dy := _dy(pose)
 	match int(ap.get("hair_style", 0)):
 		1:
-			_place(g, 2 + dy, 7, _HAIR_LONG)
+			_place(g, 7 + dy, 6, _HAIR_LONG)
 		2:
-			_place(g, 2 + dy, 7, _HAIR_PONYTAIL)
+			_place(g, 7 + dy, 6, _HAIR_PONYTAIL)
 		3:
-			# 呆毛多 2 行 (头顶翘起), 整体上提 2 行对齐头顶。
-			_place(g, 0 + dy, 7, _HAIR_AHOGE)
+			_place(g, 5 + dy, 6, _HAIR_AHOGE)
 		_:
-			_place(g, 0 + dy, 7, _HAIR_SHORT)
+			_place(g, 5 + dy, 6, _HAIR_SHORT)
 	return g
 
 
@@ -371,19 +356,19 @@ static func _hair_layer(ap: Dictionary, pose: String) -> Array:
 static func _place_boots(g: Array, pose: String, dy: int) -> void:
 	match pose:
 		"walk_a":   # 前脚(右) + 后脚(左), 同一地面高度 (不上下)
-			_place(g, 42 + dy, 12, _BOOT_B)
-			_place(g, 42 + dy, 6, _BOOT_B)
+			_place(g, 42 + dy, 13, _BOOT_B)
+			_place(g, 42 + dy, 3, _BOOT_B)
 		"walk_c":
-			_place(g, 42 + dy, 11, _BOOT_B)
-			_place(g, 42 + dy, 5, _BOOT_B)
+			_place(g, 42 + dy, 12, _BOOT_B)
+			_place(g, 42 + dy, 2, _BOOT_B)
 		"jump":
-			_place(g, 37 + dy, 8, _BOOT_B)
-			_place(g, 37 + dy, 12, _BOOT_B)
+			_place(g, 39 + dy, 7, _BOOT_B)
+			_place(g, 39 + dy, 12, _BOOT_B)
 		"fall":
-			_place(g, 42 + dy, 6, _BOOT_B)
+			_place(g, 42 + dy, 5, _BOOT_B)
 			_place(g, 42 + dy, 14, _BOOT_B)
 		_:
-			_place(g, 42 + dy, 8, _BOOT_B)
+			_place(g, 42 + dy, 7, _BOOT_B)
 			_place(g, 42 + dy, 12, _BOOT_B)
 
 
