@@ -83,6 +83,14 @@ func _start_game(seed_or_opts = 0) -> void:
 	if "current_world_size" in GameSettings:
 		GameSettings.current_world_size = world_size
 	GameSettings.creative_mode = creative_mode   # 新建=按选择(默认生存); 读档=存档里的值
+	# 角色系统: 保证有选中角色 (计划 3 的选角色 UI 上线前由 ensure_current 兜底),
+	# 并用角色名当玩家名 (联机/UI/死亡画面显示)。
+	# GUT 测试环境跳过 (照 autosave 同款 _running_under_gut 门控): current 是 autoload 跨测试残留,
+	# 测试里若 ensure_current 设了 current 会污染"新游戏发起步包"等现有测试。真实游戏照常。
+	if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL:
+		CharacterManager.ensure_current()
+		if CharacterManager.current != null and CharacterManager.current.character_name != "":
+			GameSettings.player_name = CharacterManager.current.character_name
 	# 是否新游戏 (非继续): 决定发不发起步包 (此刻判, 因为 _pending_save_data 稍后会被清).
 	_want_starter = (_pending_save_data == null)
 	# 新游戏重置昼夜到早晨; 继续游戏稍后由 _apply_save_data 还原存档时间.
@@ -193,6 +201,9 @@ func _run_async_load(world_seed: int) -> void:
 # 同步路径: 测试 + boot_to_game 用. 不走 LoadingScreen, World defer_init=false 自动跑完
 func _start_game_sync(world_seed: int) -> void:
 	GameSettings.creative_mode = false   # boot/测试默认生存 (测试要创造自己设)
+	# 角色系统: 同 _start_game, 兜底选中角色。GUT 测试跳过 (防 current 跨测试污染)。
+	if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL:
+		CharacterManager.ensure_current()
 	var w = WorldScene.instantiate()
 	w.name = "World"
 	if world_seed != 0:
@@ -243,7 +254,7 @@ func _start_autosave() -> void:
 	_autosave_timer.autostart = true
 	_autosave_timer.timeout.connect(func():
 		if _state == "game":
-			SaveManager.save(self)
+			_save_all()
 	)
 	add_child(_autosave_timer)
 
@@ -252,6 +263,19 @@ func _stop_autosave() -> void:
 	if _autosave_timer != null:
 		_autosave_timer.queue_free()
 		_autosave_timer = null
+
+
+# 存世界 + 存当前角色卡 (玩家状态)。autosave / 退出 / F5 都走这。
+# 复用 CharacterManager.save_current_from_player 的就绪护栏 (inventory 未就绪不写, 防丢三件套)。
+func _save_all() -> void:
+	SaveManager.save(self)
+	# GUT 测试跳过角色存 (防 _return_to_menu 把物品灌进残留 current 污染后续测试)。
+	if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL and CharacterManager.current != null:
+		var w = world
+		if w != null:
+			var player = w.get_player()
+			if player != null:
+				CharacterManager.save_current_from_player(player)
 
 
 # 是否在 GUT 测试里跑 (命令行带 gut_cmdln.gd). 测试里关掉抢文件的自动存档.
@@ -419,6 +443,11 @@ func _apply_save_data(data: Resource) -> void:
 			inv_node.pickup("wood_sword", 1)
 			if inv_node.has_signal("inventory_changed"):
 				inv_node.inventory_changed.emit()
+	# 角色系统: 玩家状态 (血量/魔力/背包/盔甲) 权威来源 = 当前角色卡, 覆盖上面从世界存档
+	# 还原的那套 (跨世界带背包)。位置仍用世界存档/spawn (上面已处理), 不被覆盖。
+	# GUT 测试跳过 (current 残留会覆盖 test_continue 期望的世界存档背包)。
+	if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL and CharacterManager.current != null:
+		CharacterManager.apply_to_player(player)
 	# 还原死亡掉落 (老 bug: save_manager 写了但 load 没读, 导致死亡掉落 reload 后消失,
 	# 违背 Minecraft 风设定 — 死亡处该有的箱子开锁箱必须在那里).
 	if "entities" in data and w.has_method("restore_entities_from_save"):
@@ -507,10 +536,28 @@ func _grant_starter_on_new_game() -> void:
 			var inv_node: Node = player.get_node_or_null("PlayerInventory")
 			if inv_node != null and inv_node.inventory != null:
 				_want_starter = false   # 先置, 防同帧重入
-				_grant_starter_inventory(player)
+				# 角色系统: 老角色 (已有背包) 进新世界 → 带着角色的东西, 不发起步包;
+				# 全新角色 (背包空) → 照常发起步包 (随后 autosave 把它存进角色卡)。
+				# GUT 测试跳过 → 永远走起步包分支, 不被 current 残留影响。
+				if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL \
+						and CharacterManager.current != null \
+						and _character_has_items(CharacterManager.current):
+					CharacterManager.apply_to_player(player)
+				else:
+					_grant_starter_inventory(player)
 				return
 		await get_tree().process_frame
 	push_warning("starter 没发出去: player/inventory %d 帧内没就绪" % STARTER_GRANT_MAX_FRAMES)
+
+
+# 角色背包是否有东西 (任一槽非空)。用来判断是否给新世界发起步包。
+func _character_has_items(c) -> bool:
+	if c == null:
+		return false
+	for s in c.inventory_slots:
+		if s != null:
+			return true
+	return false
 
 
 func _grant_starter_inventory(player: Node) -> void:
@@ -527,7 +574,7 @@ func _grant_starter_inventory(player: Node) -> void:
 func _return_to_menu() -> void:
 	# 退出前最后存一次档
 	if _state == "game":
-		SaveManager.save(self)
+		_save_all()
 	_stop_autosave()
 	_pause_menu.close()
 	for n in _game_nodes:
@@ -571,7 +618,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			or (event is InputEventKey and event.pressed and not event.echo \
 					and event.keycode == KEY_F5)
 	if is_f5_save and _state == "game":
-		SaveManager.save(self)
+		_save_all()
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("ui_pause") and _state == "game":
