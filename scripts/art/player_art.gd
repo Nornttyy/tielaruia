@@ -30,11 +30,11 @@ const _WHITE := Color(0.98, 0.98, 1.0, 1)
 const _HEAD := [
 	"..sssss..",
 	".sssssss.",
-	".ssssssss",
+	".sssssss.",
+	".sssseess",
 	".sssWiess",
-	".sssWiess",
-	".ksssssss",
-	".ksssmsss",
+	".kssssssk",
+	".ksssssmk",
 	".kssssss.",
 	"..kssss..",
 	"...sss...",
@@ -56,11 +56,12 @@ const _HEAD_F := [
 ]
 # 短发: 盖头顶 + 后脑 (朝右 → 后脑在左)。
 const _HAIR_SHORT := [
-	"..HHHHH..",
+	"..hhhhh..",
 	".hhhhhhh.",
-	"hhhhhhhh.",
-	"Hhhh.....",
-	"hhh......",
+	"hhhhhhhH.",
+	"hhhhhhh..",
+	"Hhh......",
+	"hh.......",
 ]
 # 长发: 顺后背 (左) 垂下到肩。
 const _HAIR_LONG := [
