@@ -6,9 +6,22 @@ signal character_chosen   # 选了角色 (current 已设), main_menu 去开世�
 signal closed             # 返回主菜单
 
 const CharacterData = preload("res://scripts/save/character_data.gd")
+const PlayerArt = preload("res://scripts/art/player_art.gd")
 
 var _select_panel: Panel
 var _list: VBoxContainer
+var _creator_panel: Panel
+var _preview: AnimatedSprite2D
+var _name_edit: LineEdit
+var _chest_row: HBoxContainer
+var _appearance: Dictionary = {}
+
+# 色块候选 (暖色优先)
+const _SKIN := [Color8(255,218,185), Color8(240,190,150), Color8(200,150,110), Color8(150,100,70), Color8(95,60,40)]
+const _HAIR := [Color8(121,85,72), Color8(60,40,30), Color8(20,20,20), Color8(210,180,90), Color8(180,70,50), Color8(120,90,160)]
+const _SHIRT := [Color8(229,57,53), Color8(50,110,200), Color8(70,160,90), Color8(240,200,70), Color8(230,140,60), Color8(240,240,240)]
+const _PANTS := [Color8(38,70,130), Color8(60,50,45), Color8(80,80,90), Color8(120,80,60), Color8(40,90,70), Color8(20,20,30)]
+const _EYE := [Color8(60,110,70), Color8(70,120,200), Color8(110,70,50), Color8(40,40,40), Color8(150,90,170), Color8(200,140,60)]
 
 
 func _ready() -> void:
@@ -95,6 +108,139 @@ func _choose_character(char_name: String) -> void:
 	character_chosen.emit()
 
 
-# Task 2 实现
+# ---- 捏人面板 ----
+
 func _on_new_character() -> void:
-	pass
+	_appearance = PlayerArt.DEFAULT_APPEARANCE.duplicate(true)
+	if _creator_panel == null:
+		_build_creator_panel()
+	_name_edit.text = ""
+	_select_panel.visible = false
+	_creator_panel.visible = true
+	visible = true
+	_set_gender(int(_appearance["gender"]))
+	_rebuild_preview()
+
+
+func _build_creator_panel() -> void:
+	_creator_panel = Panel.new()
+	_creator_panel.name = "CreatorPanel"
+	_creator_panel.custom_minimum_size = Vector2(520, 470)
+	_creator_panel.size = Vector2(520, 470)
+	_creator_panel.position = Vector2(380, 125)
+	add_child(_creator_panel)
+	# 左: 预览
+	_preview = AnimatedSprite2D.new()
+	_preview.position = Vector2(90, 250)
+	_preview.scale = Vector2(3, 3)
+	_creator_panel.add_child(_preview)
+	# 右: 选项 VBox
+	var vbox := VBoxContainer.new()
+	vbox.position = Vector2(190, 20)
+	vbox.custom_minimum_size = Vector2(310, 0)
+	vbox.add_theme_constant_override("separation", 6)
+	_creator_panel.add_child(vbox)
+	_name_edit = LineEdit.new()
+	_name_edit.placeholder_text = "角色名字"
+	_name_edit.custom_minimum_size = Vector2(300, 0)
+	vbox.add_child(_name_edit)
+	var gender_row := HBoxContainer.new()
+	var male_b := Button.new(); male_b.text = "男"; male_b.pressed.connect(func(): _set_gender(0))
+	var female_b := Button.new(); female_b.text = "女"; female_b.pressed.connect(func(): _set_gender(1))
+	gender_row.add_child(male_b); gender_row.add_child(female_b)
+	vbox.add_child(gender_row)
+	vbox.add_child(_stepper("发型", "hair_style", 0, 3))
+	_chest_row = _slider_row("胸围", "chest_size", 0, 5)
+	vbox.add_child(_chest_row)
+	vbox.add_child(_color_row("皮肤", "skin_color", _SKIN))
+	vbox.add_child(_color_row("头发", "hair_color", _HAIR))
+	vbox.add_child(_color_row("衬衫", "shirt_color", _SHIRT))
+	vbox.add_child(_color_row("裤子", "pants_color", _PANTS))
+	vbox.add_child(_color_row("眼珠", "eye_color", _EYE))
+	var btn_row := HBoxContainer.new()
+	var save_b := Button.new(); save_b.text = "保存"; save_b.pressed.connect(_save_creator)
+	var cancel_b := Button.new(); cancel_b.text = "取消"; cancel_b.pressed.connect(func():
+		_creator_panel.visible = false; _select_panel.visible = true; _refresh_list())
+	btn_row.add_child(save_b); btn_row.add_child(cancel_b)
+	vbox.add_child(btn_row)
+
+
+# 一行 ◀ 名称 ▶ stepper, 改 _appearance[key] 在 [lo,hi] 循环。
+func _stepper(label: String, key: String, lo: int, hi: int) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var l := Label.new(); l.text = label; l.custom_minimum_size = Vector2(60, 0); row.add_child(l)
+	var left := Button.new(); left.text = "◀"; row.add_child(left)
+	var val := Label.new(); val.custom_minimum_size = Vector2(40, 0)
+	val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var refresh := func(): val.text = str(int(_appearance[key]))
+	refresh.call()
+	row.add_child(val)
+	var right := Button.new(); right.text = "▶"; row.add_child(right)
+	left.pressed.connect(func():
+		_appearance[key] = wrapi(int(_appearance[key]) - 1, lo, hi + 1); refresh.call(); _rebuild_preview())
+	right.pressed.connect(func():
+		_appearance[key] = wrapi(int(_appearance[key]) + 1, lo, hi + 1); refresh.call(); _rebuild_preview())
+	return row
+
+
+func _slider_row(label: String, key: String, lo: int, hi: int) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var l := Label.new(); l.text = label; l.custom_minimum_size = Vector2(60, 0); row.add_child(l)
+	var s := HSlider.new(); s.min_value = lo; s.max_value = hi; s.step = 1
+	s.value = int(_appearance[key]); s.custom_minimum_size = Vector2(180, 0)
+	s.value_changed.connect(func(v): _appearance[key] = int(v); _rebuild_preview())
+	row.add_child(s)
+	return row
+
+
+# 一行色块: 点哪块就把 _appearance[key] 设成那色 + 重建预览。
+func _color_row(label: String, key: String, colors: Array) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var l := Label.new(); l.text = label; l.custom_minimum_size = Vector2(60, 0); row.add_child(l)
+	for col in colors:
+		var sw := ColorRect.new()
+		sw.color = col
+		sw.custom_minimum_size = Vector2(28, 28)
+		sw.gui_input.connect(func(ev):
+			if ev is InputEventMouseButton and ev.pressed:
+				_appearance[key] = col; _rebuild_preview())
+		row.add_child(sw)
+	return row
+
+
+func _set_gender(g: int) -> void:
+	_appearance["gender"] = g
+	if _chest_row != null:
+		_chest_row.visible = (g == 1)   # 胸围只女显示
+	_rebuild_preview()
+
+
+func _set_creator_name(n: String) -> void:
+	_name_edit.text = n
+
+
+func _rebuild_preview() -> void:
+	if _preview == null:
+		return
+	_preview.sprite_frames = ArtCache.player_frames_for(_appearance)
+	_preview.animation = "idle"
+	_preview.play()
+
+
+func _save_creator() -> void:
+	var c := CharacterData.new()
+	var nm: String = _name_edit.text.strip_edges()
+	c.character_name = nm if nm != "" else "我的角色"
+	c.gender = int(_appearance["gender"])
+	c.hair_style = int(_appearance["hair_style"])
+	c.chest_size = int(_appearance["chest_size"])
+	c.skin_color = _appearance["skin_color"]
+	c.hair_color = _appearance["hair_color"]
+	c.shirt_color = _appearance["shirt_color"]
+	c.pants_color = _appearance["pants_color"]
+	c.eye_color = _appearance["eye_color"]
+	CharacterManager.save_character(c)
+	CharacterManager.current = c
+	_creator_panel.visible = false
+	_select_panel.visible = true
+	_refresh_list()

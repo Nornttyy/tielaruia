@@ -49,6 +49,34 @@ func test_choose_character_sets_current_and_emits():
 	assert_eq(CharacterManager.current.character_name, "勇者A", "current 设成选中角色")
 	assert_signal_emitted(panels, "character_chosen")
 
+func test_new_character_opens_creator():
+	panels.open_select()
+	await wait_frames(1)
+	panels._on_new_character()
+	await wait_frames(1)
+	assert_not_null(panels.get_node_or_null("CreatorPanel"), "捏人面板出现")
+	assert_true(panels.get_node("CreatorPanel").visible, "捏人面板可见")
+
+func test_creator_save_writes_character():
+	panels._on_new_character()
+	await wait_frames(1)
+	panels._set_creator_name("新角色X")
+	panels._appearance["gender"] = 1
+	panels._appearance["hair_style"] = 2
+	panels._save_creator()
+	var loaded = CharacterManager.load_character_by_name("新角色X")
+	assert_not_null(loaded, "捏人保存写盘了")
+	assert_eq(loaded.gender, 1)
+	assert_eq(loaded.hair_style, 2)
+
+func test_chest_row_only_visible_for_female():
+	panels._on_new_character()
+	await wait_frames(1)
+	panels._set_gender(0)
+	assert_false(panels._chest_row.visible, "男: 胸围行隐藏")
+	panels._set_gender(1)
+	assert_true(panels._chest_row.visible, "女: 胸围行显示")
+
 func _all_labels(node: Node) -> Array:
 	var out: Array = []
 	if node is Label: out.append(node)
