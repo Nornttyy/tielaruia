@@ -204,11 +204,10 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 static func _frame(ap: Dictionary, pose: String) -> Array:
 	var layers := [
 		_cape_layer(ap, pose),
-		_arm_back_layer(ap, pose),  # 后臂 (远侧手), 画在身体后面 → 露在后方
 		_body_layer(ap, pose),
 		_pants_layer(ap, pose),
 		_shirt_layer(ap, pose),
-		_arm_layer(ap, pose),    # 前臂画在衣服前面 (近侧那条胳膊), 不被衬衫盖
+		_arm_layer(ap, pose),    # 侧面只画近侧一只手 (在衣服前面); 走路前后摆
 		_hair_layer(ap, pose),
 	]
 	# 描边跑两遍 = 2px 粗黑边 (泰拉瑞亚式, 用户要更粗)。
@@ -285,9 +284,9 @@ static func _arm_layer(_ap: Dictionary, pose: String) -> Array:
 		"hurt", "jump":
 			_place(g, 18 + dy, 15, _ARM)   # 手抬高
 		"walk_a":
-			_place(g, 20 + dy, 15, _ARM)   # 往前上摆
+			_place(g, 19 + dy, 16, _ARM)   # 往前上甩 (手在前/右)
 		"walk_c":
-			_place(g, 24 + dy, 14, _ARM)   # 往后下摆
+			_place(g, 24 + dy, 13, _ARM)   # 往后下甩 (手在后/左)
 		_:
 			_place(g, 22 + dy, 15, _ARM)
 	return g
