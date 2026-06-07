@@ -687,6 +687,21 @@ func is_water(tile_id: int) -> bool:
 			or tile_id == WATER_DESERT or tile_id == WATER_JUNGLE or tile_id == WATER_SWAMP
 
 
+# tile id → 水位 (1-8). 满水(含群系满水)=8, 非水=0.
+# 渲染层 display_water_tile 用它反查档位 (彩色分支在 Task 2 补)。
+func water_level(tile_id: int) -> int:
+	if tile_id == WATER or tile_id == WATER_DESERT or tile_id == WATER_JUNGLE or tile_id == WATER_SWAMP:
+		return 8
+	if tile_id == WATER_L7: return 7
+	if tile_id == WATER_L6: return 6
+	if tile_id == WATER_L5: return 5
+	if tile_id == WATER_L4: return 4
+	if tile_id == WATER_L3: return 3
+	if tile_id == WATER_L2: return 2
+	if tile_id == WATER_L1: return 1
+	return 0
+
+
 func is_mineable(tile_id: int) -> bool:
 	if not _PROPS.has(tile_id):
 		return false
