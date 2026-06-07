@@ -10,7 +10,7 @@ const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 # Terraria 风: HP 50 (远程怪比近战更脆少点). 火球 14 dmg (见 fireball.gd).
 const BASE_MAX_HEALTH := 50
-const FLY_SPEED := 70.0
+const FLY_SPEED := 35.0
 const AGGRO_RANGE_PX := 260.0
 const HOVER_DISTANCE_PX := 90.0  # 想保持的距离 (太近就退后)
 const ATTACK_COOLDOWN_SEC := 1.6

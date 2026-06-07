@@ -9,7 +9,7 @@ const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 const BASE_MAX_HEALTH := 20    # 钻剑 20 一击, 木剑 3 × 7 击. 难度缩放见 _ready.
 const CONTACT_DAMAGE := 8
-const FLY_SPEED := 60.0       # 飞行速度 (慢但稳)
+const FLY_SPEED := 30.0       # 飞行速度 (慢但稳)
 const AGGRO_RANGE_PX := 240.0  # 看见 20 tile 内追
 const ENEMY_IFRAME_SEC := 0.2
 # 飞行不受重力, 但漂动给一点缓动让它"活的"感觉

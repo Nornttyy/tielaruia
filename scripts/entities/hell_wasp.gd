@@ -11,8 +11,8 @@ const TILE_SIZE := ChunkConstants.TILE_SIZE
 # Terraria 风: HP 30 / 接触 12 dmg (冲刺扎人). 木剑 10 击, 钻剑 2 击.
 const BASE_MAX_HEALTH := 30
 const CONTACT_DAMAGE := 12
-const PATROL_SPEED := 60.0
-const CHARGE_SPEED := 130.0     # 冲刺
+const PATROL_SPEED := 30.0
+const CHARGE_SPEED := 65.0     # 冲刺
 const AGGRO_RANGE_PX := 280.0
 const ENEMY_IFRAME_SEC := 0.15
 

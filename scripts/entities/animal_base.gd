@@ -4,8 +4,8 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const GRAVITY := 675.0
-const SWIM_GRAVITY := 150.0     # 水里重力 (慢慢沉)
+const GRAVITY := 337.5
+const SWIM_GRAVITY := 75.0     # 水里重力 (慢慢沉)
 const SWIM_MAX_SINK := 60.0     # 水里最大下沉速度
 const WATER_SPEED_MUL := 0.5    # 水里横向速度系数
 const FLEE_DURATION := 4.0
@@ -21,7 +21,7 @@ const AUTO_STEP_DURATION := 0.12  # tween 时长 (秒). 太短像瞬移, 太长�
 
 # 子类覆盖
 var max_health: int = 10
-var walk_speed: float = 37.0
+var walk_speed: float = 18.5
 var drop_table: Array = []   # [item_id, weight%, count_min, count_max]
 var sprite_frames: SpriteFrames = null
 

@@ -4,8 +4,8 @@
 extends Area2D
 
 const TILE_SIZE := ChunkConstants.TILE_SIZE
-const SPEED := 260.0
-const GRAVITY := 200.0          # 箭飞行中往下坠的加速度 → 抛物线弧度 (越大越弯, 弓越要抬高瞄准)
+const SPEED := 130.0
+const GRAVITY := 100.0          # 箭飞行中往下坠的加速度 → 抛物线弧度 (越大越弯, 弓越要抬高瞄准)
 const LIFETIME_SEC := 3.0
 const BASE_DAMAGE := 5
 

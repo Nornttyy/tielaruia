@@ -4,8 +4,8 @@ extends Node2D
 
 const SkeletonKingArt = preload("res://scripts/art/skeleton_king_art.gd")
 
-const SPEED := 155.0
-const GRAVITY := 120.0          # 轻微抛物线 (要躲一下)
+const SPEED := 77.5
+const GRAVITY := 60.0          # 轻微抛物线 (要躲一下)
 const LIFETIME_SEC := 3.0
 const HIT_RADIUS_PX := 14.0     # 骨头到玩家身子中心 ≤ 此值算击中
 const BODY_OFFSET_Y := -14.0    # 玩家中心约在脚上方 14px (玩家 2.5 格高)

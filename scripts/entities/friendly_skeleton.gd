@@ -3,14 +3,14 @@
 # 蓝染跟敌方骷髅一眼区分。
 extends CharacterBody2D
 
-const GRAVITY := 675.0
-const WALK_SPEED := 58.0          # 比敌骷髅快 (积极找架打)
+const GRAVITY := 337.5
+const WALK_SPEED := 29.0          # 比敌骷髅快 (积极找架打)
 const AGGRO_RANGE_PX := 280.0
 const CONTACT_DAMAGE := 12
 const HIT_INTERVAL := 0.4         # 同一下别每帧狂扣 (自管节流)
 const LIFETIME_SEC := 15.0        # 临时帮手, 15 秒后消失
 const TILE_SIZE := ChunkConstants.TILE_SIZE
-const JUMP_VY := -220.0
+const JUMP_VY := -110.0
 
 var _life_t: float = 0.0
 var _hit_cd: float = 0.0
@@ -70,7 +70,7 @@ func _physics_process(delta: float) -> void:
 			sprite.flip_h = dir < 0
 		_try_hit(target)
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, 120.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 60.0 * delta)
 	move_and_slide()
 	# 撞墙 + 落地 → 跳过坎追怪
 	if is_on_wall() and is_on_floor() and _jump_cd <= 0.0:

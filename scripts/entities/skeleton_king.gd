@@ -11,14 +11,14 @@ const SkeletonScene = preload("res://scenes/entities/skeleton.tscn")
 
 const BASE_MAX_HEALTH := 1200
 const CONTACT_DAMAGE := 15      # 摸到身子
-const GRAVITY := 675.0
+const GRAVITY := 337.5
 const TILE_SIZE := ChunkConstants.TILE_SIZE
-const WALK_SPEED := 42.0        # 骑士慢走 (比小骷髅 35 稍快, 有压迫感)
-const AGGRO_RANGE_PX := 600.0
+const WALK_SPEED := 21.0        # 骑士慢走 (比小骷髅 35 稍快, 有压迫感)
+const AGGRO_RANGE_PX := 300.0
 const HIT_FLASH_SEC := 0.1
 const ENEMY_IFRAME_SEC := 0.12
-const JUMP_VY := -240.0
-const DESPAWN_DISTANCE_PX := 1100.0
+const JUMP_VY := -120.0
+const DESPAWN_DISTANCE_PX := 550.0
 const DESPAWN_AFTER_SEC := 5.0
 const BONE_DROP_MIN := 15
 const BONE_DROP_MAX := 25
@@ -37,11 +37,11 @@ const THROW_COUNT := 2               # 一次扔几根
 const DASH_DAMAGE := 18
 const DASH_WINDUP := 0.35            # 前摇 (蹲一下蓄力)
 const DASH_DURATION := 0.35
-const DASH_SPEED := 240.0
+const DASH_SPEED := 120.0
 const SWEEP_DAMAGE := 22
 const SWEEP_WINDUP := 0.25           # 举刀前摇
 const SWEEP_ACTIVE := 0.22           # 打击窗口
-const SWEEP_RANGE_PX := 26.0
+const SWEEP_RANGE_PX := 13.0
 const MINION_INTERVAL := 5.0
 const MINION_PER_WAVE := 2
 const MINION_CAP := 6
@@ -151,7 +151,7 @@ func _physics_process(delta: float) -> void:
 		if _attack_timer <= 0.0:
 			_pick_attack(player)
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 75.0 * delta)
 		_play("idle")
 	move_and_slide()
 	# 撞墙落地 → 跳 (爬台阶过坎); 攻击中不跳; 玩家在下方时不跳 (防砸头顶躲)
@@ -192,14 +192,14 @@ func _run_attack(delta: float, player: Node2D) -> void:
 	_state_t += delta
 	match _state:
 		"throw":
-			velocity.x = move_toward(velocity.x, 0.0, 320.0 * delta)   # 站定扔
+			velocity.x = move_toward(velocity.x, 0.0, 160.0 * delta)   # 站定扔
 			if not _state_done and _state_t >= THROW_WINDUP:
 				_state_done = true
 				_throw_bones(player)
 			if _state_t >= THROW_WINDUP + 0.25:
 				_end_attack()
 		"sweep":
-			velocity.x = move_toward(velocity.x, 0.0, 320.0 * delta)
+			velocity.x = move_toward(velocity.x, 0.0, 160.0 * delta)
 			if not _state_done and _state_t >= SWEEP_WINDUP and _state_t < SWEEP_WINDUP + SWEEP_ACTIVE:
 				_do_sweep_hit(player)   # 打击窗口里结算一次
 				_state_done = true
@@ -207,7 +207,7 @@ func _run_attack(delta: float, player: Node2D) -> void:
 				_end_attack()
 		"dash":
 			if _state_t < DASH_WINDUP:
-				velocity.x = move_toward(velocity.x, 0.0, 320.0 * delta)   # 前摇蓄力 (telegraph)
+				velocity.x = move_toward(velocity.x, 0.0, 160.0 * delta)   # 前摇蓄力 (telegraph)
 			elif _state_t < DASH_WINDUP + DASH_DURATION:
 				velocity.x = _dash_dir * DASH_SPEED   # 冲!
 			else:

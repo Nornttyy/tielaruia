@@ -4,16 +4,16 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const GRAVITY := 675.0
+const GRAVITY := 337.5
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 # Terraria 风地狱精英: HP 80 / 18 dmg. 钻剑 4 击, 100HP 玩家被打 6 击死 (含 i-frame).
 const BASE_MAX_HEALTH := 80
 const CONTACT_DAMAGE := 18
-const WALK_SPEED := 35.0      # 慢, 但血厚
+const WALK_SPEED := 17.5      # 慢, 但血厚
 const AGGRO_RANGE_PX := 220.0
-const JUMP_VY := -200.0
+const JUMP_VY := -100.0
 const ENEMY_IFRAME_SEC := 0.2
 
 var max_health: int = BASE_MAX_HEALTH
@@ -73,7 +73,7 @@ func _physics_process(delta: float) -> void:
 		if sprite.animation != "walk":
 			sprite.play("walk")
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, 120.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 60.0 * delta)
 		if abs(velocity.x) < 5.0 and sprite.animation != "idle":
 			sprite.play("idle")
 	move_and_slide()

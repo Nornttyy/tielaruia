@@ -5,16 +5,16 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const GRAVITY := 675.0
+const GRAVITY := 337.5
 const HIT_FLASH_SEC := 0.1
 const TILE_SIZE := ChunkConstants.TILE_SIZE
 
 # 木剑 30 击, 钻剑 5 击. 接触 16 dmg → 100HP 玩家 6 击死, 鼓励远战.
 const BASE_MAX_HEALTH := 90
 const CONTACT_DAMAGE := 16
-const WALK_SPEED := 40.0      # 慢 (重箱子)
+const WALK_SPEED := 20.0      # 慢 (重箱子)
 const AGGRO_RANGE_PX := 240.0
-const JUMP_VY := -340.0       # 跳得高 (像章鱼)
+const JUMP_VY := -170.0       # 跳得高 (像章鱼)
 const ENEMY_IFRAME_SEC := 0.2
 
 # 死人箱可掉的奖励 (打死后随机 1-2 种)
@@ -77,7 +77,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = dir * WALK_SPEED
 		sprite.flip_h = dir < 0
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, 120.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 60.0 * delta)
 	move_and_slide()
 	# 撞墙 + 落地 → 跳 (mimic 跳得高)
 	if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:

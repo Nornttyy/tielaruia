@@ -3,8 +3,8 @@
 extends Area2D
 
 const TILE_SIZE := ChunkConstants.TILE_SIZE
-const SPEED := 240.0
-const GRAVITY := 480.0
+const SPEED := 120.0
+const GRAVITY := 240.0
 const LIFETIME_SEC := 4.0
 const BASE_DAMAGE := 16
 const HIT_RADIUS_PX := 9.0
