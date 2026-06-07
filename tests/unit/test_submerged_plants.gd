@@ -6,8 +6,8 @@ const SaveData = preload("res://scripts/save/save_data.gd")
 
 
 func test_submersible_set() -> void:
-	# 用户要求: 只有装饰小草会被水淹没; 别的植物碰水都不消失 (水绕开它们)。
-	assert_true(Tiles.is_submersible_plant(Tiles.PLANT_GRASS), "装饰小草可淹 (唯一例外)")
+	# 用户最终决定: 没有植物"泡水保留" —— 小草碰水直接被破坏(见 test_liquid_flow), 别的植物挡水。
+	assert_false(Tiles.is_submersible_plant(Tiles.PLANT_GRASS), "小草也不泡水 (碰水直接被破坏)")
 	assert_false(Tiles.is_submersible_plant(Tiles.MUSHROOM), "蘑菇不淹 (碰水不消失)")
 	assert_false(Tiles.is_submersible_plant(Tiles.WHEAT_0), "小麦不淹")
 	assert_false(Tiles.is_submersible_plant(Tiles.RICE_0), "稻子不淹")

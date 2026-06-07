@@ -672,11 +672,11 @@ func is_plant(tile_id: int) -> bool:
 	return _PLANT_TILES.has(tile_id)
 
 
-# 可被水淹没的植物: 水流进 = 记进 _submerged 元数据、显示水; 退水复原。
-# 用户要求: 除了草, 别的植物 (树/仙人掌/蘑菇/庄稼/...) 碰到水都不消失 —— 水绕开它们, 一直看得见。
-# 只有贴地的装饰小草 PLANT_GRASS 例外: 它本来就矮, 被水盖住自然 (且记元数据退水复原)。
-func is_submersible_plant(tile_id: int) -> bool:
-	return tile_id == PLANT_GRASS
+# 可被水淹没(泡水保留+退水复原)的植物。用户最终决定: 没有植物要泡水 —— 小草碰水直接被破坏(见
+# water_sim._water_enterable), 别的植物挡水不消失。所以这里返 false (没有植物记元数据复原)。
+# 留这个 hook: 以后想让某植物"泡在水里不消失", 在这里返 true 即可 (机制还在: _submerged + 总闸)。
+func is_submersible_plant(_tile_id: int) -> bool:
+	return false
 
 
 # 是不是背景墙 tile (4 种). 加新墙改这里.
