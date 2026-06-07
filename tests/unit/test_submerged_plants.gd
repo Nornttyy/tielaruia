@@ -10,8 +10,9 @@ func test_submersible_set() -> void:
 	assert_true(Tiles.is_submersible_plant(Tiles.MUSHROOM), "蘑菇可淹")
 	assert_true(Tiles.is_submersible_plant(Tiles.WHEAT_0), "小麦可淹")
 	assert_true(Tiles.is_submersible_plant(Tiles.RICE_0), "稻子可淹")
-	assert_true(Tiles.is_submersible_plant(Tiles.CACTUS), "仙人掌可淹")
-	# 树不淹: 高大结构半截泡水会"被水盖住像消失" (用户反馈), 树改回挡水。
+	# 树+仙人掌不淹: 高大/竖直结构半截泡水会"被水盖住像消失" (用户反馈), 改回挡水。
+	assert_false(Tiles.is_submersible_plant(Tiles.CACTUS), "仙人掌不淹 (会像消失)")
+	assert_false(Tiles.is_submersible_plant(Tiles.CACTUS_BODY), "仙人掌身不淹")
 	assert_false(Tiles.is_submersible_plant(Tiles.LOG), "树干不淹 (会像消失)")
 	assert_false(Tiles.is_submersible_plant(Tiles.LEAVES), "树叶不淹")
 	assert_false(Tiles.is_submersible_plant(Tiles.BRANCH_L), "树枝不淹")

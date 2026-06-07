@@ -645,12 +645,13 @@ func is_plant(tile_id: int) -> bool:
 # 可被水淹没的植物: 水流进 = 记进 _submerged 元数据、显示水; 退水复原。
 # = is_plant 但排除:
 #   - 火把/史莱姆火把/绳子: 玩家搭建的功能件, 不是植物 (火把泡水灭灯也怪)。
-#   - 树 (树干/树根/侧枝/各种树叶): 树是高大结构, 半截泡水里会"被水盖住像消失了" (用户反馈), 难看。
-#     树改回挡水 (水绕开, 树一直看得见)。只有贴地小植物 (草/蘑菇/庄稼/仙人掌) 才泡水。
+#   - 树 (树干/树根/侧枝/各种树叶) + 仙人掌: 高大/竖直结构, 半截泡水里会"被水盖住像消失了"
+#     (用户反馈), 难看。改回挡水 (水绕开, 一直看得见)。只有贴地小植物 (草/蘑菇/庄稼) 才泡水。
 const _NOT_SUBMERSIBLE := {
 	TORCH: true, SLIME_TORCH: true, ROPE: true,
 	LOG: true, LOG_TOP: true, LOG_ROOT_L: true, LOG_ROOT_R: true, BRANCH_L: true, BRANCH_R: true,
 	LEAVES: true, LEAVES_PINE: true, LEAVES_AUTUMN: true, JUNGLE_LEAVES: true,
+	CACTUS: true, CACTUS_BODY: true,
 }
 func is_submersible_plant(tile_id: int) -> bool:
 	return is_plant(tile_id) and not _NOT_SUBMERSIBLE.has(tile_id)
