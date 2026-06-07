@@ -56,6 +56,39 @@ func test_unknown_shirt_style_falls_back_no_crash():
 	var sf = PlayerArt.build_sprite_frames(ap)
 	assert_true(sf.has_animation("idle"), "未知款回退不崩")
 
+func test_female_body_differs_from_male():
+	var m = _default_appearance(); m["gender"] = 0
+	var f = _default_appearance(); f["gender"] = 1
+	var im = PlayerArt.build_sprite_frames(m).get_frame_texture("idle", 0).get_image()
+	var iff = PlayerArt.build_sprite_frames(f).get_frame_texture("idle", 0).get_image()
+	var diff := 0
+	for y in range(48):
+		for x in range(24):
+			if im.get_pixel(x, y) != iff.get_pixel(x, y):
+				diff += 1
+	assert_gt(diff, 10, "女身体与男身体有明显差异 (重画比例)")
+
+func test_chest_size_changes_female_torso():
+	var f0 = _default_appearance(); f0["gender"] = 1; f0["chest_size"] = 0
+	var f5 = _default_appearance(); f5["gender"] = 1; f5["chest_size"] = 5
+	var i0 = PlayerArt.build_sprite_frames(f0).get_frame_texture("idle", 0).get_image()
+	var i5 = PlayerArt.build_sprite_frames(f5).get_frame_texture("idle", 0).get_image()
+	var diff := 0
+	for y in range(13, 26):   # 胸口区
+		for x in range(24):
+			if i0.get_pixel(x, y) != i5.get_pixel(x, y):
+				diff += 1
+	assert_gt(diff, 0, "胸围 0 与 5 在胸口区像素不同")
+
+func test_male_ignores_chest_size():
+	var m0 = _default_appearance(); m0["gender"] = 0; m0["chest_size"] = 0
+	var m5 = _default_appearance(); m5["gender"] = 0; m5["chest_size"] = 5
+	var i0 = PlayerArt.build_sprite_frames(m0).get_frame_texture("idle", 0).get_image()
+	var i5 = PlayerArt.build_sprite_frames(m5).get_frame_texture("idle", 0).get_image()
+	for y in range(48):
+		for x in range(24):
+			assert_eq(i0.get_pixel(x, y), i5.get_pixel(x, y), "男版不受 chest_size 影响 (%d,%d)" % [x, y])
+
 # helper: 在 row/col 范围内是否有接近 target 的像素 (容差比较)
 func _has_color_near(img: Image, target: Color, rows, cols, tol := 0.06) -> bool:
 	for y in rows:

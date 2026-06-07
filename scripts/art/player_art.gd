@@ -40,6 +40,20 @@ const _HEAD := [
 	"...sss...",
 	"...kss...",
 ]
+# 女头: 同尺寸, 加睫毛 (眼上一排 e) + 眼珠大一点, 一眼区分。
+const _HEAD_F := [
+	"..sssss..",
+	".ssseess.",
+	".sssWiiss",
+	".sssWiess",
+	".ksssssss",
+	".kssssssk",
+	".ksssmsss",
+	".kssssss.",
+	"..kssss..",
+	"...sss...",
+	"...kss...",
+]
 # 短发: 盖头顶 + 后脑 (朝右 → 后脑在左)。
 const _HAIR_SHORT := [
 	"..HHHHH..",
@@ -153,11 +167,12 @@ static func _cape_layer(_ap: Dictionary, _pose: String) -> Array:
 	return _blank()
 
 
-# 身体层: 头 + 前臂 + 靴 (躯干/腿留空给衣裤)。gender 1 待 Task 3, 现回退男。
+# 身体层: 头 + 前臂 + 靴 (躯干/腿留空给衣裤)。男女不同头 (女加睫毛/大眼珠)。
 static func _body_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var dy := _dy(pose)
-	_place(g, 3 + dy, 7, _HEAD)
+	var head: Array = _HEAD_F if int(ap.get("gender", 0)) == 1 else _HEAD
+	_place(g, 3 + dy, 7, head)
 	# 前臂: 跟姿势。受击/跳手抬高, 下落手外展, 其余垂在体侧前方。
 	match pose:
 		"hurt", "jump":
@@ -192,12 +207,43 @@ static func _pants_layer(_ap: Dictionary, pose: String) -> Array:
 	return g
 
 
-# 衬衫层: shirt_style 0 (T恤); 其它号回退。
-static func _shirt_layer(_ap: Dictionary, pose: String) -> Array:
+# 衬衫层: shirt_style 0 (T恤); 其它号回退。女版用窄躯干 + 胸口前凸 (chest_size)。
+static func _shirt_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var dy := _dy(pose)
-	_place(g, 13 + dy, 8, _TORSO)
+	if int(ap.get("gender", 0)) == 1:
+		_place(g, 13 + dy, 8, _female_torso(int(ap.get("chest_size", 1))))
+	else:
+		_place(g, 13 + dy, 8, _TORSO)
 	return g
+
+
+# 女躯干 (衬衫): 7 宽窄身 + 腰收; 胸口 (上 4 行) 朝右(前)按 chest_size 0..5 前凸。
+static func _female_torso(cs: int) -> Array:
+	cs = clampi(cs, 0, 5)
+	var rows := [
+		".wwwww.",
+		"wwwwwww",
+		"wwwwwDw",
+		"wwwwwww",
+		"wDwwwww",
+		".wwwww.",
+		".wwwww.",
+		"wwwwwww",
+		"wwwwwDw",
+		"wwwwwww",
+		"wDwwwww",
+		".wwwww.",
+		".wwwww.",
+		".wwwww.",
+		".wwwww.",
+	]
+	# 胸口前凸: rows 1..4 在右侧(前)加 cs 列 (最前一列 D 阴影)。
+	if cs > 0:
+		var bulge: String = ("w".repeat(cs - 1) + "D") if cs >= 1 else ""
+		for r in range(1, 5):
+			rows[r] = rows[r] + bulge
+	return rows
 
 
 # 头发层: hair_style 0 (短发); 其它号 Task 4。
