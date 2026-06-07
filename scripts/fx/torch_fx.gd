@@ -6,7 +6,7 @@
 extends Node2D
 
 const TILE_SIZE := ChunkConstants.TILE_SIZE
-const LIGHT_RADIUS := 96        # 半径 px
+const LIGHT_RADIUS := 48        # 半径 px
 const BASE_ENERGY := 1.2
 const ENERGY_OSC := 0.10        # sin 幅度
 const ENERGY_NOISE := 0.05      # 每帧随机抖幅度
