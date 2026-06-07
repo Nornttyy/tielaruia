@@ -56,12 +56,13 @@ const _HEAD_F := [
 	"...kss...",
 ]
 # 短发: 盖头顶 + 后脑 (朝右 → 后脑在左)。
+# 自然顺滑短发: 顺着头顶弧线, 前额一缕斜下, 后侧自然垂, 不是死板圆球。
 const _HAIR_SHORT := [
-	"...hhh...",
-	"..hhhhh..",
-	".hhhhhhh.",
-	"hhhhhhhh.",
-	"hhhhhhhh.",
+	"...hhhh..",
+	"..hhhhhh.",
+	".hhhhhhhh",
+	".hhhhhhhh",
+	"hhhhhhhH.",
 	"hhhhhh...",
 	"Hhhh.....",
 	"hh.......",
@@ -147,6 +148,42 @@ const _LEG := [
 	"Bbbb",
 	"Bbbb",
 	"Bbbb",
+]
+# 迈步腿: 往前迈 (髋在左上→脚在右下, 脚朝前)。走路用, 脚一前一后落地, 不上下抖。
+const _LEG_FWD := [
+	"Bbb..",
+	"Bbb..",
+	"Bbb..",
+	".Bbb.",
+	".Bbb.",
+	".Bbb.",
+	".Bbb.",
+	".Bbb.",
+	".Bbb.",
+	"..bbb",
+	"..bbb",
+	"..bbb",
+	"..bbb",
+	"..bbb",
+	"..bbb",
+]
+# 迈步腿: 往后蹬 (髋在右上→脚在左下, 脚朝后)。
+const _LEG_BACK := [
+	"..bbb",
+	"..bbb",
+	"..bbb",
+	".bbb.",
+	".bbb.",
+	".bbb.",
+	".bbb.",
+	".bbb.",
+	".bbb.",
+	"Bbb..",
+	"Bbb..",
+	"Bbb..",
+	"Bbb..",
+	"Bbb..",
+	"Bbb..",
 ]
 # 靴 (o / 阴影 O), 4 宽
 const _BOOT_B := [
@@ -256,12 +293,12 @@ static func _pants_layer(_ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var dy := _dy(pose)
 	match pose:
-		"walk_a":   # 一腿前 (右), 一腿后 (左)
-			_place(g, 27 + dy, 12, _LEG)
-			_place(g, 28 + dy, 7, _LEG)
-		"walk_c":   # 反相
-			_place(g, 28 + dy, 12, _LEG)
-			_place(g, 27 + dy, 7, _LEG)
+		"walk_a":   # 迈步: 前腿往前迈(脚在右), 后腿往后蹬(脚在左); 脚都落地, 不上下抖
+			_place(g, 27 + dy, 10, _LEG_FWD)
+			_place(g, 27 + dy, 6, _LEG_BACK)
+		"walk_c":   # 反相迈步 (前后腿对调, 看着像交替迈步)
+			_place(g, 27 + dy, 9, _LEG_FWD)
+			_place(g, 27 + dy, 5, _LEG_BACK)
 		"jump":     # 收腿 (短)
 			_place(g, 27 + dy, 8, _slice(_LEG, 0, 10))
 			_place(g, 27 + dy, 12, _slice(_LEG, 0, 10))
@@ -333,12 +370,12 @@ static func _hair_layer(ap: Dictionary, pose: String) -> Array:
 # 靴跟腿姿摆放。
 static func _place_boots(g: Array, pose: String, dy: int) -> void:
 	match pose:
-		"walk_a":
+		"walk_a":   # 前脚(右) + 后脚(左), 同一地面高度 (不上下)
 			_place(g, 42 + dy, 12, _BOOT_B)
-			_place(g, 43 + dy, 7, _BOOT_B)
+			_place(g, 42 + dy, 6, _BOOT_B)
 		"walk_c":
-			_place(g, 43 + dy, 12, _BOOT_B)
-			_place(g, 42 + dy, 7, _BOOT_B)
+			_place(g, 42 + dy, 11, _BOOT_B)
+			_place(g, 42 + dy, 5, _BOOT_B)
 		"jump":
 			_place(g, 37 + dy, 8, _BOOT_B)
 			_place(g, 37 + dy, 12, _BOOT_B)
