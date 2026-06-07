@@ -4,7 +4,7 @@ const ScenicDirector = preload("res://scripts/world/scenic_director.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const WorldGenerator = preload("res://scripts/world/world_generator.gd")
 
-const TILE_SIZE := 12  # 跟着 scenic_director.gd 走 (commit 6af9aa5: 16→12)
+const TILE_SIZE := 6  # 跟着 scenic_director.gd 走 (commit 6af9aa5: 16→12)
 
 
 # === 静态 compute (用 depth_tiles 直接算) ===

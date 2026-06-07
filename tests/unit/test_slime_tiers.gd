@@ -39,7 +39,7 @@ func test_setup_applies_tier_and_size():
 	# 紫大: HP = 25 * 2.8(紫) * 1.5(大) * 难度(普通1) ≈ 105, 远大于基础蓝中 25
 	assert_gt(s.max_health, 80, "紫大史莱姆血厚, 实际 %d" % s.max_health)
 	assert_gt(s.contact_damage, 6, "紫大接触伤 > 基础6, 实际 %d" % s.contact_damage)
-	assert_almost_eq(s.sprite.scale.x, 1.5, 0.01, "大史莱姆 scale 1.5")
+	assert_almost_eq(s.sprite.scale.x, 0.75, 0.01, "大史莱姆 scale 0.75")
 
 
 func test_setup_default_is_blue_medium():
@@ -48,7 +48,7 @@ func test_setup_default_is_blue_medium():
 	await wait_frames(1)
 	assert_eq(s.color_tier, 1, "默认蓝")
 	assert_eq(s.size, 1, "默认中")
-	assert_almost_eq(s.sprite.scale.x, 1.0, 0.01, "中 scale 1.0")
+	assert_almost_eq(s.sprite.scale.x, 0.5, 0.01, "中 scale 0.5")
 
 
 func test_random_size_in_range():

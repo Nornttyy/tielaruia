@@ -30,7 +30,7 @@ func test_mine_grass_then_pick_up():
 	# 等 pickup_delay (0.4s) 完全过期后再接近 drop
 	await wait_seconds(0.5)
 	# 瞬移玩家到 drop 位置触发 pickup
-	player.global_position = Vector2(target.x * 12 + 6, target.y * 12 + 12)
+	player.global_position = Vector2(target.x * 6 + 3, target.y * 6 + 6)
 	# 等几帧 area body_entered 信号触发
 	await wait_frames(10)
 	# inventory 中应有 grass 或 dirt

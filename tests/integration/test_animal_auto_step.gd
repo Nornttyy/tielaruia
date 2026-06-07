@@ -2,7 +2,7 @@
 extends GutTest
 
 const CowScene = preload("res://scenes/entities/cow.tscn")
-const TILE_SIZE := 12
+const TILE_SIZE := 6
 
 
 func test_cow_climbs_one_tile_step():
@@ -26,7 +26,7 @@ func test_cow_climbs_one_tile_step():
 	terrain.set_cell(btile, Tiles.STONE, Vector2i.ZERO)
 	# 放一只牛在玩家右 +3, 强制让它朝右走 (碰到台阶)
 	var cow = CowScene.instantiate()
-	cow.global_position = Vector2((pt.x + 3) * TILE_SIZE + 8, pt.y * TILE_SIZE)
+	cow.global_position = Vector2((pt.x + 3) * TILE_SIZE + 4, pt.y * TILE_SIZE)
 	world.entities_root.add_child(cow)
 	# 等牛真正落地 (不能只靠固定帧数 — gravity 把它沉到地面要 ~10 帧).
 	for _i in 60:
@@ -74,7 +74,7 @@ func test_cow_does_not_climb_two_tile_wall():
 		world._set_tile(btile.x, btile.y, Tiles.STONE)
 		terrain.set_cell(btile, Tiles.STONE, Vector2i.ZERO)
 	var cow = CowScene.instantiate()
-	cow.global_position = Vector2((pt.x + 3) * TILE_SIZE + 8, pt.y * TILE_SIZE)
+	cow.global_position = Vector2((pt.x + 3) * TILE_SIZE + 4, pt.y * TILE_SIZE)
 	world.entities_root.add_child(cow)
 	for _i in 60:
 		if cow.is_on_floor():

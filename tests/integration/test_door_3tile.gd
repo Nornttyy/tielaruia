@@ -26,13 +26,13 @@ func test_door_auto_open_and_close() -> void:
 	world._set_tile(bx, by - 1, Tiles.DOOR_MID)
 	world._set_tile(bx, by - 2, Tiles.DOOR_TOP)
 	# 玩家挪到门旁 → 一 tick → 整扇开
-	player.global_position = Vector2((bx - 1) * 12 + 6, by * 12 + 6)
+	player.global_position = Vector2((bx - 1) * 6 + 3, by * 6 + 3)
 	world._tick_doors()
 	assert_eq(cm.get_tile(bx, by), Tiles.DOOR_OPEN, "靠近: 门底应开")
 	assert_eq(cm.get_tile(bx, by - 1), Tiles.DOOR_OPEN, "靠近: 门中应开")
 	assert_eq(cm.get_tile(bx, by - 2), Tiles.DOOR_OPEN, "靠近: 门顶应开")
 	# 玩家走远 → 一 tick → 整扇关回
-	player.global_position = Vector2((bx - 30) * 12 + 6, by * 12 + 6)
+	player.global_position = Vector2((bx - 30) * 6 + 3, by * 6 + 3)
 	world._tick_doors()
 	assert_eq(cm.get_tile(bx, by), Tiles.DOOR, "走远: 门底应关回")
 	assert_eq(cm.get_tile(bx, by - 1), Tiles.DOOR_MID, "走远: 门中应关回")

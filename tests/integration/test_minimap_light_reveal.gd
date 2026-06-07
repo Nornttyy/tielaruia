@@ -2,7 +2,7 @@
 extends GutTest
 
 const MainScene = preload("res://scenes/main.tscn")
-const TILE := 12
+const TILE := 6
 
 
 func test_minimap_reveals_lit_and_adjacent_not_dark_far():

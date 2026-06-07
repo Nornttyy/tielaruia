@@ -986,12 +986,12 @@ func _tool_damage_mult() -> float:
 
 
 # 击退强度 (阶段 2): 按工具 + tier 缩放
-const KB_THRUST_BASE := 45.0
-const KB_THRUST_TIER := 11.0
-const KB_SWEEP_BASE := 60.0
-const KB_SWEEP_TIER := 15.0
-const KB_PICKAXE_BASE := 22.0
-const KB_PICKAXE_TIER := 6.0
+const KB_THRUST_BASE := 22.5
+const KB_THRUST_TIER := 5.5
+const KB_SWEEP_BASE := 30.0
+const KB_SWEEP_TIER := 7.5
+const KB_PICKAXE_BASE := 11.0
+const KB_PICKAXE_TIER := 3.0
 
 
 func _thrust_knockback() -> float:

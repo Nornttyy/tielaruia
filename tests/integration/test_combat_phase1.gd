@@ -141,7 +141,7 @@ func test_pickaxe_prefers_mining_over_attack() -> void:
 	var slime = _spawn_slime_near(ctx, Vector2(36, 0))
 	var slime_hp = slime.current_health
 	ctx["action"].aim_override = target
-	ctx["action"].mouse_world_override = Vector2(target.x * 12 + 6, target.y * 12 + 6)
+	ctx["action"].mouse_world_override = Vector2(target.x * 6 + 3, target.y * 6 + 3)
 	ctx["action"].primary_override = true
 	await wait_frames(15)
 	ctx["action"].primary_override = false

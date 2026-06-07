@@ -1,7 +1,7 @@
 # 端到端: 玩家能走上草斜坡 (move_and_slide + floor_max_angle); 挖斜砖掉 dirt 变 AIR.
 extends GutTest
 const MainScene = preload("res://scenes/main.tscn")
-const TILE := 12.0
+const TILE := 6.0
 
 func _boot():
 	var main = MainScene.instantiate()

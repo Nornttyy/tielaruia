@@ -46,7 +46,7 @@ func test_player_knockback_pushes_away() -> void:
 	# source 在玩家左侧 30px → 玩家应被推向右
 	var src: Vector2 = player.global_position - Vector2(30, 0)
 	hp.take_damage(3, src, 100.0)
-	assert_gt(player.velocity.x, 50.0, "玩家应被向右推")
+	assert_gt(player.velocity.x, 25.0, "玩家应被向右推")
 	assert_lt(player.velocity.y, 0.0, "玩家应被向上推")
 
 
