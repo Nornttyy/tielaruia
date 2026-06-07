@@ -1,0 +1,66 @@
+extends GutTest
+
+const PlayerArt = preload("res://scripts/art/player_art.gd")
+
+func _default_appearance() -> Dictionary:
+	return {
+		"gender": 0, "hair_style": 0, "shirt_style": 0, "pants_style": 0,
+		"cape_style": 0, "chest_size": 1,
+		"skin_color": Color8(255, 218, 185), "hair_color": Color8(121, 85, 72),
+		"shirt_color": Color8(229, 57, 53), "pants_color": Color8(38, 70, 130),
+		"cape_color": Color8(150, 40, 50), "eye_color": Color8(60, 110, 70),
+	}
+
+func test_build_returns_sprite_frames_with_all_anims():
+	var sf = PlayerArt.build_sprite_frames(_default_appearance())
+	assert_true(sf is SpriteFrames, "返回 SpriteFrames")
+	for anim in ["idle", "walk", "jump", "fall", "hurt"]:
+		assert_true(sf.has_animation(anim), "有动画 %s" % anim)
+
+func test_canvas_is_24x48():
+	var sf = PlayerArt.build_sprite_frames(_default_appearance())
+	var tex = sf.get_frame_texture("idle", 0)
+	assert_eq(tex.get_width(), 24, "宽 24")
+	assert_eq(tex.get_height(), 48, "高 48")
+
+func test_no_arg_uses_default_and_matches_appearance_default():
+	# 无参 = 默认 appearance, 两者首帧逐像素一致 (锁"默认基准")。
+	var a = PlayerArt.build_sprite_frames()
+	var b = PlayerArt.build_sprite_frames(_default_appearance())
+	var ia = a.get_frame_texture("idle", 0).get_image()
+	var ib = b.get_frame_texture("idle", 0).get_image()
+	for y in range(48):
+		for x in range(24):
+			assert_eq(ia.get_pixel(x, y), ib.get_pixel(x, y), "默认基准像素 (%d,%d) 一致" % [x, y])
+
+func test_shirt_color_pixel_follows_appearance():
+	var ap = _default_appearance()
+	ap["shirt_color"] = Color8(10, 200, 30)
+	var sf = PlayerArt.build_sprite_frames(ap)
+	var img = sf.get_frame_texture("idle", 0).get_image()
+	# 躯干区 (row 16..30) 应有衬衫主色
+	assert_true(_has_color_near(img, Color8(10, 200, 30), range(16, 31), range(6, 19)), "躯干有所选衬衫色")
+
+func test_eye_has_white_and_iris():
+	var ap = _default_appearance()
+	ap["eye_color"] = Color8(200, 30, 30)
+	var sf = PlayerArt.build_sprite_frames(ap)
+	var img = sf.get_frame_texture("idle", 0).get_image()
+	# 头部眼区同时有近白 (眼白) 和所选眼珠色
+	assert_true(_has_color_near(img, Color(1, 1, 1, 1), range(4, 14), range(8, 22), 0.18), "眼区有眼白")
+	assert_true(_has_color_near(img, Color8(200, 30, 30), range(4, 14), range(8, 22), 0.12), "眼区有所选眼珠色")
+
+func test_unknown_shirt_style_falls_back_no_crash():
+	var ap = _default_appearance()
+	ap["shirt_style"] = 99   # 未画的款 → 回退默认, 不崩
+	var sf = PlayerArt.build_sprite_frames(ap)
+	assert_true(sf.has_animation("idle"), "未知款回退不崩")
+
+# helper: 在 row/col 范围内是否有接近 target 的像素 (容差比较)
+func _has_color_near(img: Image, target: Color, rows, cols, tol := 0.06) -> bool:
+	for y in rows:
+		for x in cols:
+			var c = img.get_pixel(x, y)
+			if c.a > 0.5 and abs(c.r - target.r) < tol and abs(c.g - target.g) < tol and abs(c.b - target.b) < tol:
+				return true
+	return false
