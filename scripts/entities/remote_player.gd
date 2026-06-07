@@ -14,7 +14,7 @@ const LERP_SPEED := 8.0   # 每秒收敛 8/s, 0.1s 内大致到位
 
 
 func _ready() -> void:
-	# 用 ArtCache 的玩家帧 (跟本地玩家同一套). 加 modulate 偏色区分.
+	# 远程玩家暂用默认外观 (联机外观同步是后续, 见 spec 非目标). 加 modulate 偏色区分.
 	_sprite.sprite_frames = ArtCache.player_frames
 	_sprite.play("idle")
 	_sprite.modulate = Color(0.7, 0.9, 1.0)  # 偏蓝, 跟本地玩家 (白) 区分

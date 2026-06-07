@@ -313,6 +313,11 @@ func _build_doors() -> void:
 	door_item_icon = BlocksArt.get_door_icon_texture()
 
 
+# 按角色外观出玩家 SpriteFrames (捏人/换装用)。player_frames (默认) 仍由 _build_entities 缓存。
+func player_frames_for(appearance: Dictionary) -> SpriteFrames:
+	return PlayerArt.build_sprite_frames(appearance)
+
+
 func _build_entities() -> void:
 	player_frames = PlayerArt.build_sprite_frames()
 	slime_frames = SlimeArt.build_sprite_frames()

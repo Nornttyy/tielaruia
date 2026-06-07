@@ -79,7 +79,11 @@ var _hook_head: Sprite2D = null
 
 
 func _ready() -> void:
-	sprite.sprite_frames = ArtCache.player_frames
+	# 用当前角色外观出图; 没选角色 (测试/老流程) fallback 默认 player_frames。
+	if typeof(CharacterManager) != TYPE_NIL and CharacterManager.current != null:
+		sprite.sprite_frames = ArtCache.player_frames_for(CharacterManager.current.appearance_dict())
+	else:
+		sprite.sprite_frames = ArtCache.player_frames
 	sprite.play("idle")
 	add_to_group("player")
 	# 斜坡: 默认 floor_max_angle=45° 正好卡边界, 45° 斜砖会被当墙. 调到 ~51° 让斜面算地面能走上去.
