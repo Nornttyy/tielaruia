@@ -134,6 +134,11 @@ func _ready() -> void:
 	var wgp = WaterGrainPoolClass.new()
 	wgp.name = "WaterGrainPool"
 	$EffectsRoot.add_child(wgp)
+	# 网格辅助: 按 Ctrl 开关, 整屏画 tile 网格线 + 高亮鼠标那格 (搭建对齐用). 挂 World 下 = 世界坐标.
+	var GridOverlayClass = preload("res://scripts/world/grid_overlay.gd")
+	var grid_overlay = GridOverlayClass.new()
+	grid_overlay.name = "GridOverlay"
+	add_child(grid_overlay)
 	# 怪物血条: 任何进 entities_root 且有 current_health 的非玩家实体自动挂血条.
 	# 一处集中 — 不用每个 entity.gd 单独加.
 	entities_root.child_entered_tree.connect(_on_entity_added_for_bar)
