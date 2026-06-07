@@ -15,11 +15,19 @@ const TILE_SIZE := 12
 var view_tiles_x: int = MAP_PIXEL_WIDTH / ZOOM_DEFAULT
 var view_tiles_y: int = MAP_PIXEL_HEIGHT / ZOOM_DEFAULT
 
-# 大地图相关 (尺寸固定不可调; 滚轮在大地图状态不生效)
-const FULLSCREEN_ZOOM := 24    # 大地图每 tile 24px (tile 大显示, 视野约 50x30 tile)
-const FULLSCREEN_SCALE := 1.0  # 大地图占整个屏幕
+# 大地图相关
+const FULLSCREEN_ZOOM := 24         # 大地图默认每 tile 24px (视野约 50x30 tile)
+const FULLSCREEN_ZOOM_MIN := 8      # 大地图能缩到多小 (8px/tile = 看更大范围)
+const FULLSCREEN_ZOOM_MAX := 64     # 大地图能放到多大 (64px/tile = 看更细)
+const FULLSCREEN_ZOOM_STEP := 6     # 大地图滚轮一格变 6px (小地图是 1px)
+const FULLSCREEN_SCALE := 1.0       # 大地图占整个屏幕
+const DRAG_CLICK_THRESHOLD := 6.0   # 鼠标拖超过 6px 算"滑动地图", 否则算"点击关闭"
 var _fullscreen: bool = false
 var _saved_zoom: int = ZOOM_DEFAULT
+var _pan: Vector2 = Vector2.ZERO     # 大地图相对玩家的平移 (tile 单位, 可正负); 小地图恒为 0
+var _drag_active: bool = false       # 左键正按在大地图上 (可能要拖)
+var _drag_moved: bool = false        # 已拖够距离 → 是"滑动"不是"点击"
+var _drag_accum: float = 0.0         # 累计拖动像素
 
 const _TILE_COLORS := {
 	# air 在地下 = 洞 (深紫), 视觉上区分 "已探索的实心" vs "已探索的空洞"
@@ -135,17 +143,39 @@ func _capture_home_layout() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			_toggle_fullscreen()
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		# 滚轮: 小地图 / 大地图都能缩放 (大地图步子大一点)
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_zoom_step(1)
 			accept_event()
-		# 滚轮 zoom 只在小地图状态生效, 大地图状态忽略 (避免误触改边框)
-		elif not _fullscreen and event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_set_zoom(pixel_per_tile + 1)
+		elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_zoom_step(-1)
 			accept_event()
-		elif not _fullscreen and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_set_zoom(pixel_per_tile - 1)
-			accept_event()
+		elif mb.button_index == MOUSE_BUTTON_LEFT:
+			if mb.pressed:
+				if _fullscreen:
+					# 大地图: 左键按下先当"可能要拖". 松开时若没拖动才算点击 → 关地图.
+					_drag_active = true
+					_drag_moved = false
+					_drag_accum = 0.0
+				else:
+					_toggle_fullscreen()   # 小地图: 点一下打开大地图
+				accept_event()
+			else:
+				# 左键松开: 大地图里"没拖动"= 点击 → 关闭
+				if _fullscreen and not _drag_moved:
+					_toggle_fullscreen()
+				_drag_active = false
+				accept_event()
+	elif event is InputEventMouseMotion and _fullscreen and _drag_active:
+		# 拖动大地图 → 视野平移 (像拖手机地图, 内容跟手)
+		var mm := event as InputEventMouseMotion
+		_drag_accum += mm.relative.length()
+		if _drag_accum >= DRAG_CLICK_THRESHOLD:
+			_drag_moved = true
+		_pan_by_pixels(mm.relative)
+		accept_event()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -155,12 +185,29 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+# 滚轮一格: 小地图 ±1px, 大地图 ±FULLSCREEN_ZOOM_STEP px
+func _zoom_step(dir: int) -> void:
+	var step: int = FULLSCREEN_ZOOM_STEP if _fullscreen else 1
+	_set_zoom(pixel_per_tile + dir * step)
+
+
 func _set_zoom(z: int) -> void:
-	var new_zoom: int = clampi(z, ZOOM_MIN, ZOOM_MAX)
+	# 大地图缩放范围比小地图大 (大地图本来就大, 能放更大看更细)
+	var lo: int = FULLSCREEN_ZOOM_MIN if _fullscreen else ZOOM_MIN
+	var hi: int = FULLSCREEN_ZOOM_MAX if _fullscreen else ZOOM_MAX
+	var new_zoom: int = clampi(z, lo, hi)
 	if new_zoom == pixel_per_tile:
 		return
 	pixel_per_tile = new_zoom
 	_recompute_view_tiles()
+	_refresh_timer = 0.0  # 立即重绘
+
+
+# 拖动平移: 把鼠标走过的像素换算成 tile, 视野朝反方向移 (内容跟手)
+func _pan_by_pixels(dpix: Vector2) -> void:
+	if pixel_per_tile <= 0:
+		return
+	_pan -= dpix / float(pixel_per_tile)
 	_refresh_timer = 0.0  # 立即重绘
 
 
@@ -184,7 +231,10 @@ func _enter_fullscreen() -> void:
 	_capture_home_layout()
 	_saved_zoom = pixel_per_tile
 	pixel_per_tile = FULLSCREEN_ZOOM
-	print("[minimap] enter_fullscreen zoom=", FULLSCREEN_ZOOM, " scale=", FULLSCREEN_SCALE)
+	# 每次开大地图都重新居中到玩家 (清掉上次的平移)
+	_pan = Vector2.ZERO
+	_drag_active = false
+	_drag_moved = false
 	# 大地图固定 60% 屏幕居中 (尺寸不可调)
 	var vp: Vector2 = get_viewport_rect().size
 	var w: int = int(vp.x * FULLSCREEN_SCALE)
@@ -212,6 +262,7 @@ func _exit_fullscreen() -> void:
 	offset_right = _home_offsets[2]
 	offset_bottom = _home_offsets[3]
 	pixel_per_tile = _saved_zoom
+	_pan = Vector2.ZERO   # 小地图永远跟着玩家居中
 	custom_minimum_size = Vector2(MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT)
 	_rebuild_image_at(MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT)
 
@@ -247,11 +298,14 @@ func _process(delta: float) -> void:
 
 
 func _redraw() -> void:
-	# 玩家 tile 坐标 (TILE_SIZE = 16)
+	# 玩家 tile 坐标
 	var ptx: int = int(floor(_player.global_position.x / float(TILE_SIZE)))
 	var pty: int = int(floor(_player.global_position.y / float(TILE_SIZE)))
-	var x0: int = ptx - view_tiles_x / 2
-	var y0: int = pty - view_tiles_y / 2
+	# 视野中心 = 玩家 + 平移 (_pan 小地图恒为 0; 大地图拖动后偏移)
+	var cxt: int = ptx + int(round(_pan.x))
+	var cyt: int = pty + int(round(_pan.y))
+	var x0: int = cxt - view_tiles_x / 2
+	var y0: int = cyt - view_tiles_y / 2
 
 	_image.fill(_UNEXPLORED_COLOR)
 	# pixel_per_tile >= 4 时画 "3D 边" + 棋盘微噪声让 tile 不像纯色块
@@ -289,14 +343,17 @@ func _redraw() -> void:
 					for dy in pixel_per_tile:
 						_image.set_pixel(px + dx, py + dy, col)
 
-	# 玩家位置标记 (minimap 中心)
-	var cx: int = (view_tiles_x / 2) * pixel_per_tile
-	var cy: int = (view_tiles_y / 2) * pixel_per_tile
-	for dx in range(-1, pixel_per_tile + 1):
-		for dy in range(-1, pixel_per_tile + 1):
-			var px: int = cx + dx
-			var py: int = cy + dy
-			if px >= 0 and px < _image.get_width() and py >= 0 and py < _image.get_height():
-				_image.set_pixel(px, py, _PLAYER_COLOR)
+	# 玩家位置标记: 画在玩家实际所在的屏幕格 (平移后可能不在正中, 出界就不画)
+	var ptile_sx: int = ptx - x0
+	var ptile_sy: int = pty - y0
+	if ptile_sx >= 0 and ptile_sx < view_tiles_x and ptile_sy >= 0 and ptile_sy < view_tiles_y:
+		var cx: int = ptile_sx * pixel_per_tile
+		var cy: int = ptile_sy * pixel_per_tile
+		for dx in range(-1, pixel_per_tile + 1):
+			for dy in range(-1, pixel_per_tile + 1):
+				var px: int = cx + dx
+				var py: int = cy + dy
+				if px >= 0 and px < _image.get_width() and py >= 0 and py < _image.get_height():
+					_image.set_pixel(px, py, _PLAYER_COLOR)
 
 	_texture.update(_image)
