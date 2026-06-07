@@ -1849,6 +1849,17 @@ func _fix_cactus_at(x: int, y: int) -> void:
 func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = false) -> void:
 	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
 		return
+	# 水下植物总闸: 写水前若该格是可淹植物 → 记进 _submerged; 写空气前若底下记着植物 → 改写回植物。
+	# 只认 is_water (岩浆不记 → 岩浆碰植物维持现状)。覆盖所有水写入/退水路径 (都过这一个闸)。
+	if Tiles.is_water(tile_id):
+		var existing: int = chunk_manager.get_tile(x, y)
+		if Tiles.is_submersible_plant(existing):
+			chunk_manager.set_submerged(x, y, existing)
+	elif tile_id == Tiles.AIR:
+		var plant: int = chunk_manager.get_submerged(x, y)
+		if plant != -1:
+			tile_id = plant
+			chunk_manager.clear_submerged(x, y)
 	chunk_manager.set_tile(x, y, tile_id)
 	var pos := Vector2i(x, y)
 	if tile_id == Tiles.AIR:
