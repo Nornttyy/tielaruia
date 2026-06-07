@@ -5,9 +5,13 @@ extends Node
 const BlockBreakParticleScene = preload("res://scenes/fx/block_break_particle.tscn")
 const DustParticleScene = preload("res://scenes/fx/dust_particle.tscn")
 const PlaceBounceScene = preload("res://scenes/fx/place_bounce.tscn")
+const WaterGrainScene = preload("res://scenes/fx/water_grain_particle.tscn")
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
 const TILE_SIZE := 12
 const CHIPS_PER_BREAK := 6
+const MAX_WATER_GRAINS := 250        # 全局存活水珠硬上限 (网页安全)
+var _grain_count: int = 0            # 当前存活水珠数 (发 +1, 回池 -1)
+var grains_emitted: int = 0          # 调试/测试计数: 累计成功发射次数 (只增)
 
 
 func _root() -> Node:
@@ -164,3 +168,44 @@ func spawn_explosion(world_pos: Vector2, tint: Color = Color(0, 0, 0, 0)) -> voi
 		var vel := Vector2(cos(angle), sin(angle)) * speed
 		var color: Color = explosion_palette[i % explosion_palette.size()]
 		chip.setup(world_pos + Vector2(randf_range(-6, 6), randf_range(-6, 6)), color, vel)
+
+
+# 活水颗粒发射: 从流动的水冒小水珠 (纯视觉)。
+# tid: 来源水 tile (决定群系颜色); n: 这次冒几颗。
+# 返回 true = 已发射(或在 headless 下已计数); false = 到上限被拒。
+# 护栏: 全局存活 >= MAX_WATER_GRAINS 直接拒 → 瀑布密集处也不会无限堆。
+func spawn_water_grains(world_pos: Vector2, vel_hint: Vector2, tid: int, n: int = 1) -> bool:
+	if _grain_count >= MAX_WATER_GRAINS:
+		return false
+	grains_emitted += 1
+	# 颜色: 现成群系水色板的高光色 "c", alpha 调亮到 0.9 让水珠显眼
+	var pal: Dictionary = BlocksArt.water_palette_for(tid)
+	var base: Color = pal.get("c", Color(0.55, 0.8, 0.96, 1.0))
+	var color := Color(base.r, base.g, base.b, 0.9)
+	var pool: Node = get_tree().get_first_node_in_group("water_grain_pool")
+	var has_root: bool = get_tree().get_first_node_in_group("effects_root") != null
+	for i in n:
+		if _grain_count >= MAX_WATER_GRAINS:
+			break
+		# 速度: 在 vel_hint 上加点随机扇形, 像溅开的水
+		var vel := vel_hint + Vector2(randf_range(-22, 22), randf_range(-14, 4))
+		var pos := world_pos + Vector2(randf_range(-2, 2), randf_range(-2, 2))
+		if pool != null and pool.request_grain(pos, vel, color):
+			_grain_count += 1
+			continue
+		# 没池但有 effects_root → 兜底 instantiate (跟其他 spawn_* 一致)
+		if has_root:
+			var g = WaterGrainScene.instantiate()
+			_root().add_child(g)
+			g._pool = self           # 让它死时调 Effects.recycle 减计数
+			g.setup(pos, vel, color)
+			_grain_count += 1
+		# 既没池也没 root (headless 测试): 只计数, 不建节点
+	return true
+
+
+# 兜底 instantiate 出来的水珠 (无池) 走 Effects 当"池": 死时回收, 维持 _grain_count 正确。
+func recycle(g: Node) -> void:
+	if g != null and is_instance_valid(g):
+		g.queue_free()
+	_grain_count = maxi(0, _grain_count - 1)

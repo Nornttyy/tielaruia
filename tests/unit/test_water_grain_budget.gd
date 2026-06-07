@@ -29,3 +29,23 @@ func test_grain_setup_resets_state() -> void:
 	assert_eq(g.velocity, Vector2(5, -30), "setup 该重置速度")
 	assert_almost_eq(g.modulate.a, 0.9, 0.01, "setup 该按传入颜色定 alpha")
 	assert_not_null(g.texture, "setup 该有水珠贴图")
+
+
+func test_budget_blocks_when_full() -> void:
+	# 存活数到顶 → 不该再发 (返回 false / grains_emitted 不增)
+	Effects._grain_count = Effects.MAX_WATER_GRAINS
+	var before: int = Effects.grains_emitted
+	var ok: bool = Effects.spawn_water_grains(Vector2(0, 0), Vector2(0, 10), Tiles.WATER, 1)
+	assert_false(ok, "存活数到上限时该拒绝发射")
+	assert_eq(Effects.grains_emitted, before, "拒绝时调试计数不该增")
+	Effects._grain_count = 0   # 还原, 不污染别的测试
+
+
+func test_budget_counts_emit() -> void:
+	# 没到上限 → 该发, 调试计数 +1
+	Effects._grain_count = 0
+	var before: int = Effects.grains_emitted
+	var ok: bool = Effects.spawn_water_grains(Vector2(0, 0), Vector2(0, 10), Tiles.WATER, 1)
+	assert_true(ok, "没到上限该允许发射")
+	assert_eq(Effects.grains_emitted, before + 1, "发射该让调试计数 +1")
+	Effects._grain_count = 0

@@ -35,6 +35,7 @@ func recycle(g: Node) -> void:
 		return
 	_deactivate(g)
 	_idle.append(g)
+	Effects._grain_count = maxi(0, Effects._grain_count - 1)   # 通知全局护栏: 又空出一颗
 
 
 func _activate(g: Node, pos: Vector2, vel: Vector2, color: Color) -> void:
