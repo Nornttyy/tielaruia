@@ -11,6 +11,7 @@ const DIFF_EASY := 0
 const DIFF_NORMAL := 1
 const DIFF_HARD := 2
 
+const CharacterPanelsScene = preload("res://scripts/ui/character_panels.gd")
 const MenuSceneArt = preload("res://scripts/art/menu_scene_art.gd")
 const LogoArt = preload("res://scripts/art/logo_art.gd")
 const SlimeArt = preload("res://scripts/art/slime_art.gd")
@@ -36,6 +37,7 @@ const BTN_PRESSED_BG := Color8(42, 26, 10)
 @onready var _clouds_root: Node2D = $BackgroundLayer/Clouds
 @onready var _slimes_root: Node2D = $BackgroundLayer/Slimes
 
+var _character_panels: Control = null
 var _cloud_speeds: Array[float] = []
 var _slime_hop_timers: Array[float] = []
 var _slime_base_y: Array[float] = []
@@ -58,6 +60,11 @@ func _ready() -> void:
 	# i18n: 用当前语言覆盖 .tscn 默认中文; 切语言时再调一次刷新.
 	_refresh_localized_text()
 	Locale.language_changed.connect(_on_language_changed)
+	# 角色系统 (Plan 3): 选角色 + 捏人面板
+	_character_panels = CharacterPanelsScene.new()
+	add_child(_character_panels)
+	_character_panels.character_chosen.connect(_on_character_chosen)
+	_character_panels.closed.connect(_on_character_panels_closed)
 
 
 # 接 Locale.language_changed: 切语言时刷新所有 UI 文字, 并重建 saves list (因为它是动态生成).
@@ -430,10 +437,20 @@ func _apply_button_style(btn: Button) -> void:
 
 
 func _on_new_game_pressed() -> void:
-	# 点 "开始游戏" → 显 WorldSelectPanel + 刷新存档列表
-	$WorldSelectPanel.visible = true
+	# 点 "开始游戏" → 先选角色 (Plan 3), 选完角色再开世界选择。
 	$ButtonLayer/VBox.visible = false
+	_character_panels.open_select()
+
+
+# 选完角色 (current 已设) → 开世界选择面板 (原 _on_new_game_pressed 内容)。
+func _on_character_chosen() -> void:
+	$WorldSelectPanel.visible = true
 	_refresh_saves_list()
+
+
+# 选角色面板点返回 → 回主菜单按钮。
+func _on_character_panels_closed() -> void:
+	$ButtonLayer/VBox.visible = true
 
 
 # 重新扫所有存档, 动态生成 UI 列表条目

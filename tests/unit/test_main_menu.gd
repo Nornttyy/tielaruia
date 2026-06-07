@@ -91,15 +91,21 @@ func test_multiplayer_button_shows_panel():
 	assert_true(panel.visible, "点联机后面板显示")
 
 
-func test_new_game_button_shows_world_select_panel():
-	# 现在 "开始游戏" 先开 WorldSelectPanel (创建/继续二选一), 不直接进 NewGamePanel
+func test_new_game_button_shows_character_select_panel():
+	# Plan 3: "开始游戏" 先开选角色面板 (选完角色再开 WorldSelectPanel)
+	var mm = _make()
+	assert_not_null(mm._character_panels, "应有选角色/捏人面板")
+	assert_false(mm._character_panels.visible, "初始隐藏")
+	mm._on_new_game_pressed()
+	assert_true(mm._character_panels.visible, "点开始游戏后 选角色面板 显示")
+	assert_false(mm.get_node("ButtonLayer/VBox").visible)
+
+func test_character_chosen_opens_world_select():
+	# 选完角色 → WorldSelectPanel 显示
 	var mm = _make()
 	var ws_panel = mm.get_node_or_null("WorldSelectPanel")
-	assert_not_null(ws_panel, "应有 WorldSelectPanel")
-	assert_false(ws_panel.visible, "初始隐藏")
-	mm._on_new_game_pressed()
-	assert_true(ws_panel.visible, "点开始游戏后 WorldSelectPanel 显示")
-	assert_false(mm.get_node("ButtonLayer/VBox").visible)
+	mm._on_character_chosen()
+	assert_true(ws_panel.visible, "选完角色后 WorldSelectPanel 显示")
 
 
 func test_new_game_panel_start_button_emits_start_game_with_opts():
