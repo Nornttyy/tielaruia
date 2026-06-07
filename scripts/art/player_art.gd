@@ -198,7 +198,8 @@ static func _frame(ap: Dictionary, pose: String) -> Array:
 		_arm_layer(ap, pose),    # 手臂画在衣服前面 (近侧那条胳膊), 不被衬衫盖
 		_hair_layer(ap, pose),
 	]
-	return _outline(_composite(layers))
+	# 描边跑两遍 = 2px 粗黑边 (泰拉瑞亚式, 用户要更粗)。
+	return _outline(_outline(_composite(layers)))
 
 
 # 泰拉瑞亚式黑描边: 沿小人轮廓外缘 (空格且 4-邻接有实心) 补一圈 'L'。
