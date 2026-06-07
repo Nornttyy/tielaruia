@@ -389,6 +389,9 @@ func _step_tile(cm, x: int, y: int) -> void:
 		# 源变空 → 还要叫醒源正上方的液体 (x,y-1): notify_tile_changed(x,y) 会标到它.
 		# 否则它下面刚空出来却没人重标 dirty → 悬空不流 (修 test_water_settles, 跟横向流分支对称).
 		notify_tile_changed(x, y)
+		# 下落水视觉: 标记刚空出来的格还在"流" → 短时残留连成连续水帘 (纯画面; 水不岩浆, settle 不画).
+		if kind == "water" and not _in_settle and world.has_method("note_falling_water"):
+			world.note_falling_water(x, y, tid)
 		# 落水溅花: 实时(非settle) + 桌面 + 限频; 落点正下方是实心/液体 = 砸到底了
 		if kind == "water" and not _in_settle and _tick_n % 4 == 0 and not OS.has_feature("web"):
 			if cm.get_tile(x, y + 2) != Tiles.AIR:
