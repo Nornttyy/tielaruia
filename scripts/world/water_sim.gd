@@ -336,10 +336,10 @@ func _reduce_liquid(cm, x: int, y: int) -> void:
 	world._set_water_tile_fast(x, y, _tile_for_level("water", L - 1))
 
 
-# 水能否流进这格: 空气, 或草须 (水流进去 = 用水覆盖掉草 = 草被冲毁, 草是装饰非实心).
-# 用户要"草碰到水会被破坏": 水把 PLANT_GRASS 当空格流入, _set_water_tile_fast 覆盖即销毁.
+# 水下植物: 水把"可淹植物"当空格流入 (横竖都穿)。植物不被销毁 —— world._set_water_tile_fast
+# 总闸会先把植物记进 _submerged, 退水时复原。岩浆不走这判定 (岩浆碰植物维持现状)。
 func _water_enterable(tid: int) -> bool:
-	return tid == Tiles.AIR or tid == Tiles.PLANT_GRASS
+	return tid == Tiles.AIR or Tiles.is_submersible_plant(tid)
 
 
 # 水源块: 每 N 拍往正下方灌一格满水, 自己永不变少. 下方满/堵 → 不灌不重标 = 歇着 (self-limiting).
@@ -381,7 +381,7 @@ func _step_tile(cm, x: int, y: int) -> void:
 	var maxlv: int = _max_level(kind)   # 水 8 / 岩浆 4
 	# 重力: 下方 (水落到草须上 → 冲毁草; 岩浆维持原样只认空气)
 	var below_tid: int = cm.get_tile(x, y + 1)
-	if below_tid == Tiles.AIR or (kind == "water" and below_tid == Tiles.PLANT_GRASS):
+	if below_tid == Tiles.AIR or (kind == "water" and Tiles.is_submersible_plant(below_tid)):
 		world._set_water_tile_fast(x, y + 1, _tile_for_level(kind, L))
 		world._set_water_tile_fast(x, y, Tiles.AIR)
 		notify_tile_changed(x, y + 1)

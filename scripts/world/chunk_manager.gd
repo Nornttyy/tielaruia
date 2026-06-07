@@ -19,6 +19,7 @@ var view_radius: int = ChunkConstants.VIEW_RADIUS   # 可调: 加载界面按设
 var _loaded: Dictionary = {}    # chunk_x: int → Chunk
 var _deltas: Dictionary = {}    # chunk_x: int → Dict[Vector2i → tid]
 var _wall_deltas: Dictionary = {}  # chunk_x → Dict[Vector2i → wall_id]; 独立于 _deltas (同 key 不串)
+var _submerged: Dictionary = {}    # chunk_x → Dict[Vector2i_local → plant_tid]; 水下植物元数据 (不渲染, 退水复原用)
 # 生命水晶世界限制: 跨 chunk 总量上限 + 最小间距.
 # spawned = 已放出数 (含被吃的). processed_chunks = 已查过 cap 的 chunk_x.
 # positions = 所有已放水晶世界坐标 (用 Vector2i 存 — 即使被吃也保留, 防 "原位置再生").
@@ -260,6 +261,31 @@ func set_wall(world_x: int, world_y: int, wid: int) -> void:
 	if not _wall_deltas.has(cx):
 		_wall_deltas[cx] = {}
 	_wall_deltas[cx][Vector2i(lx, world_y)] = wid
+
+
+# 水下植物元数据: 水盖住植物时记 plant_tid, 退水时读出来复原。纯 chunk_manager 存, 不进 chunk tile 数组。
+func get_submerged(world_x: int, world_y: int) -> int:
+	var cx: int = Chunk.chunk_x_of(world_x)
+	if not _submerged.has(cx):
+		return -1
+	var lx: int = Chunk.local_x_of(world_x)
+	return _submerged[cx].get(Vector2i(lx, world_y), -1)
+
+
+func set_submerged(world_x: int, world_y: int, plant_tid: int) -> void:
+	var cx: int = Chunk.chunk_x_of(world_x)
+	var lx: int = Chunk.local_x_of(world_x)
+	if not _submerged.has(cx):
+		_submerged[cx] = {}
+	_submerged[cx][Vector2i(lx, world_y)] = plant_tid
+
+
+func clear_submerged(world_x: int, world_y: int) -> void:
+	var cx: int = Chunk.chunk_x_of(world_x)
+	if not _submerged.has(cx):
+		return
+	var lx: int = Chunk.local_x_of(world_x)
+	_submerged[cx].erase(Vector2i(lx, world_y))
 
 
 func is_chunk_loaded(cx: int) -> bool:

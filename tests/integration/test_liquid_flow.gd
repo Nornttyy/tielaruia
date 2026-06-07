@@ -305,3 +305,18 @@ func test_grains_silent_during_settle() -> void:
 	for i in 8:
 		sim._run_tick()
 	assert_eq(Effects.grains_emitted, before, "settle 期间不该冒水珠")
+
+
+# 水下植物: 水该能流进植物那格 (穿过)。FakeWorld 无总闸, 这里只验"水流得进去"(_water_enterable)。
+func test_water_flows_into_plant() -> void:
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER
+	fw.tiles[Vector2i(0, 1)] = Tiles.MUSHROOM     # 下面是蘑菇 (可淹植物)
+	fw.tiles[Vector2i(0, 2)] = Tiles.STONE
+	fw.tiles[Vector2i(-1, 1)] = Tiles.STONE
+	fw.tiles[Vector2i(1, 1)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim.notify_tile_changed(0, 0)
+	for i in 5:
+		sim._run_tick()
+	assert_eq(fw.tiles.get(Vector2i(0, 1), Tiles.AIR), Tiles.WATER, "水该往下流进蘑菇那格")
