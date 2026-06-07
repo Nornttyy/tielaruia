@@ -50,8 +50,8 @@ const CURRENT_VERSION := 1
 # 长相 (捏人结果). 颜色存 Color; 款式/性别存 int 枚举.
 @export var gender: int = 0            # 0=男 1=女
 @export var hair_style: int = 0        # 0..3
-@export var shirt_style: int = 0       # 0..2
-@export var pants_style: int = 0       # 0..2
+@export var shirt_style: int = 0       # 0..3 (含泳衣上装)
+@export var pants_style: int = 0       # 0..3 (含泳裤)
 @export var skin_color: Color = Color8(255, 218, 185)
 @export var hair_color: Color = Color8(121, 85, 72)
 @export var shirt_color: Color = Color8(229, 57, 53)
@@ -104,13 +104,13 @@ func has_any() -> bool
 
 **分层结构** (每个动画帧由 4 层 ascii 叠出来, 后画的盖前画的):
 1. **身体层 (BODY)**: 按 `gender` 选模板组。只画**皮肤 + 靴**, 躯干/腿留空 (`.`)。男/女各一套全帧 (idle_a/idle_b/walk_a/walk_c/jump/fall/hurt; walk_b=idle_a 复用)。女版躯干略窄。
-2. **裤子层 (PANTS)**: 按 `pants_style` 选 (0 长裤 / 1 短裤 / 2 裙子)。覆盖腿部区域, 跟随每帧腿的姿态 (走路帧腿分开)。
-3. **衬衫层 (SHIRT)**: 按 `shirt_style` 选 (0 T恤 / 1 背带 / 2 连帽)。覆盖躯干区域。
+2. **裤子层 (PANTS)**: 按 `pants_style` 选 (0 长裤 / 1 短裤 / 2 裙子 / 3 泳裤)。覆盖腿部区域, 跟随每帧腿的姿态 (走路帧腿分开)。
+3. **衬衫层 (SHIRT)**: 按 `shirt_style` 选 (0 T恤 / 1 背带 / 2 连帽 / 3 泳衣上装)。覆盖躯干区域。泳衣上装 (女=比基尼上衣, 男=裸上身/吊带) + 泳裤搭一起就是**泳衣**。
 4. **头发层 (HAIR)**: 按 `hair_style` 选 (0 短发 / 1 长发 / 2 马尾 / 3 呆毛)。覆盖头顶, 跟随每帧头的位置 (idle_b 整体下沉 1px)。
 
 - 拼装: 对每帧, 从 `BODY[gender]` 起底, 依次把 PANTS/SHIRT/HAIR 的非透明格覆盖上去, 得到一张合并 ascii, 再喂 `PixelArt.build_sprite_frames`。
 - **调色板**: 拼装时按 appearance 的颜色生成 per-character `PALETTE` (skin/hair/shirt/pants 主色+算出的阴影色)。靴、眼、嘴用固定色。
-- **起始数量** (可后续扩): 性别 2、发型 4、衬衫款 3、裤子款 3、皮肤色 5、头发色 6、衬衫色 6、裤子色 6。
+- **起始数量** (可后续扩): 性别 2、发型 4、衬衫款 4 (含泳衣上装)、裤子款 4 (含泳裤)、皮肤色 5、头发色 6、衬衫色 6、裤子色 6。
 - **默认值** = 现状那个小人 (男/短发/T恤/长裤/暖棕发/红衫/蓝裤), 保证不捏也跟以前一样。
 - 玩家场景挂的 `AnimatedSprite2D` 不变, 只是 `sprite_frames` 来自 `build_sprite_frames(current.appearance_dict())`。
 
@@ -191,7 +191,7 @@ func has_any() -> bool
 - `tests/integration/test_character_world_split.gd`
 
 **修改**:
-- `scripts/art/player_art.gd` — 重构成分层 `build_sprite_frames(appearance)` + 男/女身体、4 发型、3 衬衫款、3 裤子款 ascii 模板
+- `scripts/art/player_art.gd` — 重构成分层 `build_sprite_frames(appearance)` + 男/女身体、4 发型、4 衬衫款 (含泳衣上装)、4 裤子款 (含泳裤) ascii 模板
 - `project.godot` — 注册 autoload `CharacterManager` (改 autoload 后需 `./run.sh --rebuild`)
 - `scripts/save/save_data.gd` — `CURRENT_VERSION→5`, 玩家字段标 deprecated (保留定义)
 - `scripts/save/save_manager.gd` — `save()` 只收集世界部分 (玩家部分不再写有效值)
@@ -203,7 +203,7 @@ func has_any() -> bool
 
 ## 风险
 
-- **美术量大**: 男+女身体 × 7 帧 + 4 发型 + 3 衬衫 + 3 裤子, 每个跨帧对齐。控制法: 款式起始数量小 (各 3-4), 先把架子搭起来跑通, 再加款式; 走路帧腿/靴位置抽成共享坐标常量避免每帧手算。
+- **美术量大**: 男+女身体 × 7 帧 + 4 发型 + 4 衬衫款 (含泳衣上装) + 4 裤子款 (含泳裤), 每个跨帧对齐。控制法: 款式起始数量小 (各 3-4), 先把架子搭起来跑通, 再加款式; 走路帧腿/靴位置抽成共享坐标常量避免每帧手算。
 - **存档迁移丢数据**: 迁移只读不删世界存档; 默认角色取最新存档玩家数据; 写测试锁住。万一多个老世界各有不同背包, 只迁最新那个 (其余世界背包字段被忽略) —— spec 已说明, 属预期。
 - **autosave 时序 (历史踩过)**: 玩家未就绪不写档的护栏必须同样用在存角色上, 否则重演「丢三件套」。
 - **并发 WIP**: 仓库长期有别的 session 在改 `player_art.gd` / 存档 / 菜单。每步实现前 `git status`, 精确 `git add`, 不卷入无关 WIP。
