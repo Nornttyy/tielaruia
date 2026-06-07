@@ -642,6 +642,13 @@ func is_plant(tile_id: int) -> bool:
 	return _PLANT_TILES.has(tile_id)
 
 
+# 可被水淹没的植物: 水流进 = 记进 _submerged 元数据、显示水; 退水复原。
+# = is_plant 但排除火把/史莱姆火把/绳子 (玩家搭建的功能件, 不是植物; 火把泡水灭灯也怪)。
+const _NOT_SUBMERSIBLE := {TORCH: true, SLIME_TORCH: true, ROPE: true}
+func is_submersible_plant(tile_id: int) -> bool:
+	return is_plant(tile_id) and not _NOT_SUBMERSIBLE.has(tile_id)
+
+
 # 是不是背景墙 tile (4 种). 加新墙改这里.
 func is_wall_tile(tile_id: int) -> bool:
 	return tile_id == GRASS_WALL or tile_id == DIRT_WALL \
