@@ -7,6 +7,7 @@ const WaterGrainScene = preload("res://scenes/fx/water_grain_particle.tscn")
 
 var _pool: Array[Node] = []
 var _idle: Array[Node] = []
+var chunk_manager = null   # world.gd 在 chunk_manager 建好后赋值; 下发给水珠做落地碰撞 (可能 null)
 
 
 func _ready() -> void:
@@ -22,11 +23,11 @@ func _ready() -> void:
 
 
 # 返回 true = 取到并激活; false = 池满, 调用方放弃这一颗。
-func request_grain(start_pos: Vector2, vel: Vector2, color: Color) -> bool:
+func request_grain(start_pos: Vector2, vel: Vector2, color: Color, splashes: bool = true) -> bool:
 	if _idle.is_empty():
 		return false
 	var g: Node = _idle.pop_back()
-	_activate(g, start_pos, vel, color)
+	_activate(g, start_pos, vel, color, splashes)
 	return true
 
 
@@ -38,11 +39,13 @@ func recycle(g: Node) -> void:
 	Effects._grain_count = maxi(0, Effects._grain_count - 1)   # 通知全局护栏: 又空出一颗
 
 
-func _activate(g: Node, pos: Vector2, vel: Vector2, color: Color) -> void:
+func _activate(g: Node, pos: Vector2, vel: Vector2, color: Color, splashes: bool = true) -> void:
 	g.visible = true
 	g.set_process(true)
+	if "_cm" in g:
+		g._cm = chunk_manager   # 下发碰撞引用 (落地溅花用; world 没赋值时为 null = 不落地只淡出)
 	if g.has_method("setup"):
-		g.setup(pos, vel, color)
+		g.setup(pos, vel, color, splashes)
 
 
 func _deactivate(g: Node) -> void:

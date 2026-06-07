@@ -196,6 +196,10 @@ func _step_chunks() -> void:
 	chunk_manager.setup(world_seed)
 	chunk_manager.chunk_loaded.connect(_on_chunk_loaded)
 	chunk_manager.chunk_unloaded.connect(_on_chunk_unloaded)
+	# 把 chunk_manager 下发给水珠池: 水珠落地溅花要查 get_tile (池在更早的 _ready 建好, 那时还没 chunk_manager)
+	var _wgp: Node = $EffectsRoot.get_node_or_null("WaterGrainPool")
+	if _wgp != null:
+		_wgp.chunk_manager = chunk_manager
 	# water_sim 必须在 ensure_loaded 之前建好: 否则初始区块加载触发的 _on_chunk_loaded 里
 	# "if water_sim != null" 唤醒+settle 整块被跳过 → 出生点周围生成的悬空水永远没被叫醒不流
 	# (修 test_water_settles). water_sim 只依赖 world=self, 提前建无副作用.

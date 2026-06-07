@@ -174,7 +174,7 @@ func spawn_explosion(world_pos: Vector2, tint: Color = Color(0, 0, 0, 0)) -> voi
 # tid: 来源水 tile (决定群系颜色); n: 这次冒几颗。
 # 返回 true = 已发射(或在 headless 下已计数); false = 到上限被拒。
 # 护栏: 全局存活 >= MAX_WATER_GRAINS 直接拒 → 瀑布密集处也不会无限堆。
-func spawn_water_grains(world_pos: Vector2, vel_hint: Vector2, tid: int, n: int = 1) -> bool:
+func spawn_water_grains(world_pos: Vector2, vel_hint: Vector2, tid: int, n: int = 1, splashes: bool = true) -> bool:
 	if _grain_count >= MAX_WATER_GRAINS:
 		return false
 	# grains_emitted 数的是"发射器被成功调用的次数", 不是实际生成的颗粒数:
@@ -192,7 +192,7 @@ func spawn_water_grains(world_pos: Vector2, vel_hint: Vector2, tid: int, n: int 
 		# 速度: 在 vel_hint 上加点随机扇形, 像溅开的水
 		var vel := vel_hint + Vector2(randf_range(-22, 22), randf_range(-14, 4))
 		var pos := world_pos + Vector2(randf_range(-2, 2), randf_range(-2, 2))
-		if pool != null and pool.request_grain(pos, vel, color):
+		if pool != null and pool.request_grain(pos, vel, color, splashes):
 			_grain_count += 1
 			continue
 		# 没池但有 effects_root → 兜底 instantiate (跟其他 spawn_* 一致)
@@ -200,7 +200,7 @@ func spawn_water_grains(world_pos: Vector2, vel_hint: Vector2, tid: int, n: int 
 			var g = WaterGrainScene.instantiate()
 			_root().add_child(g)
 			g._pool = self           # 让它死时调 Effects.recycle 减计数
-			g.setup(pos, vel, color)
+			g.setup(pos, vel, color, splashes)
 			_grain_count += 1
 		# 既没池也没 root (headless 测试): 只计数, 不建节点
 	return true
