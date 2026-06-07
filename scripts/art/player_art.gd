@@ -32,9 +32,9 @@ const _HEAD := [
 	"..ssssss...",
 	".ssssssss..",
 	".sssssssss.",
-	".ssssssWii.",
-	".ssssssWii.",
-	".ssssssWii.",
+	".sssssssWi.",
+	".sssssssWi.",
+	".sssssssWi.",
 	".kssssssss.",
 	".kssssssss.",
 	"..ksssss...",
@@ -45,10 +45,10 @@ const _HEAD := [
 const _HEAD_F := [
 	"..ssssss...",
 	".ssssssss..",
-	".sssssseee.",
-	".ssssssWii.",
-	".ssssssWii.",
-	".ssssssWii.",
+	".sssssssee.",
+	".sssssssWi.",
+	".sssssssWi.",
+	".sssssssWi.",
 	".kssssssss.",
 	".kssssssss.",
 	"..ksssss...",
@@ -140,8 +140,6 @@ const _LEG := [
 	"Bbbbb",
 	"Bbbbb",
 	"Bbbbb",
-	"Bbbbb",
-	"Bbbbb",
 ]
 # 迈步腿: 往前迈 (髋在左上→脚在右下, 脚朝前)。走路用, 脚一前一后落地, 不上下抖。
 const _LEG_FWD := [
@@ -150,8 +148,6 @@ const _LEG_FWD := [
 	".Bbbb.",
 	".Bbbb.",
 	".Bbbb.",
-	".Bbbb.",
-	"..bbbb",
 	"..bbbb",
 	"..bbbb",
 	"..bbbb",
@@ -164,8 +160,6 @@ const _LEG_BACK := [
 	".bbbb.",
 	".bbbb.",
 	".bbbb.",
-	".bbbb.",
-	"Bbbb..",
 	"Bbbb..",
 	"Bbbb..",
 	"Bbbb..",
@@ -258,17 +252,17 @@ static func _body_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var dy := _dy(pose)
 	var head: Array = _HEAD_F if int(ap.get("gender", 0)) == 1 else _HEAD
-	_place(g, 8 + dy, 5, head)
+	_place(g, 11 + dy, 5, head)
 	# 前臂: 跟姿势。受击/跳手抬高; 走路时前后摆 (手会动); 其余垂在体侧前方。
 	match pose:
 		"hurt", "jump":
-			_place(g, 16 + dy, 17, _ARM)
+			_place(g, 19 + dy, 17, _ARM)
 		"walk_a":   # 手往前上摆
-			_place(g, 20 + dy, 17, _ARM)
+			_place(g, 23 + dy, 17, _ARM)
 		"walk_c":   # 手往后下摆
-			_place(g, 24 + dy, 16, _ARM)
+			_place(g, 27 + dy, 16, _ARM)
 		_:
-			_place(g, 22 + dy, 17, _ARM)
+			_place(g, 25 + dy, 17, _ARM)
 	# 靴: 跟腿姿。
 	_place_boots(g, pose, dy)
 	return g
@@ -280,20 +274,20 @@ static func _pants_layer(_ap: Dictionary, pose: String) -> Array:
 	var dy := _dy(pose)
 	match pose:
 		"walk_a":   # 迈步: 前腿往前迈(脚在右), 后腿往后蹬(脚在左); 脚都落地, 不上下抖
-			_place(g, 31 + dy, 11, _LEG_FWD)
-			_place(g, 31 + dy, 3, _LEG_BACK)
+			_place(g, 33 + dy, 11, _LEG_FWD)
+			_place(g, 33 + dy, 3, _LEG_BACK)
 		"walk_c":   # 反相迈步 (前后腿对调, 看着像交替迈步)
-			_place(g, 31 + dy, 10, _LEG_FWD)
-			_place(g, 31 + dy, 2, _LEG_BACK)
+			_place(g, 33 + dy, 10, _LEG_FWD)
+			_place(g, 33 + dy, 2, _LEG_BACK)
 		"jump":     # 收腿 (短)
-			_place(g, 31 + dy, 7, _slice(_LEG, 0, 8))
-			_place(g, 31 + dy, 12, _slice(_LEG, 0, 8))
+			_place(g, 33 + dy, 7, _slice(_LEG, 0, 6))
+			_place(g, 33 + dy, 12, _slice(_LEG, 0, 6))
 		"fall":     # 展腿
-			_place(g, 31 + dy, 5, _LEG)
-			_place(g, 31 + dy, 14, _LEG)
+			_place(g, 33 + dy, 5, _LEG)
+			_place(g, 33 + dy, 14, _LEG)
 		_:          # idle: 双腿并拢
-			_place(g, 31 + dy, 7, _LEG)
-			_place(g, 31 + dy, 12, _LEG)
+			_place(g, 33 + dy, 7, _LEG)
+			_place(g, 33 + dy, 12, _LEG)
 	return g
 
 
@@ -302,9 +296,9 @@ static func _shirt_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var dy := _dy(pose)
 	if int(ap.get("gender", 0)) == 1:
-		_place(g, 18 + dy, 7, _female_torso(int(ap.get("chest_size", 1))))
+		_place(g, 21 + dy, 7, _female_torso(int(ap.get("chest_size", 1))))
 	else:
-		_place(g, 18 + dy, 6, _TORSO)
+		_place(g, 21 + dy, 6, _TORSO)
 	return g
 
 
@@ -342,13 +336,13 @@ static func _hair_layer(ap: Dictionary, pose: String) -> Array:
 	var dy := _dy(pose)
 	match int(ap.get("hair_style", 0)):
 		1:
-			_place(g, 7 + dy, 6, _HAIR_LONG)
+			_place(g, 10 + dy, 6, _HAIR_LONG)
 		2:
-			_place(g, 7 + dy, 6, _HAIR_PONYTAIL)
+			_place(g, 10 + dy, 6, _HAIR_PONYTAIL)
 		3:
-			_place(g, 5 + dy, 6, _HAIR_AHOGE)
+			_place(g, 8 + dy, 6, _HAIR_AHOGE)
 		_:
-			_place(g, 5 + dy, 6, _HAIR_SHORT)
+			_place(g, 8 + dy, 6, _HAIR_SHORT)
 	return g
 
 
@@ -362,8 +356,8 @@ static func _place_boots(g: Array, pose: String, dy: int) -> void:
 			_place(g, 42 + dy, 12, _BOOT_B)
 			_place(g, 42 + dy, 2, _BOOT_B)
 		"jump":
-			_place(g, 39 + dy, 7, _BOOT_B)
-			_place(g, 39 + dy, 12, _BOOT_B)
+			_place(g, 41 + dy, 7, _BOOT_B)
+			_place(g, 41 + dy, 12, _BOOT_B)
 		"fall":
 			_place(g, 42 + dy, 5, _BOOT_B)
 			_place(g, 42 + dy, 14, _BOOT_B)

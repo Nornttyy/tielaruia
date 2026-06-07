@@ -47,8 +47,8 @@ func test_eye_has_white_and_iris():
 	var sf = PlayerArt.build_sprite_frames(ap)
 	var img = sf.get_frame_texture("idle", 0).get_image()
 	# 头部眼区同时有近白 (眼白) 和所选眼珠色
-	assert_true(_has_color_near(img, Color(1, 1, 1, 1), range(4, 14), range(8, 22), 0.18), "眼区有眼白")
-	assert_true(_has_color_near(img, Color8(200, 30, 30), range(4, 14), range(8, 22), 0.12), "眼区有所选眼珠色")
+	assert_true(_has_color_near(img, Color(1, 1, 1, 1), range(8, 24), range(8, 22), 0.18), "眼区有眼白")
+	assert_true(_has_color_near(img, Color8(200, 30, 30), range(8, 24), range(8, 22), 0.12), "眼区有所选眼珠色")
 
 func test_unknown_shirt_style_falls_back_no_crash():
 	var ap = _default_appearance()
@@ -64,7 +64,7 @@ func test_hairstyles_differ():
 	for a in range(4):
 		for c in range(a + 1, 4):
 			var diff := 0
-			for y in range(1, 13):
+			for y in range(6, 24):
 				for x in range(24):
 					if imgs[a].get_pixel(x, y) != imgs[c].get_pixel(x, y):
 						diff += 1
@@ -73,12 +73,12 @@ func test_hairstyles_differ():
 func test_hair_color_follows_appearance():
 	var ap = _default_appearance(); ap["hair_color"] = Color8(20, 180, 220)
 	var img = PlayerArt.build_sprite_frames(ap).get_frame_texture("idle", 0).get_image()
-	assert_true(_has_color_near(img, Color8(20, 180, 220), range(2, 11), range(6, 20)), "头发是所选色")
+	assert_true(_has_color_near(img, Color8(20, 180, 220), range(6, 22), range(6, 20)), "头发是所选色")
 
 func test_skin_color_follows_appearance():
 	var ap = _default_appearance(); ap["skin_color"] = Color8(120, 80, 55)
 	var img = PlayerArt.build_sprite_frames(ap).get_frame_texture("idle", 0).get_image()
-	assert_true(_has_color_near(img, Color8(120, 80, 55), range(4, 14), range(8, 22)), "脸是所选肤色")
+	assert_true(_has_color_near(img, Color8(120, 80, 55), range(8, 22), range(8, 22)), "脸是所选肤色")
 
 func test_pants_color_follows_appearance():
 	var ap = _default_appearance(); ap["pants_color"] = Color8(20, 160, 60)
