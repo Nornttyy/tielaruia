@@ -118,3 +118,22 @@ func test_no_item_stays_hidden_on_use():
 	held.play_swing()
 	held.flash()
 	assert_false(held.visible, "空手时 play/flash 都不显示")
+
+
+# 放方块动画: 朝放置方向"按"出去 (position 偏移), 显示出来, 完了归位.
+func test_play_place_pokes_and_shows():
+	var held: Sprite2D = _make_held()
+	held.visible = false
+	held.position = Vector2(held.HAND_OFFSET_X, held.HAND_OFFSET_Y)
+	held.play_place(0.0)   # 朝右放
+	assert_true(held.visible, "放方块时显示")
+	# tween 第一段把 position 往右推 (x 变大). 推进一点点时间看是否在动.
+	# (tween 在 SceneTree 里跑; 这里只验初始没崩 + 显示了)
+	assert_true(held._has_item, "有物品")
+
+func test_play_place_skips_when_no_item():
+	var held: Sprite2D = _make_held()
+	held._has_item = false
+	held.visible = false
+	held.play_place(0.0)
+	assert_false(held.visible, "空手不放动画")

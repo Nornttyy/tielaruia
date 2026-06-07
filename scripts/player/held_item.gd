@@ -54,9 +54,33 @@ func _show_for(anim_dur: float) -> void:
 	_use_timer = maxf(_use_timer, anim_dur + _HIDE_GRACE)
 
 
-# 短暂闪一下 (放方块 / 射箭 / 施法 等没有挥摆动画的"使用"给点反馈)
+# 短暂闪一下 (射箭 / 施法 等没有专门动画的"使用"给点反馈)
 func flash() -> void:
 	_show_for(0.0)
+
+
+const PLACE_DURATION := 0.22       # 放方块动画: 短促有力 (按一下)
+const PLACE_REACH_PX := 7.0        # 方块朝放置点伸出去多少 px
+
+# 放方块: 手里的方块朝放置点"按"出去一下再弹回 (像把方块按进去). 不旋转 — 方块不转.
+func play_place(target_angle: float) -> void:
+	if not _has_item:
+		return
+	_show_for(PLACE_DURATION)
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	_attack_locked = false
+	var mouse_on_right: bool = cos(target_angle) >= 0.0
+	set_facing(mouse_on_right)
+	_attack_locked = true     # 锁 facing, 别让走路方向跟动画打架
+	rotation = 0.0
+	var base_pos := Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
+	var reach_pos := base_pos + Vector2(cos(target_angle), sin(target_angle)) * PLACE_REACH_PX
+	position = base_pos
+	_tween = create_tween()
+	_tween.tween_property(self, "position", reach_pos, PLACE_DURATION * 0.4).set_ease(Tween.EASE_OUT)
+	_tween.tween_property(self, "position", base_pos, PLACE_DURATION * 0.6).set_ease(Tween.EASE_IN)
+	_tween.tween_callback(func(): _attack_locked = false)
 
 
 func set_facing(right: bool) -> void:

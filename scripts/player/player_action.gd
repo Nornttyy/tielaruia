@@ -1076,7 +1076,7 @@ func _update_eat_or_place(delta: float) -> void:
 	# 优先级: place_override (测试) → 进食 → 放置
 	if place_override:
 		if try_place():
-			_flash_held()   # 放方块时显示一下手里的方块
+			_play_place_anim()   # 放方块: 朝放置点按一下的动画
 		place_override = false
 		return
 
@@ -1260,7 +1260,7 @@ func _update_eat_or_place(delta: float) -> void:
 	# 退回放置逻辑（与原行为一致）
 	if just:
 		if try_place():
-			_flash_held()   # 放方块时显示一下手里的方块
+			_play_place_anim()   # 放方块: 朝放置点按一下的动画
 
 
 # 进食动画: 食物在玩家手里 上下抖动 + 微微旋转, 像在啃咬
@@ -1283,11 +1283,38 @@ func _held_item_node() -> Node:
 	return player_node.get_node_or_null("HeldItem")
 
 
-# 让手持物品短暂"闪一下"显示 (放方块/射箭/施法/投掷等没挥摆动画的"使用"). 工具只在使用时显示.
+# 让手持物品短暂"闪一下"显示 (射箭/施法/投掷等没专门动画的"使用"). 工具只在使用时显示.
 func _flash_held() -> void:
 	var held: Node = _held_item_node()
 	if held != null and held.has_method("flash"):
 		held.flash()
+
+
+# 放方块动画: 手里的方块朝放置点"按"出去一下 (方块也只在使用时显示).
+func _play_place_anim() -> void:
+	var held: Node = _held_item_node()
+	if held == null or not held.has_method("play_place"):
+		return
+	var player := get_parent() as Node2D
+	if player == null:
+		return
+	var tile: Vector2i = aim_tile_coord()
+	var ang: float
+	if tile == INVALID_TILE:
+		ang = 0.0 if _facing_right_guess() else PI   # 没瞄准就朝面对方向
+	else:
+		var tc := Vector2((tile.x + 0.5) * TILE_SIZE, (tile.y + 0.5) * TILE_SIZE)
+		ang = (tc - player.global_position).angle()
+	held.play_place(ang)
+
+
+# 玩家当前面朝 (放方块动画兜底用): 看 sprite scale.x 正负
+func _facing_right_guess() -> bool:
+	var player := get_parent() as Node2D
+	if player == null:
+		return true
+	var spr = player.get_node_or_null("AnimatedSprite2D")
+	return spr == null or spr.scale.x >= 0.0
 
 
 # 挥的弧度: 前方 ±45° = 总 90° 弧
