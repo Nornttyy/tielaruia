@@ -232,6 +232,7 @@ func _physics_process(delta: float) -> void:
 		var primary_pressed_b: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed_b and _attack_cooldown <= 0.0:
 			_try_fire_bow()
+			_flash_held()   # 射箭时显示弓 (无挥摆动画, 闪一下)
 	elif kind == "staff":
 		# 法杖: LMB 按下 → 火球 (普通法杖) 或 召唤友方骷髅 (骷髅法杖 summons_minion).
 		_reset_mining()
@@ -242,12 +243,14 @@ func _physics_process(delta: float) -> void:
 				_summon_friendly()
 			else:
 				_try_cast_staff()
+			_flash_held()   # 施法时显示法杖
 	elif kind == "slimeball":
 		# 史莱姆球: LMB 按下 → 朝鼠标投弹跳球. cd 0.45s. 无弹药 (Boss 武器).
 		_reset_mining()
 		var primary_pressed_sb: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed_sb and _attack_cooldown <= 0.0:
 			_try_throw_slimeball()
+			_flash_held()   # 投掷时显示
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
@@ -1072,7 +1075,8 @@ func _effective_sword_damage() -> int:
 func _update_eat_or_place(delta: float) -> void:
 	# 优先级: place_override (测试) → 进食 → 放置
 	if place_override:
-		try_place()
+		if try_place():
+			_flash_held()   # 放方块时显示一下手里的方块
 		place_override = false
 		return
 
@@ -1255,7 +1259,8 @@ func _update_eat_or_place(delta: float) -> void:
 
 	# 退回放置逻辑（与原行为一致）
 	if just:
-		try_place()
+		if try_place():
+			_flash_held()   # 放方块时显示一下手里的方块
 
 
 # 进食动画: 食物在玩家手里 上下抖动 + 微微旋转, 像在啃咬
@@ -1276,6 +1281,13 @@ func _held_item_node() -> Node:
 	if player_node == null:
 		return null
 	return player_node.get_node_or_null("HeldItem")
+
+
+# 让手持物品短暂"闪一下"显示 (放方块/射箭/施法/投掷等没挥摆动画的"使用"). 工具只在使用时显示.
+func _flash_held() -> void:
+	var held: Node = _held_item_node()
+	if held != null and held.has_method("flash"):
+		held.flash()
 
 
 # 挥的弧度: 前方 ±45° = 总 90° 弧

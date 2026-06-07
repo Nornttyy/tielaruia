@@ -19,6 +19,10 @@ var _tween: Tween = null
 var _current_size: float = TOOL_SIZE
 var _eating: bool = false
 var _eat_phase: float = 0.0   # 进食动画时间累积 (秒)
+# 工具只在"使用时"才显示 (用户要求): 平时藏起来, 挥/挖/戳/放/射/吃时才冒出来, 用完自动收.
+var _has_item: bool = false   # 当前 hotbar 槽有可显示物品 (有贴图)
+var _use_timer: float = 0.0   # 还要显示多少秒; 用一下刷新, 归零自动收起
+const _HIDE_GRACE := 0.35     # 动作结束后再多显示这么久 (防连挥/连挖时闪烁)
 # 攻击期间锁 facing: player_controller 每帧 set_facing 跟玩家走路方向,
 # 攻击中翻 facing 会让 sprite 镜像但旋转值还是攻击时算的 → 朝向乱套. 锁住期间忽略.
 var _attack_locked: bool = false
@@ -42,6 +46,19 @@ func bind_inventory(inv: Node) -> void:
 	_refresh()
 
 
+# 用一下 → 显示 (只在有物品时); 持续 anim_dur + 宽限期后, _process 自动收起.
+func _show_for(anim_dur: float) -> void:
+	if not _has_item:
+		return
+	visible = true
+	_use_timer = maxf(_use_timer, anim_dur + _HIDE_GRACE)
+
+
+# 短暂闪一下 (放方块 / 射箭 / 施法 等没有挥摆动画的"使用"给点反馈)
+func flash() -> void:
+	_show_for(0.0)
+
+
 func set_facing(right: bool) -> void:
 	# 攻击中: 忽略 player_controller 的 facing 更新, 否则跟 play_thrust/swing 算的
 	# 旋转值打架 (sprite 翻面但旋转还是攻击方向 → 朝向反了)
@@ -56,7 +73,10 @@ func set_facing(right: bool) -> void:
 
 # 进食动画开始: 食物上下抖动 + 微微旋转, 模拟"啃咬"
 func start_eat() -> void:
+	if not _has_item:
+		return
 	_eating = true
+	visible = true   # 吃东西时显示食物
 	_eat_phase = 0.0
 	# 把潜在的挥摆 tween 杀掉, 避免冲突
 	if _tween != null and _tween.is_valid():
@@ -69,9 +89,15 @@ func stop_eat() -> void:
 	_eat_phase = 0.0
 	position = Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
 	rotation = 0.0
+	visible = false   # 吃完收起来
 
 
 func _process(delta: float) -> void:
+	# 不在吃东西时: 用完计时归零 → 收起来 (工具只在使用时显示)
+	if not _eating and _use_timer > 0.0:
+		_use_timer -= delta
+		if _use_timer <= 0.0:
+			visible = false
 	if not _eating or not visible:
 		return
 	_eat_phase += delta
@@ -90,8 +116,9 @@ func _process(delta: float) -> void:
 
 func play_swing() -> void:
 	# 节奏性挥摆 (挖矿/砍木用): 朝当前 facing 摆 ±75°
-	if not visible:
+	if not _has_item:
 		return
+	_show_for(SWING_DURATION)
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	rotation = 0.0
@@ -113,8 +140,9 @@ const PICKAXE_ATTACK_DURATION := 1.0   # 用户改 0.7→1.0 转慢一点
 # 镐攻击: 工具全周转 360°. 用户改: 起始朝鼠标 (target_angle), 不再总从上方开始.
 # target_angle: 鼠标相对玩家的角度 (radians, 0 = 右). 默认 -PI/2 = 上 (兼容老调用).
 func play_pickaxe_attack(target_angle: float = -PI / 2.0) -> void:
-	if not visible:
+	if not _has_item:
 		return
+	_show_for(PICKAXE_ATTACK_DURATION)
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	_attack_locked = false
@@ -138,8 +166,9 @@ func play_pickaxe_attack(target_angle: float = -PI / 2.0) -> void:
 
 # 戳 (剑): 朝鼠标方向向前突再收回, 不旋转 (跟挥不同, 挥是转圈弧)
 func play_thrust(target_angle: float) -> void:
-	if not visible:
+	if not _has_item:
 		return
+	_show_for(THRUST_DURATION)
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	_attack_locked = false   # 先解锁, set_facing 才能跟着鼠标转
@@ -168,8 +197,9 @@ func play_thrust(target_angle: float) -> void:
 func play_swing_directional(target_angle: float) -> void:
 	# 定向挥击 (挥剑用): 沿 target_angle 方向划 180° 半圆 (用户改: Terraria 风).
 	# 攻击时把 sprite 朝向锁到鼠标方向, 避免移动中翻面让剑乱飞.
-	if not visible:
+	if not _has_item:
 		return
+	_show_for(SWING_DURATION * 1.7)   # 挥 + 归位全程都显示
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	_attack_locked = false
@@ -200,18 +230,23 @@ func _on_changed(_arg = null) -> void:
 
 func _refresh() -> void:
 	if _player_inventory == null:
+		_has_item = false
 		visible = false
 		return
 	var slot = _player_inventory.current_hotbar_slot()
 	if slot == null:
+		_has_item = false
 		visible = false
 		return
 	var tex: Texture2D = ArtCache.get_inventory_icon(slot.item_id)
 	if tex == null:
+		_has_item = false
 		visible = false
 		return
 	texture = tex
-	visible = true
+	_has_item = true
+	# 注意: 不再常驻 visible=true. 只更新贴图/缩放; 显隐交给"使用时"逻辑 (_show_for/flash/_process).
+	# 切 hotbar 不会让工具凭空冒出来 — 下次挥/挖/放/射/吃才显示.
 	# 工具用原大小, 其他物品缩小
 	_current_size = TOOL_SIZE if _is_tool(slot.item_id) else BLOCK_SIZE
 	_apply_scale()

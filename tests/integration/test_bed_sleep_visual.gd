@@ -25,16 +25,20 @@ func test_sleep_hides_held_item_then_wake_restores() -> void:
 	var ctx = await _boot()
 	var player = ctx["player"]
 	var held = ctx["held"]
-	# 拿个木剑 (让手持物本应显示)
+	# 拿个木剑. 工具只在"使用时"显示 (用户要求): 挥一下才冒出来.
 	var inv = player.get_node("PlayerInventory")
 	inv.pickup("wood_sword", 1)
 	inv.hotbar_selected = 0
 	held._refresh()
-	assert_true(held.visible, "前置: 拿着剑时手持物可见")
+	held.play_swing()   # 使用 → 显示
+	assert_true(held.visible, "前置: 挥剑(使用)时手持物可见")
 	ctx["world"].sleep_in_bed(Vector2i(5, 5))
 	assert_false(held.visible, "睡觉时手持物应藏起来")
 	ctx["world"]._wake_up()
-	assert_true(held.visible, "醒来后手持物恢复显示 (还拿着剑)")
+	# 醒来: 不强制显示 (工具只在使用时显示), 但还拿着剑 → 再挥一下能正常显示
+	assert_true(held._has_item, "醒来后还拿着剑 (_has_item)")
+	held.play_swing()
+	assert_true(held.visible, "醒来后再挥一下 → 正常显示 (没被睡觉弄坏)")
 
 
 func test_sleep_pose_centered_then_wake_restores_stand_config() -> void:

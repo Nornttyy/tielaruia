@@ -7,9 +7,8 @@ func _make_held() -> Sprite2D:
 	var held := Sprite2D.new()
 	held.set_script(HeldItemScript)
 	add_child_autofree(held)
-	# 跳过 _ready 里的 inventory 绑定, 直接强制 visible 让 swing 函数生效
-	held.visible = true
-	# 提供一个最小 texture 避免 visible 被 _refresh 拒绝 (但我们不会调 _refresh)
+	# 跳过 _ready 里的 inventory 绑定, 直接标"有物品"让 swing 函数生效 (工具现在只在使用时显示).
+	held._has_item = true
 	return held
 
 
@@ -42,13 +41,14 @@ func test_play_swing_directional_target_left_flips_facing():
 		"facing_left: 起手 +20° (剑尖朝上, 上往下劈), 不是 -200° (那是从下往上挑的 bug)")
 
 
-func test_play_swing_directional_skips_when_invisible():
+func test_play_swing_directional_skips_when_no_item():
 	var held: Sprite2D = _make_held()
-	held.visible = false
+	held._has_item = false   # 没拿工具 (空手) → 不该挥
 	held.rotation = 0.0
 	held.play_swing_directional(PI / 4.0)
-	# 不可见时直接 return, rotation 不动
-	assert_eq(held.rotation, 0.0, "invisible 时不应动 rotation")
+	# 没物品时直接 return, rotation 不动
+	assert_eq(held.rotation, 0.0, "空手时不应动 rotation")
+	assert_false(held.visible, "空手时不显示")
 
 
 # 剑尖朝鼠标 (戳剑/木剑石剑用): rotation = target_angle + PI/2 → tip dir = (sin rot, -cos rot).
@@ -90,3 +90,31 @@ func test_play_thrust_tip_lower_left():
 	var d: Vector2 = _tip_dir(held.rotation)
 	assert_almost_eq(d.x, -sqrt(2.0) / 2.0, 0.05, "剑尖左下 x≈-0.707")
 	assert_almost_eq(d.y, sqrt(2.0) / 2.0, 0.05, "剑尖左下 y≈+0.707")
+
+
+# 工具只在使用时显示: 平时藏着, 挥一下冒出来, 计时归零自动收回.
+func test_hidden_until_used_then_auto_hides():
+	var held: Sprite2D = _make_held()
+	held.visible = false
+	assert_false(held.visible, "平时(没使用)工具藏着")
+	held.play_swing()   # 挖矿挥摆 = 使用
+	assert_true(held.visible, "挥一下 → 显示")
+	# 跑够时间 (动画时长 + 宽限期) → 自动收回
+	held._process(held.SWING_DURATION + held._HIDE_GRACE + 0.05)
+	assert_false(held.visible, "用完计时归零 → 自动收回")
+
+func test_flash_shows_briefly():
+	var held: Sprite2D = _make_held()
+	held.visible = false
+	held.flash()   # 放方块/射箭等
+	assert_true(held.visible, "flash → 显示")
+	held._process(held._HIDE_GRACE + 0.05)
+	assert_false(held.visible, "flash 后宽限期过 → 收回")
+
+func test_no_item_stays_hidden_on_use():
+	var held: Sprite2D = _make_held()
+	held._has_item = false
+	held.visible = false
+	held.play_swing()
+	held.flash()
+	assert_false(held.visible, "空手时 play/flash 都不显示")

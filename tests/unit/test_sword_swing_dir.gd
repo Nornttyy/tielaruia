@@ -8,7 +8,7 @@ const HeldItem = preload("res://scripts/player/held_item.gd")
 func _make_held() -> Node:
 	var h = HeldItem.new()
 	add_child_autofree(h)
-	h.visible = true   # play_swing_directional 在 not visible 时直接 return
+	h._has_item = true   # 标"有物品", play_swing_directional 才生效 (工具只在使用时显示)
 	return h
 
 
