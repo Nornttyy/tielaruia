@@ -311,7 +311,7 @@ func test_grains_silent_during_settle() -> void:
 func test_water_flows_into_plant() -> void:
 	var fw = FakeWorld.new()
 	fw.tiles[Vector2i(0, 0)] = Tiles.WATER
-	fw.tiles[Vector2i(0, 1)] = Tiles.MUSHROOM     # 下面是蘑菇 (可淹植物)
+	fw.tiles[Vector2i(0, 1)] = Tiles.PLANT_GRASS     # 下面是装饰小草 (唯一可淹植物)
 	fw.tiles[Vector2i(0, 2)] = Tiles.STONE
 	fw.tiles[Vector2i(-1, 1)] = Tiles.STONE
 	fw.tiles[Vector2i(1, 1)] = Tiles.STONE
@@ -319,4 +319,4 @@ func test_water_flows_into_plant() -> void:
 	sim.notify_tile_changed(0, 0)
 	for i in 5:
 		sim._run_tick()
-	assert_eq(fw.tiles.get(Vector2i(0, 1), Tiles.AIR), Tiles.WATER, "水该往下流进蘑菇那格")
+	assert_eq(fw.tiles.get(Vector2i(0, 1), Tiles.AIR), Tiles.WATER, "水该往下流进小草那格")
