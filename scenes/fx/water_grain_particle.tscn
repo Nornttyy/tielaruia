@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bwgrain0water01"]
+
+[ext_resource type="Script" path="res://scripts/fx/water_grain_particle.gd" id="1"]
+
+[node name="WaterGrainParticle" type="Sprite2D"]
+script = ExtResource("1")

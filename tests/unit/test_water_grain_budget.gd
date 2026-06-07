@@ -2,6 +2,7 @@
 extends GutTest
 
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
+const WaterGrainScene = preload("res://scenes/fx/water_grain_particle.tscn")
 
 
 func test_water_drop_texture_built() -> void:
@@ -16,3 +17,15 @@ func test_water_drop_texture_cached() -> void:
 	var a = ParticlesArt.get_water_drop()
 	var b = ParticlesArt.get_water_drop()
 	assert_eq(a, b, "get_water_drop 该缓存复用同一张贴图")
+
+
+func test_grain_setup_resets_state() -> void:
+	var g = WaterGrainScene.instantiate()
+	add_child_autofree(g)
+	# 先弄脏状态, 再 setup, 验证被重置 (池复用必须归零)
+	g.velocity = Vector2(999, 999)
+	g.setup(Vector2(10, 20), Vector2(5, -30), Color(0.4, 0.7, 1.0, 0.9))
+	assert_eq(g.global_position, Vector2(10, 20), "setup 该设位置")
+	assert_eq(g.velocity, Vector2(5, -30), "setup 该重置速度")
+	assert_almost_eq(g.modulate.a, 0.9, 0.01, "setup 该按传入颜色定 alpha")
+	assert_not_null(g.texture, "setup 该有水珠贴图")
