@@ -189,10 +189,60 @@ func apply_to_player(player: Node) -> void:
 					inv_node.set_armor(pair[0], {"item_id": pair[1], "count": 1})
 
 
-# --- Task 4 实现 ---
+# 没选中角色时兜底 (计划 3 的选角色 UI 上线前, main 启动时调)。
+# current 已有 → 不动; 否则选第一个已存角色; 一个都没有 → 造默认并写盘。
 func ensure_current() -> void:
-	pass
+	if current != null:
+		return
+	var chars: Array = list_characters()
+	if not chars.is_empty():
+		current = chars[0]["data"]
+		return
+	var c := CharacterData.new()
+	c.character_name = DEFAULT_CHARACTER_NAME
+	save_character(c)
+	current = c
 
 
+# 生产入口 (_ready 调): 用 SaveManager 的真存档列表迁移。autoload 才有 SaveManager/GameSettings。
 func _migrate_from_world_saves() -> void:
-	pass
+	var saves: Array = []
+	if typeof(SaveManager) != TYPE_NIL and SaveManager.has_method("list_saves"):
+		saves = SaveManager.list_saves()
+	var p_name: String = "玩家"
+	if typeof(GameSettings) != TYPE_NIL and "player_name" in GameSettings:
+		p_name = GameSettings.player_name
+	migrate_with_saves(saves, p_name)
+
+
+# 可测核心: 给定存档列表 (最新在前) + 玩家名, 仅当无角色且有存档时造默认角色。
+# 只读不删世界存档 (世界地形/箱子原样保留, 其玩家字段从此被忽略)。
+func migrate_with_saves(saves: Array, player_name: String) -> void:
+	if has_any():
+		return            # 已有角色 → 不迁移
+	if saves.is_empty():
+		return            # 没世界存档 → 不造
+	var newest = saves[0]["data"]
+	var c := CharacterData.new()
+	c.character_name = player_name if (player_name != null and player_name != "") else DEFAULT_CHARACTER_NAME
+	# 玩家状态从最新世界存档搬过来 (字段名同 SaveData)
+	if "inventory_slots" in newest:
+		c.inventory_slots = newest.inventory_slots.duplicate(true)
+	if "player_hp" in newest:
+		c.player_hp = float(newest.player_hp)
+	if "player_max_hp" in newest:
+		c.player_max_hp = int(newest.player_max_hp)
+	if "player_mana" in newest:
+		c.player_mana = int(newest.player_mana)
+	if "player_max_mana" in newest:
+		c.player_max_mana = int(newest.player_max_mana)
+	if "hotbar_selection" in newest:
+		c.hotbar_selection = int(newest.hotbar_selection)
+	if "armor_helmet_id" in newest:
+		c.armor_helmet_id = String(newest.armor_helmet_id)
+	if "armor_chest_id" in newest:
+		c.armor_chest_id = String(newest.armor_chest_id)
+	if "armor_pants_id" in newest:
+		c.armor_pants_id = String(newest.armor_pants_id)
+	# 外观 = 默认 (现状小人); 计划 2 渲染。
+	save_character(c)
