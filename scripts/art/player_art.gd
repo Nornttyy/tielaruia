@@ -99,23 +99,24 @@ const _HAIR_AHOGE := [
 	"Hhhh.....",
 	"hhh......",
 ]
-# 躯干 (衬衫 w / 阴影 D), 8 宽 × 15 高 (肩到腰)
+# 躯干 (衬衫 w / 阴影 D), 8 宽 × 15 高 (肩到腰)。
+# 阴影沿后侧(左)一整列 + 衣摆一条, 立体感 (不再散点像波点)。
 const _TORSO := [
 	".wwwwww.",
-	"wwwwwwww",
-	"wwwwwwDw",
-	"wwwwwwww",
-	"wDwwwwww",
-	"wwwwwwww",
-	"wwwwwwDw",
-	"wwwwwwww",
-	"wDwwwwww",
-	"wwwwwwww",
-	"wwwwwwDw",
-	"wwwwwwww",
-	"wwwwwwww",
-	".wwwwww.",
-	".wwwwww.",
+	"Dwwwwww.",
+	"Dwwwwwww",
+	"Dwwwwwww",
+	"Dwwwwwww",
+	"Dwwwwwww",
+	"Dwwwwwww",
+	"Dwwwwwww",
+	"Dwwwwwww",
+	"Dwwwwwww",
+	"Dwwwwwww",
+	"Dwwwwwww",
+	"DDDDDDDw",
+	".wwwww..",
+	".wwwww..",
 ]
 # 前臂 + 手 (皮肤; T恤短袖露小臂), 2 宽
 const _ARM := [
@@ -127,23 +128,23 @@ const _ARM := [
 	"ss",
 	"sk",
 ]
-# 单腿 (裤子 b / 阴影 B), 3 宽 × 15 高
+# 单腿 (裤子 b / 阴影 B), 3 宽 × 15 高。后侧(左)一列阴影, 立体 (不再中间散点)。
 const _LEG := [
-	"bbb",
-	"bbb",
-	"bBb",
-	"bbb",
-	"bbb",
-	"bBb",
-	"bbb",
-	"bbb",
-	"bBb",
-	"bbb",
-	"bbb",
-	"bbb",
-	"bbb",
-	"bbb",
-	"bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
 ]
 # 靴 (o / 阴影 O), 4 宽
 const _BOOT_B := [
@@ -283,20 +284,20 @@ static func _female_torso(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
 		".wwwww.",
-		"wwwwwww",
-		"wwwwwDw",
-		"wwwwwww",
-		"wDwwwww",
-		".wwwww.",
-		".wwwww.",
-		"wwwwwww",
-		"wwwwwDw",
-		"wwwwwww",
-		"wDwwwww",
-		".wwwww.",
-		".wwwww.",
-		".wwwww.",
-		".wwwww.",
+		"Dwwwww.",
+		"Dwwwwww",
+		"Dwwwwww",
+		"Dwwwwww",
+		"Dwwww..",
+		"Dwwww..",
+		"Dwwwww.",
+		"Dwwwwww",
+		"Dwwwwww",
+		"DDDDDw.",
+		".wwww..",
+		".wwww..",
+		".wwww..",
+		".wwww..",
 	]
 	# 胸口前凸: rows 1..4 在右侧(前)加 cs 列 (最前一列 D 阴影)。
 	if cs > 0:
