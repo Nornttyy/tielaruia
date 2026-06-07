@@ -53,11 +53,13 @@ const CURRENT_VERSION := 1
 @export var shirt_style: int = 0       # 0..7 (含 2 款泳衣上装, 见 C)
 @export var pants_style: int = 0       # 0..8 (含 2 款泳衣下装, 见 C)
 @export var cape_style: int = 0        # 0=无 1=短披风 2=长披风
+@export var chest_size: int = 1        # 仅 gender=1(女) 生效: 0 小 / 1 中 / 2 大; 男忽略
 @export var skin_color: Color = Color8(255, 218, 185)
 @export var hair_color: Color = Color8(121, 85, 72)
 @export var shirt_color: Color = Color8(229, 57, 53)
 @export var pants_color: Color = Color8(38, 70, 130)
 @export var cape_color: Color = Color8(150, 40, 50)   # cape_style=0 时忽略
+@export var eye_color: Color = Color8(60, 110, 70)    # 眼珠(虹膜)色; 眼白固定白
 
 # 跟着角色走的玩家状态 (从 SaveData 搬过来)
 @export var player_hp: float = 100.0
@@ -72,7 +74,7 @@ const CURRENT_VERSION := 1
 ```
 
 - 颜色阴影自动算: 阴影色 = 主色 `.darkened(0.28)` (头发/衬衫/裤子各自的 `H/W/B`)。皮肤阴影 = `skin_color.darkened(0.18)`。**不单独存阴影**, 渲染时算。
-- 提供 `appearance_dict() -> Dictionary` 帮助方法, 返回 `{gender, hair_style, shirt_style, pants_style, cape_style, skin_color, hair_color, shirt_color, pants_color, cape_color}`, 给 `PlayerArt.build_sprite_frames()` 用 (避免渲染层依赖整个 CharacterData)。
+- 提供 `appearance_dict() -> Dictionary` 帮助方法, 返回 `{gender, hair_style, shirt_style, pants_style, cape_style, chest_size, skin_color, hair_color, shirt_color, pants_color, cape_color, eye_color}`, 给 `PlayerArt.build_sprite_frames()` 用 (避免渲染层依赖整个 CharacterData)。
 
 ### B. 角色管理器 `CharacterManager` (新 autoload)
 
@@ -109,8 +111,10 @@ func has_any() -> bool
 **分层结构** (每个动画帧由 5 层 ascii 叠出来, 后画的盖前画的; 第 0 层在最底/最后面):
 0. **披风层 (CAPE)** — 画在**最底 (身体后面)**: 按 `cape_style` 选 (0 无 / 1 短披风 / 2 长披风)。`0` 时整层透明。颜色 `cape_color`。
 1. **身体层 (BODY)**: 按 `gender` 选模板组。只画**皮肤 + 靴**, 躯干/腿留空 (`.`)。男/女**各一套完整全帧** (idle_a/idle_b/walk_a/walk_c/jump/fall/hurt; walk_b=idle_a 复用)。
-   - **侧面视角 + 单眼**: 脸是侧面, 只画**一只眼睛** (朝右那侧), 一张侧脸轮廓 (鼻尖可 1px)。`PALETTE` 的 `e`(眼)/`m`(嘴) 改成侧脸位置。
-   - **男女身材比例不同 (用户要大区别)**: 男版 = 侧面、肩宽、躯干直; 女版 = **重画身材比例** —— 肩略窄、腰更收、胸口侧面加一点点圆弧 (约 1px, 卡通风, 自然区分身形)、腿型略不同, 脸加睫毛/大眼一眼区分。
+   - **侧面视角 + 单眼**: 脸是侧面, 只画**一只眼睛** (朝右那侧), 一张侧脸轮廓 (鼻尖可 1px)。
+   - **眼睛 = 眼白 + 眼珠**: 眼睛**不再是一团黑**。眼白固定白色 (`PALETTE` 加 `W白`), 眼珠(虹膜)用 `eye_color` (可改)。侧面单眼占约 2px (1px 眼白 + 1px 眼珠), 没空间就眼珠 1px、四周白描边。`m`(嘴) 放侧脸位置。
+   - **男女身材比例不同 (用户要大区别)**: 男版 = 侧面、肩宽、躯干直; 女版 = **重画身材比例** —— 肩略窄、腰更收、腿型略不同, 脸加睫毛/大眼一眼区分。
+   - **女版胸部大小可调** (`chest_size`, 仅 gender=1 生效): 侧面胸口前凸 0 小 (≈0px, 平) / 1 中 (≈1px) / 2 大 (≈2px), 卡通风。女身体躯干那几行按 `chest_size` 取对应 ascii 变体。男版忽略此项。
    - **关键约束 (省美术 + 保对齐)**: 两套身体**同画布 (12×24)**, 且**头部行段、手臂行、腿/靴锚点行保持一致** —— 这样头发层和大多数衣服层在男女上都能用同一锚点对齐, 不必每件衣服画两遍。只有**躯干/腿宽窄**男女不同。
 2. **裤子层 (PANTS)**: 按 `pants_style` 选。覆盖腿部区域, 跟随每帧腿的姿态 (走路帧腿分开)。
 3. **衬衫层 (SHIRT)**: 按 `shirt_style` 选。覆盖躯干区域。
@@ -128,7 +132,7 @@ func has_any() -> bool
 
 - 拼装: 对每帧, 先铺 `CAPE`, 再 `BODY[gender]` 起底, 依次把 PANTS/SHIRT/HAIR 的非透明格覆盖上去, 得到一张合并 ascii, 再喂 `PixelArt.build_sprite_frames`。
 - **调色板**: 拼装时按 appearance 的颜色生成 per-character `PALETTE` (skin/hair/shirt/pants/cape 主色+算出的阴影色)。靴、眼、嘴用固定色。
-- **颜色数量** (可后续扩): 皮肤色 5、头发色 6、衬衫色 6、裤子色 6、披风色 6。
+- **颜色数量** (可后续扩): 皮肤色 5、头发色 6、衬衫色 6、裤子色 6、披风色 6、眼珠色 6。眼白固定白。
 - **默认值** = 现状那个小人 (男/短发/T恤/长裤/无披风/暖棕发/红衫/蓝裤), 保证不捏也跟以前一样。
 - 玩家场景挂的 `AnimatedSprite2D` 不变, 只是 `sprite_frames` 来自 `build_sprite_frames(current.appearance_dict())`。
 
@@ -146,7 +150,8 @@ func has_any() -> bool
    - 名字 `LineEdit`。
    - 性别: 2 个互斥 toggle (照 NewGamePanel 难度 radio 写法)。
    - 发型 / 衬衫款 / 裤子款 / 披风款: 每个一行 `◀ 名称 ▶` 或一排小按钮切换 (名称走 `Locale.t()`)。
-   - 皮肤/头发/衬衫/裤子/披风色: 每个一行**色块按钮**, 点哪个选哪个 (高亮选中)。披风款=无 时披风色行可禁用/灰掉。
+   - **胸部大小** (`◀ 小/中/大 ▶`): **仅性别=女时显示**, 切到男时整行隐藏。
+   - 皮肤/头发/衬衫/裤子/披风/**眼珠**色: 每个一行**色块按钮**, 点哪个选哪个 (高亮选中)。披风款=无 时披风色行可禁用/灰掉。
    - 任意改动 → 重建预览 `SpriteFrames` (节流: 同步重建即可, 帧数少不卡)。
    - `保存` (名字空或重名给提示) → `CharacterManager.save_character()` → 回 CharacterSelectPanel; `取消` → 回 CharacterSelectPanel。
    - i18n: 所有静态文字走 `Locale.t()` (照现有面板), 新 key 加进 4 语言表; **款式/颜色名也要中文** (照 `_ZH_NAMES` 习惯)。
@@ -190,7 +195,7 @@ func has_any() -> bool
 **单元 (`tests/unit/`)**:
 - `test_character_data.gd`: `CharacterData` 存读往返 (写 .tres → 读回, 所有字段相等); 默认值正确。
 - `test_character_manager.gd`: save/list/load_by_name/delete 往返; 重名覆盖; 非法名拒绝 (路径注入); 空目录 `has_any()=false`。用临时 `user://` 路径或 mock。
-- `test_player_art_appearance.gd`: `build_sprite_frames(appearance)` 给定颜色 → 取某已知坐标像素 (如衬衫格) 断言等于所选 shirt_color; 换 hair_style 头顶像素变化; 默认 appearance 画出的 idle 第 0 帧与**新侧面基准**逐格一致 (锁住默认款不被后续改歪); 侧脸只有一只眼 (断言朝右那侧有 `e` 眼色、另一侧无)。
+- `test_player_art_appearance.gd`: `build_sprite_frames(appearance)` 给定颜色 → 取某已知坐标像素 (如衬衫格) 断言等于所选 shirt_color; 换 hair_style 头顶像素变化; 默认 appearance 画出的 idle 第 0 帧与**新侧面基准**逐格一致 (锁住默认款不被后续改歪); 侧脸只有一只眼 (断言朝右那侧有眼、另一侧无); 眼睛区域**同时有眼白(白)和眼珠(=eye_color)**; 改 `eye_color` 眼珠像素跟着变; 女版 `chest_size` 小/中/大 三档胸口像素列数不同, 男版不受 `chest_size` 影响。
 - `test_save_migration.gd`: 构造一个含玩家数据的老 world `SaveData` + 空 characters 目录 → 跑迁移 → 断言生成了一张默认角色且背包/hp 等于老存档玩家数据。
 
 **集成 (`tests/integration/`)**:
@@ -231,8 +236,8 @@ func has_any() -> bool
 1. A `CharacterData` (含 cape 字段) + 单测 (能独立存读)。
 2. B `CharacterManager` autoload + 单测 (`--rebuild` 建索引)。
 3. C `player_art.gd` 分层重构 —— **分批**:
-   - C1 5 层框架 + **侧面单眼男身体** + 默认款 (短发/T恤/长裤/无披风) + 逐格基准测试 (锁住新侧面基准)。
-   - C2 女身体 (重画身材比例) + 4 发型 + 颜色替换跑通; 默认款做出女版 fit。
+   - C1 5 层框架 + **侧面单眼男身体** (眼白+眼珠 `eye_color`) + 默认款 (短发/T恤/长裤/无披风) + 逐格基准测试 (锁住新侧面基准)。
+   - C2 女身体 (重画身材比例 + `chest_size` 小/中/大 三档躯干变体) + 4 发型 + 颜色替换跑通; 默认款做出女版 fit。
    - C3 日常款 (背带/连帽/海魂衫 · 短裤/裙子/工装裤), 每款男女 fit 各一版。
    - C4 泳衣 (2 上装 + 2 下装) + 披风层 (短/长披风)。
    - C5 主题套装 (法师袍 上+下 · 骑士胸甲+护腿 · 公主裙)。
