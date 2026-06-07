@@ -177,6 +177,8 @@ func spawn_explosion(world_pos: Vector2, tint: Color = Color(0, 0, 0, 0)) -> voi
 func spawn_water_grains(world_pos: Vector2, vel_hint: Vector2, tid: int, n: int = 1) -> bool:
 	if _grain_count >= MAX_WATER_GRAINS:
 		return false
+	# grains_emitted 数的是"发射器被成功调用的次数", 不是实际生成的颗粒数:
+	# headless 测试里没池也没 effects_root, 不会真建节点, 但仍 +1 → 集成测试靠它确认钩子被调到。
 	grains_emitted += 1
 	# 颜色: 现成群系水色板的高光色 "c", alpha 调亮到 0.9 让水珠显眼
 	var pal: Dictionary = BlocksArt.water_palette_for(tid)

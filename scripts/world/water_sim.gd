@@ -389,7 +389,8 @@ func _step_tile(cm, x: int, y: int) -> void:
 			if cm.get_tile(x, y + 2) != Tiles.AIR:
 				Effects.spawn_splash(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE))
 		# 活水颗粒: 下落的水冒水珠 (含网页, 靠 Effects 全局上限控量)。settle 不冒。
-		if kind == "water" and not _in_settle:
+		# 限频 _tick_n % 3: 跟上面溅花同思路, 防一道高瀑布每 tick 把 250 名额占满、饿死别处水珠。
+		if kind == "water" and not _in_settle and _tick_n % 3 == 0:
 			Effects.spawn_water_grains(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE), Vector2(0, 60), tid, 1)
 		return
 	if _liquid_kind(below_tid) == kind:
