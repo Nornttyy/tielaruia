@@ -14,7 +14,7 @@ const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
 
 static func build() -> TileSet:
 	var ts := TileSet.new()
-	ts.tile_size = Vector2i(12, 12)  # 方块更小 (TILE_SIZE 16 → 12, 整体缩 75%)
+	ts.tile_size = Vector2i(6, 6)  # 方块更小 (TILE_SIZE 12 → 6, 再缩 50%)
 	# 物理层 0: 世界默认 (bit 0). 普通实心方块用.
 	ts.add_physics_layer()
 	# 物理层 1: 门专用 (bit 1). 门挡怪不挡玩家 — 玩家 collision_mask=1 跳过, 怪 mask=3 阻挡.
@@ -83,7 +83,7 @@ static func build() -> TileSet:
 	for tile_id in tile_ids:
 		var source := TileSetAtlasSource.new()
 		source.texture = ArtCache.block_textures[tile_id]
-		source.texture_region_size = Vector2i(12, 12)
+		source.texture_region_size = Vector2i(6, 6)
 		ts.add_source(source, tile_id)
 
 		# 门 (底/中/顶) 走物理层 1 (挡怪不挡人); DOOR_OPEN 不在内 → 开门无碰撞谁都能穿
@@ -99,7 +99,7 @@ static func build() -> TileSet:
 					var props = source.get_tile_data(coord, 0)
 					props.add_collision_polygon(0)
 					props.set_collision_polygon_points(0, 0, PackedVector2Array([
-						Vector2(-6, -6), Vector2(6, -6), Vector2(6, 6), Vector2(-6, 6),
+						Vector2(-3, -3), Vector2(3, -3), Vector2(3, 3), Vector2(-3, 3),
 					]))
 		else:
 			# 非 autotile: 单 cell
@@ -108,9 +108,9 @@ static func build() -> TileSet:
 				# 斜砖: 三角形碰撞 (实心半边). ◢ 右下三角 / ◣ 左下三角.
 				var spts: PackedVector2Array
 				if tile_id == Tiles.GRASS_SLOPE_R:
-					spts = PackedVector2Array([Vector2(-6, 6), Vector2(6, 6), Vector2(6, -6)])
+					spts = PackedVector2Array([Vector2(-3, 3), Vector2(3, 3), Vector2(3, -3)])
 				else:  # GRASS_SLOPE_L ◣
-					spts = PackedVector2Array([Vector2(-6, 6), Vector2(6, 6), Vector2(-6, -6)])
+					spts = PackedVector2Array([Vector2(-3, 3), Vector2(3, 3), Vector2(-3, -3)])
 				var sprops = source.get_tile_data(Vector2i.ZERO, 0)
 				sprops.add_collision_polygon(0)
 				sprops.set_collision_polygon_points(0, 0, spts)
@@ -118,14 +118,14 @@ static func build() -> TileSet:
 				var props = source.get_tile_data(Vector2i.ZERO, 0)
 				props.add_collision_polygon(0)
 				props.set_collision_polygon_points(0, 0, PackedVector2Array([
-					Vector2(-6, -6), Vector2(6, -6), Vector2(6, 6), Vector2(-6, 6),
+					Vector2(-3, -3), Vector2(3, -3), Vector2(3, 3), Vector2(-3, 3),
 				]))
 			elif is_door:
 				# 门: 加碰撞但用物理层 1 (门层 bit 1, 玩家不 mask)
 				var dprops = source.get_tile_data(Vector2i.ZERO, 0)
 				dprops.add_collision_polygon(1)
 				dprops.set_collision_polygon_points(1, 0, PackedVector2Array([
-					Vector2(-6, -6), Vector2(6, -6), Vector2(6, 6), Vector2(-6, 6),
+					Vector2(-3, -3), Vector2(3, -3), Vector2(3, 3), Vector2(-3, 3),
 				]))
 			elif tile_id == Tiles.WOOD_PLATFORM:
 				# 平台 (2 行薄板): 碰撞框 y=-1..+1 在物理层 2 (bit 2)
@@ -133,7 +133,7 @@ static func build() -> TileSet:
 				var pprops = source.get_tile_data(Vector2i.ZERO, 0)
 				pprops.add_collision_polygon(2)
 				pprops.set_collision_polygon_points(2, 0, PackedVector2Array([
-					Vector2(-6, -1), Vector2(6, -1), Vector2(6, 1), Vector2(-6, 1),
+					Vector2(-3, -0.5), Vector2(3, -0.5), Vector2(3, 0.5), Vector2(-3, 0.5),
 				]))
 				pprops.set_collision_polygon_one_way(2, 0, true)
 			# 水 (8 档水位 + 3 群系满水 + 21 群系薄水) 都启用 4 帧动画

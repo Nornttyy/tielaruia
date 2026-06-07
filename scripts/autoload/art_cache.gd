@@ -134,54 +134,54 @@ func _build_blocks() -> void:
 			# UI icon 用原 16x16 (不缩, 库存里能看清);
 			# 世界内 tile 用 smart-resize 后 12x12 (匹配 TileSet tile_size=12, 边线齐整)
 			block_icons[tile_id] = _extract_interior_icon(atlas_16)
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(atlas_16)
+			block_textures[tile_id] = _smart_resize_atlas(atlas_16)
 		elif tile_id == BlocksArt.WATER:
 			# 水: 64×16 → 48×12 智能缩放; UI icon 用原 16x16
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_animated_atlas())
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_water_animated_atlas())
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L1:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(1))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_water_level_atlas(1))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L2:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(2))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_water_level_atlas(2))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L3:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(3))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_water_level_atlas(3))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L4:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(4))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_water_level_atlas(4))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L5:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(5))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_water_level_atlas(5))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L6:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(6))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_water_level_atlas(6))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L7:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(7))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_water_level_atlas(7))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_DESERT or tile_id == BlocksArt.WATER_JUNGLE \
 				or tile_id == BlocksArt.WATER_SWAMP:
 			# 群系满水: 同 WATER 的 4 帧动画 atlas, 只换调色板染色
 			var pal: Dictionary = BlocksArt.water_palette_for(tile_id)
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_animated_atlas_p(pal))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_water_animated_atlas_p(pal))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.LAVA_L1:
 			# 岩浆深浅不是 item, icon 直接复用世界贴图 (避免缺 key 崩)
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_lava_level_atlas(1))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_lava_level_atlas(1))
 			block_icons[tile_id] = block_textures[tile_id]
 		elif tile_id == BlocksArt.LAVA_L2:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_lava_level_atlas(2))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_lava_level_atlas(2))
 			block_icons[tile_id] = block_textures[tile_id]
 		elif tile_id == BlocksArt.LAVA_L3:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_lava_level_atlas(3))
+			block_textures[tile_id] = _smart_resize_atlas(BlocksArt.get_lava_level_atlas(3))
 			block_icons[tile_id] = block_textures[tile_id]
 		else:
 			var single_16: ImageTexture = BlocksArt.get_texture(tile_id)
 			single_16 = _apply_biome_tint(tile_id, single_16)
 			# UI icon 用原 16x16; world tile 用 12x12 (匹配 TileSet)
 			block_icons[tile_id] = single_16
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(single_16)
+			block_textures[tile_id] = _smart_resize_atlas(single_16)
 
 	# 群系薄水 (visual-only, 21 张): 3 族 × 7 档, 同薄水 atlas 换调色板染色。
 	# 不在上面 tile_ids 主循环里 (它们不进数据, 单独按族×档生成)。
@@ -189,7 +189,7 @@ func _build_blocks() -> void:
 		var pal: Dictionary = BlocksArt.water_palette_for(base_id)
 		for lvl in range(1, 8):
 			var tid: int = base_id + (lvl - 1)
-			var tex: ImageTexture = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas_p(lvl, pal))
+			var tex: ImageTexture = _smart_resize_atlas(BlocksArt.get_water_level_atlas_p(lvl, pal))
 			block_textures[tid] = tex
 			block_icons[tid] = tex   # 不是 item, icon 复用世界贴图防缺 key 崩
 
@@ -221,27 +221,27 @@ static func _tint_texture(src: ImageTexture, tint: Color, strength: float) -> Im
 	return ImageTexture.create_from_image(img)
 
 
-# 16x16 → 12x12 智能缩放: 保留 4 个边缘行/列, 内部 12 行/列压到 8.
-# 用途: TileSet tile_size=12 后, 让 16x16 ASCII pattern 在 Godot 渲染前先缩成 12x12,
-# 避免 Godot 内部缩时不均匀采样导致边线 (autotile edge) 厚薄不一.
-static func _smart_resize_atlas_16_to_12(tex: ImageTexture) -> ImageTexture:
+# 16x16 → n×n 智能缩放 (每 cell). 用途: TileSet region=n 前先把 16px ASCII pattern
+# 缩成 n×n, 避免 Godot 内部缩时不均匀采样导致边线 (autotile edge) 厚薄不一.
+# n 默认 = ChunkConstants.TILE_SIZE (现 6). 均匀采样: dst 第 i 个 → src round(i*15/(n-1)), 含两端.
+static func _smart_resize_atlas(tex: ImageTexture, n: int = ChunkConstants.TILE_SIZE) -> ImageTexture:
 	var src: Image = tex.get_image()
 	var w_cells: int = src.get_width() / 16
 	var h_cells: int = src.get_height() / 16
 	if w_cells <= 0 or h_cells <= 0:
 		return tex
-	var dst := Image.create(w_cells * 12, h_cells * 12, false, Image.FORMAT_RGBA8)
+	var map_n: PackedInt32Array = PackedInt32Array()
+	for i in n:
+		map_n.append(int(round(float(i) * 15.0 / float(n - 1))))
+	var dst := Image.create(w_cells * n, h_cells * n, false, Image.FORMAT_RGBA8)
 	dst.fill(Color(0, 0, 0, 0))
-	# dst[i] → src[?] 映射: 12 行/列里, 前 2 + 后 2 保留 src 0/1/14/15
-	# 中间 8 行/列采自 src 2..13: 跳 src 3/6/9/12 → 取 2,4,5,7,8,10,11,13
-	var map12: PackedInt32Array = PackedInt32Array([0, 1, 2, 4, 5, 7, 8, 10, 11, 13, 14, 15])
 	for cy in h_cells:
 		for cx in w_cells:
-			for dr in 12:
-				var sr: int = cy * 16 + map12[dr]
-				for dc in 12:
-					var sc: int = cx * 16 + map12[dc]
-					dst.set_pixel(cx * 12 + dc, cy * 12 + dr, src.get_pixel(sc, sr))
+			for dr in n:
+				var sr: int = cy * 16 + map_n[dr]
+				for dc in n:
+					var sc: int = cx * 16 + map_n[dc]
+					dst.set_pixel(cx * n + dc, cy * n + dr, src.get_pixel(sc, sr))
 	return ImageTexture.create_from_image(dst)
 
 
