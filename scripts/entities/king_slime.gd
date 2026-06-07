@@ -17,8 +17,8 @@ const HOP_HEIGHT_TILES := 4.0
 const HOP_DIST_TILES := 5.0
 const HOP_COOLDOWN_FULL := 1.6
 const HOP_COOLDOWN_LOW := 0.5
-const SCALE_FULL := 4.0
-const SCALE_LOW := 2.0
+const SCALE_FULL := 2.0
+const SCALE_LOW := 1.0
 const MINION_INTERVAL := 4.0
 const MINION_PER_WAVE := 3
 const MINION_CAP := 8
@@ -81,7 +81,7 @@ func _apply_scale() -> void:
 	# 王冠跟着体型缩放, 坐在头顶: band 底边贴头顶 (-16-8s), 留 1px 嵌入防缝隙.
 	if _crown != null:
 		_crown.scale = Vector2(s, s)
-		_crown.position = Vector2(0.0, -16.0 - 8.0 * s)
+		_crown.position = Vector2(0.0, -8.0 - 8.0 * s)
 
 
 # 近战命中半径: 王身子巨大, 让剑/镐碰到大身子就算命中 (不只认中心一点).

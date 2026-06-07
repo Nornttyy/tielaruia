@@ -31,7 +31,7 @@ const _COLOR_HP_MULT := [0.6, 1.0, 1.8, 2.8]
 const _COLOR_DMG_MULT := [0.7, 1.0, 1.5, 2.2]
 const _COLOR_JELLY := [1, 1, 2, 3]
 # 大小 0小/1中/2大: sprite scale + HP/伤害乘数.
-const _SIZE_SCALE := [0.65, 1.0, 1.5]
+const _SIZE_SCALE := [0.325, 0.5, 0.75]
 const _SIZE_HP_MULT := [0.5, 1.0, 1.5]
 const _SIZE_DMG_MULT := [0.8, 1.0, 1.2]
 

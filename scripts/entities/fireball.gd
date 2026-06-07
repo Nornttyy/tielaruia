@@ -18,9 +18,9 @@ var _is_dead: bool = false
 
 # 每种元素: 弹的视觉大小 (sprite 缩放, 不动碰撞) + 命中爆炸主色.
 const ELEMENT_VISUAL := {
-	"fire":   {"scale": 1.25, "explosion": Color8(255, 150, 40)},   # 大, 橙红
-	"ice":    {"scale": 1.0,  "explosion": Color8(90, 180, 240)},   # 中, 冰蓝
-	"nature": {"scale": 0.8,  "explosion": Color8(120, 200, 60)},   # 小, 绿
+	"fire":   {"scale": 0.625, "explosion": Color8(255, 150, 40)},   # 大, 橙红
+	"ice":    {"scale": 0.5,  "explosion": Color8(90, 180, 240)},   # 中, 冰蓝
+	"nature": {"scale": 0.4,  "explosion": Color8(120, 200, 60)},   # 小, 绿
 }
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D

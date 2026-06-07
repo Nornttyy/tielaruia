@@ -24,7 +24,7 @@ const BONE_DROP_MIN := 15
 const BONE_DROP_MAX := 25
 const ARMOR_DROP_CHANCE := 0.40   # 每件骷髅盔甲掉落几率 (多打几次凑齐一套)
 const STAFF_DROP_CHANCE := 0.25   # 骷髅法杖掉落几率 (稀有奖励)
-const BODY_SCALE := 1.3         # 专属骑士帧 24×30 → ~35px ≈ 玩家(30px)高一点
+const BODY_SCALE := 0.65         # 专属骑士帧 24×30 → ~35px ≈ 玩家(30px)高一点
 
 # === 4 招 (按距离选: 远扔骨头 / 中冲刺 / 近横扫; 血<50% 周期召唤小骷髅) ===
 const ATTACK_COOLDOWN_FULL := 2.2    # 满血出招间隔
@@ -98,7 +98,7 @@ func boss_display_name() -> String:
 
 # 近战命中半径: 王身子高 (~30px), 让剑碰到身子就算命中 (不只认脚底中心一点)。
 func melee_hit_radius() -> float:
-	return 14.0
+	return 7.0
 
 
 func _find_player() -> Node2D:
