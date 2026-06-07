@@ -109,6 +109,36 @@ const WATER_JUNGLE := 82    # 丛林 = 翠绿
 const WATER_SWAMP := 83     # 沼泽 = 浑浊墨绿
 const WATER_SOURCE := 86    # 水源块: 永远冒水的泉眼 (瀑布). 实心可挖, 挖掉就停; 不掉物=不可造, 防无限水
 
+# 群系薄水 (visual-only): 沙漠/丛林/沼泽 × 7 档. 只出现在 terrain_layer 画面层,
+# 永不进 chunk 数据 / 存档 / 联机 → 不需要行为表条目。颜色 = 水当前所在群系。
+const WATER_DESERT_L1 := 94
+const WATER_DESERT_L2 := 95
+const WATER_DESERT_L3 := 96
+const WATER_DESERT_L4 := 97
+const WATER_DESERT_L5 := 98
+const WATER_DESERT_L6 := 99
+const WATER_DESERT_L7 := 100
+const WATER_JUNGLE_L1 := 101
+const WATER_JUNGLE_L2 := 102
+const WATER_JUNGLE_L3 := 103
+const WATER_JUNGLE_L4 := 104
+const WATER_JUNGLE_L5 := 105
+const WATER_JUNGLE_L6 := 106
+const WATER_JUNGLE_L7 := 107
+const WATER_SWAMP_L1 := 108
+const WATER_SWAMP_L2 := 109
+const WATER_SWAMP_L3 := 110
+const WATER_SWAMP_L4 := 111
+const WATER_SWAMP_L5 := 112
+const WATER_SWAMP_L6 := 113
+const WATER_SWAMP_L7 := 114
+
+# display_water_tile 用: 档位(1-8) → tile id. 索引 0 占位. 普通水 id 不连续故显式列。
+const _GENERIC_LV := [0, WATER_L1, WATER_L2, WATER_L3, WATER_L4, WATER_L5, WATER_L6, WATER_L7, WATER]
+const _DESERT_LV  := [0, WATER_DESERT_L1, WATER_DESERT_L2, WATER_DESERT_L3, WATER_DESERT_L4, WATER_DESERT_L5, WATER_DESERT_L6, WATER_DESERT_L7, WATER_DESERT]
+const _JUNGLE_LV  := [0, WATER_JUNGLE_L1, WATER_JUNGLE_L2, WATER_JUNGLE_L3, WATER_JUNGLE_L4, WATER_JUNGLE_L5, WATER_JUNGLE_L6, WATER_JUNGLE_L7, WATER_JUNGLE]
+const _SWAMP_LV   := [0, WATER_SWAMP_L1, WATER_SWAMP_L2, WATER_SWAMP_L3, WATER_SWAMP_L4, WATER_SWAMP_L5, WATER_SWAMP_L6, WATER_SWAMP_L7, WATER_SWAMP]
+
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
 # tier: -1 = 该工具挖不动；0 = 徒手也行；1 = 需 1 级 (木质)
@@ -688,8 +718,11 @@ func is_water(tile_id: int) -> bool:
 
 
 # tile id → 水位 (1-8). 满水(含群系满水)=8, 非水=0.
-# 渲染层 display_water_tile 用它反查档位 (彩色分支在 Task 2 补)。
+# 渲染层 display_water_tile 用它反查档位。
 func water_level(tile_id: int) -> int:
+	# 彩色薄水 (94-114): 三族各 7 档, 连号 → 档 = (offset % 7) + 1
+	if tile_id >= WATER_DESERT_L1 and tile_id <= WATER_SWAMP_L7:
+		return ((tile_id - WATER_DESERT_L1) % 7) + 1
 	if tile_id == WATER or tile_id == WATER_DESERT or tile_id == WATER_JUNGLE or tile_id == WATER_SWAMP:
 		return 8
 	if tile_id == WATER_L7: return 7
@@ -700,6 +733,26 @@ func water_level(tile_id: int) -> int:
 	if tile_id == WATER_L2: return 2
 	if tile_id == WATER_L1: return 1
 	return 0
+
+
+# 是不是 21 个 visual-only 彩色薄水之一 (tileset 动画门 / art_cache 用)。
+func is_biome_water_visual(tile_id: int) -> bool:
+	return tile_id >= WATER_DESERT_L1 and tile_id <= WATER_SWAMP_L7
+
+
+# 数据里存的普通水 stored_id → 按所在群系该画的彩色 visual id。
+# full_water_id = 该群系的满水 id (WATER / WATER_DESERT / WATER_JUNGLE / WATER_SWAMP),
+# 由调用方用 WorldGenerator._biome_water_tile(biome) 得到 → Tiles 不依赖 biome 编号。
+# 非水 stored_id 原样返回。
+func display_water_tile(stored_id: int, full_water_id: int) -> int:
+	var lvl: int = water_level(stored_id)
+	if lvl <= 0:
+		return stored_id
+	match full_water_id:
+		WATER_DESERT: return _DESERT_LV[lvl]
+		WATER_JUNGLE: return _JUNGLE_LV[lvl]
+		WATER_SWAMP:  return _SWAMP_LV[lvl]
+		_:            return _GENERIC_LV[lvl]
 
 
 func is_mineable(tile_id: int) -> bool:
