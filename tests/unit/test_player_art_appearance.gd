@@ -56,6 +56,35 @@ func test_unknown_shirt_style_falls_back_no_crash():
 	var sf = PlayerArt.build_sprite_frames(ap)
 	assert_true(sf.has_animation("idle"), "未知款回退不崩")
 
+func test_hairstyles_differ():
+	var imgs := []
+	for hs in range(4):
+		var ap = _default_appearance(); ap["hair_style"] = hs
+		imgs.append(PlayerArt.build_sprite_frames(ap).get_frame_texture("idle", 0).get_image())
+	for a in range(4):
+		for c in range(a + 1, 4):
+			var diff := 0
+			for y in range(1, 13):
+				for x in range(24):
+					if imgs[a].get_pixel(x, y) != imgs[c].get_pixel(x, y):
+						diff += 1
+			assert_gt(diff, 0, "发型 %d 与 %d 不同" % [a, c])
+
+func test_hair_color_follows_appearance():
+	var ap = _default_appearance(); ap["hair_color"] = Color8(20, 180, 220)
+	var img = PlayerArt.build_sprite_frames(ap).get_frame_texture("idle", 0).get_image()
+	assert_true(_has_color_near(img, Color8(20, 180, 220), range(2, 11), range(6, 20)), "头发是所选色")
+
+func test_skin_color_follows_appearance():
+	var ap = _default_appearance(); ap["skin_color"] = Color8(120, 80, 55)
+	var img = PlayerArt.build_sprite_frames(ap).get_frame_texture("idle", 0).get_image()
+	assert_true(_has_color_near(img, Color8(120, 80, 55), range(4, 14), range(8, 22)), "脸是所选肤色")
+
+func test_pants_color_follows_appearance():
+	var ap = _default_appearance(); ap["pants_color"] = Color8(20, 160, 60)
+	var img = PlayerArt.build_sprite_frames(ap).get_frame_texture("idle", 0).get_image()
+	assert_true(_has_color_near(img, Color8(20, 160, 60), range(27, 43), range(7, 18)), "裤子是所选色")
+
 func test_female_body_differs_from_male():
 	var m = _default_appearance(); m["gender"] = 0
 	var f = _default_appearance(); f["gender"] = 1

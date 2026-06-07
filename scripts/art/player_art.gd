@@ -62,6 +62,41 @@ const _HAIR_SHORT := [
 	"Hhhh.....",
 	"hhh......",
 ]
+# 长发: 顺后背 (左) 垂下到肩。
+const _HAIR_LONG := [
+	"..HHHHH..",
+	".hhhhhhh.",
+	"hhhhhhhh.",
+	"Hhhh.....",
+	"hhhh.....",
+	"Hhh......",
+	"hhh......",
+	"hhh......",
+	"Hhh......",
+	"hhh......",
+	".Hh......",
+]
+# 马尾: 短顶 + 后脑扎一束往左下翘。
+const _HAIR_PONYTAIL := [
+	"..HHHHH..",
+	".hhhhhhh.",
+	"hhhhhhhh.",
+	"HhhH.....",
+	"hh.......",
+	"hhh......",
+	".Hhh.....",
+	"..hh.....",
+]
+# 呆毛: 短发 + 头顶一根翘起。
+const _HAIR_AHOGE := [
+	"....hh...",
+	"...Hh....",
+	"..HHHHH..",
+	".hhhhhhh.",
+	"hhhhhhhh.",
+	"Hhhh.....",
+	"hhh......",
+]
 # 躯干 (衬衫 w / 阴影 D), 8 宽 × 15 高 (肩到腰)
 const _TORSO := [
 	".wwwwww.",
@@ -246,11 +281,20 @@ static func _female_torso(cs: int) -> Array:
 	return rows
 
 
-# 头发层: hair_style 0 (短发); 其它号 Task 4。
-static func _hair_layer(_ap: Dictionary, pose: String) -> Array:
+# 头发层: 4 款 (0 短发 / 1 长发 / 2 马尾 / 3 呆毛); 未知号回退短发。
+static func _hair_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var dy := _dy(pose)
-	_place(g, 2 + dy, 7, _HAIR_SHORT)
+	match int(ap.get("hair_style", 0)):
+		1:
+			_place(g, 2 + dy, 7, _HAIR_LONG)
+		2:
+			_place(g, 2 + dy, 7, _HAIR_PONYTAIL)
+		3:
+			# 呆毛多 2 行 (头顶翘起), 整体上提 2 行对齐头顶。
+			_place(g, 0 + dy, 7, _HAIR_AHOGE)
+		_:
+			_place(g, 2 + dy, 7, _HAIR_SHORT)
 	return g
 
 
