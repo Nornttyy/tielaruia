@@ -50,12 +50,14 @@ const CURRENT_VERSION := 1
 # 长相 (捏人结果). 颜色存 Color; 款式/性别存 int 枚举.
 @export var gender: int = 0            # 0=男 1=女
 @export var hair_style: int = 0        # 0..3
-@export var shirt_style: int = 0       # 0..3 (含泳衣上装)
-@export var pants_style: int = 0       # 0..3 (含泳裤)
+@export var shirt_style: int = 0       # 0..7 (含 2 款泳衣上装, 见 C)
+@export var pants_style: int = 0       # 0..8 (含 2 款泳衣下装, 见 C)
+@export var cape_style: int = 0        # 0=无 1=短披风 2=长披风
 @export var skin_color: Color = Color8(255, 218, 185)
 @export var hair_color: Color = Color8(121, 85, 72)
 @export var shirt_color: Color = Color8(229, 57, 53)
 @export var pants_color: Color = Color8(38, 70, 130)
+@export var cape_color: Color = Color8(150, 40, 50)   # cape_style=0 时忽略
 
 # 跟着角色走的玩家状态 (从 SaveData 搬过来)
 @export var player_hp: float = 100.0
@@ -70,7 +72,7 @@ const CURRENT_VERSION := 1
 ```
 
 - 颜色阴影自动算: 阴影色 = 主色 `.darkened(0.28)` (头发/衬衫/裤子各自的 `H/W/B`)。皮肤阴影 = `skin_color.darkened(0.18)`。**不单独存阴影**, 渲染时算。
-- 提供 `appearance_dict() -> Dictionary` 帮助方法, 返回 `{gender, hair_style, shirt_style, pants_style, skin_color, hair_color, shirt_color, pants_color}`, 给 `PlayerArt.build_sprite_frames()` 用 (避免渲染层依赖整个 CharacterData)。
+- 提供 `appearance_dict() -> Dictionary` 帮助方法, 返回 `{gender, hair_style, shirt_style, pants_style, cape_style, skin_color, hair_color, shirt_color, pants_color, cape_color}`, 给 `PlayerArt.build_sprite_frames()` 用 (避免渲染层依赖整个 CharacterData)。
 
 ### B. 角色管理器 `CharacterManager` (新 autoload)
 
@@ -102,16 +104,26 @@ func has_any() -> bool
 #                 skin_color, hair_color, shirt_color, pants_color}
 ```
 
-**分层结构** (每个动画帧由 4 层 ascii 叠出来, 后画的盖前画的):
+**分层结构** (每个动画帧由 5 层 ascii 叠出来, 后画的盖前画的; 第 0 层在最底/最后面):
+0. **披风层 (CAPE)** — 画在**最底 (身体后面)**: 按 `cape_style` 选 (0 无 / 1 短披风 / 2 长披风)。`0` 时整层透明。颜色 `cape_color`。
 1. **身体层 (BODY)**: 按 `gender` 选模板组。只画**皮肤 + 靴**, 躯干/腿留空 (`.`)。男/女各一套全帧 (idle_a/idle_b/walk_a/walk_c/jump/fall/hurt; walk_b=idle_a 复用)。女版躯干略窄。
-2. **裤子层 (PANTS)**: 按 `pants_style` 选 (0 长裤 / 1 短裤 / 2 裙子 / 3 泳裤)。覆盖腿部区域, 跟随每帧腿的姿态 (走路帧腿分开)。
-3. **衬衫层 (SHIRT)**: 按 `shirt_style` 选 (0 T恤 / 1 背带 / 2 连帽 / 3 泳衣上装)。覆盖躯干区域。泳衣上装 (女=比基尼上衣, 男=裸上身/吊带) + 泳裤搭一起就是**泳衣**。
+2. **裤子层 (PANTS)**: 按 `pants_style` 选。覆盖腿部区域, 跟随每帧腿的姿态 (走路帧腿分开)。
+3. **衬衫层 (SHIRT)**: 按 `shirt_style` 选。覆盖躯干区域。
 4. **头发层 (HAIR)**: 按 `hair_style` 选 (0 短发 / 1 长发 / 2 马尾 / 3 呆毛)。覆盖头顶, 跟随每帧头的位置 (idle_b 整体下沉 1px)。
 
-- 拼装: 对每帧, 从 `BODY[gender]` 起底, 依次把 PANTS/SHIRT/HAIR 的非透明格覆盖上去, 得到一张合并 ascii, 再喂 `PixelArt.build_sprite_frames`。
-- **调色板**: 拼装时按 appearance 的颜色生成 per-character `PALETTE` (skin/hair/shirt/pants 主色+算出的阴影色)。靴、眼、嘴用固定色。
-- **起始数量** (可后续扩): 性别 2、发型 4、衬衫款 4 (含泳衣上装)、裤子款 4 (含泳裤)、皮肤色 5、头发色 6、衬衫色 6、裤子色 6。
-- **默认值** = 现状那个小人 (男/短发/T恤/长裤/暖棕发/红衫/蓝裤), 保证不捏也跟以前一样。
+**完整款式目录** (实现可分批上, 见「实现顺序」):
+
+- **衬衫款 `shirt_style` (8)**: 0 T恤 / 1 背带 / 2 连帽卫衣 / 3 海魂衫(蓝白条纹) / 4 法师袍(上) / 5 骑士胸甲 / 6 泳衣·背心式 / 7 泳衣·吊带式(女=比基尼上衣, 男=吊带)。
+- **裤子款 `pants_style` (9)**: 0 长裤 / 1 短裤 / 2 裙子 / 3 工装裤 / 4 公主裙(华丽蓬蓬裙) / 5 法师袍(下摆) / 6 骑士护腿 / 7 泳裤 / 8 泳裙(沙滩裤)。
+- **披风款 `cape_style` (3)**: 0 无 / 1 短披风 / 2 长披风。
+- **发型 `hair_style` (4)**: 0 短发 / 1 长发 / 2 马尾 / 3 呆毛。
+- **泳衣** = 泳衣上装 (shirt 6/7) + 泳衣下装 (pants 7/8) 自由搭, 共 2×2=4 种泳衣组合。
+- **主题套装**: 法师袍 = shirt 4 + pants 5 (可再配长披风); 骑士盔甲 = shirt 5 + pants 6。捏人 UI 各层独立选, 不强制成套。
+
+- 拼装: 对每帧, 先铺 `CAPE`, 再 `BODY[gender]` 起底, 依次把 PANTS/SHIRT/HAIR 的非透明格覆盖上去, 得到一张合并 ascii, 再喂 `PixelArt.build_sprite_frames`。
+- **调色板**: 拼装时按 appearance 的颜色生成 per-character `PALETTE` (skin/hair/shirt/pants/cape 主色+算出的阴影色)。靴、眼、嘴用固定色。
+- **颜色数量** (可后续扩): 皮肤色 5、头发色 6、衬衫色 6、裤子色 6、披风色 6。
+- **默认值** = 现状那个小人 (男/短发/T恤/长裤/无披风/暖棕发/红衫/蓝裤), 保证不捏也跟以前一样。
 - 玩家场景挂的 `AnimatedSprite2D` 不变, 只是 `sprite_frames` 来自 `build_sprite_frames(current.appearance_dict())`。
 
 ### D. 捏人 + 选角色 UI (改 `main_menu.gd` + MainMenu 场景)
@@ -127,8 +139,8 @@ func has_any() -> bool
 2. **CharacterCreatorPanel** (捏人): 左侧**活预览** (一个 `AnimatedSprite2D` 放大, 播 idle/walk 切换) + 右侧选项:
    - 名字 `LineEdit`。
    - 性别: 2 个互斥 toggle (照 NewGamePanel 难度 radio 写法)。
-   - 发型 / 衬衫款 / 裤子款: 每个一行 `◀ 名称 ▶` 或一排小按钮切换。
-   - 皮肤/头发/衬衫/裤子色: 每个一行**色块按钮**, 点哪个选哪个 (高亮选中)。
+   - 发型 / 衬衫款 / 裤子款 / 披风款: 每个一行 `◀ 名称 ▶` 或一排小按钮切换 (名称走 `Locale.t()`)。
+   - 皮肤/头发/衬衫/裤子/披风色: 每个一行**色块按钮**, 点哪个选哪个 (高亮选中)。披风款=无 时披风色行可禁用/灰掉。
    - 任意改动 → 重建预览 `SpriteFrames` (节流: 同步重建即可, 帧数少不卡)。
    - `保存` (名字空或重名给提示) → `CharacterManager.save_character()` → 回 CharacterSelectPanel; `取消` → 回 CharacterSelectPanel。
    - i18n: 所有静态文字走 `Locale.t()` (照现有面板), 新 key 加进 4 语言表; **款式/颜色名也要中文** (照 `_ZH_NAMES` 习惯)。
@@ -191,7 +203,7 @@ func has_any() -> bool
 - `tests/integration/test_character_world_split.gd`
 
 **修改**:
-- `scripts/art/player_art.gd` — 重构成分层 `build_sprite_frames(appearance)` + 男/女身体、4 发型、4 衬衫款 (含泳衣上装)、4 裤子款 (含泳裤) ascii 模板
+- `scripts/art/player_art.gd` — 重构成分层 `build_sprite_frames(appearance)` (5 层: 披风/身体/裤子/衬衫/头发) + 男/女身体、4 发型、8 衬衫款、9 裤子款、3 披风款 ascii 模板
 - `project.godot` — 注册 autoload `CharacterManager` (改 autoload 后需 `./run.sh --rebuild`)
 - `scripts/save/save_data.gd` — `CURRENT_VERSION→5`, 玩家字段标 deprecated (保留定义)
 - `scripts/save/save_manager.gd` — `save()` 只收集世界部分 (玩家部分不再写有效值)
@@ -203,15 +215,21 @@ func has_any() -> bool
 
 ## 风险
 
-- **美术量大**: 男+女身体 × 7 帧 + 4 发型 + 4 衬衫款 (含泳衣上装) + 4 裤子款 (含泳裤), 每个跨帧对齐。控制法: 款式起始数量小 (各 3-4), 先把架子搭起来跑通, 再加款式; 走路帧腿/靴位置抽成共享坐标常量避免每帧手算。
+- **美术量大** (服装多了之后更明显): 男+女身体 × 7 帧 + 4 发型 + 8 衬衫款 + 9 裤子款 + 3 披风款, 每个跨帧对齐。控制法: **分批上** (见实现顺序 —— 先框架+默认, 再日常款, 再主题套装+披风), 每批能独立跑测试上线; 走路帧腿/靴位置抽成共享坐标常量避免每帧手算; 款式美术加进来不改框架代码 (纯加 ascii 模板 + 1 个 case)。
 - **存档迁移丢数据**: 迁移只读不删世界存档; 默认角色取最新存档玩家数据; 写测试锁住。万一多个老世界各有不同背包, 只迁最新那个 (其余世界背包字段被忽略) —— spec 已说明, 属预期。
 - **autosave 时序 (历史踩过)**: 玩家未就绪不写档的护栏必须同样用在存角色上, 否则重演「丢三件套」。
 - **并发 WIP**: 仓库长期有别的 session 在改 `player_art.gd` / 存档 / 菜单。每步实现前 `git status`, 精确 `git add`, 不卷入无关 WIP。
 
 ## 实现顺序建议
 
-1. A `CharacterData` + 单测 (能独立存读)。
+1. A `CharacterData` (含 cape 字段) + 单测 (能独立存读)。
 2. B `CharacterManager` autoload + 单测 (`--rebuild` 建索引)。
-3. C `player_art.gd` 分层重构 + 默认值逐格基准测试 (先保证「不捏=老样子」), 再逐步加款式/颜色。
+3. C `player_art.gd` 分层重构 —— **分批**:
+   - C1 5 层框架 + 男身体 + 默认款 (短发/T恤/长裤/无披风) + 逐格基准测试 (锁「不捏=老样子」)。
+   - C2 女身体 + 4 发型 + 颜色替换跑通。
+   - C3 日常款 (背带/连帽/海魂衫 · 短裤/裙子/工装裤)。
+   - C4 泳衣 (2 上装 + 2 下装) + 披风层 (短/长披风)。
+   - C5 主题套装 (法师袍 上+下 · 骑士胸甲+护腿 · 公主裙)。
+   每批加完跑一次像素断言测试。
 4. E 存档拆分 + 迁移 + main 接线 + 单测/集成 (角色跟人走)。
-5. D 捏人 + 选角色 UI (最后接, 因为它依赖 A/B/C 都就位)。
+5. D 捏人 + 选角色 UI (最后接, 因为它依赖 A/B/C 都就位; 含披风款/披风色选择行)。
