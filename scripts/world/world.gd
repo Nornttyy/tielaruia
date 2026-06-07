@@ -10,6 +10,7 @@ const WeatherClass = preload("res://scripts/world/weather.gd")
 const CursorManagerClass = preload("res://scripts/world/cursor_manager.gd")
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
+const WorldGenerator = preload("res://scripts/world/world_generator.gd")  # 静态 _biome_at / _biome_water_tile (画水按列染色用)
 const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
 const VillagePlacer = preload("res://scripts/world/village_placer.gd")
 const PlayerScene = preload("res://scenes/player/player.tscn")
@@ -107,6 +108,10 @@ var _door_tick_timer: float = 0.0
 var _open_doors: Dictionary = {}     # Vector2i(门底坐标) → true: 当前开着的门
 var _last_player_chunk_x: int = 0
 var _minimap_mark_timer: float = 0.0
+# 下落水视觉: cell → 剩余秒数. 水流过空格就刷新, 不再被流过就淡出 → 连续瀑布连成水帘.
+const _FALLING_VIS_SEC := 0.3
+var _falling_layer: TileMapLayer
+var _falling: Dictionary = {}
 
 
 func _ready() -> void:
@@ -187,6 +192,14 @@ func _step_build_tileset() -> void:
 	var ts := TileSetBuilder.build()
 	terrain_layer.tile_set = ts
 	wall_layer.tile_set = ts  # 跟前景共享同一个 TileSet
+	# 下落水视觉层: 纯画面, 在空气格里画"正在下落的水"连成连续水流 (瀑布不再一段段).
+	# 复用同一 TileSet (有水 tile + 动画), 排在 TerrainLayer 之后同 z → 盖在地形水同层.
+	_falling_layer = TileMapLayer.new()
+	_falling_layer.name = "FallingWaterLayer"
+	_falling_layer.tile_set = ts
+	_falling_layer.modulate = Color(1, 1, 1, 0.85)   # 略透, 像流动的水帘
+	add_child(_falling_layer)
+	move_child(_falling_layer, terrain_layer.get_index() + 1)
 
 
 func _step_chunks() -> void:
@@ -621,6 +634,7 @@ func _spawn_villagers() -> void:
 
 
 func _process(delta: float) -> void:
+	_sweep_falling_water(delta)   # 下落水视觉淡出 (每帧)
 	# 联机 client (不是 host) 跳过怪物/动物刷新 (host 权威, client 只接受 ent_pos 同步)
 	var is_mp_client: bool = NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host
 	if not is_mp_client:
@@ -935,7 +949,8 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				var q := Autotile.make_terrain_query(tid, chunk_manager)
 				Autotile.refresh_tile(terrain_layer, pos, tid, q)
 			else:
-				terrain_layer.set_cell(pos, tid, Vector2i.ZERO)
+				# 水 (普通 + 群系满水) 按列染成所在群系色; 非水 _display_water_tile 原样返回
+				terrain_layer.set_cell(pos, _display_water_tile(world_x, tid), Vector2i.ZERO)
 			var wid: int = wall_col[y]
 			var wpos := Vector2i(world_x, y)
 			if wid == Tiles.AIR:
@@ -1843,9 +1858,44 @@ func _fix_cactus_at(x: int, y: int) -> void:
 	terrain_layer.set_cell(Vector2i(x, y), want_tid, Vector2i.ZERO)
 
 
+# water_sim 调: 水正在重力下落穿过空格 (x,y). 画一道下落水视觉, 短时残留 → 连续瀑布连成水帘.
+# 纯画面: 不进 chunk 数据 / 不动物理 / 不联机 (host 本地够用, client 看真实 tile).
+func note_falling_water(x: int, y: int, tid: int) -> void:
+	if _falling_layer == null:
+		return
+	var cell := Vector2i(x, y)
+	if not _falling.has(cell):
+		_falling_layer.set_cell(cell, _display_water_tile(x, tid), Vector2i.ZERO)
+	_falling[cell] = _FALLING_VIS_SEC
+
+
+# 每帧淡出下落水: 没再被流过 (超时) 或该格已被实体水/方块占了 → 清掉视觉.
+func _sweep_falling_water(delta: float) -> void:
+	if _falling.is_empty() or _falling_layer == null:
+		return
+	var done: Array = []
+	for cell in _falling:
+		_falling[cell] -= delta
+		var occupied: bool = chunk_manager != null and chunk_manager.get_tile(cell.x, cell.y) != Tiles.AIR
+		if _falling[cell] <= 0.0 or occupied:
+			_falling_layer.set_cell(cell, -1)
+			done.append(cell)
+	for cell in done:
+		_falling.erase(cell)
+
+
 # 水专用 fast path: 跳过 autotile/darkness/lighting/cactus/sky 等水改不影响的子系统.
 # water_sim 每 tick 调几百次, 走完整 _set_tile 会卡帧 (darkness recompute 17x17 × 数百次).
 # 联机: host 改水时广播给 client; client 收到通过 _on_remote_tile 走完整 _set_tile.
+# 数据里存普通水 stored_id; 画到屏幕前按列查群系换成彩色 visual id。
+# 彩色 id 只进 terrain_layer (画面), 绝不回写 chunk_manager (数据保持普通水)。
+func _display_water_tile(x: int, stored_id: int) -> int:
+	if Tiles.water_level(stored_id) <= 0:
+		return stored_id   # 不是水, 原样 (省一次 biome 查询)
+	var full: int = WorldGenerator._biome_water_tile(WorldGenerator._biome_at(x, world_seed))
+	return Tiles.display_water_tile(stored_id, full)
+
+
 func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = false) -> void:
 	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
 		return
@@ -1865,7 +1915,7 @@ func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = fals
 	if tile_id == Tiles.AIR:
 		terrain_layer.set_cell(pos, -1)
 	else:
-		terrain_layer.set_cell(pos, tile_id, Vector2i.ZERO)
+		terrain_layer.set_cell(pos, _display_water_tile(x, tile_id), Vector2i.ZERO)
 	# host 广播给 client (但不接收方再回播, 避免回声). 批量模式累积到 buf
 	if not from_remote and NetworkManager != null and NetworkManager.connected():
 		if _tile_batching:
