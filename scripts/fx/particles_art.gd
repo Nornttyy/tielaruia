@@ -54,3 +54,20 @@ static func get_torch_spark(color: Color) -> ImageTexture:
 	var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
 	img.fill(color)
 	return ImageTexture.create_from_image(img)
+
+
+# 3x3 圆润水珠: 白底 (中心实, 四角淡), 靠 modulate 染成群系水色。静态缓存只建一次。
+static var _water_drop_cache: ImageTexture = null
+static func get_water_drop() -> ImageTexture:
+	if _water_drop_cache != null:
+		return _water_drop_cache
+	var img := Image.create(3, 3, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	# 十字 + 中心 = 圆润点; 四角留空显得圆
+	img.set_pixel(1, 0, Color(1, 1, 1, 0.85))
+	img.set_pixel(0, 1, Color(1, 1, 1, 0.85))
+	img.set_pixel(1, 1, Color(1, 1, 1, 1.0))
+	img.set_pixel(2, 1, Color(1, 1, 1, 0.85))
+	img.set_pixel(1, 2, Color(1, 1, 1, 0.85))
+	_water_drop_cache = ImageTexture.create_from_image(img)
+	return _water_drop_cache
