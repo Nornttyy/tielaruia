@@ -272,3 +272,36 @@ func test_no_lateral_oscillation_on_flat_ground() -> void:
 	sim.mark_dirty(1, 0)
 	sim.settle_now()
 	assert_true(sim._dirty.is_empty(), "平地 L2/L1 应收敛 (差1级稳定, 不再无限震荡)")
+
+
+# 活水颗粒: 水落进空气时该调发射器; settle 期间不该调。
+func test_grains_emit_on_fall() -> void:
+	# 高竖井: 水从 (0,0) 沿空气一路往下掉, 连掉好几 tick。
+	# 重力钩子限频 _tick_n % 3, 单格下落不一定撞上发射 tick → 用连续下落跨过它。
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER
+	for r in range(0, 9):                        # 两侧砌墙, 水只直落不横铺
+		fw.tiles[Vector2i(-1, r)] = Tiles.STONE
+		fw.tiles[Vector2i(1, r)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim._in_settle = false
+	var before: int = Effects.grains_emitted
+	sim.notify_tile_changed(0, 0)
+	for i in 8:                                  # 跨过 _tick_n=3、6 这些发射 tick
+		sim._run_tick()
+	assert_gt(Effects.grains_emitted, before, "水连续下落该冒水珠 (发射器被调)")
+
+
+func test_grains_silent_during_settle() -> void:
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER
+	for r in range(0, 9):
+		fw.tiles[Vector2i(-1, r)] = Tiles.STONE
+		fw.tiles[Vector2i(1, r)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim._in_settle = true                       # 加载找平期间: 全程不冒
+	var before: int = Effects.grains_emitted
+	sim.notify_tile_changed(0, 0)
+	for i in 8:
+		sim._run_tick()
+	assert_eq(Effects.grains_emitted, before, "settle 期间不该冒水珠")

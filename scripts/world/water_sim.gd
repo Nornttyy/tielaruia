@@ -350,6 +350,9 @@ func _step_source(cm, x: int, y: int) -> void:
 		world._set_water_tile_fast(x, y + 1, Tiles.WATER)
 		notify_tile_changed(x, y + 1)
 		mark_dirty(x, y)   # 还有活, 继续醒着
+		# 活水颗粒: 瀑布源往下灌时冒水珠。settle 不冒。
+		if not _in_settle:
+			Effects.spawn_water_grains(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE), Vector2(0, 70), Tiles.WATER, 1)
 	# 下方满水/实心/岩浆 → 啥也不做, dirty 不重标 → 自然歇下
 
 
@@ -385,6 +388,10 @@ func _step_tile(cm, x: int, y: int) -> void:
 		if kind == "water" and not _in_settle and _tick_n % 4 == 0 and not OS.has_feature("web"):
 			if cm.get_tile(x, y + 2) != Tiles.AIR:
 				Effects.spawn_splash(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE))
+		# 活水颗粒: 下落的水冒水珠 (含网页, 靠 Effects 全局上限控量)。settle 不冒。
+		# 限频 _tick_n % 3: 跟上面溅花同思路, 防一道高瀑布每 tick 把 250 名额占满、饿死别处水珠。
+		if kind == "water" and not _in_settle and _tick_n % 3 == 0:
+			Effects.spawn_water_grains(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE), Vector2(0, 60), tid, 1)
 		return
 	if _liquid_kind(below_tid) == kind:
 		var below_L: int = _level_of(below_tid)
@@ -437,6 +444,10 @@ func _step_water_lateral(cm, x: int, y: int, L: int, maxlv: int) -> void:
 		world._set_water_tile_fast(x, y, Tiles.AIR)
 	notify_tile_changed(best_nx, y)
 	notify_tile_changed(x, y)
+	# 活水颗粒: 横向漫流前沿冒 1 颗 (流进空气那一步, best_nl==0 表示流进空气/草须)。settle 不冒。
+	if not _in_settle and best_nl == 0:
+		var grain_dir: float = 40.0 if best_nx > x else -40.0
+		Effects.spawn_water_grains(Vector2((best_nx + 0.5) * TILE_SIZE, (y + 0.5) * TILE_SIZE), Vector2(grain_dir, 10), Tiles.WATER, 1)
 
 
 # 岩浆横向: 黏稠 — 只往一个最低邻居挪 1 格 (差≥2 才溢; 薄岩浆只朝落差). 不快铺.

@@ -124,6 +124,11 @@ func _ready() -> void:
 	var dp = DustPoolClass.new()
 	dp.name = "DustPool"
 	$EffectsRoot.add_child(dp)
+	# 水珠对象池: 预分配 120 颗 water grain, 复用减 alloc (瀑布密集处每秒几十颗)
+	var WaterGrainPoolClass = preload("res://scripts/fx/water_grain_pool.gd")
+	var wgp = WaterGrainPoolClass.new()
+	wgp.name = "WaterGrainPool"
+	$EffectsRoot.add_child(wgp)
 	# 怪物血条: 任何进 entities_root 且有 current_health 的非玩家实体自动挂血条.
 	# 一处集中 — 不用每个 entity.gd 单独加.
 	entities_root.child_entered_tree.connect(_on_entity_added_for_bar)
