@@ -217,6 +217,9 @@ func _level_body(cm, sx: int, sy: int, visited: Dictionary) -> bool:
 		while i < n and body[i].y == row_y:
 			row.append(body[i])
 			i += 1
+		# 按 x 排序 → 余数凸起放固定位置 (跟 flood 方向无关). 不排序的话凸起会落在
+		# "stack 先访问到的格", 水从左来 vs 从右来结果不同 → 活水时水面凸起乱跳 = 抽搐.
+		row.sort_custom(func(a, b): return a.x < b.x)
 		var rn: int = row.size()
 		var give: Array = []
 		if total >= rn * 8:
@@ -226,8 +229,9 @@ func _level_body(cm, sx: int, sy: int, visited: Dictionary) -> bool:
 			for k in range(rn): give.append(0)
 		else:
 			var base: int = total / rn
-			var extra: int = total % rn   # 余数分给前几格 → 差 ≤ 1
-			for k in range(rn): give.append(base + (1 if k < extra else 0))
+			var extra: int = total % rn   # 余数 (差 ≤ 1) 放正中间几格 → 对称 + 确定 (不抖)
+			var start: int = (rn - extra) / 2
+			for k in range(rn): give.append(base + (1 if (k >= start and k < start + extra) else 0))
 			total = 0
 		for k in range(rn):
 			var cell: Vector2i = row[k]
@@ -295,7 +299,7 @@ func _run_tick() -> void:
 		count += 1
 	if world.has_method("end_tile_batch"):
 		world.end_tile_batch()
-	# 实时模式下: 这批水刚流到安静 (dirty 空了) → 整片找平它们所在水域.
+	# 实时模式下: 这批水刚流到安静 (dirty 空了) → 整片找平它们所在水域 (单个种子即可洪泛整片连通水).
 	# 找平若挪了水会重新标 dirty → 下拍继续铺/找平, 直到纯平才彻底安静 (幂等不抖).
 	# settle 期间不在这做 (settle_now 自己分轮找平). 大水体 _level_body 会自动跳过.
 	if not _in_settle and _dirty.is_empty() and not working.is_empty():
