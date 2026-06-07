@@ -18,10 +18,12 @@ const SlimeArt = preload("res://scripts/art/slime_art.gd")
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 
 const VIEWPORT_SIZE := Vector2(1280, 720)
-const CLOUD_COUNT := 4
+const CLOUD_COUNT := 7          # 4→7: 云更多更丰富 (大小/透明度分层做远近)
 const TREE_COUNT := 5
 const SLIME_COUNT := 2
+const BIRD_COUNT := 5           # 天上飘几只小鸟
 const CLOUD_SPEED_RANGE := Vector2(6.0, 14.0)
+const BIRD_SPEED_RANGE := Vector2(22.0, 40.0)
 const SLIME_HOP_INTERVAL := 2.5
 
 const BTN_NORMAL_BG := Color8(58, 42, 26)
@@ -39,16 +41,21 @@ const BTN_PRESSED_BG := Color8(42, 26, 10)
 
 var _character_panels: Control = null
 var _cloud_speeds: Array[float] = []
+var _bird_speeds: Array[float] = []
+var _bird_phase: Array[float] = []     # 小鸟上下飘的相位
+var _bird_t: float = 0.0
 var _slime_hop_timers: Array[float] = []
 var _slime_base_y: Array[float] = []
 
 
 func _ready() -> void:
 	_setup_sky_gradient()
+	_setup_sun()
 	_setup_stars()
 	_setup_hills()
 	_setup_trees()
 	_setup_clouds()
+	_setup_birds()
 	_setup_torches()
 	_setup_slimes()
 	_setup_title()
@@ -136,6 +143,7 @@ func _process(delta: float) -> void:
 	if not visible:
 		return
 	_animate_clouds(delta)
+	_animate_birds(delta)
 	_animate_slimes(delta)
 
 
@@ -279,12 +287,56 @@ func _setup_clouds() -> void:
 		var s := Sprite2D.new()
 		s.texture = cloud_tex
 		s.centered = false
-		s.scale = Vector2(4.0, 4.0)
+		# 大小/透明度分层 → 近大远小, 有空间纵深感 (更丰富)
+		var sc: float = randf_range(2.6, 5.2)
+		s.scale = Vector2(sc, sc)
+		s.modulate.a = lerpf(0.7, 1.0, (sc - 2.6) / 2.6)   # 越小越淡 (像远处)
 		var x: float = randf() * VIEWPORT_SIZE.x
-		var y: float = randf_range(40.0, VIEWPORT_SIZE.y * 0.3)
+		var y: float = randf_range(30.0, VIEWPORT_SIZE.y * 0.34)
 		s.position = Vector2(x, y)
 		_clouds_root.add_child(s)
-		_cloud_speeds.append(randf_range(CLOUD_SPEED_RANGE.x, CLOUD_SPEED_RANGE.y))
+		# 越小(远)飘越慢 → 视差
+		_cloud_speeds.append(randf_range(CLOUD_SPEED_RANGE.x, CLOUD_SPEED_RANGE.y) * (sc / 5.2))
+
+
+# 暖阳: 软光晕 + 圆盘, 挂左上, 缓缓"呼吸". 放进 Sky 里 (渲染在云/山后面).
+func _setup_sun() -> void:
+	var sky: Control = $BackgroundLayer/Sky
+	var sun_pos := Vector2(225.0, 130.0)
+	# 软光晕 (放大的径向渐变, 暖黄半透)
+	var glow := Sprite2D.new()
+	glow.texture = ArtCache.radial_gradient(220)
+	glow.modulate = Color8(255, 232, 160, 115)
+	glow.scale = Vector2(1.9, 1.9)
+	glow.position = sun_pos
+	sky.add_child(glow)
+	# 圆盘
+	var disc := Sprite2D.new()
+	disc.texture = MenuSceneArt.make_sun(30)
+	disc.scale = Vector2(2.6, 2.6)
+	disc.position = sun_pos
+	sky.add_child(disc)
+	# 光晕缓缓呼吸 (放大缩小 + 透明度), 暖洋洋
+	var t := create_tween().set_loops()
+	t.tween_property(glow, "scale", Vector2(2.1, 2.1), 2.4).set_trans(Tween.TRANS_SINE)
+	t.tween_property(glow, "scale", Vector2(1.9, 1.9), 2.4).set_trans(Tween.TRANS_SINE)
+
+
+func _setup_birds() -> void:
+	var birds_root := Node2D.new()
+	birds_root.name = "Birds"
+	$BackgroundLayer.add_child(birds_root)
+	var bird_tex = MenuSceneArt.make_bird()
+	for i in BIRD_COUNT:
+		var b := Sprite2D.new()
+		b.texture = bird_tex
+		b.centered = true
+		var sc: float = randf_range(2.0, 3.4)
+		b.scale = Vector2(sc, sc)
+		b.position = Vector2(randf() * VIEWPORT_SIZE.x, randf_range(70.0, VIEWPORT_SIZE.y * 0.34))
+		birds_root.add_child(b)
+		_bird_speeds.append(randf_range(BIRD_SPEED_RANGE.x, BIRD_SPEED_RANGE.y))
+		_bird_phase.append(randf() * TAU)
 
 
 func _setup_slimes() -> void:
@@ -311,6 +363,21 @@ func _animate_clouds(delta: float) -> void:
 		var cloud_w := 24.0 * c.scale.x
 		if c.position.x > VIEWPORT_SIZE.x:
 			c.position.x = -cloud_w
+
+
+# 小鸟: 横向飘 + 轻轻上下浮 (sin), 飞出右边从左边绕回.
+func _animate_birds(delta: float) -> void:
+	var birds := $BackgroundLayer.get_node_or_null("Birds")
+	if birds == null:
+		return
+	_bird_t += delta
+	for i in birds.get_child_count():
+		var b: Sprite2D = birds.get_child(i)
+		b.position.x += _bird_speeds[i] * delta
+		b.position.y += sin(_bird_t * 2.0 + _bird_phase[i]) * 8.0 * delta   # 轻飘
+		if b.position.x > VIEWPORT_SIZE.x + 20.0:
+			b.position.x = -20.0
+			b.position.y = randf_range(70.0, VIEWPORT_SIZE.y * 0.34)
 
 
 func _animate_slimes(delta: float) -> void:
@@ -385,14 +452,20 @@ func _setup_buttons() -> void:
 		btn.pivot_offset = btn.size / 2.0
 		btn.mouse_entered.connect(func():
 			arrow.visible = true
-			# hover 时按钮微微放大 (1.05) 给视觉反馈
+			# hover: 顺滑放大到 1.12 (CUBIC 缓出, 先杀旧 tween 防连续 hover 抖)
+			var prev = btn.get_meta("scale_tw", null)
+			if prev != null and is_instance_valid(prev) and prev.is_valid(): prev.kill()
 			var tw := create_tween()
-			tw.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.08).set_trans(Tween.TRANS_QUAD)
+			tw.tween_property(btn, "scale", Vector2(1.12, 1.12), 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			btn.set_meta("scale_tw", tw)
 		)
 		btn.mouse_exited.connect(func():
 			arrow.visible = false
+			var prev = btn.get_meta("scale_tw", null)
+			if prev != null and is_instance_valid(prev) and prev.is_valid(): prev.kill()
 			var tw := create_tween()
-			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.10).set_trans(Tween.TRANS_QUAD)
+			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			btn.set_meta("scale_tw", tw)
 		)
 		var cb: Callable = entry["callback"]
 		if cb.is_valid():
@@ -402,15 +475,19 @@ func _setup_buttons() -> void:
 func _apply_button_style(btn: Button) -> void:
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = BTN_NORMAL_BG
-	normal.border_color = BTN_NORMAL_BORDER
-	normal.border_width_left = 1
-	normal.border_width_top = 1
-	normal.border_width_right = 1
-	normal.border_width_bottom = 1
-	normal.content_margin_left = 16
-	normal.content_margin_right = 16
-	normal.content_margin_top = 8
-	normal.content_margin_bottom = 8
+	# 用户要求: 去掉边框 (border 全 0) + 圆角 (更圆润)
+	normal.border_width_left = 0
+	normal.border_width_top = 0
+	normal.border_width_right = 0
+	normal.border_width_bottom = 0
+	normal.corner_radius_top_left = 12
+	normal.corner_radius_top_right = 12
+	normal.corner_radius_bottom_left = 12
+	normal.corner_radius_bottom_right = 12
+	normal.content_margin_left = 18
+	normal.content_margin_right = 18
+	normal.content_margin_top = 9
+	normal.content_margin_bottom = 9
 	btn.add_theme_stylebox_override("normal", normal)
 
 	var hover := normal.duplicate() as StyleBoxFlat
