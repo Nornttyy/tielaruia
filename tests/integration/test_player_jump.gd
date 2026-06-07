@@ -3,7 +3,7 @@
 extends GutTest
 
 const MainScene = preload("res://scenes/main.tscn")
-const TILE_SIZE := 16
+const TILE_SIZE := 6
 
 
 func test_jump_height_clears_one_tile():

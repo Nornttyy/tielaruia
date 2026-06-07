@@ -106,7 +106,7 @@ var _mining_swing_t: float = 0.0  # 挖矿挥镐动画节流
 var _mine_saved: Dictionary = {}
 
 # 战斗
-const SWORD_RANGE_PX := 13.5
+const SWORD_RANGE_PX := 27.0
 const SWORD_COOLDOWN := 0.50   # 阔剑(扫): 跟挥击时长 0.5s 对齐, 一刀完整挥完才能再挥 (防连挥重叠抽搐); 短剑(戳)快 0.3
 var _attack_cooldown: float = 0.0
 # 剑的戳/挥交替: 0 = 下一击戳, 1 = 下一击挥. 切工具时归零.
@@ -117,7 +117,7 @@ var _attack_combo_step: int = 0
 # 用户改: PICKAXE_SPIN_DURATION 0.7→1.0 慢一点; spin 起始朝鼠标 (不再总从上).
 const PICKAXE_SPIN_DURATION := 1.0
 const PICKAXE_TIP_LOCAL_Y := -20.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 1.25)
-const PICKAXE_HIT_RADIUS := 6.25     # tip 到怪中心 ≤ 12.5px 算碰到 (玩家 1.25x)
+const PICKAXE_HIT_RADIUS := 12.5     # tip 到怪中心 ≤ 12.5px 算碰到 (玩家 1.25x)
 var _pickaxe_spin_active: bool = false
 var _pickaxe_spin_t: float = 0.0
 var _pickaxe_hit_this_spin: Dictionary = {}  # instance_id → true (1 spin 1 只怪 1 击)
@@ -132,14 +132,14 @@ var _pickaxe_spin_damages: bool = false   # 只有"攻击"spin 扣血; 挖矿/�
 # 注: rotation/position 自己按 _sword_attack_t 算, 不读 held.rotation —
 # tween 在 _process 更新, _physics_process 这里读可能滞后 (headless 测试 tween 可能不动).
 const SWORD_TIP_LOCAL_Y := -20.0       # tip 相对 held.position 的 y (sprite 16h × scale 1.25)
-const SWORD_SWEEP_REACH_BONUS := 10.0  # 阔剑挥剑身比基础长这么多 → 够得更远 (用户嫌阔剑太短, 12→20)
-const SWORD_HIT_RADIUS := 8.75         # 怪中心到 grip→tip 线段 ≤ 17.5px (玩家 1.25x). 视觉碰到了 算法也命中
-const SWORD_POINT_BLANK_DIST := 11.25   # 怪离玩家中心 ≤ 22.5px 视为贴脸 (玩家 1.25x), 任何剑攻击一律命中
+const SWORD_SWEEP_REACH_BONUS := 20.0  # 阔剑挥剑身比基础长这么多 → 够得更远 (用户嫌阔剑太短, 12→20)
+const SWORD_HIT_RADIUS := 17.5         # 怪中心到 grip→tip 线段 ≤ 17.5px (玩家 1.25x). 视觉碰到了 算法也命中
+const SWORD_POINT_BLANK_DIST := 22.5   # 怪离玩家中心 ≤ 22.5px 视为贴脸 (玩家 1.25x), 任何剑攻击一律命中
 const SWORD_HAND_OFFSET_X := 5.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
 const SWORD_HAND_OFFSET_Y := -10.0     # 跟 held_item.HAND_OFFSET_Y 一致
-const SWORD_THRUST_OFFSET := 4.0       # 跟 held_item.THRUST_OFFSET_PX 一致 (用户: 短剑戳太远 → 12.5→8)
+const SWORD_THRUST_OFFSET := 8.0       # 跟 held_item.THRUST_OFFSET_PX 一致 (用户: 短剑戳太远 → 12.5→8)
 const DAGGER_BLADE_SHORTEN := 6.0      # 短剑(戳)命中剑身比阔剑短这么多 → 戳得更近 (剑短)
-const DAGGER_HIT_RADIUS := 6.5        # 短剑命中半径比阔剑(17.5)小, 更"贴"不糊到远处怪
+const DAGGER_HIT_RADIUS := 13.0        # 短剑命中半径比阔剑(17.5)小, 更"贴"不糊到远处怪
 const SWORD_THRUST_DURATION := 0.30    # 三段: 20% 突出, 55% dwell, 25% 收回
 const SWORD_THRUST_EXTEND_END := 0.20  # 0..0.20 突出阶段结束
 const SWORD_THRUST_DWELL_END := 0.75   # 0.20..0.75 dwell, 0.75+ 收回 (主要打击在 dwell)

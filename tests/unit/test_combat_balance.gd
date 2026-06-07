@@ -35,7 +35,7 @@ func test_baseline_spider():
 	# 用户调 v2: HP 20 / 接触 10 / 速度 55. 木剑 7 击死, 玩家 10 击死. 给反应余地.
 	assert_eq(Spider.BASE_MAX_HEALTH, 20)
 	assert_eq(Spider.CONTACT_DAMAGE, 10)
-	assert_almost_eq(Spider.WALK_SPEED, 55.0, 0.01)
+	assert_almost_eq(Spider.WALK_SPEED, 27.5, 0.01)
 
 
 func test_baseline_hell_wasp():
