@@ -357,7 +357,7 @@ func _step_source(cm, x: int, y: int) -> void:
 		mark_dirty(x, y)   # 还有活, 继续醒着
 		# 活水颗粒: 瀑布源往下灌时冒水珠。settle 不冒。
 		if not _in_settle:
-			Effects.spawn_water_grains(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE), Vector2(0, 70), Tiles.WATER, 1)
+			Effects.spawn_water_grains(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE), Vector2(0, 35), Tiles.WATER, 1)
 	# 下方满水/实心/岩浆 → 啥也不做, dirty 不重标 → 自然歇下
 
 
@@ -399,7 +399,7 @@ func _step_tile(cm, x: int, y: int) -> void:
 		# 活水颗粒: 下落的水冒水珠 (含网页, 靠 Effects 全局上限控量)。settle 不冒。
 		# 限频 _tick_n % 3: 跟上面溅花同思路, 防一道高瀑布每 tick 把 250 名额占满、饿死别处水珠。
 		if kind == "water" and not _in_settle and _tick_n % 3 == 0:
-			Effects.spawn_water_grains(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE), Vector2(0, 60), tid, 1)
+			Effects.spawn_water_grains(Vector2((x + 0.5) * TILE_SIZE, (y + 1.5) * TILE_SIZE), Vector2(0, 30), tid, 1)
 		return
 	if _liquid_kind(below_tid) == kind:
 		var below_L: int = _level_of(below_tid)

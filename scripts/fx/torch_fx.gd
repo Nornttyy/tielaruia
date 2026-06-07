@@ -39,7 +39,7 @@ func _setup_flame_texture() -> void:
 	var ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 	flame.texture = ParticlesArt.get_torch_spark(Color(1.0, 0.6, 0.2))
 	flame.scale = Vector2(2, 3)
-	flame.position = Vector2(0, -6)
+	flame.position = Vector2(0, -3)
 
 
 func _process(delta: float) -> void:

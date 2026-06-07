@@ -3,7 +3,7 @@
 extends Sprite2D
 
 const LIFETIME := 0.35
-const RISE_SPEED := 18.0  # 缓慢上飘 (像素/秒)
+const RISE_SPEED := 9.0  # 缓慢上飘 (像素/秒)
 
 var _age: float = 0.0
 var _pool: Node = null   # DustPool 持有, _pool.recycle(self) 回池

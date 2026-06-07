@@ -114,7 +114,7 @@ func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1
 	lbl.add_theme_font_size_override("font_size", 14)
 	# 随机水平偏移避免数字叠在一起 (连续多发命中)
 	var jitter_x: float = randf_range(-6.0, 6.0)
-	lbl.position = world_pos + Vector2(-8.0 + jitter_x, -16.0)
+	lbl.position = world_pos + Vector2(-4.0 + jitter_x, -8.0)
 	lbl.z_index = 100
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root().add_child(lbl)

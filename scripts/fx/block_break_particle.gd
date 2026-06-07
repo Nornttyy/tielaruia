@@ -1,7 +1,7 @@
 # 单个块碎片。受重力，30 帧 (0.5s @ 60fps) 后自删。
 extends Sprite2D
 
-const GRAVITY := 800.0
+const GRAVITY := 400.0
 const LIFETIME := 0.5
 
 var velocity: Vector2 = Vector2.ZERO

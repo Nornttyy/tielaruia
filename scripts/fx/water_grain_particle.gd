@@ -4,7 +4,7 @@
 extends Sprite2D
 
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
-const GRAVITY := 520.0
+const GRAVITY := 260.0
 const LIFETIME := 0.6
 const TILE_SIZE := ChunkConstants.TILE_SIZE               # 本项目格子像素 (落地碰撞查询用)
 
@@ -52,8 +52,8 @@ func _splash_on_land(tx: int, ty: int) -> void:
 	if left_open and not right_open:
 		bias = -28.0
 	elif right_open and not left_open:
-		bias = 28.0
-	Effects.spawn_water_grains(global_position, Vector2(bias, -28), Tiles.WATER, 1, false)
+		bias = 14.0
+	Effects.spawn_water_grains(global_position, Vector2(bias, -14), Tiles.WATER, 1, false)
 
 
 func _recycle() -> void:
