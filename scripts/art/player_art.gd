@@ -24,16 +24,17 @@ const _BOOT_SH := Color8(48, 30, 15)
 const _EYE_DARK := Color8(30, 28, 26)
 const _MOUTH := Color8(150, 70, 70)
 const _WHITE := Color(0.98, 0.98, 1.0, 1)
+const _OUTLINE := Color8(28, 24, 30)   # 泰拉瑞亚式黑描边 (略暖的近黑)
 
 # ---- 积木块 (朝右; 大写=阴影) ----
 # 头 (皮肤 s / 阴影 k); 侧脸朝右, 眼在偏右 (W 眼白 / i 眼珠 / e 睫毛瞳); 鼻在最右; 嘴 m。
 const _HEAD := [
 	"..sssss..",
 	".sssssss.",
-	".sssssss.",
-	".sssseess",
-	".sssWiess",
-	".kssssssk",
+	".ssseeess",
+	".ssWiiess",
+	".ssWiiess",
+	".ksssssss",
 	".ksssssmk",
 	".kssssss.",
 	"..kssss..",
@@ -43,12 +44,12 @@ const _HEAD := [
 # 女头: 同尺寸, 加睫毛 (眼上一排 e) + 眼珠大一点, 一眼区分。
 const _HEAD_F := [
 	"..sssss..",
-	".ssseess.",
-	".sssWiiss",
-	".sssWiess",
+	".ssseeess",
+	".ssWiiees",
+	".ssWiiees",
+	".sssssess",
 	".ksssssss",
-	".kssssssk",
-	".ksssmsss",
+	".ksssssmk",
 	".kssssss.",
 	"..kssss..",
 	"...sss...",
@@ -173,7 +174,30 @@ static func _frame(ap: Dictionary, pose: String) -> Array:
 		_shirt_layer(ap, pose),
 		_hair_layer(ap, pose),
 	]
-	return _composite(layers)
+	return _outline(_composite(layers))
+
+
+# 泰拉瑞亚式黑描边: 沿小人轮廓外缘 (空格且 4-邻接有实心) 补一圈 'L'。
+static func _outline(grid: Array) -> Array:
+	var out: Array = grid.duplicate(true)
+	for y in H:
+		for x in W:
+			if grid[y].substr(x, 1) != ".":
+				continue
+			var adj := false
+			for d in [[-1, 0], [1, 0], [0, -1], [0, 1]]:
+				var ny: int = y + d[0]
+				var nx: int = x + d[1]
+				if ny >= 0 and ny < H and nx >= 0 and nx < W and grid[ny].substr(nx, 1) != ".":
+					adj = true
+					break
+			if adj:
+				out[y] = _set_char(out[y], x, "L")
+	return out
+
+
+static func _set_char(row: String, x: int, c: String) -> String:
+	return row.substr(0, x) + c + row.substr(x + 1)
 
 
 # 合并: 后层非 '.' 盖前层。
@@ -335,6 +359,7 @@ static func _palette_from(ap: Dictionary) -> Dictionary:
 		"c": cape, "C": cape.darkened(0.28),
 		"i": eye, "W": _WHITE, "e": _EYE_DARK, "m": _MOUTH,
 		"o": _BOOT, "O": _BOOT_SH,
+		"L": _OUTLINE,
 	}
 
 
