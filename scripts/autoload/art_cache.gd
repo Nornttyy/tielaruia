@@ -183,6 +183,16 @@ func _build_blocks() -> void:
 			block_icons[tile_id] = single_16
 			block_textures[tile_id] = _smart_resize_atlas_16_to_12(single_16)
 
+	# 群系薄水 (visual-only, 21 张): 3 族 × 7 档, 同薄水 atlas 换调色板染色。
+	# 不在上面 tile_ids 主循环里 (它们不进数据, 单独按族×档生成)。
+	for base_id in [BlocksArt.WATER_DESERT_L1, BlocksArt.WATER_JUNGLE_L1, BlocksArt.WATER_SWAMP_L1]:
+		var pal: Dictionary = BlocksArt.water_palette_for(base_id)
+		for lvl in range(1, 8):
+			var tid: int = base_id + (lvl - 1)
+			var tex: ImageTexture = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas_p(lvl, pal))
+			block_textures[tid] = tex
+			block_icons[tid] = tex   # 不是 item, icon 复用世界贴图防缺 key 崩
+
 
 # 群系 tile 复用现有 pattern, 用 tint 区分. 在 atlas / 单 cell 两种路径都用.
 static func _apply_biome_tint(tile_id: int, tex: ImageTexture) -> ImageTexture:

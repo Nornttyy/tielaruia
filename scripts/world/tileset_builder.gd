@@ -43,6 +43,13 @@ static func build() -> TileSet:
 		Tiles.WATER_L1, Tiles.WATER_L2, Tiles.WATER_L3,
 		Tiles.WATER_L4, Tiles.WATER_L5, Tiles.WATER_L6, Tiles.WATER_L7,
 		Tiles.WATER_DESERT, Tiles.WATER_JUNGLE, Tiles.WATER_SWAMP,
+		# 群系薄水 (visual-only, 21 张): 只画面层用, 必须注册成 source 否则 set_cell 不显示
+		Tiles.WATER_DESERT_L1, Tiles.WATER_DESERT_L2, Tiles.WATER_DESERT_L3,
+		Tiles.WATER_DESERT_L4, Tiles.WATER_DESERT_L5, Tiles.WATER_DESERT_L6, Tiles.WATER_DESERT_L7,
+		Tiles.WATER_JUNGLE_L1, Tiles.WATER_JUNGLE_L2, Tiles.WATER_JUNGLE_L3,
+		Tiles.WATER_JUNGLE_L4, Tiles.WATER_JUNGLE_L5, Tiles.WATER_JUNGLE_L6, Tiles.WATER_JUNGLE_L7,
+		Tiles.WATER_SWAMP_L1, Tiles.WATER_SWAMP_L2, Tiles.WATER_SWAMP_L3,
+		Tiles.WATER_SWAMP_L4, Tiles.WATER_SWAMP_L5, Tiles.WATER_SWAMP_L6, Tiles.WATER_SWAMP_L7,
 		Tiles.WATER_SOURCE,   # 水源块 (实心, 走普通方块渲染, 不进下面的水视觉分支)
 		Tiles.CHEST,
 		Tiles.DOOR_TOP, Tiles.DOOR_MID, Tiles.DOOR_OPEN,
@@ -129,8 +136,8 @@ static func build() -> TileSet:
 					Vector2(-6, -1), Vector2(6, -1), Vector2(6, 1), Vector2(-6, 1),
 				]))
 				pprops.set_collision_polygon_one_way(2, 0, true)
-			# 水 (8 档水位 + 3 个群系满水) 都启用 4 帧动画
-			if Tiles.is_water(tile_id):
+			# 水 (8 档水位 + 3 群系满水 + 21 群系薄水) 都启用 4 帧动画
+			if Tiles.is_water(tile_id) or Tiles.is_biome_water_visual(tile_id):
 				source.set_tile_animation_frames_count(Vector2i.ZERO, 4)
 				for f in range(4):
 					source.set_tile_animation_frame_duration(Vector2i.ZERO, f, 0.4)

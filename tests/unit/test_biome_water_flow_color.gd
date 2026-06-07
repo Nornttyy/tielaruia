@@ -87,3 +87,16 @@ func test_water_palette_for_colored() -> void:
 	assert_eq(BlocksArt.water_palette_for(BlocksArt.WATER_DESERT_L3), BlocksArt._P_WATER_DESERT)
 	assert_eq(BlocksArt.water_palette_for(BlocksArt.WATER_JUNGLE_L5), BlocksArt._P_WATER_JUNGLE)
 	assert_eq(BlocksArt.water_palette_for(BlocksArt.WATER_SWAMP_L1), BlocksArt._P_WATER_SWAMP)
+
+
+func test_all_21_colored_have_textures() -> void:
+	# 21 个彩色薄水都该在 ArtCache 有世界贴图 (漏注册 → 缺 key)
+	for tid in range(Tiles.WATER_DESERT_L1, Tiles.WATER_SWAMP_L7 + 1):
+		assert_not_null(ArtCache.block_textures.get(tid), "彩色薄水 %d 该有贴图" % tid)
+
+
+func test_tileset_has_21_colored_sources() -> void:
+	# TileSet 必须注册这 21 个 source, 否则 set_cell 不显示
+	var ts: TileSet = load("res://scripts/world/tileset_builder.gd").build()
+	for tid in range(Tiles.WATER_DESERT_L1, Tiles.WATER_SWAMP_L7 + 1):
+		assert_true(ts.has_source(tid), "TileSet 缺 source %d" % tid)
