@@ -7,7 +7,7 @@
 # Phase F 把 _spawn_torch 换成 TorchFx 场景, 接口不变。
 extends Node
 
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 const TorchFxScene = preload("res://scenes/fx/torch_fx.tscn")
 
 var _torches: Dictionary = {}  # Vector2i tile_coord → TorchFx Node2D

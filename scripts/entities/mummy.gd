@@ -5,15 +5,15 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const GRAVITY := 337.5
+const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 
 const BASE_MAX_HEALTH := 60
 const CONTACT_DAMAGE := 14
-const WALK_SPEED := 12.5       # 很慢
+const WALK_SPEED := 25.0       # 很慢
 const AGGRO_RANGE_PX := 200.0
-const JUMP_VY := -90.0         # 跳得短 (体重)
+const JUMP_VY := -180.0         # 跳得短 (体重)
 const ENEMY_IFRAME_SEC := 0.2
 
 var max_health: int = BASE_MAX_HEALTH
@@ -74,7 +74,7 @@ func _physics_process(delta: float) -> void:
 		if sprite.animation != "walk":
 			sprite.play("walk")
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, 40.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 80.0 * delta)
 		if abs(velocity.x) < 5.0 and sprite.animation != "idle":
 			sprite.play("idle")
 	move_and_slide()

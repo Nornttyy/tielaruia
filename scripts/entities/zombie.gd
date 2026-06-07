@@ -4,19 +4,19 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
-const GRAVITY := 337.5
-const SWIM_GRAVITY := 75.0
-const SWIM_MAX_SINK := 26.0
-const SWIM_UP_SPEED := -17.0
-const JUMP_VY := -97.5
+const GRAVITY := 675.0
+const SWIM_GRAVITY := 150.0
+const SWIM_MAX_SINK := 52.0
+const SWIM_UP_SPEED := -34.0
+const JUMP_VY := -195.0
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 
 # 子类可覆盖 (jaguar 等). 用 var 不用 const.
 # Terraria 风: 木剑 3 × 20 击 / 钻剑 20 × 3 击. 100HP 玩家被打 12 击死.
 var max_health: int = 60
 var contact_damage: int = 8
-var walk_speed: float = 14.0
+var walk_speed: float = 28.0
 var aggro_range_px: float = 180.0
 var entity_group: String = "zombies"   # 子类可改成 "animals" 等
 var sprite_frames_override: SpriteFrames = null   # _ready 前由子类设
@@ -95,7 +95,7 @@ func _physics_process(delta: float) -> void:
 		if sprite.animation != "walk":
 			sprite.play("walk")
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, 40.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 80.0 * delta)
 		if abs(velocity.x) < 5.0 and sprite.animation != "idle":
 			sprite.play("idle")
 

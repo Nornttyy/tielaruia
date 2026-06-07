@@ -7,7 +7,7 @@ const DustParticleScene = preload("res://scenes/fx/dust_particle.tscn")
 const PlaceBounceScene = preload("res://scenes/fx/place_bounce.tscn")
 const WaterGrainScene = preload("res://scenes/fx/water_grain_particle.tscn")
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 const CHIPS_PER_BREAK := 6
 const MAX_WATER_GRAINS := 250        # 全局存活水珠硬上限 (网页安全)
 var _grain_count: int = 0            # 当前存活水珠数 (发 +1, 回池 -1)
@@ -114,7 +114,7 @@ func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1
 	lbl.add_theme_font_size_override("font_size", 14)
 	# 随机水平偏移避免数字叠在一起 (连续多发命中)
 	var jitter_x: float = randf_range(-6.0, 6.0)
-	lbl.position = world_pos + Vector2(-4.0 + jitter_x, -8.0)
+	lbl.position = world_pos + Vector2(-8.0 + jitter_x, -16.0)
 	lbl.z_index = 100
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root().add_child(lbl)

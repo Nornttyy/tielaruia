@@ -5,8 +5,8 @@
 #   - SparkTimer: 0.12-0.20s 触发一次, spawn 火花到 effects_root
 extends Node2D
 
-const TILE_SIZE := ChunkConstants.TILE_SIZE
-const LIGHT_RADIUS := 48        # 半径 px
+const TILE_SIZE := 12
+const LIGHT_RADIUS := 96        # 半径 px
 const BASE_ENERGY := 1.2
 const ENERGY_OSC := 0.10        # sin 幅度
 const ENERGY_NOISE := 0.05      # 每帧随机抖幅度
@@ -39,7 +39,7 @@ func _setup_flame_texture() -> void:
 	var ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 	flame.texture = ParticlesArt.get_torch_spark(Color(1.0, 0.6, 0.2))
 	flame.scale = Vector2(2, 3)
-	flame.position = Vector2(0, -3)
+	flame.position = Vector2(0, -6)
 
 
 func _process(delta: float) -> void:

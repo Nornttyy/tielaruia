@@ -11,7 +11,7 @@ const ZOOM_DEFAULT := 2
 const REFRESH_INTERVAL := 0.2
 
 var pixel_per_tile: int = ZOOM_DEFAULT
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 var view_tiles_x: int = MAP_PIXEL_WIDTH / ZOOM_DEFAULT
 var view_tiles_y: int = MAP_PIXEL_HEIGHT / ZOOM_DEFAULT
 

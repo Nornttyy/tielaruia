@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/entities/slime.gd" id="1_slime"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_slime"]
-size = Vector2(6, 5)
+size = Vector2(12, 10)
 
 [node name="Slime" type="CharacterBody2D"]
 script = ExtResource("1_slime")
@@ -11,11 +11,10 @@ collision_layer = 0
 collision_mask = 3
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -6)
+position = Vector2(0, -12)
 centered = false
 offset = Vector2(-8, 0)
-scale = Vector2(0.5, 0.5)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -2.5)
+position = Vector2(0, -5)
 shape = SubResource("RectangleShape2D_slime")

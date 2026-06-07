@@ -56,7 +56,7 @@ func test_creative_no_damage_infinite_instant_fly() -> void:
 
 	# --- 飞行 (无重力: 不按键时 velocity.y 应为 0, 不下坠) ---
 	action.aim_override = null
-	player.global_position = Vector2(pt.x * 6 + 3, (pt.y - 6) * 6)   # 抬到空中
+	player.global_position = Vector2(pt.x * 12 + 6, (pt.y - 6) * 12)   # 抬到空中
 	player.velocity = Vector2(0, 50)   # 先给个下坠速度
 	player._physics_process(0.1)
 	assert_eq(player.velocity.y, 0.0, "创造: 飞行无重力 (不按键悬停, vy=0)")

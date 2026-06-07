@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/entities/skeleton_king.gd" id="1_sk"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sk"]
-size = Vector2(7, 15)
+size = Vector2(14, 30)
 
 [node name="SkeletonKing" type="CharacterBody2D"]
 script = ExtResource("1_sk")
@@ -11,15 +11,14 @@ collision_layer = 0
 collision_mask = 3
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -8)
+position = Vector2(0, -16)
 centered = true
-scale = Vector2(0.5, 0.5)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -7.5)
+position = Vector2(0, -15)
 shape = SubResource("RectangleShape2D_sk")
 
 [node name="Crown" type="Sprite2D" parent="."]
-position = Vector2(0, -18)
-scale = Vector2(0.5, 0.5)
+position = Vector2(0, -36)
+scale = Vector2(1.0, 1.0)
 z_index = 1

@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/entities/imp.gd" id="1_imp"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_imp"]
-size = Vector2(7, 6)
+size = Vector2(14, 12)
 
 [node name="Imp" type="CharacterBody2D"]
 script = ExtResource("1_imp")
@@ -11,10 +11,9 @@ collision_layer = 0
 collision_mask = 3
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -4)
+position = Vector2(0, -8)
 centered = true
-scale = Vector2(0.5, 0.5)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -3.5)
+position = Vector2(0, -7)
 shape = SubResource("RectangleShape2D_imp")

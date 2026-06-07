@@ -4,7 +4,7 @@
 # 最终: 渲染从 TILE_SIZE×1.2 (14.4px) 弹回 TILE_SIZE (12px), 跟放下的方块一样大。
 extends Sprite2D
 
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 const BOUNCE_DURATION := 0.1
 const START_SCALE := 1.2
 const END_SCALE := 1.0

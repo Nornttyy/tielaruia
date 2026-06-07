@@ -9,7 +9,7 @@ const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const WorldGenerator = preload("res://scripts/world/world_generator.gd")
 const MinimapData = preload("res://scripts/world/minimap_data.gd")
 const MainScene = preload("res://scenes/main.tscn")
-const TILE := 6
+const TILE := 12
 
 
 # 假 ChunkManager: 鸭子类型. is_chunk_loaded 报告某 chunk 是否在 loaded 里 (修复 B 靠它).

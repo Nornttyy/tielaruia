@@ -5,12 +5,12 @@ extends CharacterBody2D
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 const BASE_MAX_HEALTH := 24
 const CONTACT_DAMAGE := 8
-const PATROL_SPEED := 27.5
-const CHARGE_SPEED := 60.0
-const AGGRO_RANGE_PX := 130.0
+const PATROL_SPEED := 55.0
+const CHARGE_SPEED := 120.0
+const AGGRO_RANGE_PX := 260.0
 const ENEMY_IFRAME_SEC := 0.15
 const DESPAWN_BELOW_TILES := 100   # 掉到 spawn 下方 100 tile (到地面了) → despawn
 

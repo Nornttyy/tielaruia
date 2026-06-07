@@ -16,7 +16,7 @@ extends Node
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const WorldGenerator = preload("res://scripts/world/world_generator.gd")
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 
 # 距离原始草方块多少格才开始切换
 const SHALLOW_START_TILES := 10      # >10 格深才开始显远岩壁

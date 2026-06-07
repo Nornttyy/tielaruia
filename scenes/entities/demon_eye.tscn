@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/entities/demon_eye.gd" id="1_demon_eye"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_demon_eye"]
-size = Vector2(8, 5)
+size = Vector2(16, 10)
 
 [node name="DemonEye" type="CharacterBody2D"]
 script = ExtResource("1_demon_eye")
@@ -11,10 +11,9 @@ collision_layer = 0
 collision_mask = 3
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -2.5)
+position = Vector2(0, -5)
 centered = true
-scale = Vector2(0.5, 0.5)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -2.5)
+position = Vector2(0, -5)
 shape = SubResource("RectangleShape2D_demon_eye")

@@ -2,9 +2,9 @@
 # 撞实心方块/地面反弹 (最多 MAX_BOUNCES 次, 速度衰减), 命中怪 → 伤害 + 销毁.
 extends Area2D
 
-const TILE_SIZE := ChunkConstants.TILE_SIZE
-const SPEED := 120.0
-const GRAVITY := 240.0
+const TILE_SIZE := 12
+const SPEED := 240.0
+const GRAVITY := 480.0
 const LIFETIME_SEC := 4.0
 const BASE_DAMAGE := 16
 const HIT_RADIUS_PX := 9.0

@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/items/item_drop.gd" id="1_drop"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_pickup"]
-radius = 3.75
+radius = 7.5
 
 [node name="ItemDrop" type="Area2D"]
 script = ExtResource("1_drop")
@@ -11,7 +11,7 @@ collision_layer = 0
 collision_mask = 8
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.375, 0.375)
+scale = Vector2(0.75, 0.75)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_pickup")

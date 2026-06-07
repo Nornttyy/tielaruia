@@ -2,7 +2,7 @@
 # TorchFx 每 0.12-0.20s 实例化一个, 放到 effects_root。
 extends Sprite2D
 
-const GRAVITY := 100.0
+const GRAVITY := 200.0
 const LIFETIME := 0.8
 
 var velocity: Vector2 = Vector2.ZERO
@@ -26,7 +26,7 @@ func setup(start_pos: Vector2) -> void:
 		color = Color(1.0, 0.9, 0.4).lerp(Color(1.0, 0.5, 0.2), t)
 	var ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 	texture = ParticlesArt.get_torch_spark(color)
-	velocity = Vector2(randf_range(-7.5, 7.5), randf_range(-40.0, -20.0))
+	velocity = Vector2(randf_range(-15.0, 15.0), randf_range(-80.0, -40.0))
 
 
 func _physics_process(delta: float) -> void:

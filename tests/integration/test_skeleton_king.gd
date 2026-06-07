@@ -182,7 +182,7 @@ func test_sweep_damages_close_player() -> void:
 	var boss = SkeletonKingScene.instantiate()
 	ctx["world"].add_child(boss)
 	boss.set_physics_process(false)   # 冻住: 否则它会走过去先 contact 玩家(触发无敌帧挡住横扫测试)
-	boss.global_position = ctx["player"].global_position + Vector2(-8, 0)   # 玩家在王右侧, 近
+	boss.global_position = ctx["player"].global_position + Vector2(-16, 0)   # 玩家在王右侧, 近
 	await wait_frames(2)
 	if boss.sprite != null:
 		boss.sprite.flip_h = false   # 面朝右 (朝玩家)

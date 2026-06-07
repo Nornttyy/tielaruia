@@ -8,21 +8,21 @@ const SlimeScene = preload("res://scenes/entities/slime.tscn")
 
 const BASE_MAX_HEALTH := 1000
 const CONTACT_DAMAGE := 20
-const GRAVITY := 337.5
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const GRAVITY := 675.0
+const TILE_SIZE := 12
 const HIT_FLASH_SEC := 0.1
 const ENEMY_IFRAME_SEC := 0.15
-const AGGRO_RANGE_PX := 300.0
+const AGGRO_RANGE_PX := 600.0
 const HOP_HEIGHT_TILES := 4.0
 const HOP_DIST_TILES := 5.0
 const HOP_COOLDOWN_FULL := 1.6
 const HOP_COOLDOWN_LOW := 0.5
-const SCALE_FULL := 2.0
-const SCALE_LOW := 1.0
+const SCALE_FULL := 4.0
+const SCALE_LOW := 2.0
 const MINION_INTERVAL := 4.0
 const MINION_PER_WAVE := 3
 const MINION_CAP := 8
-const DESPAWN_DISTANCE_PX := 480.0
+const DESPAWN_DISTANCE_PX := 960.0
 const DESPAWN_AFTER_SEC := 5.0
 const JELLY_DROP_MIN := 20
 const JELLY_DROP_MAX := 40
@@ -81,7 +81,7 @@ func _apply_scale() -> void:
 	# 王冠跟着体型缩放, 坐在头顶: band 底边贴头顶 (-16-8s), 留 1px 嵌入防缝隙.
 	if _crown != null:
 		_crown.scale = Vector2(s, s)
-		_crown.position = Vector2(0.0, -8.0 - 8.0 * s)
+		_crown.position = Vector2(0.0, -16.0 - 8.0 * s)
 
 
 # 近战命中半径: 王身子巨大, 让剑/镐碰到大身子就算命中 (不只认中心一点).
@@ -145,7 +145,7 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, 100.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 200.0 * delta)
 		_hop_timer -= delta
 		if _hop_timer <= 0.0:
 			_attempt_hop()

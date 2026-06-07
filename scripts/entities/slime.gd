@@ -8,9 +8,9 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 # 简单 / 困难: HP × 0.7 / 1.4 (见 _ready); 伤害另外有 GameSettings.damage_multiplier 0.5/1/1.5.
 const BASE_MAX_HEALTH := 25
 const CONTACT_DAMAGE := 6
-const GRAVITY := 337.5
-const SWIM_GRAVITY := 75.0   # 水里重力 (慢沉)
-const SWIM_MAX_SINK := 26.0   # 最大下沉速度
+const GRAVITY := 675.0
+const SWIM_GRAVITY := 150.0   # 水里重力 (慢沉)
+const SWIM_MAX_SINK := 52.0   # 最大下沉速度
 # 跳高/跳远: 每次跳前随机挑 (tile, 16 px 一格).
 # 高度 1-2 格, 距离 0-3 格. 由物理公式反算 vy/vx.
 const HOP_HEIGHT_MIN_TILES := 1.0
@@ -19,9 +19,9 @@ const HOP_DIST_MIN_TILES := 0.0
 const HOP_DIST_MAX_TILES := 3.0
 const HOP_COOLDOWN_MIN := 0.8
 const HOP_COOLDOWN_MAX := 1.8
-const AGGRO_RANGE_PX := 60.0   # 10 tiles
+const AGGRO_RANGE_PX := 120.0   # 10 tiles
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 
 const SlimeScene = preload("res://scenes/entities/slime.tscn")  # 分裂用 (自引用 preload, Godot 允许)
 
@@ -31,7 +31,7 @@ const _COLOR_HP_MULT := [0.6, 1.0, 1.8, 2.8]
 const _COLOR_DMG_MULT := [0.7, 1.0, 1.5, 2.2]
 const _COLOR_JELLY := [1, 1, 2, 3]
 # 大小 0小/1中/2大: sprite scale + HP/伤害乘数.
-const _SIZE_SCALE := [0.325, 0.5, 0.75]
+const _SIZE_SCALE := [0.65, 1.0, 1.5]
 const _SIZE_HP_MULT := [0.5, 1.0, 1.5]
 const _SIZE_DMG_MULT := [0.8, 1.0, 1.2]
 
@@ -179,7 +179,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 	else:
 		# 落地 → 摩擦 + 准备下次跳
-		velocity.x = move_toward(velocity.x, 0.0, 100.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 200.0 * delta)
 		_hop_timer -= delta
 		if _hop_timer <= 0.0:
 			_attempt_hop()

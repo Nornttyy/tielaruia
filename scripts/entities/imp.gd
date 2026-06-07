@@ -6,11 +6,11 @@ const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
 
 const HIT_FLASH_SEC := 0.1
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 
 # Terraria 风: HP 50 (远程怪比近战更脆少点). 火球 14 dmg (见 fireball.gd).
 const BASE_MAX_HEALTH := 50
-const FLY_SPEED := 35.0
+const FLY_SPEED := 70.0
 const AGGRO_RANGE_PX := 260.0
 const HOVER_DISTANCE_PX := 90.0  # 想保持的距离 (太近就退后)
 const ATTACK_COOLDOWN_SEC := 1.6
@@ -95,7 +95,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2(-dir.y, dir.x) * 30.0  # 绕圈 (垂直方向漂)
 	sprite.flip_h = to_player.x < 0
 	# 加点 bobbing 上下漂
-	velocity.y += sin(_bob_phase) * 6.0
+	velocity.y += sin(_bob_phase) * 12.0
 	move_and_slide()
 	# 开火: cooldown 到 + 看得见玩家 → 发火球
 	if _attack_cooldown <= 0.0 and dist <= AGGRO_RANGE_PX:

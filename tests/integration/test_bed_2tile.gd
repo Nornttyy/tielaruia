@@ -2,7 +2,7 @@
 extends GutTest
 
 const MainScene = preload("res://scenes/main.tscn")
-const TILE := 6.0
+const TILE := 12.0
 
 
 func _boot():

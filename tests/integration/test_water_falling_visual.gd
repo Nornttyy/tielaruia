@@ -88,8 +88,8 @@ func test_world_renders_and_expires_falling() -> void:
 	await wait_frames(3)
 	var world = main.get_node("World")
 	var player = world.get_player()
-	var ptx: int = int(floor(player.global_position.x / 6.0))
-	var pty: int = int(floor(player.global_position.y / 6.0))
+	var ptx: int = int(floor(player.global_position.x / 12.0))
+	var pty: int = int(floor(player.global_position.y / 12.0))
 	var cell := Vector2i(ptx, pty - 30)   # 头顶上方 30 格 = 天空, 肯定空气
 	var fl: TileMapLayer = world.get_node("FallingWaterLayer")
 	assert_not_null(fl, "应有 FallingWaterLayer")

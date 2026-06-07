@@ -29,7 +29,7 @@ const _BOBBER_PAL := {
 const BITE_WAIT_MIN := 2.0       # 最短等待 (秒)
 const BITE_WAIT_MAX := 5.0       # 最长等待
 const REEL_WINDOW := 1.5         # 咬钩后收竿窗口 (秒, 调宽点不太难)
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 
 # 收获表: [item_id, weight]. 权重相对, 不必凑 100 (调稀有度改数字即可)。
 const CATCH_TABLE := [
