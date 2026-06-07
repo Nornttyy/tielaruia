@@ -92,10 +92,11 @@ var water_sim_enabled: bool = true:
 		_save_and_emit()
 
 # camera_zoom: 摄像机大小 (越小看得越远, 越大看得越近). World 的 Camera2D 同步.
-# 默认 0.8. 范围 0.8 (远视野/最缩) ~ 2.0 (近距离/最放大) — 用户要求. 滚轮/滑块都走这个 clamp.
-var camera_zoom: float = 0.8:
+# 默认 0.5 (方块视觉缩半: 12px tile × 0.5 = 屏幕 6px, 整数缩放保持清晰). 范围 0.4 (最缩/看更多) ~ 2.0 (最放大).
+# 用相机拉远做"方块变小"而非缩 TILE_SIZE → 贴图仍是 12px 全分辨率, 不糊. 滚轮/滑块都走这个 clamp.
+var camera_zoom: float = 0.5:
 	set(v):
-		var clamped: float = clampf(v, 0.8, 2.0)
+		var clamped: float = clampf(v, 0.4, 2.0)
 		if camera_zoom == clamped: return
 		camera_zoom = clamped
 		_save_and_emit()
@@ -204,7 +205,11 @@ func _load() -> void:
 	show_parallax = true   # 远山+矿洞背景, 不卡
 	show_flocks = false    # 鸟蝠 perf: 36 sprite × 2 每帧 sin 扑翼, 默认关
 	water_sim_enabled = true
-	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 0.8)), 0.8, 2.0)
+	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 0.5)), 0.4, 2.0)
+	# 一次性迁移: 老版本默认/最小是 0.8, 新版方块缩半默认 0.5. 存档里正好 0.8 的视为老默认 → 拉到 0.5.
+	# (设回 0.5 会触发 setter 存盘, 下次加载就是 0.5, 只迁移一次. 想要 0.8 的可手动再调.)
+	if absf(camera_zoom - 0.8) < 0.001:
+		camera_zoom = 0.5
 	# 语言: 只接受 4 个支持的代码, 其他值退回中文
 	var saved_lang: String = String(cfg.get_value("locale", "language", "zh"))
 	current_language = saved_lang if ["zh", "en", "ja", "ko"].has(saved_lang) else "zh"

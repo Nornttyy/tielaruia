@@ -3,7 +3,7 @@ extends Node2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const VillagerLines = preload("res://scripts/npc/villager_lines.gd")
-const TILE_SIZE := ChunkConstants.TILE_SIZE
+const TILE_SIZE := 12
 const REACH_TILES := 4
 const INVALID_TILE := Vector2i(-1, -1)
 
@@ -986,12 +986,12 @@ func _tool_damage_mult() -> float:
 
 
 # 击退强度 (阶段 2): 按工具 + tier 缩放
-const KB_THRUST_BASE := 22.5
-const KB_THRUST_TIER := 5.5
-const KB_SWEEP_BASE := 30.0
-const KB_SWEEP_TIER := 7.5
-const KB_PICKAXE_BASE := 11.0
-const KB_PICKAXE_TIER := 3.0
+const KB_THRUST_BASE := 45.0
+const KB_THRUST_TIER := 11.0
+const KB_SWEEP_BASE := 60.0
+const KB_SWEEP_TIER := 15.0
+const KB_PICKAXE_BASE := 22.0
+const KB_PICKAXE_TIER := 6.0
 
 
 func _thrust_knockback() -> float:
@@ -1805,7 +1805,7 @@ func _summon_friendly() -> void:
 	if entities == null:
 		entities = player.get_parent()
 	entities.add_child(fs)
-	fs.global_position = player.global_position + Vector2(randf_range(-8.0, 8.0), -2.0)
+	fs.global_position = player.global_position + Vector2(randf_range(-16.0, 16.0), -4.0)
 	SfxBank.play("place", 0.15)
 
 
