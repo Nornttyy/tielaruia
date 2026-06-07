@@ -134,17 +134,28 @@ func spawn_walk_puff(world_pos: Vector2) -> void:
 
 # 爆炸 (死人箱触发): 红黄火光粒子 30 颗向四面散开 + 黑烟 + 飞溅木屑碎片.
 # 用 BlockBreakParticle 当弹片 (颜色覆盖成爆炸色).
-func spawn_explosion(world_pos: Vector2) -> void:
+func spawn_explosion(world_pos: Vector2, tint: Color = Color(0, 0, 0, 0)) -> void:
 	var parent: Node = _root()
-	# 爆炸色板: 红 → 橙 → 黄 → 黑烟
-	var explosion_palette: Array = [
-		Color8(255, 230, 90),   # 黄亮
-		Color8(255, 150, 40),   # 橙
-		Color8(220, 60, 30),    # 红
-		Color8(40, 30, 25),     # 黑烟
-		Color8(255, 200, 80),   # 黄
-		Color8(200, 50, 40),    # 暗红
-	]
+	# 爆炸色板: 默认红 → 橙 → 黄 → 黑烟; 传了 tint (法杖元素色) 就围着 tint 配一套深浅.
+	var explosion_palette: Array
+	if tint.a <= 0.0:
+		explosion_palette = [
+			Color8(255, 230, 90),   # 黄亮
+			Color8(255, 150, 40),   # 橙
+			Color8(220, 60, 30),    # 红
+			Color8(40, 30, 25),     # 黑烟
+			Color8(255, 200, 80),   # 黄
+			Color8(200, 50, 40),    # 暗红
+		]
+	else:
+		explosion_palette = [
+			tint.lightened(0.45),   # 亮芯
+			tint,                   # 主色
+			tint.darkened(0.3),     # 暗
+			Color8(40, 30, 25),     # 黑烟
+			tint.lightened(0.2),    # 次亮
+			tint.darkened(0.5),     # 更暗
+		]
 	for i in 30:  # 比普通破方块 6 颗多很多 → "爆炸感"
 		var chip = BlockBreakParticleScene.instantiate()
 		parent.add_child(chip)

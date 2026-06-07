@@ -54,6 +54,8 @@ var imp_frames: SpriteFrames
 var hell_wasp_frames: SpriteFrames
 var harpy_frames: SpriteFrames
 var fireball_frames: SpriteFrames
+var spell_frames_ice: SpriteFrames      # 铁法杖蓝弹
+var spell_frames_nature: SpriteFrames   # 木法杖绿弹
 var arrow_proj_frames: SpriteFrames
 var mummy_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
@@ -334,13 +336,24 @@ func _build_entities() -> void:
 	hell_wasp_frames = HellWaspArt.build_sprite_frames()
 	# 哈比鸟: 天空浮岛飞行怪
 	harpy_frames = HarpyArt.build_sprite_frames()
-	# 火球投射物 (Imp 用)
-	fireball_frames = FireballArt.build_sprite_frames()
+	# 火球投射物 (Imp + 地狱法杖红弹). 法杖另两种元素 (蓝/绿) 单独建.
+	fireball_frames = FireballArt.build_sprite_frames("fire")
+	spell_frames_ice = FireballArt.build_sprite_frames("ice")
+	spell_frames_nature = FireballArt.build_sprite_frames("nature")
 	# 玩家箭投射物 (弓用)
 	arrow_proj_frames = ArrowProjArt.build_sprite_frames()
 	# 木乃伊: 金字塔守卫
 	mummy_frames = MummyArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)
+
+
+# 按元素取法杖魔法弹贴图: nature=绿 / ice=蓝 / 其它=fire 红 (默认).
+func spell_frames_for(element: String) -> SpriteFrames:
+	if element == "nature":
+		return spell_frames_nature
+	if element == "ice":
+		return spell_frames_ice
+	return fireball_frames
 
 
 # 统一的"取背包/热键栏图标"接口。

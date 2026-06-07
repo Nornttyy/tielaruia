@@ -1712,6 +1712,7 @@ func _try_cast_staff() -> void:
 		return
 	var mana_cost: int = def.get("mana_cost", 20)
 	var spell_dmg: int = def.get("spell_damage", 14)
+	var element: String = String(def.get("spell_element", "fire"))
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1733,9 +1734,10 @@ func _try_cast_staff() -> void:
 	entities.add_child(fb)
 	# damage_mult 让未来高 tier 法杖加伤
 	var final_dmg: int = int(round(float(spell_dmg) * _tool_damage_mult()))
-	fb.setup(start, target, final_dmg, true)   # true = player_cast
+	fb.setup(start, target, final_dmg, true, element)   # true = player_cast, element = 元素弹
 	if NetworkManager != null and NetworkManager.connected():
-		NetworkManager.send_projectile("fireball", start.x, start.y, target.x, target.y)
+		# kind 带上元素 (fireball_nature/ice/fire), 对端按后缀还原弹色
+		NetworkManager.send_projectile("fireball_" + element, start.x, start.y, target.x, target.y)
 	SfxBank.play("break", 0.12)
 
 

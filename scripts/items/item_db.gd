@@ -135,9 +135,9 @@ const _DEFS := {
 	"hell_dagger":    {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 8, "max_stack": 1, "damage_mult": 0.8, "sword_style": "thrust"},
 	# === 法杖 (Phase 7): 持杖 LMB → 消耗 mana 发火球 ===
 	# 法杖 3 tier (起步早): wood = 学徒, iron = 中期, hell = 末期
-	"wood_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 5,  "spell_damage": 8},
-	"iron_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 12, "spell_damage": 15},
-	"hell_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 20, "spell_damage": 22},
+	"wood_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 5,  "spell_damage": 8,  "spell_element": "nature"},
+	"iron_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 12, "spell_damage": 15, "spell_element": "ice"},
+	"hell_staff":    {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 20, "spell_damage": 22, "spell_element": "fire"},
 	# 骷髅法杖 (骷髅王几率掉): 不发火球, 而是召唤友方小骷髅帮打 (summons_minion 标记)
 	"skull_staff":   {"placeable_tile_id": -1, "tool_kind": "staff",   "tool_tier": 1, "max_stack": 1, "mana_cost": 18, "summons_minion": true},
 	# 魔力药水: 喝下 → 立刻 +30 mana (类似食物回血但回魔)

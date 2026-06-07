@@ -11,20 +11,31 @@ const HIT_RADIUS_PX := 8.0   # 玩家方向手动碰怪距离
 var velocity: Vector2 = Vector2.ZERO
 var damage: int = DEFAULT_DAMAGE
 var is_player_cast: bool = false  # true = 玩家法杖发, 撞 slimes 组扣血; false = Imp 发, 撞玩家扣血
+var element: String = "fire"      # fire(红) / ice(蓝) / nature(绿) — 决定贴图+大小+爆炸色
 var _life_t: float = 0.0
 var _cached_chunk_manager = null
 var _is_dead: bool = false
 
+# 每种元素: 弹的视觉大小 (sprite 缩放, 不动碰撞) + 命中爆炸主色.
+const ELEMENT_VISUAL := {
+	"fire":   {"scale": 1.25, "explosion": Color8(255, 150, 40)},   # 大, 橙红
+	"ice":    {"scale": 1.0,  "explosion": Color8(90, 180, 240)},   # 中, 冰蓝
+	"nature": {"scale": 0.8,  "explosion": Color8(120, 200, 60)},   # 小, 绿
+}
+
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
-func setup(start_pos: Vector2, target_pos: Vector2, dmg: int = DEFAULT_DAMAGE, player_cast: bool = false) -> void:
+func setup(start_pos: Vector2, target_pos: Vector2, dmg: int = DEFAULT_DAMAGE, player_cast: bool = false, elem: String = "fire") -> void:
 	global_position = start_pos
 	var dir: Vector2 = (target_pos - start_pos).normalized() if start_pos.distance_to(target_pos) > 0.01 else Vector2.RIGHT
 	velocity = dir * SPEED
 	damage = dmg
 	is_player_cast = player_cast
+	element = elem
 	rotation = velocity.angle()
+	# 按元素换贴图 + 大小 (setup 在 add_child→_ready 之后跑, sprite 已就绪).
+	_apply_element_visual()
 	# body_entered 的连接必须在这里 (setup) 判, 不能在 _ready:
 	# add_child 会立刻触发 _ready, 那时 setup 还没跑, is_player_cast 还是默认 false →
 	# 玩家法杖发的火球也会误连 body_entered, 一生成就撞到施法者自己 (不飞/原地炸/按法伤扣自己血).
@@ -35,7 +46,17 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int = DEFAULT_DAMAGE, p
 
 
 func _ready() -> void:
-	sprite.sprite_frames = ArtCache.fireball_frames
+	# 默认火 (Imp 直接 add 不一定调 setup 的元素); setup 会按元素覆盖.
+	if sprite.sprite_frames == null:
+		sprite.sprite_frames = ArtCache.fireball_frames
+	sprite.play("fly")
+
+
+# 按 element 换魔法弹贴图 + 视觉大小 (旋转方向角度由 setup 设, 这里只缩放).
+func _apply_element_visual() -> void:
+	sprite.sprite_frames = ArtCache.spell_frames_for(element)
+	var vis: Dictionary = ELEMENT_VISUAL.get(element, ELEMENT_VISUAL["fire"])
+	sprite.scale = Vector2.ONE * float(vis["scale"])
 	sprite.play("fly")
 
 
@@ -102,8 +123,9 @@ func _destroy() -> void:
 	if _is_dead:
 		return
 	_is_dead = true
-	# 小爆炸视觉
-	Effects.spawn_explosion(global_position)
+	# 小爆炸视觉 (颜色跟元素走: 火橙红 / 冰蓝 / 自然绿)
+	var vis: Dictionary = ELEMENT_VISUAL.get(element, ELEMENT_VISUAL["fire"])
+	Effects.spawn_explosion(global_position, vis["explosion"])
 	queue_free()
 
 

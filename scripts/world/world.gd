@@ -420,7 +420,11 @@ func _on_remote_projectile(kind: String, sx: float, sy: float, tx: float, ty: fl
 	if kind == "arrow":
 		proj.setup(start, target, 0, null)
 	else:
-		proj.setup(start, target, 0, true)
+		# fireball / fireball_nature / fireball_ice / fireball_fire → 取后缀当元素
+		var element: String = "fire"
+		if kind.begins_with("fireball_"):
+			element = kind.substr("fireball_".length())
+		proj.setup(start, target, 0, true, element)
 
 
 func _on_remote_player_death() -> void:
