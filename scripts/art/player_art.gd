@@ -58,10 +58,10 @@ const _HEAD_F := [
 # 短发: 盖头顶 + 后脑 (朝右 → 后脑在左)。
 # 自然顺滑短发: 顺着头顶弧线, 前额一缕斜下, 后侧自然垂, 不是死板圆球。
 const _HAIR_SHORT := [
-	"...2hh...",
-	"..2hhhh..",
+	"..hhhhh..",
 	".2hhhhhh.",
-	".h2hhhhhh",
+	".2hhhhhh.",
+	"h2hhhhhh.",
 	"hh2hhhhH.",
 	"hhhhhh...",
 	"Hhhh.....",
