@@ -179,8 +179,11 @@ func play_swing_directional(target_angle: float) -> void:
 	# 不乘 facing 符号: 剑尖在中心列, 水平翻转不改变剑尖方向; 乘 s 会让"瞄左"和"瞄右"算出同一个
 	# base → 永远往同一边挥 (= 用户报的"瞄左却往右挥" bug, 跟 play_thrust 早先修过的同款 s 反向 bug).
 	var base: float = wrapf(target_angle + PI / 2.0, -PI, PI)
-	var start_a: float = base - deg_to_rad(110.0)
-	var end_a:   float = base + deg_to_rad(110.0)
+	# 弧线方向随朝向镜像: 瞄右从上往右下劈, 瞄左从上往左下劈。剑尖在中心列, 翻转不影响剑尖方向,
+	# 所以瞄左若跟瞄右同向扫 → 剑尖会从下往上走 = "挑" (用户报的 bug)。瞄左把扫向反过来。
+	var half: float = deg_to_rad(110.0) if mouse_on_right else -deg_to_rad(110.0)
+	var start_a: float = base - half
+	var end_a:   float = base + half
 	rotation = start_a
 	_tween = create_tween()
 	# 挥 (打击窗口, 跟 player_action 命中判定的 180°/SWING_DURATION 同步)

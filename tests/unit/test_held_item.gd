@@ -33,13 +33,13 @@ func test_play_swing_directional_target_up():
 
 func test_play_swing_directional_target_left_flips_facing():
 	var held: Sprite2D = _make_held()
-	# 目标朝正左 (PI). facing_left. 修 bug 后不再乘 facing 符号 s:
-	# base = wrapf(PI + PI/2) = -PI/2; start = -PI/2 - 110° = -200°.
-	# (旧代码乘 s 算成 -20°, 跟瞄右一样 → 永远往右挥的 bug; 现在 -200° 跟瞄右 -20° 不同 = 真往左挥)
+	# 目标朝正左 (PI). facing_left. base = wrapf(PI + PI/2) = -PI/2 (-90°).
+	# 瞄左弧线反向 (half = -110°): start = base - half = -90° - (-110°) = +20°.
+	# 关键: 起手 +20° 剑尖朝上 (cos20>0) → "从上往下劈"; 不是旧的 -200° (剑尖朝下 = 从下往上挑 bug)。
 	held.play_swing_directional(PI)
 	assert_eq(held._facing_right, false, "mouse 在左时应翻到 facing_left")
-	assert_almost_eq(held.rotation, deg_to_rad(-200.0), 0.05,
-		"facing_left + target_left: 起手 -200° (跟瞄右 -20° 不同 → 真往左挥)")
+	assert_almost_eq(held.rotation, deg_to_rad(20.0), 0.05,
+		"facing_left: 起手 +20° (剑尖朝上, 上往下劈), 不是 -200° (那是从下往上挑的 bug)")
 
 
 func test_play_swing_directional_skips_when_invisible():

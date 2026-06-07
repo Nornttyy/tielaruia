@@ -1456,12 +1456,12 @@ func _start_sword_blade_attack(is_sweep: bool, swing_dir: Vector2, damage: int, 
 	_sword_attack_swing_dir = swing_dir
 	_sword_attack_target_angle = swing_dir.angle()
 	_sword_attack_facing_right = cos(_sword_attack_target_angle) >= 0.0
-	# 挥 (sweep) 起手旋转: 跟 held_item.play_swing_directional 同公式.
-	# base = target_angle + PI/2 (剑尖朝鼠标), start_a = base - 90° (起手在 base 左 90°).
-	# 挥剑时剑尖在中心列, 翻转不影响剑尖方向, 不用 s * 反向 (跟最新 play_thrust 同逻辑).
+	# 挥 (sweep) 起手旋转: 跟 held_item.play_swing_directional 同公式 (含瞄左反向, 否则左挥变"挑").
+	# 瞄右 half=+110°: start=base-110, 扫 +220°; 瞄左 half=-110°: start=base+110, 扫 -220° (镜像)。
 	if is_sweep:
 		var base: float = wrapf(_sword_attack_target_angle + PI / 2.0, -PI, PI)
-		_sword_attack_start_rot = base - deg_to_rad(110.0)
+		var half: float = deg_to_rad(110.0) if _sword_attack_facing_right else -deg_to_rad(110.0)
+		_sword_attack_start_rot = base - half
 	_sword_attack_damage = max(1, damage)
 	_sword_attack_knockback = knockback
 	_sword_hit_this_attack.clear()
@@ -1478,9 +1478,11 @@ func _check_sword_blade_hits() -> void:
 	var hand_x: float = SWORD_HAND_OFFSET_X if _sword_attack_facing_right else -SWORD_HAND_OFFSET_X
 	var grip_local: Vector2 = Vector2(hand_x, SWORD_HAND_OFFSET_Y)
 	if _sword_attack_is_sweep:
-		# 半圆挥: rotation 从 start_a 线性插值到 start_a + 180° over SWORD_SWING_DURATION.
+		# 半圆挥: rotation 从 start_a 线性插值过 ±220° over SWORD_SWING_DURATION.
+		# 瞄左扫向反过来 (-220°), 跟视觉/起手 half 一致 → 命中弧线跟看到的一致, 不是"挑"。
 		var progress: float = clamp(t / SWORD_SWING_DURATION, 0.0, 1.0)
-		blade_rot = _sword_attack_start_rot + deg_to_rad(220.0) * progress
+		var total: float = deg_to_rad(220.0) if _sword_attack_facing_right else -deg_to_rad(220.0)
+		blade_rot = _sword_attack_start_rot + total * progress
 	else:
 		# 戳: rotation 静止指向鼠标 (target_angle + PI/2). position 三段式动.
 		blade_rot = wrapf(_sword_attack_target_angle + PI / 2.0, -PI, PI)

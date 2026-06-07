@@ -21,12 +21,11 @@ func test_left_and_right_swing_differ():
 	assert_ne(right_start, left_start, "瞄左和瞄右起手角必须不同 (相等=永远往同一边挥, 就是这个 bug)")
 
 
-func test_left_right_differ_by_180():
-	# 瞄左瞄右相差 180°, 起手角也该差 ~180° (跟着瞄的方向走). bug 时差 0.
+func test_swing_starts_upward_both_sides():
+	# 修"瞄左从下往上挑"的 bug: 不管瞄左瞄右, 挥剑起手都该剑尖朝上 (上往下劈)。
+	# 剑尖默认 (0,-1), 旋转 rot 后 y 分量 = -cos(rot); <0 = 朝上 → 即 cos(rot) > 0。
 	var h = _make_held()
-	h.play_swing_directional(0.0)
-	var right_start: float = h.rotation
-	h.play_swing_directional(PI)
-	var left_start: float = h.rotation
-	var d: float = wrapf(right_start - left_start, -PI, PI)
-	assert_almost_eq(absf(d), PI, 0.05, "瞄左瞄右起手角应差 ~180° (实测差 %.2f°)" % rad_to_deg(absf(d)))
+	h.play_swing_directional(0.0)            # 瞄右
+	assert_gt(cos(h.rotation), 0.0, "瞄右: 挥剑起手剑尖该朝上 (上往下劈)")
+	h.play_swing_directional(PI)             # 瞄左
+	assert_gt(cos(h.rotation), 0.0, "瞄左: 挥剑起手剑尖也该朝上 (不是从下往上挑)")
