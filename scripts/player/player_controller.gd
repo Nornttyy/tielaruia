@@ -6,21 +6,21 @@ const Chunk = preload("res://scripts/world/chunk.gd")
 const ItemsArt = preload("res://scripts/art/items_art.gd")
 const CAVE_DEPTH_THRESHOLD := 10   # 玩家离原始地表 >10 格才算"地下" (即使顶上方块挖掉了)
 
-const SPEED := 105.0
-const JUMP_VELOCITY := -240.0
-const GRAVITY := 675.0
+const SPEED := 52.5
+const JUMP_VELOCITY := -120.0
+const GRAVITY := 337.5
 const COYOTE_TIME := 0.10
-const LAND_VY_THRESHOLD := 150.0    # 落地时 vy 超此值才扬大灰
+const LAND_VY_THRESHOLD := 75.0    # 落地时 vy 超此值才扬大灰
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 const TILE_SIZE := ChunkConstants.TILE_SIZE
 # 游泳物理: 水里重力 ~22%, 按 Space/W 持续上浮.
-const SWIM_GRAVITY := 150.0         # 水里重力 (vs GRAVITY 900 → 慢慢沉)
-const SWIM_UP_SPEED := -82.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -320 → 弱跳)
-const SWIM_MAX_SINK := 135.0        # 最大下沉速度 (浮力封顶)
-const ROPE_CLIMB_SPEED := 82.0     # 绳子上下爬速度 (vs SPEED 140 — 慢点)
+const SWIM_GRAVITY := 75.0         # 水里重力 (vs GRAVITY 900 → 慢慢沉)
+const SWIM_UP_SPEED := -41.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -320 → 弱跳)
+const SWIM_MAX_SINK := 67.5        # 最大下沉速度 (浮力封顶)
+const ROPE_CLIMB_SPEED := 41.0     # 绳子上下爬速度 (vs SPEED 140 — 慢点)
 const ROPE_HOLD_GRAVITY := 0.0      # 抓绳子时无重力 (松手才掉)
 # 玩家碰撞框高度 (跟 player.tscn 同步, 用于水/绳/头检测)
-const PLAYER_BODY_HEIGHT := 30      # collider y 尺寸 = 2.5 格 × 12px (跟 player.tscn 同步)
+const PLAYER_BODY_HEIGHT := 15      # collider y 尺寸 = 2.5 格 × 12px (跟 player.tscn 同步)
 const PLAYER_HEAD_OFFSET := -29     # 头部 y 偏移 (脚到头, 比 30 略内缩防边界误判)
 const PLAYER_WAIST_OFFSET := -15    # 腰部 y 偏移 (身高一半)
 
@@ -30,14 +30,14 @@ const PLAYER_WAIST_OFFSET := -15    # 腰部 y 偏移 (身高一半)
 @onready var _held_item: Sprite2D = $HeldItem
 
 const HURT_DURATION := 0.4
-const KNOCKBACK_VX := 67.0
+const KNOCKBACK_VX := 33.5
 const KNOCKBACK_VY := -135.0
-const SHAKE_MAX_OFFSET := 4.0
+const SHAKE_MAX_OFFSET := 2.0
 const SHAKE_DECAY := 20.0
 
 # Light2D 配置: PlayerAura 常亮小光圈, SunAura 头顶天空时大日光 (0.3s lerp)
-const PLAYER_AURA_TEX_SIZE := 48      # TILE_SIZE 16→12 后缩 0.75 (光圈跟世界比例同)
-const SUN_AURA_TEX_SIZE := 300        # 同上
+const PLAYER_AURA_TEX_SIZE := 24      # TILE_SIZE 16→12 后缩 0.75 (光圈跟世界比例同)
+const SUN_AURA_TEX_SIZE := 150        # 同上
 const SUN_ENERGY_ON := 1.5
 const SUN_ENERGY_OFF := 0.0
 const SUN_FADE_TIME := 0.3
@@ -64,9 +64,9 @@ var _cached_chunk_manager = null   # 第一次 _process 查到后缓存, 避免�
 # - flying: 钩头沿 dir 飞 (HOOK_FLY_SPEED). 撞实心 tile → active. 飞超 max_dist → 释放.
 # - active: 玩家被匀速拉向锚点. 距锚 < HOOK_RELEASE_DIST 自动脱; jump 中断.
 const HOOK_MAX_DIST_TILES := 15           # 最远射程 15 tile
-const HOOK_FLY_SPEED := 360.0             # 钩头飞行速度 px/s (比拉拽快, 才看得清钩)
-const HOOK_PULL_SPEED := 210.0            # 拉过去的速度 px/s
-const HOOK_RELEASE_DIST := 7.5           # 距锚点 < 这个值就脱钩 (避免抖)
+const HOOK_FLY_SPEED := 180.0             # 钩头飞行速度 px/s (比拉拽快, 才看得清钩)
+const HOOK_PULL_SPEED := 105.0            # 拉过去的速度 px/s
+const HOOK_RELEASE_DIST := 3.75           # 距锚点 < 这个值就脱钩 (避免抖)
 var _hook_active: bool = false
 var _hook_anchor: Vector2 = Vector2.ZERO
 var _hook_line: Line2D = null
