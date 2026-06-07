@@ -36,6 +36,28 @@ const RICE_3 := 80
 const WATER_DESERT := 81    # 沙漠绿洲水 (青绿松石)
 const WATER_JUNGLE := 82    # 丛林水 (翠绿)
 const WATER_SWAMP := 83     # 沼泽水 (浑浊墨绿)
+# 群系薄水 (visual-only, 跟 Tiles 同号 94-114)
+const WATER_DESERT_L1 := 94
+const WATER_DESERT_L2 := 95
+const WATER_DESERT_L3 := 96
+const WATER_DESERT_L4 := 97
+const WATER_DESERT_L5 := 98
+const WATER_DESERT_L6 := 99
+const WATER_DESERT_L7 := 100
+const WATER_JUNGLE_L1 := 101
+const WATER_JUNGLE_L2 := 102
+const WATER_JUNGLE_L3 := 103
+const WATER_JUNGLE_L4 := 104
+const WATER_JUNGLE_L5 := 105
+const WATER_JUNGLE_L6 := 106
+const WATER_JUNGLE_L7 := 107
+const WATER_SWAMP_L1 := 108
+const WATER_SWAMP_L2 := 109
+const WATER_SWAMP_L3 := 110
+const WATER_SWAMP_L4 := 111
+const WATER_SWAMP_L5 := 112
+const WATER_SWAMP_L6 := 113
+const WATER_SWAMP_L7 := 114
 const WATER_SOURCE := 86    # 水源块 (湿石泉眼, 瀑布)
 const MUSHROOM := 52        # 蓝光蘑菇 (矿洞蘑菇地装饰)
 const MIMIC_CHEST := 53     # 死人箱 (假宝箱陷阱), 视觉跟 CHEST 像但锁孔是红的
@@ -2448,15 +2470,23 @@ static func get_water_animated_atlas_p(palette: Dictionary) -> ImageTexture:
 
 # 群系水的调色板 (给 ArtCache 用). tile_id 传 WATER_DESERT/JUNGLE/SWAMP.
 static func water_palette_for(tile_id: int) -> Dictionary:
-	if tile_id == WATER_DESERT: return _P_WATER_DESERT
-	if tile_id == WATER_JUNGLE: return _P_WATER_JUNGLE
-	if tile_id == WATER_SWAMP: return _P_WATER_SWAMP
+	if tile_id == WATER_DESERT or (tile_id >= WATER_DESERT_L1 and tile_id <= WATER_DESERT_L7):
+		return _P_WATER_DESERT
+	if tile_id == WATER_JUNGLE or (tile_id >= WATER_JUNGLE_L1 and tile_id <= WATER_JUNGLE_L7):
+		return _P_WATER_JUNGLE
+	if tile_id == WATER_SWAMP or (tile_id >= WATER_SWAMP_L1 and tile_id <= WATER_SWAMP_L7):
+		return _P_WATER_SWAMP
 	return _P_WATER
 
 
 # 水位 (1/4, 2/4, 3/4) 动画 atlas: 同样 4 帧但顶部 (4-level)*4 行透明 (水位低).
 # level: 1 = 1/4 满 (顶 12 行透明), 2 = 1/2 满 (顶 8 行透明), 3 = 3/4 满 (顶 4 行透明)
 static func get_water_level_atlas(level: int) -> ImageTexture:
+	return get_water_level_atlas_p(level, _P_WATER)
+
+
+# 同上但用指定调色板 (群系薄水分色用). 复用同一套水帧 + clip。
+static func get_water_level_atlas_p(level: int, palette: Dictionary) -> ImageTexture:
 	assert(level >= 1 and level <= 7, "level 必须 1-7 (8 档体系)")
 	var clip_rows: int = (8 - level) * 2  # 顶部清除多少行 (16px/8档 = 每档 2px)
 	var frames: Array = [_WATER, _WATER_F1, _WATER_F2, _WATER_F3]
@@ -2465,7 +2495,7 @@ static func get_water_level_atlas(level: int) -> ImageTexture:
 	dst.fill(transparent)
 	for i in range(4):
 		var clipped: Array = _clip_water_top(frames[i], clip_rows)
-		var frame_img: Image = PixelArt.grid_to_image(clipped, _P_WATER)
+		var frame_img: Image = PixelArt.grid_to_image(clipped, palette)
 		dst.blit_rect(frame_img, Rect2i(0, 0, 16, 16), Vector2i(i * 16, 0))
 	return ImageTexture.create_from_image(dst)
 

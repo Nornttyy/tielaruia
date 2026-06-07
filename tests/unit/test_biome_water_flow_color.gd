@@ -1,6 +1,8 @@
 # 群系水流动保色: 纯映射函数 + 贴图注册 验收.
 extends GutTest
 
+const BlocksArt = preload("res://scripts/art/blocks_art.gd")
+
 
 func test_water_level_generic() -> void:
 	assert_eq(Tiles.water_level(Tiles.WATER), 8, "满水 = 8")
@@ -63,3 +65,25 @@ func test_display_water_tile_plain_passthrough() -> void:
 	assert_eq(Tiles.display_water_tile(Tiles.WATER, Tiles.WATER), Tiles.WATER)
 	# 非水原样穿过
 	assert_eq(Tiles.display_water_tile(Tiles.STONE, Tiles.WATER_DESERT), Tiles.STONE)
+
+
+func test_blocksart_colored_constants_align() -> void:
+	# BlocksArt 与 Tiles 的 id 必须数值对齐
+	assert_eq(BlocksArt.WATER_DESERT_L1, Tiles.WATER_DESERT_L1)
+	assert_eq(BlocksArt.WATER_JUNGLE_L4, Tiles.WATER_JUNGLE_L4)
+	assert_eq(BlocksArt.WATER_SWAMP_L7, Tiles.WATER_SWAMP_L7)
+
+
+func test_get_water_level_atlas_p_size() -> void:
+	# 带调色板的薄水 atlas: 64x16 (4 帧), 跟原 get_water_level_atlas 同尺寸
+	var tex := BlocksArt.get_water_level_atlas_p(3, BlocksArt._P_WATER_DESERT)
+	assert_not_null(tex)
+	assert_eq(tex.get_width(), 64)
+	assert_eq(tex.get_height(), 16)
+
+
+func test_water_palette_for_colored() -> void:
+	# 彩色薄水 id 也能查到对应族调色板
+	assert_eq(BlocksArt.water_palette_for(BlocksArt.WATER_DESERT_L3), BlocksArt._P_WATER_DESERT)
+	assert_eq(BlocksArt.water_palette_for(BlocksArt.WATER_JUNGLE_L5), BlocksArt._P_WATER_JUNGLE)
+	assert_eq(BlocksArt.water_palette_for(BlocksArt.WATER_SWAMP_L1), BlocksArt._P_WATER_SWAMP)
