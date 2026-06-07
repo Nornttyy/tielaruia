@@ -124,13 +124,69 @@ func _flush_web_filesystem() -> void:
 	""", true)
 
 
-# --- Task 3 实现 (玩家 <-> 角色状态) ---
-func save_current_from_player(_player: Node) -> bool:
-	return false
+# 从 player 节点收集玩家状态写进 current。沿用 main.gd 的就绪护栏: current 为空 /
+# inventory 未就绪 → 返 false 不写 (防加载窗口期 autosave 写出空背包覆盖好档 = 丢三件套)。
+func save_current_from_player(player: Node) -> bool:
+	if current == null or player == null:
+		return false
+	var inv_node: Node = player.get_node_or_null("PlayerInventory")
+	if inv_node == null or inv_node.inventory == null:
+		return false
+	# 背包 (深拷贝, 不跟 player 共享引用)
+	var slots_copy: Array = []
+	for s in inv_node.inventory.slots:
+		slots_copy.append(null if s == null else {"item_id": s.item_id, "count": s.count})
+	current.inventory_slots = slots_copy
+	if "hotbar_selected" in inv_node:
+		current.hotbar_selection = inv_node.hotbar_selected
+	current.armor_helmet_id = "" if inv_node.armor_helmet == null else String(inv_node.armor_helmet.item_id)
+	current.armor_chest_id = "" if inv_node.armor_chest == null else String(inv_node.armor_chest.item_id)
+	current.armor_pants_id = "" if inv_node.armor_pants == null else String(inv_node.armor_pants.item_id)
+	# 血量
+	var hp: Node = player.get_node_or_null("PlayerHealth")
+	if hp != null and "current_health" in hp:
+		current.player_hp = float(hp.current_health)
+		current.player_max_hp = int(hp.MAX_HEALTH) if "MAX_HEALTH" in hp else 100
+	# 魔力
+	var mn: Node = player.get_node_or_null("PlayerMana")
+	if mn != null and "current_mana" in mn:
+		current.player_mana = int(mn.current_mana)
+		current.player_max_mana = int(mn.MAX_MANA) if "MAX_MANA" in mn else 100
+	return true
 
 
-func apply_to_player(_player: Node) -> void:
-	pass
+# 把 current 的玩家状态还原到 player 节点 (照 main._apply_save_data 的玩家段)。
+# 外观不在此处理 (计划 2 渲染)。current 为空则 no-op。
+func apply_to_player(player: Node) -> void:
+	if current == null or player == null:
+		return
+	var hp: Node = player.get_node_or_null("PlayerHealth")
+	if hp != null and "current_health" in hp:
+		if "MAX_HEALTH" in hp and "BASE_MAX_HEALTH" in hp and "MAX_HEALTH_CAP" in hp:
+			hp.MAX_HEALTH = clamp(current.player_max_hp, hp.BASE_MAX_HEALTH, hp.MAX_HEALTH_CAP)
+		hp.current_health = clamp(int(current.player_hp), 0, hp.MAX_HEALTH)
+		if hp.has_signal("health_changed"):
+			hp.health_changed.emit(hp.current_health, hp.MAX_HEALTH)
+	var mn: Node = player.get_node_or_null("PlayerMana")
+	if mn != null and "current_mana" in mn:
+		if "MAX_MANA" in mn:
+			mn.MAX_MANA = int(current.player_max_mana)
+		mn.current_mana = clamp(int(current.player_mana), 0, mn.MAX_MANA)
+		if mn.has_signal("mana_changed"):
+			mn.mana_changed.emit(mn.current_mana, mn.MAX_MANA)
+	var inv_node: Node = player.get_node_or_null("PlayerInventory")
+	if inv_node != null and inv_node.inventory != null:
+		inv_node.inventory.slots = current.inventory_slots.duplicate(true)
+		if "hotbar_selected" in inv_node:
+			inv_node.hotbar_selected = current.hotbar_selection
+		if inv_node.has_signal("inventory_changed"):
+			inv_node.inventory_changed.emit()
+		if inv_node.has_signal("hotbar_selection_changed"):
+			inv_node.hotbar_selection_changed.emit(current.hotbar_selection)
+		if inv_node.has_method("set_armor"):
+			for pair in [["helmet", current.armor_helmet_id], ["chest", current.armor_chest_id], ["pants", current.armor_pants_id]]:
+				if pair[1] != "":
+					inv_node.set_armor(pair[0], {"item_id": pair[1], "count": 1})
 
 
 # --- Task 4 实现 ---
