@@ -131,6 +131,18 @@ const _ARM := [
 	"skk",
 	".kk",
 ]
+# 后臂 (远侧那条手, 画在身体后面): 整体用深色 (袖 D / 小臂 k) 表示在后/远。
+const _ARM_BACK := [
+	"DD.",
+	"DDD",
+	"DDD",
+	"Dkk",
+	"kkk",
+	"kkk",
+	"kkk",
+	"kkk",
+	".kk",
+]
 # 单腿 (裤子 b / 阴影 B), 3 宽 × 15 高。后侧(左)一列阴影, 立体 (不再中间散点)。
 const _LEG := [
 	"Bbbb3",
@@ -192,10 +204,11 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 static func _frame(ap: Dictionary, pose: String) -> Array:
 	var layers := [
 		_cape_layer(ap, pose),
+		_arm_back_layer(ap, pose),  # 后臂 (远侧手), 画在身体后面 → 露在后方
 		_body_layer(ap, pose),
 		_pants_layer(ap, pose),
 		_shirt_layer(ap, pose),
-		_arm_layer(ap, pose),    # 手臂画在衣服前面 (近侧那条胳膊), 不被衬衫盖
+		_arm_layer(ap, pose),    # 前臂画在衣服前面 (近侧那条胳膊), 不被衬衫盖
 		_hair_layer(ap, pose),
 	]
 	# 描边跑两遍 = 2px 粗黑边 (泰拉瑞亚式, 用户要更粗)。
@@ -277,6 +290,22 @@ static func _arm_layer(_ap: Dictionary, pose: String) -> Array:
 			_place(g, 24 + dy, 14, _ARM)   # 往后下摆
 		_:
 			_place(g, 22 + dy, 15, _ARM)
+	return g
+
+
+# 后臂层 (画在身体后面): 远侧那只手, 在后方(左)露出, 走路跟前臂**反向**摆。
+static func _arm_back_layer(_ap: Dictionary, pose: String) -> Array:
+	var g := _blank()
+	var dy := _dy(pose)
+	match pose:
+		"hurt", "jump":
+			_place(g, 18 + dy, 3, _ARM_BACK)
+		"walk_a":   # 前臂往前 → 后臂往后下
+			_place(g, 24 + dy, 3, _ARM_BACK)
+		"walk_c":   # 前臂往后 → 后臂往前上
+			_place(g, 20 + dy, 4, _ARM_BACK)
+		_:
+			_place(g, 22 + dy, 3, _ARM_BACK)
 	return g
 
 
