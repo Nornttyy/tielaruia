@@ -272,3 +272,34 @@ func test_no_lateral_oscillation_on_flat_ground() -> void:
 	sim.mark_dirty(1, 0)
 	sim.settle_now()
 	assert_true(sim._dirty.is_empty(), "平地 L2/L1 应收敛 (差1级稳定, 不再无限震荡)")
+
+
+# 活水颗粒: 水落进空气时该调发射器; settle 期间不该调。
+func test_grains_emit_on_fall() -> void:
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER
+	fw.tiles[Vector2i(0, 2)] = Tiles.STONE     # 下落 1 格后下方是石头 → 砸到底
+	fw.tiles[Vector2i(-1, 1)] = Tiles.STONE
+	fw.tiles[Vector2i(1, 1)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim._in_settle = false
+	var before: int = Effects.grains_emitted
+	sim.notify_tile_changed(0, 0)
+	for i in 5:
+		sim._run_tick()
+	assert_gt(Effects.grains_emitted, before, "水落进空气该冒水珠 (发射器被调)")
+
+
+func test_grains_silent_during_settle() -> void:
+	var fw = FakeWorld.new()
+	fw.tiles[Vector2i(0, 0)] = Tiles.WATER
+	fw.tiles[Vector2i(0, 2)] = Tiles.STONE
+	fw.tiles[Vector2i(-1, 1)] = Tiles.STONE
+	fw.tiles[Vector2i(1, 1)] = Tiles.STONE
+	var sim = _make_sim(fw)
+	sim._in_settle = true                       # 加载找平期间
+	var before: int = Effects.grains_emitted
+	sim.notify_tile_changed(0, 0)
+	for i in 5:
+		sim._run_tick()
+	assert_eq(Effects.grains_emitted, before, "settle 期间不该冒水珠")
