@@ -52,7 +52,7 @@ const SPAWN_RANGE_MAX := 22
 
 const TILE_SIZE := ChunkConstants.TILE_SIZE
 
-const MINIMAP_VIEW_TILES_X := 60  # 屏幕能看到的横向 tile (1280px / 0.8 zoom / 12 ≈ 133, 用 60 覆盖近视野)
+const MINIMAP_VIEW_TILES_X := 120  # 屏幕能看到的横向 tile (1280px / 0.8 zoom / 6 ≈ 267, 用 120 覆盖近视野)
 const MINIMAP_VIEW_TILES_Y := 40  # 纵向 (覆盖屏幕高度)
 const MINIMAP_REVEAL_ADJ := 4     # 玩家旁边 ±这么多格永远露 (黑暗里也看得到脚下一圈); 其余要被天光照到才露
 const MINIMAP_MARK_INTERVAL := 0.25  # 每 0.25s 标记一次玩家周围. 玩家 0.25s 走 ~1 tile,
@@ -1670,7 +1670,7 @@ func _spawn_death_drop(item_id: String, count: int, pos: Vector2) -> void:
 		var drop = ItemDropScene.instantiate()
 		drop.item_id = item_id
 		drop.count = n
-		drop.global_position = pos + Vector2(randf_range(-12.0, 12.0), -6.0)
+		drop.global_position = pos + Vector2(randf_range(-6.0, 6.0), -3.0)
 		entities_root.add_child(drop)
 		count -= n
 

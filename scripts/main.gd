@@ -379,22 +379,22 @@ func _apply_save_data(data: Resource) -> void:
 	# 验证保存的位置不是在石头里 (老坏存档救出: 大世界 bug 时玩家被埋深石里, 那时存的
 	# player_position 还是 [0, 1200], reload 又卡进去). tile 实心 → fallback 用世界 spawn.
 	var saved_pos: Vector2 = data.player_position
-	var pos_tx: int = int(floor(saved_pos.x / 12.0))
-	var pos_ty: int = int(floor(saved_pos.y / 12.0))
+	var pos_tx: int = int(floor(saved_pos.x / float(ChunkConstants.TILE_SIZE)))
+	var pos_ty: int = int(floor(saved_pos.y / float(ChunkConstants.TILE_SIZE)))
 	var pos_tid: int = w.chunk_manager.get_tile(pos_tx, pos_ty) if w.chunk_manager != null else 0
 	if pos_tid != 0 and Tiles.is_solid(pos_tid):
 		push_warning("存档玩家位置在实心 tile 里, 用 spawn 救出")
 		player.global_position = w._spawn_world_pos()
 		# 也清个空气坑防再次卡
 		if w.has_method("_ensure_air_pocket"):
-			w._ensure_air_pocket(int(floor(player.global_position.x / 12.0)),
-					int(floor(player.global_position.y / 12.0)))
+			w._ensure_air_pocket(int(floor(player.global_position.x / float(ChunkConstants.TILE_SIZE))),
+					int(floor(player.global_position.y / float(ChunkConstants.TILE_SIZE))))
 	else:
 		player.global_position = saved_pos
 	# 玩家瞬移到存档位置后立刻同步加载落点 chunk: 否则这一帧 ScenicDirector 查不到地表(背景误显地底)
 	# + minimap 把那片当 AIR(显地底). ensure_loaded 是同步的, 当帧就有 surfaces/tile 数据.
 	if w.chunk_manager != null:
-		w.chunk_manager.ensure_loaded(_ChunkClass.chunk_x_of(int(floor(player.global_position.x / 12.0))))
+		w.chunk_manager.ensure_loaded(_ChunkClass.chunk_x_of(int(floor(player.global_position.x / float(ChunkConstants.TILE_SIZE)))))
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and "current_health" in hp:
 		# v0 → v1: 老存档 player_hp 0-20 刻度, ×5 缩放到 0-100.

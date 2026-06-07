@@ -83,7 +83,7 @@ func _try_hit(target: Node2D) -> void:
 	if _hit_cd > 0.0:
 		return
 	var radius: float = target.melee_hit_radius() if target.has_method("melee_hit_radius") else 0.0
-	if global_position.distance_to(target.global_position) > 16.0 + radius:
+	if global_position.distance_to(target.global_position) > 8.0 + radius:
 		return
 	if target.has_method("take_damage"):
 		target.take_damage(CONTACT_DAMAGE, global_position, 80.0)

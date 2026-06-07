@@ -1805,7 +1805,7 @@ func _summon_friendly() -> void:
 	if entities == null:
 		entities = player.get_parent()
 	entities.add_child(fs)
-	fs.global_position = player.global_position + Vector2(randf_range(-16.0, 16.0), -4.0)
+	fs.global_position = player.global_position + Vector2(randf_range(-8.0, 8.0), -2.0)
 	SfxBank.play("place", 0.15)
 
 
