@@ -12,7 +12,7 @@ class_name SaveData extends Resource
 #          由 CharacterManager 管, 跟着角色跨世界。下面这些玩家字段保留定义 (防老 .tres
 #          读不了) 但**作废**: 新存档权威来源是角色卡, main 加载时从 CharacterManager.current
 #          还原玩家, 不再信世界存档里的这些值 (位置仍用世界 spawn/bed)。
-const CURRENT_VERSION := 5
+const CURRENT_VERSION := 6
 
 @export var version: int = CURRENT_VERSION
 @export var world_seed: int = 0
@@ -58,6 +58,8 @@ const CURRENT_VERSION := 5
 @export var chunk_deltas: Dictionary = {}
 # 玩家改过的背景墙 (砸墙/放墙). 结构同 chunk_deltas, 但存墙 id. 独立存防跟 tile 串.
 @export var wall_deltas: Dictionary = {}
+# 水下植物: 被水盖住的植物 (退水复原)。结构同 wall_deltas。旧档无此字段 → 默认空, 兼容。
+@export var submerged_plants: Dictionary = {}
 # 实体快照: [{"type": "slime"|"villager"|"item_drop", "position": Vector2, ...}]
 @export var entities: Array = []
 # 箱子内容: "x,y" (tile world coord) → Array<24>{item_id, count} or null

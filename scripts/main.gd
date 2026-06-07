@@ -319,6 +319,9 @@ func _apply_save_data(data: Resource) -> void:
 	# 恢复玩家砸/放的背景墙 (老存档没字段则跳过)
 	if "wall_deltas" in data:
 		SaveManager.apply_wall_deltas(w.chunk_manager, data.wall_deltas)
+	# 恢复水下植物记录 (老存档没字段则跳过)
+	if "submerged_plants" in data:
+		SaveManager.apply_submerged(w.chunk_manager, data.submerged_plants)
 	# 恢复生命水晶世界限计数 + 已处理 chunk 列表 + 位置 (防 chunk 重载又 cap)
 	if data.version >= 2 and w.chunk_manager != null:
 		w.chunk_manager.life_crystals_spawned = data.life_crystals_spawned
