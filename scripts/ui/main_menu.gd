@@ -64,6 +64,7 @@ func _ready() -> void:
 	_setup_sun()
 	_setup_stars()
 	_setup_hills()
+	_setup_ground()
 	_setup_trees()
 	_setup_clouds()
 	_setup_birds()
@@ -190,6 +191,19 @@ func _setup_sky_gradient() -> void:
 func _setup_hills() -> void:
 	# 用户要"不要山, 后面全是大树" → 隐藏山丘, 背景天际线改由树的"后墙层"撑 (见 _setup_trees)。
 	_hills.visible = false
+
+
+# 底部地面: 把原来那块"死平绿色" ColorRect 换成 草皮(草尖+草丝) + 泥土(斑点小石) 纹理。
+# 纹理挂成 Ground 的子节点 → 画在 Ground 之后、云/史莱姆之前 (盖住树干底, 史莱姆仍在上面)。
+func _setup_ground() -> void:
+	var ground: ColorRect = $BackgroundLayer/Ground
+	ground.color = Color(0, 0, 0, 0)   # 原绿色块改透明, 改用下面的纹理
+	var tex := TextureRect.new()
+	tex.texture = MenuSceneArt.make_ground_strip()
+	tex.stretch_mode = TextureRect.STRETCH_TILE   # 横向平铺铺满
+	tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ground.add_child(tex)
 
 
 const TREE_W := 22.0    # make_forest_tree 纹理宽

@@ -171,6 +171,48 @@ static func make_hill() -> ImageTexture:
 	return PixelArt.grid_to_texture(_HILL_ROWS, _HILL_PALETTE)
 
 
+# 主菜单地面: 顶部草皮 (锯齿草尖 + 高光 + 草丝) + 下面泥土 (斑点 + 小石)。
+# 横向平铺用 (TextureRect STRETCH_TILE); 高度比地面带略高 → 不竖向重复, 只露上半部。
+static func make_ground_strip(w: int = 64, h: int = 220) -> ImageTexture:
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var grass := Color8(86, 150, 66)
+	var grass_hi := Color8(122, 190, 94)
+	var grass_sh := Color8(56, 110, 52)
+	var dirt := Color8(104, 74, 48)
+	var dirt_d := Color8(82, 57, 37)
+	var stone := Color8(122, 116, 108)
+	var grass_h := 26
+	for x in w:
+		var tip: int = (x * 5 + (x * x) % 4) % 4   # 0..3 草尖高低起伏
+		for y in h:
+			var c: Color
+			if y < tip:
+				c = Color(0, 0, 0, 0)       # 草尖之上透明 (锯齿感)
+			elif y < tip + 2:
+				c = grass_hi                # 草尖高光
+			elif y < grass_h - 3:
+				c = grass
+			elif y < grass_h:
+				c = grass_sh                # 草底阴影
+			else:
+				c = dirt
+			img.set_pixel(x, y, c)
+		# 几根深色草丝 (竖向纹理)
+		if x % 5 == 1:
+			for yy in range(tip + 2, grass_h - 3):
+				if yy % 2 == 0:
+					img.set_pixel(x, yy, grass_sh)
+	# 泥土斑点 + 偶尔小石 (确定性散布, 不用随机)
+	for i in range(46):
+		var px: int = (i * 11 + 3) % w
+		var py: int = grass_h + 2 + (i * 17 + 5) % (h - grass_h - 4)
+		img.set_pixel(px, py, dirt_d)
+		if i % 7 == 0:
+			img.set_pixel((px + 1) % w, py, stone)
+			img.set_pixel(px, py + 1, stone)
+	return ImageTexture.create_from_image(img)
+
+
 static func make_tree() -> ImageTexture:
 	return PixelArt.grid_to_texture(_TREE_ROWS, _TREE_PALETTE)
 
