@@ -232,16 +232,15 @@ static func _smart_resize_atlas_16_to_12(tex: ImageTexture) -> ImageTexture:
 		return tex
 	var dst := Image.create(w_cells * 12, h_cells * 12, false, Image.FORMAT_RGBA8)
 	dst.fill(Color(0, 0, 0, 0))
-	# dst[i] → src[?] 映射: 12 行/列里, 前 2 + 后 2 保留 src 0/1/14/15
-	# 中间 8 行/列采自 src 2..13: 跳 src 3/6/9/12 → 取 2,4,5,7,8,10,11,13
-	var map12: PackedInt32Array = PackedInt32Array([0, 1, 2, 4, 5, 7, 8, 10, 11, 13, 14, 15])
+	# 每个 16×16 cell 单独高质量缩到 12×12 (LANCZOS): 16px 原画的全部细节都参与, 不再像旧版
+	# 硬扔 4 列像素 (第 3/6/9/12 列) — 那会丢掉落在那些列上的图案细节, 看着乱/糊。
+	# 必须逐 cell 缩: autotile atlas 是 8×6 个 cell, 整图缩会跨 cell 边界糊到邻格。
 	for cy in h_cells:
 		for cx in w_cells:
-			for dr in 12:
-				var sr: int = cy * 16 + map12[dr]
-				for dc in 12:
-					var sc: int = cx * 16 + map12[dc]
-					dst.set_pixel(cx * 12 + dc, cy * 12 + dr, src.get_pixel(sc, sr))
+			var cell := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+			cell.blit_rect(src, Rect2i(cx * 16, cy * 16, 16, 16), Vector2i.ZERO)
+			cell.resize(12, 12, Image.INTERPOLATE_LANCZOS)
+			dst.blit_rect(cell, Rect2i(0, 0, 12, 12), Vector2i(cx * 12, cy * 12))
 	return ImageTexture.create_from_image(dst)
 
 
