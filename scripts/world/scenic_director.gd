@@ -35,19 +35,8 @@ var _bat: Node = null
 var _rainbow: Node = null
 var _aurora: Node = null
 var _lava_drip: Node = null
-# Biome 远景切换 (用户要求"不同群系不同背景"):
-# 玩家在群系内时, 远山/天空 modulate 缓慢 lerp 到该群系的色调.
-var _biome_tint_current: Color = Color.WHITE       # 当前实际 tint (lerp 用)
-var _biome_tint_target: Color = Color.WHITE        # 目标 tint
-const _BIOME_TINT_LERP_PER_SEC := 1.5              # 每秒 lerp 多少 (0→1 大约 0.7s)
-# 各 biome 的 modulate (multiply 上, 1.0=不变)
-const _BIOME_TINTS := {
-	0: Color(1.0, 1.0, 1.0),    # FOREST 默认
-	1: Color(1.30, 1.00, 0.65), # DESERT 橙黄
-	2: Color(0.85, 1.00, 1.25), # SNOW 蓝白
-	3: Color(0.75, 1.15, 0.75), # JUNGLE 深绿
-	4: Color(0.85, 0.95, 0.85), # SWAMP 灰绿
-}
+# Biome 远景切换 (用户要求"不同群系不同背景"): 玩家所在 biome 变 → MountainsLayer 换景物剪影.
+# 注意: 不用染色 (用户嫌敷衍), 是真·不同形状, 见 mountains_layer.gd / mountains_art.gd。
 
 
 # 由 World 在 _ready 调用, 把所有 layer 引用绑进来. 任何 key 缺省 = 该层不存在 (跳过).
@@ -105,8 +94,8 @@ var _update_timer: float = 0.0
 func _process(delta: float) -> void:
 	if _world == null:
 		return
-	# Biome tint lerp (每帧, 平滑过渡)
-	_update_biome_tint(delta)
+	# 每帧检查玩家所在群系 → 切远景景物 (set_biome 内部幂等)
+	_update_biome_scenery()
 	_update_timer -= delta
 	if _update_timer > 0.0:
 		return
@@ -117,23 +106,18 @@ func _process(delta: float) -> void:
 	_apply_depths(shallow_t, deep_t)
 
 
-# 检查玩家所在 biome → 更新 target tint, lerp current 朝 target
-func _update_biome_tint(delta: float) -> void:
+# 检查玩家所在 biome → 切远景景物 (MountainsLayer.set_biome)
+func _update_biome_scenery() -> void:
 	var player: Node2D = _world.get_player() if _world.has_method("get_player") else null
 	if player == null:
 		return
 	var world_seed: int = _world.world_seed if "world_seed" in _world else 0
 	var player_x_tile: int = int(floor(player.global_position.x / float(TILE_SIZE)))
 	var biome_id: int = WorldGenerator._biome_at(player_x_tile, world_seed)
-	_biome_tint_target = _BIOME_TINTS.get(biome_id, Color.WHITE)
-	# Lerp current → target
-	_biome_tint_current = _biome_tint_current.lerp(_biome_tint_target, clamp(delta * _BIOME_TINT_LERP_PER_SEC, 0.0, 1.0))
-	# 应用到远山 (modulate). cave_bg / sky_bg 暂不动 (它们由 depth/time 控制 alpha, 加 tint 容易冲突).
-	if _mountains != null and _mountains is CanvasItem:
-		var ci: CanvasItem = _mountains
-		# 保留原 alpha (depth alpha 别覆盖)
-		var a: float = ci.modulate.a
-		ci.modulate = Color(_biome_tint_current.r, _biome_tint_current.g, _biome_tint_current.b, a)
+	# 不同群系 = 真·不同的远景景物 (森林山/沙漠沙丘+仙人掌/雪原雪山/丛林树冠/沼泽枯树),
+	# 由 MountainsLayer.set_biome 交叉淡入切换 (不是染色). set_biome 内部对重复调用幂等.
+	if _mountains != null and _mountains.has_method("set_biome"):
+		_mountains.set_biome(biome_id)
 
 
 # === 公开 compute (静态, 容易测) ===
