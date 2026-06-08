@@ -1,194 +1,124 @@
-# 玩家像素画: 泰拉瑞亚式 24×48 侧面单眼。按 CharacterData.appearance_dict() 分层拼装:
-# 披风(后) → 身体(皮肤+靴) → 裤子 → 衬衫 → 头发。每层 24×48, 后画盖前画。
-# 朝右版; 运行时 flip_h 朝左 (player_controller 处理)。
-# Plan 2: 只画默认款 (短发/T恤/长裤/无披风) + 男女身体; 其它款式号回退默认 (Plan 4 逐批补)。
-#
-# 构建方式: 用小"积木块"(ascii 子图) + _place 摆放坐标拼每帧, 比手摆整张 48 行更不易错位。
+# 玩家像素画: 泰拉瑞亚式 **正面** 小人 (18×28)。两只白眼睛 + 大蓬松头发 + 两只手, 没嘴。
+# 按 CharacterData.appearance_dict() 分层拼装: 身体(皮肤+脸+鞋) → 裤子 → 衬衫(+袖) → 头发。
+# 正面对称; 朝向用 flip_h (左右镜像没差, 正面通用)。1px 黑描边。
 extends RefCounted
 
 const PixelArt = preload("res://scripts/art/pixel_art.gd")
-const W := 24
-const H := 48
+const W := 18
+const H := 28
 
 const DEFAULT_APPEARANCE := {
 	"gender": 0, "hair_style": 0, "shirt_style": 0, "pants_style": 0,
 	"cape_style": 0, "chest_size": 1,
-	"skin_color": Color8(255, 218, 185), "hair_color": Color8(121, 85, 72),
-	"shirt_color": Color8(229, 57, 53), "pants_color": Color8(38, 70, 130),
-	"cape_color": Color8(150, 40, 50), "eye_color": Color8(60, 110, 70),
+	"skin_color": Color8(255, 218, 185), "hair_color": Color8(190, 110, 60),
+	"shirt_color": Color8(220, 210, 180), "pants_color": Color8(70, 90, 150),
+	"cape_color": Color8(150, 40, 50), "eye_color": Color8(70, 110, 170),
 }
 
-# 固定色 (不随 appearance)
-const _BOOT := Color8(74, 47, 26)
-const _BOOT_SH := Color8(48, 30, 15)
-const _EYE_DARK := Color8(30, 28, 26)
-const _MOUTH := Color8(150, 70, 70)
+const _SHOE := Color8(74, 47, 26)
+const _SHOE_SH := Color8(48, 30, 15)
 const _WHITE := Color(0.98, 0.98, 1.0, 1)
-const _OUTLINE := Color8(28, 24, 30)   # 泰拉瑞亚式黑描边 (略暖的近黑)
+const _OUTLINE := Color8(30, 26, 30)
 
-# ---- 积木块 (朝右; 大写=阴影) ----
-# 头 (皮肤 s / 阴影 k); 侧脸朝右, 眼在偏右 (W 眼白 / i 眼珠 / e 睫毛瞳); 鼻在最右; 嘴 m。
+# ---- 积木块 (正面对称; 大写=阴影) ----
+# 脸 (皮肤 s / 阴影 k): 两只白眼睛 (W 眼白 / i 眼珠), 没嘴。8 宽 × 8 高。
 const _HEAD := [
-	"..ssssss...",
-	".ssssssss..",
-	".sssssssss.",
-	".sssssssWi.",
-	".sssssssWi.",
-	".sssssssWi.",
-	".kssssssss.",
-	".kssssssss.",
-	"..ksssss...",
-	"...ssss....",
-	"...ksss....",
+	"..ssss..",
+	".ssssss.",
+	"ssssssss",
+	"sWWssWWs",
+	"siissiis",
+	"ssssssss",
+	".kssssk.",
+	"..ssss..",
 ]
-# 女头: 同尺寸, 加睫毛 (眼上一排 e) + 眼珠大一点, 一眼区分。
+# 女脸: 加睫毛 (e 在眼上)。
 const _HEAD_F := [
-	"..ssssss...",
-	".ssssssss..",
-	".sssssssee.",
-	".sssssssWi.",
-	".sssssssWi.",
-	".sssssssWi.",
-	".kssssssss.",
-	".kssssssss.",
-	"..ksssss...",
-	"...ssss....",
-	"...ksss....",
+	"..ssss..",
+	".seeees.",
+	"ssssssss",
+	"sWWssWWs",
+	"siissiis",
+	"ssssssss",
+	".kssssk.",
+	"..ssss..",
 ]
-# 短发: 盖头顶 + 后脑 (朝右 → 后脑在左)。
-# 自然顺滑短发: 顺着头顶弧线, 前额一缕斜下, 后侧自然垂, 不是死板圆球。
+# 大蓬松头发 (盖头顶 + 两侧, 留脸): 14 宽 × 8 高。h 主色 / H 阴影。
 const _HAIR_SHORT := [
-	"..hhhhh..",
-	".2hhhhhh.",
-	".2hhhhhh.",
-	"h2hhhhhh.",
-	"hh2hhhhH.",
-	"hhhhhh...",
-	"Hhhh.....",
-	"hh.......",
+	"...h.h.hh.....",
+	"..hhhhhhhhh...",
+	".hhhhhhhhhhh..",
+	"hhhhhhhhhhhh..",
+	"hhhhhhhhhhhh..",
+	"hhhh....hhhh..",
+	"Hhh......hhH..",
+	"hh........hh..",
 ]
-# 长发: 顺后背 (左) 垂下到肩。
+# 长发: 蓬松顶 + 两侧垂长。
 const _HAIR_LONG := [
-	"..HHHHH..",
-	".hhhhhhh.",
-	"hhhhhhhh.",
-	"Hhhh.....",
-	"hhhh.....",
-	"Hhh......",
-	"hhh......",
-	"hhh......",
-	"Hhh......",
-	"hhh......",
-	".Hh......",
+	"...h.h.hh.....",
+	"..hhhhhhhhh...",
+	".hhhhhhhhhhh..",
+	"hhhhhhhhhhhh..",
+	"hhhhhhhhhhhh..",
+	"hhhh....hhhh..",
+	"hhh......hhh..",
+	"hhh......hhh..",
+	"Hhh......hhH..",
+	"hh........hh..",
 ]
-# 马尾: 短顶 + 后脑扎一束往左下翘。
+# 马尾/扎起: 顶蓬松 + 收边。
 const _HAIR_PONYTAIL := [
-	"..HHHHH..",
-	".hhhhhhh.",
-	"hhhhhhhh.",
-	"HhhH.....",
-	"hh.......",
-	"hhh......",
-	".Hhh.....",
-	"..hh.....",
+	"....hhhh.h....",
+	"..hhhhhhhh....",
+	".hhhhhhhhh....",
+	"hhhhhhhhhh....",
+	"hhhhhhhhhh....",
+	"hhh....hhh....",
+	"Hh......hH....",
+	"h........h....",
 ]
-# 呆毛: 短发 + 头顶一根翘起。
+# 呆毛: 蓬松 + 头顶翘一撮。
 const _HAIR_AHOGE := [
-	"....hh...",
-	"...Hh....",
-	"..HHHHH..",
-	".hhhhhhh.",
-	"hhhhhhhh.",
-	"Hhhh.....",
-	"hhh......",
+	".....hh.......",
+	"...h.hh.hh....",
+	"..hhhhhhhhh...",
+	".hhhhhhhhhhh..",
+	"hhhhhhhhhhhh..",
+	"hhhh....hhhh..",
+	"Hhh......hhH..",
+	"hh........hh..",
 ]
-# 躯干 (衬衫 w / 阴影 D), 8 宽 × 15 高 (肩到腰)。
-# 阴影沿后侧(左)一整列 + 衣摆一条, 立体感 (不再散点像波点)。
+# 躯干 (衬衫 w / 阴影 D), 正面带肩 + 两侧袖。10 宽 × 7 高。
 const _TORSO := [
-	".wwwDDwwww.",
-	"1wwwwwwww1.",
-	"1wwwwwwwww1",
-	"1wwwwwwwww1",
-	"D1wwwwwww11",
-	"D1wwwwwww11",
-	"Dwwwwwwww11",
-	"Dwwwwwwww11",
-	"Dwwwwwwww11",
-	"Dwwwwwwww11",
-	"DDDDDDDDD11",
-	".wwwwwww1..",
-	".Dwwwww11..",
+	".wwwwwwww.",
+	"wwwwwwwwww",
+	"DwwwwwwwwD",
+	"DwwwwwwwwD",
+	"DwwwwwwwwD",
+	"DwwwwwwwwD",
+	".DwwwwwwD.",
 ]
-# 垂下的胳膊: 袖子(衬衫 w/D) + 小臂(皮肤 s/k) + 手, 3 宽。画在衣服前面。
-const _ARM := [
-	"ww.",
-	"www",
-	"Dww",
-	"Dss",
-	"sss",
-	"ssk",
-	"ssk",
-	"skk",
-	".kk",
+# 两只手 (皮肤, 垂在袖子下两侧)。整片 (含中间空)。10 宽 × 2 高。
+const _HANDS := [
+	"s........s",
+	"k........k",
 ]
-# 后臂 (远侧那条手, 画在身体后面): 整体用深色 (袖 D / 小臂 k) 表示在后/远。
-const _ARM_BACK := [
-	"DD.",
-	"DDD",
-	"DDD",
-	"Dkk",
-	"kkk",
-	"kkk",
-	"kkk",
-	"kkk",
-	".kk",
-]
-# 单腿 (裤子 b / 阴影 B), 3 宽 × 15 高。后侧(左)一列阴影, 立体 (不再中间散点)。
+# 单腿 (裤 b / 阴影 B)。3 宽 × 5 高。
 const _LEG := [
-	"Bbbb3",
-	"Bbbb3",
-	"Bbbb3",
-	"Bbbb3",
-	"Bbbb3",
-	"Bbbb3",
-	"Bbbb3",
-	"Bbbb3",
-	"Bbbb3",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
+	"Bbb",
 ]
-# 迈步腿: 往前迈 (髋在左上→脚在右下, 脚朝前)。走路用, 脚一前一后落地, 不上下抖。
-const _LEG_FWD := [
-	"Bbbb..",
-	"Bbbb..",
-	".Bbbb.",
-	".Bbbb.",
-	".Bbbb.",
-	"..bbbb",
-	"..bbbb",
-	"..bbbb",
-	"..bbbb",
-]
-# 迈步腿: 往后蹬 (髋在右上→脚在左下, 脚朝后)。
-const _LEG_BACK := [
-	"..bbbb",
-	"..bbbb",
-	".bbbb.",
-	".bbbb.",
-	".bbbb.",
-	"Bbbb..",
-	"Bbbb..",
-	"Bbbb..",
-	"Bbbb..",
-]
-# 靴 (o / 阴影 O / 高光 P), 5 宽。带鞋面高光 + 鞋底深色。
-const _BOOT_B := [
-	"ooPoo",
-	"ooooo",
-	"OOOOO",
-	"OOOOO",
+# 鞋 (o / O)。4 宽 × 2 高。
+const _SHOE_B := [
+	"oooo",
+	"OOOO",
 ]
 
 
-# 主入口
 static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> SpriteFrames:
 	var pal := _palette_from(appearance)
 	var anims := {
@@ -203,18 +133,147 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 
 static func _frame(ap: Dictionary, pose: String) -> Array:
 	var layers := [
-		_cape_layer(ap, pose),
 		_body_layer(ap, pose),
 		_pants_layer(ap, pose),
 		_shirt_layer(ap, pose),
-		_arm_layer(ap, pose),    # 侧面只画近侧一只手 (在衣服前面); 走路前后摆
 		_hair_layer(ap, pose),
 	]
-	# 描边跑两遍 = 2px 粗黑边 (泰拉瑞亚式, 用户要更粗)。
-	return _outline(_outline(_composite(layers)))
+	return _outline(_composite(layers))
 
 
-# 泰拉瑞亚式黑描边: 沿小人轮廓外缘 (空格且 4-邻接有实心) 补一圈 'L'。
+static func _dy(pose: String) -> int:
+	return 1 if pose == "idle_b" else 0
+
+
+# 身体层: 脸 + 两手 + 鞋 (躯干/腿留空)。男女不同脸。
+static func _body_layer(ap: Dictionary, pose: String) -> Array:
+	var g := _blank()
+	var dy := _dy(pose)
+	var head: Array = _HEAD_F if int(ap.get("gender", 0)) == 1 else _HEAD
+	_place(g, 5 + dy, 5, head)
+	_place(g, 18 + dy, 4, _HANDS)   # 两手垂在衬衫下
+	_place_shoes(g, pose, dy)
+	return g
+
+
+static func _pants_layer(_ap: Dictionary, pose: String) -> Array:
+	var g := _blank()
+	var dy := _dy(pose)
+	match pose:
+		"walk_a":   # 左腿前(下) 右腿后(上一点) — 走路交替
+			_place(g, 20 + dy, 5, _LEG)
+			_place(g, 21 + dy, 10, _LEG)
+		"walk_c":
+			_place(g, 21 + dy, 5, _LEG)
+			_place(g, 20 + dy, 10, _LEG)
+		"jump":
+			_place(g, 20 + dy, 5, _slice(_LEG, 0, 4))
+			_place(g, 20 + dy, 10, _slice(_LEG, 0, 4))
+		_:          # idle/fall: 双腿站开
+			_place(g, 20 + dy, 5, _LEG)
+			_place(g, 20 + dy, 10, _LEG)
+	return g
+
+
+static func _shirt_layer(ap: Dictionary, pose: String) -> Array:
+	var g := _blank()
+	var dy := _dy(pose)
+	if int(ap.get("gender", 0)) == 1:
+		_place(g, 13 + dy, 4, _female_torso(int(ap.get("chest_size", 1))))
+	else:
+		_place(g, 13 + dy, 4, _TORSO)
+	return g
+
+
+# 女躯干: 同位, 腰略收 + 胸口 (上排) 微鼓。正面对称。
+static func _female_torso(cs: int) -> Array:
+	cs = clampi(cs, 0, 5)
+	var rows := [
+		".wwwwwwww.",
+		"wwwwwwwwww",
+		"DwwwwwwwwD",
+		".DwwwwwwD.",
+		".DwwwwwwD.",
+		".DwwwwwwD.",
+		"..DwwwwD..",
+	]
+	# 胸 (row 1-2) 微鼓: cs 越大中间略饱满 (低分辨率, 仅细微)
+	return rows
+
+
+static func _hair_layer(ap: Dictionary, pose: String) -> Array:
+	var g := _blank()
+	var dy := _dy(pose)
+	match int(ap.get("hair_style", 0)):
+		1:
+			_place(g, 1 + dy, 2, _HAIR_LONG)
+		2:
+			_place(g, 1 + dy, 2, _HAIR_PONYTAIL)
+		3:
+			_place(g, 0 + dy, 2, _HAIR_AHOGE)
+		_:
+			_place(g, 1 + dy, 2, _HAIR_SHORT)
+	return g
+
+
+static func _place_shoes(g: Array, pose: String, dy: int) -> void:
+	match pose:
+		"walk_a":
+			_place(g, 25 + dy, 4, _SHOE_B)
+			_place(g, 26 + dy, 9, _SHOE_B)
+		"walk_c":
+			_place(g, 26 + dy, 4, _SHOE_B)
+			_place(g, 25 + dy, 9, _SHOE_B)
+		"jump":
+			_place(g, 24 + dy, 4, _SHOE_B)
+			_place(g, 24 + dy, 9, _SHOE_B)
+		_:
+			_place(g, 25 + dy, 4, _SHOE_B)
+			_place(g, 25 + dy, 9, _SHOE_B)
+
+
+static func _palette_from(ap: Dictionary) -> Dictionary:
+	var skin: Color = ap.get("skin_color", DEFAULT_APPEARANCE["skin_color"])
+	var hair: Color = ap.get("hair_color", DEFAULT_APPEARANCE["hair_color"])
+	var shirt: Color = ap.get("shirt_color", DEFAULT_APPEARANCE["shirt_color"])
+	var pants: Color = ap.get("pants_color", DEFAULT_APPEARANCE["pants_color"])
+	var eye: Color = ap.get("eye_color", DEFAULT_APPEARANCE["eye_color"])
+	return {
+		".": Color(0, 0, 0, 0),
+		"s": skin, "k": skin.darkened(0.18),
+		"h": hair, "H": hair.darkened(0.28),
+		"w": shirt, "D": shirt.darkened(0.18),
+		"b": pants, "B": pants.darkened(0.28),
+		"i": eye, "W": _WHITE, "e": skin.darkened(0.30),
+		"o": _SHOE, "O": _SHOE_SH,
+		"L": _OUTLINE,
+	}
+
+
+# ---- 网格工具 ----
+static func _blank() -> Array:
+	var g: Array = []
+	for y in H:
+		g.append(".".repeat(W))
+	return g
+
+
+static func _composite(layers: Array) -> Array:
+	var out := _blank()
+	for layer in layers:
+		if layer == null:
+			continue
+		for y in H:
+			var base: String = out[y]
+			var top: String = layer[y]
+			var merged := ""
+			for x in W:
+				var tc := top.substr(x, 1)
+				merged += tc if tc != "." else base.substr(x, 1)
+			out[y] = merged
+	return out
+
+
 static func _outline(grid: Array) -> Array:
 	var out: Array = grid.duplicate(true)
 	for y in H:
@@ -237,204 +296,6 @@ static func _set_char(row: String, x: int, c: String) -> String:
 	return row.substr(0, x) + c + row.substr(x + 1)
 
 
-# 合并: 后层非 '.' 盖前层。
-static func _composite(layers: Array) -> Array:
-	var out := _blank()
-	for layer in layers:
-		if layer == null:
-			continue
-		for y in H:
-			var base: String = out[y]
-			var top: String = layer[y]
-			var merged := ""
-			for x in W:
-				var tc := top.substr(x, 1)
-				merged += tc if tc != "." else base.substr(x, 1)
-			out[y] = merged
-	return out
-
-
-# idle_b: 整体下沉 1px (呼吸)
-static func _dy(pose: String) -> int:
-	return 1 if pose == "idle_b" else 0
-
-
-# 披风层: Plan 2 一律透明 (cape_style 0; 其它号 Plan 4)。
-static func _cape_layer(_ap: Dictionary, _pose: String) -> Array:
-	return _blank()
-
-
-# 身体层: 头 + 前臂 + 靴 (躯干/腿留空给衣裤)。男女不同头 (女加睫毛/大眼珠)。
-static func _body_layer(ap: Dictionary, pose: String) -> Array:
-	var g := _blank()
-	var dy := _dy(pose)
-	var head: Array = _HEAD_F if int(ap.get("gender", 0)) == 1 else _HEAD
-	_place(g, 11 + dy, 5, head)
-	# 靴: 跟腿姿。
-	_place_boots(g, pose, dy)
-	return g
-
-
-# 手臂层 (画在衣服前面): 近侧那条胳膊从肩垂下, 袖子(衬衫色)+小臂(皮肤)+手。
-# 走路前后摆 (手会动); 受击/跳抬高。
-static func _arm_layer(_ap: Dictionary, pose: String) -> Array:
-	var g := _blank()
-	var dy := _dy(pose)
-	match pose:
-		"hurt", "jump":
-			_place(g, 18 + dy, 15, _ARM)   # 手抬高
-		"walk_a":
-			_place(g, 19 + dy, 16, _ARM)   # 往前上甩 (手在前/右)
-		"walk_c":
-			_place(g, 24 + dy, 13, _ARM)   # 往后下甩 (手在后/左)
-		_:
-			_place(g, 22 + dy, 15, _ARM)
-	return g
-
-
-# 后臂层 (画在身体后面): 远侧那只手, 在后方(左)露出, 走路跟前臂**反向**摆。
-static func _arm_back_layer(_ap: Dictionary, pose: String) -> Array:
-	var g := _blank()
-	var dy := _dy(pose)
-	match pose:
-		"hurt", "jump":
-			_place(g, 18 + dy, 3, _ARM_BACK)
-		"walk_a":   # 前臂往前 → 后臂往后下
-			_place(g, 24 + dy, 3, _ARM_BACK)
-		"walk_c":   # 前臂往后 → 后臂往前上
-			_place(g, 20 + dy, 4, _ARM_BACK)
-		_:
-			_place(g, 22 + dy, 3, _ARM_BACK)
-	return g
-
-
-# 裤子层: pants_style 0 (长裤); 其它号回退。
-static func _pants_layer(_ap: Dictionary, pose: String) -> Array:
-	var g := _blank()
-	var dy := _dy(pose)
-	match pose:
-		"walk_a":   # 迈步: 前腿往前迈(脚在右), 后腿往后蹬(脚在左); 脚都落地, 不上下抖
-			_place(g, 33 + dy, 11, _LEG_FWD)
-			_place(g, 33 + dy, 3, _LEG_BACK)
-		"walk_c":   # 反相迈步 (前后腿对调, 看着像交替迈步)
-			_place(g, 33 + dy, 10, _LEG_FWD)
-			_place(g, 33 + dy, 2, _LEG_BACK)
-		"jump":     # 收腿 (短)
-			_place(g, 33 + dy, 7, _slice(_LEG, 0, 6))
-			_place(g, 33 + dy, 12, _slice(_LEG, 0, 6))
-		"fall":     # 展腿
-			_place(g, 33 + dy, 5, _LEG)
-			_place(g, 33 + dy, 14, _LEG)
-		_:          # idle: 双腿并拢
-			_place(g, 33 + dy, 7, _LEG)
-			_place(g, 33 + dy, 12, _LEG)
-	return g
-
-
-# 衬衫层: shirt_style 0 (T恤); 其它号回退。女版用窄躯干 + 胸口前凸 (chest_size)。
-static func _shirt_layer(ap: Dictionary, pose: String) -> Array:
-	var g := _blank()
-	var dy := _dy(pose)
-	if int(ap.get("gender", 0)) == 1:
-		_place(g, 21 + dy, 6, _female_torso(int(ap.get("chest_size", 1))))
-	else:
-		_place(g, 21 + dy, 6, _TORSO)
-	return g
-
-
-# 女躯干 (衬衫): 跟男躯干**同宽同位** (11 宽 @ col6, 对齐头/腿/手臂), 只腰略收 + 胸口前凸。
-static func _female_torso(cs: int) -> Array:
-	cs = clampi(cs, 0, 5)
-	var rows := [
-		".wwwDDwwww.",
-		"1wwwwwwww1.",
-		"1wwwwwwwww1",
-		"1wwwwwwwww1",
-		"D1wwwwwww11",
-		"D1wwwwwww11",
-		"Dwwwwwww11.",
-		"Dwwwwwww11.",
-		"Dwwwwwww11.",
-		"Dwwwwwww11.",
-		"DDDDDDDD11.",
-		".wwwwww1...",
-		".Dwwww11...",
-	]
-	# 胸口前凸 (上前部 rows 2..5 右侧加 cs 列, 最前一列高光)。
-	if cs > 0:
-		var bulge: String = "w".repeat(maxi(cs - 1, 0)) + "1"
-		for r in range(2, 6):
-			rows[r] = rows[r] + bulge
-	return rows
-
-
-# 头发层: 4 款 (0 短发 / 1 长发 / 2 马尾 / 3 呆毛); 未知号回退短发。
-static func _hair_layer(ap: Dictionary, pose: String) -> Array:
-	var g := _blank()
-	var dy := _dy(pose)
-	match int(ap.get("hair_style", 0)):
-		1:
-			_place(g, 10 + dy, 6, _HAIR_LONG)
-		2:
-			_place(g, 10 + dy, 6, _HAIR_PONYTAIL)
-		3:
-			_place(g, 8 + dy, 6, _HAIR_AHOGE)
-		_:
-			_place(g, 8 + dy, 6, _HAIR_SHORT)
-	return g
-
-
-# 靴跟腿姿摆放。
-static func _place_boots(g: Array, pose: String, dy: int) -> void:
-	match pose:
-		"walk_a":   # 前脚(右) + 后脚(左), 同一地面高度 (不上下)
-			_place(g, 42 + dy, 13, _BOOT_B)
-			_place(g, 42 + dy, 3, _BOOT_B)
-		"walk_c":
-			_place(g, 42 + dy, 12, _BOOT_B)
-			_place(g, 42 + dy, 2, _BOOT_B)
-		"jump":
-			_place(g, 41 + dy, 7, _BOOT_B)
-			_place(g, 41 + dy, 12, _BOOT_B)
-		"fall":
-			_place(g, 42 + dy, 5, _BOOT_B)
-			_place(g, 42 + dy, 14, _BOOT_B)
-		_:
-			_place(g, 42 + dy, 7, _BOOT_B)
-			_place(g, 42 + dy, 12, _BOOT_B)
-
-
-static func _palette_from(ap: Dictionary) -> Dictionary:
-	var skin: Color = ap.get("skin_color", DEFAULT_APPEARANCE["skin_color"])
-	var hair: Color = ap.get("hair_color", DEFAULT_APPEARANCE["hair_color"])
-	var shirt: Color = ap.get("shirt_color", DEFAULT_APPEARANCE["shirt_color"])
-	var pants: Color = ap.get("pants_color", DEFAULT_APPEARANCE["pants_color"])
-	var cape: Color = ap.get("cape_color", DEFAULT_APPEARANCE["cape_color"])
-	var eye: Color = ap.get("eye_color", DEFAULT_APPEARANCE["eye_color"])
-	return {
-		".": Color(0, 0, 0, 0),
-		"s": skin, "k": skin.darkened(0.18),
-		"h": hair, "H": hair.darkened(0.28),
-		"w": shirt, "D": shirt.darkened(0.28),
-		"b": pants, "B": pants.darkened(0.28),
-		"c": cape, "C": cape.darkened(0.28),
-		"i": eye, "W": _WHITE, "e": _EYE_DARK, "m": _MOUTH,
-		"o": _BOOT, "O": _BOOT_SH, "P": _BOOT.lightened(0.22),
-		"L": _OUTLINE,
-		# 高光 (亮面, 加细节): 衬衫/头发/裤子各一档亮
-		"1": shirt.lightened(0.16), "2": hair.lightened(0.24), "3": pants.lightened(0.16),
-	}
-
-
-# ---- 网格工具 ----
-static func _blank() -> Array:
-	var g: Array = []
-	for y in H:
-		g.append(".".repeat(W))
-	return g
-
-
-# 把 block (ascii 子图) 摆到 grid 的 (top,left); 越界裁掉; '.' 不覆盖 (透明)。
 static func _place(grid: Array, top: int, left: int, block: Array) -> void:
 	for by in block.size():
 		var gy := top + by
@@ -452,6 +313,5 @@ static func _place(grid: Array, top: int, left: int, block: Array) -> void:
 		grid[gy] = merged
 
 
-# 取 block 的前 n 行 (收腿用)。
 static func _slice(block: Array, from: int, n: int) -> Array:
 	return block.slice(from, from + n)

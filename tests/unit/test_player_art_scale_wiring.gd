@@ -10,13 +10,12 @@ func test_artcache_player_frames_for_returns_frames():
 	}
 	var sf = ArtCache.player_frames_for(ap)
 	assert_true(sf is SpriteFrames, "返回 SpriteFrames")
-	assert_eq(sf.get_frame_texture("idle", 0).get_width(), 24, "24 宽")
+	assert_eq(sf.get_frame_texture("idle", 0).get_width(), 18, "18 宽 (正面版)")
 
-func test_player_scene_sprite_scaled_for_48px_art():
-	# 24×48 art × scale 应 ≈ 旧 12×24 × (1.2,1.25) = 屏幕 (14.4, 30)
+func test_player_scene_sprite_scaled():
 	var p = preload("res://scenes/player/player.tscn").instantiate()
 	add_child_autofree(p)
 	var spr: AnimatedSprite2D = p.get_node("AnimatedSprite2D")
-	assert_almost_eq(spr.scale.x, 0.6, 0.01, "scale.x 减半")
-	assert_almost_eq(spr.scale.y, 0.625, 0.01, "scale.y 减半")
-	assert_eq(spr.offset, Vector2(-12, 0), "offset 水平居中 24 宽")
+	assert_almost_eq(spr.scale.x, 0.85, 0.01, "scale.x")
+	assert_almost_eq(spr.scale.y, 0.85, 0.01, "scale.y")
+	assert_eq(spr.offset, Vector2(-9, 0), "offset 水平居中 18 宽")
