@@ -75,6 +75,23 @@ func test_female_differs_from_male():
 	var iff = PlayerArt.build_sprite_frames(f).get_frame_texture("idle", 0).get_image()
 	assert_gt(_count_diff(im, iff), 0, "男女不同")
 
+func test_chest_size_changes_female():
+	# 女生胸围滑条每动一格都要看得见变化 (修 '调了没反应')
+	var imgs := []
+	for cs in range(6):
+		var ap = _default_appearance(); ap["gender"] = 1; ap["chest_size"] = cs
+		imgs.append(PlayerArt.build_sprite_frames(ap).get_frame_texture("idle", 0).get_image())
+	for cs in range(5):
+		assert_gt(_count_diff(imgs[cs], imgs[cs + 1]), 0, "胸围 %d→%d 有变化" % [cs, cs + 1])
+
+func test_chest_size_male_unaffected():
+	# 胸围只对女生生效, 男生调它不该变
+	var a = _default_appearance(); a["gender"] = 0; a["chest_size"] = 0
+	var b = _default_appearance(); b["gender"] = 0; b["chest_size"] = 5
+	var ia = PlayerArt.build_sprite_frames(a).get_frame_texture("idle", 0).get_image()
+	var ib = PlayerArt.build_sprite_frames(b).get_frame_texture("idle", 0).get_image()
+	assert_eq(_count_diff(ia, ib), 0, "男生不受胸围影响")
+
 func test_unknown_style_no_crash():
 	var ap = _default_appearance(); ap["shirt_style"] = 99; ap["hair_style"] = 99
 	var sf = PlayerArt.build_sprite_frames(ap)
