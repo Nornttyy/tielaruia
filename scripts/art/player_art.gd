@@ -336,36 +336,34 @@ static func _shirt_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var dy := _dy(pose)
 	if int(ap.get("gender", 0)) == 1:
-		_place(g, 21 + dy, 7, _female_torso(int(ap.get("chest_size", 1))))
+		_place(g, 21 + dy, 6, _female_torso(int(ap.get("chest_size", 1))))
 	else:
 		_place(g, 21 + dy, 6, _TORSO)
 	return g
 
 
-# 女躯干 (衬衫): 7 宽窄身 + 腰收; 胸口 (上 4 行) 朝右(前)按 chest_size 0..5 前凸。
+# 女躯干 (衬衫): 跟男躯干**同宽同位** (11 宽 @ col6, 对齐头/腿/手臂), 只腰略收 + 胸口前凸。
 static func _female_torso(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
-		".wwwww.",
-		"Dwwwww.",
-		"Dwwwwww",
-		"Dwwwwww",
-		"Dwwwwww",
-		"Dwwww..",
-		"Dwwww..",
-		"Dwwwww.",
-		"Dwwwwww",
-		"Dwwwwww",
-		"DDDDDw.",
-		".wwww..",
-		".wwww..",
-		".wwww..",
-		".wwww..",
+		".wwwDDwwww.",
+		"1wwwwwwww1.",
+		"1wwwwwwwww1",
+		"1wwwwwwwww1",
+		"D1wwwwwww11",
+		"D1wwwwwww11",
+		"Dwwwwwww11.",
+		"Dwwwwwww11.",
+		"Dwwwwwww11.",
+		"Dwwwwwww11.",
+		"DDDDDDDD11.",
+		".wwwwww1...",
+		".Dwwww11...",
 	]
-	# 胸口前凸: rows 1..4 在右侧(前)加 cs 列 (最前一列 D 阴影)。
+	# 胸口前凸 (上前部 rows 2..5 右侧加 cs 列, 最前一列高光)。
 	if cs > 0:
-		var bulge: String = ("w".repeat(cs - 1) + "D") if cs >= 1 else ""
-		for r in range(1, 5):
+		var bulge: String = "w".repeat(maxi(cs - 1, 0)) + "1"
+		for r in range(2, 6):
 			rows[r] = rows[r] + bulge
 	return rows
 

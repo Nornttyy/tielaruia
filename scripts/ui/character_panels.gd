@@ -14,6 +14,8 @@ var _creator_panel: Panel
 var _preview: AnimatedSprite2D
 var _name_edit: LineEdit
 var _chest_row: HBoxContainer
+var _chest_slider: HSlider
+var _step_vals: Dictionary = {}
 var _appearance: Dictionary = {}
 
 # 色块候选 (暖色优先)
@@ -174,6 +176,7 @@ func _stepper(label: String, key: String, lo: int, hi: int) -> HBoxContainer:
 	val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var refresh := func(): val.text = str(int(_appearance[key]))
 	refresh.call()
+	_step_vals[key] = val   # 存引用, _sync_controls 能刷新
 	row.add_child(val)
 	var right := Button.new(); right.text = "▶"; row.add_child(right)
 	left.pressed.connect(func():
@@ -189,6 +192,8 @@ func _slider_row(label: String, key: String, lo: int, hi: int) -> HBoxContainer:
 	var s := HSlider.new(); s.min_value = lo; s.max_value = hi; s.step = 1
 	s.value = int(_appearance[key]); s.custom_minimum_size = Vector2(180, 0)
 	s.value_changed.connect(func(v): _appearance[key] = int(v); _rebuild_preview())
+	if key == "chest_size":
+		_chest_slider = s
 	row.add_child(s)
 	return row
 
@@ -210,9 +215,20 @@ func _color_row(label: String, key: String, colors: Array) -> HBoxContainer:
 
 func _set_gender(g: int) -> void:
 	_appearance["gender"] = g
+	# 切性别给个对应的默认发型 (男短发0 / 女长发1), 让性别一眼看出区别; 之后还能自己改。
+	_appearance["hair_style"] = 1 if g == 1 else 0
 	if _chest_row != null:
 		_chest_row.visible = (g == 1)   # 胸围只女显示
+	_sync_controls()
 	_rebuild_preview()
+
+
+# 把控件的显示值同步到 _appearance (重开捏人 / 切性别后控件不再显旧值)。
+func _sync_controls() -> void:
+	for key in _step_vals.keys():
+		_step_vals[key].text = str(int(_appearance.get(key, 0)))
+	if _chest_slider != null:
+		_chest_slider.set_value_no_signal(int(_appearance.get("chest_size", 1)))
 
 
 func _set_creator_name(n: String) -> void:
