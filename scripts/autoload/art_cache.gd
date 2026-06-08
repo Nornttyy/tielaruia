@@ -240,6 +240,17 @@ static func _smart_resize_atlas_16_to_12(tex: ImageTexture) -> ImageTexture:
 			var cell := Image.create(16, 16, false, Image.FORMAT_RGBA8)
 			cell.blit_rect(src, Rect2i(cx * 16, cy * 16, 16, 16), Vector2i.ZERO)
 			cell.resize(12, 12, Image.INTERPOLATE_LANCZOS)
+			# LANCZOS 是平滑插值, 会把不透明像素和透明像素在边界上混成"半透明"
+			# → 草/树叶等带透明的方块看着半透明发虚。像素画每个点应非透即实:
+			# 把 alpha 卡硬 (≥0.5 → 不透明, 否则全透明), 去掉半透明边缘, 保留 LANCZOS 的颜色细节。
+			for py in 12:
+				for px in 12:
+					var c: Color = cell.get_pixel(px, py)
+					if c.a >= 0.5:
+						c.a = 1.0
+						cell.set_pixel(px, py, c)
+					else:
+						cell.set_pixel(px, py, Color(0, 0, 0, 0))
 			dst.blit_rect(cell, Rect2i(0, 0, 12, 12), Vector2i(cx * 12, cy * 12))
 	return ImageTexture.create_from_image(dst)
 
