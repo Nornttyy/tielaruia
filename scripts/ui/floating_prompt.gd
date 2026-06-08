@@ -2,6 +2,8 @@
 # show_prompt(world_pos, text) 后每帧重新计算屏幕位置（玩家移动时跟随）。
 extends CanvasLayer
 
+const UIStyle = preload("res://scripts/ui/ui_style.gd")
+
 @onready var label: Label = $Label
 
 var _target_world_pos: Vector2 = Vector2.ZERO
@@ -11,6 +13,9 @@ var _showing: bool = false
 func _ready() -> void:
 	visible = false
 	label.visible = false
+	# 蓝色圆角小底 (跟整体 UI 统一)
+	label.add_theme_stylebox_override("normal", UIStyle.prompt_box())
+	label.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0))
 
 
 func show_prompt(world_pos: Vector2, text: String) -> void:

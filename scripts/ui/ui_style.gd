@@ -107,3 +107,13 @@ static func style_line_edit(le: LineEdit) -> void:
 # 滑条 (音量/镜头): 轨道蓝色 (grabber 保留默认圆点)
 static func style_slider(sl: Control) -> void:
 	sl.add_theme_stylebox_override("slider", _sb(SLOT_BG, SLOT_BORDER, 4, 1))
+
+
+# 小提示框 ("按 E" 那种世界跟随提示): 蓝色圆角小底
+static func prompt_box() -> StyleBoxFlat:
+	var s := _sb(Color(0.06, 0.10, 0.18, 0.85), PANEL_BORDER, 7, 2)
+	s.content_margin_left = 8
+	s.content_margin_right = 8
+	s.content_margin_top = 3
+	s.content_margin_bottom = 3
+	return s

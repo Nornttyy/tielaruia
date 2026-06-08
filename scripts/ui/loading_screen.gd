@@ -7,9 +7,9 @@ signal finished     # 淡出动画结束 → main.gd queue_free 它
 const PlayerArt = preload("res://scripts/art/player_art.gd")
 const VIEWPORT_SIZE := Vector2(1280, 720)
 const BAR_SIZE := Vector2(480, 28)
-const BAR_BG_COLOR := Color8(58, 42, 26)
-const BAR_BORDER := Color8(212, 181, 138)
-const BAR_FILL_COLOR := Color8(255, 180, 110)
+const BAR_BG_COLOR := Color8(18, 32, 58)     # 深蓝底 (统一蓝色 UI)
+const BAR_BORDER := Color8(72, 122, 184)     # 蓝边
+const BAR_FILL_COLOR := Color8(90, 170, 240) # 蓝色进度
 const TEXT_WARM := Color8(242, 194, 101)
 const TIP_AUTO_INTERVAL := 4.0
 const TIP_HINT_SUFFIX := "    (点击换一条)"

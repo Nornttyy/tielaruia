@@ -14,6 +14,15 @@ const BLUE_SLOT_BORDER := Color(0.275, 0.47, 0.706, 1.0)
 const CELL_NORMAL_COLOR := Color(0.07, 0.125, 0.227, 0.8)
 
 
+# 给按钮 (配方卡/创造格) 套蓝色圆角 (normal/hover/pressed/disabled)
+func _style_item_button(btn: Button) -> void:
+	btn.add_theme_stylebox_override("normal", _blue_slot_style())
+	btn.add_theme_stylebox_override("hover", _blue_slot_style(Color(0.14, 0.25, 0.42, 0.92), Color(0.42, 0.62, 0.86, 1.0)))
+	btn.add_theme_stylebox_override("pressed", _blue_slot_style(Color(0.05, 0.09, 0.16, 0.92), BLUE_SLOT_BORDER))
+	btn.add_theme_stylebox_override("focus", _blue_slot_style(Color(0.14, 0.25, 0.42, 0.92), Color(0.42, 0.62, 0.86, 1.0)))
+	btn.add_theme_stylebox_override("disabled", _blue_slot_style(Color(0.05, 0.07, 0.12, 0.7), Color(0.25, 0.32, 0.42, 1.0)))
+
+
 # 蓝色圆角槽样式 (统一: 背包槽/盔甲槽/创造格都用)
 func _blue_slot_style(bg: Color = BLUE_SLOT_BG, border: Color = BLUE_SLOT_BORDER) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
@@ -184,6 +193,7 @@ func _build_creative_section() -> void:
 			continue   # 没图标的跳过 (不该有, 但保险)
 		var btn := Button.new()
 		btn.custom_minimum_size = Vector2(30, 30)
+		_style_item_button(btn)
 		btn.tooltip_text = _zh_name(item_id)
 		var icon := TextureRect.new()
 		icon.texture = tex
@@ -229,6 +239,7 @@ func _make_recipe_row(recipe: Dictionary) -> Dictionary:
 	# 细节 (工作台需求) 仍在 hover tooltip.
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(180, 54)  # 高度 54 = 上 24 + 下 16 + padding
+	_style_item_button(btn)
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.tooltip_text = _recipe_tooltip(recipe)
 
