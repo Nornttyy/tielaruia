@@ -22,8 +22,8 @@ const VIEWPORT_SIZE := Vector2(1280, 720)
 const CLOUD_COUNT := 7          # 4→7: 云更多更丰富 (大小/透明度分层做远近)
 const TREE_COUNT := 5
 # 移动森林: 两层视差树 (远 小/慢/淡, 近 大/快). 横向滚动 + 循环.
-const TREE_FAR_COUNT := 10
-const TREE_NEAR_COUNT := 7
+const TREE_FAR_COUNT := 20
+const TREE_NEAR_COUNT := 20
 const TREE_FAR_SPEED := Vector2(8.0, 16.0)
 const TREE_NEAR_SPEED := Vector2(22.0, 38.0)
 const SLIME_COUNT := 2
@@ -196,15 +196,19 @@ const TREE_H := 30.0    # 纹理高 (树底贴地用)
 
 
 func _setup_trees() -> void:
-	# 移动森林: 远层 (小/慢/淡, 纵深) 先建在后; 近层 (大/快/实) 后建在前. 两种树形交替.
+	# 移动森林 (用户要"全是大树"): 远近两层都密密铺满, 大棵, 均匀分布 + 抖动 → 没大空档, 整片森林。
+	# 远层 (大/慢/略淡, 纵深) 先建在后; 近层 (更大/快/实) 后建在前. 两种树形交替。
 	var t0 = MenuSceneArt.make_forest_tree(0)   # 圆胖
 	var t1 = MenuSceneArt.make_forest_tree(1)   # 高瘦
 	for i in TREE_FAR_COUNT:
-		_add_tree(t0 if i % 2 == 0 else t1, randf() * (VIEWPORT_SIZE.x + 200.0) - 100.0,
-			randf_range(1.3, 1.9), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 0.72, 0.72)
+		# 均匀分槽 + 槽内随机 → 铺满不留缝
+		var fx: float = (float(i) + randf()) / float(TREE_FAR_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
+		_add_tree(t0 if i % 2 == 0 else t1, fx,
+			randf_range(2.2, 3.0), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 0.82, 0.70)
 	for i in TREE_NEAR_COUNT:
-		_add_tree(t0 if i % 2 == 0 else t1, randf() * (VIEWPORT_SIZE.x + 200.0) - 100.0,
-			randf_range(2.4, 3.6), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.78)
+		var nx: float = (float(i) + randf()) / float(TREE_NEAR_COUNT) * (VIEWPORT_SIZE.x + 240.0) - 120.0
+		_add_tree(t0 if i % 2 == 0 else t1, nx,
+			randf_range(3.4, 4.6), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.80)
 
 
 # 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
