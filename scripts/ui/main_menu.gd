@@ -21,6 +21,11 @@ const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 const VIEWPORT_SIZE := Vector2(1280, 720)
 const CLOUD_COUNT := 7          # 4→7: 云更多更丰富 (大小/透明度分层做远近)
 const TREE_COUNT := 5
+# 移动森林: 两层视差树 (远 小/慢/淡, 近 大/快). 横向滚动 + 循环.
+const TREE_FAR_COUNT := 10
+const TREE_NEAR_COUNT := 7
+const TREE_FAR_SPEED := Vector2(8.0, 16.0)
+const TREE_NEAR_SPEED := Vector2(22.0, 38.0)
 const SLIME_COUNT := 2
 const BIRD_COUNT := 5           # 天上飘几只小鸟
 const CLOUD_SPEED_RANGE := Vector2(6.0, 14.0)
@@ -43,6 +48,7 @@ const BTN_PRESSED_BG := Color8(22, 40, 74)
 
 var _character_panels: Control = null
 var _cloud_speeds: Array[float] = []
+var _tree_speeds: Array[float] = []   # 跟 _trees_root 子节点一一对应 (移动森林)
 var _bird_speeds: Array[float] = []
 var _bird_phase: Array[float] = []     # 小鸟上下飘的相位
 var _bird_t: float = 0.0
@@ -147,6 +153,7 @@ func _process(delta: float) -> void:
 		return
 	_animate_clouds(delta)
 	_animate_birds(delta)
+	_animate_trees(delta)
 	_animate_slimes(delta)
 
 
@@ -185,17 +192,36 @@ func _setup_hills() -> void:
 
 
 func _setup_trees() -> void:
+	# 移动森林: 远层 (小/慢/淡, 营造纵深) 先建 → 渲染在后; 近层 (大/快/实) 后建 → 在前.
 	var tree_tex = MenuSceneArt.make_tree()
-	var x_positions := [80.0, 280.0, 540.0, 820.0, 1100.0]
-	var scales := [3.0, 4.0, 3.5, 4.5, 3.0]
-	for i in TREE_COUNT:
-		var s := Sprite2D.new()
-		s.texture = tree_tex
-		s.centered = false
-		s.scale = Vector2(scales[i], scales[i])
-		# 12×16 像素 × scale，树底贴到地面 (y = 0.75 * 720)
-		s.position = Vector2(x_positions[i], VIEWPORT_SIZE.y * 0.75 - 16.0 * scales[i])
-		_trees_root.add_child(s)
+	for i in TREE_FAR_COUNT:
+		_add_tree(tree_tex, randf() * (VIEWPORT_SIZE.x + 200.0) - 100.0,
+			randf_range(2.0, 2.9), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 0.65, 0.72)
+	for i in TREE_NEAR_COUNT:
+		_add_tree(tree_tex, randf() * (VIEWPORT_SIZE.x + 200.0) - 100.0,
+			randf_range(3.8, 5.4), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.75)
+
+
+# 加一棵树. ground_ratio: 树底所在 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
+func _add_tree(tex: Texture2D, x: float, scale: float, speed: float, alpha: float, ground_ratio: float) -> void:
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.centered = false
+	s.scale = Vector2(scale, scale)
+	s.modulate.a = alpha
+	s.position = Vector2(x, VIEWPORT_SIZE.y * ground_ratio - 16.0 * scale)
+	_trees_root.add_child(s)
+	_tree_speeds.append(speed)
+
+
+# 森林向左滚动 (移动感); 树移出左边 → 绕回右边 (无限森林)
+func _animate_trees(delta: float) -> void:
+	for i in _trees_root.get_child_count():
+		var t: Sprite2D = _trees_root.get_child(i)
+		t.position.x -= _tree_speeds[i] * delta
+		var tree_w: float = 12.0 * t.scale.x
+		if t.position.x < -tree_w:
+			t.position.x = VIEWPORT_SIZE.x + randf_range(20.0, 180.0)
 
 
 func _setup_stars() -> void:
