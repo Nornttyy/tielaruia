@@ -37,13 +37,18 @@ func _make_slot() -> PanelContainer:
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.clip_contents = true   # 防溢出影响相邻槽
+	# 蓝色圆角槽 (用户要求): 深蓝半透底 + 中蓝边 + 圆角
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0, 0, 0, 0.4)
-	style.border_color = Color(0.4, 0.4, 0.4, 1.0)
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
+	style.bg_color = Color8(18, 32, 58, 205)
+	style.border_color = Color8(70, 120, 180)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 9
+	style.corner_radius_top_right = 9
+	style.corner_radius_bottom_left = 9
+	style.corner_radius_bottom_right = 9
 	panel.add_theme_stylebox_override("panel", style)
 	# 用一个 Control 作为绝对定位容器，所有 child 用 anchors
 	var layout := Control.new()
@@ -113,8 +118,10 @@ func refresh() -> void:
 			count_label.text = "" if slot_data.count <= 1 else str(slot_data.count)
 		var style: StyleBoxFlat = panel.get_theme_stylebox("panel") as StyleBoxFlat
 		var is_selected: bool = (i == _player_inv.hotbar_selected)
-		style.border_color = Color(1, 1, 0.4, 1) if is_selected else Color(0.4, 0.4, 0.4, 1)
-		style.border_width_left = 2 if is_selected else 1
-		style.border_width_top = 2 if is_selected else 1
-		style.border_width_right = 2 if is_selected else 1
-		style.border_width_bottom = 2 if is_selected else 1
+		# 选中: 亮青蓝边 + 更亮的蓝底 (一眼看出拿的哪个); 没选: 中蓝边
+		style.border_color = Color8(110, 205, 255) if is_selected else Color8(70, 120, 180)
+		style.bg_color = Color8(34, 64, 108, 225) if is_selected else Color8(18, 32, 58, 205)
+		style.border_width_left = 3 if is_selected else 2
+		style.border_width_top = 3 if is_selected else 2
+		style.border_width_right = 3 if is_selected else 2
+		style.border_width_bottom = 3 if is_selected else 2

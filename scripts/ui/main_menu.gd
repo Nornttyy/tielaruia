@@ -26,13 +26,14 @@ const CLOUD_SPEED_RANGE := Vector2(6.0, 14.0)
 const BIRD_SPEED_RANGE := Vector2(22.0, 40.0)
 const SLIME_HOP_INTERVAL := 2.5
 
-const BTN_NORMAL_BG := Color8(58, 42, 26)
-const BTN_NORMAL_BORDER := Color8(212, 181, 138)
-const BTN_NORMAL_TEXT := Color8(242, 194, 101)
-const BTN_HOVER_BG := Color8(90, 58, 42)
-const BTN_HOVER_BORDER := Color8(242, 194, 101)
-const BTN_HOVER_TEXT := Color8(255, 245, 220)
-const BTN_PRESSED_BG := Color8(42, 26, 10)
+# 蓝色 UI (用户要求): 深蓝按钮 + 浅蓝字, 悬停更亮
+const BTN_NORMAL_BG := Color8(34, 58, 100)
+const BTN_NORMAL_BORDER := Color8(90, 150, 210)
+const BTN_NORMAL_TEXT := Color8(192, 224, 252)
+const BTN_HOVER_BG := Color8(54, 96, 156)
+const BTN_HOVER_BORDER := Color8(120, 196, 250)
+const BTN_HOVER_TEXT := Color8(240, 248, 255)
+const BTN_PRESSED_BG := Color8(22, 40, 74)
 
 @onready var _hills: Sprite2D = $BackgroundLayer/Hills
 @onready var _trees_root: Node2D = $BackgroundLayer/Trees
