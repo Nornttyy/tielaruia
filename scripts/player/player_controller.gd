@@ -230,6 +230,9 @@ func _is_inventory_ui_open() -> bool:
 		return true
 	if ch != null and ch.has_method("is_open") and ch.is_open():
 		return true
+	# 联机聊天打字时也暂停玩家移动 (不然打 WASD 会一边走一边打字)
+	if get_tree().get_first_node_in_group("chat_typing") != null:
+		return true
 	return false
 
 

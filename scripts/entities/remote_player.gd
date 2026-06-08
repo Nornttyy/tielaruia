@@ -19,6 +19,7 @@ func _ready() -> void:
 	_sprite.play("idle")
 	_sprite.modulate = Color(0.7, 0.9, 1.0)  # 偏蓝, 跟本地玩家 (白) 区分
 	z_index = 1
+	add_to_group("remote_player")   # 聊天气泡靠这个组找到对方位置
 
 
 func _process(delta: float) -> void:
