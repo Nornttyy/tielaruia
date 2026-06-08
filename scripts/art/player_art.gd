@@ -37,9 +37,9 @@ const _FACE := [
 	".sssssss.",
 	"sssssssss",
 	"sssssssss",
-	"ssssssWis",   # 眼 (2宽×3高): 后列白眼白 + 前列蓝眼珠 (看前方), 眼珠小
-	"ssssssWis",
-	"ssssssiis",   # 下沿眼珠多 1px (像下眼睑)
+	"ssssssWis",   # 眼 (2宽×3高): 眼珠填满 + 后上角 1px 白高光 (照游戏其它人形, 不留大白)
+	"ssssssiis",
+	"ssssssiis",
 	"sssssssks",   # 脸颊 + 前下颌一点阴影
 	"..sssss..",
 	"...sss...",   # 脖子
@@ -51,7 +51,7 @@ const _FACE_F := [
 	"sssssssss",
 	"sssssssss",
 	"sssssseis",   # 睫毛(后) + 眼珠(前)
-	"ssssssWis",   # 白 + 眼珠
+	"ssssssiis",   # 眼珠填满
 	"ssssssiis",   # 眼珠
 	"sssssssks",
 	"..sssss..",
