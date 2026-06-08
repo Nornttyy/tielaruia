@@ -204,16 +204,16 @@ func _setup_trees() -> void:
 	for i in TREE_WALL_COUNT:
 		var wx: float = (float(i) + randf()) / float(TREE_WALL_COUNT) * (VIEWPORT_SIZE.x + 160.0) - 80.0
 		_add_tree(t0 if i % 2 == 0 else t1, wx,
-			randf_range(2.0, 2.7), randf_range(TREE_WALL_SPEED.x, TREE_WALL_SPEED.y), 0.88, 0.60)
+			randf_range(3.6, 4.8), randf_range(TREE_WALL_SPEED.x, TREE_WALL_SPEED.y), 0.9, 0.58)
 	for i in TREE_FAR_COUNT:
 		# 均匀分槽 + 槽内随机 → 铺满不留缝
 		var fx: float = (float(i) + randf()) / float(TREE_FAR_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
 		_add_tree(t0 if i % 2 == 0 else t1, fx,
-			randf_range(2.2, 3.0), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 0.82, 0.70)
+			randf_range(4.0, 5.2), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 0.9, 0.70)
 	for i in TREE_NEAR_COUNT:
 		var nx: float = (float(i) + randf()) / float(TREE_NEAR_COUNT) * (VIEWPORT_SIZE.x + 240.0) - 120.0
 		_add_tree(t0 if i % 2 == 0 else t1, nx,
-			randf_range(3.4, 4.6), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.80)
+			randf_range(4.8, 6.2), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.80)
 
 
 # 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
