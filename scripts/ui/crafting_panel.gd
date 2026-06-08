@@ -8,7 +8,26 @@ const InventoryCursor = preload("res://scripts/items/inventory_cursor.gd")
 const CELL_SIZE := 40
 const SLOT_SIZE := 36
 const RECIPE_SIZE := 48
-const CELL_NORMAL_COLOR := Color(0, 0, 0, 0.4)
+# 蓝色圆角槽 (跟热键栏/菜单统一)
+const BLUE_SLOT_BG := Color(0.07, 0.125, 0.227, 0.8)
+const BLUE_SLOT_BORDER := Color(0.275, 0.47, 0.706, 1.0)
+const CELL_NORMAL_COLOR := Color(0.07, 0.125, 0.227, 0.8)
+
+
+# 蓝色圆角槽样式 (统一: 背包槽/盔甲槽/创造格都用)
+func _blue_slot_style(bg: Color = BLUE_SLOT_BG, border: Color = BLUE_SLOT_BORDER) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = bg
+	s.border_color = border
+	s.border_width_left = 2
+	s.border_width_top = 2
+	s.border_width_right = 2
+	s.border_width_bottom = 2
+	s.corner_radius_top_left = 7
+	s.corner_radius_top_right = 7
+	s.corner_radius_bottom_left = 7
+	s.corner_radius_bottom_right = 7
+	return s
 
 signal opened
 signal closed
@@ -296,11 +315,8 @@ func _make_armor_slot(slot_kind: String, label_text: String) -> PanelContainer:
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.gui_input.connect(_on_armor_slot_input.bind(slot_kind))
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.15, 0.2, 0.6)  # 深背景, 跟普通槽区分
-	style.border_color = Color(0.5, 0.5, 0.6, 1)
-	style.border_width_left = 1; style.border_width_top = 1
-	style.border_width_right = 1; style.border_width_bottom = 1
+	# 盔甲槽: 更深的蓝 (跟普通背包槽区分)
+	var style := _blue_slot_style(Color(0.05, 0.08, 0.15, 0.85), Color(0.32, 0.52, 0.74, 1.0))
 	panel.add_theme_stylebox_override("panel", style)
 	var layout := Control.new()
 	layout.name = "Layout"
@@ -390,13 +406,7 @@ func _make_inv_slot(idx: int) -> PanelContainer:
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP   # 接受点击
 	panel.clip_contents = true
 	panel.gui_input.connect(_on_inv_slot_input.bind(idx))
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0, 0, 0, 0.4)
-	style.border_color = Color(0.4, 0.4, 0.4, 1)
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
+	var style := _blue_slot_style()
 	panel.add_theme_stylebox_override("panel", style)
 	var layout := Control.new()
 	layout.name = "Layout"
@@ -1015,13 +1025,7 @@ func _refresh_inv() -> void:
 func _make_cell(r: int, c: int) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(CELL_SIZE, CELL_SIZE)
-	var style := StyleBoxFlat.new()
-	style.bg_color = CELL_NORMAL_COLOR
-	style.border_color = Color(0.4, 0.4, 0.4, 1)
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
+	var style := _blue_slot_style()
 	panel.add_theme_stylebox_override("panel", style)
 	var icon := TextureRect.new()
 	icon.name = "Icon"
