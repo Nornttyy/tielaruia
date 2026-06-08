@@ -208,6 +208,11 @@ func _build_creative_section() -> void:
 
 # 点了"物品大全"里的物品: 免费拿一整组进背包
 func _on_creative_grab(item_id: String) -> void:
+	# 兜底: 面板若没绑定背包 (玩家加载时序 / 旧 bug 致 bind 没跑) 就现找一个, 否则点了没反应。
+	if _player_inv == null:
+		var p = get_tree().get_first_node_in_group("player")
+		if p != null:
+			_player_inv = p.get_node_or_null("PlayerInventory")
 	if _player_inv == null or not _player_inv.has_method("pickup"):
 		return
 	var n: int = ItemDB.max_stack(item_id)
