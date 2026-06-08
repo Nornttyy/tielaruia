@@ -1,11 +1,12 @@
-# 玩家像素画: 泰拉瑞亚式 **正面** 小人 (18×28)。两只白眼睛 + 大蓬松头发 + 两只手, 没嘴。
-# 按 CharacterData.appearance_dict() 分层拼装: 身体(皮肤+脸+鞋) → 裤子 → 衬衫(+袖) → 头发。
-# 正面对称; 朝向用 flip_h (左右镜像没差, 正面通用)。1px 黑描边。
+# 玩家像素画: 泰拉瑞亚式 **侧面** 小人 (16×26)。朝右 (flip_h 朝左)。
+# 一只眼 (眼白 W + 眼珠 i), 没嘴, 又大又蓬松的头发, 矮壮 Q 版比例 (头大腿短)。
+# 按 CharacterData.appearance_dict() 分层拼: 腿(裤+鞋) → 脸 → 衬衫 → 手臂 → 头发。
+# 1px 黑描边 (最后一步整体描)。站着轻微呼吸 (上半身下沉 1px); 走路两腿前后迈 + 一只手摆。
 extends RefCounted
 
 const PixelArt = preload("res://scripts/art/pixel_art.gd")
-const W := 18
-const H := 28
+const W := 16
+const H := 26
 
 const DEFAULT_APPEARANCE := {
 	"gender": 0, "hair_style": 0, "shirt_style": 0, "pants_style": 0,
@@ -20,102 +21,144 @@ const _SHOE_SH := Color8(48, 30, 15)
 const _WHITE := Color(0.98, 0.98, 1.0, 1)
 const _OUTLINE := Color8(30, 26, 30)
 
-# ---- 积木块 (正面对称; 大写=阴影) ----
-# 脸 (皮肤 s / 阴影 k): 两只白眼睛 (W 眼白 / i 眼珠), 没嘴。8 宽 × 8 高。
-const _HEAD := [
-	"..ssss..",
-	".ssssss.",
-	"ssssssss",
-	"sWWssWWs",
-	"siissiis",
-	"ssssssss",
-	".kssssk.",
-	"..ssss..",
+# ---- 摆放坐标 (composite 16×26; 行 0 顶, 行 25 脚底) ----
+const _FACE_TOP := 3
+const _FACE_LEFT := 4
+const _HAIR_TOP := 0
+const _HAIR_LEFT := 1
+const _TORSO_TOP := 13
+const _TORSO_LEFT := 5
+const _HIP := 19          # 腿顶 (胯) 所在行
+
+# ---- 积木块 ----
+# 侧脸 (朝右): 眼睛在前 (右) 侧。s 皮肤 / k 阴影 / W 眼白 / i 眼珠。9 宽 × 10 高。
+const _FACE := [
+	"...ssss..",
+	".sssssss.",
+	"sssssssss",
+	"sssssssss",
+	"sssssWWWs",   # 眼白上沿
+	"sssssWiWs",   # 眼珠 (1px, 眼白裹住 = 像眼球)
+	"sssssWWWs",   # 眼白下沿
+	"sssssssks",   # 脸颊 + 前下颌一点阴影
+	"..sssss..",
+	"...sss...",   # 脖子
 ]
-# 女脸: 加睫毛 (e 在眼上)。
-const _HEAD_F := [
-	"..ssss..",
-	".seeees.",
-	"ssssssss",
-	"sWWssWWs",
-	"siissiis",
-	"ssssssss",
-	".kssssk.",
-	"..ssss..",
+# 女脸: 眼上沿换成睫毛 (e, 露在发下), 看着更秀气。
+const _FACE_F := [
+	"...ssss..",
+	".sssssss.",
+	"sssssssss",
+	"sssssssss",
+	"ssssseees",   # 睫毛 (眼上沿)
+	"sssssWiWs",   # 眼珠
+	"sssssWWWs",   # 眼白下沿
+	"sssssssks",
+	"..sssss..",
+	"...sss...",
 ]
-# 大蓬松头发 (盖头顶 + 两侧, 留脸): 14 宽 × 8 高。h 主色 / H 阴影。
+
+# 大蓬松短发 (盖头顶 + 后脑 + 前额留眼): h 主色 / H 阴影。14 宽 × 11 高。
 const _HAIR_SHORT := [
-	"...h.h.hh.....",
-	"..hhhhhhhhh...",
-	".hhhhhhhhhhh..",
+	"....hhhhhh....",
+	"..hhhhhhhhhh..",
+	".hhhhhhhhhhhh.",
+	"hhhhhhhhhhhhh.",
+	"hhhhhhhhhhhhhh",
+	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
-	"hhhhhhhhhhhh..",
-	"hhhh....hhhh..",
-	"Hhh......hhH..",
-	"hh........hh..",
+	"Hhhhhhhh...hh.",   # 后+顶留发, 中间空出眼睛, 前一缕刘海
+	"Hhhhhhh.......",
+	".HHhhh........",
+	"..HHh.........",
 ]
-# 长发: 蓬松顶 + 两侧垂长。
+# 长发: 同顶, 后脑一大片垂到腰。14 宽 × 16 高。
 const _HAIR_LONG := [
-	"...h.h.hh.....",
-	"..hhhhhhhhh...",
-	".hhhhhhhhhhh..",
+	"....hhhhhh....",
+	"..hhhhhhhhhh..",
+	".hhhhhhhhhhhh.",
+	"hhhhhhhhhhhhh.",
+	"hhhhhhhhhhhhhh",
+	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
+	"hhhhhhhh...hh.",
+	"hhhhhhh.......",
+	"hhhhhhh.......",
+	"hhhhhh........",
+	"hhhhhh........",
+	"hhhhhH........",
+	"hhhhhH........",
+	"Hhhhh.........",
+	".HHhh.........",
+]
+# 马尾: 短发 + 后脑伸出一束 (尾巴另块拼)。
+const _HAIR_PONY := [
+	"....hhhhhh....",
+	"..hhhhhhhhhh..",
+	".hhhhhhhhhhhh.",
+	"hhhhhhhhhhhhh.",
+	"hhhhhhhhhhhhhh",
+	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
-	"hhhh....hhhh..",
-	"hhh......hhh..",
-	"hhh......hhh..",
-	"Hhh......hhH..",
-	"hh........hh..",
+	"Hhhhhhhh...hh.",
+	"Hhhhhhh.......",
+	".HHhhh........",
+	"..HHh.........",
 ]
-# 马尾/扎起: 顶蓬松 + 收边。
-const _HAIR_PONYTAIL := [
-	"....hhhh.h....",
-	"..hhhhhhhh....",
-	".hhhhhhhhh....",
-	"hhhhhhhhhh....",
-	"hhhhhhhhhh....",
-	"hhh....hhh....",
-	"Hh......hH....",
-	"h........h....",
+const _PONY_TAIL := [   # 后脑扎起垂下的一束 (拼在后脑外侧)
+	"hh.",
+	"hhh",
+	"hhh",
+	"Hhh",
+	"hhh",
+	"HHh",
+	".h.",
 ]
-# 呆毛: 蓬松 + 头顶翘一撮。
+# 呆毛: 顶上炸开几撮 (尖刺顶)。
 const _HAIR_AHOGE := [
-	".....hh.......",
-	"...h.hh.hh....",
-	"..hhhhhhhhh...",
-	".hhhhhhhhhhh..",
+	"...h.hh.h.h..",
+	"..hhhhhhhhhh..",
+	".hhhhhhhhhhhh.",
+	"hhhhhhhhhhhhh.",
+	"hhhhhhhhhhhhhh",
+	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
-	"hhhh....hhhh..",
-	"Hhh......hhH..",
-	"hh........hh..",
+	"Hhhhhhhh...hh.",
+	"Hhhhhhh.......",
+	".HHhhh........",
+	"..HHh.........",
 ]
-# 躯干 (衬衫 w / 阴影 D), 正面带肩 + 两侧袖。10 宽 × 7 高。
+
+# 侧躯干 (衬衫 w / 阴影 D)。7 宽 × 6 高。
 const _TORSO := [
-	".wwwwwwww.",
-	"wwwwwwwwww",
-	"DwwwwwwwwD",
-	"DwwwwwwwwD",
-	"DwwwwwwwwD",
-	"DwwwwwwwwD",
-	".DwwwwwwD.",
+	".wwwww.",
+	"wwwwwww",
+	"wwwwwww",
+	"Dwwwwww",
+	"Dwwwwww",
+	".wwwww.",
 ]
-# 两只手 (皮肤, 垂在袖子下两侧)。整片 (含中间空)。10 宽 × 2 高。
-const _HANDS := [
-	"s........s",
-	"k........k",
+# 手臂 (袖 w/D + 手 s/k), 垂下。2 宽 × 6 高。
+const _ARM := [
+	"ww",
+	"ww",
+	"Dw",
+	"Dw",
+	"ss",
+	"kk",
 ]
-# 单腿 (裤 b / 阴影 B)。3 宽 × 5 高。
+# 单腿 (裤 b / 阴影 B)。3 宽 × 4 高。
 const _LEG := [
-	"Bbb",
-	"Bbb",
-	"Bbb",
+	"bbb",
+	"bbb",
 	"Bbb",
 	"Bbb",
 ]
-# 鞋 (o / O)。4 宽 × 2 高。
+# 侧鞋 (o / O), 鞋尖朝右 (前)。5 宽 × 3 高。
 const _SHOE_B := [
-	"oooo",
-	"OOOO",
+	"oo...",
+	"ooooo",
+	"OOOOO",
 ]
 
 
@@ -132,104 +175,102 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 
 
 static func _frame(ap: Dictionary, pose: String) -> Array:
+	var dy := 1 if pose == "idle_b" else 0   # idle_b 上半身下沉 1px = 呼吸
 	var layers := [
-		_body_layer(ap, pose),
-		_pants_layer(ap, pose),
-		_shirt_layer(ap, pose),
-		_hair_layer(ap, pose),
+		_legs_layer(pose),            # 腿+鞋 (最底; 不随呼吸动)
+		_body_layer(ap, dy),          # 脸+脖
+		_shirt_layer(ap, dy),         # 衬衫躯干
+		_arm_layer(pose, dy),         # 手臂 (盖在躯干前)
+		_hair_layer(ap, dy),          # 头发 (盖在最上)
 	]
 	return _outline(_composite(layers))
 
 
-static func _dy(pose: String) -> int:
-	return 1 if pose == "idle_b" else 0
-
-
-# 身体层: 脸 + 两手 + 鞋 (躯干/腿留空)。男女不同脸。
-static func _body_layer(ap: Dictionary, pose: String) -> Array:
+static func _body_layer(ap: Dictionary, dy: int) -> Array:
 	var g := _blank()
-	var dy := _dy(pose)
-	var head: Array = _HEAD_F if int(ap.get("gender", 0)) == 1 else _HEAD
-	_place(g, 5 + dy, 5, head)
-	_place(g, 18 + dy, 4, _HANDS)   # 两手垂在衬衫下
-	_place_shoes(g, pose, dy)
+	var head: Array = _FACE_F if int(ap.get("gender", 0)) == 1 else _FACE
+	_place(g, _FACE_TOP + dy, _FACE_LEFT, head)
 	return g
 
 
-static func _pants_layer(_ap: Dictionary, pose: String) -> Array:
+static func _shirt_layer(ap: Dictionary, dy: int) -> Array:
 	var g := _blank()
-	var dy := _dy(pose)
-	match pose:
-		"walk_a":   # 左腿前(下) 右腿后(上一点) — 走路交替
-			_place(g, 20 + dy, 5, _LEG)
-			_place(g, 21 + dy, 10, _LEG)
-		"walk_c":
-			_place(g, 21 + dy, 5, _LEG)
-			_place(g, 20 + dy, 10, _LEG)
-		"jump":
-			_place(g, 20 + dy, 5, _slice(_LEG, 0, 4))
-			_place(g, 20 + dy, 10, _slice(_LEG, 0, 4))
-		_:          # idle/fall: 双腿站开
-			_place(g, 20 + dy, 5, _LEG)
-			_place(g, 20 + dy, 10, _LEG)
-	return g
-
-
-static func _shirt_layer(ap: Dictionary, pose: String) -> Array:
-	var g := _blank()
-	var dy := _dy(pose)
 	if int(ap.get("gender", 0)) == 1:
-		_place(g, 13 + dy, 4, _female_torso(int(ap.get("chest_size", 1))))
+		_place(g, _TORSO_TOP + dy, _TORSO_LEFT, _female_torso(int(ap.get("chest_size", 1))))
 	else:
-		_place(g, 13 + dy, 4, _TORSO)
+		_place(g, _TORSO_TOP + dy, _TORSO_LEFT, _TORSO)
 	return g
 
 
-# 女躯干: 同位, 腰略收 + 胸口 (上排) 微鼓。正面对称。
-static func _female_torso(cs: int) -> Array:
-	cs = clampi(cs, 0, 5)
-	var rows := [
-		".wwwwwwww.",
-		"wwwwwwwwww",
-		"DwwwwwwwwD",
-		".DwwwwwwD.",
-		".DwwwwwwD.",
-		".DwwwwwwD.",
-		"..DwwwwD..",
+# 女躯干: 腰略收 (正面差异小, 侧面靠收腰区分)。
+static func _female_torso(_cs: int) -> Array:
+	return [
+		".wwwww.",
+		"wwwwwww",
+		"wwwwwww",
+		"Dwwwww.",
+		".wwwww.",
+		".wwww..",
 	]
-	# 胸 (row 1-2) 微鼓: cs 越大中间略饱满 (低分辨率, 仅细微)
-	return rows
 
 
-static func _hair_layer(ap: Dictionary, pose: String) -> Array:
+static func _arm_layer(pose: String, dy: int) -> Array:
 	var g := _blank()
-	var dy := _dy(pose)
+	# 默认 (idle/hurt): 垂在躯干前 (右)。走路前后摆; 跳/落抬高。
+	var top := 13
+	var left := 10
+	match pose:
+		"walk_a": left = 11; top = 13   # 手向前
+		"walk_c": left = 9;  top = 14   # 手向后
+		"jump":   left = 10; top = 11   # 抬手
+		"fall":   left = 11; top = 11
+		"hurt":   left = 10; top = 11
+	_place(g, top + dy, left, _ARM)
+	return g
+
+
+static func _hair_layer(ap: Dictionary, dy: int) -> Array:
+	var g := _blank()
+	var t := _HAIR_TOP + dy
 	match int(ap.get("hair_style", 0)):
 		1:
-			_place(g, 1 + dy, 2, _HAIR_LONG)
+			_place(g, t, _HAIR_LEFT, _HAIR_LONG)
 		2:
-			_place(g, 1 + dy, 2, _HAIR_PONYTAIL)
+			_place(g, t, _HAIR_LEFT, _HAIR_PONY)
+			_place(g, t + 7, 1, _PONY_TAIL)   # 后脑发束垂在背后
 		3:
-			_place(g, 0 + dy, 2, _HAIR_AHOGE)
+			_place(g, t, _HAIR_LEFT, _HAIR_AHOGE)
 		_:
-			_place(g, 1 + dy, 2, _HAIR_SHORT)
+			_place(g, t, _HAIR_LEFT, _HAIR_SHORT)
 	return g
 
 
-static func _place_shoes(g: Array, pose: String, dy: int) -> void:
+# 腿层: 两条腿 + 鞋, 按姿势前后迈 / 抬。
+static func _legs_layer(pose: String) -> Array:
+	var g := _blank()
 	match pose:
-		"walk_a":
-			_place(g, 25 + dy, 4, _SHOE_B)
-			_place(g, 26 + dy, 9, _SHOE_B)
-		"walk_c":
-			_place(g, 26 + dy, 4, _SHOE_B)
-			_place(g, 25 + dy, 9, _SHOE_B)
-		"jump":
-			_place(g, 24 + dy, 4, _SHOE_B)
-			_place(g, 24 + dy, 9, _SHOE_B)
-		_:
-			_place(g, 25 + dy, 4, _SHOE_B)
-			_place(g, 25 + dy, 9, _SHOE_B)
+		"walk_a":   # 迈开: 两脚分开都落地 (宽站, 重心稳)
+			_put_leg(g, 4, _HIP, 4)
+			_put_leg(g, 9, _HIP, 4)
+		"walk_c":   # 收拢: 后脚落地, 前脚抬起迈步 (与 walk_a 不同 → 动起来)
+			_put_leg(g, 5, _HIP, 4)
+			_put_leg(g, 8, _HIP, 3)
+		"jump":     # 双腿收起
+			_put_leg(g, 5, _HIP, 2)
+			_put_leg(g, 9, _HIP, 2)
+		"fall":     # 双腿张开
+			_put_leg(g, 4, _HIP, 4)
+			_put_leg(g, 10, _HIP, 4)
+		_:          # idle/hurt: 站立, 两腿稍分
+			_put_leg(g, 5, _HIP, 4)
+			_put_leg(g, 8, _HIP, 4)
+	return g
+
+
+# 放一条腿 + 腿下的鞋。height<4 = 抬腿 (鞋离地)。
+static func _put_leg(g: Array, col: int, top: int, height: int) -> void:
+	_place(g, top, col, _slice(_LEG, 0, height))
+	_place(g, top + height, col - 1, _SHOE_B)   # 鞋比腿宽, 左移 1 让鞋尖朝前伸
 
 
 static func _palette_from(ap: Dictionary) -> Dictionary:

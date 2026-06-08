@@ -18,10 +18,10 @@ collision_layer = 8
 collision_mask = 5
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -24)
+position = Vector2(0, -26)
 centered = false
-offset = Vector2(-9, 0)
-scale = Vector2(0.85, 0.85)
+offset = Vector2(-8, 0)
+scale = Vector2(1, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -15)
