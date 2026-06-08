@@ -870,23 +870,24 @@ const _P_BRANCH := {
 
 
 # 树干顶帽: 像 LOG 但顶上多一条暗 "圆环 cap" 让树干顶部不那么生硬
+# 圆柱树干顶帽: 同 _LOG 圆柱光影 + 顶上一条深色 cap 环
 const _LOG_TOP := [
-	"bBBBBBBBBBBBBBBB",
-	"BBlrBBlbBBblrBBb",
-	"bBblbBblbBblbBbl",
-	"brblbBplbBblbBol",
-	"bBblbBblbBblbBbl",
-	"bBblbRRlbBblbBbl",
-	"bBpbBRRBbBblbBbl",
-	"bBblbrblbBblbBbl",
-	"brblbBblpBblrBbl",
-	"bBblbBblbBblbBbl",
-	"bBblbBblbBplbRRl",
-	"bBblbBblbBblbRRl",
-	"bBblbBblobblbrbl",
-	"brblbBplbBblbBbl",
-	"bBblbBblbBblbBpl",
-	"bbBbpBbpBbBbpBbB",
+	"BBBBBBBBBBBBBBBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrlRRlrrbbBB",
+	"BBbbrrlRRlrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
 ]
 
 
@@ -996,23 +997,25 @@ const _ROPE := [
 	".....HhllhH.....",
 ]
 
+# 圆柱树干 (用户要"显瘦"): 满宽 (枝/叶/根靠边连得上), 但画成中间亮(l)、两肩中调(r)、
+# 两边渐暗到深沟(B) 的圆柱光影 → 看着更细更立体 (不是平板一块)。竖向一致 = 树皮纹; 2 个木结 RR。
 const _LOG := [
-	"bBbpBbbBpbBbpBbB",
-	"bBblrBblbBblrBbl",
-	"brBlbBblpBblbBol",
-	"bBblbBplbBblbBbl",
-	"bBblbRRlbBblbBbl",
-	"bBpbBRRBbBblbBbl",
-	"bBblbrblbBblbBbl",
-	"brblbBblpBblrBbl",
-	"bBblbBblbBblbBbl",
-	"bBblbBblbBplbRRl",
-	"bBblbBblbBblbRRl",
-	"bBblbBblobblbrbl",
-	"brblbBplbBblbBbl",
-	"bBblbBblbBblbBpl",
-	"bbBbpBbpBbBbpBbB",
-	"bbbBbbBbbBbbBbpb",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrlRRlrrbbBB",
+	"BBbbrrlRRlrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrRRlllrrbbBB",
+	"BBbbrRRlllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
+	"BBbbrrllllrrbbBB",
 ]
 
 # 橡木叶：4 角透空 + 多个叶簇 (簇心 h 高光 + d 阴影框) + 秋红浆果 r + 金橄榄 y + 鼠尾草 a
