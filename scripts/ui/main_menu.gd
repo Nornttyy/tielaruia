@@ -26,6 +26,7 @@ const TREE_WALL_COUNT := 30   # 最后排"森林墙": 替掉山, 密密一排撑
 const TREE_FAR_COUNT := 20
 const TREE_NEAR_COUNT := 20
 const TREE_WALL_SPEED := Vector2(4.0, 9.0)
+const TREE_TALL := 1.6   # 树竖向额外拉长系数 (>1 = 更高更挺拔)
 const TREE_FAR_SPEED := Vector2(8.0, 16.0)
 const TREE_NEAR_SPEED := Vector2(22.0, 38.0)
 const SLIME_COUNT := 2
@@ -221,9 +222,10 @@ func _add_tree(tex: Texture2D, x: float, scale: float, speed: float, alpha: floa
 	var s := Sprite2D.new()
 	s.texture = tex
 	s.centered = false
-	s.scale = Vector2(scale, scale)
+	var sy: float = scale * TREE_TALL   # 竖向再拉长 = 树更高 (用户要"长一点")
+	s.scale = Vector2(scale, sy)
 	s.modulate.a = alpha
-	s.position = Vector2(x, VIEWPORT_SIZE.y * ground_ratio - TREE_H * scale)
+	s.position = Vector2(x, VIEWPORT_SIZE.y * ground_ratio - TREE_H * sy)
 	_trees_root.add_child(s)
 	_tree_speeds.append(speed)
 
