@@ -202,29 +202,29 @@ static func _shirt_layer(ap: Dictionary, dy: int) -> Array:
 	return g
 
 
-# 女躯干 (9 宽): 收腰沙漏身, 胸在躯干前 (右)。chest_size 越大前胸越往前鼓。
-# 低龄游戏, 鼓得很克制 (顶多前伸 2px); 默认 cs=1 只微微一鼓。
+# 女躯干 (9 宽): 沙漏身, 胸在躯干前 (右)。chest_size 越大胸越饱满。
+# 胸只前鼓 1px (col7), 占 row1-3 满宽胸区, 随 cs 从下往上长成一道圆润竖弧 + 下沿阴影。
+# 不再戳 2px 大包 (旧版戳出手臂外侧 + 腰行留悬空像素 = '怪'), 低龄克制。
 static func _female_torso(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
 		".wwwww...",   # 肩
-		"wwwwwww..",   # 上胸 (前缘到 local col6 = 躯干前)
+		"wwwwwww..",   # 上胸 (满宽, 前缘 local col6)
+		"wwwwwww..",   # 中胸
 		"wwwwwww..",   # 下胸
-		"Dwwww....",   # 收腰 (比胸/胯都窄)
-		"Dwwwww...",   # 胯上
-		".wwwww...",   # 胯
+		"Dwww.....",   # 收腰 (窄)
+		".wwww....",   # 胯
 	]
-	# 前胸外鼓: 一级一级往前 (col7=前 1px, col8=前 2px) + 往上长。
 	if cs >= 1:
-		rows[2] = _set_char(rows[2], 7, "w")   # 下胸鼓 1px
+		rows[3] = _set_char(rows[3], 7, "w")   # 下胸前鼓 1px
 	if cs >= 2:
-		rows[1] = _set_char(rows[1], 7, "w")   # 上胸也鼓
+		rows[2] = _set_char(rows[2], 7, "w")   # 中胸也鼓 (竖弧变高)
 	if cs >= 3:
-		rows[2] = _set_char(rows[2], 8, "w")   # 下胸再前伸到 2px
+		rows[1] = _set_char(rows[1], 7, "w")   # 上胸也鼓 (满 1px 竖弧)
 	if cs >= 4:
-		rows[1] = _set_char(rows[1], 8, "w")   # 上胸也到 2px
+		rows[2] = _set_char(rows[2], 8, "w")   # 最饱满处 (中胸) 再前 1px 小圆点
 	if cs >= 5:
-		rows[3] = _set_char(rows[3], 7, "D")   # 胸下加阴影 = 更饱满
+		rows[3] = _set_char(rows[3], 8, "D")   # 下尖收阴影 = 圆角收口
 	return rows
 
 
