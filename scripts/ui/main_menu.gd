@@ -191,25 +191,30 @@ func _setup_hills() -> void:
 	_hills.position = Vector2(0, VIEWPORT_SIZE.y * 0.55)
 
 
+const TREE_W := 22.0    # make_forest_tree 纹理宽
+const TREE_H := 30.0    # 纹理高 (树底贴地用)
+
+
 func _setup_trees() -> void:
-	# 移动森林: 远层 (小/慢/淡, 营造纵深) 先建 → 渲染在后; 近层 (大/快/实) 后建 → 在前.
-	var tree_tex = MenuSceneArt.make_tree()
+	# 移动森林: 远层 (小/慢/淡, 纵深) 先建在后; 近层 (大/快/实) 后建在前. 两种树形交替.
+	var t0 = MenuSceneArt.make_forest_tree(0)   # 圆胖
+	var t1 = MenuSceneArt.make_forest_tree(1)   # 高瘦
 	for i in TREE_FAR_COUNT:
-		_add_tree(tree_tex, randf() * (VIEWPORT_SIZE.x + 200.0) - 100.0,
-			randf_range(2.0, 2.9), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 0.65, 0.72)
+		_add_tree(t0 if i % 2 == 0 else t1, randf() * (VIEWPORT_SIZE.x + 200.0) - 100.0,
+			randf_range(1.3, 1.9), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 0.72, 0.72)
 	for i in TREE_NEAR_COUNT:
-		_add_tree(tree_tex, randf() * (VIEWPORT_SIZE.x + 200.0) - 100.0,
-			randf_range(3.8, 5.4), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.75)
+		_add_tree(t0 if i % 2 == 0 else t1, randf() * (VIEWPORT_SIZE.x + 200.0) - 100.0,
+			randf_range(2.4, 3.6), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.78)
 
 
-# 加一棵树. ground_ratio: 树底所在 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
+# 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
 func _add_tree(tex: Texture2D, x: float, scale: float, speed: float, alpha: float, ground_ratio: float) -> void:
 	var s := Sprite2D.new()
 	s.texture = tex
 	s.centered = false
 	s.scale = Vector2(scale, scale)
 	s.modulate.a = alpha
-	s.position = Vector2(x, VIEWPORT_SIZE.y * ground_ratio - 16.0 * scale)
+	s.position = Vector2(x, VIEWPORT_SIZE.y * ground_ratio - TREE_H * scale)
 	_trees_root.add_child(s)
 	_tree_speeds.append(speed)
 
@@ -219,8 +224,7 @@ func _animate_trees(delta: float) -> void:
 	for i in _trees_root.get_child_count():
 		var t: Sprite2D = _trees_root.get_child(i)
 		t.position.x -= _tree_speeds[i] * delta
-		var tree_w: float = 12.0 * t.scale.x
-		if t.position.x < -tree_w:
+		if t.position.x < -TREE_W * t.scale.x:
 			t.position.x = VIEWPORT_SIZE.x + randf_range(20.0, 180.0)
 
 

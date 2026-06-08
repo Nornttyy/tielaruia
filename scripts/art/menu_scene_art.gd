@@ -108,6 +108,45 @@ static func make_bird() -> ImageTexture:
 	return PixelArt.grid_to_texture(_BIRD_ROWS, _BIRD_PALETTE)
 
 
+static func _circle(img: Image, cx: float, cy: float, r: float, c: Color) -> void:
+	for y in range(int(cy - r), int(cy + r) + 1):
+		for x in range(int(cx - r), int(cx + r) + 1):
+			if Vector2(x - cx, y - cy).length() <= r:
+				if x >= 0 and y >= 0 and x < img.get_width() and y < img.get_height():
+					img.set_pixel(x, y, c)
+
+
+# 好看的森林树: 棕树干 + 圆树冠 (暖绿) + 左上高光 + 右下阴影. variant 0=圆胖, 1=高瘦双层.
+static func make_forest_tree(variant: int = 0) -> ImageTexture:
+	var w := 22
+	var h := 30
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var cx: float = w / 2.0
+	var trunk := Color8(120, 82, 52)
+	var trunk_sh := Color8(92, 62, 40)
+	# 树干 (底部 ~9px, 3px 宽)
+	for y in range(h - 9, h):
+		img.set_pixel(int(cx) - 1, y, trunk)
+		img.set_pixel(int(cx), y, trunk)
+		img.set_pixel(int(cx) + 1, y, trunk_sh)
+	var g := Color8(92, 156, 72)       # 暖绿基
+	var hl := Color8(142, 198, 98)     # 受光高光
+	var sh := Color8(58, 116, 56)      # 阴影
+	if variant == 0:
+		_circle(img, cx, 13.0, 8.5, g)        # 主树冠
+		_circle(img, cx - 6, 16.0, 6.0, g)    # 左下鼓
+		_circle(img, cx + 6, 16.0, 6.0, g)    # 右下鼓
+		_circle(img, cx + 5, 18.0, 4.5, sh)   # 右下阴影
+		_circle(img, cx - 4, 9.0, 5.0, hl)    # 左上高光
+	else:
+		_circle(img, cx, 17.0, 7.0, g)        # 下层
+		_circle(img, cx, 9.5, 6.0, g)         # 上层
+		_circle(img, cx + 4, 19.0, 4.0, sh)
+		_circle(img, cx - 3, 6.5, 4.0, hl)
+	return ImageTexture.create_from_image(img)
+
+
 # 暖色太阳圆盘 (中心亮白黄 → 边缘暖橙, 边缘微软). 程序画圆比 ASCII 圆.
 static func make_sun(size: int = 30) -> ImageTexture:
 	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
