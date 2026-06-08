@@ -799,6 +799,12 @@ func sleep_in_bed(tile: Vector2i) -> void:
 		_sleep_armed = false   # 等触发睡觉那次点击松开才允许按键唤醒
 		# 睡觉期间禁止玩家移动 + 给一个安全 iframe (老 bug: 没锁, 怪打过来 = 任挨打死)
 		player.set_physics_process(false)
+		# 关键: PlayerAction 是子节点, player.set_physics_process(false) 不会停它 →
+		# 不锁的话睡觉还能挖/放方块 (bug2), 而且对着床再点会重复 sleep_in_bed 重置 anchor → 永远醒不来 (bug1).
+		# 把它的 _physics_process 也停掉, _wake_up 再开。
+		var pa_sleep = player.get_node_or_null("PlayerAction")
+		if pa_sleep != null:
+			pa_sleep.set_physics_process(false)
 		var hp = player.get_node_or_null("PlayerHealth")
 		if hp != null:
 			hp._iframe_timer = 999.0  # 睡觉期间无敌, _wake_up 时清
@@ -843,6 +849,10 @@ func _wake_up() -> void:
 	var player := get_player()
 	if player != null:
 		player.set_physics_process(true)
+		# 恢复 PlayerAction (睡觉时停掉了, 见 sleep_in_bed) → 醒后又能挖/放/用了
+		var pa_wake = player.get_node_or_null("PlayerAction")
+		if pa_wake != null:
+			pa_wake.set_physics_process(true)
 		var hp = player.get_node_or_null("PlayerHealth")
 		if hp != null and hp._iframe_timer > 100.0:
 			hp._iframe_timer = 0.5  # 短 iframe 防醒了立刻被怪打
