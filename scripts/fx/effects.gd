@@ -211,3 +211,37 @@ func recycle(g: Node) -> void:
 	if g != null and is_instance_valid(g):
 		g.queue_free()
 	_grain_count = maxi(0, _grain_count - 1)
+
+
+# 联机聊天: 在 world_pos (玩家头顶) 冒一个文字气泡, 飘一下 → 停 3 秒 → 渐隐。
+# 文字截短到 24 字保持气泡小巧 (完整内容在左下聊天栏看)。
+func spawn_speech_bubble(world_pos: Vector2, text: String) -> void:
+	if text == "":
+		return
+	var shown: String = text if text.length() <= 24 else text.substr(0, 24) + "…"
+	var panel := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.06, 0.10, 0.82)   # 深色半透明气泡底
+	sb.set_corner_radius_all(5)
+	sb.set_content_margin_all(4)
+	panel.add_theme_stylebox_override("panel", sb)
+	panel.z_index = 120
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var lbl := Label.new()
+	lbl.text = shown
+	lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	lbl.add_theme_constant_override("outline_size", 3)
+	lbl.add_theme_font_size_override("font_size", 11)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(lbl)
+	_root().add_child(panel)
+	# 头顶上方, 大致居中 (按字数估宽度往左挪半个; 不求精确, 够"在头顶上"即可)
+	var est_w: float = float(shown.length()) * 6.0 + 8.0
+	panel.position = world_pos + Vector2(-est_w * 0.5, -34.0)
+	panel.modulate = Color(1, 1, 1, 1)
+	var tw := panel.create_tween()
+	tw.tween_property(panel, "position:y", panel.position.y - 6.0, 0.25).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(3.0)
+	tw.tween_property(panel, "modulate:a", 0.0, 0.6)
+	tw.tween_callback(panel.queue_free)

@@ -191,6 +191,9 @@ func _on_hotbar_changed(_idx: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# 联机聊天打字时: 不挖不砍不放不开面板 (键盘都给输入框)
+	if get_tree().get_first_node_in_group("chat_typing") != null:
+		return
 	# E 一键合成: 工作台旁开 3x3, 否则 2x2; 已开则关
 	if Input.is_action_just_pressed("interact"):
 		_try_open_workbench_or_close()

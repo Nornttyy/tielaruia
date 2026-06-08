@@ -24,6 +24,7 @@ signal error_occurred(msg: String)
 # 高层协议事件 (parse 后):
 signal hello_received(world_seed: int, world_size: int, difficulty: int)  # host → client, seed+大小+难度 (双方一致)
 signal remote_name_received(name: String)      # 对方玩家名 (改名后联机也显示真名)
+signal chat_received(text: String)              # 对方发来的聊天文字 (联机聊天)
 signal remote_pos_received(x: float, y: float, facing: int, anim: String)
 signal remote_tile_received(x: int, y: int, tile_id: int)  # 对方挖/放方块
 signal remote_time_weather_received(time_val: float, weather_state: String)  # host 广播时间+天气
@@ -138,6 +139,10 @@ func _route_message(raw: String) -> void:
 			var pname: String = String(data.get("n", ""))
 			remote_player_name = pname
 			remote_name_received.emit(pname)
+		"chat":
+			# 对方发来的聊天文字. 截断防超长. chat_box 收到 → 头顶气泡 + 左下聊天栏.
+			var ctext: String = String(data.get("m", "")).substr(0, 120)
+			chat_received.emit(ctext)
 		"init_state":
 			# host 在自己 world 加载后发的现状. client world 准备好就 emit, world 接收应用.
 			var deltas: Dictionary = data.get("deltas", {})
@@ -270,6 +275,11 @@ func _name_payload(n: String) -> String:
 
 func send_player_name(n: String) -> void:
 	send(_name_payload(n))
+
+
+# 联机聊天: 把一句话发给对方 (截断防超长)。
+func send_chat(text: String) -> void:
+	send(JSON.stringify({"type": "chat", "m": text.substr(0, 120)}))
 
 
 func _initial_state_payload(chunk_deltas: Dictionary) -> String:

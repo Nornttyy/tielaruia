@@ -10,6 +10,7 @@ const HudScene = preload("res://scenes/ui/hud.tscn")
 const CraftingPanelScene = preload("res://scenes/ui/crafting_panel.tscn")
 const ChestPanelScene = preload("res://scenes/ui/chest_panel.tscn")
 const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
+const ChatBoxScript = preload("res://scripts/ui/chat_box.gd")   # 联机聊天框 (无 tscn, 纯代码 CanvasLayer)
 const LoadingScreenScene = preload("res://scenes/ui/loading_screen.tscn")
 const TouchControlsScript = preload("res://scripts/ui/touch_controls.gd")
 const LoadPlanner = preload("res://scripts/world/load_planner.gd")
@@ -142,6 +143,10 @@ func _run_async_load(world_seed: int) -> void:
 	crafting.add_to_group("crafting_panel")
 	add_child(crafting)
 	_game_nodes.append(crafting)
+	var chat_box = ChatBoxScript.new()
+	chat_box.name = "ChatBox"
+	add_child(chat_box)
+	_game_nodes.append(chat_box)
 	var chest = ChestPanelScene.instantiate()
 	chest.name = "ChestPanel"
 	add_child(chest)
@@ -220,6 +225,10 @@ func _start_game_sync(world_seed: int) -> void:
 	crafting.add_to_group("crafting_panel")
 	add_child(crafting)
 	_game_nodes.append(crafting)
+	var chat_box = ChatBoxScript.new()
+	chat_box.name = "ChatBox"
+	add_child(chat_box)
+	_game_nodes.append(chat_box)
 	var chest = ChestPanelScene.instantiate()
 	chest.name = "ChestPanel"
 	add_child(chest)
