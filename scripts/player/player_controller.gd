@@ -415,7 +415,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			camera.offset = Vector2.ZERO
 		# 应用摄像机缩放 (滚轮/设置面板改的 camera_zoom). 之前漏了 → 滚轮只动光照不动镜头.
-		var cz: float = GameSettings.camera_zoom if GameSettings != null else 0.8
+		var cz: float = GameSettings.camera_zoom if GameSettings != null else 1.0
 		if not is_equal_approx(camera.zoom.x, cz):
 			camera.zoom = Vector2(cz, cz)
 
