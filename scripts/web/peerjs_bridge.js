@@ -71,44 +71,86 @@
         });
     }
 
+    // ---- 联机健壮性参数 ----
+    bridge._gen = 0;            // "代次": host/join/disconnect 每次 +1, 作废上一轮挂着的重试/超时回调
     bridge._hostRetries = 0;
+    bridge._joinRetries = 0;
+    bridge._joinCode = '';
+    var MAX_RETRIES = 4;        // 抽风时最多自动重试几次
+    var RETRY_DELAY_MS = 1500;  // 每次重试间隔
+    var JOIN_TIMEOUT_MS = 12000; // join 后这么久还没连上 host → 重试
+    // 这些错误是"服务器/网络一时抽风", 该自动重试 (而不是直接报错)
+    var _RETRYABLE = {'network': 1, 'server-error': 1, 'socket-error': 1, 'socket-closed': 1, 'unavailable-id': 1};
+
+    // PeerJS 错误码 → 人话提示
+    function _friendlyError(et) {
+        switch (et) {
+            case 'peer-unavailable': return '找不到房间 — 检查房间码对不对、房主开房间了没';
+            case 'unavailable-id': return '房间码被占用了, 正在换一个…';
+            case 'network': case 'server-error': case 'socket-error': case 'socket-closed':
+                return '联机服务器忙, 正在重试… (免费服务器有时要等一下)';
+            case 'connect-timeout': return '连不上房主, 正在重试…';
+            case 'browser-incompatible': return '这个浏览器不支持联机, 换 Chrome 试试';
+            case 'ssl-unavailable': return '联机需要 https';
+            default: return '联机出错: ' + et;
+        }
+    }
 
     bridge.host = function() {
         bridge.disconnect();
+        bridge._gen++;
         bridge._isHost = true;
         bridge._status = 'hosting';
         bridge._lastError = '';
         bridge._hostRetries = 0;
-        _hostAttempt();
+        _hostAttempt(bridge._gen);
     };
 
-    function _hostAttempt() {
-        // PeerJS 公共 broker. 自定义 id = 房间码 (用户分享给朋友的代码)
+    function _hostAttempt(gen) {
+        if (gen !== bridge._gen) return;   // 已被新的 host/disconnect 作废
         var code = _genRoomCode();
         var fullId = 'teilaruia-' + code;
         try {
             bridge._peer = new Peer(fullId, _peerOpts());
         } catch (e) {
-            bridge._lastError = 'PeerJS not loaded';
+            bridge._lastError = 'PeerJS 没加载好, 刷新页面再试';
             bridge._status = 'error';
             return;
         }
-        bridge._peer.on('open', function(id) {
+        bridge._peer.on('open', function() {
+            if (gen !== bridge._gen) return;
             bridge._myId = code;
+            bridge._hostRetries = 0;   // 成功开房 → 重置重试计数
         });
         bridge._peer.on('connection', function(conn) {
+            if (gen !== bridge._gen) return;
             _setupConn(conn);
         });
+        bridge._peer.on('disconnected', function() {
+            // broker 连接掉了但 peer 没销毁 → 重连 broker, 保住已分享的房间码
+            if (gen !== bridge._gen) return;
+            try { if (bridge._peer && !bridge._peer.destroyed) bridge._peer.reconnect(); } catch (e) {}
+        });
         bridge._peer.on('error', function(err) {
+            if (gen !== bridge._gen) return;
             var et = err.type || err.message || err;
-            // id 冲突: 换 code 重试 (最多 5 次)
-            if (et === 'unavailable-id' && bridge._hostRetries < 5) {
-                bridge._hostRetries++;
-                try { bridge._peer.destroy(); } catch (e) {}
-                _hostAttempt();
-                return;
+            if (_RETRYABLE[et]) {
+                if (bridge._myId) {
+                    // 已开房、码已分享 → 别换码, 重连 broker 即可
+                    bridge._lastError = _friendlyError(et);
+                    try { if (bridge._peer && !bridge._peer.destroyed) bridge._peer.reconnect(); } catch (e) {}
+                    return;
+                }
+                if (bridge._hostRetries < MAX_RETRIES) {
+                    bridge._hostRetries++;
+                    bridge._lastError = _friendlyError(et);
+                    bridge._status = 'hosting';   // 还在试, 别变 error
+                    try { bridge._peer.destroy(); } catch (e) {}
+                    setTimeout(function() { _hostAttempt(gen); }, RETRY_DELAY_MS);
+                    return;
+                }
             }
-            bridge._lastError = 'peer error: ' + et;
+            bridge._lastError = _friendlyError(et);
             bridge._status = 'error';
         });
     }
@@ -120,27 +162,57 @@
             return;
         }
         bridge.disconnect();
+        bridge._gen++;
         bridge._isHost = false;
         bridge._status = 'joining';
         bridge._lastError = '';
-        var fullId = 'teilaruia-' + code.toUpperCase();
+        bridge._joinCode = code.toUpperCase();
+        bridge._joinRetries = 0;
+        _joinAttempt(bridge._gen);
+    };
+
+    function _joinAttempt(gen) {
+        if (gen !== bridge._gen) return;
+        var fullId = 'teilaruia-' + bridge._joinCode;
         try {
             bridge._peer = new Peer(null, _peerOpts());
         } catch (e) {
-            bridge._lastError = 'PeerJS not loaded';
+            bridge._lastError = 'PeerJS 没加载好, 刷新页面再试';
             bridge._status = 'error';
             return;
         }
-        bridge._peer.on('open', function(myId) {
-            // 现在尝试连 host
+        bridge._peer.on('open', function() {
+            if (gen !== bridge._gen) return;
             var conn = bridge._peer.connect(fullId, { reliable: true });
             _setupConn(conn);
+            // 连接开启超时: 一段时间还没连上 host (房主没开/码错/broker 慢) → 重试
+            setTimeout(function() {
+                if (gen !== bridge._gen) return;
+                if (bridge._status === 'joining' && (!bridge._conn || !bridge._conn.open)) {
+                    _joinRetryOrFail(gen, 'connect-timeout');
+                }
+            }, JOIN_TIMEOUT_MS);
         });
         bridge._peer.on('error', function(err) {
-            bridge._lastError = 'peer error: ' + (err.type || err.message || err);
-            bridge._status = 'error';
+            if (gen !== bridge._gen) return;
+            _joinRetryOrFail(gen, err.type || err.message || err);
         });
-    };
+    }
+
+    function _joinRetryOrFail(gen, et) {
+        if (gen !== bridge._gen) return;
+        if (bridge._joinRetries < MAX_RETRIES &&
+                (_RETRYABLE[et] || et === 'peer-unavailable' || et === 'connect-timeout')) {
+            bridge._joinRetries++;
+            bridge._lastError = _friendlyError(et);
+            bridge._status = 'joining';   // 还在试
+            try { if (bridge._peer) bridge._peer.destroy(); } catch (e) {}
+            setTimeout(function() { _joinAttempt(gen); }, RETRY_DELAY_MS);
+            return;
+        }
+        bridge._lastError = _friendlyError(et);
+        bridge._status = 'error';
+    }
 
     bridge.send = function(jsonStr) {
         if (bridge._conn && bridge._conn.open) {
@@ -163,6 +235,7 @@
     bridge.is_host = function() { return bridge._isHost; };
 
     bridge.disconnect = function() {
+        bridge._gen = (bridge._gen || 0) + 1;   // 作废所有挂着的重试/超时回调
         if (bridge._conn) {
             try { bridge._conn.close(); } catch (e) {}
         }
