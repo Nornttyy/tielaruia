@@ -175,7 +175,14 @@ func apply_to_player(player: Node) -> void:
 		if mn.has_signal("mana_changed"):
 			mn.mana_changed.emit(mn.current_mana, mn.MAX_MANA)
 	var inv_node: Node = player.get_node_or_null("PlayerInventory")
-	if inv_node != null and inv_node.inventory != null:
+	# 只在角色卡【有东西】时才覆盖背包. 空卡 (全新角色/没存过) 不抹掉玩家已有/世界存档还原的背包,
+	# 防"读档丢三件套 / 拿不了方块". (旧 bug: 继续读档时空卡无条件覆盖, 把背包清空。)
+	var card_has_items := false
+	for s in current.inventory_slots:
+		if s != null:
+			card_has_items = true
+			break
+	if inv_node != null and inv_node.inventory != null and card_has_items:
 		inv_node.inventory.slots = current.inventory_slots.duplicate(true)
 		if "hotbar_selected" in inv_node:
 			inv_node.hotbar_selected = current.hotbar_selection

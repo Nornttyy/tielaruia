@@ -125,3 +125,25 @@ func test_round_trip_player_to_character_to_player():
 	assert_eq(p2.get_node("PlayerInventory").inventory.slots[0]["item_id"], "diamond")
 	assert_eq(p2.get_node("PlayerHealth").current_health, 88)
 	p2.free()
+
+
+# 修 bug: 空角色卡 (全新角色/没存过) 不该抹掉玩家已有背包 (读档丢三件套/拿不了方块)
+func test_apply_empty_card_keeps_existing_inventory():
+	cm.current = CharacterData.new()
+	cm.current.inventory_slots = []   # 空卡
+	var p = _make_player()
+	p.get_node("PlayerInventory").inventory.slots = [{"item_id": "stone", "count": 9}, null]
+	cm.apply_to_player(p)
+	var slots = p.get_node("PlayerInventory").inventory.slots
+	assert_eq(slots.size(), 2, "空卡不该清空背包")
+	assert_eq(slots[0]["item_id"], "stone", "玩家原有物品该保留")
+	p.free()
+
+func test_apply_card_with_items_still_overwrites():
+	cm.current = CharacterData.new()
+	cm.current.inventory_slots = [{"item_id": "gold", "count": 3}]
+	var p = _make_player()
+	p.get_node("PlayerInventory").inventory.slots = [{"item_id": "stone", "count": 9}]
+	cm.apply_to_player(p)
+	assert_eq(p.get_node("PlayerInventory").inventory.slots[0]["item_id"], "gold", "有东西的卡正常覆盖")
+	p.free()
