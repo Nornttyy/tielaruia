@@ -22,6 +22,7 @@ var _crystal_sprites: Array = []    # 水晶 (深层才显, sin 闪烁)
 var _shallow_alpha: float = 0.0     # 远岩壁 alpha (由 ScenicDirector 设)
 var _deep_alpha: float = 0.0        # 钟乳石/水晶 alpha
 var _time_accum: float = 0.0
+var _biome_tint: Color = Color(1, 1, 1)  # 群系色调 (地下也按群系变: 沙下偏沙黄/雪下偏冰蓝...)
 
 
 func _ready() -> void:
@@ -93,6 +94,15 @@ func _apply_alphas() -> void:
 	for sp in _stalactite_sprites:
 		sp.modulate.a = _deep_alpha
 	# 水晶 alpha 由 _process 跑 sin 闪烁, 这里不重置 (会被下一帧覆盖)
+
+
+# 群系色调: 给所有岩壁/钟乳石/水晶精灵设 RGB (a 仍由 _apply_alphas/_process 管, 不冲突).
+# 地下也按群系变 — 沙漠下偏沙黄岩, 雪原下偏冰蓝, 丛林下偏苔绿.
+func set_biome_tint(c: Color) -> void:
+	_biome_tint = c
+	for arr in [_rock_sprites, _stalactite_sprites, _crystal_sprites]:
+		for sp in arr:
+			sp.modulate = Color(c.r, c.g, c.b, sp.modulate.a)
 
 
 func current_alpha() -> float:

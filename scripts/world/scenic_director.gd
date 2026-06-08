@@ -128,12 +128,22 @@ func _update_biome_tint(delta: float) -> void:
 	_biome_tint_target = _BIOME_TINTS.get(biome_id, Color.WHITE)
 	# Lerp current → target
 	_biome_tint_current = _biome_tint_current.lerp(_biome_tint_target, clamp(delta * _BIOME_TINT_LERP_PER_SEC, 0.0, 1.0))
-	# 应用到远山 (modulate). cave_bg / sky_bg 暂不动 (它们由 depth/time 控制 alpha, 加 tint 容易冲突).
+	# 应用到远山 (modulate, 保留 depth alpha)
 	if _mountains != null and _mountains is CanvasItem:
 		var ci: CanvasItem = _mountains
-		# 保留原 alpha (depth alpha 别覆盖)
 		var a: float = ci.modulate.a
 		ci.modulate = Color(_biome_tint_current.r, _biome_tint_current.g, _biome_tint_current.b, a)
+	# 天空也按群系变 (柔和点, 别太冲): 沙漠偏橙/雪原偏蓝/丛林偏绿
+	var sky_tint: Color = Color(1, 1, 1).lerp(_biome_tint_current, 0.5)
+	if _sky_bg != null:
+		var bg: Node = _sky_bg.get_node_or_null("Bg")
+		if bg != null and bg.has_method("set_biome_tint"):
+			bg.set_biome_tint(sky_tint)
+		elif _sky_bg.has_method("set_biome_tint"):
+			_sky_bg.set_biome_tint(sky_tint)
+	# 地下也按群系变 (用户要求): 矿洞远景 tint (沙下沙黄/雪下冰蓝/丛林下苔绿)
+	if _cave_bg != null and _cave_bg.has_method("set_biome_tint"):
+		_cave_bg.set_biome_tint(_biome_tint_current)
 
 
 # === 公开 compute (静态, 容易测) ===
