@@ -37,22 +37,22 @@ const _FACE := [
 	".sssssss.",
 	"sssssssss",
 	"sssssssss",
-	"sssssWWWs",   # 眼白上沿
-	"sssssWiWs",   # 眼珠 (1px, 眼白裹住 = 像眼球)
-	"sssssWWWs",   # 眼白下沿
+	"sssssWiis",   # 眼: 后上角 1px 白高光 + 眼珠填满 (沉稳大眼, 不是震惊小瞳)
+	"sssssiiis",   # 眼珠
+	"sssssiiis",   # 眼珠
 	"sssssssks",   # 脸颊 + 前下颌一点阴影
 	"..sssss..",
 	"...sss...",   # 脖子
 ]
-# 女脸: 眼上沿换成睫毛 (e, 露在发下), 看着更秀气。
+# 女脸: 眼上沿加睫毛 (e, 露在发下) + 同样的沉稳大眼。
 const _FACE_F := [
 	"...ssss..",
 	".sssssss.",
 	"sssssssss",
 	"sssssssss",
 	"ssssseees",   # 睫毛 (眼上沿)
-	"sssssWiWs",   # 眼珠
-	"sssssWWWs",   # 眼白下沿
+	"sssssWiis",   # 高光 + 眼珠
+	"sssssiiis",   # 眼珠
 	"sssssssks",
 	"..sssss..",
 	"...sss...",
