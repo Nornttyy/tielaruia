@@ -1,4 +1,4 @@
-# 村民对话框: open(line) 显示, ESC 关闭. CanvasLayer 默认隐藏.
+# 通用对话框: open(line) 显示, ESC 关闭. CanvasLayer 默认隐藏. (村民 NPC 已移除, 暂无调用方)
 # ESC 通过 _unhandled_input 处理, 消耗事件 (在 PauseMenu 之前一级).
 extends CanvasLayer
 

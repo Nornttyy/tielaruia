@@ -27,7 +27,6 @@ const HarpyScene = preload("res://scenes/entities/harpy.tscn")
 const MummyScene = preload("res://scenes/entities/mummy.tscn")
 const KingSlimeScene = preload("res://scenes/entities/king_slime.tscn")
 const SkeletonKingScene = preload("res://scenes/entities/skeleton_king.tscn")
-const VillagerScene = preload("res://scenes/entities/villager.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
 const PigScene = preload("res://scenes/entities/pig.tscn")
@@ -92,7 +91,6 @@ const _MP_TIME_SYNC_INTERVAL := 5.0
 var _mp_entity_sync_timer: float = 0.0  # host 广播实体位置计时 (Phase E)
 const _MP_ENTITY_SYNC_INTERVAL := 0.2
 var weather: Node
-var village_villager_spawns: Array = []
 var _active_king_slime: Node = null  # 当前存活的史莱姆王 Boss (一次只准一个)
 var _active_skeleton_king: Node = null  # 当前存活的骷髅王 Boss (一次只准一个)
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
@@ -422,7 +420,7 @@ func _on_remote_entity_damage(ent_id: int, amount: int, knockback: float, sx: fl
 
 # 按 entity_id_for 在本地真实实体里找 (host 用; 跟广播的 id 算法一致)
 func _find_local_entity_by_id(ent_id: int) -> Node:
-	for grp in ["slimes", "animals", "villagers"]:
+	for grp in ["slimes", "animals"]:
 		for e in get_tree().get_nodes_in_group(grp):
 			if e is Node2D and NetworkManager.entity_id_for(e) == ent_id:
 				return e
@@ -496,7 +494,6 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"pig": scene = PigScene
 		"penguin": scene = PenguinScene
 		"frog": scene = FrogScene
-		"villager": scene = VillagerScene
 		_: return null
 	if scene == null:
 		return null
@@ -622,20 +619,8 @@ func _place_village() -> void:
 	var prefab = VillagePrefab.load_default()
 	if prefab.is_empty():
 		return
-	village_villager_spawns = VillagePlacer.place(
-		chunk_manager, terrain_layer, prefab, spawn_point
-	)
-	_spawn_villagers()
-
-
-func _spawn_villagers() -> void:
-	for tile_pos in village_villager_spawns:
-		var v = VillagerScene.instantiate()
-		v.global_position = Vector2(
-			tile_pos.x * TILE_SIZE + TILE_SIZE / 2.0,
-			tile_pos.y * TILE_SIZE + TILE_SIZE
-		)
-		entities_root.add_child(v)
+	# 只盖房子结构 (村民 NPC 已移除)
+	VillagePlacer.place(chunk_manager, terrain_layer, prefab, spawn_point)
 
 
 func _process(delta: float) -> void:
@@ -684,10 +669,10 @@ func _process(delta: float) -> void:
 
 
 func _mp_broadcast_entities() -> void:
-	# 怪物 / 动物 / 村民
+	# 怪物 / 动物
 	# 注: 僵尸同时在 "slimes" 和 "zombies" 组, "slimes" 分支已按 scene_path 认出僵尸,
 	# 故这里不再单列 "zombies", 否则每个僵尸每 tick 被广播两遍 (双倍带宽).
-	for grp in ["slimes", "animals", "villagers"]:
+	for grp in ["slimes", "animals"]:
 		for ent in get_tree().get_nodes_in_group(grp):
 			if not (ent is Node2D):
 				continue
@@ -724,7 +709,6 @@ func _mp_broadcast_entities() -> void:
 					else:
 						kind = "slime"
 				"zombies": kind = "zombie"
-				"villagers": kind = "villager"
 				"animals":
 					var scene_path: String = n2d.scene_file_path if n2d.scene_file_path != null else ""
 					if "cow" in scene_path:
@@ -1059,7 +1043,6 @@ func _on_chunk_unloaded(cx: int) -> void:
 			wall_layer.set_cell(Vector2i(world_x, y), -1)
 		SkyLightGrid.invalidate_column(world_x)
 	# 清该 chunk 像素范围内所有"短命"实体: 怪物 (slime/zombie) + 动物 (cow/sheep/pig) + 掉落物
-	# 注意: villager 用专门 group, 由村庄系统管, 这里不清
 	for group in ["slimes", "zombies", "animals", "item_drops"]:
 		for ent in get_tree().get_nodes_in_group(group):
 			# Boss 在 "slimes" 组里, 但有自己的远离消失逻辑 — chunk 卸载别误删 (否则用钩爪/传送拉开距离让王那列卸载, 王凭空消失+血条空挂)

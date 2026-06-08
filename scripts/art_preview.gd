@@ -114,18 +114,6 @@ func _draw_entities(origin: Vector2) -> void:
 		add_child(anim)
 		_add_caption("史莱姆 " + slime_anims[i], anim.position + Vector2(0, 12 * SCALE + 4))
 
-	# 村民
-	var villager_x := slime_x + 2 * (16 * SCALE + 24) + 32
-	var v := AnimatedSprite2D.new()
-	v.sprite_frames = ArtCache.villager_frames
-	v.animation = "idle"
-	v.scale = Vector2(SCALE, SCALE)
-	v.centered = false
-	v.position = Vector2(villager_x, origin.y)
-	v.play("idle")
-	add_child(v)
-	_add_caption("村民 idle", v.position + Vector2(0, 24 * SCALE + 4))
-
 
 func _draw_doors(origin: Vector2) -> void:
 	var closed := Sprite2D.new()

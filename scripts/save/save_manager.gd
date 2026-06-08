@@ -368,7 +368,7 @@ static func apply_submerged(cm, serialized: Dictionary) -> void:
 		cm._submerged[cx] = inner
 
 
-# 收集 slime/villager/item_drop 位置 + 状态.
+# 收集 slime/item_drop 位置 + 状态.
 func _serialize_entities() -> Array:
 	var out: Array = []
 	for s in get_tree().get_nodes_in_group("slimes"):
@@ -376,8 +376,6 @@ func _serialize_entities() -> Array:
 		if s.is_in_group("boss"):
 			continue
 		out.append({"type": "slime", "pos": s.global_position})
-	for v in get_tree().get_nodes_in_group("villagers"):
-		out.append({"type": "villager", "pos": v.global_position})
 	for d in get_tree().get_nodes_in_group("item_drops"):
 		out.append({
 			"type": "item_drop",

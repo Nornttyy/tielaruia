@@ -6,7 +6,7 @@ class_name VillagePlacer extends RefCounted
 const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
 
 
-# 在 anchor 处盖章。返回需要 spawn 村民的世界坐标列表。
+# 在 anchor 处盖章 (只盖房子结构; 村民 NPC 已移除)。
 # 流程: (1) 清出 spawn → 所有屋顶上方一行的整片矩形 (擦树/草, 留出走路 + 头顶空间)
 #       (2) 按每间屋的 grid 盖墙/门。
 static func place(
@@ -14,8 +14,7 @@ static func place(
 		terrain_layer: TileMapLayer,
 		prefab: Dictionary,
 		anchor: Vector2i
-) -> Array:
-	var villager_spawns: Array = []
+) -> void:
 	# Pass 0: 清整片矩形 - 从 spawn 往右一直到最远屋, 高度从屋顶上方 1 行到 spawn 行
 	_clear_bounding_rect(chunk_manager, terrain_layer, prefab, anchor)
 	for house in prefab.houses:
@@ -44,10 +43,6 @@ static func place(
 				if tid == Tiles.DOOR:
 					chunk_manager.set_tile(pos.x, pos.y - 1, Tiles.DOOR_MID)
 					chunk_manager.set_tile(pos.x, pos.y - 2, Tiles.DOOR_TOP)
-		if house.get("villager_offset", null) != null:
-			var off = house.villager_offset
-			villager_spawns.append(house_anchor + Vector2i(off[0], off[1]))
-	return villager_spawns
 
 
 # 算出所有屋子的 bounding box, 从 anchor (spawn 列) 起算, 清空内部 (扣掉树/草)。

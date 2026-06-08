@@ -14,7 +14,6 @@ const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
 const PlayerArt = preload("res://scripts/art/player_art.gd")
 const SlimeArt = preload("res://scripts/art/slime_art.gd")
 const ZombieArt = preload("res://scripts/art/zombie_art.gd")
-const VillagerArt = preload("res://scripts/art/villager_art.gd")
 const CowArt = preload("res://scripts/art/cow_art.gd")
 const SheepArt = preload("res://scripts/art/sheep_art.gd")
 const PigArt = preload("res://scripts/art/pig_art.gd")
@@ -42,7 +41,6 @@ var player_frames: SpriteFrames
 var slime_frames: SpriteFrames
 var slime_crown_tex: ImageTexture          # 史莱姆王专属王冠贴图 (贴在头顶)
 var zombie_frames: SpriteFrames
-var villager_frames: SpriteFrames
 var cow_frames: SpriteFrames
 var sheep_frames: SpriteFrames
 var pig_frames: SpriteFrames
@@ -343,7 +341,6 @@ func _build_entities() -> void:
 	slime_frames = SlimeArt.build_sprite_frames()
 	slime_crown_tex = SlimeArt.build_crown_texture()   # 史莱姆王头顶王冠 (单独贴图)
 	zombie_frames = ZombieArt.build_sprite_frames()
-	villager_frames = VillagerArt.build_sprite_frames()
 	cow_frames = CowArt.build_sprite_frames()
 	sheep_frames = SheepArt.build_sprite_frames()
 	pig_frames = PigArt.build_sprite_frames()

@@ -72,13 +72,6 @@ func test_place_clears_interior_to_air():
 	assert_eq(cm.get_tile(wx, wy), Tiles.AIR, "室内 '.' 位置应被清成空气")
 
 
-func test_place_returns_villager_spawn():
-	var cm = _make_chunk_manager()
-	var prefab = VillagePrefab.load_default()
-	var spawns = VillagePlacer.place(cm, null, prefab, ANCHOR)
-	assert_gt(spawns.size(), 0, "至少 1 个村民 spawn")
-
-
 # 第一间屋的门确实放在 grid 里 "D" 字符对应的世界坐标
 func test_first_house_door_at_grid_position():
 	var cm = _make_chunk_manager()

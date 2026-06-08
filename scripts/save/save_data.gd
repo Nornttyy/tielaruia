@@ -60,7 +60,7 @@ const CURRENT_VERSION := 6
 @export var wall_deltas: Dictionary = {}
 # 水下植物: 被水盖住的植物 (退水复原)。结构同 wall_deltas。旧档无此字段 → 默认空, 兼容。
 @export var submerged_plants: Dictionary = {}
-# 实体快照: [{"type": "slime"|"villager"|"item_drop", "position": Vector2, ...}]
+# 实体快照: [{"type": "slime"|"item_drop", "position": Vector2, ...}]
 @export var entities: Array = []
 # 箱子内容: "x,y" (tile world coord) → Array<24>{item_id, count} or null
 @export var chest_contents: Dictionary = {}

@@ -1,22 +1,12 @@
 extends GutTest
 
 const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
-const VillagerLines = preload("res://scripts/npc/villager_lines.gd")
 
 
 func _make() -> CanvasLayer:
 	var db = DialogueBoxScene.instantiate()
 	add_child_autofree(db)
 	return db
-
-
-func test_lines_pool_has_10_entries():
-	assert_eq(VillagerLines.LINES.size(), 10, "spec 要求 10 句")
-
-
-func test_random_line_returns_one_of_pool():
-	var line = VillagerLines.random_line()
-	assert_true(line in VillagerLines.LINES)
 
 
 func test_initially_hidden():
