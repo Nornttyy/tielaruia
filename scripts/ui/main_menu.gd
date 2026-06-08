@@ -22,8 +22,10 @@ const VIEWPORT_SIZE := Vector2(1280, 720)
 const CLOUD_COUNT := 7          # 4→7: 云更多更丰富 (大小/透明度分层做远近)
 const TREE_COUNT := 5
 # 移动森林: 两层视差树 (远 小/慢/淡, 近 大/快). 横向滚动 + 循环.
+const TREE_WALL_COUNT := 30   # 最后排"森林墙": 替掉山, 密密一排撑起背景天际线
 const TREE_FAR_COUNT := 20
 const TREE_NEAR_COUNT := 20
+const TREE_WALL_SPEED := Vector2(4.0, 9.0)
 const TREE_FAR_SPEED := Vector2(8.0, 16.0)
 const TREE_NEAR_SPEED := Vector2(22.0, 38.0)
 const SLIME_COUNT := 2
@@ -185,10 +187,8 @@ func _setup_sky_gradient() -> void:
 
 
 func _setup_hills() -> void:
-	_hills.texture = MenuSceneArt.make_hill()
-	# 80×10 像素 → 屏宽，高度放大 6 倍
-	_hills.scale = Vector2(VIEWPORT_SIZE.x / 80.0, 6.0)
-	_hills.position = Vector2(0, VIEWPORT_SIZE.y * 0.55)
+	# 用户要"不要山, 后面全是大树" → 隐藏山丘, 背景天际线改由树的"后墙层"撑 (见 _setup_trees)。
+	_hills.visible = false
 
 
 const TREE_W := 22.0    # make_forest_tree 纹理宽
@@ -200,6 +200,11 @@ func _setup_trees() -> void:
 	# 远层 (大/慢/略淡, 纵深) 先建在后; 近层 (更大/快/实) 后建在前. 两种树形交替。
 	var t0 = MenuSceneArt.make_forest_tree(0)   # 圆胖
 	var t1 = MenuSceneArt.make_forest_tree(1)   # 高瘦
+	# 后墙层 (最先建=最靠后): 一整排密树撑起背景, 替掉原来的山。略淡作远景雾感。
+	for i in TREE_WALL_COUNT:
+		var wx: float = (float(i) + randf()) / float(TREE_WALL_COUNT) * (VIEWPORT_SIZE.x + 160.0) - 80.0
+		_add_tree(t0 if i % 2 == 0 else t1, wx,
+			randf_range(2.0, 2.7), randf_range(TREE_WALL_SPEED.x, TREE_WALL_SPEED.y), 0.88, 0.60)
 	for i in TREE_FAR_COUNT:
 		# 均匀分槽 + 槽内随机 → 铺满不留缝
 		var fx: float = (float(i) + randf()) / float(TREE_FAR_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
