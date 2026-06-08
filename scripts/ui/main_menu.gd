@@ -213,8 +213,9 @@ func _setup_trees() -> void:
 			randf_range(5.5, 7.0), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 0.9, 0.70)
 	for i in TREE_NEAR_COUNT:
 		var nx: float = (float(i) + randf()) / float(TREE_NEAR_COUNT) * (VIEWPORT_SIZE.x + 240.0) - 120.0
+		# ground_ratio 1.18: 近树往下沉很多 (树底在屏幕下方外), 只露下半截 → 不盖住中间按钮/顶部标题
 		_add_tree(t0 if i % 2 == 0 else t1, nx,
-			randf_range(6.5, 8.5), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.80)
+			randf_range(6.5, 8.5), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 1.18)
 
 
 # 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
