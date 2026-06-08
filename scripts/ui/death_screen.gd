@@ -3,6 +3,8 @@
 # CanvasLayer process_mode = ALWAYS，暂停时仍可点击。
 extends CanvasLayer
 
+const UIStyle = preload("res://scripts/ui/ui_style.gd")
+
 signal respawn
 
 const FADE_DURATION := 0.6
@@ -16,6 +18,7 @@ var _tween: Tween = null
 
 func _ready() -> void:
 	visible = false
+	UIStyle.style_button(_respawn_button)   # 蓝色复活按钮
 	_respawn_button.pressed.connect(_on_respawn_pressed)
 	# i18n: 切语言时刷文字
 	if Locale != null:

@@ -8,8 +8,8 @@ const BAR_H := 16.0
 const BAR_Y := 28.0          # 血条顶距屏幕顶
 const NAME_Y := 22.0         # 名字基线 (在血条上方)
 
-const BG := Color8(8, 6, 12, 230)
-const BORDER := Color8(235, 225, 200, 255)
+const BG := Color8(14, 24, 44, 235)        # 深蓝底 (统一蓝色 UI)
+const BORDER := Color8(72, 122, 184, 255)  # 蓝边
 const FILL_FULL := Color8(120, 220, 80)   # 满血绿
 const FILL_MID := Color8(245, 200, 70)    # 中血黄
 const FILL_LOW := Color8(220, 60, 50)     # 残血红

@@ -84,3 +84,26 @@ static func style_toggle(btn: Button) -> void:
 	btn.add_theme_color_override("font_color", C_TEXT)
 	btn.add_theme_color_override("font_hover_color", C_TEXT_HI)
 	btn.add_theme_color_override("font_pressed_color", C_TEXT_HI)
+
+
+static func _input_box(bg: Color, border: Color) -> StyleBoxFlat:
+	var s := _sb(bg, border, 7, 2)
+	s.content_margin_left = 8
+	s.content_margin_right = 8
+	s.content_margin_top = 4
+	s.content_margin_bottom = 4
+	return s
+
+
+# 输入框 (名字/种子/房间码): 蓝色圆角 + 聚焦亮边
+static func style_line_edit(le: LineEdit) -> void:
+	le.add_theme_stylebox_override("normal", _input_box(SLOT_BG, SLOT_BORDER))
+	le.add_theme_stylebox_override("focus", _input_box(Color(0.10, 0.18, 0.30, 0.92), C_BTN_SEL))
+	le.add_theme_color_override("font_color", C_TEXT_HI)
+	le.add_theme_color_override("font_placeholder_color", Color(0.5, 0.62, 0.78))
+	le.add_theme_color_override("caret_color", C_TEXT_HI)
+
+
+# 滑条 (音量/镜头): 轨道蓝色 (grabber 保留默认圆点)
+static func style_slider(sl: Control) -> void:
+	sl.add_theme_stylebox_override("slider", _sb(SLOT_BG, SLOT_BORDER, 4, 1))

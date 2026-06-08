@@ -494,6 +494,10 @@ func _style_buttons_recursive(node: Node) -> void:
 				UIStyle.style_toggle(c)
 			else:
 				UIStyle.style_button(c)
+		elif c is LineEdit:
+			UIStyle.style_line_edit(c)
+		elif c is HSlider:
+			UIStyle.style_slider(c)
 		_style_buttons_recursive(c)
 
 

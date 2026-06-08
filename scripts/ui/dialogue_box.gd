@@ -2,6 +2,8 @@
 # ESC 通过 _unhandled_input 处理, 消耗事件 (在 PauseMenu 之前一级).
 extends CanvasLayer
 
+const UIStyle = preload("res://scripts/ui/ui_style.gd")
+
 signal closed
 
 @onready var _line_label: Label = $Panel/VBox/LineLabel
@@ -10,6 +12,7 @@ signal closed
 func _ready() -> void:
 	visible = false
 	add_to_group("dialogue_box")
+	$Panel.add_theme_stylebox_override("panel", UIStyle.panel())   # 蓝色圆角对话框
 
 
 func open(line: String) -> void:
