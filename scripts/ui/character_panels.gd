@@ -7,6 +7,7 @@ signal closed             # 返回主菜单
 
 const CharacterData = preload("res://scripts/save/character_data.gd")
 const PlayerArt = preload("res://scripts/art/player_art.gd")
+const UIStyle = preload("res://scripts/ui/ui_style.gd")
 
 var _select_panel: Panel
 var _list: VBoxContainer
@@ -69,6 +70,24 @@ func _build_select_panel() -> void:
 	back_btn.text = "返回"
 	back_btn.pressed.connect(func(): visible = false; closed.emit())
 	vbox.add_child(back_btn)
+	# 蓝色统一: 面板 + 按钮 (色块 ColorRect 保留原色, _style_controls 不动它)
+	_select_panel.add_theme_stylebox_override("panel", UIStyle.panel())
+	_style_controls(_select_panel)
+
+
+# 递归把按钮/输入框/滑条刷蓝 (色块/标签不动)
+func _style_controls(node: Node) -> void:
+	for c in node.get_children():
+		if c is Button:
+			if (c as Button).toggle_mode:
+				UIStyle.style_toggle(c)
+			else:
+				UIStyle.style_button(c)
+		elif c is LineEdit:
+			UIStyle.style_line_edit(c)
+		elif c is HSlider:
+			UIStyle.style_slider(c)
+		_style_controls(c)
 
 
 func _refresh_list() -> void:
@@ -88,10 +107,12 @@ func _make_row(char_name: String) -> void:
 	row.add_child(lbl)
 	var pick := Button.new()
 	pick.text = "选择"
+	UIStyle.style_button(pick)
 	pick.pressed.connect(func(): _choose_character(char_name))
 	row.add_child(pick)
 	var del := Button.new()
 	del.text = "删除"
+	UIStyle.style_button(del)
 	del.pressed.connect(func():
 		CharacterManager.delete_character_by_name(char_name)
 		_refresh_list()
@@ -165,6 +186,9 @@ func _build_creator_panel() -> void:
 		_creator_panel.visible = false; _select_panel.visible = true; _refresh_list())
 	btn_row.add_child(save_b); btn_row.add_child(cancel_b)
 	vbox.add_child(btn_row)
+	# 蓝色统一: 捏人面板 + 全部按钮/名字框/胸围滑条 (色块保留)
+	_creator_panel.add_theme_stylebox_override("panel", UIStyle.panel())
+	_style_controls(_creator_panel)
 
 
 # 一行 ◀ 名称 ▶ stepper, 改 _appearance[key] 在 [lo,hi] 循环。
