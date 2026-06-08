@@ -25,6 +25,24 @@
         _lastError: '',
     };
 
+    // ⚙️ 联机服务器配置 ⚙️
+    // 填上你自己的 PeerJS 服务器域名 (在 Render 免费部署后拿到, 不含 "https://" 和末尾的 "/")。
+    // 留空 "" = 用 PeerJS 免费公共服务器 (大家都在蹭, 经常连不上 — 只当临时兜底)。
+    // 部署教程见 docs/multiplayer-server-setup.md
+    var PEER_HOST = "";   // 例: "teilaruia-peer.onrender.com"
+
+    // 生成连服务器的参数: 填了 PEER_HOST 就连自己的服务器, 否则连公共的。
+    function _peerOpts() {
+        var o = { debug: 1 };
+        if (PEER_HOST) {
+            o.host = PEER_HOST;
+            o.port = 443;
+            o.secure = true;     // Render 是 https → 443 + secure
+            o.path = "/peerjs";  // 跟服务器 index.js 里挂的路径一致
+        }
+        return o;
+    }
+
     // 把 6 位字母+数字的 peer id 当 "房间码", 用户友好
     function _genRoomCode() {
         var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -69,7 +87,7 @@
         var code = _genRoomCode();
         var fullId = 'teilaruia-' + code;
         try {
-            bridge._peer = new Peer(fullId, { debug: 1 });
+            bridge._peer = new Peer(fullId, _peerOpts());
         } catch (e) {
             bridge._lastError = 'PeerJS not loaded';
             bridge._status = 'error';
@@ -107,7 +125,7 @@
         bridge._lastError = '';
         var fullId = 'teilaruia-' + code.toUpperCase();
         try {
-            bridge._peer = new Peer(null, { debug: 1 });
+            bridge._peer = new Peer(null, _peerOpts());
         } catch (e) {
             bridge._lastError = 'PeerJS not loaded';
             bridge._status = 'error';

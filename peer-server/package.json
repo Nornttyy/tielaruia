@@ -1,0 +1,16 @@
+{
+  "name": "teilaruia-peer-server",
+  "version": "1.0.0",
+  "description": "teilaruia 联机用的私人 PeerJS 信令服务器 (只给自己人用 = 稳)。部署到 Render 免费托管。",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "peer": "^1.0.2"
+  }
+}
