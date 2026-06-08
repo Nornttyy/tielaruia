@@ -4,6 +4,8 @@
 # 由 main.gd 监听 ui_pause action 调 toggle.
 extends CanvasLayer
 
+const UIStyle = preload("res://scripts/ui/ui_style.gd")
+
 signal return_to_menu
 
 @onready var _resume_button: Button = $VBox/ResumeButton
@@ -19,6 +21,10 @@ signal return_to_menu
 
 func _ready() -> void:
 	visible = false
+	# 蓝色按钮 + 蓝色子面板 (统一风格)
+	for b in [_resume_button, _multiplayer_button, _return_button, _creative_button, _close_button]:
+		UIStyle.style_button(b)
+	_host_panel.add_theme_stylebox_override("panel", UIStyle.panel())
 	_resume_button.pressed.connect(_on_resume_pressed)
 	_multiplayer_button.pressed.connect(_on_multiplayer_pressed)
 	_return_button.pressed.connect(_on_return_to_menu_pressed)

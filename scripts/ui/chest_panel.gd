@@ -5,6 +5,7 @@
 extends CanvasLayer
 
 const InventoryCursor = preload("res://scripts/items/inventory_cursor.gd")
+const UIStyle = preload("res://scripts/ui/ui_style.gd")
 
 const SLOT_SIZE := 40
 const COLS_CHEST := 8
@@ -62,6 +63,7 @@ func _build_ui() -> void:
 	add_child(dim)
 
 	_root = PanelContainer.new()
+	_root.add_theme_stylebox_override("panel", UIStyle.panel())   # 蓝色圆角面板
 	_root.set_anchors_preset(Control.PRESET_CENTER)
 	_root.custom_minimum_size = Vector2(SLOT_SIZE * COLS_PLAYER + 32, SLOT_SIZE * (ROWS_CHEST + ROWS_PLAYER) + 96)
 	# 居中
@@ -95,6 +97,7 @@ func _build_ui() -> void:
 	_take_all_btn = Button.new()
 	_take_all_btn.text = Locale.t("chest_take_all")
 	_take_all_btn.custom_minimum_size = Vector2(0, 26)
+	UIStyle.style_button(_take_all_btn)
 	_take_all_btn.pressed.connect(take_all_from_chest)
 	vbox.add_child(_take_all_btn)
 
@@ -125,6 +128,7 @@ func _build_ui() -> void:
 	_close_btn = Button.new()
 	_close_btn.text = Locale.t("chest_close")
 	_close_btn.custom_minimum_size = Vector2(0, 32)
+	UIStyle.style_button(_close_btn)
 	_close_btn.pressed.connect(close)
 	vbox.add_child(_close_btn)
 	# Cursor icon: 跟鼠标飘的物品
@@ -148,12 +152,8 @@ func _build_ui() -> void:
 func _make_slot(idx: int, is_chest: bool) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
-	# 背景: 暗灰
-	var bg := ColorRect.new()
-	bg.color = Color(0.18, 0.18, 0.2)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(bg)
+	# 蓝色圆角槽 (跟热键栏/合成统一)
+	p.add_theme_stylebox_override("panel", UIStyle.slot())
 	# icon
 	var icon := TextureRect.new()
 	icon.name = "Icon"

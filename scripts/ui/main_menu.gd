@@ -11,6 +11,7 @@ const DIFF_EASY := 0
 const DIFF_NORMAL := 1
 const DIFF_HARD := 2
 
+const UIStyle = preload("res://scripts/ui/ui_style.gd")
 const CharacterPanelsScene = preload("res://scripts/ui/character_panels.gd")
 const MenuSceneArt = preload("res://scripts/art/menu_scene_art.gd")
 const LogoArt = preload("res://scripts/art/logo_art.gd")
@@ -65,6 +66,7 @@ func _ready() -> void:
 	_setup_settings_panel()
 	_setup_new_game_panel()
 	_setup_world_select_panel()
+	_blue_dialogs()   # 弹窗面板 + 按钮统一蓝色
 	# i18n: 用当前语言覆盖 .tscn 默认中文; 切语言时再调一次刷新.
 	_refresh_localized_text()
 	Locale.language_changed.connect(_on_language_changed)
@@ -471,6 +473,28 @@ func _setup_buttons() -> void:
 		var cb: Callable = entry["callback"]
 		if cb.is_valid():
 			btn.pressed.connect(cb)
+
+
+# 把所有弹窗面板 (设置/新游戏/选世界/联机) + 里面的按钮统一刷成蓝色.
+# 开关按钮 (难度/模式/尺寸/勾选, toggle_mode=true) 用 style_toggle (选中=亮蓝高亮).
+func _blue_dialogs() -> void:
+	for pname in ["SettingsPanel", "NewGamePanel", "WorldSelectPanel", "MultiplayerPanel"]:
+		var p: Node = get_node_or_null(pname)
+		if p == null:
+			continue
+		if p is Panel:
+			(p as Panel).add_theme_stylebox_override("panel", UIStyle.panel())
+		_style_buttons_recursive(p)
+
+
+func _style_buttons_recursive(node: Node) -> void:
+	for c in node.get_children():
+		if c is Button:
+			if (c as Button).toggle_mode:
+				UIStyle.style_toggle(c)
+			else:
+				UIStyle.style_button(c)
+		_style_buttons_recursive(c)
 
 
 func _apply_button_style(btn: Button) -> void:
