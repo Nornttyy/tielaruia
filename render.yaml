@@ -1,0 +1,12 @@
+# Render 蓝图 (Blueprint): 让联机服务器"一键部署"。
+# 配合 "Deploy to Render" 按钮使用 —— Render 自动读这个文件建好服务, 不用手填那些框。
+# 服务器代码在 peer-server/ 文件夹。详见 docs/multiplayer-server-setup.md
+services:
+  - type: web
+    name: teilaruia-peer
+    runtime: node
+    rootDir: peer-server
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
