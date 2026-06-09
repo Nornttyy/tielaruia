@@ -59,8 +59,8 @@ func _input(event: InputEvent) -> void:
 	if ke == null or not ke.pressed or ke.echo:
 		return
 	var kc: int = ke.keycode
-	if not _typing and (kc == KEY_ENTER or kc == KEY_KP_ENTER):
-		# 别人面板 (背包/箱子) 开着时不抢回车
+	if not _typing and kc == KEY_T:
+		# 像 Minecraft: 按 T 开聊天框 (发送还是回车). 别人面板 (背包/箱子) 开着时不抢键
 		if _other_panel_open():
 			return
 		_open_input()
