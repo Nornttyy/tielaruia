@@ -63,15 +63,10 @@ var _slime_base_y: Array[float] = []
 
 func _ready() -> void:
 	_setup_sky_gradient()
-	_setup_sun()
-	_setup_stars()
-	_setup_hills()
-	_setup_ground()
+	# 背景只留树 (用户要求): 隐藏山+地面, 不画太阳/星星/云/鸟/火把/史莱姆
+	_hills.visible = false
+	$BackgroundLayer/Ground.visible = false
 	_setup_trees()
-	_setup_clouds()
-	_setup_birds()
-	_setup_torches()
-	_setup_slimes()
 	_setup_title()
 	_start_title_breathing()
 	_setup_buttons()
@@ -160,10 +155,7 @@ func _refresh_localized_text() -> void:
 func _process(delta: float) -> void:
 	if not visible:
 		return
-	_animate_clouds(delta)
-	_animate_birds(delta)
 	_animate_trees(delta)
-	_animate_slimes(delta)
 
 
 # ---- background ----

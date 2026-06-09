@@ -29,11 +29,15 @@ func test_background_has_sky():
 	assert_not_null(mm.get_node_or_null("BackgroundLayer/Sky"))
 
 
-func test_background_has_clouds():
+# 背景只留树 (用户要求): 云/太阳/鸟/史莱姆/地面都不画了
+func test_background_only_trees_no_clouds():
 	var mm = _make()
 	var clouds = mm.get_node_or_null("BackgroundLayer/Clouds")
-	assert_not_null(clouds)
-	assert_gt(clouds.get_child_count(), 0, "至少一朵云")
+	assert_true(clouds == null or clouds.get_child_count() == 0, "背景不该有云了")
+	# 地面隐藏
+	var ground = mm.get_node_or_null("BackgroundLayer/Ground")
+	if ground != null:
+		assert_false(ground.visible, "地面该隐藏 (只留树)")
 
 
 func test_background_has_trees():
