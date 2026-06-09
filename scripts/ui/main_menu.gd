@@ -51,7 +51,7 @@ const BTN_PRESSED_BG := Color8(22, 40, 74)
 
 var _character_panels: Control = null
 var _cloud_speeds: Array[float] = []
-var _tree_speeds: Array[float] = []   # 跟 _trees_root 子节点一一对应 (移动森林)
+var _trees_front: Node2D = null   # 近景树层: 画在草地之后 = 站在草地前面 (速度存在各精灵 meta 上)
 var _bird_speeds: Array[float] = []
 var _bird_phase: Array[float] = []     # 小鸟上下飘的相位
 var _bird_t: float = 0.0
@@ -215,25 +215,30 @@ func _setup_trees() -> void:
 	# 远层 (大/慢/略淡, 纵深) 先建在后; 近层 (更大/快/实) 后建在前. 两种树形交替。
 	var t0 = MenuSceneArt.make_forest_tree(0)   # 圆胖
 	var t1 = MenuSceneArt.make_forest_tree(1)   # 高瘦
-	# 后墙层 (最先建=最靠后): 一整排密树撑起背景, 替掉原来的山。略淡作远景雾感。
+	# 近景树单独一层, 插到 Ground 之后绘制 → 前面的树站在草地前面 (树干完整露出, 不被草盖住)
+	_trees_front = Node2D.new()
+	_trees_front.name = "TreesFront"
+	$BackgroundLayer.add_child(_trees_front)
+	$BackgroundLayer.move_child(_trees_front, $BackgroundLayer/Ground.get_index() + 1)
+	# 后墙层 (最先建=最靠后): 一整排密树撑起背景, 替掉原来的山。在草地后面 (扎进地里)。
 	for i in TREE_WALL_COUNT:
 		var wx: float = (float(i) + randf()) / float(TREE_WALL_COUNT) * (VIEWPORT_SIZE.x + 160.0) - 80.0
-		_add_tree(t0 if i % 2 == 0 else t1, wx,
+		_add_tree(_trees_root, t0 if i % 2 == 0 else t1, wx,
 			randf_range(5.0, 6.5), randf_range(TREE_WALL_SPEED.x, TREE_WALL_SPEED.y), 1.0, 0.58)
 	for i in TREE_FAR_COUNT:
 		# 均匀分槽 + 槽内随机 → 铺满不留缝
 		var fx: float = (float(i) + randf()) / float(TREE_FAR_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
-		_add_tree(t0 if i % 2 == 0 else t1, fx,
+		_add_tree(_trees_root, t0 if i % 2 == 0 else t1, fx,
 			randf_range(5.5, 7.0), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 1.0, 0.70)
 	for i in TREE_NEAR_COUNT:
 		var nx: float = (float(i) + randf()) / float(TREE_NEAR_COUNT) * (VIEWPORT_SIZE.x + 240.0) - 120.0
-		# ground_ratio 1.0: 近树底在屏幕底边, 露多一点又不至于盖住中间按钮/顶部标题 (1.18 太下了)
-		_add_tree(t0 if i % 2 == 0 else t1, nx,
+		# 近树进 _trees_front (草地前面). ground_ratio 1.0: 树底在屏幕底边。
+		_add_tree(_trees_front, t0 if i % 2 == 0 else t1, nx,
 			randf_range(6.5, 8.5), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 1.0)
 
 
 # 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
-func _add_tree(tex: Texture2D, x: float, scale: float, speed: float, alpha: float, ground_ratio: float) -> void:
+func _add_tree(parent: Node2D, tex: Texture2D, x: float, scale: float, speed: float, alpha: float, ground_ratio: float) -> void:
 	var s := Sprite2D.new()
 	s.texture = tex
 	s.centered = false
@@ -241,17 +246,25 @@ func _add_tree(tex: Texture2D, x: float, scale: float, speed: float, alpha: floa
 	s.scale = Vector2(scale, sy)
 	s.modulate.a = alpha
 	s.position = Vector2(x, VIEWPORT_SIZE.y * ground_ratio - TREE_H * sy)
-	_trees_root.add_child(s)
-	_tree_speeds.append(speed)
+	s.set_meta("speed", speed)   # 速度存精灵自己身上 (两层树都靠它滚)
+	parent.add_child(s)
 
 
-# 森林向左滚动 (移动感); 树移出左边 → 绕回右边 (无限森林)
+# 森林向左滚动 (移动感); 树移出左边 → 绕回右边 (无限森林). 后景层 + 近景层都滚。
 func _animate_trees(delta: float) -> void:
-	for i in _trees_root.get_child_count():
-		var t: Sprite2D = _trees_root.get_child(i)
-		t.position.x -= _tree_speeds[i] * delta
-		if t.position.x < -TREE_W * t.scale.x:
-			t.position.x = VIEWPORT_SIZE.x + randf_range(20.0, 180.0)
+	_scroll_tree_layer(_trees_root, delta)
+	if _trees_front != null:
+		_scroll_tree_layer(_trees_front, delta)
+
+
+func _scroll_tree_layer(layer: Node2D, delta: float) -> void:
+	for t in layer.get_children():
+		var sp: Sprite2D = t as Sprite2D
+		if sp == null:
+			continue
+		sp.position.x -= float(sp.get_meta("speed", 0.0)) * delta
+		if sp.position.x < -TREE_W * sp.scale.x:
+			sp.position.x = VIEWPORT_SIZE.x + randf_range(20.0, 180.0)
 
 
 func _setup_stars() -> void:
