@@ -53,9 +53,9 @@ func test_invalidate_column_updates():
 	assert_true(grid.is_sky_exposed(2, 5))
 
 
-func test_out_of_bounds_returns_false():
-	# y 越界
-	assert_false(grid.is_sky_exposed(0, -1))
+func test_out_of_bounds():
+	# 世界顶之上 (y<0) = 开阔天空, 有天光 (修"飞高头顶黑墙"); 世界底之下 (y>=256) = 地底, 无天光
+	assert_true(grid.is_sky_exposed(0, -1), "世界顶之上是开阔天空, 该有天光")
 	assert_false(grid.is_sky_exposed(0, 256))
 
 

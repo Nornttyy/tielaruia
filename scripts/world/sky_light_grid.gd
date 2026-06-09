@@ -15,7 +15,11 @@ var _light_top: Dictionary = {}  # int x → int top_solid_y (该列最顶的 so
 
 # 公开 API: 该 tile 是否在天空下
 func is_sky_exposed(x: int, y: int) -> bool:
-	if y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
+	# 世界顶之上 (y<0) = 开阔天空, 算"晒到天" → 飞高了头顶是亮天空, 不再是黑天花板。
+	# 世界底之下 (y>=WORLD_HEIGHT) = 地底, 无天光。
+	if y < 0:
+		return true
+	if y >= ChunkConstants.WORLD_HEIGHT:
 		return false
 	if not _light_top.has(x):
 		_light_top[x] = _compute_light_top(x)
