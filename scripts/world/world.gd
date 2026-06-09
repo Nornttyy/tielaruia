@@ -665,7 +665,9 @@ func _process(delta: float) -> void:
 	_sweep_falling_water(delta)   # 下落水视觉淡出 (每帧)
 	# 联机 client (不是 host) 跳过怪物/动物刷新 (host 权威, client 只接受 ent_pos 同步)
 	var is_mp_client: bool = NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host
-	if not is_mp_client:
+	# 对战房 (PvP) 不刷怪/动物 — 纯玩家对战 (作物/门照常)
+	var no_mobs: bool = NetworkManager != null and NetworkManager.is_pvp()
+	if not is_mp_client and not no_mobs:
 		_slime_spawn_timer -= delta
 		if _slime_spawn_timer <= 0.0:
 			_slime_spawn_timer = SPAWN_INTERVAL
@@ -680,6 +682,7 @@ func _process(delta: float) -> void:
 			_animal_spawn_timer = ANIMAL_SPAWN_INTERVAL
 			if not TimeOfDay.is_night():
 				_try_spawn_animal()
+	if not is_mp_client:
 		_crop_grow_timer -= delta
 		if _crop_grow_timer <= 0.0:
 			_crop_grow_timer = CROP_GROW_INTERVAL

@@ -586,9 +586,24 @@ func _grant_starter_inventory(player: Node) -> void:
 		return
 	# 双发由调用方 _want_starter 一次性标志保证; 这里直接发. 不再"任一槽非空就跳过" —
 	# 那个会被新游戏时抢先进背包的物品 / 联机消息误触发 → 玩家丢三件套.
+	# 对战房 (PvP): 改发战斗装备包, 不发生存起步包
+	if NetworkManager != null and NetworkManager.is_pvp():
+		_grant_pvp_loadout(inv_node)
+		return
 	inv_node.pickup("wood_pickaxe", 1)
 	inv_node.pickup("wood_axe", 1)
 	inv_node.pickup("wood_sword", 1)
+
+
+# 对战房开局包: 剑 + 弓 + 一叠箭 + 方块 + 穿上一套铁甲
+func _grant_pvp_loadout(inv_node: Node) -> void:
+	inv_node.pickup("iron_sword", 1)
+	inv_node.pickup("wood_bow", 1)
+	inv_node.pickup("wood_arrow", 99)
+	inv_node.pickup("stone", 64)
+	inv_node.set_armor("helmet", {"item_id": "iron_helmet", "count": 1})
+	inv_node.set_armor("chest", {"item_id": "iron_chest", "count": 1})
+	inv_node.set_armor("pants", {"item_id": "iron_pants", "count": 1})
 
 
 func _return_to_menu() -> void:
