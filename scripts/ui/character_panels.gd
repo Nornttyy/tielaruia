@@ -19,13 +19,15 @@ var _chest_slider: HSlider
 var _step_vals: Dictionary = {}
 var _appearance: Dictionary = {}
 
-# 色块候选 (暖色优先)
-const _SKIN := [Color8(255,218,185), Color8(240,190,150), Color8(200,150,110), Color8(150,100,70), Color8(95,60,40)]
-const _HAIR := [Color8(121,85,72), Color8(60,40,30), Color8(20,20,20), Color8(210,180,90), Color8(180,70,50), Color8(120,90,160)]
-const _SHIRT := [Color8(229,57,53), Color8(50,110,200), Color8(70,160,90), Color8(240,200,70), Color8(230,140,60), Color8(240,240,240)]
-const _PANTS := [Color8(38,70,130), Color8(60,50,45), Color8(80,80,90), Color8(120,80,60), Color8(40,90,70), Color8(20,20,30)]
-const _EYE := [Color8(60,110,70), Color8(70,120,200), Color8(110,70,50), Color8(40,40,40), Color8(150,90,170), Color8(200,140,60)]
-
+# 自由调色: 选部位 (◀ ▶) + 3 滑杆 (色相/饱和度/亮度), 任意颜色随便调。
+const _COLOR_PARTS := [["皮肤", "skin_color"], ["头发", "hair_color"], ["衬衫", "shirt_color"], ["裤子", "pants_color"], ["眼珠", "eye_color"]]
+var _active_part_index: int = 0
+var _active_color_key: String = "skin_color"
+var _part_name_label: Label
+var _active_swatch: ColorRect
+var _hue_slider: HSlider
+var _sat_slider: HSlider
+var _val_slider: HSlider
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -142,6 +144,8 @@ func _on_new_character() -> void:
 	_creator_panel.visible = true
 	visible = true
 	_set_gender(int(_appearance["gender"]))
+	if _hue_slider != null:
+		_set_active_color_index(_active_part_index)   # 重开捏人: 滑杆同步到新角色颜色
 	_rebuild_preview()
 
 
@@ -175,11 +179,7 @@ func _build_creator_panel() -> void:
 	vbox.add_child(_stepper("发型", "hair_style", 0, 3))
 	_chest_row = _slider_row("胸围", "chest_size", 0, 5)
 	vbox.add_child(_chest_row)
-	vbox.add_child(_color_row("皮肤", "skin_color", _SKIN))
-	vbox.add_child(_color_row("头发", "hair_color", _HAIR))
-	vbox.add_child(_color_row("衬衫", "shirt_color", _SHIRT))
-	vbox.add_child(_color_row("裤子", "pants_color", _PANTS))
-	vbox.add_child(_color_row("眼珠", "eye_color", _EYE))
+	_build_color_editor(vbox)
 	var btn_row := HBoxContainer.new()
 	var save_b := Button.new(); save_b.text = "保存"; save_b.pressed.connect(_save_creator)
 	var cancel_b := Button.new(); cancel_b.text = "取消"; cancel_b.pressed.connect(func():
@@ -222,19 +222,64 @@ func _slider_row(label: String, key: String, lo: int, hi: int) -> HBoxContainer:
 	return row
 
 
-# 一行色块: 点哪块就把 _appearance[key] 设成那色 + 重建预览。
-func _color_row(label: String, key: String, colors: Array) -> HBoxContainer:
+# 自由调色 UI: 一行"调色 ◀ 部位 ▶ [当前色]" + 色相/饱和度/亮度 三滑杆。
+func _build_color_editor(parent: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	var l := Label.new(); l.text = "调色"; l.custom_minimum_size = Vector2(60, 0); row.add_child(l)
+	var left := Button.new(); left.text = "◀"; row.add_child(left)
+	_part_name_label = Label.new()
+	_part_name_label.custom_minimum_size = Vector2(50, 0)
+	_part_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	row.add_child(_part_name_label)
+	var right := Button.new(); right.text = "▶"; row.add_child(right)
+	_active_swatch = ColorRect.new(); _active_swatch.custom_minimum_size = Vector2(28, 28)
+	row.add_child(_active_swatch)
+	parent.add_child(row)
+	left.pressed.connect(func(): _cycle_part(-1))
+	right.pressed.connect(func(): _cycle_part(1))
+	# 三滑杆: 色相 0-359, 饱和度/亮度 0-100
+	_hue_slider = _make_color_slider("色相", 0, 359, parent)
+	_sat_slider = _make_color_slider("饱和度", 0, 100, parent)
+	_val_slider = _make_color_slider("亮度", 0, 100, parent)
+	_set_active_color_index(0)
+
+
+func _make_color_slider(label: String, lo: int, hi: int, parent: VBoxContainer) -> HSlider:
 	var row := HBoxContainer.new()
 	var l := Label.new(); l.text = label; l.custom_minimum_size = Vector2(60, 0); row.add_child(l)
-	for col in colors:
-		var sw := ColorRect.new()
-		sw.color = col
-		sw.custom_minimum_size = Vector2(28, 28)
-		sw.gui_input.connect(func(ev):
-			if ev is InputEventMouseButton and ev.pressed:
-				_appearance[key] = col; _rebuild_preview())
-		row.add_child(sw)
-	return row
+	var s := HSlider.new(); s.min_value = lo; s.max_value = hi; s.step = 1
+	s.custom_minimum_size = Vector2(180, 0)
+	s.value_changed.connect(func(_v): _on_color_slider_changed())
+	row.add_child(s)
+	parent.add_child(row)
+	return s
+
+
+func _cycle_part(d: int) -> void:
+	_set_active_color_index(wrapi(_active_part_index + d, 0, _COLOR_PARTS.size()))
+
+
+# 切到第 i 个部位: 标题 + 把该部位当前颜色拆成 HSV 填进三滑杆 (no_signal 防回环)。
+func _set_active_color_index(i: int) -> void:
+	_active_part_index = i
+	_active_color_key = String(_COLOR_PARTS[i][1])
+	if _part_name_label != null:
+		_part_name_label.text = String(_COLOR_PARTS[i][0])
+	var c: Color = _appearance.get(_active_color_key, Color.WHITE)
+	_hue_slider.set_value_no_signal(roundi(c.h * 359.0))
+	_sat_slider.set_value_no_signal(roundi(c.s * 100.0))
+	_val_slider.set_value_no_signal(roundi(c.v * 100.0))
+	if _active_swatch != null:
+		_active_swatch.color = c
+
+
+# 拖任意滑杆 → 用三滑杆当前值合成颜色, 写回当前部位 + 即时重画预览。
+func _on_color_slider_changed() -> void:
+	var c := Color.from_hsv(_hue_slider.value / 359.0, _sat_slider.value / 100.0, _val_slider.value / 100.0)
+	_appearance[_active_color_key] = c
+	if _active_swatch != null:
+		_active_swatch.color = c
+	_rebuild_preview()
 
 
 func _set_gender(g: int) -> void:

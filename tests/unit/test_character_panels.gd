@@ -77,6 +77,28 @@ func test_chest_row_only_visible_for_female():
 	panels._set_gender(1)
 	assert_true(panels._chest_row.visible, "女: 胸围行显示")
 
+func test_color_sliders_change_active_part_color():
+	panels._on_new_character()
+	await wait_frames(1)
+	panels._set_active_color_index(0)   # 皮肤
+	# 拖动滑杆 (设 value 会触发 value_changed → 合成颜色写回 _appearance)
+	panels._hue_slider.value = 200
+	panels._sat_slider.value = 50
+	panels._val_slider.value = 80
+	var c: Color = panels._appearance["skin_color"]
+	assert_almost_eq(c.s, 0.5, 0.02, "饱和度滑杆该改皮肤饱和度")
+	assert_almost_eq(c.v, 0.8, 0.02, "亮度滑杆该改皮肤亮度")
+
+
+func test_color_editor_switches_part():
+	panels._on_new_character()
+	await wait_frames(1)
+	panels._set_active_color_index(1)   # 头发
+	assert_eq(panels._active_color_key, "hair_color", "切到头发")
+	panels._cycle_part(1)               # 下一个 = 衬衫
+	assert_eq(panels._active_color_key, "shirt_color", "◀▶ 切到衬衫")
+
+
 func _all_labels(node: Node) -> Array:
 	var out: Array = []
 	if node is Label: out.append(node)
