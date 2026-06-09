@@ -149,6 +149,9 @@ func _refresh_localized_text() -> void:
 
 	# 多人游戏面板
 	$MultiplayerPanel/VBox/TitleLabel.text = Locale.t("mp_title")
+	$MultiplayerPanel/VBox/RoomsLabel.text = Locale.t("mp_rooms_title")
+	$MultiplayerPanel/VBox/PublicSurvivalButton.text = Locale.t("mp_public_survival")
+	$MultiplayerPanel/VBox/JoinTitleLabel.text = Locale.t("mp_join_title")
 	$MultiplayerPanel/VBox/JoinRow/JoinInput.placeholder_text = Locale.t("mp_room_code_placeholder")
 	$MultiplayerPanel/VBox/JoinRow/JoinButton.text = Locale.t("mp_join_label")
 	$MultiplayerPanel/VBox/BackButton.text = Locale.t("mp_back")
@@ -912,7 +915,10 @@ func _setup_new_game_panel() -> void:
 
 # ---- multiplayer panel ----
 
+const MpRooms = preload("res://scripts/net/mp_rooms.gd")
+
 var _mp_wired: bool = false
+var _entering_public: bool = false   # 正在进公共房: 一旦本端成 host 就用固定 seed 进游戏
 
 
 func _on_multiplayer_pressed() -> void:
@@ -929,10 +935,13 @@ func _setup_multiplayer_panel_once() -> void:
 	var panel: Panel = $MultiplayerPanel
 	var join_btn: Button = panel.get_node("VBox/JoinRow/JoinButton")
 	var back_btn: Button = panel.get_node("VBox/BackButton")
+	var pub_btn: Button = panel.get_node("VBox/PublicSurvivalButton")
 	_apply_button_style(join_btn)
 	_apply_button_style(back_btn)
+	_apply_button_style(pub_btn)
 	join_btn.pressed.connect(_on_join_pressed)
 	back_btn.pressed.connect(_on_multiplayer_back_pressed)
+	pub_btn.pressed.connect(_on_public_survival_pressed)
 	# 接 NetworkManager 信号 (autoload, 一直在). host 已移到 PauseMenu, 主菜单只 join.
 	if NetworkManager != null:
 		if not NetworkManager.status_changed.is_connected(_on_mp_status_changed):
@@ -946,6 +955,7 @@ func _setup_multiplayer_panel_once() -> void:
 func _on_multiplayer_back_pressed() -> void:
 	$MultiplayerPanel.visible = false
 	$ButtonLayer/VBox.visible = true
+	_entering_public = false
 	if NetworkManager != null and NetworkManager.status != "idle":
 		NetworkManager.disconnect_room()
 
@@ -961,13 +971,31 @@ func _on_join_pressed() -> void:
 	_refresh_multiplayer_status()
 
 
+# 点「公共生存房」: 进固定房号的公共房 (谁先到谁当 host, 房满顺延). 进游戏在状态变 connected 时.
+func _on_public_survival_pressed() -> void:
+	if NetworkManager == null:
+		$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_status_error_prefix") + "只在浏览器有效"
+		return
+	_entering_public = true
+	NetworkManager.enter_public("SV", MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, MpRooms.PUBLIC_SV_DIFF)
+	$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_entering_public")
+	_refresh_multiplayer_status()
+
+
 func _on_mp_status_changed(_s: String) -> void:
+	# 进公共房且本端被定为 host → 立刻用固定 seed 进游戏 (房里就我一个也能玩, 等别人来).
+	# client 不在这里进: 它要等 host 的 hello (见 _on_mp_hello_received) 拿到一致 seed.
+	if _entering_public and NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
+		_entering_public = false
+		_start_multiplayer_game(MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, MpRooms.PUBLIC_SV_DIFF)
+		return
 	_refresh_multiplayer_status()
 
 
 func _on_mp_hello_received(seed_val: int, size_val: int, diff_val: int) -> void:
 	# client 收到 host 的 hello → 用同 seed + 同世界大小 + 同难度 启游戏
 	if not NetworkManager.is_host:
+		_entering_public = false
 		_start_multiplayer_game(seed_val, size_val, diff_val)
 
 

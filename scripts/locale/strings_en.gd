@@ -46,7 +46,11 @@ const S := {
 	"newgame_default_world_name": "My World",
 	"newgame_seed_placeholder": "Random",
 
-	"mp_title": "Join Room",
+	"mp_title": "Multiplayer",
+	"mp_rooms_title": "Rooms",
+	"mp_public_survival": "🌍 Public Survival",
+	"mp_join_title": "Join Room",
+	"mp_entering_public": "Entering public room…",
 	"mp_room_code_prompt": "Enter the 6-digit room code from your friend",
 	"mp_room_code_placeholder": "6-digit code",
 	"mp_join_label": "Join",

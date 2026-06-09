@@ -53,7 +53,11 @@ const S := {
 	"newgame_seed_placeholder": "随机",
 
 	# ===== 多人游戏面板 =====
-	"mp_title": "加 入 房 间",
+	"mp_title": "多 人 游 戏",
+	"mp_rooms_title": "房间",
+	"mp_public_survival": "🌍 公共生存房",
+	"mp_join_title": "加入房间",
+	"mp_entering_public": "正在进入公共房…",
 	"mp_room_code_prompt": "输入朋友给的 6 位房间码",
 	"mp_room_code_placeholder": "6 位房间码",
 	"mp_join_label": "加入",

@@ -97,6 +97,9 @@ func _has_javascript_bridge() -> bool:
 
 # 拉 bridge 状态: 更新 status / my_room_code / 拉消息
 func _poll_bridge() -> void:
+	# 角色 (host / client) 由 bridge 决定 (公共房抢占后才知道). 必须在处理状态变化"之前"同步,
+	# 否则 connected 那一刻 is_host 还是旧值 → host 不发 hello / 不进游戏.
+	is_host = bool(_bridge.is_host())
 	var new_status: String = String(_bridge.get_status())
 	if new_status != status:
 		var old_status: String = status
@@ -111,8 +114,6 @@ func _poll_bridge() -> void:
 		# 双方连上后互发自己的名字 (host + client 都发, 这样两边都显示真名)
 		if status == "connected" and old_status != "connected":
 			send_player_name(_local_player_name())
-	# 角色 (host / client) 由 bridge 决定 (公共房抢占后才知道), 每次同步
-	is_host = bool(_bridge.is_host())
 	# my_room_code (host 模式才有, 异步生成)
 	var rc: String = String(_bridge.get_my_id())
 	if rc != my_room_code and rc != "":

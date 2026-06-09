@@ -46,7 +46,11 @@ const S := {
 	"newgame_default_world_name": "私のワールド",
 	"newgame_seed_placeholder": "ランダム",
 
-	"mp_title": "ルームに参加",
+	"mp_title": "マルチプレイ",
+	"mp_rooms_title": "ルーム",
+	"mp_public_survival": "🌍 公開サバイバル",
+	"mp_join_title": "ルームに参加",
+	"mp_entering_public": "公開ルームに入室中…",
 	"mp_room_code_prompt": "友達からの 6 桁のルームコードを入力",
 	"mp_room_code_placeholder": "6 桁コード",
 	"mp_join_label": "参加",

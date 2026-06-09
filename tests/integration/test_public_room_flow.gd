@@ -56,3 +56,14 @@ func test_double_join_same_peer_no_duplicate() -> void:
 func test_public_survival_constants() -> void:
 	assert_eq(MpRooms.PUBLIC_SV_SEED, 20260609, "公共生存房固定种子")
 	assert_eq(MpRooms.MAX_PEERS, 8, "每房 8 人")
+
+
+# 主菜单有公共生存房按钮 + 入口走 enter_public("SV", ...)
+func test_main_menu_has_public_button() -> void:
+	var MainMenuScene = load("res://scenes/ui/main_menu.tscn")
+	var menu = MainMenuScene.instantiate()
+	add_child_autofree(menu)
+	await wait_frames(2)
+	var btn = menu.get_node_or_null("MultiplayerPanel/VBox/PublicSurvivalButton")
+	assert_not_null(btn, "多人面板该有公共生存房按钮")
+	assert_true(menu.has_method("_on_public_survival_pressed"), "该有公共生存房按钮回调")
