@@ -4,6 +4,7 @@
 extends Node2D
 
 # 收到的目标位置 (lerp target). 实际位置 (self.global_position) 平滑追上.
+var peer_id: String = ""   # 这个远程玩家对应的 peer (多人时区分谁是谁)
 var _target_pos: Vector2 = Vector2.ZERO
 var _facing_right: bool = true
 var _current_anim: String = "idle"

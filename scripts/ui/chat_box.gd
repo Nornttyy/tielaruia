@@ -102,18 +102,31 @@ func _on_submit(text: String) -> void:
 	_close_input()
 
 
-func _on_chat_received(text: String) -> void:
+func _on_chat_received(peer_id: String, text: String) -> void:
 	if text == "":
 		return
-	_bubble_over("remote_player", text)         # 对方头顶冒
-	_add_log(_remote_name() + ": " + text)
+	# 气泡冒在发话那个 peer 的远程玩家头顶 (多人: 不同人冒不同头顶)
+	var rp: Node2D = _remote_player_node(peer_id)
+	if rp != null and Effects != null:
+		Effects.spawn_speech_bubble(rp.global_position + HEAD_OFFSET, text)
+	_add_log(_remote_name(peer_id) + ": " + text)
 
 
-# 在某个玩家 (group) 头顶冒气泡
+# 自己头顶冒气泡 (本地玩家在 "player" 组)
 func _bubble_over(group_name: String, text: String) -> void:
 	var node: Node2D = get_tree().get_first_node_in_group(group_name) as Node2D
 	if node != null and Effects != null:
 		Effects.spawn_speech_bubble(node.global_position + HEAD_OFFSET, text)
+
+
+# 找某 peer 的远程玩家节点 (world 按 peer_id 管理). peer_id 空 → 退回任意一个远程玩家.
+func _remote_player_node(peer_id: String) -> Node2D:
+	var world: Node = get_tree().get_first_node_in_group("world")
+	if world != null and world.has_method("get_remote_player") and peer_id != "":
+		var rp = world.get_remote_player(peer_id)
+		if rp != null and is_instance_valid(rp):
+			return rp as Node2D
+	return get_tree().get_first_node_in_group("remote_player") as Node2D
 
 
 func _add_log(line: String) -> void:
@@ -141,7 +154,8 @@ func _local_name() -> String:
 	return "我"
 
 
-func _remote_name() -> String:
+func _remote_name(_peer_id: String = "") -> String:
+	# 多人精确"按 peer 显示各自名字"是后续优化; 现在统一退回最近收到的对方名字, 够用.
 	if NetworkManager != null and NetworkManager.remote_player_name != "":
 		return NetworkManager.remote_player_name
 	return "对方"

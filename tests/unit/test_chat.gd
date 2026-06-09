@@ -4,24 +4,25 @@ extends GutTest
 
 
 func test_chat_message_routes_to_signal() -> void:
-	# 收到 {"type":"chat","m":"你好"} → 该 emit chat_received("你好")
-	var got := {"text": ""}
-	var cb := func(t: String): got.text = t
+	# 收到 {"type":"chat","m":"你好"} → 该 emit chat_received(peer_id, "你好")
+	var got := {"pid": "", "text": ""}
+	var cb := func(pid: String, t: String): got.pid = pid; got.text = t
 	NetworkManager.chat_received.connect(cb)
-	NetworkManager._route_message('{"type":"chat","m":"你好"}')
+	NetworkManager._route_message('{"type":"chat","m":"你好"}', "P7")
 	NetworkManager.chat_received.disconnect(cb)
 	assert_eq(got.text, "你好", "chat 消息该路由到 chat_received 信号")
+	assert_eq(got.pid, "P7", "chat 信号带来源 peer_id")
 
 
 func test_chat_truncates_overlong() -> void:
 	# 超长 (>120) 该被截断, 防刷屏/卡
 	var got := {"text": ""}
-	var cb := func(t: String): got.text = t
+	var cb := func(_pid: String, t: String): got.text = t
 	NetworkManager.chat_received.connect(cb)
 	var long_text := ""
 	for i in 200:
 		long_text += "a"
-	NetworkManager._route_message(JSON.stringify({"type": "chat", "m": long_text}))
+	NetworkManager._route_message(JSON.stringify({"type": "chat", "m": long_text}), "P7")
 	NetworkManager.chat_received.disconnect(cb)
 	assert_eq(got.text.length(), 120, "超长聊天该截到 120 字")
 
