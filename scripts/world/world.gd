@@ -35,6 +35,7 @@ const FrogScene = preload("res://scenes/entities/frog.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
 const ArrowScene = preload("res://scenes/entities/arrow.tscn")
+const BulletScene = preload("res://scenes/entities/bullet.tscn")
 const BoneProjClass = preload("res://scripts/entities/bone_projectile.gd")   # 骷髅王飞骨头 (脚本直接 new, 无 .tscn)
 const RemotePlayerScene = preload("res://scenes/entities/remote_player.tscn")
 const HealthBarScript = preload("res://scripts/entities/health_bar.gd")
@@ -443,6 +444,13 @@ func _on_remote_projectile(kind: String, sx: float, sy: float, tx: float, ty: fl
 		b.set_meta("is_remote", true)
 		entities_root.add_child(b)
 		b.setup(start, target, 12)   # 12 = SkeletonKing.THROW_DAMAGE
+		return
+	# 子弹: 跟箭一样是"玩家打怪"的视觉副本 (dmg=0, host 算伤害)
+	if kind == "bullet":
+		var b: Node2D = BulletScene.instantiate()
+		b.set_meta("is_remote", true)
+		entities_root.add_child(b)
+		b.setup(start, target, 0, null)
 		return
 	var proj: Node2D = ArrowScene.instantiate() if kind == "arrow" else FireballScene.instantiate()
 	proj.set_meta("is_remote", true)

@@ -232,6 +232,13 @@ func _physics_process(delta: float) -> void:
 		if primary_pressed_b and _attack_cooldown <= 0.0:
 			_try_fire_bow()
 			_flash_held()   # 射箭时显示弓 (无挥摆动画, 闪一下)
+	elif kind == "gun":
+		# 枪: LMB 按下 → 朝鼠标射子弹, 消耗 1 bullet. cooldown 0.22s (比弓快).
+		_reset_mining()
+		var primary_pressed_g: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
+		if primary_pressed_g and _attack_cooldown <= 0.0:
+			_try_fire_gun()
+			_flash_held()   # 开枪时闪一下显示枪
 	elif kind == "staff":
 		# 法杖: LMB 按下 → 火球 (普通法杖) 或 召唤友方骷髅 (骷髅法杖 summons_minion).
 		_reset_mining()
@@ -1678,11 +1685,14 @@ func in_reach(tile: Vector2i) -> bool:
 
 
 const ArrowScene = preload("res://scenes/entities/arrow.tscn")
+const BulletScene = preload("res://scenes/entities/bullet.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
 const SlimeBallScene = preload("res://scenes/entities/slime_ball.tscn")
 const FriendlySkeletonScene = preload("res://scenes/entities/friendly_skeleton.tscn")
 const BOW_COOLDOWN := 0.4
 const BOW_ARROW_DAMAGE := 5    # base, 后续乘 tier multiplier
+const GUN_COOLDOWN := 0.22     # 比弓快 (连发感)
+const GUN_BULLET_DAMAGE := 9   # base, 比箭(5)狠; 后续乘 tier multiplier
 const STAFF_COOLDOWN := 0.5    # 法杖 cd (mana 限制为主, cd 防自动连发)
 const SUMMON_STAFF_COOLDOWN := 0.6   # 骷髅法杖召唤 cd
 const FRIENDLY_CAP := 3              # 场上最多几个友方骷髅
@@ -1724,6 +1734,36 @@ func _try_fire_bow() -> void:
 	if NetworkManager != null and NetworkManager.connected():
 		NetworkManager.send_projectile("arrow", start.x, start.y, target.x, target.y)
 	SfxBank.play("break", 0.10)  # 暂用破方块声当弓弦声; 以后加专属
+
+
+# 枪射子弹: 找 inventory 里第 1 个 bullet → 消耗 1 → spawn Bullet 朝鼠标直飞.
+# 没子弹 → 不发, 也不进 cooldown (跟弓一样, 随便点没惩罚). 照 _try_fire_bow 结构.
+func _try_fire_gun() -> void:
+	var inv: Node = _inventory_node()
+	if inv == null:
+		return
+	var consumed: bool = false
+	if inv.has_method("consume_first"):
+		consumed = inv.consume_first("bullet", 1)
+	if not consumed:
+		return
+	_attack_cooldown = GUN_COOLDOWN
+	var parent: Node2D = get_parent() as Node2D
+	if parent == null:
+		return
+	var start: Vector2 = parent.global_position + Vector2(0, -8)   # 玩家身体中部
+	var target: Vector2 = mouse_world_override if mouse_world_override != null else parent.get_global_mouse_position()
+	var bullet = BulletScene.instantiate()
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = parent.get_parent()
+	entities.add_child(bullet)
+	# 枪 tier 加伤: tier1 ×1.0, 留口子未来加高 tier 枪
+	var dmg: int = int(round(float(GUN_BULLET_DAMAGE) * _tool_damage_mult()))
+	bullet.setup(start, target, dmg, parent)
+	if NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_projectile("bullet", start.x, start.y, target.x, target.y)
+	SfxBank.play("gunshot", 0.08)
 
 
 # 法杖发火球: 检查 mana 够 → 扣 → spawn fireball 朝鼠标飞.
