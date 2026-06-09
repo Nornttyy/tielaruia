@@ -283,6 +283,12 @@ func _setup_torches() -> void:
 		return
 	var glow_tex: Texture2D = ArtCache.radial_gradient(160)
 	var ground_layer: Node = $BackgroundLayer
+	# 火把层: 插到前景树 (TreesFront) 之前绘制 → 树会从前面遮住火把 (用户要求).
+	var torch_layer := Node2D.new()
+	torch_layer.name = "Torches"
+	ground_layer.add_child(torch_layer)
+	if _trees_front != null:
+		ground_layer.move_child(torch_layer, _trees_front.get_index())
 	var torch_x := [180.0, 1050.0]
 	var ground_y: float = VIEWPORT_SIZE.y * 0.75
 	for tx in torch_x:
@@ -292,22 +298,22 @@ func _setup_torches() -> void:
 		glow.modulate = Color(1.0, 0.65, 0.25, 0.45)
 		glow.scale = Vector2(1.4, 1.4)
 		glow.position = Vector2(tx, ground_y - 30.0)
-		ground_layer.add_child(glow)
+		torch_layer.add_child(glow)
 		# 火把本体 (像素画 16×16 → 48×48). 像素图本身已含火苗, 不再叠 flame_overlay.
 		var torch := Sprite2D.new()
 		torch.texture = torch_tex
 		torch.scale = Vector2(3, 3)
 		torch.centered = false
 		torch.position = Vector2(tx - 24.0, ground_y - 48.0)
-		ground_layer.add_child(torch)
+		torch_layer.add_child(torch)
 		# 光晕呼吸 (alpha 节律), 让火光感来自光晕本身而非贴图叠加
 		var t := create_tween().set_loops()
 		t.tween_property(glow, "modulate:a", 0.60, 0.10)
 		t.tween_property(glow, "modulate:a", 0.35, 0.13)
 		t.tween_property(glow, "modulate:a", 0.50, 0.09)
 		t.tween_property(glow, "modulate:a", 0.45, 0.12)
-		# 周期生成上升火花
-		_start_menu_spark_timer(Vector2(tx, ground_y - 42.0), ground_layer)
+		# 周期生成上升火花 (也进火把层 → 同样被前景树遮住)
+		_start_menu_spark_timer(Vector2(tx, ground_y - 42.0), torch_layer)
 
 
 func _start_menu_spark_timer(spawn_pos: Vector2, parent: Node) -> void:
