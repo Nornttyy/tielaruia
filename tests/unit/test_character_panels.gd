@@ -99,6 +99,17 @@ func test_color_editor_switches_part():
 	assert_eq(panels._active_color_key, "shirt_color", "◀▶ 切到衬衫")
 
 
+func test_second_character_same_name_not_overwritten():
+	# 两次都不改名字 → 第二个该自动取不重名, 不覆盖第一个 (= 能建多个角色)
+	panels._on_new_character()
+	await wait_frames(1)
+	panels._save_creator()
+	panels._on_new_character()
+	await wait_frames(1)
+	panels._save_creator()
+	assert_eq(CharacterManager.list_characters().size(), 2, "两次创建该有 2 个角色, 不互相覆盖")
+
+
 func _all_labels(node: Node) -> Array:
 	var out: Array = []
 	if node is Label: out.append(node)

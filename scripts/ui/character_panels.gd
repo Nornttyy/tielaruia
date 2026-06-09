@@ -315,7 +315,10 @@ func _rebuild_preview() -> void:
 func _save_creator() -> void:
 	var c := CharacterData.new()
 	var nm: String = _name_edit.text.strip_edges()
-	c.character_name = nm if nm != "" else "我的角色"
+	if nm == "":
+		nm = "我的角色"
+	# 自动取不重名: 存档文件名按角色名算, 重名会覆盖 → 这里重名就加 2/3/… 保证每次都是新角色
+	c.character_name = _unique_character_name(nm)
 	c.gender = int(_appearance["gender"])
 	c.hair_style = int(_appearance["hair_style"])
 	c.chest_size = int(_appearance["chest_size"])
@@ -329,3 +332,16 @@ func _save_creator() -> void:
 	_creator_panel.visible = false
 	_select_panel.visible = true
 	_refresh_list()
+
+
+# 重名就在后面加 2/3/… (按存档文件名比对), 防第二个角色覆盖第一个。
+func _unique_character_name(base: String) -> String:
+	var taken := {}
+	for entry in CharacterManager.list_characters():
+		taken[String(entry["name"])] = true
+	if not taken.has(CharacterManager._sanitize(base)):
+		return base
+	var i: int = 2
+	while taken.has(CharacterManager._sanitize(base + " " + str(i))):
+		i += 1
+	return base + " " + str(i)
