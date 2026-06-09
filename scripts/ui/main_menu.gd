@@ -22,7 +22,8 @@ const VIEWPORT_SIZE := Vector2(1280, 720)
 const CLOUD_COUNT := 7          # 4→7: 云更多更丰富 (大小/透明度分层做远近)
 const TREE_COUNT := 5
 # 移动森林: 两层视差树 (远 小/慢/淡, 近 大/快). 横向滚动 + 循环.
-const TREE_WALL_COUNT := 30   # 最后排"森林墙": 替掉山, 密密一排撑起背景天际线
+const TREE_ROW_COUNT := 9     # 只一排高大的树 (用户要求, 不要背景森林)
+const TREE_WALL_COUNT := 30   # (旧多层森林常量, 现已不用)
 const TREE_FAR_COUNT := 20
 const TREE_NEAR_COUNT := 20
 const TREE_WALL_SPEED := Vector2(4.0, 9.0)
@@ -211,30 +212,19 @@ const TREE_H := 30.0    # 纹理高 (树底贴地用)
 
 
 func _setup_trees() -> void:
-	# 移动森林 (用户要"全是大树"): 远近两层都密密铺满, 大棵, 均匀分布 + 抖动 → 没大空档, 整片森林。
-	# 远层 (大/慢/略淡, 纵深) 先建在后; 近层 (更大/快/实) 后建在前. 两种树形交替。
+	# 用户要"只一排高大的树": 不要背景森林, 只在草地前面摆一排又高又大的树, 横向滚动。
 	var t0 = MenuSceneArt.make_forest_tree(0)   # 圆胖
 	var t1 = MenuSceneArt.make_forest_tree(1)   # 高瘦
-	# 近景树单独一层, 插到 Ground 之后绘制 → 前面的树站在草地前面 (树干完整露出, 不被草盖住)
+	# 树层放到 Ground 之后绘制 → 树站在草地前面 (树干完整露出, 不被草盖住)
 	_trees_front = Node2D.new()
 	_trees_front.name = "TreesFront"
 	$BackgroundLayer.add_child(_trees_front)
 	$BackgroundLayer.move_child(_trees_front, $BackgroundLayer/Ground.get_index() + 1)
-	# 后墙层 (最先建=最靠后): 一整排密树撑起背景, 替掉原来的山。在草地后面 (扎进地里)。
-	for i in TREE_WALL_COUNT:
-		var wx: float = (float(i) + randf()) / float(TREE_WALL_COUNT) * (VIEWPORT_SIZE.x + 160.0) - 80.0
-		_add_tree(_trees_root, t0 if i % 2 == 0 else t1, wx,
-			randf_range(5.0, 6.5), randf_range(TREE_WALL_SPEED.x, TREE_WALL_SPEED.y), 1.0, 0.58)
-	for i in TREE_FAR_COUNT:
-		# 均匀分槽 + 槽内随机 → 铺满不留缝
-		var fx: float = (float(i) + randf()) / float(TREE_FAR_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
-		_add_tree(_trees_root, t0 if i % 2 == 0 else t1, fx,
-			randf_range(5.5, 7.0), randf_range(TREE_FAR_SPEED.x, TREE_FAR_SPEED.y), 1.0, 0.70)
-	for i in TREE_NEAR_COUNT:
-		var nx: float = (float(i) + randf()) / float(TREE_NEAR_COUNT) * (VIEWPORT_SIZE.x + 240.0) - 120.0
-		# 近树进 _trees_front (草地前面). ground_ratio 1.0: 树底在屏幕底边。
-		_add_tree(_trees_front, t0 if i % 2 == 0 else t1, nx,
-			randf_range(6.5, 8.5), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 1.0)
+	# 一排: 均匀分槽 + 槽内小抖动, 棵棵高大
+	for i in TREE_ROW_COUNT:
+		var x: float = (float(i) + randf() * 0.5 + 0.25) / float(TREE_ROW_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
+		_add_tree(_trees_front, t0 if i % 2 == 0 else t1, x,
+			randf_range(9.0, 11.0), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 1.0)
 
 
 # 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
