@@ -108,7 +108,7 @@ func _play_initial_track(ctx: String) -> void:
 	var stream: AudioStreamWAV = _tracks.get(ctx)
 	if stream == null:
 		return
-	_bgm_target_db = BGM_VOLUME_DB + _master_db()
+	_bgm_target_db = BGM_VOLUME_DB
 	_active_bgm.stream = stream
 	_active_bgm.volume_db = _bgm_target_db
 	_active_bgm.play()
@@ -130,13 +130,13 @@ func set_context(ctx: String) -> void:
 	incoming.volume_db = DB_SILENT
 	incoming.play()
 	_active_bgm = incoming
-	_bgm_target_db = BGM_VOLUME_DB + _master_db()
+	_bgm_target_db = BGM_VOLUME_DB
 	_fade_t = 0.0
 	_fading = true
 
 
 func _update_ambient_targets(ctx: String) -> void:
-	var amb_db: float = AMBIENT_VOLUME_DB + _master_db()
+	var amb_db: float = AMBIENT_VOLUME_DB
 	match ctx:
 		"day":
 			_amb_target_wind = amb_db
@@ -158,11 +158,10 @@ func _new_loop_player() -> AudioStreamPlayer:
 	return p
 
 
-func _master_db() -> float:
-	var v: float = clampf(GameSettings.master_volume, 0.0, 1.0)
-	if v <= 0.001:
-		return -80.0
-	return linear_to_db(v)
+# 注意: 主音量(master_volume) 不在这里处理! GameSettings._apply_to_audio_server 已经把它
+# 实时挂在 Master 总线上 (所有 player 默认走 Master 总线). 以前这里又把它烤进每个 player 的
+# volume_db, 等于应用两次, 而且只在切场景时重算 → 调低再调高时这份烤进去的旧值不会恢复,
+# 音乐永远偏小. 现在只用相对常量, 全局音量交给总线实时控制.
 
 
 # ===== 音乐合成 =====

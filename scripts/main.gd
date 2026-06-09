@@ -50,6 +50,9 @@ func _ready() -> void:
 
 func _show_menu_state() -> void:
 	_state = "menu"
+	# 主菜单永远放自己的音乐(day), 不被刚才游戏里的夜/洞穴音乐带跑.
+	# (游戏里 player_controller 会按昼夜/洞穴切 context; 回菜单要复位, 否则菜单还放着洞穴 drone)
+	MusicBank.set_context("day")
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.visible = true
 		# 复位"新游戏"按钮的淡出 tween (不然回主菜单是黑屏 + 看不见按钮)
