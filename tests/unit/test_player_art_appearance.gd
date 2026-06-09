@@ -92,6 +92,22 @@ func test_chest_size_male_unaffected():
 	var ib = PlayerArt.build_sprite_frames(b).get_frame_texture("idle", 0).get_image()
 	assert_eq(_count_diff(ia, ib), 0, "男生不受胸围影响")
 
+func test_shirt_style_vest_changes_render():
+	# 背心款 (shirt_style 1) 露胳膊, 跟 T恤 (袖子) 不同
+	var a = _default_appearance()
+	var b = _default_appearance(); b["shirt_style"] = 1
+	var ia = PlayerArt.build_sprite_frames(a).get_frame_texture("idle", 0).get_image()
+	var ib = PlayerArt.build_sprite_frames(b).get_frame_texture("idle", 0).get_image()
+	assert_gt(_count_diff(ia, ib), 0, "背心款(裸臂)与 T恤不同")
+
+func test_pants_style_skirt_changes_render():
+	# 裙子款 (pants_style 2) 裸腿 + 盖裙, 跟长裤不同
+	var a = _default_appearance()
+	var b = _default_appearance(); b["pants_style"] = 2
+	var ia = PlayerArt.build_sprite_frames(a).get_frame_texture("idle", 0).get_image()
+	var ib = PlayerArt.build_sprite_frames(b).get_frame_texture("idle", 0).get_image()
+	assert_gt(_count_diff(ia, ib), 0, "裙子款与长裤不同")
+
 func test_unknown_style_no_crash():
 	var ap = _default_appearance(); ap["shirt_style"] = 99; ap["hair_style"] = 99
 	var sf = PlayerArt.build_sprite_frames(ap)

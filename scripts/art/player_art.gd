@@ -171,6 +171,28 @@ const _SHOE_B := [
 	"ooooo",
 	"OOOOO",
 ]
+# 背心款手臂 (露胳膊, 全皮肤; 跟 T恤的袖子区分)。2 宽 × 6 高。
+const _ARM_BARE := [
+	"ss",
+	"ss",
+	"ks",
+	"ks",
+	"ss",
+	"kk",
+]
+# 裙子款的裸腿 (皮肤色, 裙下露小腿)。3 宽 × 4 高。
+const _LEG_SKIN := [
+	"sss",
+	"sss",
+	"kss",
+	"kss",
+]
+# 裙子 (裤色 b/B 梯形, 盖胯 + 大腿上段, 裸腿露在裙下)。9 宽 × 3 高。
+const _SKIRT := [
+	".bbbbbbb.",
+	"bbbbbbbbb",
+	"BbbbbbbbB",
+]
 
 
 static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> SpriteFrames:
@@ -188,10 +210,10 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 static func _frame(ap: Dictionary, pose: String) -> Array:
 	var dy := 1 if pose == "idle_b" else 0   # idle_b 上半身下沉 1px = 呼吸
 	var layers := [
-		_legs_layer(pose),            # 腿+鞋 (最底; 不随呼吸动)
+		_legs_layer(ap, pose),        # 腿+鞋 (+裙子) (最底; 不随呼吸动)
 		_body_layer(ap, dy),          # 脸+脖
 		_shirt_layer(ap, dy),         # 衬衫躯干
-		_arm_layer(pose, dy),         # 手臂 (盖在躯干前)
+		_arm_layer(ap, pose, dy),     # 手臂 (盖在躯干前; 背心款裸臂)
 		_hair_layer(ap, dy),          # 头发 (盖在最上)
 	]
 	return _outline(_composite(layers))
@@ -239,7 +261,7 @@ static func _female_torso(cs: int) -> Array:
 	return rows
 
 
-static func _arm_layer(pose: String, dy: int) -> Array:
+static func _arm_layer(ap: Dictionary, pose: String, dy: int) -> Array:
 	var g := _blank()
 	# 默认 (idle/hurt): 垂在躯干前 (右)。走路前后摆; 跳/落抬高。
 	var top := 13
@@ -250,7 +272,8 @@ static func _arm_layer(pose: String, dy: int) -> Array:
 		"jump":   left = 10; top = 11   # 抬手
 		"fall":   left = 11; top = 11
 		"hurt":   left = 10; top = 11
-	_place(g, top + dy, left, _ARM)
+	var arm: Array = _ARM_BARE if int(ap.get("shirt_style", 0)) == 1 else _ARM   # 背心款露胳膊
+	_place(g, top + dy, left, arm)
 	return g
 
 
@@ -275,31 +298,34 @@ static func _hair_layer(ap: Dictionary, dy: int) -> Array:
 	return g
 
 
-# 腿层: 两条腿 + 鞋, 按姿势前后迈 / 抬。
-static func _legs_layer(pose: String) -> Array:
+# 腿层: 两条腿 + 鞋 (+裙子), 按姿势前后迈 / 抬。裙子款腿裸 (皮肤) + 上面盖裙。
+static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
+	var skirt := int(ap.get("pants_style", 0)) == 2
 	match pose:
 		"walk_a":   # 迈开: 两脚分开都落地 (宽站, 重心稳)
-			_put_leg(g, 4, _HIP, 4)
-			_put_leg(g, 9, _HIP, 4)
+			_put_leg(g, 4, _HIP, 4, skirt)
+			_put_leg(g, 9, _HIP, 4, skirt)
 		"walk_c":   # 收拢: 后脚落地, 前脚抬起迈步 (与 walk_a 不同 → 动起来)
-			_put_leg(g, 5, _HIP, 4)
-			_put_leg(g, 8, _HIP, 3)
+			_put_leg(g, 5, _HIP, 4, skirt)
+			_put_leg(g, 8, _HIP, 3, skirt)
 		"jump":     # 双腿收起
-			_put_leg(g, 5, _HIP, 2)
-			_put_leg(g, 9, _HIP, 2)
+			_put_leg(g, 5, _HIP, 2, skirt)
+			_put_leg(g, 9, _HIP, 2, skirt)
 		"fall":     # 双腿张开
-			_put_leg(g, 4, _HIP, 4)
-			_put_leg(g, 10, _HIP, 4)
+			_put_leg(g, 4, _HIP, 4, skirt)
+			_put_leg(g, 10, _HIP, 4, skirt)
 		_:          # idle/hurt: 站立, 两腿稍分
-			_put_leg(g, 5, _HIP, 4)
-			_put_leg(g, 8, _HIP, 4)
+			_put_leg(g, 5, _HIP, 4, skirt)
+			_put_leg(g, 8, _HIP, 4, skirt)
+	if skirt:
+		_place(g, _HIP - 1, 4, _SKIRT)   # 裙子盖胯+大腿上段, 裸腿露在裙下
 	return g
 
 
-# 放一条腿 + 腿下的鞋。height<4 = 抬腿 (鞋离地)。
-static func _put_leg(g: Array, col: int, top: int, height: int) -> void:
-	_place(g, top, col, _slice(_LEG, 0, height))
+# 放一条腿 + 腿下的鞋。height<4 = 抬腿 (鞋离地)。bare=裙子款的裸腿 (皮肤色)。
+static func _put_leg(g: Array, col: int, top: int, height: int, bare: bool = false) -> void:
+	_place(g, top, col, _slice(_LEG_SKIN if bare else _LEG, 0, height))
 	_place(g, top + height, col - 1, _SHOE_B)   # 鞋比腿宽, 左移 1 让鞋尖朝前伸
 
 

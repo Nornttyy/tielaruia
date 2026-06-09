@@ -17,6 +17,7 @@ var _name_edit: LineEdit
 var _chest_row: HBoxContainer
 var _chest_slider: HSlider
 var _step_vals: Dictionary = {}
+var _named_refresh: Dictionary = {}   # key → Callable, 给"显中文名"的款式选择器刷新用
 var _appearance: Dictionary = {}
 
 # 自由调色: 选部位 (◀ ▶) + 3 滑杆 (色相/饱和度/亮度), 任意颜色随便调。
@@ -180,6 +181,9 @@ func _build_creator_panel() -> void:
 	gender_row.add_child(male_b); gender_row.add_child(female_b)
 	vbox.add_child(gender_row)
 	vbox.add_child(_stepper("发型", "hair_style", 0, 3))
+	# 服装款式 (中文名; 只列已实现的款 —— 后续按 spec 补充目录)
+	vbox.add_child(_stepper_choices("上装", "shirt_style", [[0, "T恤"], [1, "背心"]]))
+	vbox.add_child(_stepper_choices("下装", "pants_style", [[0, "长裤"], [2, "裙子"]]))
 	_chest_row = _slider_row("胸围", "chest_size", 0, 5)
 	vbox.add_child(_chest_row)
 	_build_color_editor(vbox)
@@ -210,6 +214,30 @@ func _stepper(label: String, key: String, lo: int, hi: int) -> HBoxContainer:
 		_appearance[key] = wrapi(int(_appearance[key]) - 1, lo, hi + 1); refresh.call(); _rebuild_preview())
 	right.pressed.connect(func():
 		_appearance[key] = wrapi(int(_appearance[key]) + 1, lo, hi + 1); refresh.call(); _rebuild_preview())
+	return row
+
+
+# 一行 ◀ 中文名 ▶, 在 choices=[[value,中文名],...] 里循环 (跳过没实现的款), 设 _appearance[key]=value。
+func _stepper_choices(label: String, key: String, choices: Array) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var l := Label.new(); l.text = label; l.custom_minimum_size = Vector2(60, 0); row.add_child(l)
+	var left := Button.new(); left.text = "◀"; row.add_child(left)
+	var val := Label.new(); val.custom_minimum_size = Vector2(80, 0)
+	val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var idx_of := func() -> int:
+		for i in choices.size():
+			if int(choices[i][0]) == int(_appearance.get(key, 0)):
+				return i
+		return 0
+	var refresh := func(): val.text = String(choices[idx_of.call()][1])
+	refresh.call()
+	_named_refresh[key] = refresh
+	row.add_child(val)
+	var right := Button.new(); right.text = "▶"; row.add_child(right)
+	left.pressed.connect(func():
+		_appearance[key] = int(choices[wrapi(idx_of.call() - 1, 0, choices.size())][0]); refresh.call(); _rebuild_preview())
+	right.pressed.connect(func():
+		_appearance[key] = int(choices[wrapi(idx_of.call() + 1, 0, choices.size())][0]); refresh.call(); _rebuild_preview())
 	return row
 
 
@@ -360,6 +388,8 @@ func _set_gender(g: int) -> void:
 func _sync_controls() -> void:
 	for key in _step_vals.keys():
 		_step_vals[key].text = str(int(_appearance.get(key, 0)))
+	for cb in _named_refresh.values():
+		cb.call()
 	if _chest_slider != null:
 		_chest_slider.set_value_no_signal(int(_appearance.get("chest_size", 1)))
 
@@ -385,6 +415,9 @@ func _save_creator() -> void:
 	c.character_name = _unique_character_name(nm)
 	c.gender = int(_appearance["gender"])
 	c.hair_style = int(_appearance["hair_style"])
+	c.shirt_style = int(_appearance.get("shirt_style", 0))
+	c.pants_style = int(_appearance.get("pants_style", 0))
+	c.cape_style = int(_appearance.get("cape_style", 0))
 	c.chest_size = int(_appearance["chest_size"])
 	c.skin_color = _appearance["skin_color"]
 	c.hair_color = _appearance["hair_color"]
