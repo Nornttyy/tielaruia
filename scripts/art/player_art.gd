@@ -129,15 +129,6 @@ const _HAIR_AHOGE := [
 	"..HHh.........",
 ]
 
-# 女性专属: 面颊侧发绺 (垂在脸前框脸, 所有女发型都加)。2 宽 × 6 高, 拼在脸前。
-const _SIDELOCK_F := [
-	"hh",
-	"hh",
-	"hh",
-	"Hh",
-	".h",
-	".H",
-]
 # 女性专属: 短发/呆毛补的后发 (垂到肩下, 让短发也有女生长度)。3 宽 × 7 高, 拼在后脑外侧。
 const _BACKLOCK_F := [
 	"hhh",
@@ -277,9 +268,8 @@ static func _hair_layer(ap: Dictionary, dy: int) -> Array:
 			_place(g, t, _HAIR_LEFT, _HAIR_AHOGE)
 		_:
 			_place(g, t, _HAIR_LEFT, _HAIR_SHORT)
-	# 女性: 加面颊侧发绺框脸 (所有发型); 短发/呆毛再补后发到肩 → 不管什么发型都一眼是女生。
+	# 女性: 短发/呆毛补后发到肩 → 短发也有女生长度 (脸前侧发绺已按用户要求删除)。
 	if int(ap.get("gender", 0)) == 1:
-		_place(g, t + 7, 12, _SIDELOCK_F)
 		if style == 0 or style == 3:
 			_place(g, t + 8, 1, _BACKLOCK_F)
 	return g
