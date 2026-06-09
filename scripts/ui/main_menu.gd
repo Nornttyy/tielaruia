@@ -221,7 +221,7 @@ func _setup_trees() -> void:
 		var x: float = (float(i) + randf() * 0.5 + 0.25) / float(TREE_ROW_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
 		# 速度统一 (用户要求): 所有树同一滚动速度, 不再每棵随机 → 整排一起平移不散
 		_add_tree(_trees_front, t0 if i % 2 == 0 else t1, x,
-			randf_range(9.0, 11.0), TREE_SCROLL_SPEED, 1.0, 0.92)
+			randf_range(9.0, 11.0), TREE_SCROLL_SPEED, 1.0, 1.02)
 
 
 # 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
