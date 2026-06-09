@@ -93,8 +93,13 @@ func _start_game(seed_or_opts = 0) -> void:
 	# 测试里若 ensure_current 设了 current 会污染"新游戏发起步包"等现有测试。真实游戏照常。
 	if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL:
 		CharacterManager.ensure_current()
-		if CharacterManager.current != null and CharacterManager.current.character_name != "":
-			GameSettings.player_name = CharacterManager.current.character_name
+		if CharacterManager.current != null:
+			# 选角色 UI 还没上线 → 设置里的"玩家名"是唯一改名入口, 让它说了算。
+			# 把它写进当前角色存档; 否则下次进游戏角色里的旧名字会把它盖回去 (= 改名不生效 bug)。
+			var chosen: String = GameSettings.player_name
+			if chosen != "" and CharacterManager.current.character_name != chosen:
+				CharacterManager.current.character_name = chosen
+				CharacterManager.save_character(CharacterManager.current)
 	# 是否新游戏 (非继续): 决定发不发起步包 (此刻判, 因为 _pending_save_data 稍后会被清).
 	_want_starter = (_pending_save_data == null)
 	# 新游戏重置昼夜到早晨; 继续游戏稍后由 _apply_save_data 还原存档时间.
