@@ -1639,7 +1639,9 @@ func respawn_player() -> void:
 	#   2 困难: 全掉, 只留木剑/木镐/木斧 (重新做工具的成本省了)
 	var difficulty: int = GameSettings.current_difficulty if GameSettings != null else 1
 	var wood_kit := {"wood_sword": true, "wood_pickaxe": true, "wood_axe": true}
-	if inv_node != null and inv_node.inventory != null and difficulty > 0:
+	# 对战房复活不掉东西 (装备留着继续打)
+	var pvp: bool = NetworkManager != null and NetworkManager.is_pvp()
+	if inv_node != null and inv_node.inventory != null and difficulty > 0 and not pvp:
 		var inv = inv_node.inventory
 		for i in inv.slots.size():
 			var s = inv.slots[i]

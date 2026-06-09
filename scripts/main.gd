@@ -30,6 +30,7 @@ var _autosave_timer: Timer = null
 # 那时 world.chunk_manager 还是 null, 应用就崩了 (玩家/背包/方块全没还原).
 var _pending_save_data: Resource = null
 var _want_starter: bool = false   # 本局是否该发起步包 (新游戏 true, 继续游戏 false). 一次性, 发完置 false.
+var _last_attacker_pid: String = ""   # PvP: 最近把我打掉血的人 (死了算他击杀)
 
 var world: Node2D:
 	get:
@@ -45,6 +46,9 @@ func _ready() -> void:
 	_main_menu.continue_game.connect(_continue_game)
 	_pause_menu.return_to_menu.connect(_return_to_menu)
 	_death_screen.respawn.connect(_on_respawn)
+	# PvP: 被别人打 → 在自己这端扣自己的血 (各管各血)
+	if NetworkManager != null and NetworkManager.has_signal("player_damaged"):
+		NetworkManager.player_damaged.connect(_on_player_damaged)
 	_show_menu_state()
 
 
@@ -531,6 +535,9 @@ func _wire_player() -> void:
 		# 联机: 本地玩家死了 → 通知对方 (对方那边 remote_player 变半透明"死亡")
 		if not hp.died.is_connected(_notify_remote_death):
 			hp.died.connect(_notify_remote_death)
+		# PvP: 死了 → 记击杀给凶手 + 几秒后自动满血复活
+		if not hp.died.is_connected(_on_local_death_pvp):
+			hp.died.connect(_on_local_death_pvp)
 
 
 # 真实新游戏 + continue 路径 (_run_async_load) 会调用这个;
@@ -618,6 +625,38 @@ func _return_to_menu() -> void:
 	_game_nodes.clear()
 	get_tree().paused = false
 	_show_menu_state()
+
+
+# PvP: 收到"你被某人打了 X 点" → 在自己这端扣自己的血 (带无敌帧防连击)。
+func _on_player_damaged(to_pid: String, dmg: int, kb: float, sx: float, sy: float, by_pid: String) -> void:
+	if NetworkManager == null or not NetworkManager.is_pvp():
+		return
+	if to_pid != NetworkManager.my_peer_id():
+		return   # 不是打我的, 忽略 (转发途中经过)
+	var w := world
+	if w == null or not is_instance_valid(w):
+		return
+	var player: Node2D = w.get_player()
+	if player == null:
+		return
+	var hp: Node = player.get_node_or_null("PlayerHealth")
+	if hp != null and hp.has_method("take_damage"):
+		if hp.take_damage(dmg, Vector2(sx, sy), kb):
+			_last_attacker_pid = by_pid   # 真扣到血了才记凶手 (iframe 内没扣不算)
+
+
+# PvP: 本地玩家死 → 把击杀记给凶手 + 几秒后自动满血复活 (不掉东西)。
+func _on_local_death_pvp() -> void:
+	if NetworkManager == null or not NetworkManager.is_pvp():
+		return
+	if _last_attacker_pid != "":
+		NetworkManager.send_kill(_last_attacker_pid, NetworkManager.my_peer_id())
+		_last_attacker_pid = ""
+	# 3 秒后自动复活 (死亡屏先显示, 到点自动 _on_respawn 收掉它)
+	var t := get_tree().create_timer(3.0)
+	t.timeout.connect(func():
+		if _state == "game":
+			_on_respawn())
 
 
 func _notify_remote_death() -> void:
