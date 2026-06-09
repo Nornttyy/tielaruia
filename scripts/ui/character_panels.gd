@@ -28,6 +28,8 @@ var _active_swatch: ColorRect
 var _hue_slider: HSlider
 var _sat_slider: HSlider
 var _val_slider: HSlider
+var _sat_gradient: Gradient   # 饱和度条背景: 灰→当前色 (随色相/亮度实时更新)
+var _val_gradient: Gradient   # 亮度条背景: 黑→当前色
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -88,7 +90,8 @@ func _style_controls(node: Node) -> void:
 		elif c is LineEdit:
 			UIStyle.style_line_edit(c)
 		elif c is HSlider:
-			UIStyle.style_slider(c)
+			if not c.has_meta("color_slider"):   # 调色滑杆是透明轨道+彩色渐变, 别套默认皮
+				UIStyle.style_slider(c)
 		_style_controls(c)
 
 
@@ -237,22 +240,81 @@ func _build_color_editor(parent: VBoxContainer) -> void:
 	parent.add_child(row)
 	left.pressed.connect(func(): _cycle_part(-1))
 	right.pressed.connect(func(): _cycle_part(1))
-	# 三滑杆: 色相 0-359, 饱和度/亮度 0-100
-	_hue_slider = _make_color_slider("色相", 0, 359, parent)
-	_sat_slider = _make_color_slider("饱和度", 0, 100, parent)
-	_val_slider = _make_color_slider("亮度", 0, 100, parent)
+	# 三滑杆, 每条都有彩色渐变背景 = 一眼看到拖到哪是什么色
+	_hue_slider = _make_color_slider("色相", 0, 359, parent, _make_hue_gradient_tex())
+	_sat_gradient = _two_stop_gradient(Color(0.5, 0.5, 0.5), Color.RED)
+	_sat_slider = _make_color_slider("饱和度", 0, 100, parent, _grad_tex(_sat_gradient))
+	_val_gradient = _two_stop_gradient(Color.BLACK, Color.RED)
+	_val_slider = _make_color_slider("亮度", 0, 100, parent, _grad_tex(_val_gradient))
 	_set_active_color_index(0)
 
 
-func _make_color_slider(label: String, lo: int, hi: int, parent: VBoxContainer) -> HSlider:
+# 一条带彩色渐变背景的滑杆: 渐变 TextureRect 垫底 + 透明轨道滑杆叠上面 (只露手柄)。
+func _make_color_slider(label: String, lo: int, hi: int, parent: VBoxContainer, tex: Texture2D) -> HSlider:
 	var row := HBoxContainer.new()
 	var l := Label.new(); l.text = label; l.custom_minimum_size = Vector2(60, 0); row.add_child(l)
+	var stack := Control.new()
+	stack.custom_minimum_size = Vector2(180, 22)
+	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var bg := TextureRect.new()
+	bg.texture = tex
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stack.add_child(bg)
 	var s := HSlider.new(); s.min_value = lo; s.max_value = hi; s.step = 1
-	s.custom_minimum_size = Vector2(180, 0)
+	s.set_anchors_preset(Control.PRESET_FULL_RECT)
+	s.set_meta("color_slider", true)   # _style_controls 跳过它, 别拿默认皮盖住渐变
+	var empty := StyleBoxEmpty.new()
+	s.add_theme_stylebox_override("slider", empty)
+	s.add_theme_stylebox_override("grabber_area", empty)
+	s.add_theme_stylebox_override("grabber_area_highlight", empty)
 	s.value_changed.connect(func(_v): _on_color_slider_changed())
-	row.add_child(s)
+	stack.add_child(s)
+	row.add_child(stack)
 	parent.add_child(row)
 	return s
+
+
+func _two_stop_gradient(a: Color, b: Color) -> Gradient:
+	var g := Gradient.new()
+	g.set_offset(0, 0.0); g.set_color(0, a)
+	g.set_offset(1, 1.0); g.set_color(1, b)
+	return g
+
+
+func _grad_tex(g: Gradient) -> GradientTexture1D:
+	var t := GradientTexture1D.new()
+	t.gradient = g
+	t.width = 128
+	return t
+
+
+# 彩虹色相条 (红→黄→绿→青→蓝→品红→红)
+func _make_hue_gradient_tex() -> GradientTexture1D:
+	var g := Gradient.new()
+	var offs: PackedFloat32Array = [0.0, 1.0/6, 2.0/6, 3.0/6, 4.0/6, 5.0/6, 1.0]
+	var cols := PackedColorArray()
+	for o in offs:
+		cols.append(Color.from_hsv(o, 1.0, 1.0))
+	g.offsets = offs    # 直接替换默认的 2 个点
+	g.colors = cols
+	return _grad_tex(g)
+
+
+# 饱和度/亮度条颜色随当前色相+另两轴实时更新 (色相条是固定彩虹不用更新)。
+func _update_color_gradients() -> void:
+	if _hue_slider == null:
+		return
+	var h: float = _hue_slider.value / 359.0
+	var s: float = _sat_slider.value / 100.0
+	var v: float = maxf(_val_slider.value / 100.0, 0.05)   # 太暗看不出饱和度变化, 给个下限
+	if _sat_gradient != null:
+		_sat_gradient.set_color(0, Color.from_hsv(h, 0.0, v))
+		_sat_gradient.set_color(1, Color.from_hsv(h, 1.0, v))
+	if _val_gradient != null:
+		_val_gradient.set_color(0, Color.from_hsv(h, s, 0.0))
+		_val_gradient.set_color(1, Color.from_hsv(h, s, 1.0))
 
 
 func _cycle_part(d: int) -> void:
@@ -269,6 +331,7 @@ func _set_active_color_index(i: int) -> void:
 	_hue_slider.set_value_no_signal(roundi(c.h * 359.0))
 	_sat_slider.set_value_no_signal(roundi(c.s * 100.0))
 	_val_slider.set_value_no_signal(roundi(c.v * 100.0))
+	_update_color_gradients()
 	if _active_swatch != null:
 		_active_swatch.color = c
 
@@ -277,6 +340,7 @@ func _set_active_color_index(i: int) -> void:
 func _on_color_slider_changed() -> void:
 	var c := Color.from_hsv(_hue_slider.value / 359.0, _sat_slider.value / 100.0, _val_slider.value / 100.0)
 	_appearance[_active_color_key] = c
+	_update_color_gradients()   # 拖一条 → 另两条的渐变实时跟着变色
 	if _active_swatch != null:
 		_active_swatch.color = c
 	_rebuild_preview()
