@@ -23,6 +23,7 @@ const _PLAYER_TYPES := {"pos": true, "name": true, "chat": true, "pdead": true, 
 const _RELAY_TYPES := {
 	"pos": true, "name": true, "chat": true, "pdead": true, "pres": true,
 	"tile": true, "tile_batch": true, "chest": true, "drop_pick": true,
+	"pkill": true,   # PvP 击杀广播 (pdmg 单独特判只发给被打者, 不在此)
 }
 
 static func is_player_type(msg_type: String) -> bool:

@@ -176,3 +176,45 @@ func test_disconnect_clears_session_state() -> void:
 	nm.disconnect_room()
 	assert_eq(nm.pending_initial_deltas.size(), 0, "断线应清 pending_initial_deltas, 防污染新游戏")
 	assert_eq(nm.remote_player_name, "", "断线应清 remote_player_name")
+
+
+# --- PvP 对战模式 ---
+
+# hello payload 带 room_mode (host 告诉 client 这是对战房)
+func test_hello_payload_includes_mode() -> void:
+	nm.room_mode = "pvp"
+	var data: Variant = JSON.parse_string(nm._hello_payload(1, 1, 1))
+	assert_eq(String(data.get("mode", "")), "pvp", "hello 要带 mode 让 client 知道是对战房")
+
+
+# 收 hello 带 mode → 设 room_mode
+func test_route_hello_sets_room_mode() -> void:
+	nm._route_message('{"type":"hello","seed":1,"size":1,"diff":1,"mode":"pvp"}')
+	assert_eq(nm.room_mode, "pvp", "client 收 hello 后知道在对战房")
+
+
+# is_pvp 必须 connected + room_mode=pvp
+func test_is_pvp_requires_connected_and_pvp() -> void:
+	nm.room_mode = "pvp"
+	nm.status = "idle"
+	assert_false(nm.is_pvp(), "没连上不算 pvp")
+	nm.status = "connected"
+	assert_true(nm.is_pvp(), "连上 + pvp 模式 = is_pvp")
+	nm.room_mode = "survival"
+	assert_false(nm.is_pvp(), "生存模式不是 pvp")
+
+
+# pdmg payload 带 by (攻击者), to (被打者)
+func test_player_damage_payload() -> void:
+	var data: Variant = JSON.parse_string(nm._player_damage_payload("B", 8, 120.0, 3.0, 4.0))
+	assert_eq(String(data.get("to", "")), "B", "带被打者")
+	assert_eq(int(data.get("dmg", 0)), 8, "带伤害")
+
+
+# route pdmg → player_damaged 信号; route pkill → kill_scored 信号
+func test_route_pdmg_and_pkill() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"pdmg","to":"B","dmg":8,"kb":120.0,"sx":3.0,"sy":4.0,"by":"A"}')
+	assert_signal_emitted_with_parameters(nm, "player_damaged", ["B", 8, 120.0, 3.0, 4.0, "A"])
+	nm._route_message('{"type":"pkill","killer":"A","victim":"B"}')
+	assert_signal_emitted_with_parameters(nm, "kill_scored", ["A", "B"])

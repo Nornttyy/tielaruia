@@ -41,6 +41,9 @@ signal remote_entity_damage_received(ent_id: int, amount: int, knockback: float,
 signal remote_projectile_received(kind: String, sx: float, sy: float, tx: float, ty: float)  # 投射物(箭/火球)画面同步
 signal remote_player_death_received(peer_id: String)    # 某 peer 玩家死了
 signal remote_player_respawn_received(peer_id: String)  # 某 peer 玩家复活了
+# PvP: 我被某人打 (to_pid=被打者, by_pid=攻击者) / 有人被杀 (击杀榜计分)
+signal player_damaged(to_pid: String, dmg: int, kb: float, sx: float, sy: float, by_pid: String)
+signal kill_scored(killer_pid: String, victim_pid: String)
 signal remote_drop_request_received(item_id: String, count: int, x: float, y: float)  # client→host: 请求生成掉落
 signal remote_chest_received(x: int, y: int, slots: Array)  # 箱子内容同步 (一人改两人见)
 signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
@@ -57,6 +60,12 @@ var last_error: String = ""
 var shared_world_seed: int = 0  # host 创建房间时生成的种子, client 从 hello 拿
 var shared_world_size: int = 1  # host 的世界大小 (0小/1中/2大); client 从 hello 拿. 不传会致两端地形/大小不一致
 var shared_world_difficulty: int = 1  # host 难度 (0简/1普/2难); client 从 hello 拿. 不传会致怪 HP/伤害两端不一致
+var room_mode: String = "survival"    # "survival" / "pvp" (对战房). client 从 hello 拿. 决定能否打人/刷不刷怪/开局包
+
+
+# 当前是否在对战房 (联机 + pvp 模式). 打人/不刷怪/战斗开局包都靠它门控.
+func is_pvp() -> bool:
+	return connected() and room_mode == "pvp"
 var remote_player_name: String = ""  # 对方玩家名, 收到 name 消息后存; remote_player spawn 时取用
 var pending_initial_deltas: Dictionary = {}  # client 收 hello 时存入, world 加载后取走应用
 var _pos_send_timer: float = 0.0
@@ -177,6 +186,7 @@ func _route_message(raw: String, from_peer: String = "HOST") -> void:
 			shared_world_seed = seed_val
 			shared_world_size = size_val
 			shared_world_difficulty = diff_val
+			room_mode = String(data.get("mode", "survival"))   # client 从 hello 知道是不是对战房
 			hello_received.emit(seed_val, size_val, diff_val)
 		"name":
 			var pname: String = String(data.get("n", ""))
@@ -219,6 +229,13 @@ func _route_message(raw: String, from_peer: String = "HOST") -> void:
 			remote_player_death_received.emit(_pid_of(data, from_peer))
 		"pres":
 			remote_player_respawn_received.emit(_pid_of(data, from_peer))
+		"pdmg":
+			player_damaged.emit(
+				String(data.get("to", "")), int(data.get("dmg", 0)),
+				float(data.get("kb", 0.0)), float(data.get("sx", 0.0)), float(data.get("sy", 0.0)),
+				String(data.get("by", "")))
+		"pkill":
+			kill_scored.emit(String(data.get("killer", "")), String(data.get("victim", "")))
 		"drop_req":
 			remote_drop_request_received.emit(
 				String(data.get("item", "")), int(data.get("n", 1)),
@@ -270,6 +287,7 @@ func host(p_seed: int = 0, p_size: int = 1, p_diff: int = 1) -> void:
 		return
 	is_host = true
 	my_room_code = ""
+	room_mode = "survival"   # 私人房不打人
 	# 共享 seed: 由调用方传 (游戏内 host 用当前世界 seed); 0 = 让 NM 随机生
 	shared_world_seed = p_seed if p_seed != 0 else randi_range(1, 999999)
 	# 共享世界大小: client 收 hello 后用它生成同样大小的世界 (不传 → 地形/大小不一致 bug)
@@ -285,12 +303,14 @@ func join(code: String) -> void:
 		_emit_no_bridge_error()
 		return
 	is_host = false
+	room_mode = "survival"   # 私人房不打人 (host 会发 hello 覆盖, 这里先给默认)
 	_bridge.join(code.strip_edges().to_upper())
 
 
 # 进公共房: 由 bridge 抢占式决定本端成 host 还是 client (谁先到谁当 host, 房满顺延下一号).
 # 先设好固定世界参数 (万一本端成 host, 连上后要 send_hello 这些值给 client).
 func enter_public(tag: String, seed_val: int, size_val: int, diff_val: int) -> void:
+	room_mode = "pvp" if tag == "PVP" else "survival"   # 对战房 = pvp; 其它公共房 = survival
 	if _bridge == null:
 		_try_reload_bridge()
 	if _bridge == null:
@@ -311,7 +331,15 @@ func my_peer_id() -> String:
 
 # host 把某 client 的玩家个体/世界改动消息转发给其它 client (盖来源 pid 防回声).
 func _relay_if_needed(msg_type: String, from_peer: String, data: Dictionary) -> void:
-	if _bridge == null or not MpRooms.is_relay_type(msg_type):
+	if _bridge == null:
+		return
+	# pdmg 只转给被打的那个 peer (不广播); 被打者按 to==自己 判定扣血
+	if msg_type == "pdmg":
+		var to_pid: String = String(data.get("to", ""))
+		if to_pid != "" and to_pid != MpRooms.HOST_PID:
+			_bridge.send_to(to_pid, JSON.stringify(data))
+		return
+	if not MpRooms.is_relay_type(msg_type):
 		return
 	var targets: Array = MpRooms.relay_targets(msg_type, from_peer, _all_peer_ids())
 	if targets.is_empty():
@@ -342,7 +370,7 @@ func send(data: String) -> bool:
 # ===== 高层协议: 发 hello / 位置 =====
 
 func _hello_payload(seed_val: int, size_val: int, diff_val: int) -> String:
-	return JSON.stringify({"type": "hello", "seed": seed_val, "size": size_val, "diff": diff_val})
+	return JSON.stringify({"type": "hello", "seed": seed_val, "size": size_val, "diff": diff_val, "mode": room_mode})
 
 
 func send_hello(seed_val: int, size_val: int, diff_val: int) -> void:
@@ -430,6 +458,24 @@ func send_player_respawn() -> void:
 	send(JSON.stringify({"type": "pres"}))
 
 
+# PvP: 我打了某玩家 (各管各血: 对方收到后在自己那端扣自己的血)
+func _player_damage_payload(to_pid: String, dmg: int, kb: float, x: float, y: float) -> String:
+	return JSON.stringify({
+		"type": "pdmg", "to": to_pid, "dmg": dmg,
+		"kb": snappedf(kb, 0.1), "sx": snappedf(x, 0.1), "sy": snappedf(y, 0.1),
+		"by": my_peer_id(),
+	})
+
+
+func send_player_damage(to_pid: String, dmg: int, kb: float, x: float, y: float) -> void:
+	send(_player_damage_payload(to_pid, dmg, kb, x, y))
+
+
+# PvP: 广播一次击杀 (killer 给被打死的 victim). 击杀榜各端 +1.
+func send_kill(killer_pid: String, victim_pid: String) -> void:
+	send(JSON.stringify({"type": "pkill", "killer": killer_pid, "victim": victim_pid}))
+
+
 # client → host: 请求在 (x,y) 生成掉落. host 权威 spawn 后经 drop_pos 广播给两边.
 func send_drop_request(item_id: String, count: int, x: float, y: float) -> void:
 	send(JSON.stringify({
@@ -510,6 +556,7 @@ func disconnect_room() -> void:
 	# 带到下一局, 污染新世界地形 (bug: 返回菜单再开新游戏看到旧改动)
 	pending_initial_deltas = {}
 	remote_player_name = ""
+	room_mode = "survival"
 
 
 func connected() -> bool:
