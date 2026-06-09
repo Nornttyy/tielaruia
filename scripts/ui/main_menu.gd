@@ -224,7 +224,7 @@ func _setup_trees() -> void:
 	for i in TREE_ROW_COUNT:
 		var x: float = (float(i) + randf() * 0.5 + 0.25) / float(TREE_ROW_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
 		_add_tree(_trees_front, t0 if i % 2 == 0 else t1, x,
-			randf_range(9.0, 11.0), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 1.0)
+			randf_range(9.0, 11.0), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.92)
 
 
 # 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
