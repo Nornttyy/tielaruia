@@ -38,9 +38,10 @@ func test_background_has_clouds():
 
 func test_background_has_trees():
 	var mm = _make()
-	var trees = mm.get_node_or_null("BackgroundLayer/Trees")
-	assert_not_null(trees)
-	assert_gt(trees.get_child_count(), 0)
+	# 树现在画在前景层 TreesFront (站在草地前面); 老的 Trees 层保留但空着.
+	var front = mm.get_node_or_null("BackgroundLayer/TreesFront")
+	assert_not_null(front, "应有前景树层 TreesFront")
+	assert_gt(front.get_child_count(), 0, "前景树层里该有树")
 
 
 # ---- title ----

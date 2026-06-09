@@ -30,6 +30,7 @@ const TREE_WALL_SPEED := Vector2(4.0, 9.0)
 const TREE_TALL := 1.6   # 树竖向额外拉长系数 (>1 = 更高更挺拔)
 const TREE_FAR_SPEED := Vector2(8.0, 16.0)
 const TREE_NEAR_SPEED := Vector2(22.0, 38.0)
+const TREE_SCROLL_SPEED := 30.0   # 一排树统一滚动速度 (取 NEAR 区间中点 → 整排一起平移不散开)
 const SLIME_COUNT := 2
 const BIRD_COUNT := 5           # 天上飘几只小鸟
 const CLOUD_SPEED_RANGE := Vector2(6.0, 14.0)
@@ -223,8 +224,9 @@ func _setup_trees() -> void:
 	# 一排: 均匀分槽 + 槽内小抖动, 棵棵高大
 	for i in TREE_ROW_COUNT:
 		var x: float = (float(i) + randf() * 0.5 + 0.25) / float(TREE_ROW_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
+		# 速度统一 (用户要求): 所有树同一滚动速度, 不再每棵随机 → 整排一起平移不散
 		_add_tree(_trees_front, t0 if i % 2 == 0 else t1, x,
-			randf_range(9.0, 11.0), randf_range(TREE_NEAR_SPEED.x, TREE_NEAR_SPEED.y), 1.0, 0.92)
+			randf_range(9.0, 11.0), TREE_SCROLL_SPEED, 1.0, 0.92)
 
 
 # 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
