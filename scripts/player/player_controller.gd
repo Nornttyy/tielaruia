@@ -136,15 +136,8 @@ func _update_sun_aura(delta: float) -> void:
 #      用 chunk.surfaces[lx] 取原始地表, 跟玩家挖没挖无关 — "顶上方块挖掉也算"
 # 否则按白天/夜晚分.
 func _update_music_context() -> void:
-	var tile_x: int = int(floor(global_position.x / TILE_SIZE))
-	var tile_y: int = int(floor(global_position.y / TILE_SIZE))
-	var ctx: String
-	if _is_player_underground(tile_x, tile_y):
-		ctx = "cave"
-	elif TimeOfDay.is_night():
-		ctx = "night"
-	else:
-		ctx = "day"
+	# 用户要求: 删掉矿洞音乐, 地下也用地面 (白天/夜晚) 音乐 → 不再切 "cave".
+	var ctx: String = "night" if TimeOfDay.is_night() else "day"
 	MusicBank.set_context(ctx)
 
 
