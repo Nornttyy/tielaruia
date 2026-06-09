@@ -44,6 +44,8 @@ const SUN_FADE_TIME := 0.3
 
 var _coyote_timer: float = 0.0
 var _double_jump_used: bool = false   # 离地后是否已用过二段跳 (云靴), 落地重置
+var _was_in_water: bool = false       # 上一帧是否在水里 (检测"入水那一刻"放水花+音效)
+var _bubble_timer: float = 0.0        # 水下定期冒气泡 (强化"在水里"的感觉)
 # 下平台: 按 S/Down 0.3s 内不撞 bit 2 (木平台), 落下
 const DROP_THROUGH_DURATION := 0.3
 var _drop_through_t: float = 0.0
@@ -320,6 +322,21 @@ func _physics_process(delta: float) -> void:
 	var dir := Input.get_axis("move_left", "move_right")
 	# 泡水里走得慢一半 + sprite 偏蓝
 	var in_water: bool = _is_in_water()
+	# 入水那一刻: 溅水花 + 上扬水珠 + "噗通"音效 (要往下扎进去才算, 防水面浮沉刷屏)
+	if in_water and not _was_in_water and velocity.y > 20.0:
+		var sp: Vector2 = global_position + Vector2(0, -8)   # 水面 ≈ 腰部
+		Effects.spawn_splash(sp)
+		Effects.spawn_water_grains(sp, Vector2(0, -55), Tiles.WATER, 5)
+		SfxBank.play("splash", 0.1)
+	# 水下定期冒气泡 (头在水里时): 一串小水珠往上飘 = "在水里"
+	if in_water:
+		_bubble_timer -= delta
+		if _bubble_timer <= 0.0:
+			_bubble_timer = 0.6
+			Effects.spawn_water_grains(global_position + Vector2(0, -10), Vector2(0, -22), Tiles.WATER, 1)
+	else:
+		_bubble_timer = 0.0
+	_was_in_water = in_water
 	var on_rope: bool = _is_on_rope() and not is_on_floor()
 	var speed_mul: float = 0.5 if in_water else 1.0
 	velocity.x = dir * SPEED * speed_mul * _buff_speed_mul()
