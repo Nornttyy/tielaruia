@@ -129,6 +129,26 @@ const _HAIR_AHOGE := [
 	"..HHh.........",
 ]
 
+# 女性专属: 面颊侧发绺 (垂在脸前框脸, 所有女发型都加)。2 宽 × 6 高, 拼在脸前。
+const _SIDELOCK_F := [
+	"hh",
+	"hh",
+	"hh",
+	"Hh",
+	".h",
+	".H",
+]
+# 女性专属: 短发/呆毛补的后发 (垂到肩下, 让短发也有女生长度)。3 宽 × 7 高, 拼在后脑外侧。
+const _BACKLOCK_F := [
+	"hhh",
+	"hhh",
+	"hhh",
+	"Hhh",
+	"Hhh",
+	".Hh",
+	".H.",
+]
+
 # 侧躯干 (衬衫 w / 阴影 D)。7 宽 × 6 高。
 const _TORSO := [
 	".wwwww.",
@@ -212,8 +232,8 @@ static func _female_torso(cs: int) -> Array:
 		"wwwwwww..",   # 上胸 (满宽, 前缘 local col6)
 		"wwwwwww..",   # 中胸
 		"wwwwwww..",   # 下胸
-		"Dwww.....",   # 收腰 (窄)
-		".wwww....",   # 胯
+		".Dww.....",   # 腰 (超窄 = 明显沙漏)
+		"Dwwwww...",   # 胯 (外扩, 比腰宽一截)
 	]
 	if cs >= 1:
 		rows[3] = _set_char(rows[3], 7, "w")   # 下胸前鼓 1px
@@ -246,7 +266,8 @@ static func _arm_layer(pose: String, dy: int) -> Array:
 static func _hair_layer(ap: Dictionary, dy: int) -> Array:
 	var g := _blank()
 	var t := _HAIR_TOP + dy
-	match int(ap.get("hair_style", 0)):
+	var style := int(ap.get("hair_style", 0))
+	match style:
 		1:
 			_place(g, t, _HAIR_LEFT, _HAIR_LONG)
 		2:
@@ -256,6 +277,11 @@ static func _hair_layer(ap: Dictionary, dy: int) -> Array:
 			_place(g, t, _HAIR_LEFT, _HAIR_AHOGE)
 		_:
 			_place(g, t, _HAIR_LEFT, _HAIR_SHORT)
+	# 女性: 加面颊侧发绺框脸 (所有发型); 短发/呆毛再补后发到肩 → 不管什么发型都一眼是女生。
+	if int(ap.get("gender", 0)) == 1:
+		_place(g, t + 7, 12, _SIDELOCK_F)
+		if style == 0 or style == 3:
+			_place(g, t + 8, 1, _BACKLOCK_F)
 	return g
 
 
