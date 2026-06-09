@@ -1568,6 +1568,37 @@ func _check_sword_blade_hits() -> void:
 	if is_thrust and thrust_target != null:
 		_sword_hit_this_attack[thrust_target.get_instance_id()] = true
 		_deal_enemy_damage(thrust_target, _sword_attack_damage, tip_world, _sword_attack_knockback)
+	# PvP: 对战房里剑也能扫到远程玩家
+	if NetworkManager != null and NetworkManager.is_pvp():
+		var player2: Node2D = get_parent() as Node2D
+		for s in get_tree().get_nodes_in_group("remote_player"):
+			var rp := s as Node2D
+			if rp == null:
+				continue
+			var rid2: int = rp.get_instance_id()
+			if _sword_hit_this_attack.has(rid2):
+				continue
+			var radius2: float = rp.melee_hit_radius() if rp.has_method("melee_hit_radius") else 8.0
+			var to_p: float = rp.global_position.distance_to(player2.global_position)
+			var hit2: bool = to_p <= SWORD_POINT_BLANK_DIST + radius2
+			if not hit2:
+				hit2 = _dist_point_to_segment(rp.global_position, grip_world, tip_world) <= hit_r + radius2
+			if not hit2:
+				continue
+			_sword_hit_this_attack[rid2] = true
+			_hit_remote_player(rp, _sword_attack_damage, tip_world, _sword_attack_knockback)
+
+
+# PvP: 命中某远程玩家 → 发伤害消息 (对方那端扣自己的血) + 本地闪红反馈。
+func _hit_remote_player(rp: Node2D, dmg: int, src: Vector2, kb: float) -> void:
+	if NetworkManager == null or not NetworkManager.is_pvp():
+		return
+	var pid: String = String(rp.peer_id) if "peer_id" in rp else ""
+	if pid == "":
+		return
+	NetworkManager.send_player_damage(pid, dmg, kb, src.x, src.y)
+	if rp.has_method("flash_hit"):
+		rp.flash_hit()
 
 
 # 点到线段最近距离. clamp t ∈ [0,1] 让计算落在线段内, 端点外的算到端点.

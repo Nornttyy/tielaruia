@@ -48,6 +48,20 @@ func set_player_name(n: String) -> void:
 		_name_label.text = n
 
 
+# PvP: 剑/箭命中判定用的身子半径 (远程玩家是一点, 给个半径才好打中)
+func melee_hit_radius() -> float:
+	return 8.0
+
+
+# PvP: 被打中闪红一下 (乐观反馈; 真实扣血在对方那端)
+func flash_hit() -> void:
+	if _sprite == null:
+		return
+	_sprite.modulate = Color(1.0, 0.35, 0.35)
+	var tw := create_tween()
+	tw.tween_property(_sprite, "modulate", Color(0.7, 0.9, 1.0), 0.18)
+
+
 # 对方死亡 → 半透明灰"幽灵"; 复活 → 恢复偏蓝. 由 world 收到 pdead/pres 调.
 func set_dead(dead: bool) -> void:
 	if _sprite == null:

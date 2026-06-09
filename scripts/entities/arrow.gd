@@ -84,6 +84,23 @@ func _check_enemy_hit() -> void:
 				enemy.take_damage(damage, src, 120.0)
 			_destroy()
 			return
+	# PvP: 对战房里箭也能射到远程玩家 (本地箭判命中 → 发伤害给对方, 对方扣自己血)
+	if NetworkManager != null and NetworkManager.is_pvp():
+		for s in get_tree().get_nodes_in_group("remote_player"):
+			var rp := s as Node2D
+			if rp == null or not is_instance_valid(rp):
+				continue
+			var radius2: float = rp.melee_hit_radius() if rp.has_method("melee_hit_radius") else 8.0
+			if global_position.distance_to(rp.global_position) > HIT_RADIUS_PX + radius2:
+				continue
+			var src2: Vector2 = global_position - velocity.normalized() * 32.0
+			var pid: String = String(rp.peer_id) if "peer_id" in rp else ""
+			if pid != "":
+				NetworkManager.send_player_damage(pid, damage, 120.0, src2.x, src2.y)
+				if rp.has_method("flash_hit"):
+					rp.flash_hit()
+			_destroy()
+			return
 
 
 func _destroy() -> void:
