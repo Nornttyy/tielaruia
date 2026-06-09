@@ -16,16 +16,22 @@
 # 非 HTML5 平台 (桌面 / 测试) 直接禁用, _has_bridge() 返 false, 所有操作 no-op.
 extends Node
 
+const MpRooms = preload("res://scripts/net/mp_rooms.gd")
+
 signal status_changed(s: String)
 signal room_code_ready(code: String)
 signal message_received(data: String)
 signal error_occurred(msg: String)
 
+# 多人: 有人进房 / 离开 (host 端 = client 连上/断开; client 端 = host 出现/消失)
+signal peer_joined(peer_id: String)
+signal peer_left(peer_id: String)
+
 # 高层协议事件 (parse 后):
 signal hello_received(world_seed: int, world_size: int, difficulty: int)  # host → client, seed+大小+难度 (双方一致)
-signal remote_name_received(name: String)      # 对方玩家名 (改名后联机也显示真名)
-signal chat_received(text: String)              # 对方发来的聊天文字 (联机聊天)
-signal remote_pos_received(x: float, y: float, facing: int, anim: String)
+signal remote_name_received(peer_id: String, name: String)      # 某 peer 的玩家名 (改名后联机也显示真名)
+signal chat_received(peer_id: String, text: String)              # 某 peer 发来的聊天文字 (联机聊天)
+signal remote_pos_received(peer_id: String, x: float, y: float, facing: int, anim: String)
 signal remote_tile_received(x: int, y: int, tile_id: int)  # 对方挖/放方块
 signal remote_time_weather_received(time_val: float, weather_state: String)  # host 广播时间+天气
 signal initial_state_received(chunk_deltas: Dictionary)  # host 进游戏后广播现状, client 应用 (Phase G)
@@ -33,8 +39,8 @@ signal remote_entity_pos_received(ent_id: int, kind: String, x: float, y: float,
 signal remote_entity_die_received(ent_id: int)  # 实体死亡 (Phase E)
 signal remote_entity_damage_received(ent_id: int, amount: int, knockback: float, sx: float, sy: float)  # client→host: 对怪造成伤害
 signal remote_projectile_received(kind: String, sx: float, sy: float, tx: float, ty: float)  # 投射物(箭/火球)画面同步
-signal remote_player_death_received()    # 对方玩家死了
-signal remote_player_respawn_received()  # 对方玩家复活了
+signal remote_player_death_received(peer_id: String)    # 某 peer 玩家死了
+signal remote_player_respawn_received(peer_id: String)  # 某 peer 玩家复活了
 signal remote_drop_request_received(item_id: String, count: int, x: float, y: float)  # client→host: 请求生成掉落
 signal remote_chest_received(x: int, y: int, slots: Array)  # 箱子内容同步 (一人改两人见)
 signal remote_drop_pos_received(ent_id: int, item_id: String, count: int, x: float, y: float)  # 掉落物 (item_drop)
@@ -105,22 +111,58 @@ func _poll_bridge() -> void:
 		# 双方连上后互发自己的名字 (host + client 都发, 这样两边都显示真名)
 		if status == "connected" and old_status != "connected":
 			send_player_name(_local_player_name())
+	# 角色 (host / client) 由 bridge 决定 (公共房抢占后才知道), 每次同步
+	is_host = bool(_bridge.is_host())
 	# my_room_code (host 模式才有, 异步生成)
 	var rc: String = String(_bridge.get_my_id())
 	if rc != my_room_code and rc != "":
 		my_room_code = rc
 		room_code_ready.emit(rc)
-	# 拉消息队列
+	# 拉消息队列: 新格式每条是 {"from":"<peerId>","data":"<原始消息字符串>"}
 	var msgs_json: String = String(_bridge.pop_messages())
 	if msgs_json != "" and msgs_json != "[]":
 		var msgs: Variant = JSON.parse_string(msgs_json)
 		if msgs is Array:
 			for m in msgs:
-				_route_message(String(m))
+				var env: Dictionary = _parse_envelope(JSON.stringify(m) if m is Dictionary else String(m))
+				_handle_envelope(env)
 
 
-# 解析收到的 JSON 消息, 分发到具体信号
-func _route_message(raw: String) -> void:
+# 解析 bridge 投递的信封 {from, data}. 兼容老格式 (纯字符串当 data, from=HOST).
+func _parse_envelope(raw: String) -> Dictionary:
+	var v: Variant = JSON.parse_string(raw)
+	if v is Dictionary and v.has("data"):
+		return {"from": String(v.get("from", MpRooms.HOST_PID)), "data": String(v.get("data", ""))}
+	return {"from": MpRooms.HOST_PID, "data": raw}
+
+
+# 处理一条信封: 系统事件 (peer 加入/离开) 直接发信号; 其余交给 _route_message + host 转发.
+func _handle_envelope(env: Dictionary) -> void:
+	var from_peer: String = String(env.get("from", MpRooms.HOST_PID))
+	var raw: String = String(env.get("data", ""))
+	var data: Variant = JSON.parse_string(raw)
+	if data is Dictionary:
+		var t: String = String(data.get("type", ""))
+		if t == "__peer_join":
+			peer_joined.emit(String(data.get("id", from_peer)))
+			return
+		if t == "__peer_leave":
+			peer_left.emit(String(data.get("id", from_peer)))
+			return
+	_route_message(raw, from_peer)
+	# host 收到 client 的可转发消息 → 盖来源 pid 后转发给其它 client
+	if is_host and data is Dictionary:
+		_relay_if_needed(String(data.get("type", "")), from_peer, data)
+
+
+# 解析某玩家个体消息的来源 peer id: 消息里带 pid 用 pid (host 转发时盖的), 否则用 from_peer.
+func _pid_of(data: Dictionary, from_peer: String) -> String:
+	var pid: String = String(data.get("pid", ""))
+	return pid if pid != "" else from_peer
+
+
+# 解析收到的 JSON 消息, 分发到具体信号. from_peer = 来源 peer id (单机/老格式默认 HOST).
+func _route_message(raw: String, from_peer: String = "HOST") -> void:
 	message_received.emit(raw)
 	var data: Variant = JSON.parse_string(raw)
 	if not (data is Dictionary):
@@ -138,11 +180,11 @@ func _route_message(raw: String) -> void:
 		"name":
 			var pname: String = String(data.get("n", ""))
 			remote_player_name = pname
-			remote_name_received.emit(pname)
+			remote_name_received.emit(_pid_of(data, from_peer), pname)
 		"chat":
 			# 对方发来的聊天文字. 截断防超长. chat_box 收到 → 头顶气泡 + 左下聊天栏.
 			var ctext: String = String(data.get("m", "")).substr(0, 120)
-			chat_received.emit(ctext)
+			chat_received.emit(_pid_of(data, from_peer), ctext)
 		"init_state":
 			# host 在自己 world 加载后发的现状. client world 准备好就 emit, world 接收应用.
 			var deltas: Dictionary = data.get("deltas", {})
@@ -173,9 +215,9 @@ func _route_message(raw: String) -> void:
 				float(data.get("sx", 0.0)), float(data.get("sy", 0.0)),
 				float(data.get("tx", 0.0)), float(data.get("ty", 0.0)))
 		"pdead":
-			remote_player_death_received.emit()
+			remote_player_death_received.emit(_pid_of(data, from_peer))
 		"pres":
-			remote_player_respawn_received.emit()
+			remote_player_respawn_received.emit(_pid_of(data, from_peer))
 		"drop_req":
 			remote_drop_request_received.emit(
 				String(data.get("item", "")), int(data.get("n", 1)),
@@ -207,7 +249,7 @@ func _route_message(raw: String) -> void:
 			var y: float = float(data.get("y", 0.0))
 			var facing: int = int(data.get("f", 1))
 			var anim: String = String(data.get("a", "idle"))
-			remote_pos_received.emit(x, y, facing, anim)
+			remote_pos_received.emit(_pid_of(data, from_peer), x, y, facing, anim)
 		"tile":
 			var tx: int = int(data.get("x", 0))
 			var ty: int = int(data.get("y", 0))
@@ -243,6 +285,51 @@ func join(code: String) -> void:
 		return
 	is_host = false
 	_bridge.join(code.strip_edges().to_upper())
+
+
+# 进公共房: 由 bridge 抢占式决定本端成 host 还是 client (谁先到谁当 host, 房满顺延下一号).
+# 先设好固定世界参数 (万一本端成 host, 连上后要 send_hello 这些值给 client).
+func enter_public(tag: String, seed_val: int, size_val: int, diff_val: int) -> void:
+	if _bridge == null:
+		_try_reload_bridge()
+	if _bridge == null:
+		_emit_no_bridge_error()
+		return
+	shared_world_seed = seed_val
+	shared_world_size = size_val
+	shared_world_difficulty = diff_val
+	_bridge.enter_public(tag, MpRooms.MAX_PEERS, MpRooms.MAX_ROOMS)
+
+
+# 本端玩家的 peer id (host = 固定房号; client = bridge 分配的随机 id)
+func my_peer_id() -> String:
+	if _bridge == null:
+		return MpRooms.HOST_PID
+	return String(_bridge.get_my_id())
+
+
+# host 把某 client 的玩家个体/世界改动消息转发给其它 client (盖来源 pid 防回声).
+func _relay_if_needed(msg_type: String, from_peer: String, data: Dictionary) -> void:
+	if _bridge == null or not MpRooms.is_relay_type(msg_type):
+		return
+	var targets: Array = MpRooms.relay_targets(msg_type, from_peer, _all_peer_ids())
+	if targets.is_empty():
+		return
+	# 玩家个体消息盖上来源 pid, 让收件 client 知道是谁
+	if MpRooms.is_player_type(msg_type):
+		data["pid"] = from_peer
+	var payload: String = JSON.stringify(data)
+	for pid in targets:
+		_bridge.send_to(pid, payload)
+
+
+# host 当前所有 client peer id (从 bridge 读). 桌面无 bridge → 空.
+func _all_peer_ids() -> Array:
+	if _bridge == null:
+		return []
+	var ids_json: String = String(_bridge.get_peer_ids())
+	var v: Variant = JSON.parse_string(ids_json)
+	return v if v is Array else []
 
 
 func send(data: String) -> bool:

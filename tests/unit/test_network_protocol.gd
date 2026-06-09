@@ -60,12 +60,40 @@ func test_name_payload_builds_message() -> void:
 	assert_eq(String(data.get("n", "")), "小明", "payload 要带名字")
 
 
-# 接收端: 解析 name 消息 → 存 remote_player_name + 发信号
+# 接收端: 解析 name 消息 → 存 remote_player_name + 发信号 (带 peer_id)
 func test_route_name_stores_and_emits() -> void:
 	watch_signals(nm)
-	nm._route_message('{"type":"name","n":"小红"}')
+	nm._route_message('{"type":"name","n":"小红","pid":"P2"}', "P2")
 	assert_eq(nm.remote_player_name, "小红", "收到 name 后存 remote_player_name")
-	assert_signal_emitted_with_parameters(nm, "remote_name_received", ["小红"])
+	assert_signal_emitted_with_parameters(nm, "remote_name_received", ["P2", "小红"])
+
+
+# 玩家位置: 信号带 peer_id (多人时区分是谁)
+func test_route_pos_carries_peer_id() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"pos","x":10.0,"y":20.0,"f":-1,"a":"walk","pid":"P3"}', "P3")
+	assert_signal_emitted_with_parameters(nm, "remote_pos_received", ["P3", 10.0, 20.0, -1, "walk"])
+
+
+# 聊天: 带 peer_id
+func test_route_chat_carries_peer_id() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"chat","m":"hi","pid":"P5"}', "P5")
+	assert_signal_emitted_with_parameters(nm, "chat_received", ["P5", "hi"])
+
+
+# host 收到 client 的 pos → 决定转发给除来源外的所有 peer
+func test_host_relay_targets_for_pos() -> void:
+	var MpRooms = preload("res://scripts/net/mp_rooms.gd")
+	var targets: Array = MpRooms.relay_targets("pos", "P2", ["P2", "P3"])
+	assert_eq(targets, ["P3"], "P2 发的 pos 转给 P3, 不发回 P2")
+
+
+# 解析 bridge 新消息格式 {from, data}: 取出 from 当来源, data 当原始消息
+func test_parse_bridge_envelope() -> void:
+	var env: Dictionary = nm._parse_envelope('{"from":"P9","data":"{\\"type\\":\\"pos\\",\\"x\\":1.0,\\"y\\":2.0}"}')
+	assert_eq(String(env.get("from", "")), "P9", "取出来源 peer")
+	assert_eq(String(env.get("data", "")), '{"type":"pos","x":1.0,"y":2.0}', "取出原始消息字符串")
 
 
 # --- 实体朝向/动画同步 (动物被打后对方看到动作/方向不变的 bug) ---
@@ -114,13 +142,13 @@ func test_route_proj_emits() -> void:
 	assert_signal_emitted_with_parameters(nm, "remote_projectile_received", ["fireball", 1.0, 2.0, 3.0, 4.0])
 
 
-# --- 玩家死亡/复活通知 ---
-func test_route_player_death_and_respawn() -> void:
+# --- 玩家死亡/复活通知 (带 peer_id) ---
+func test_route_player_death_and_respawn_carry_peer_id() -> void:
 	watch_signals(nm)
-	nm._route_message('{"type":"pdead"}')
-	assert_signal_emitted(nm, "remote_player_death_received")
-	nm._route_message('{"type":"pres"}')
-	assert_signal_emitted(nm, "remote_player_respawn_received")
+	nm._route_message('{"type":"pdead","pid":"P2"}', "P2")
+	assert_signal_emitted_with_parameters(nm, "remote_player_death_received", ["P2"])
+	nm._route_message('{"type":"pres","pid":"P2"}', "P2")
+	assert_signal_emitted_with_parameters(nm, "remote_player_respawn_received", ["P2"])
 
 
 # --- client→host 掉落请求 ---
