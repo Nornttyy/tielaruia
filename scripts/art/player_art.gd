@@ -193,6 +193,22 @@ const _SKIRT := [
 	"bbbbbbbbb",
 	"BbbbbbbbB",
 ]
+# 泳裤款的腿 (上段短裤 b/B + 下段裸腿 s/k)。3 宽 × 4 高。
+const _LEG_TRUNK := [
+	"bbb",
+	"Bbb",
+	"kss",
+	"kss",
+]
+# 泳衣款男躯干 (露肚短上衣: 上 3 行衣 w + 下 3 行肚皮肤 s)。7 宽 × 6 高。
+const _TORSO_SWIM := [
+	".wwwww.",
+	"wwwwwww",
+	"wwwwwww",
+	".sssss.",
+	".sssss.",
+	"..sss..",
+]
 
 
 static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> SpriteFrames:
@@ -228,11 +244,35 @@ static func _body_layer(ap: Dictionary, dy: int) -> Array:
 
 static func _shirt_layer(ap: Dictionary, dy: int) -> Array:
 	var g := _blank()
-	if int(ap.get("gender", 0)) == 1:
-		_place(g, _TORSO_TOP + dy, _TORSO_LEFT, _female_torso(int(ap.get("chest_size", 1))))
+	var female := int(ap.get("gender", 0)) == 1
+	var cs := int(ap.get("chest_size", 1))
+	var torso: Array
+	if int(ap.get("shirt_style", 0)) == 6:        # 泳衣: 露肚短上衣
+		torso = _female_torso_swim(cs) if female else _TORSO_SWIM
+	elif female:
+		torso = _female_torso(cs)
 	else:
-		_place(g, _TORSO_TOP + dy, _TORSO_LEFT, _TORSO)
+		torso = _TORSO
+	_place(g, _TORSO_TOP + dy, _TORSO_LEFT, torso)
 	return g
+
+
+# 女泳衣躯干 (露肚: 上 3 行衣+胸, 下 3 行肚皮肤)。沙漏腰; cs 简化两档前鼓。
+static func _female_torso_swim(cs: int) -> Array:
+	cs = clampi(cs, 0, 5)
+	var rows := [
+		".wwwww...",   # 上胸
+		"wwwwwww..",   # 胸
+		"wwwwwww..",   # 胸下沿 (衣底)
+		".sssss...",   # 肚 (皮肤)
+		".Dss.....",   # 腰 (皮肤, 收窄)
+		"ksssk....",   # 胯 (皮肤)
+	]
+	if cs >= 2:
+		rows[1] = _set_char(rows[1], 7, "w")   # 胸前鼓 1px
+	if cs >= 4:
+		rows[2] = _set_char(rows[2], 7, "w")
+	return rows
 
 
 # 女躯干 (9 宽): 沙漏身, 胸在躯干前 (右)。chest_size 越大胸越饱满。
@@ -272,7 +312,8 @@ static func _arm_layer(ap: Dictionary, pose: String, dy: int) -> Array:
 		"jump":   left = 10; top = 11   # 抬手
 		"fall":   left = 11; top = 11
 		"hurt":   left = 10; top = 11
-	var arm: Array = _ARM_BARE if int(ap.get("shirt_style", 0)) == 1 else _ARM   # 背心款露胳膊
+	var ss := int(ap.get("shirt_style", 0))
+	var arm: Array = _ARM_BARE if (ss == 1 or ss == 6) else _ARM   # 背心/泳衣 露胳膊
 	_place(g, top + dy, left, arm)
 	return g
 
@@ -301,31 +342,36 @@ static func _hair_layer(ap: Dictionary, dy: int) -> Array:
 # 腿层: 两条腿 + 鞋 (+裙子), 按姿势前后迈 / 抬。裙子款腿裸 (皮肤) + 上面盖裙。
 static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
-	var skirt := int(ap.get("pants_style", 0)) == 2
+	var ps := int(ap.get("pants_style", 0))
+	var leg: Array = _LEG
+	if ps == 2:
+		leg = _LEG_SKIN       # 裙子: 裸腿 (上面盖裙)
+	elif ps == 7:
+		leg = _LEG_TRUNK      # 泳裤: 上段短裤 + 下段裸腿
 	match pose:
 		"walk_a":   # 迈开: 两脚分开都落地 (宽站, 重心稳)
-			_put_leg(g, 4, _HIP, 4, skirt)
-			_put_leg(g, 9, _HIP, 4, skirt)
+			_put_leg(g, 4, _HIP, 4, leg)
+			_put_leg(g, 9, _HIP, 4, leg)
 		"walk_c":   # 收拢: 后脚落地, 前脚抬起迈步 (与 walk_a 不同 → 动起来)
-			_put_leg(g, 5, _HIP, 4, skirt)
-			_put_leg(g, 8, _HIP, 3, skirt)
+			_put_leg(g, 5, _HIP, 4, leg)
+			_put_leg(g, 8, _HIP, 3, leg)
 		"jump":     # 双腿收起
-			_put_leg(g, 5, _HIP, 2, skirt)
-			_put_leg(g, 9, _HIP, 2, skirt)
+			_put_leg(g, 5, _HIP, 2, leg)
+			_put_leg(g, 9, _HIP, 2, leg)
 		"fall":     # 双腿张开
-			_put_leg(g, 4, _HIP, 4, skirt)
-			_put_leg(g, 10, _HIP, 4, skirt)
+			_put_leg(g, 4, _HIP, 4, leg)
+			_put_leg(g, 10, _HIP, 4, leg)
 		_:          # idle/hurt: 站立, 两腿稍分
-			_put_leg(g, 5, _HIP, 4, skirt)
-			_put_leg(g, 8, _HIP, 4, skirt)
-	if skirt:
+			_put_leg(g, 5, _HIP, 4, leg)
+			_put_leg(g, 8, _HIP, 4, leg)
+	if ps == 2:
 		_place(g, _HIP - 1, 4, _SKIRT)   # 裙子盖胯+大腿上段, 裸腿露在裙下
 	return g
 
 
-# 放一条腿 + 腿下的鞋。height<4 = 抬腿 (鞋离地)。bare=裙子款的裸腿 (皮肤色)。
-static func _put_leg(g: Array, col: int, top: int, height: int, bare: bool = false) -> void:
-	_place(g, top, col, _slice(_LEG_SKIN if bare else _LEG, 0, height))
+# 放一条腿 (用给定 leg_block) + 腿下的鞋。height<4 = 抬腿 (鞋离地)。
+static func _put_leg(g: Array, col: int, top: int, height: int, leg_block: Array) -> void:
+	_place(g, top, col, _slice(leg_block, 0, height))
 	_place(g, top + height, col - 1, _SHOE_B)   # 鞋比腿宽, 左移 1 让鞋尖朝前伸
 
 

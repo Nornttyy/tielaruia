@@ -108,6 +108,22 @@ func test_pants_style_skirt_changes_render():
 	var ib = PlayerArt.build_sprite_frames(b).get_frame_texture("idle", 0).get_image()
 	assert_gt(_count_diff(ia, ib), 0, "裙子款与长裤不同")
 
+func test_shirt_style_swim_changes_render():
+	# 泳衣款 (shirt_style 6) 露肚短上衣, 跟 T恤不同
+	var a = _default_appearance()
+	var b = _default_appearance(); b["shirt_style"] = 6
+	var ia = PlayerArt.build_sprite_frames(a).get_frame_texture("idle", 0).get_image()
+	var ib = PlayerArt.build_sprite_frames(b).get_frame_texture("idle", 0).get_image()
+	assert_gt(_count_diff(ia, ib), 0, "泳衣款与 T恤不同")
+
+func test_pants_style_trunks_changes_render():
+	# 泳裤款 (pants_style 7) 短裤+裸腿, 跟长裤不同
+	var a = _default_appearance()
+	var b = _default_appearance(); b["pants_style"] = 7
+	var ia = PlayerArt.build_sprite_frames(a).get_frame_texture("idle", 0).get_image()
+	var ib = PlayerArt.build_sprite_frames(b).get_frame_texture("idle", 0).get_image()
+	assert_gt(_count_diff(ia, ib), 0, "泳裤款与长裤不同")
+
 func test_unknown_style_no_crash():
 	var ap = _default_appearance(); ap["shirt_style"] = 99; ap["hair_style"] = 99
 	var sf = PlayerArt.build_sprite_frames(ap)
