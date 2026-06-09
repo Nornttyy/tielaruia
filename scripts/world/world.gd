@@ -85,7 +85,7 @@ var _sleep_zzz: Node = null          # 头顶 "Zzz" 提示
 var chunk_manager: ChunkManager
 var water_sim: Node
 var minimap_data: Node
-var _remote_player: Node = null   # 联机时另一个玩家的 sprite (Phase C)
+var _remote_players: Dictionary = {}   # peer_id(String) → RemotePlayer 节点 (多人公共房)
 var _mp_time_sync_timer: float = 0.0   # host 广播时间+天气计时 (Phase F)
 const _MP_TIME_SYNC_INTERVAL := 5.0
 var _mp_entity_sync_timer: float = 0.0  # host 广播实体位置计时 (Phase E)
@@ -266,8 +266,11 @@ func _step_spawn_player() -> void:
 func _setup_multiplayer_callbacks() -> void:
 	if NetworkManager == null or not NetworkManager.connected():
 		return
-	if _remote_player == null:
-		_spawn_remote_player()
+	# 多人: 谁进/离房 → spawn/移除对应远程玩家 (不再开局就建单个)
+	if not NetworkManager.peer_joined.is_connected(_on_peer_joined):
+		NetworkManager.peer_joined.connect(_on_peer_joined)
+	if not NetworkManager.peer_left.is_connected(_on_peer_left):
+		NetworkManager.peer_left.connect(_on_peer_left)
 	if not NetworkManager.remote_pos_received.is_connected(_on_remote_pos):
 		NetworkManager.remote_pos_received.connect(_on_remote_pos)
 	if not NetworkManager.remote_tile_received.is_connected(_on_remote_tile):
@@ -316,9 +319,11 @@ func _on_mp_status_changed(s: String) -> void:
 
 # 对方掉线: 清掉对方角色 + 所有从对端同步来的怪/实体, 否则残留"幽灵"继续接触伤害本地玩家.
 func _cleanup_remote_on_disconnect() -> void:
-	if _remote_player != null and is_instance_valid(_remote_player):
-		_remote_player.queue_free()
-	_remote_player = null
+	for pid in _remote_players.keys():
+		var rp = _remote_players[pid]
+		if rp != null and is_instance_valid(rp):
+			rp.queue_free()
+	_remote_players.clear()
 	for id in _remote_entities.keys():
 		var ent = _remote_entities[id]
 		if ent != null and is_instance_valid(ent):
@@ -452,14 +457,16 @@ func _on_remote_projectile(kind: String, sx: float, sy: float, tx: float, ty: fl
 		proj.setup(start, target, 0, true, element)
 
 
-func _on_remote_player_death() -> void:
-	if _remote_player != null and _remote_player.has_method("set_dead"):
-		_remote_player.set_dead(true)
+func _on_remote_player_death(peer_id: String) -> void:
+	var rp: Node = _remote_players.get(peer_id, null)
+	if rp != null and is_instance_valid(rp) and rp.has_method("set_dead"):
+		rp.set_dead(true)
 
 
-func _on_remote_player_respawn() -> void:
-	if _remote_player != null and _remote_player.has_method("set_dead"):
-		_remote_player.set_dead(false)
+func _on_remote_player_respawn(peer_id: String) -> void:
+	var rp: Node = _remote_players.get(peer_id, null)
+	if rp != null and is_instance_valid(rp) and rp.has_method("set_dead"):
+		rp.set_dead(false)
 
 
 # host 收到 client 挖矿掉落请求 → 权威生成 (随后 _mp_broadcast_entities 广播给两边)
@@ -587,32 +594,55 @@ func _on_remote_time_weather(time_val: float, weather_state: String) -> void:
 		weather.force_state(weather_state)
 
 
-func _spawn_remote_player() -> void:
-	if _remote_player != null:
-		return
-	_remote_player = RemotePlayerScene.instantiate()
-	_remote_player.name = "RemotePlayer"
-	entities_root.add_child(_remote_player)
+func _spawn_remote_player(peer_id: String) -> Node:
+	if _remote_players.has(peer_id) and is_instance_valid(_remote_players[peer_id]):
+		return _remote_players[peer_id]
+	var rp: Node = RemotePlayerScene.instantiate()
+	rp.name = "RemotePlayer_" + peer_id
+	entities_root.add_child(rp)
+	if "peer_id" in rp:
+		rp.peer_id = peer_id
 	# 初始放在 spawn 点附近 (收到第一条 pos 后 snap 到真实位置)
-	_remote_player.global_position = Vector2(
+	rp.global_position = Vector2(
 		spawn_point.x * TILE_SIZE + TILE_SIZE / 2.0,
 		spawn_point.y * TILE_SIZE + TILE_SIZE
 	)
 	# name 消息可能先于 spawn 到达 → spawn 时补上已收到的对方名字
-	if _remote_player.has_method("set_player_name") and NetworkManager.remote_player_name != "":
-		_remote_player.set_player_name(NetworkManager.remote_player_name)
+	if rp.has_method("set_player_name") and NetworkManager.remote_player_name != "":
+		rp.set_player_name(NetworkManager.remote_player_name)
+	_remote_players[peer_id] = rp
+	return rp
 
 
-func _on_remote_pos(x: float, y: float, facing: int, anim: String) -> void:
-	if _remote_player == null:
-		_spawn_remote_player()
-	if _remote_player != null and _remote_player.has_method("apply_pos"):
-		_remote_player.apply_pos(x, y, facing, anim)
+func _on_peer_joined(peer_id: String) -> void:
+	_spawn_remote_player(peer_id)
 
 
-func _on_remote_name(n: String) -> void:
-	if _remote_player != null and _remote_player.has_method("set_player_name"):
-		_remote_player.set_player_name(n)
+func _on_peer_left(peer_id: String) -> void:
+	if _remote_players.has(peer_id):
+		var rp = _remote_players[peer_id]
+		if is_instance_valid(rp):
+			rp.queue_free()
+		_remote_players.erase(peer_id)
+
+
+# 给 chat_box 按 peer 定位头顶气泡用
+func get_remote_player(peer_id: String) -> Node:
+	return _remote_players.get(peer_id, null)
+
+
+func _on_remote_pos(peer_id: String, x: float, y: float, facing: int, anim: String) -> void:
+	var rp: Node = _remote_players.get(peer_id, null)
+	if rp == null or not is_instance_valid(rp):
+		rp = _spawn_remote_player(peer_id)   # 懒创建: pos 先于 join 到也不丢人
+	if rp.has_method("apply_pos"):
+		rp.apply_pos(x, y, facing, anim)
+
+
+func _on_remote_name(peer_id: String, n: String) -> void:
+	var rp: Node = _remote_players.get(peer_id, null)
+	if rp != null and is_instance_valid(rp) and rp.has_method("set_player_name"):
+		rp.set_player_name(n)
 
 
 func _place_village() -> void:
@@ -1445,8 +1475,10 @@ func _door_player_positions() -> Array:
 	var lp = get_tree().get_first_node_in_group("player")
 	if lp != null and is_instance_valid(lp):
 		out.append(lp.global_position)
-	if _remote_player != null and is_instance_valid(_remote_player):
-		out.append(_remote_player.global_position)
+	for pid in _remote_players:
+		var rp = _remote_players[pid]
+		if rp != null and is_instance_valid(rp):
+			out.append(rp.global_position)
 	return out
 
 
