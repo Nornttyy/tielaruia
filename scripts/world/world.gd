@@ -1109,15 +1109,24 @@ func _player_is_deep() -> bool:
 		return false
 	var px: int = int(floor(player.global_position.x / TILE_SIZE))
 	var py: int = int(floor(player.global_position.y / TILE_SIZE))
-	return py - _surf_at_x(px) >= 8
+	var surf: int = _surf_at_x(px)
+	if surf < 0:
+		return false  # 地表未知 (区块没加载, 如刚进世界) → 当作不深, 别刷地下紫史莱姆
+	return py - surf >= 8
 
 
-# 某列地表 y (从上往下第一个非 AIR). 全空返回 0.
+# 某列地表 y. 用区块生成时存好的 surfaces (不受挖动/加载影响), 比扫活 tile 稳.
+# 区块没加载 (surfaces 取不到) → 返回 -1 表示"未知", 调用方按"不深/跳过"处理.
+# (旧版扫不到实心就返回 0, 把没加载的列当成"地表在世界顶" → 深度算成上百格 →
+#  地表被误判成地下, 刷出红/紫史莱姆. 这是"地面出现紫史莱姆"的根因.)
 func _surf_at_x(x: int) -> int:
-	for y in ChunkConstants.WORLD_HEIGHT:
-		if chunk_manager.get_tile(x, y) != Tiles.AIR:
-			return y
-	return 0
+	var ch: Chunk = chunk_manager.get_chunk(Chunk.chunk_x_of(x))
+	if ch == null:
+		return -1
+	var lx: int = Chunk.local_x_of(x)
+	if lx < 0 or lx >= ch.surfaces.size():
+		return -1
+	return int(ch.surfaces[lx])
 
 
 # 地下刷史莱姆: 玩家附近找 AIR(头顶空+脚下实心) 刷一只按深度配色的史莱姆.
@@ -1139,7 +1148,10 @@ func _try_spawn_underground_slime() -> void:
 		# 地狱(>=220)留给地狱怪, 不在这刷
 		if cand_y >= 220 or cand_y >= ChunkConstants.WORLD_HEIGHT - 2:
 			continue
-		var depth: int = cand_y - _surf_at_x(cand_x)
+		var cand_surf: int = _surf_at_x(cand_x)
+		if cand_surf < 0:
+			continue  # 这列地表未知 (没加载) → 跳过, 别按错深度配出红/紫
+		var depth: int = cand_y - cand_surf
 		if depth < 8:
 			continue  # 太浅算地表, 跳过
 		if chunk_manager.get_tile(cand_x, cand_y) != Tiles.AIR:

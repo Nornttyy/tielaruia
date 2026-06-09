@@ -48,12 +48,12 @@ static func color_for_depth(depth_below_surf: int, rng: RandomNumberGenerator) -
 	return 3
 
 
-# 刷怪随机大小: 40% 大 / 40% 中 / 20% 小 (偏大给分裂乐趣).
+# 刷怪随机大小: 15% 大 / 40% 中 / 45% 小 (大史莱姆稀有, 偶尔遇到才有惊喜).
 static func random_spawn_size(rng: RandomNumberGenerator) -> int:
 	var r: float = rng.randf()
-	if r < 0.40:
+	if r < 0.15:
 		return 2
-	elif r < 0.80:
+	elif r < 0.55:
 		return 1
 	return 0
 
