@@ -1,23 +1,28 @@
 // PeerJS bridge for teilaruia multiplayer.
-// 用 PeerJS 免费公共 broker 信令, 建立 WebRTC P2P 数据通道.
+// 星形拓扑 + host 权威: 所有 client 只连 host; host 用连接表 _conns 群发/转发.
 // Godot 通过 JavaScriptBridge.eval / get_interface() 访问 window.MultiplayerBridge.
 //
 // 接口 (Godot 调用):
-//   host()               -> 启动 host, 异步获取 6 位房间码
-//   join(roomCode)       -> 加入指定房间码
-//   send(jsonStr)        -> 发字符串到对方
-//   pop_messages()       -> 返回收到的消息 JSON 数组字符串 (取走清空)
-//   get_status()         -> 'idle' / 'hosting' / 'joining' / 'connected' / 'disconnected' / 'error'
-//   get_my_id()          -> 当前 peer 的 6 位房间码 (host 用)
-//   get_last_error()     -> 最近的错误字符串 (status='error' 时有效)
-//   is_host()            -> 是 host 还是 client
-//   disconnect()         -> 断开连接, 回到 idle
+//   host()                  -> 启动私人 host (6 位房间码)
+//   join(roomCode)          -> 加入指定房间码
+//   enter_public(tag,maxPeers,maxRooms) -> 进公共房 (谁先到谁当 host, 房满顺延下一号)
+//   send(jsonStr)           -> host: 群发所有 client; client: 发给 host
+//   send_to(peerId,jsonStr) -> host: 只发给某个 client (转发用)
+//   pop_messages()          -> 取走收到的消息: [{from:"<peerId>",data:"<字符串>"}, ...] 的 JSON
+//   get_peer_ids()          -> host 当前所有 client peer id 的 JSON 数组
+//   get_peer_count()        -> host 当前 client 数
+//   get_status()            -> 'idle'/'hosting'/'joining'/'connected'/'disconnected'/'error'
+//   get_my_id()             -> host 的房间码 / 公共房号
+//   get_last_error()        -> 最近错误字符串
+//   is_host()               -> 是 host 还是 client
+//   disconnect()            -> 断开, 回 idle
 (function() {
     'use strict';
 
     var bridge = {
         _peer: null,
-        _conn: null,
+        _conns: {},        // host 端: peerId -> DataConnection (多 client)
+        _hostConn: null,   // client 端: 到 host 的连接
         _status: 'idle',
         _myId: '',
         _isHost: false,
@@ -25,13 +30,9 @@
         _lastError: '',
     };
 
-    // ⚙️ 联机服务器配置 ⚙️
-    // 填上你自己的 PeerJS 服务器域名 (在 Render 免费部署后拿到, 不含 "https://" 和末尾的 "/")。
-    // 留空 "" = 用 PeerJS 免费公共服务器 (大家都在蹭, 经常连不上 — 只当临时兜底)。
-    // 部署教程见 docs/multiplayer-server-setup.md
-    var PEER_HOST = "tielaruia.onrender.com";   // 自己的 Render 服务器 (稳, 只给自己人用)
+    // ⚙️ 联机服务器配置 ⚙️ (自建 Render 服务器, 稳, 只给自己人用)
+    var PEER_HOST = "tielaruia.onrender.com";
 
-    // 生成连服务器的参数: 填了 PEER_HOST 就连自己的服务器, 否则连公共的。
     function _peerOpts() {
         var o = { debug: 1 };
         if (PEER_HOST) {
@@ -43,7 +44,6 @@
         return o;
     }
 
-    // 把 6 位字母+数字的 peer id 当 "房间码", 用户友好
     function _genRoomCode() {
         var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         var s = '';
@@ -53,36 +53,59 @@
         return s;
     }
 
-    function _setupConn(conn) {
-        bridge._conn = conn;
+    // 一条连接的事件. isIncoming=true: host 端收到的 client 连接 (进 _conns 表);
+    // false: client 到 host 的连接.
+    function _setupConn(conn, isIncoming) {
         conn.on('open', function() {
             bridge._status = 'connected';
+            if (isIncoming) {
+                bridge._conns[conn.peer] = conn;
+                // 通知 GDScript 有人进来了
+                bridge._messages.push({from: '__sys', data: JSON.stringify({type: '__peer_join', id: conn.peer})});
+            }
         });
         conn.on('data', function(data) {
-            // data 是字符串 (Godot 发什么收什么). 简单 push 到队列.
-            bridge._messages.push(String(data));
+            // 进队带来源: host 端 = conn.peer; client 端 = 'HOST'
+            bridge._messages.push({from: isIncoming ? conn.peer : 'HOST', data: String(data)});
         });
         conn.on('close', function() {
-            bridge._status = 'disconnected';
+            if (isIncoming) {
+                delete bridge._conns[conn.peer];
+                bridge._messages.push({from: '__sys', data: JSON.stringify({type: '__peer_leave', id: conn.peer})});
+            } else {
+                bridge._status = 'disconnected';   // 到 host 的连接断了 = 房主走了
+            }
         });
         conn.on('error', function(err) {
             bridge._lastError = 'conn error: ' + (err.type || err.message || err);
-            bridge._status = 'error';
         });
     }
 
+    // host 端收到一个新连接: 房满礼貌拒绝 (client 会自动试下一号房), 否则接纳.
+    function _onIncoming(conn, gen) {
+        if (gen !== bridge._gen) return;
+        var cap = bridge._maxPeers || 8;
+        if (Object.keys(bridge._conns).length + 1 >= cap) {   // +1 含 host 自己
+            conn.on('open', function() {
+                try { conn.send(JSON.stringify({__full: 1})); } catch (e) {}
+                setTimeout(function() { try { conn.close(); } catch (e) {} }, 200);
+            });
+            return;
+        }
+        _setupConn(conn, true);
+    }
+
     // ---- 联机健壮性参数 ----
-    bridge._gen = 0;            // "代次": host/join/disconnect 每次 +1, 作废上一轮挂着的重试/超时回调
+    bridge._gen = 0;            // "代次": 每次 host/join/enter/disconnect +1, 作废上一轮挂着的回调
     bridge._hostRetries = 0;
     bridge._joinRetries = 0;
     bridge._joinCode = '';
-    var MAX_RETRIES = 4;        // 抽风时最多自动重试几次
-    var RETRY_DELAY_MS = 1500;  // 每次重试间隔
-    var JOIN_TIMEOUT_MS = 12000; // join 后这么久还没连上 host → 重试
-    // 这些错误是"服务器/网络一时抽风", 该自动重试 (而不是直接报错)
+    bridge._maxPeers = 8;
+    var MAX_RETRIES = 4;
+    var RETRY_DELAY_MS = 1500;
+    var JOIN_TIMEOUT_MS = 12000;
     var _RETRYABLE = {'network': 1, 'server-error': 1, 'socket-error': 1, 'socket-closed': 1, 'unavailable-id': 1};
 
-    // PeerJS 错误码 → 人话提示
     function _friendlyError(et) {
         switch (et) {
             case 'peer-unavailable': return '找不到房间 — 检查房间码对不对、房主开房间了没';
@@ -96,6 +119,7 @@
         }
     }
 
+    // ===== 私人房: host (6 位码) =====
     bridge.host = function() {
         bridge.disconnect();
         bridge._gen++;
@@ -103,11 +127,12 @@
         bridge._status = 'hosting';
         bridge._lastError = '';
         bridge._hostRetries = 0;
+        bridge._maxPeers = 8;
         _hostAttempt(bridge._gen);
     };
 
     function _hostAttempt(gen) {
-        if (gen !== bridge._gen) return;   // 已被新的 host/disconnect 作废
+        if (gen !== bridge._gen) return;
         var code = _genRoomCode();
         var fullId = 'teilaruia-' + code;
         try {
@@ -120,14 +145,10 @@
         bridge._peer.on('open', function() {
             if (gen !== bridge._gen) return;
             bridge._myId = code;
-            bridge._hostRetries = 0;   // 成功开房 → 重置重试计数
+            bridge._hostRetries = 0;
         });
-        bridge._peer.on('connection', function(conn) {
-            if (gen !== bridge._gen) return;
-            _setupConn(conn);
-        });
+        bridge._peer.on('connection', function(conn) { _onIncoming(conn, gen); });
         bridge._peer.on('disconnected', function() {
-            // broker 连接掉了但 peer 没销毁 → 重连 broker, 保住已分享的房间码
             if (gen !== bridge._gen) return;
             try { if (bridge._peer && !bridge._peer.destroyed) bridge._peer.reconnect(); } catch (e) {}
         });
@@ -136,7 +157,6 @@
             var et = err.type || err.message || err;
             if (_RETRYABLE[et]) {
                 if (bridge._myId) {
-                    // 已开房、码已分享 → 别换码, 重连 broker 即可
                     bridge._lastError = _friendlyError(et);
                     try { if (bridge._peer && !bridge._peer.destroyed) bridge._peer.reconnect(); } catch (e) {}
                     return;
@@ -144,7 +164,7 @@
                 if (bridge._hostRetries < MAX_RETRIES) {
                     bridge._hostRetries++;
                     bridge._lastError = _friendlyError(et);
-                    bridge._status = 'hosting';   // 还在试, 别变 error
+                    bridge._status = 'hosting';
                     try { bridge._peer.destroy(); } catch (e) {}
                     setTimeout(function() { _hostAttempt(gen); }, RETRY_DELAY_MS);
                     return;
@@ -155,6 +175,7 @@
         });
     }
 
+    // ===== 私人房: join (输码) =====
     bridge.join = function(code) {
         if (!code || code.length !== 6) {
             bridge._lastError = '房间码必须是 6 位';
@@ -184,11 +205,11 @@
         bridge._peer.on('open', function() {
             if (gen !== bridge._gen) return;
             var conn = bridge._peer.connect(fullId, { reliable: true });
-            _setupConn(conn);
-            // 连接开启超时: 一段时间还没连上 host (房主没开/码错/broker 慢) → 重试
+            bridge._hostConn = conn;
+            _setupConn(conn, false);
             setTimeout(function() {
                 if (gen !== bridge._gen) return;
-                if (bridge._status === 'joining' && (!bridge._conn || !bridge._conn.open)) {
+                if (bridge._status === 'joining' && (!conn || !conn.open)) {
                     _joinRetryOrFail(gen, 'connect-timeout');
                 }
             }, JOIN_TIMEOUT_MS);
@@ -205,7 +226,7 @@
                 (_RETRYABLE[et] || et === 'peer-unavailable' || et === 'connect-timeout')) {
             bridge._joinRetries++;
             bridge._lastError = _friendlyError(et);
-            bridge._status = 'joining';   // 还在试
+            bridge._status = 'joining';
             try { if (bridge._peer) bridge._peer.destroy(); } catch (e) {}
             setTimeout(function() { _joinAttempt(gen); }, RETRY_DELAY_MS);
             return;
@@ -214,18 +235,145 @@
         bridge._status = 'error';
     }
 
+    // ===== 公共房: 谁先到谁当 host, 房满顺延下一号 =====
+    bridge.enter_public = function(tag, maxPeers, maxRooms) {
+        bridge.disconnect();
+        bridge._gen++;
+        bridge._maxPeers = maxPeers || 8;
+        bridge._maxRooms = maxRooms || 20;
+        bridge._pubTag = tag;
+        bridge._pubIndex = 1;
+        bridge._isHost = false;
+        bridge._status = 'joining';
+        bridge._lastError = '';
+        _tryJoinPublic(bridge._gen);
+    };
+
+    function _pubId(idx) { return 'teilaruia-PUB-' + bridge._pubTag + '-' + idx; }
+
+    // 先以 client 身份连 idx 号房
+    function _tryJoinPublic(gen) {
+        if (gen !== bridge._gen) return;
+        if (bridge._pubIndex > bridge._maxRooms) {
+            bridge._lastError = '现在人太多啦, 等会儿再来';
+            bridge._status = 'error';
+            return;
+        }
+        var targetId = _pubId(bridge._pubIndex);
+        try {
+            bridge._peer = new Peer(null, _peerOpts());
+        } catch (e) {
+            bridge._lastError = 'PeerJS 没加载好, 刷新页面再试';
+            bridge._status = 'error';
+            return;
+        }
+        bridge._peer.on('open', function() {
+            if (gen !== bridge._gen) return;
+            var conn = bridge._peer.connect(targetId, { reliable: true });
+            var settled = false;
+            conn.on('open', function() {
+                if (gen !== bridge._gen || settled) return;
+                settled = true;
+                bridge._isHost = false;
+                bridge._hostConn = conn;
+                _setupConn(conn, false);
+                bridge._status = 'connected';
+            });
+            conn.on('data', function(d) {
+                // 被房主拒绝 (房满) → 试下一号房
+                try { if (JSON.parse(String(d)).__full) { settled = true; _nextRoom(gen); } } catch (e) {}
+            });
+            // 一段时间没连上 → 这号房可能没人开 → 去抢占当 host
+            setTimeout(function() {
+                if (gen !== bridge._gen || settled) return;
+                settled = true;
+                try { bridge._peer.destroy(); } catch (e) {}
+                _hostPublic(gen);
+            }, 5000);
+        });
+        bridge._peer.on('error', function(err) {
+            if (gen !== bridge._gen) return;
+            var et = err.type || err.message || err;
+            if (et === 'peer-unavailable') {
+                try { bridge._peer.destroy(); } catch (e) {}
+                _hostPublic(gen);   // 没人开这号房 → 抢占当 host
+            } else if (_RETRYABLE[et]) {
+                bridge._lastError = _friendlyError(et);   // 服务器忙, 保持 joining 等超时
+            } else {
+                bridge._lastError = _friendlyError(et);
+                bridge._status = 'error';
+            }
+        });
+    }
+
+    // 抢占 idx 号房当 host
+    function _hostPublic(gen) {
+        if (gen !== bridge._gen) return;
+        try {
+            bridge._peer = new Peer(_pubId(bridge._pubIndex), _peerOpts());
+        } catch (e) {
+            bridge._lastError = 'PeerJS 没加载好, 刷新页面再试';
+            bridge._status = 'error';
+            return;
+        }
+        bridge._peer.on('open', function() {
+            if (gen !== bridge._gen) return;
+            bridge._isHost = true;
+            bridge._myId = _pubId(bridge._pubIndex);
+            bridge._status = 'connected';   // host 自己即"连上" (房里就他一个也能玩)
+        });
+        bridge._peer.on('connection', function(conn) { _onIncoming(conn, gen); });
+        bridge._peer.on('error', function(err) {
+            if (gen !== bridge._gen) return;
+            var et = err.type || err.message || err;
+            if (et === 'unavailable-id') {
+                // 并发竞争: 别人刚抢到这号房 → 退回当 client 再连它
+                try { bridge._peer.destroy(); } catch (e) {}
+                bridge._isHost = false;
+                _tryJoinPublic(gen);
+            } else {
+                bridge._lastError = _friendlyError(et);
+                bridge._status = 'error';
+            }
+        });
+    }
+
+    function _nextRoom(gen) {
+        if (gen !== bridge._gen) return;
+        try { if (bridge._peer) bridge._peer.destroy(); } catch (e) {}
+        bridge._pubIndex++;
+        _tryJoinPublic(gen);
+    }
+
+    // ===== 发送 =====
     bridge.send = function(jsonStr) {
-        if (bridge._conn && bridge._conn.open) {
-            bridge._conn.send(jsonStr);
+        if (bridge._isHost) {
+            var sent = false;
+            for (var pid in bridge._conns) {
+                var c = bridge._conns[pid];
+                if (c && c.open) { c.send(jsonStr); sent = true; }
+            }
+            return sent;
+        }
+        if (bridge._hostConn && bridge._hostConn.open) {
+            bridge._hostConn.send(jsonStr);
             return true;
         }
         return false;
     };
 
+    bridge.send_to = function(peerId, jsonStr) {
+        var c = bridge._conns[peerId];
+        if (c && c.open) { c.send(jsonStr); return true; }
+        return false;
+    };
+
+    bridge.get_peer_ids = function() { return JSON.stringify(Object.keys(bridge._conns)); };
+    bridge.get_peer_count = function() { return Object.keys(bridge._conns).length; };
+
     bridge.pop_messages = function() {
         var msgs = bridge._messages;
         bridge._messages = [];
-        // Return as JSON string array — Godot will parse
         return JSON.stringify(msgs);
     };
 
@@ -236,14 +384,16 @@
 
     bridge.disconnect = function() {
         bridge._gen = (bridge._gen || 0) + 1;   // 作废所有挂着的重试/超时回调
-        if (bridge._conn) {
-            try { bridge._conn.close(); } catch (e) {}
+        for (var pid in bridge._conns) {
+            try { bridge._conns[pid].close(); } catch (e) {}
         }
+        bridge._conns = {};
+        if (bridge._hostConn) { try { bridge._hostConn.close(); } catch (e) {} }
+        bridge._hostConn = null;
         if (bridge._peer) {
             try { bridge._peer.destroy(); } catch (e) {}
         }
         bridge._peer = null;
-        bridge._conn = null;
         bridge._status = 'idle';
         bridge._myId = '';
         bridge._isHost = false;
