@@ -118,7 +118,7 @@ visible = false
 
 [node name="Button" type="Button" parent="ButtonLayer/VBox/MultiplayerRow"]
 custom_minimum_size = Vector2(240, 44)
-text = "加入房间"
+text = "多人游戏"
 
 [node name="SettingsRow" type="HBoxContainer" parent="ButtonLayer/VBox"]
 theme_override_constants/separation = 6
@@ -503,7 +503,7 @@ theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
 
 [node name="PublicSurvivalButton" type="Button" parent="MultiplayerPanel/VBox"]
 custom_minimum_size = Vector2(0, 40)
-text = "🌍 公共生存房"
+text = "公共生存房"
 
 [node name="JoinTitleLabel" type="Label" parent="MultiplayerPanel/VBox"]
 text = "加入房间"

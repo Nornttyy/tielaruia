@@ -7,7 +7,7 @@ const S := {
 
 	"menu_subtitle": "2D 샌드박스 · 테라리아 스타일",
 	"menu_new_game": "게임 시작",
-	"menu_multiplayer": "방 참여",
+	"menu_multiplayer": "멀티플레이",
 	"menu_settings": "설정",
 
 	"settings_title": "설정",
@@ -48,7 +48,7 @@ const S := {
 
 	"mp_title": "멀티플레이",
 	"mp_rooms_title": "방",
-	"mp_public_survival": "🌍 공개 서바이벌",
+	"mp_public_survival": "공개 서바이벌",
 	"mp_join_title": "방 참여",
 	"mp_entering_public": "공개 방 입장 중…",
 	"mp_room_code_prompt": "친구에게 받은 6자리 방 코드 입력",

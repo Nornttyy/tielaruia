@@ -7,7 +7,7 @@ const S := {
 
 	"menu_subtitle": "2D Sandbox · Terraria-style",
 	"menu_new_game": "New Game",
-	"menu_multiplayer": "Join Room",
+	"menu_multiplayer": "Multiplayer",
 	"menu_settings": "Settings",
 
 	"settings_title": "Settings",
@@ -48,7 +48,7 @@ const S := {
 
 	"mp_title": "Multiplayer",
 	"mp_rooms_title": "Rooms",
-	"mp_public_survival": "🌍 Public Survival",
+	"mp_public_survival": "Public Survival",
 	"mp_join_title": "Join Room",
 	"mp_entering_public": "Entering public room…",
 	"mp_room_code_prompt": "Enter the 6-digit room code from your friend",

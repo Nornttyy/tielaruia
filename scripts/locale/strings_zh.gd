@@ -10,7 +10,7 @@ const S := {
 	# ===== 主菜单 =====
 	"menu_subtitle": "2D 沙盒 · Terraria 风",
 	"menu_new_game": "开始游戏",
-	"menu_multiplayer": "加入房间",
+	"menu_multiplayer": "多人游戏",
 	"menu_settings": "设置",
 
 	# ===== 设置面板 =====
@@ -55,7 +55,7 @@ const S := {
 	# ===== 多人游戏面板 =====
 	"mp_title": "多 人 游 戏",
 	"mp_rooms_title": "房间",
-	"mp_public_survival": "🌍 公共生存房",
+	"mp_public_survival": "公共生存房",
 	"mp_join_title": "加入房间",
 	"mp_entering_public": "正在进入公共房…",
 	"mp_room_code_prompt": "输入朋友给的 6 位房间码",
