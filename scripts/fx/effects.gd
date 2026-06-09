@@ -104,8 +104,9 @@ func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1
 	# 砍怪 / 玩家受伤时, 头上飘一个 "-N" 数字, 0.7s 上升 + 渐隐.
 	# color: 默认暖黄 (打怪); 玩家受伤可传 Color(1, 0.4, 0.4) 暗红.
 	# 怪受击音效: 只在"砍怪"(默认黄字 g=0.9)时播, 玩家受伤(红字 g≈0.35)不播 — 玩家有自己的 hurt 音.
+	# 按距离衰减: 离玩家远了变小, 超过 ~22 tile 直接静音 (远处怪挨打不该满音量吵, 用户要求)。
 	if color.g > 0.6:
-		SfxBank.play("hit", 0.08)
+		SfxBank.play_at("hit", world_pos, 270.0, 0.08)
 	var lbl := Label.new()
 	lbl.text = "-%d" % amount
 	lbl.add_theme_color_override("font_color", color)
