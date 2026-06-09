@@ -29,7 +29,7 @@
     // 填上你自己的 PeerJS 服务器域名 (在 Render 免费部署后拿到, 不含 "https://" 和末尾的 "/")。
     // 留空 "" = 用 PeerJS 免费公共服务器 (大家都在蹭, 经常连不上 — 只当临时兜底)。
     // 部署教程见 docs/multiplayer-server-setup.md
-    var PEER_HOST = "";   // 例: "teilaruia-peer.onrender.com"
+    var PEER_HOST = "tielaruia.onrender.com";   // 自己的 Render 服务器 (稳, 只给自己人用)
 
     // 生成连服务器的参数: 填了 PEER_HOST 就连自己的服务器, 否则连公共的。
     function _peerOpts() {
