@@ -22,7 +22,7 @@ const VIEWPORT_SIZE := Vector2(1280, 720)
 const CLOUD_COUNT := 7          # 4→7: 云更多更丰富 (大小/透明度分层做远近)
 const TREE_COUNT := 5
 # 移动森林: 两层视差树 (远 小/慢/淡, 近 大/快). 横向滚动 + 循环.
-const TREE_ROW_COUNT := 9     # 只一排高大的树 (用户要求, 不要背景森林)
+const TREE_ROW_COUNT := 16    # 一排树, 密一点 (用户要求调高密度)
 const TREE_WALL_COUNT := 30   # (旧多层森林常量, 现已不用)
 const TREE_FAR_COUNT := 20
 const TREE_NEAR_COUNT := 20
