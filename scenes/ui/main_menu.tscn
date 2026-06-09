@@ -505,6 +505,10 @@ theme_override_colors/font_color = Color(0.949, 0.761, 0.396, 1)
 custom_minimum_size = Vector2(0, 40)
 text = "公共生存房"
 
+[node name="PublicPvpButton" type="Button" parent="MultiplayerPanel/VBox"]
+custom_minimum_size = Vector2(0, 40)
+text = "公共对战房"
+
 [node name="JoinTitleLabel" type="Label" parent="MultiplayerPanel/VBox"]
 text = "加入房间"
 horizontal_alignment = 1

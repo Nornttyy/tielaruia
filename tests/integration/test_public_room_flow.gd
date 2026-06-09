@@ -67,3 +67,18 @@ func test_main_menu_has_public_button() -> void:
 	var btn = menu.get_node_or_null("MultiplayerPanel/VBox/PublicSurvivalButton")
 	assert_not_null(btn, "多人面板该有公共生存房按钮")
 	assert_true(menu.has_method("_on_public_survival_pressed"), "该有公共生存房按钮回调")
+	# PvP 对战房按钮 + 回调
+	assert_not_null(menu.get_node_or_null("MultiplayerPanel/VBox/PublicPvpButton"), "该有公共对战房按钮")
+	assert_true(menu.has_method("_on_public_pvp_pressed"), "该有公共对战房按钮回调")
+
+
+func test_pvp_scoreboard_counts_kills() -> void:
+	var Scoreboard = load("res://scripts/ui/pvp_scoreboard.gd")
+	var sb = Scoreboard.new()
+	add_child_autofree(sb)
+	await wait_frames(1)
+	sb._on_kill_scored("A", "B")
+	sb._on_kill_scored("A", "C")
+	sb._on_kill_scored("", "D")   # 没凶手不计
+	assert_eq(int(sb._kills.get("A", 0)), 2, "A 杀了 2 个")
+	assert_false(sb._kills.has(""), "空凶手不进榜")

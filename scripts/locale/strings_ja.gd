@@ -49,6 +49,7 @@ const S := {
 	"mp_title": "マルチプレイ",
 	"mp_rooms_title": "ルーム",
 	"mp_public_survival": "公開サバイバル",
+	"mp_public_pvp": "公開対戦",
 	"mp_join_title": "ルームに参加",
 	"mp_entering_public": "公開ルームに入室中…",
 	"mp_room_code_prompt": "友達からの 6 桁のルームコードを入力",

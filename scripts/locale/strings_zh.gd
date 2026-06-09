@@ -56,6 +56,7 @@ const S := {
 	"mp_title": "多 人 游 戏",
 	"mp_rooms_title": "房间",
 	"mp_public_survival": "公共生存房",
+	"mp_public_pvp": "公共对战房",
 	"mp_join_title": "加入房间",
 	"mp_entering_public": "正在进入公共房…",
 	"mp_room_code_prompt": "输入朋友给的 6 位房间码",

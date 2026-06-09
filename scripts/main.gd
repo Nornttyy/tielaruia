@@ -11,6 +11,7 @@ const CraftingPanelScene = preload("res://scenes/ui/crafting_panel.tscn")
 const ChestPanelScene = preload("res://scenes/ui/chest_panel.tscn")
 const DialogueBoxScene = preload("res://scenes/ui/dialogue_box.tscn")
 const ChatBoxScript = preload("res://scripts/ui/chat_box.gd")   # 联机聊天框 (无 tscn, 纯代码 CanvasLayer)
+const PvpScoreboardScript = preload("res://scripts/ui/pvp_scoreboard.gd")   # PvP 击杀榜 (只对战房显示)
 const LoadingScreenScene = preload("res://scenes/ui/loading_screen.tscn")
 const TouchControlsScript = preload("res://scripts/ui/touch_controls.gd")
 const LoadPlanner = preload("res://scripts/world/load_planner.gd")
@@ -159,6 +160,10 @@ func _run_async_load(world_seed: int) -> void:
 	chat_box.name = "ChatBox"
 	add_child(chat_box)
 	_game_nodes.append(chat_box)
+	var scoreboard = PvpScoreboardScript.new()
+	scoreboard.name = "PvpScoreboard"
+	add_child(scoreboard)
+	_game_nodes.append(scoreboard)
 	var chest = ChestPanelScene.instantiate()
 	chest.name = "ChestPanel"
 	add_child(chest)
@@ -241,6 +246,10 @@ func _start_game_sync(world_seed: int) -> void:
 	chat_box.name = "ChatBox"
 	add_child(chat_box)
 	_game_nodes.append(chat_box)
+	var scoreboard = PvpScoreboardScript.new()
+	scoreboard.name = "PvpScoreboard"
+	add_child(scoreboard)
+	_game_nodes.append(scoreboard)
 	var chest = ChestPanelScene.instantiate()
 	chest.name = "ChestPanel"
 	add_child(chest)
