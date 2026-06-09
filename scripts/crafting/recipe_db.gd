@@ -860,6 +860,30 @@ const _RECIPES := [
 		"output_count": 4,
 		"mirror_ok": false,
 	},
+	# 手枪: 上排 3 铁锭(枪管) + 下排左 1 木板(握把) → 1 把. L 形像枪.
+	{
+		"id": "pistol",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["iron_ingot", "iron_ingot", "iron_ingot"],
+			["planks",     "",           ""],
+		],
+		"output_id": "pistol",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 子弹: 2 铁锭竖排 → 8 发. 跟木箭(1x2 planks)同形但材料不同, 不撞.
+	{
+		"id": "bullet",
+		"grid_size": Vector2i(1, 2),
+		"pattern": [
+			["iron_ingot"],
+			["iron_ingot"],
+		],
+		"output_id": "bullet",
+		"output_count": 8,
+		"mirror_ok": false,
+	},
 	# === 锤子 (破墙): 形状 X X X / X X . / . X . (区别于镐 XXX/.X./.X. 和斧 XX./XX./.X.)
 	# 头=材质, 柄=planks. 木锤全 planks 也不撞木镐 (silhouette 不同).
 	{

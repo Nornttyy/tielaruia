@@ -606,6 +606,8 @@ const _ZH_NAMES := {
 	"hell_fruit": "火果",
 	"wood_bow": "木弓",
 	"wood_arrow": "木箭",
+	"pistol": "手枪",
+	"bullet": "子弹",
 	"hell_crystal_ingot": "魔晶锭",
 	"hell_alloy_ore": "地狱合金矿",
 	"hell_alloy_ingot": "地狱合金锭",

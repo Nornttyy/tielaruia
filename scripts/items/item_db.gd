@@ -93,6 +93,9 @@ const _DEFS := {
 	# === 远程武器: 弓 + 箭 ===
 	"wood_bow":      {"placeable_tile_id": -1,                     "tool_kind": "bow",     "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0},
 	"wood_arrow":    {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
+	# === 远程武器: 枪 + 子弹 (子弹走直线/快/狠, 区别于弓的抛物线) ===
+	"pistol":        {"placeable_tile_id": -1,                     "tool_kind": "gun",     "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0},
+	"bullet":        {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	# === 地狱矿石 ===
 	"hell_crystal_ingot": {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	"hell_alloy_ore":     {"placeable_tile_id": Tiles.HELL_ALLOY_ORE, "tool_kind": "",     "tool_tier": 0, "max_stack": 99},

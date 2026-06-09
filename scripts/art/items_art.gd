@@ -722,6 +722,46 @@ const _WOOD_ARROW := [
 	"................",
 ]
 
+# 手枪 icon: 枪管/滑套朝右(b亮/B灰/K深) + 木握把朝下左(h/H). L 形.
+const _PISTOL := [
+	"................",
+	"................",
+	"....nnnnnnnn....",
+	"...nbbbbbbbKn...",
+	"...nBBBBBBBBn...",
+	"...nKBnnnnBKn...",
+	"...nhBn..nnn....",
+	"..nhhhn.........",
+	"..nhHhn.........",
+	"..nhHhn.........",
+	"..nhHhn.........",
+	"..nhHhn.........",
+	"...nhn..........",
+	"...nn...........",
+	"................",
+	"................",
+]
+
+# 子弹 icon: 铜尖(u/t)向上 + 黄铜壳(y/Y)直立 + 底缘.
+const _BULLET := [
+	"................",
+	"................",
+	".......n........",
+	"......nun.......",
+	"......nun.......",
+	".....ntuun......",
+	".....nyYYn......",
+	"....nyYYYyn.....",
+	"....nyYYYyn.....",
+	"....nyYYYyn.....",
+	"....nyYYYyn.....",
+	"....nyYYYyn.....",
+	"....nyYYYyn.....",
+	"....nnnnnnn.....",
+	".....nYYYn......",
+	"................",
+]
+
 # 火果 icon: 圆果红身 + 棕枝 + 绿叶 + 高光. 用 items_art PALETTE: A=苹果红, a=红高光, m=暗红影, S=棕梗, L=绿叶, n=黑描边, y=沙黄高光.
 const _HELL_FRUIT_ICON := [
 	"................",
@@ -2173,6 +2213,8 @@ const _ICONS := {
 	"mana_potion": _MANA_POTION,
 	"wood_bow": _WOOD_BOW,
 	"wood_arrow": _WOOD_ARROW,
+	"pistol": _PISTOL,
+	"bullet": _BULLET,
 	"slime_crown": _SLIME_CROWN,
 	"slime_ball": _SLIME_BALL,
 }
