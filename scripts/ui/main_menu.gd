@@ -117,6 +117,7 @@ func _refresh_localized_text() -> void:
 	$SettingsPanel/VBox/EnemyHpBarRow/Label.text = Locale.t("settings_enemy_hp_bar")
 	$SettingsPanel/VBox/EnemyHpNumberRow/Label.text = Locale.t("settings_enemy_hp_number")
 	$SettingsPanel/VBox/ScrollWheelRow/Label.text = Locale.t("settings_scroll_zoom")
+	$SettingsPanel/VBox/ContinuousPlaceRow/Label.text = Locale.t("settings_continuous_place")
 	$MultiplayerPanel/VBox/MpSectionLabel.text = Locale.t("settings_mp_section")
 	$MultiplayerPanel/VBox/MpNamesRow/Label.text = Locale.t("settings_mp_show_names")
 	$MultiplayerPanel/VBox/MpChatRow/Label.text = Locale.t("settings_mp_chat")
@@ -1120,6 +1121,9 @@ func _setup_settings_panel() -> void:
 	var scroll_cb: CheckBox = $SettingsPanel/VBox/ScrollWheelRow/CheckBox
 	scroll_cb.button_pressed = GameSettings.scroll_wheel_zoom
 	scroll_cb.toggled.connect(func(p: bool): GameSettings.scroll_wheel_zoom = p)
+	var place_cb: CheckBox = $SettingsPanel/VBox/ContinuousPlaceRow/CheckBox
+	place_cb.button_pressed = GameSettings.continuous_place
+	place_cb.toggled.connect(func(p: bool): GameSettings.continuous_place = p)
 	# 多人游戏: 显示名字 / 聊天 开关 + 房间人数滑条
 	var names_cb: CheckBox = $MultiplayerPanel/VBox/MpNamesRow/CheckBox
 	names_cb.button_pressed = GameSettings.mp_show_names
@@ -1142,6 +1146,11 @@ func _setup_settings_panel() -> void:
 	diff_opt.add_item(Locale.t("newgame_difficulty_hard"))
 	diff_opt.selected = clampi(GameSettings.mp_host_difficulty, 0, 2)
 	diff_opt.item_selected.connect(func(idx: int): GameSettings.mp_host_difficulty = idx)
+	# 多人设置已挪进游戏里 (暂停菜单 → 多人游戏面板), 主菜单这份隐藏 (用户要求).
+	for n in ["MpSectionLabel", "MpMaxRow", "MpDiffRow", "MpNamesRow", "MpChatRow"]:
+		var mp_node: Node = $MultiplayerPanel/VBox.get_node_or_null(n)
+		if mp_node != null:
+			(mp_node as CanvasItem).visible = false
 	_apply_button_style(back_btn)
 	back_btn.pressed.connect(_on_settings_back_pressed)
 

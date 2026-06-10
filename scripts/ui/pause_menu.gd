@@ -31,6 +31,7 @@ func _ready() -> void:
 	_creative_button.pressed.connect(_on_creative_pressed)
 	_close_button.pressed.connect(_on_host_close_pressed)
 	_build_kick_ui()
+	_build_mp_settings()
 	# NetworkManager 信号 (autoload, 一直在). 用 host 反馈房间码 + 状态.
 	if NetworkManager != null:
 		if not NetworkManager.status_changed.is_connected(_on_mp_status_changed):
@@ -118,6 +119,60 @@ func _build_kick_ui() -> void:
 	UIStyle.style_button(back)
 	back.pressed.connect(func(): _kick_panel.visible = false; _vbox.visible = true)
 	vb.add_child(back)
+
+
+# 多人设置 (用户要求: 从主菜单挪到游戏里的"多人游戏"面板). 建在 HostPanel/VBox, 关闭按钮上方.
+func _build_mp_settings() -> void:
+	var vb: VBoxContainer = $HostPanel/VBox if has_node("HostPanel/VBox") else null
+	if vb == null:
+		return
+	var sec := Label.new()
+	sec.text = "多人设置"
+	sec.add_theme_font_size_override("font_size", 14)
+	sec.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0))
+	vb.add_child(sec)
+	# 显示玩家名字 / 允许聊天 (随时可改)
+	vb.add_child(_mp_checkbox_row("显示玩家名字", GameSettings.mp_show_names,
+		func(p: bool): GameSettings.mp_show_names = p))
+	vb.add_child(_mp_checkbox_row("允许聊天", GameSettings.mp_chat_enabled,
+		func(p: bool): GameSettings.mp_chat_enabled = p))
+	# 房间最多人数 (开公共房用; 存下来下次进房生效)
+	var max_row := HBoxContainer.new()
+	var max_lbl := Label.new(); max_lbl.text = "房间最多人数"; max_lbl.custom_minimum_size = Vector2(120, 0)
+	max_row.add_child(max_lbl)
+	var sld := HSlider.new()
+	sld.min_value = 2; sld.max_value = 8; sld.step = 1; sld.value = GameSettings.mp_max_players
+	sld.custom_minimum_size = Vector2(100, 0); sld.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	UIStyle.style_slider(sld)
+	var val := Label.new(); val.text = str(GameSettings.mp_max_players); val.custom_minimum_size = Vector2(22, 0)
+	sld.value_changed.connect(func(v: float):
+		GameSettings.mp_max_players = int(v)
+		val.text = str(int(v)))
+	max_row.add_child(sld); max_row.add_child(val)
+	vb.add_child(max_row)
+	# 联机难度 (开房用)
+	var diff_row := HBoxContainer.new()
+	var diff_lbl := Label.new(); diff_lbl.text = "联机难度"; diff_lbl.custom_minimum_size = Vector2(120, 0)
+	diff_row.add_child(diff_lbl)
+	var opt := OptionButton.new()
+	opt.add_item("简单"); opt.add_item("普通"); opt.add_item("困难")
+	opt.selected = clampi(GameSettings.mp_host_difficulty, 0, 2)
+	opt.item_selected.connect(func(i: int): GameSettings.mp_host_difficulty = i)
+	diff_row.add_child(opt)
+	vb.add_child(diff_row)
+	# "关闭"按钮挪到最底 (设置显示在它上面)
+	if _close_button != null:
+		vb.move_child(_close_button, -1)
+
+
+func _mp_checkbox_row(text: String, initial: bool, on_toggle: Callable) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var lbl := Label.new(); lbl.text = text; lbl.custom_minimum_size = Vector2(120, 0)
+	row.add_child(lbl)
+	var cb := CheckBox.new(); cb.button_pressed = initial
+	cb.toggled.connect(on_toggle)
+	row.add_child(cb)
+	return row
 
 
 func _on_kick_pressed() -> void:

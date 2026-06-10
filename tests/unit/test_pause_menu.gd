@@ -174,3 +174,20 @@ func test_private_host_shows_mp_and_kick():
 	assert_true(pm._multiplayer_button.visible, "私人房该显示'多人游戏'(可看房间码)")
 	assert_true(pm._kick_button.visible, "私人房房主该能踢人")
 	_reset_nm()
+
+
+# 多人设置已从主菜单挪进暂停菜单的多人面板 (用户要求)
+func test_mp_settings_built_in_hostpanel():
+	var pm = _make()
+	var vb = pm.get_node("HostPanel/VBox")
+	var has_label := false
+	var has_checkbox := false
+	for c in vb.get_children():
+		if c is Label and c.text == "多人设置":
+			has_label = true
+		if c is HBoxContainer:
+			for cc in c.get_children():
+				if cc is CheckBox:
+					has_checkbox = true
+	assert_true(has_label, "暂停菜单多人面板有'多人设置'区")
+	assert_true(has_checkbox, "多人设置里有开关 (名字/聊天)")
