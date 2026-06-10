@@ -319,7 +319,12 @@ func enter_public(tag: String, seed_val: int, size_val: int, diff_val: int) -> v
 	shared_world_seed = seed_val
 	shared_world_size = size_val
 	shared_world_difficulty = diff_val
-	_bridge.enter_public(tag, MpRooms.MAX_PEERS, MpRooms.MAX_ROOMS)
+	# 房间最多人数: 用设置里的值 (只在本端当 host 时生效); 缺省/越界回落到 MAX_PEERS
+	var max_p: int = MpRooms.MAX_PEERS
+	var gs: Node = get_node_or_null("/root/GameSettings")
+	if gs != null and "mp_max_players" in gs:
+		max_p = clampi(int(gs.mp_max_players), 2, MpRooms.MAX_PEERS)
+	_bridge.enter_public(tag, max_p, MpRooms.MAX_ROOMS)
 
 
 # 本端玩家的 peer id (host = 固定房号; client = bridge 分配的随机 id)

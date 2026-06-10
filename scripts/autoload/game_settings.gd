@@ -146,6 +146,27 @@ var show_enemy_hp_number: bool = true:
 		show_enemy_hp_number = v
 		_save_and_emit()
 
+# ===== 多人游戏设置 =====
+# 联机时是否显示别人头顶的名字
+var mp_show_names: bool = true:
+	set(v):
+		if mp_show_names == v: return
+		mp_show_names = v
+		_save_and_emit()   # remote_player 监听 settings_changed 立刻显/隐名字
+# 联机聊天开关 (关掉就不弹聊天框/不显聊天栏)
+var mp_chat_enabled: bool = true:
+	set(v):
+		if mp_chat_enabled == v: return
+		mp_chat_enabled = v
+		_save()
+# 我开房时每个公共房最多几人 (2..8). 只影响我当 host 的房。
+var mp_max_players: int = 8:
+	set(v):
+		var c: int = clampi(v, 2, 8)
+		if mp_max_players == c: return
+		mp_max_players = c
+		_save()
+
 
 # 难度对玩家受伤的乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x
 func damage_multiplier() -> float:
@@ -192,6 +213,9 @@ func _save() -> void:
 	cfg.set_value("hud", "enemy_hp_bar", show_enemy_hp_bar)
 	cfg.set_value("hud", "enemy_hp_number", show_enemy_hp_number)
 	cfg.set_value("input", "scroll_wheel_zoom", scroll_wheel_zoom)
+	cfg.set_value("mp", "show_names", mp_show_names)
+	cfg.set_value("mp", "chat_enabled", mp_chat_enabled)
+	cfg.set_value("mp", "max_players", mp_max_players)
 	cfg.save(SETTINGS_PATH)
 
 
@@ -215,3 +239,7 @@ func _load() -> void:
 	show_enemy_hp_bar = bool(cfg.get_value("hud", "enemy_hp_bar", true))
 	show_enemy_hp_number = bool(cfg.get_value("hud", "enemy_hp_number", true))
 	scroll_wheel_zoom = bool(cfg.get_value("input", "scroll_wheel_zoom", false))
+	# 多人游戏设置
+	mp_show_names = bool(cfg.get_value("mp", "show_names", true))
+	mp_chat_enabled = bool(cfg.get_value("mp", "chat_enabled", true))
+	mp_max_players = clampi(int(cfg.get_value("mp", "max_players", 8)), 2, 8)

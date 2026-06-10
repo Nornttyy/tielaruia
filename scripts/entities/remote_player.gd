@@ -21,6 +21,15 @@ func _ready() -> void:
 	_sprite.modulate = Color.WHITE  # 不染色, 正常颜色
 	z_index = 1
 	add_to_group("remote_player")   # 聊天气泡靠这个组找到对方位置
+	# 设置: "显示玩家名字" 开关控制头顶名字显隐 (切换立刻生效)
+	_apply_name_visibility()
+	if GameSettings != null and GameSettings.has_signal("settings_changed"):
+		GameSettings.settings_changed.connect(_apply_name_visibility)
+
+
+func _apply_name_visibility() -> void:
+	if _name_label != null and GameSettings != null:
+		_name_label.visible = GameSettings.mp_show_names
 
 
 func _process(delta: float) -> void:

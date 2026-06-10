@@ -55,6 +55,11 @@ func _input(event: InputEvent) -> void:
 	# 只在联机时响应
 	if NetworkManager == null or not NetworkManager.connected():
 		return
+	# 设置里关了聊天 → 不响应按键 (打字中也收起)
+	if GameSettings != null and not GameSettings.mp_chat_enabled:
+		if _typing:
+			_close_input()
+		return
 	var ke := event as InputEventKey
 	if ke == null or not ke.pressed or ke.echo:
 		return
@@ -104,6 +109,9 @@ func _on_submit(text: String) -> void:
 
 func _on_chat_received(peer_id: String, text: String) -> void:
 	if text == "":
+		return
+	# 设置里关了聊天 → 不显示别人发来的消息
+	if GameSettings != null and not GameSettings.mp_chat_enabled:
 		return
 	# 气泡冒在发话那个 peer 的远程玩家头顶 (多人: 不同人冒不同头顶)
 	var rp: Node2D = _remote_player_node(peer_id)
