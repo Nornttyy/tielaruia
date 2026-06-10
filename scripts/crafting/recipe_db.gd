@@ -1036,6 +1036,30 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": false,
 	},
+	# 冰雪枪 (魔法): 双钻石(冰晶) + 铁 + 木握把
+	{
+		"id": "frost_gun",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["diamond", "diamond", "iron_ingot"],
+			["",        "planks",  ""],
+		],
+		"output_id": "frost_gun",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 绿叶枪 (魔法): 3 叶子 + 原木(柄)
+	{
+		"id": "leaf_gun",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["leaves", "leaves", "leaves"],
+			["",       "log",    ""],
+		],
+		"output_id": "leaf_gun",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
 	# === 锤子 (破墙): 形状 X X X / X X . / . X . (区别于镐 XXX/.X./.X. 和斧 XX./XX./.X.)
 	# 头=材质, 柄=planks. 木锤全 planks 也不撞木镐 (silhouette 不同).
 	{

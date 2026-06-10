@@ -619,6 +619,8 @@ const _ZH_NAMES := {
 	"lightning_gun": "闪电链枪",
 	"star_gun": "星星炮",
 	"slime_gun": "史莱姆枪",
+	"frost_gun": "冰雪枪",
+	"leaf_gun": "绿叶枪",
 	"bullet": "子弹",
 	"hell_crystal_ingot": "魔晶锭",
 	"hell_alloy_ore": "地狱合金矿",

@@ -73,6 +73,7 @@ func _apply_visual() -> void:
 		"lightning": frames = ArtCache.lightning_proj_frames # 闪电链枪: 黄电球
 		"star":      frames = ArtCache.star_proj_frames      # 星星炮: 金色星
 		"slimeblob": frames = ArtCache.slime_blob_proj_frames # 史莱姆枪: 绿果冻团
+		"leaf":      frames = ArtCache.leaf_proj_frames       # 绿叶枪: 绿叶片
 	if frames == null:
 		return
 	sprite.sprite_frames = frames

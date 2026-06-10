@@ -35,6 +35,7 @@ const MagicProjArt = preload("res://scripts/art/magic_proj_art.gd")
 const LightningProjArt = preload("res://scripts/art/lightning_proj_art.gd")
 const StarProjArt = preload("res://scripts/art/star_proj_art.gd")
 const SlimeBlobProjArt = preload("res://scripts/art/slime_blob_proj_art.gd")
+const LeafProjArt = preload("res://scripts/art/leaf_proj_art.gd")
 const MummyArt = preload("res://scripts/art/mummy_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
@@ -67,6 +68,7 @@ var magic_proj_frames: SpriteFrames
 var lightning_proj_frames: SpriteFrames
 var star_proj_frames: SpriteFrames
 var slime_blob_proj_frames: SpriteFrames
+var leaf_proj_frames: SpriteFrames
 var mummy_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
@@ -303,6 +305,7 @@ func _build_items() -> void:
 			"pistol", "bullet", "smg", "assault_rifle", "shotgun", "sniper",
 			"laser_gun", "flamethrower", "freeze_ray",
 			"arcane_gun", "poison_gun", "lightning_gun", "star_gun", "slime_gun",   # 魔法枪 (耗魔力)
+			"frost_gun", "leaf_gun",
 			# 盔甲: 15 件 (5 tier × 3 件)
 			"copper_helmet", "copper_chest", "copper_pants",
 			"iron_helmet", "iron_chest", "iron_pants",
@@ -390,6 +393,7 @@ func _build_entities() -> void:
 	lightning_proj_frames = LightningProjArt.build_sprite_frames()
 	star_proj_frames = StarProjArt.build_sprite_frames()
 	slime_blob_proj_frames = SlimeBlobProjArt.build_sprite_frames()
+	leaf_proj_frames = LeafProjArt.build_sprite_frames()
 	# 木乃伊: 金字塔守卫
 	mummy_frames = MummyArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)

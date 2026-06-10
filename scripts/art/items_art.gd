@@ -1002,6 +1002,46 @@ const _SLIME_GUN := [
 	"................",
 ]
 
+# 冰雪枪 icon: 顶上蓝色雪花(N/X/Q 钻蓝) + 灰枪身 + 木握把.
+const _FROST_GUN := [
+	"................",
+	".......X........",
+	"....N.XQX.N.....",
+	".....XNQNX......",
+	"....nNQXQNn.nnn.",
+	"..nBBBBBBBBBBn..",
+	"..nKKnnKnnnnn...",
+	".nhHHn.nn.......",
+	".nhHHHn.........",
+	"..nnn...........",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
+# 绿叶枪 icon: 顶上绿叶簇(L/o/q) + 灰枪身 + 木握把.
+const _LEAF_GUN := [
+	"................",
+	"................",
+	".....L.L........",
+	"....LoLoL.......",
+	"....LoqoL..nnn..",
+	"...nLoooLnBBBn..",
+	"..nBBBBBBBBBBn..",
+	"..nKKnnKnnnnn...",
+	".nhHHn.nn.......",
+	".nhHHHn.........",
+	"..nnn...........",
+	"................",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
 # 火果 icon: 圆果红身 + 棕枝 + 绿叶 + 高光. 用 items_art PALETTE: A=苹果红, a=红高光, m=暗红影, S=棕梗, L=绿叶, n=黑描边, y=沙黄高光.
 const _HELL_FRUIT_ICON := [
 	"................",
@@ -2487,6 +2527,8 @@ const _ICONS := {
 	"lightning_gun": _LIGHTNING_GUN,
 	"star_gun": _STAR_GUN,
 	"slime_gun": _SLIME_GUN,
+	"frost_gun": _FROST_GUN,
+	"leaf_gun": _LEAF_GUN,
 	"bullet": _BULLET,
 	"slime_crown": _SLIME_CROWN,
 	"slime_ball": _SLIME_BALL,
