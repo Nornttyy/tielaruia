@@ -36,8 +36,8 @@ const _FACE := [
 	"...ssss..",
 	".sssssss.",
 	"sssssssss",
-	"sssssssss",
-	"ssssssWis",   # 眼 (2宽×3高): 眼珠填满 + 后上角 1px 白高光 (照游戏其它人形, 不留大白)
+	"sssssskks",
+	"ssssssWis",   # 眼 (2宽×3高): 眼珠填满 + 后上角 1px 白高光; 上行 kk = 眉毛
 	"ssssssiis",
 	"ssssssiis",
 	"sssssssks",   # 脸颊 + 前下颌一点阴影
@@ -61,9 +61,9 @@ const _FACE_F := [
 # 大蓬松短发 (盖头顶 + 后脑 + 前额留眼): h 主色 / H 阴影。14 宽 × 11 高。
 const _HAIR_SHORT := [
 	"....hhhhhh....",
-	"..hhhhhhhhhh..",
-	".hhhhhhhhhhhh.",
-	"hhhhhhhhhhhhh.",
+	"..hhhgghhhhh..",
+	".hhhhgghhhhhh.",
+	"hhhhhgghhhhhh.",
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
@@ -75,9 +75,9 @@ const _HAIR_SHORT := [
 # 长发: 同顶, 后脑一大片垂到腰。14 宽 × 16 高。
 const _HAIR_LONG := [
 	"....hhhhhh....",
-	"..hhhhhhhhhh..",
-	".hhhhhhhhhhhh.",
-	"hhhhhhhhhhhhh.",
+	"..hhhgghhhhh..",
+	".hhhhgghhhhhh.",
+	"hhhhhgghhhhhh.",
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
@@ -94,9 +94,9 @@ const _HAIR_LONG := [
 # 马尾: 短发 + 后脑伸出一束 (尾巴另块拼)。
 const _HAIR_PONY := [
 	"....hhhhhh....",
-	"..hhhhhhhhhh..",
-	".hhhhhhhhhhhh.",
-	"hhhhhhhhhhhhh.",
+	"..hhhgghhhhh..",
+	".hhhhgghhhhhh.",
+	"hhhhhgghhhhhh.",
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
@@ -117,9 +117,9 @@ const _PONY_TAIL := [   # 后脑扎起垂下的一束 (拼在后脑外侧)
 # 呆毛: 顶上炸开几撮 (尖刺顶)。
 const _HAIR_AHOGE := [
 	"...h.hh.h.h..",
-	"..hhhhhhhhhh..",
-	".hhhhhhhhhhhh.",
-	"hhhhhhhhhhhhh.",
+	"..hhhgghhhhh..",
+	".hhhhgghhhhhh.",
+	"hhhhhgghhhhhh.",
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
@@ -140,14 +140,14 @@ const _BACKLOCK_F := [
 	".H.",
 ]
 
-# 侧躯干 (衬衫 w / 阴影 D)。7 宽 × 6 高。
+# 侧躯干 (衬衫 w / 阴影 D / 高光 c)。领口 D + 前缘高光 + 下摆。7 宽 × 6 高。
 const _TORSO := [
-	".wwwww.",
-	"wwwwwww",
-	"wwwwwww",
+	".wwDww.",
+	"wwwwwwc",
+	"Dwwwwwc",
+	"Dwwwwwc",
 	"Dwwwwww",
-	"Dwwwwww",
-	".wwwww.",
+	".DwwwD.",
 ]
 # 手臂 (袖 w/D + 手 s/k), 垂下。2 宽 × 6 高。
 const _ARM := [
@@ -158,17 +158,17 @@ const _ARM := [
 	"ss",
 	"kk",
 ]
-# 单腿 (裤 b / 阴影 B)。3 宽 × 4 高。
+# 单腿 (裤 b / 阴影 B / 高光 P 在前缘)。3 宽 × 4 高。
 const _LEG := [
-	"bbb",
-	"bbb",
-	"Bbb",
+	"bbP",
+	"bbP",
+	"BbP",
 	"Bbb",
 ]
-# 侧鞋 (o / O), 鞋尖朝右 (前)。5 宽 × 3 高。
+# 侧鞋 (o / O / 高光 q)。鞋尖朝右 (前) + 鞋面高光 + 鞋带。5 宽 × 3 高。
 const _SHOE_B := [
-	"oo...",
-	"ooooo",
+	"oq...",
+	"qoOoo",
 	"OOOOO",
 ]
 # 背心款手臂 (露胳膊, 全皮肤; 跟 T恤的袖子区分)。2 宽 × 6 高。
@@ -281,10 +281,10 @@ static func _female_torso_swim(cs: int) -> Array:
 static func _female_torso(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
-		".wwwww...",   # 肩
-		"wwwwwww..",   # 上胸 (满宽, 前缘 local col6)
-		"wwwwwww..",   # 中胸
-		"wwwwwww..",   # 下胸
+		".wwDww...",   # 肩 + 领口 (D)
+		"wwwwwwc..",   # 上胸 (前缘高光 c)
+		"wwwwwwc..",   # 中胸
+		"wwwwwwc..",   # 下胸
 		".Dww.....",   # 腰 (超窄 = 明显沙漏)
 		"Dwwwww...",   # 胯 (外扩, 比腰宽一截)
 	]
@@ -383,12 +383,12 @@ static func _palette_from(ap: Dictionary) -> Dictionary:
 	var eye: Color = ap.get("eye_color", DEFAULT_APPEARANCE["eye_color"])
 	return {
 		".": Color(0, 0, 0, 0),
-		"s": skin, "k": skin.darkened(0.18),
-		"h": hair, "H": hair.darkened(0.28),
-		"w": shirt, "D": shirt.darkened(0.18),
-		"b": pants, "B": pants.darkened(0.28),
+		"s": skin, "k": skin.darkened(0.18), "p": skin.lightened(0.16),   # p=皮肤高光
+		"h": hair, "H": hair.darkened(0.28), "g": hair.lightened(0.32),   # g=头发高光
+		"w": shirt, "D": shirt.darkened(0.18), "c": shirt.lightened(0.22), # c=衬衫高光
+		"b": pants, "B": pants.darkened(0.28), "P": pants.lightened(0.26), # P=裤子高光
 		"i": eye, "W": _WHITE, "e": skin.darkened(0.30),
-		"o": _SHOE, "O": _SHOE_SH,
+		"o": _SHOE, "O": _SHOE_SH, "q": _SHOE.lightened(0.28),            # q=鞋高光
 		"L": _OUTLINE,
 	}
 
