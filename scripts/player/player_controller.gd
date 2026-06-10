@@ -4,6 +4,9 @@ extends CharacterBody2D
 
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ItemsArt = preload("res://scripts/art/items_art.gd")
+const ItemDropScene = preload("res://scenes/items/item_drop.tscn")   # 按 Q 丢弃用
+const DROP_REPEAT_INTERVAL := 0.18   # 按住 Q 连续丢的间隔 (秒)
+var _drop_timer: float = 0.0         # 距下次可丢的倒计时
 const CAVE_DEPTH_THRESHOLD := 10   # 玩家离原始地表 >10 格才算"地下" (即使顶上方块挖掉了)
 
 const SPEED := 105.0
@@ -117,6 +120,55 @@ func _process(delta: float) -> void:
 		var anim_name: String = sprite.animation if sprite != null else "idle"
 		var facing_int: int = 1 if _facing_right else -1
 		NetworkManager.tick_send_player_pos(delta, global_position.x, global_position.y, facing_int, anim_name)
+	_handle_drop_input(delta)
+
+
+# 按 Q 丢弃: 把选中格的物品一个个扔到脚边地上 (能走过去捡回). 按住 Q 连续丢。
+# 背包/箱子/合成面板开着 或 聊天打字时不丢 (_is_inventory_ui_open 已含这些门控)。
+func _handle_drop_input(delta: float) -> void:
+	if _drop_timer > 0.0:
+		_drop_timer -= delta
+	if not Input.is_action_pressed("drop_item"):
+		return
+	if _is_inventory_ui_open():
+		return
+	if _drop_timer > 0.0:
+		return
+	if _drop_one_selected():
+		_drop_timer = DROP_REPEAT_INTERVAL
+
+
+func _drop_one_selected() -> bool:
+	var pinv: Node = get_node_or_null("PlayerInventory")
+	if pinv == null or pinv.inventory == null:
+		return false
+	var slot: Variant = pinv.current_hotbar_slot()
+	if slot == null:
+		return false   # 选中格空 → 没东西可丢
+	var item_id: String = String(slot.item_id)
+	var taken: int = pinv.consume_current(1)   # 从选中格扣 1, 发 inventory_changed 刷新 UI
+	if taken <= 0:
+		return false
+	# 丢到玩家身前一点 (朝当前朝向), 稍抬高像"扔出去"
+	var face: float = 1.0 if _facing_right else -1.0
+	var pos: Vector2 = global_position + Vector2(face * 10.0, -4.0)
+	_spawn_dropped_item(item_id, taken, pos)
+	return true
+
+
+# 生成掉落物 (照 player_action._spawn_drop: 联机 client 交 host 权威生成, 否则本地刷).
+func _spawn_dropped_item(item_id: String, count: int, pos: Vector2) -> void:
+	if NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host:
+		NetworkManager.send_drop_request(item_id, count, pos.x, pos.y)
+		return
+	var drop = ItemDropScene.instantiate()
+	drop.item_id = item_id
+	drop.count = count
+	drop.global_position = pos
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = get_parent()
+	entities.add_child(drop)
 
 
 # SunAura 跟随 SkyLightGrid: 玩家头顶有天空 → 启用大日光; 钻进洞穴 → 关掉。0.3s lerp 避免硬切。
