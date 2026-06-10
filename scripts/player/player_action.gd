@@ -1775,25 +1775,39 @@ func _try_fire_gun() -> void:
 		return
 	var consumed: bool = false
 	if inv.has_method("consume_first"):
-		consumed = inv.consume_first("bullet", 1)
+		consumed = inv.consume_first("bullet", 1)   # 一次扣 1 发 (霰弹也只 1 发, 出 N 弹丸, 划算)
 	if not consumed:
 		return
-	_attack_cooldown = GUN_COOLDOWN
+	# 每把枪自带参数 (从 item def 读); 没配的用手枪默认值. 加新枪只改 item_db, 不动这里.
+	var def: Variant = _current_tool_def()
+	var cd: float = float(def.get("gun_cooldown", GUN_COOLDOWN)) if def != null else GUN_COOLDOWN
+	var base_dmg: int = int(def.get("gun_damage", GUN_BULLET_DAMAGE)) if def != null else GUN_BULLET_DAMAGE
+	var pellets: int = int(def.get("gun_pellets", 1)) if def != null else 1
+	var spread_deg: float = float(def.get("gun_spread_deg", 0.0)) if def != null else 0.0
+	var speed: float = float(def.get("bullet_speed", 0.0)) if def != null else 0.0  # 0 = 子弹默认速度
+	_attack_cooldown = cd
 	var parent: Node2D = get_parent() as Node2D
 	if parent == null:
 		return
 	var start: Vector2 = parent.global_position + Vector2(0, -8)   # 玩家身体中部
 	var target: Vector2 = mouse_world_override if mouse_world_override != null else parent.get_global_mouse_position()
-	var bullet = BulletScene.instantiate()
+	var base_dir: Vector2 = target - start
+	base_dir = base_dir.normalized() if base_dir.length() > 0.01 else Vector2.RIGHT
+	var dmg: int = int(round(float(base_dmg) * _tool_damage_mult()))
 	var entities: Node = get_tree().get_first_node_in_group("entities_root")
 	if entities == null:
 		entities = parent.get_parent()
-	entities.add_child(bullet)
-	# 枪 tier 加伤: tier1 ×1.0, 留口子未来加高 tier 枪
-	var dmg: int = int(round(float(GUN_BULLET_DAMAGE) * _tool_damage_mult()))
-	bullet.setup(start, target, dmg, parent)
-	if NetworkManager != null and NetworkManager.connected():
-		NetworkManager.send_projectile("bullet", start.x, start.y, target.x, target.y)
+	# 多弹丸: 霰弹枪一次喷 N 颗, 每颗在 ±spread/2 内随机偏角 → 扇形. 普通枪 pellets=1.
+	for _i in max(1, pellets):
+		var dir: Vector2 = base_dir
+		if spread_deg > 0.0:
+			dir = base_dir.rotated(deg_to_rad(randf_range(-spread_deg * 0.5, spread_deg * 0.5)))
+		var aim: Vector2 = start + dir * 100.0   # 沿偏角给个瞄点, bullet 自己按方向算速度
+		var bullet = BulletScene.instantiate()
+		entities.add_child(bullet)
+		bullet.setup(start, aim, dmg, parent, speed)
+		if NetworkManager != null and NetworkManager.connected():
+			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
 	SfxBank.play("gunshot", 0.08)
 
 

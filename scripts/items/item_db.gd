@@ -94,8 +94,13 @@ const _DEFS := {
 	"wood_bow":      {"placeable_tile_id": -1,                     "tool_kind": "bow",     "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0},
 	"wood_arrow":    {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	# === 远程武器: 枪 + 子弹 (子弹走直线/快/狠, 区别于弓的抛物线) ===
-	"pistol":        {"placeable_tile_id": -1,                     "tool_kind": "gun",     "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0},
-	"bullet":        {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
+	# gun_cooldown 射速 / gun_damage 单发伤 / gun_pellets 一次几颗 / gun_spread_deg 散布角 / bullet_speed 弹速
+	"pistol":        {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.22, "gun_damage": 9, "bullet_speed": 560},
+	"smg":           {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 2, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.08, "gun_damage": 5, "gun_spread_deg": 7.0, "bullet_speed": 600},   # 冲锋枪: 超快/弱/略飘
+	"assault_rifle": {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 3, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.14, "gun_damage": 11, "gun_spread_deg": 3.0, "bullet_speed": 700},  # 突击步枪: 快/均衡/微飘
+	"shotgun":       {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 3, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.65, "gun_damage": 6, "gun_pellets": 5, "gun_spread_deg": 32.0, "bullet_speed": 520},  # 霰弹枪: 一次5颗扇形/近战狠
+	"sniper":        {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.9, "gun_damage": 32, "bullet_speed": 1000},  # 狙击枪: 慢/超狠/弹速超快
+	"bullet":        {"placeable_tile_id": -1, "tool_kind": "",    "tool_tier": 0, "max_stack": 99},
 	# === 地狱矿石 ===
 	"hell_crystal_ingot": {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	"hell_alloy_ore":     {"placeable_tile_id": Tiles.HELL_ALLOY_ORE, "tool_kind": "",     "tool_tier": 0, "max_stack": 99},

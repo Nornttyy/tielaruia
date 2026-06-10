@@ -18,12 +18,14 @@ var _shooter: Node = null       # 谁射的 (玩家), 避免自伤
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
-func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node) -> void:
+# speed=0 → 用默认 SPEED; 不同枪传不同弹速 (步枪快/霰弹慢).
+func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, speed: float = 0.0) -> void:
 	global_position = start_pos
 	damage = dmg
 	_shooter = shooter
 	var dir: Vector2 = (target_pos - start_pos).normalized() if start_pos.distance_to(target_pos) > 0.01 else Vector2.RIGHT
-	velocity = dir * SPEED
+	var spd: float = speed if speed > 0.0 else SPEED
+	velocity = dir * spd
 	rotation = velocity.angle()   # sprite 朝飞行方向 (子弹直线, 整程不变向)
 
 

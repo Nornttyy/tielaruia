@@ -884,6 +884,56 @@ const _RECIPES := [
 		"output_count": 8,
 		"mirror_ok": false,
 	},
+	# 冲锋枪: 铜+铁枪身 + 中下木握把 (握把居中, 区别手枪的左握把)
+	{
+		"id": "smg",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["copper_ingot", "iron_ingot", "iron_ingot"],
+			["",             "planks",     ""],
+		],
+		"output_id": "smg",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 突击步枪: 3 铁锭枪管 + 双木握把 (2 木在左, 区别手枪 1 木)
+	{
+		"id": "assault_rifle",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["iron_ingot", "iron_ingot", "iron_ingot"],
+			["planks",     "planks",     ""],
+		],
+		"output_id": "assault_rifle",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 霰弹枪: 双排铁枪身(厚) + 双木握把 → 近战大威力
+	{
+		"id": "shotgun",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["iron_ingot", "iron_ingot", "iron_ingot"],
+			["iron_ingot", "iron_ingot", "iron_ingot"],
+			["planks",     "planks",     ""],
+		],
+		"output_id": "shotgun",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 狙击枪: 长铁枪管 + 右上金锭(瞄准镜) + 左下木握把 → 高级
+	{
+		"id": "sniper",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["",           "",           "gold_ingot"],
+			["iron_ingot", "iron_ingot", "iron_ingot"],
+			["planks",     "",           ""],
+		],
+		"output_id": "sniper",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
 	# === 锤子 (破墙): 形状 X X X / X X . / . X . (区别于镐 XXX/.X./.X. 和斧 XX./XX./.X.)
 	# 头=材质, 柄=planks. 木锤全 planks 也不撞木镐 (silhouette 不同).
 	{
