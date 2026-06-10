@@ -273,7 +273,7 @@ static func _female_torso_swim(cs: int) -> Array:
 		"sssswwc..",   # 上胸: 罩杯顶 + 高光
 		"swwwwwc..",   # 下胸: 罩杯 + 后背横系带 (一道细带绕到背) + 高光
 		".ssssp...",   # 肚: 露肚 (皮肤 + 高光 p)
-		".Dss.....",   # 腰 (皮肤, 收窄)
+		".kss.....",   # 腰 (皮肤阴影 k, 收窄; 不是衬衫色)
 		"ksssk....",   # 胯 (皮肤)
 	]
 	if cs >= 2:
@@ -293,7 +293,7 @@ static func _female_torso(cs: int) -> Array:
 		"DwwDwwc..",   # 上胸 (后阴暗 + 中缝 + 前缘高光 c)
 		"DwwDwwc..",   # 中胸
 		"DwwDwwc..",   # 下胸
-		".Dww.....",   # 腰 (超窄 = 明显沙漏)
+		"Dwww.....",   # 腰 (收腰; 后背对齐 col0 一条直线, 不歪)
 		"Dwwwww...",   # 胯 (外扩, 比腰宽一截)
 	]
 	if cs >= 1:
