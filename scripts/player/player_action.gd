@@ -599,6 +599,13 @@ func _crack_overlay() -> Node:
 
 func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapLayer) -> void:
 	var world: Node = terrain.get_parent()
+	# 对战房: 天然/竞技场地形挖不动, 只有玩家放下的格能挖 (挖掉后取消标记).
+	if NetworkManager != null and NetworkManager.is_pvp():
+		var cm_pvp = world.get("chunk_manager") if world != null else null
+		if cm_pvp != null and cm_pvp.has_method("is_pvp_placed"):
+			if not cm_pvp.is_pvp_placed(tile):
+				return
+			cm_pvp.unmark_pvp_placed(tile)
 	# 砍 LOG 时若是树底 (下方是地面而不是树) → 整棵爆掉
 	if tid == Tiles.LOG and _is_tree_base(world, tile.x, tile.y):
 		_cascade_chop_tree(world, tile, tool_kind)
@@ -688,11 +695,22 @@ func _drop_unsupported_plants_above(world: Node, tile: Vector2i, tool_kind: Stri
 		y -= 1
 
 
-# 放置消耗 1 个: 创造模式不消耗 (无限方块), 否则正常扣库存.
+# 放置消耗 1 个: 创造模式不消耗 (无限方块); 对战房也不消耗 (消耗品无限); 否则正常扣库存.
 func _consume_one(inv: Node) -> void:
 	if GameSettings != null and GameSettings.creative_mode:
 		return
+	if NetworkManager != null and NetworkManager.is_pvp():
+		return   # 对战房: 方块/消耗品无限
 	inv.consume_current(1)
+
+
+# 对战房: 标记"这格是玩家放的" (天然/竞技场地形不标 → 挖不动; 玩家放的才能挖)
+func _pvp_mark_placed(world: Node, c: Vector2i) -> void:
+	if NetworkManager == null or not NetworkManager.is_pvp():
+		return
+	var cm = world.get("chunk_manager") if world != null else null
+	if cm != null and cm.has_method("mark_pvp_placed"):
+		cm.mark_pvp_placed(c)
 
 
 # 这格是不是门的一部分 (底/中/顶/开). 砍门时往上下扫连续门 tile 用.
@@ -863,6 +881,9 @@ func try_place() -> bool:
 			world._set_tile(tile.x, tile.y, Tiles.DOOR)        # 底
 			world._set_tile(mid.x, mid.y, Tiles.DOOR_MID)      # 中
 			world._set_tile(top.x, top.y, Tiles.DOOR_TOP)      # 顶
+		_pvp_mark_placed(world, tile)
+		_pvp_mark_placed(world, mid)
+		_pvp_mark_placed(world, top)
 		_consume_one(inv)
 		SkyLightGrid.invalidate_column(tile.x)
 		Effects.spawn_place_bounce(tile, Tiles.DOOR)
@@ -877,6 +898,8 @@ func try_place() -> bool:
 		if world.has_method("_set_tile"):
 			world._set_tile(tile.x, tile.y, Tiles.BED)                  # 左 (床头, 锚点)
 			world._set_tile(bed_right.x, bed_right.y, Tiles.BED_RIGHT)  # 右 (床尾)
+		_pvp_mark_placed(world, tile)
+		_pvp_mark_placed(world, bed_right)
 		_consume_one(inv)
 		SkyLightGrid.invalidate_column(tile.x)
 		SkyLightGrid.invalidate_column(bed_right.x)
@@ -892,6 +915,7 @@ func try_place() -> bool:
 	# (移除 terrain.set_cell; world._set_tile 内部刷视觉 + 邻居)
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, def.placeable_tile_id)
+	_pvp_mark_placed(world, tile)   # 对战房: 记为"玩家放的" → 可挖
 	_consume_one(inv)
 	SkyLightGrid.invalidate_column(tile.x)
 	# P1.5 hook: 放下弹动
@@ -1206,7 +1230,8 @@ func _update_eat_or_place(delta: float) -> void:
 			if mana_node.has_signal("mana_changed"):
 				mana_node.mana_changed.emit(mana_node.current_mana, mana_node.MAX_MANA)
 			SfxBank.play("eat", 0.10)
-			inv.consume_current(1)
+			if NetworkManager == null or not NetworkManager.is_pvp():
+				inv.consume_current(1)   # 对战房: 药水无限
 			_stop_eat_anim()
 		return
 
@@ -1235,7 +1260,8 @@ func _update_eat_or_place(delta: float) -> void:
 				if buffs != null:
 					buffs.apply(ItemDB.food_buff_kind(slot.item_id), ItemDB.food_buff_secs(slot.item_id))
 			SfxBank.play("eat", 0.10)
-			inv.consume_current(1)
+			if NetworkManager == null or not NetworkManager.is_pvp():
+				inv.consume_current(1)   # 对战房: 食物/生命药水无限
 			_stop_eat_anim()  # 吃完一口, 下次按住会重新开始
 		return
 
@@ -1736,9 +1762,11 @@ func _try_fire_bow() -> void:
 	var inv: Node = _inventory_node()
 	if inv == null:
 		return
-	# 找到任意 wood_arrow 槽并消耗 1
+	# 找到任意 wood_arrow 槽并消耗 1 (对战房: 箭无限, 不扣也能射)
 	var consumed: bool = false
-	if inv.has_method("consume_first"):
+	if NetworkManager != null and NetworkManager.is_pvp():
+		consumed = true
+	elif inv.has_method("consume_first"):
 		consumed = inv.consume_first("wood_arrow", 1)
 	else:
 		# 兜底: 直接查 hotbar / main inv 槽位
