@@ -124,6 +124,17 @@ func test_pants_style_trunks_changes_render():
 	var ib = PlayerArt.build_sprite_frames(b).get_frame_texture("idle", 0).get_image()
 	assert_gt(_count_diff(ia, ib), 0, "泳裤款与长裤不同")
 
+func test_shoe_color_applies():
+	var ap = _default_appearance(); ap["shoe_color"] = Color8(10, 200, 30)
+	var img = PlayerArt.build_sprite_frames(ap).get_frame_texture("idle", 0).get_image()
+	assert_true(_has_color(img, Color8(10, 200, 30)), "鞋色出现")
+
+func test_swim_trunks_barefoot():
+	# 泳裤 (pants 7) 光脚: 不画鞋, 所以鞋色不出现
+	var ap = _default_appearance(); ap["pants_style"] = 7; ap["shoe_color"] = Color8(10, 200, 30)
+	var img = PlayerArt.build_sprite_frames(ap).get_frame_texture("idle", 0).get_image()
+	assert_false(_has_color(img, Color8(10, 200, 30)), "泳裤光脚, 鞋色不出现")
+
 func test_unknown_style_no_crash():
 	var ap = _default_appearance(); ap["shirt_style"] = 99; ap["hair_style"] = 99
 	var sf = PlayerArt.build_sprite_frames(ap)

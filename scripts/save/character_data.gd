@@ -20,6 +20,7 @@ const CURRENT_VERSION := 1
 @export var pants_color: Color = Color8(38, 70, 130)
 @export var cape_color: Color = Color8(150, 40, 50)
 @export var eye_color: Color = Color8(60, 110, 70)
+@export var shoe_color: Color = Color8(74, 47, 26)
 
 # ---- 跟着角色走的玩家状态 (从 SaveData 搬过来) ----
 @export var player_hp: float = 100.0
@@ -49,4 +50,5 @@ func appearance_dict() -> Dictionary:
 		"pants_color": pants_color,
 		"cape_color": cape_color,
 		"eye_color": eye_color,
+		"shoe_color": shoe_color,
 	}

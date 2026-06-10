@@ -21,7 +21,7 @@ var _named_refresh: Dictionary = {}   # key → Callable, 给"显中文名"的�
 var _appearance: Dictionary = {}
 
 # 自由调色: 选部位 (◀ ▶) + 3 滑杆 (色相/饱和度/亮度), 任意颜色随便调。
-const _COLOR_PARTS := [["皮肤", "skin_color"], ["头发", "hair_color"], ["衬衫", "shirt_color"], ["裤子", "pants_color"], ["眼珠", "eye_color"]]
+const _COLOR_PARTS := [["皮肤", "skin_color"], ["头发", "hair_color"], ["衬衫", "shirt_color"], ["裤子", "pants_color"], ["鞋", "shoe_color"], ["眼珠", "eye_color"]]
 var _active_part_index: int = 0
 var _active_color_key: String = "skin_color"
 var _part_name_label: Label
@@ -424,6 +424,7 @@ func _save_creator() -> void:
 	c.shirt_color = _appearance["shirt_color"]
 	c.pants_color = _appearance["pants_color"]
 	c.eye_color = _appearance["eye_color"]
+	c.shoe_color = _appearance.get("shoe_color", Color8(74, 47, 26))
 	CharacterManager.save_character(c)
 	CharacterManager.current = c
 	_creator_panel.visible = false

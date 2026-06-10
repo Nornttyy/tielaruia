@@ -14,6 +14,7 @@ const DEFAULT_APPEARANCE := {
 	"skin_color": Color8(255, 218, 185), "hair_color": Color8(190, 110, 60),
 	"shirt_color": Color8(220, 210, 180), "pants_color": Color8(70, 90, 150),
 	"cape_color": Color8(150, 40, 50), "eye_color": Color8(70, 110, 170),
+	"shoe_color": Color8(74, 47, 26),
 }
 
 const _SHOE := Color8(74, 47, 26)
@@ -170,6 +171,12 @@ const _SHOE_B := [
 	"oq...",
 	"qoOoo",
 	"OOOOO",
+]
+# 光脚 (泳裤时用; 皮肤色, 脚趾朝右, 脚底阴影)。5 宽 × 3 高。
+const _FOOT_BARE := [
+	"ss...",
+	"sssps",
+	"kksss",
 ]
 # 背心款手臂 (露胳膊, 全皮肤 + 前缘高光 p)。2 宽 × 6 高。
 const _ARM_BARE := [
@@ -348,31 +355,32 @@ static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 		leg = _LEG_SKIN       # 裙子: 裸腿 (上面盖裙)
 	elif ps == 7:
 		leg = _LEG_TRUNK      # 泳裤: 上段短裤 + 下段裸腿
+	var foot: Array = _FOOT_BARE if ps == 7 else _SHOE_B   # 泳裤光脚, 其余穿鞋
 	match pose:
 		"walk_a":   # 迈开: 两脚分开都落地 (宽站, 重心稳)
-			_put_leg(g, 4, _HIP, 4, leg)
-			_put_leg(g, 9, _HIP, 4, leg)
+			_put_leg(g, 4, _HIP, 4, leg, foot)
+			_put_leg(g, 9, _HIP, 4, leg, foot)
 		"walk_c":   # 收拢: 后脚落地, 前脚抬起迈步 (与 walk_a 不同 → 动起来)
-			_put_leg(g, 5, _HIP, 4, leg)
-			_put_leg(g, 8, _HIP, 3, leg)
+			_put_leg(g, 5, _HIP, 4, leg, foot)
+			_put_leg(g, 8, _HIP, 3, leg, foot)
 		"jump":     # 双腿收起
-			_put_leg(g, 5, _HIP, 2, leg)
-			_put_leg(g, 9, _HIP, 2, leg)
+			_put_leg(g, 5, _HIP, 2, leg, foot)
+			_put_leg(g, 9, _HIP, 2, leg, foot)
 		"fall":     # 双腿张开
-			_put_leg(g, 4, _HIP, 4, leg)
-			_put_leg(g, 10, _HIP, 4, leg)
+			_put_leg(g, 4, _HIP, 4, leg, foot)
+			_put_leg(g, 10, _HIP, 4, leg, foot)
 		_:          # idle/hurt: 站立, 两腿稍分
-			_put_leg(g, 5, _HIP, 4, leg)
-			_put_leg(g, 8, _HIP, 4, leg)
+			_put_leg(g, 5, _HIP, 4, leg, foot)
+			_put_leg(g, 8, _HIP, 4, leg, foot)
 	if ps == 2:
 		_place(g, _HIP - 1, 4, _SKIRT)   # 裙子盖胯+大腿上段, 裸腿露在裙下
 	return g
 
 
-# 放一条腿 (用给定 leg_block) + 腿下的鞋。height<4 = 抬腿 (鞋离地)。
-static func _put_leg(g: Array, col: int, top: int, height: int, leg_block: Array) -> void:
+# 放一条腿 (用给定 leg_block) + 脚 (鞋或光脚 foot_block)。height<4 = 抬腿 (脚离地)。
+static func _put_leg(g: Array, col: int, top: int, height: int, leg_block: Array, foot_block: Array) -> void:
 	_place(g, top, col, _slice(leg_block, 0, height))
-	_place(g, top + height, col - 1, _SHOE_B)   # 鞋比腿宽, 左移 1 让鞋尖朝前伸
+	_place(g, top + height, col - 1, foot_block)   # 脚比腿宽, 左移 1 让脚尖朝前伸
 
 
 static func _palette_from(ap: Dictionary) -> Dictionary:
@@ -381,6 +389,7 @@ static func _palette_from(ap: Dictionary) -> Dictionary:
 	var shirt: Color = ap.get("shirt_color", DEFAULT_APPEARANCE["shirt_color"])
 	var pants: Color = ap.get("pants_color", DEFAULT_APPEARANCE["pants_color"])
 	var eye: Color = ap.get("eye_color", DEFAULT_APPEARANCE["eye_color"])
+	var shoe: Color = ap.get("shoe_color", DEFAULT_APPEARANCE["shoe_color"])
 	return {
 		".": Color(0, 0, 0, 0),
 		"s": skin, "k": skin.darkened(0.18), "p": skin.lightened(0.16),   # p=皮肤高光
@@ -388,7 +397,7 @@ static func _palette_from(ap: Dictionary) -> Dictionary:
 		"w": shirt, "D": shirt.darkened(0.18), "c": shirt.lightened(0.22), # c=衬衫高光
 		"b": pants, "B": pants.darkened(0.28), "P": pants.lightened(0.26), # P=裤子高光
 		"i": eye, "W": _WHITE, "e": skin.darkened(0.30),
-		"o": _SHOE, "O": _SHOE_SH, "q": _SHOE.lightened(0.28),            # q=鞋高光
+		"o": shoe, "O": shoe.darkened(0.36), "q": shoe.lightened(0.28),   # 鞋(可换色) + 高光 q
 		"L": _OUTLINE,
 	}
 
