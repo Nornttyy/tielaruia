@@ -193,6 +193,16 @@ func test_route_hello_sets_room_mode() -> void:
 	assert_eq(nm.room_mode, "pvp", "client 收 hello 后知道在对战房")
 
 
+# 私人房创造模式: hello 带 creative, client 收到设 shared_world_creative
+func test_hello_creative_roundtrip() -> void:
+	nm.shared_world_creative = true
+	var data: Variant = JSON.parse_string(nm._hello_payload(1, 1, 1))
+	assert_true(bool(data.get("creative", false)), "hello 该带 creative")
+	nm.shared_world_creative = false
+	nm._route_message('{"type":"hello","seed":1,"size":1,"diff":1,"creative":true}')
+	assert_true(nm.shared_world_creative, "收 hello → 设 shared_world_creative")
+
+
 # is_pvp 必须 connected + room_mode=pvp
 func test_is_pvp_requires_connected_and_pvp() -> void:
 	nm.room_mode = "pvp"

@@ -62,6 +62,7 @@ var shared_world_seed: int = 0  # host 创建房间时生成的种子, client �
 var shared_world_size: int = 1  # host 的世界大小 (0小/1中/2大); client 从 hello 拿. 不传会致两端地形/大小不一致
 var shared_world_difficulty: int = 1  # host 难度 (0简/1普/2难); client 从 hello 拿. 不传会致怪 HP/伤害两端不一致
 var room_mode: String = "survival"    # "survival" / "pvp" (对战房). client 从 hello 拿. 决定能否打人/刷不刷怪/开局包
+var shared_world_creative: bool = false   # 私人房可创造 (host 当前世界的模式); 公共房永远 false. client 从 hello 拿
 
 
 # 当前是否在对战房 (联机 + pvp 模式). 打人/不刷怪/战斗开局包都靠它门控.
@@ -188,6 +189,7 @@ func _route_message(raw: String, from_peer: String = "HOST") -> void:
 			shared_world_size = size_val
 			shared_world_difficulty = diff_val
 			room_mode = String(data.get("mode", "survival"))   # client 从 hello 知道是不是对战房
+			shared_world_creative = bool(data.get("creative", false))   # 私人房可能是创造
 			hello_received.emit(seed_val, size_val, diff_val)
 		"name":
 			var pname: String = String(data.get("n", ""))
@@ -291,6 +293,9 @@ func host(p_seed: int = 0, p_size: int = 1, p_diff: int = 1) -> void:
 	is_host = true
 	my_room_code = ""
 	room_mode = "survival"   # 私人房不打人
+	# 私人房: 把当前世界的创造/生存模式带给加入者 (只私人房能创造)
+	var gs_h: Node = get_node_or_null("/root/GameSettings")
+	shared_world_creative = gs_h != null and "creative_mode" in gs_h and bool(gs_h.creative_mode)
 	# 共享 seed: 由调用方传 (游戏内 host 用当前世界 seed); 0 = 让 NM 随机生
 	shared_world_seed = p_seed if p_seed != 0 else randi_range(1, 999999)
 	# 共享世界大小: client 收 hello 后用它生成同样大小的世界 (不传 → 地形/大小不一致 bug)
@@ -314,6 +319,7 @@ func join(code: String) -> void:
 # 先设好固定世界参数 (万一本端成 host, 连上后要 send_hello 这些值给 client).
 func enter_public(tag: String, seed_val: int, size_val: int, diff_val: int) -> void:
 	room_mode = "pvp" if tag == "PVP" else "survival"   # 对战房 = pvp; 其它公共房 = survival
+	shared_world_creative = false   # 公共房永远生存 (不让陌生人创造乱飞)
 	if _bridge == null:
 		_try_reload_bridge()
 	if _bridge == null:
@@ -378,7 +384,7 @@ func send(data: String) -> bool:
 # ===== 高层协议: 发 hello / 位置 =====
 
 func _hello_payload(seed_val: int, size_val: int, diff_val: int) -> String:
-	return JSON.stringify({"type": "hello", "seed": seed_val, "size": size_val, "diff": diff_val, "mode": room_mode})
+	return JSON.stringify({"type": "hello", "seed": seed_val, "size": size_val, "diff": diff_val, "mode": room_mode, "creative": shared_world_creative})
 
 
 func send_hello(seed_val: int, size_val: int, diff_val: int) -> void:
@@ -573,6 +579,7 @@ func disconnect_room() -> void:
 	pending_initial_deltas = {}
 	remote_player_name = ""
 	room_mode = "survival"
+	shared_world_creative = false
 
 
 func connected() -> bool:

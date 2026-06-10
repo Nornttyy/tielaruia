@@ -1050,6 +1050,7 @@ func _start_multiplayer_game(seed_val: int, size_val: int, diff_val: int) -> voi
 		"difficulty": diff_val,
 		"world_size": size_val,
 		"multiplayer": true,
+		"creative_mode": NetworkManager.shared_world_creative if NetworkManager != null else false,
 	}))
 
 
