@@ -77,6 +77,7 @@ const S := {
 	"pause_title": "P A U S E D",
 	"pause_resume": "Resume",
 	"pause_multiplayer": "Multiplayer",
+	"pause_kick": "Kick player",
 	"pause_return_menu": "Main Menu",
 	"pause_mp_title": "Multiplayer",
 	"pause_mp_hint": "Share the room code with your friend, they join from main menu",

@@ -52,6 +52,9 @@ func _ready() -> void:
 	# PvP: 被别人打 → 在自己这端扣自己的血 (各管各血)
 	if NetworkManager != null and NetworkManager.has_signal("player_damaged"):
 		NetworkManager.player_damaged.connect(_on_player_damaged)
+	# 被房主踢了 → 断开回主菜单
+	if NetworkManager != null and NetworkManager.has_signal("kicked_by_host"):
+		NetworkManager.kicked_by_host.connect(_on_kicked_by_host)
 	_show_menu_state()
 
 
@@ -689,6 +692,14 @@ func _on_local_death_pvp() -> void:
 	t.timeout.connect(func():
 		if _state == "game":
 			_on_respawn())
+
+
+func _on_kicked_by_host() -> void:
+	if _state != "game":
+		return
+	if NetworkManager != null:
+		NetworkManager.disconnect_room()
+	_return_to_menu()
 
 
 func _notify_remote_death() -> void:

@@ -204,6 +204,13 @@ func test_is_pvp_requires_connected_and_pvp() -> void:
 	assert_false(nm.is_pvp(), "生存模式不是 pvp")
 
 
+# 被房主踢: 收到 __kicked → emit kicked_by_host (main 收到回主菜单)
+func test_route_kicked_emits_signal() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"__kicked"}', "HOST")
+	assert_signal_emitted(nm, "kicked_by_host")
+
+
 # 回归: 新信封 {from,data} 处理路径不能把实体同步弄断 (host→client 怪位置)
 func test_handle_envelope_routes_entity_pos() -> void:
 	watch_signals(nm)

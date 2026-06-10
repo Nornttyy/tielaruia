@@ -26,6 +26,7 @@ signal error_occurred(msg: String)
 # 多人: 有人进房 / 离开 (host 端 = client 连上/断开; client 端 = host 出现/消失)
 signal peer_joined(peer_id: String)
 signal peer_left(peer_id: String)
+signal kicked_by_host()   # 本端 client 被房主踢了 → main 收到后断开回主菜单
 
 # 高层协议事件 (parse 后):
 signal hello_received(world_seed: int, world_size: int, difficulty: int)  # host → client, seed+大小+难度 (双方一致)
@@ -236,6 +237,8 @@ func _route_message(raw: String, from_peer: String = "HOST") -> void:
 				String(data.get("by", "")))
 		"pkill":
 			kill_scored.emit(String(data.get("killer", "")), String(data.get("victim", "")))
+		"__kicked":
+			kicked_by_host.emit()
 		"drop_req":
 			remote_drop_request_received.emit(
 				String(data.get("item", "")), int(data.get("n", 1)),
@@ -479,6 +482,14 @@ func send_player_damage(to_pid: String, dmg: int, kb: float, x: float, y: float)
 # PvP: 广播一次击杀 (killer 给被打死的 victim). 击杀榜各端 +1.
 func send_kill(killer_pid: String, victim_pid: String) -> void:
 	send(JSON.stringify({"type": "pkill", "killer": killer_pid, "victim": victim_pid}))
+
+
+# host 踢人: 告诉那个 client 它被踢了 + 关掉连接. 只 host 有用.
+func kick_peer(peer_id: String) -> void:
+	if _bridge == null or not is_host:
+		return
+	if _bridge.has_method("kick"):
+		_bridge.kick(peer_id)
 
 
 # client → host: 请求在 (x,y) 生成掉落. host 权威 spawn 后经 drop_pos 广播给两边.

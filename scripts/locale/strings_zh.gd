@@ -86,6 +86,7 @@ const S := {
 	"pause_title": "已 暂 停",
 	"pause_resume": "继续游戏",
 	"pause_multiplayer": "多人游戏",
+	"pause_kick": "踢人",
 	"pause_return_menu": "回主菜单",
 	"pause_mp_title": "多人游戏",
 	"pause_mp_hint": "把房间码发给朋友, 他在主菜单 加入房间 输入即可",

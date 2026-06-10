@@ -368,6 +368,18 @@
         return false;
     };
 
+    // host 踢人: 先告诉那个 client "你被踢了", 稍后关掉它的连接.
+    bridge.kick = function(peerId) {
+        var c = bridge._conns[peerId];
+        if (!c) return false;
+        try { c.send(JSON.stringify({type: "__kicked"})); } catch (e) {}
+        setTimeout(function() {
+            try { c.close(); } catch (e) {}
+            delete bridge._conns[peerId];
+        }, 200);
+        return true;
+    };
+
     bridge.get_peer_ids = function() { return JSON.stringify(Object.keys(bridge._conns)); };
     bridge.get_peer_count = function() { return Object.keys(bridge._conns).length; };
 

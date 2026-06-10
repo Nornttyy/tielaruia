@@ -77,6 +77,7 @@ const S := {
 	"pause_title": "一 時 停 止",
 	"pause_resume": "ゲームに戻る",
 	"pause_multiplayer": "マルチプレイ",
+	"pause_kick": "キック",
 	"pause_return_menu": "メインメニュー",
 	"pause_mp_title": "マルチプレイ",
 	"pause_mp_hint": "ルームコードを友達に送り, メインメニューの ルーム参加 で入れます",

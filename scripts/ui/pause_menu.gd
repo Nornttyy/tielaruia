@@ -30,6 +30,7 @@ func _ready() -> void:
 	_return_button.pressed.connect(_on_return_to_menu_pressed)
 	_creative_button.pressed.connect(_on_creative_pressed)
 	_close_button.pressed.connect(_on_host_close_pressed)
+	_build_kick_ui()
 	# NetworkManager 信号 (autoload, 一直在). 用 host 反馈房间码 + 状态.
 	if NetworkManager != null:
 		if not NetworkManager.status_changed.is_connected(_on_mp_status_changed):
@@ -55,6 +56,8 @@ func _refresh_texts(_new_lang: String) -> void:
 	_multiplayer_button.text = Locale.t("pause_multiplayer")
 	_return_button.text = Locale.t("pause_return_menu")
 	_close_button.text = Locale.t("pause_mp_back")
+	if _kick_button != null:
+		_kick_button.text = Locale.t("pause_kick")
 	# Host 面板上的固定提示标签
 	var hint = $HostPanel/VBox/HintLabel if has_node("HostPanel/VBox/HintLabel") else null
 	if hint != null:
@@ -62,6 +65,85 @@ func _refresh_texts(_new_lang: String) -> void:
 	var host_title = $HostPanel/VBox/TitleLabel if has_node("HostPanel/VBox/TitleLabel") else null
 	if host_title != null:
 		host_title.text = Locale.t("pause_mp_title")
+
+
+# ===== 踢人 (房主) =====
+var _kick_button: Button = null
+var _kick_panel: Panel = null
+var _kick_list: VBoxContainer = null
+
+
+func _build_kick_ui() -> void:
+	# 踢人按钮: 加到主面板按钮列里 (放"多人游戏"按钮下面). 只房主+联机时显示。
+	_kick_button = Button.new()
+	_kick_button.text = "踢人"
+	UIStyle.style_button(_kick_button)
+	_kick_button.pressed.connect(_on_kick_pressed)
+	_vbox.add_child(_kick_button)
+	_vbox.move_child(_kick_button, _multiplayer_button.get_index() + 1)
+	_kick_button.visible = false
+	# 踢人面板 (列玩家 + 踢按钮), 代码建, 默认隐藏
+	_kick_panel = Panel.new()
+	_kick_panel.add_theme_stylebox_override("panel", UIStyle.panel())
+	_kick_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_kick_panel.custom_minimum_size = Vector2(320, 360)
+	_kick_panel.size = Vector2(320, 360)
+	_kick_panel.position = Vector2(-160, -180)
+	_kick_panel.visible = false
+	add_child(_kick_panel)
+	var vb := VBoxContainer.new()
+	vb.position = Vector2(16, 16)
+	vb.custom_minimum_size = Vector2(288, 0)
+	vb.add_theme_constant_override("separation", 8)
+	_kick_panel.add_child(vb)
+	var title := Label.new()
+	title.text = "踢出玩家"
+	title.add_theme_font_size_override("font_size", 20)
+	vb.add_child(title)
+	_kick_list = VBoxContainer.new()
+	_kick_list.add_theme_constant_override("separation", 6)
+	vb.add_child(_kick_list)
+	var back := Button.new()
+	back.text = "返回"
+	UIStyle.style_button(back)
+	back.pressed.connect(func(): _kick_panel.visible = false; _vbox.visible = true)
+	vb.add_child(back)
+
+
+func _on_kick_pressed() -> void:
+	_vbox.visible = false
+	_kick_panel.visible = true
+	_refresh_kick_list()
+
+
+func _refresh_kick_list() -> void:
+	for c in _kick_list.get_children():
+		c.free()
+	var world: Node = get_tree().get_first_node_in_group("world")
+	var players: Array = []
+	if world != null and world.has_method("get_remote_player_list"):
+		players = world.get_remote_player_list()
+	if players.is_empty():
+		var empty := Label.new()
+		empty.text = "房间里暂时没别人"
+		_kick_list.add_child(empty)
+		return
+	for p in players:
+		var row := HBoxContainer.new()
+		var nm := Label.new()
+		nm.text = String(p.get("name", "玩家"))
+		nm.custom_minimum_size = Vector2(200, 0)
+		row.add_child(nm)
+		var kbtn := Button.new()
+		kbtn.text = "踢"
+		UIStyle.style_button(kbtn)
+		var pid: String = String(p.get("id", ""))
+		kbtn.pressed.connect(func():
+			if NetworkManager != null:
+				NetworkManager.kick_peer(pid)
+			_refresh_kick_list())
+		row.add_child(kbtn)
+		_kick_list.add_child(row)
 
 
 func open() -> void:
@@ -79,6 +161,11 @@ func open() -> void:
 	get_tree().paused = true
 	# 每次开都回到主面板 (要看房间码再点一下 多人游戏 即可)
 	_vbox.visible = true
+	# 踢人按钮: 只房主 + 联机时显示
+	if _kick_button != null:
+		_kick_button.visible = NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host
+	if _kick_panel != null:
+		_kick_panel.visible = false
 	_host_panel.visible = false
 	_refresh_creative_text()
 	_update_creative_availability()

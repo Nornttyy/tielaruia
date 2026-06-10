@@ -640,6 +640,23 @@ func get_remote_player(peer_id: String) -> Node:
 	return _remote_players.get(peer_id, null)
 
 
+# 踢人 UI 用: 当前所有远程玩家 [{id, name}]
+func get_remote_player_list() -> Array:
+	var out: Array = []
+	for pid in _remote_players:
+		var rp = _remote_players[pid]
+		if rp == null or not is_instance_valid(rp):
+			continue
+		var nm: String = ""
+		if "peer_id" in rp:
+			nm = String(rp.peer_id)
+		var label = rp.get_node_or_null("NameLabel")
+		if label != null and String(label.text) != "":
+			nm = String(label.text)
+		out.append({"id": String(pid), "name": nm})
+	return out
+
+
 func _on_remote_pos(peer_id: String, x: float, y: float, facing: int, anim: String) -> void:
 	var rp: Node = _remote_players.get(peer_id, null)
 	if rp == null or not is_instance_valid(rp):

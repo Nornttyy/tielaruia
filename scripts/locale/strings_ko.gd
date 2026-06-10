@@ -77,6 +77,7 @@ const S := {
 	"pause_title": "일 시 정 지",
 	"pause_resume": "계속하기",
 	"pause_multiplayer": "멀티플레이",
+	"pause_kick": "내보내기",
 	"pause_return_menu": "메인 메뉴",
 	"pause_mp_title": "멀티플레이",
 	"pause_mp_hint": "방 코드를 친구에게 알려주면 메인 메뉴의 방 참가 에서 입력합니다",
