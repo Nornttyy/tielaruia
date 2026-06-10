@@ -15,6 +15,7 @@ const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
 const VillagePlacer = preload("res://scripts/world/village_placer.gd")
 const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 const SlimeClass = preload("res://scripts/entities/slime.gd")  # 用静态 color_for_depth / random_spawn_size
 const ZombieScene = preload("res://scenes/entities/zombie.tscn")
 const SpiderScene = preload("res://scenes/entities/spider.tscn")
@@ -1173,9 +1174,11 @@ func _surf_at_x(x: int) -> int:
 # 地下刷史莱姆: 玩家附近找 AIR(头顶空+脚下实心) 刷一只按深度配色的史莱姆.
 # 越深越强 (深度决定颜色: 浅蓝→深红→极深紫). 仿 _spawn_hell_creature 的找坑逻辑.
 func _try_spawn_underground_slime() -> void:
-	var player := get_player()
-	if player == null:
+	# 联机: 随机挑个玩家身边刷 (含加入的人); 单机退化成本地玩家。
+	var players: Array = PlayersUtil.all_players(get_tree())
+	if players.is_empty():
 		return
+	var player: Node2D = players[randi() % players.size()]
 	var slimes := get_tree().get_nodes_in_group("slimes")
 	if slimes.size() >= MAX_SLIMES + UNDERGROUND_SLIME_MAX:
 		return
@@ -1553,9 +1556,12 @@ func spawn_harpies_for_chunk(chunk_x: int, spots: Array) -> void:
 
 # 在玩家附近地表随机刷一个 creature (slime/zombie 共用站位逻辑)
 func _spawn_surface_creature(scene: PackedScene) -> Node:
-	var player := get_player()
-	if player == null:
+	# 联机: 随机挑一个玩家(房主或加入的人)身边刷 → 怪对所有人公平, 不全挤在房主那。
+	# 单机只有本地玩家, 退化成原行为。
+	var players: Array = PlayersUtil.all_players(get_tree())
+	if players.is_empty():
 		return null
+	var player: Node2D = players[randi() % players.size()]
 	var px: int = int(floor(player.global_position.x / TILE_SIZE))
 	for _i in 10:
 		var sign_x: int = 1 if randf() < 0.5 else -1

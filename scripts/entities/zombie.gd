@@ -3,6 +3,7 @@
 extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const GRAVITY := 675.0
 const SWIM_GRAVITY := 150.0
@@ -25,6 +26,7 @@ var drop_table: Array = [["bone", 1, 3]]
 
 var current_health: int = 60
 var _cached_player: Node2D = null
+var _target_repick: float = 0.0    # 重选最近玩家倒计时 (联机追最近的人)
 var _cached_cm: Node = null  # 缓存 chunk_manager, 每帧避免 group + parent 查 3 次
 var _hit_flash: float = 0.0
 const ENEMY_IFRAME_SEC := 0.2
@@ -152,13 +154,12 @@ func _is_head_above_water() -> bool:
 
 
 func _find_player() -> Node2D:
-	if _cached_player != null and is_instance_valid(_cached_player):
+	# 联机: 追"最近的玩家"(含加入的人), 不只盯房主。单机时行为不变。每 0.3s 重选。
+	_target_repick -= 0.016
+	if _cached_player != null and is_instance_valid(_cached_player) and _target_repick > 0.0:
 		return _cached_player
-	var players := get_tree().get_nodes_in_group("player")
-	if players.is_empty():
-		_cached_player = null
-		return null
-	_cached_player = players[0]
+	_target_repick = 0.3
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 

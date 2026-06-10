@@ -2,6 +2,7 @@
 extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 # Terraria 风血量基线 (玩家 100 HP, 5 颗心): 普通难度 25 HP / 6 dmg.
 # 木剑 3 × 9 击, 钻剑 20 × 2 击. 接触伤 6 → 100HP 玩家被锁住吃 17 下死 (含 i-frame).
@@ -64,6 +65,7 @@ var size: int = 1         # 0小/1中/2大, 默认中
 var contact_damage: int = CONTACT_DAMAGE   # _apply_tier 按 tier 缩放; CONTACT_DAMAGE 常量当基准
 var _base_tint: Color = Color(1, 1, 1)     # tier 染色; 受击闪光后恢复到它
 var _cached_player: Node2D = null  # 缓存 player ref, 每帧避免 get_nodes_in_group
+var _target_repick: float = 0.0    # 重选最近玩家的倒计时 (联机追最近的人)
 var _cached_cm: Node = null  # 缓存 chunk_manager (每帧 _is_in_water 不用查 3 层)
 var _hop_timer: float = 0.5
 var _hit_flash: float = 0.0
@@ -255,14 +257,13 @@ func _on_anim_done() -> void:
 
 
 func _find_player() -> Node2D:
-	# 缓存 player ref, 避免每帧 get_nodes_in_group (25 怪 × 3 调用 = 75 次/帧)
-	if _cached_player != null and is_instance_valid(_cached_player):
+	# 联机: 追"最近的玩家"(含加入的人), 不只盯房主。单机时只有本地玩家, 行为不变。
+	# 每 0.3s 重选一次目标 (省得每帧 get_nodes_in_group)。
+	_target_repick -= 0.016
+	if _cached_player != null and is_instance_valid(_cached_player) and _target_repick > 0.0:
 		return _cached_player
-	var players := get_tree().get_nodes_in_group("player")
-	if players.is_empty():
-		_cached_player = null
-		return null
-	_cached_player = players[0]
+	_target_repick = 0.3
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 

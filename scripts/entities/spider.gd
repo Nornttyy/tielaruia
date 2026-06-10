@@ -3,6 +3,7 @@
 extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
@@ -22,6 +23,7 @@ const ENEMY_IFRAME_SEC := 0.2
 var max_health: int = BASE_MAX_HEALTH
 var current_health: int = BASE_MAX_HEALTH
 var _cached_player: Node2D = null
+var _target_repick: float = 0.0    # 重选最近玩家倒计时 (联机追最近的人)
 var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
 var _is_dying: bool = false
@@ -91,13 +93,12 @@ func _physics_process(delta: float) -> void:
 
 
 func _find_player() -> Node2D:
-	if _cached_player != null and is_instance_valid(_cached_player):
+	# 联机: 追"最近的玩家"(含加入的人), 不只盯房主。单机行为不变。每 0.3s 重选。
+	_target_repick -= 0.016
+	if _cached_player != null and is_instance_valid(_cached_player) and _target_repick > 0.0:
 		return _cached_player
-	var players := get_tree().get_nodes_in_group("player")
-	if players.is_empty():
-		_cached_player = null
-		return null
-	_cached_player = players[0]
+	_target_repick = 0.3
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 
