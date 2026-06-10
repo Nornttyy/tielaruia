@@ -100,6 +100,10 @@ const _DEFS := {
 	"assault_rifle": {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 3, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.14, "gun_damage": 11, "gun_spread_deg": 3.0, "bullet_speed": 700},  # 突击步枪: 快/均衡/微飘
 	"shotgun":       {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 3, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.65, "gun_damage": 6, "gun_pellets": 5, "gun_spread_deg": 32.0, "bullet_speed": 520},  # 霰弹枪: 一次5颗扇形/近战狠
 	"sniper":        {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.9, "gun_damage": 32, "bullet_speed": 1000},  # 狙击枪: 慢/超狠/弹速超快
+	# 特殊枪 (耗子弹, 带新机制): 激光穿透 / 火焰流 / 冰冻减速
+	"laser_gun":     {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.3, "gun_damage": 8, "bullet_speed": 900, "gun_pierce": true, "gun_visual": "laser"},  # 激光: 穿透一排怪
+	"flamethrower":  {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.05, "gun_damage": 3, "bullet_speed": 260, "gun_spread_deg": 18.0, "gun_pierce": true, "gun_visual": "fire", "bullet_lifetime": 0.28},  # 火焰: 近距连续烧
+	"freeze_ray":    {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.4, "gun_damage": 5, "bullet_speed": 480, "gun_visual": "ice", "gun_slow_factor": 0.4, "gun_slow_dur": 2.5},  # 冰冻: 命中减速
 	"bullet":        {"placeable_tile_id": -1, "tool_kind": "",    "tool_tier": 0, "max_stack": 99},
 	# === 地狱矿石 ===
 	"hell_crystal_ingot": {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},

@@ -30,6 +30,7 @@ const HarpyArt = preload("res://scripts/art/harpy_art.gd")
 const FireballArt = preload("res://scripts/art/fireball_art.gd")
 const ArrowProjArt = preload("res://scripts/art/arrow_proj_art.gd")
 const BulletProjArt = preload("res://scripts/art/bullet_proj_art.gd")
+const LaserProjArt = preload("res://scripts/art/laser_proj_art.gd")
 const MummyArt = preload("res://scripts/art/mummy_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
@@ -57,6 +58,7 @@ var spell_frames_ice: SpriteFrames      # 铁法杖蓝弹
 var spell_frames_nature: SpriteFrames   # 木法杖绿弹
 var arrow_proj_frames: SpriteFrames
 var bullet_proj_frames: SpriteFrames
+var laser_proj_frames: SpriteFrames
 var mummy_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
@@ -368,6 +370,8 @@ func _build_entities() -> void:
 	arrow_proj_frames = ArrowProjArt.build_sprite_frames()
 	# 玩家子弹投射物 (枪用)
 	bullet_proj_frames = BulletProjArt.build_sprite_frames()
+	# 激光投射物 (激光枪用, 穿透)
+	laser_proj_frames = LaserProjArt.build_sprite_frames()
 	# 木乃伊: 金字塔守卫
 	mummy_frames = MummyArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)

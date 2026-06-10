@@ -77,10 +77,19 @@ var _current_hop_vx: float = 0.0  # 本次跳跃的目标横速 (空中维持用
 # 中立/敌对状态: 白天默认中立 (闲逛, 接触不伤害). 晚上自动敌对.
 # 白天被玩家打 → 也变敌对 (撑到死或被遗忘) — 像 Minecraft 中立怪.
 var _is_provoked: bool = false
+# 冰冻减速: 1.0=正常, <1=被冰冻枪打中变慢 (跳得矮/近/少). _slow_t 倒计时, 到 0 恢复.
+var _slow_mult: float = 1.0
+var _slow_t: float = 0.0
 
 
 func _is_hostile() -> bool:
 	return _is_provoked or TimeOfDay.is_night()
+
+
+# 冰冻枪命中: 把 slime 减速 factor 倍 (0.15~1.0), 持续 dur 秒. 多次命中取更慢/更久.
+func apply_slow(factor: float, dur: float) -> void:
+	_slow_mult = min(_slow_mult, clampf(factor, 0.15, 1.0))
+	_slow_t = max(_slow_t, dur)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -167,6 +176,15 @@ func _physics_process(delta: float) -> void:
 		_hit_flash = max(0.0, _hit_flash - delta)
 		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else _base_tint
 	_iframe_t = max(0.0, _iframe_t - delta)
+	# 冰冻减速倒计时 + 冰蓝提示 (受击闪光优先, 不抢闪光帧)
+	if _slow_t > 0.0:
+		_slow_t -= delta
+		if _slow_t <= 0.0:
+			_slow_mult = 1.0
+			if _hit_flash <= 0.0 and sprite != null:
+				sprite.modulate = _base_tint   # 解冻 → 恢复本色
+		elif _hit_flash <= 0.0 and sprite != null:
+			sprite.modulate = _base_tint * Color(0.55, 0.8, 1.5)  # 冻住时偏冰蓝
 
 	# 史莱姆怕水: 碰到水继续正常重力下沉 + 每 0.5s 扣 1 HP (玩家可用水陷阱杀)
 	var in_water: bool = _is_in_water()
@@ -201,7 +219,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _attempt_hop() -> void:
-	_hop_timer = randf_range(HOP_COOLDOWN_MIN, HOP_COOLDOWN_MAX)
+	# 被冰冻减速时跳得更不频繁 (_slow_mult 越小, 冷却越长)
+	_hop_timer = randf_range(HOP_COOLDOWN_MIN, HOP_COOLDOWN_MAX) / max(0.15, _slow_mult)
 	var player := _find_player()
 	var dir: float = 0.0
 	# 自动寻路: hop 高度/距离会根据玩家相对位置调整, 防止砸到玩家头顶.
@@ -242,9 +261,10 @@ func _attempt_hop() -> void:
 	var vy_mag: float = sqrt(2.0 * GRAVITY * h_px)
 	# 滞空 = 2*vy/g, 距离 = vx * 滞空 → vx = d*g / (2*vy)
 	var vx_mag: float = 0.0 if vy_mag == 0.0 else (d_px * GRAVITY) / (2.0 * vy_mag)
-	_current_hop_vx = dir * vx_mag
+	# 被冰冻减速时跳得更矮更近 (_slow_mult 缩放横/竖速)
+	_current_hop_vx = dir * vx_mag * _slow_mult
 	velocity.x = _current_hop_vx
-	velocity.y = -vy_mag
+	velocity.y = -vy_mag * _slow_mult
 	sprite.play("hop")
 	SfxBank.play_at("slime_hop", global_position, 128.0, 0.25)  # 远于 8 tile 静音
 

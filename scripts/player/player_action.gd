@@ -1813,6 +1813,18 @@ func _try_fire_gun() -> void:
 	var pellets: int = int(def.get("gun_pellets", 1)) if def != null else 1
 	var spread_deg: float = float(def.get("gun_spread_deg", 0.0)) if def != null else 0.0
 	var speed: float = float(def.get("bullet_speed", 0.0)) if def != null else 0.0  # 0 = 子弹默认速度
+	# 特殊枪机制 (激光穿透 / 冰冻减速 / 火焰外观+短寿命); 普通枪这些字段都没配 → opts 空.
+	var opts: Dictionary = {}
+	if def != null:
+		if bool(def.get("gun_pierce", false)):
+			opts["pierce"] = true
+		if def.has("gun_slow_factor"):
+			opts["slow_factor"] = float(def.get("gun_slow_factor"))
+			opts["slow_dur"] = float(def.get("gun_slow_dur", 2.0))
+		if def.has("gun_visual"):
+			opts["visual"] = String(def.get("gun_visual"))
+		if def.has("bullet_lifetime"):
+			opts["lifetime"] = float(def.get("bullet_lifetime"))
 	_attack_cooldown = cd
 	var parent: Node2D = get_parent() as Node2D
 	if parent == null:
@@ -1833,7 +1845,7 @@ func _try_fire_gun() -> void:
 		var aim: Vector2 = start + dir * 100.0   # 沿偏角给个瞄点, bullet 自己按方向算速度
 		var bullet = BulletScene.instantiate()
 		entities.add_child(bullet)
-		bullet.setup(start, aim, dmg, parent, speed)
+		bullet.setup(start, aim, dmg, parent, speed, opts)
 		if NetworkManager != null and NetworkManager.connected():
 			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
 	SfxBank.play("gunshot", 0.08)

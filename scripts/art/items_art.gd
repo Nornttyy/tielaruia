@@ -842,6 +842,66 @@ const _SNIPER := [
 	"................",
 ]
 
+# 激光枪 icon: 灰枪身 + 枪口发青光(N/X/Q 钻蓝当能量色) + 木握把. 科幻感.
+const _LASER_GUN := [
+	"................",
+	"................",
+	"................",
+	"....nnnnnnn.....",
+	"...nBBBBBBBn....",
+	"...nBBBBBBBnnnn.",
+	"...nBKKKKKBNXQn.",
+	"...nBBBBBBBnnnn.",
+	"..nhBKnnnBn.....",
+	"..nhhhn.nn......",
+	"..nhHhn.........",
+	"..nhHhn.........",
+	"...nhn..........",
+	"...nn...........",
+	"................",
+	"................",
+]
+
+# 火焰喷射器 icon: 铁枪身 + 枪口喷火(z黄/u橙/A红) + 下方燃料罐. 一眼是喷火.
+const _FLAMETHROWER := [
+	"................",
+	"................",
+	"....nnnnn.......",
+	"...nBBBBBn.nnn..",
+	"...nBKKKBnnBBn..",
+	"...nBKKKBnzuAn..",
+	"...nBKKKBnnBn...",
+	"..nhhBKBn.......",
+	"..nhhhn.........",
+	".nKKKn..........",
+	".nKBKn..........",
+	".nKKn...........",
+	"..nn............",
+	"................",
+	"................",
+	"................",
+]
+
+# 冰冻枪 icon: 灰枪身 + 枪口冰晶(N/T/Q/X 钻蓝) + 木握把. 偏冰蓝.
+const _FREEZE_RAY := [
+	"................",
+	"................",
+	"....nnnnnn......",
+	"...nBBBBBBn.....",
+	"...nBBBBBBnNXn..",
+	"...nBKKKKBNTQXn.",
+	"...nBBBBBBnNXn..",
+	"..nhBnnnBn......",
+	"..nhhhn.........",
+	"..nhHhn.........",
+	"..nhHhn.........",
+	"...nhn..........",
+	"...nn...........",
+	"................",
+	"................",
+	"................",
+]
+
 # 火果 icon: 圆果红身 + 棕枝 + 绿叶 + 高光. 用 items_art PALETTE: A=苹果红, a=红高光, m=暗红影, S=棕梗, L=绿叶, n=黑描边, y=沙黄高光.
 const _HELL_FRUIT_ICON := [
 	"................",
@@ -2298,6 +2358,9 @@ const _ICONS := {
 	"assault_rifle": _ASSAULT_RIFLE,
 	"shotgun": _SHOTGUN,
 	"sniper": _SNIPER,
+	"laser_gun": _LASER_GUN,
+	"flamethrower": _FLAMETHROWER,
+	"freeze_ray": _FREEZE_RAY,
 	"bullet": _BULLET,
 	"slime_crown": _SLIME_CROWN,
 	"slime_ball": _SLIME_BALL,
