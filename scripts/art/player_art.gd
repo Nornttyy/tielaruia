@@ -166,17 +166,17 @@ const _LEG := [
 	"BbP",
 	"BBb",
 ]
-# 侧鞋 (o / O / 高光 q)。鞋尖朝右 (前) + 鞋面高光 + 鞋带。5 宽 × 3 高。
+# 侧鞋 (o / O / 高光 q)。3 宽 × 3 高 (= 腿宽, 两脚分开不重叠成一坨, 不显大)。
 const _SHOE_B := [
-	"oq...",
-	"qoOoo",
-	"OOOOO",
+	"oo.",
+	"ooq",
+	"OOO",
 ]
-# 光脚 (泳裤时用; 皮肤色, 脚趾朝右, 脚底阴影)。5 宽 × 3 高。
+# 光脚 (泳裤时用; 皮肤色, 脚底阴影)。3 宽 × 3 高。
 const _FOOT_BARE := [
-	"ss...",
-	"sssps",
-	"kksss",
+	"ss.",
+	"ssp",
+	"kks",
 ]
 # 背心款手臂 (露胳膊, 全皮肤 + 前缘高光 p)。2 宽 × 6 高。
 const _ARM_BARE := [
@@ -380,7 +380,7 @@ static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 # 放一条腿 (用给定 leg_block) + 脚 (鞋或光脚 foot_block)。height<4 = 抬腿 (脚离地)。
 static func _put_leg(g: Array, col: int, top: int, height: int, leg_block: Array, foot_block: Array) -> void:
 	_place(g, top, col, _slice(leg_block, 0, height))
-	_place(g, top + height, col - 1, foot_block)   # 脚比腿宽, 左移 1 让脚尖朝前伸
+	_place(g, top + height, col, foot_block)   # 脚跟对齐腿, 只往前伸 1px 脚尖 (缩小后不再后伸)
 
 
 static func _palette_from(ap: Dictionary) -> Dictionary:
