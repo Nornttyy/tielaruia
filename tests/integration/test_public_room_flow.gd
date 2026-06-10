@@ -70,6 +70,9 @@ func test_main_menu_has_public_button() -> void:
 	# PvP 对战房按钮 + 回调
 	assert_not_null(menu.get_node_or_null("MultiplayerPanel/VBox/PublicPvpButton"), "该有公共对战房按钮")
 	assert_true(menu.has_method("_on_public_pvp_pressed"), "该有公共对战房按钮回调")
+	# 点联机入口 → 先转选角色 (存了待办动作), 不直接连
+	menu._on_public_survival_pressed()
+	assert_true(menu._pending_mp_action.is_valid(), "点公共房先选角色: 存了待办联机动作")
 
 
 func test_pvp_scoreboard_counts_kills() -> void:

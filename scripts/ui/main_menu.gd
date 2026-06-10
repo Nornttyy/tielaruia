@@ -611,14 +611,20 @@ func _on_new_game_pressed() -> void:
 	_character_panels.open_select()
 
 
-# 选完角色 (current 已设) → 开世界选择面板 (原 _on_new_game_pressed 内容)。
+# 选完角色 (current 已设): 联机入口 → 执行待办联机动作; 单机 → 开世界选择面板。
 func _on_character_chosen() -> void:
+	if _pending_mp_action.is_valid():
+		var action: Callable = _pending_mp_action
+		_pending_mp_action = Callable()
+		action.call()
+		return
 	$WorldSelectPanel.visible = true
 	_refresh_saves_list()
 
 
-# 选角色面板点返回 → 回主菜单按钮。
+# 选角色面板点返回 → 回主菜单按钮 (取消待办的联机动作)。
 func _on_character_panels_closed() -> void:
+	_pending_mp_action = Callable()
 	$ButtonLayer/VBox.visible = true
 
 
@@ -912,6 +918,7 @@ const MpRooms = preload("res://scripts/net/mp_rooms.gd")
 
 var _mp_wired: bool = false
 var _entering_public: bool = false   # 正在进公共房: 一旦本端成 host 就用固定 seed 进游戏
+var _pending_mp_action: Callable = Callable()   # 选完角色后要执行的联机动作 (进生存房/对战房/加入)
 
 
 func _on_multiplayer_pressed() -> void:
@@ -962,29 +969,40 @@ func _on_join_pressed() -> void:
 	if code.length() != 6:
 		$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_room_code_invalid")
 		return
+	_start_mp_after_character(_do_join.bind(code))   # 先选角色再连
+
+
+func _do_join(code: String) -> void:
 	if NetworkManager != null:
 		NetworkManager.join(code)
+	$MultiplayerPanel.visible = true
 	_refresh_multiplayer_status()
 
 
 # 点「公共生存房」: 进固定房号的公共房 (谁先到谁当 host, 房满顺延). 进游戏在状态变 connected 时.
+# 联机入口都先选角色 (用户要求): 存好"待办动作", 选完角色 (_on_character_chosen) 再真连。
+func _start_mp_after_character(action: Callable) -> void:
+	if NetworkManager == null:
+		$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_status_error_prefix") + "只在浏览器有效"
+		return
+	_pending_mp_action = action
+	$MultiplayerPanel.visible = false
+	_character_panels.open_select()
+
+
 func _on_public_survival_pressed() -> void:
-	if NetworkManager == null:
-		$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_status_error_prefix") + "只在浏览器有效"
-		return
-	_entering_public = true
-	NetworkManager.enter_public("SV", MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, MpRooms.PUBLIC_SV_DIFF)
-	$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_entering_public")
-	_refresh_multiplayer_status()
+	_start_mp_after_character(_do_enter_public.bind("SV"))
 
 
-# 点「公共对战房」: 进 PVP 公共房 (能互相打). 同样固定地图; 进游戏流程同生存房.
 func _on_public_pvp_pressed() -> void:
-	if NetworkManager == null:
-		$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_status_error_prefix") + "只在浏览器有效"
-		return
+	_start_mp_after_character(_do_enter_public.bind("PVP"))
+
+
+# 真·进公共房 (选完角色后调). tag = "SV" 生存 / "PVP" 对战.
+func _do_enter_public(tag: String) -> void:
 	_entering_public = true
-	NetworkManager.enter_public("PVP", MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, MpRooms.PUBLIC_SV_DIFF)
+	NetworkManager.enter_public(tag, MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, MpRooms.PUBLIC_SV_DIFF)
+	$MultiplayerPanel.visible = true   # 重新露出面板显示"正在进入"状态
 	$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_entering_public")
 	_refresh_multiplayer_status()
 
