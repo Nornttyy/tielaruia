@@ -167,22 +167,22 @@ const _LEG := [
 	"AbP",
 	"AAb",
 ]
-# 女款细腿 (2 宽, 苗条): 长裤 / 裙下裸腿 / 泳裤 各一版。
+# 女款细腿 (2 宽, 苗条): 长裤 / 裙下裸腿 / 泳裤 各一版。外侧深裤缝 A + 前高光 P。
 const _LEG_F := [
-	"bP",
-	"bP",
-	"BP",
-	"Bb",
+	"AP",
+	"AP",
+	"AP",
+	"Ab",
 ]
 const _LEG_SKIN_F := [
-	"sp",
+	"kp",
 	"sp",
 	"ks",
 	"ks",
 ]
 const _LEG_TRUNK_F := [
-	"bP",
-	"bP",
+	"AP",
+	"AP",
 	"ks",
 	"ks",
 ]
@@ -214,16 +214,16 @@ const _LEG_SKIN := [
 	"kss",
 	"kss",
 ]
-# 裙子 (裤色 b/B 梯形 + 竖褶缝 B + 前缘高光 P + 腰带/下摆阴影)。9 宽 × 3 高。
+# 裙子 (裤色 b/B 梯形 + 腰带B + 竖褶缝 + 前高光P + 下摆深阴A)。9 宽 × 3 高。
 const _SKIRT := [
-	".bBbBbbP.",
-	"BbBbBbbPb",
-	"BBbBbBbPB",
+	".BBBBBbP.",
+	"bBbBbbbPb",
+	"ABbBbbBPA",
 ]
-# 泳裤款的腿 (上段短裤 b/B + 外侧裤缝 B + 前缘高光 P + 下段裸腿 s/k)。3 宽 × 4 高。
+# 泳裤款的腿 (上段短裤 b/B + 外侧深裤缝 A + 前缘高光 P + 下段裸腿 s/k)。3 宽 × 4 高。
 const _LEG_TRUNK := [
-	"BbP",
-	"BbP",
+	"AbP",
+	"AbP",
 	"kss",
 	"kss",
 ]
