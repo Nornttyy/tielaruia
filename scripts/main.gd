@@ -617,6 +617,8 @@ func _grant_pvp_loadout(inv_node: Node) -> void:
 	inv_node.pickup("wood_bow", 1)
 	inv_node.pickup("wood_arrow", 99)
 	inv_node.pickup("stone", 64)
+	inv_node.pickup("iron_pickaxe", 1)    # 挖掉自己/别人放的方块 (天然/竞技场地形挖不动)
+	inv_node.pickup("health_potion", 5)   # 战斗补血 (对战房里无限, 见消耗 gate)
 	inv_node.set_armor("helmet", {"item_id": "iron_helmet", "count": 1})
 	inv_node.set_armor("chest", {"item_id": "iron_chest", "count": 1})
 	inv_node.set_armor("pants", {"item_id": "iron_pants", "count": 1})

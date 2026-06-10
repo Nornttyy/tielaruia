@@ -20,6 +20,13 @@ var _loaded: Dictionary = {}    # chunk_x: int → Chunk
 var _deltas: Dictionary = {}    # chunk_x: int → Dict[Vector2i → tid]
 var _wall_deltas: Dictionary = {}  # chunk_x → Dict[Vector2i → wall_id]; 独立于 _deltas (同 key 不串)
 var _submerged: Dictionary = {}    # chunk_x → Dict[Vector2i_local → plant_tid]; 水下植物元数据 (不渲染, 退水复原用)
+# 对战房 (PvP): 玩家放下的格 (世界坐标 Vector2i → true). 天然/竞技场地形不在内 = 挖不动;
+# 只有这里面的 (玩家放的) 才能挖. 进/退对战房清空. 内存态, 不存档.
+var _pvp_placed: Dictionary = {}
+func mark_pvp_placed(c: Vector2i) -> void: _pvp_placed[c] = true
+func is_pvp_placed(c: Vector2i) -> bool: return _pvp_placed.has(c)
+func unmark_pvp_placed(c: Vector2i) -> void: _pvp_placed.erase(c)
+func clear_pvp_placed() -> void: _pvp_placed.clear()
 # 生命水晶世界限制: 跨 chunk 总量上限 + 最小间距.
 # spawned = 已放出数 (含被吃的). processed_chunks = 已查过 cap 的 chunk_x.
 # positions = 所有已放水晶世界坐标 (用 Vector2i 存 — 即使被吃也保留, 防 "原位置再生").
