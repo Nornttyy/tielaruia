@@ -41,6 +41,18 @@
             o.secure = true;     // Render 是 https → 443 + secure
             o.path = "/peerjs";  // 跟服务器 index.js 里挂的路径一致
         }
+        // NAT 穿透: 信令服只负责"互相找到", 真正传数据是两台机直连(WebRTC).
+        // 很多家庭路由挡直连 → 只能连上 1-2 个人. 加 STUN(探外网地址) + 免费公共 TURN(直连失败时中转),
+        // 连接成功率大幅提高 (= 修"联机最多两人/公共房只有一个人"). 不绑卡, 用现成免费中转.
+        o.config = {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun1.l.google.com:19302" },
+                { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+                { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+                { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+            ]
+        };
         return o;
     }
 
