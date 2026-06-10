@@ -1084,7 +1084,7 @@ func _effective_sword_damage() -> int:
 	return max(1, int(round(float(base) * dmg_mult)))
 
 
-const PLACE_HOLD_INTERVAL := 0.13   # 连续放置时每隔多久放一个 (按住右键)
+const PLACE_HOLD_INTERVAL := 0.05   # 连续放置时每隔多久放一个 (按住右键)
 var _place_hold_cd: float = 0.0
 
 
