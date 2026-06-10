@@ -95,3 +95,34 @@ func test_craft_uses_freed_slot_when_consuming_all_materials():
 	assert_not_null(slot5, "原 log 槽应被 planks 占用")
 	assert_eq(slot5.item_id, "planks", "槽 5 应变 planks")
 	assert_eq(slot5.count, 4, "4 个 planks")
+
+
+# ---- 垃圾桶: 把光标拿着的物品永久删除 ----
+
+func test_trash_deletes_cursor_item():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	main.boot_to_game()
+	await wait_frames(2)
+	var player = main.get_node("World").get_player()
+	var inv_node: Node = player.get_node("PlayerInventory")
+	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
+	cp.bind_inventory(inv_node)
+	assert_not_null(cp._trash_slot, "垃圾桶槽该建好")
+	# 模拟鼠标光标拿着一叠 dirt
+	inv_node.cursor_slot = {"item_id": "dirt", "count": 10}
+	assert_true(cp._trash_cursor_item(), "丢进垃圾桶应成功")
+	assert_null(inv_node.cursor_slot, "丢完光标清空 (物品没了)")
+
+
+func test_trash_empty_cursor_noop():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	main.boot_to_game()
+	await wait_frames(2)
+	var player = main.get_node("World").get_player()
+	var inv_node: Node = player.get_node("PlayerInventory")
+	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
+	cp.bind_inventory(inv_node)
+	inv_node.cursor_slot = null
+	assert_false(cp._trash_cursor_item(), "光标空时丢垃圾桶应无操作")

@@ -64,6 +64,7 @@ var _recipe_buttons: Array = []  # [{recipe_dict, button, cost_label}]
 var _inv_grid: GridContainer
 var _inv_slot_nodes: Array = []  # 36 个 PanelContainer
 var _armor_slot_nodes: Array = []  # 3 个盔甲槽 PanelContainer (helmet/chest/pants 顺序)
+var _trash_slot: PanelContainer = null  # 垃圾桶: 拖物品来松手 = 永久删除
 var _creative_section: VBoxContainer = null  # 创造模式"物品大全"区 (只创造模式显示)
 
 # 内部 _cells 初始化用
@@ -102,7 +103,7 @@ func _build_ui() -> void:
 	armor_box.anchor_right = 1.0
 	armor_box.anchor_bottom = 1.0
 	armor_box.offset_left = -150.0   # 离右边 ~150px
-	armor_box.offset_top = -96.0     # 离底边 ~96px
+	armor_box.offset_top = -176.0    # 离底边 ~176px (加高: 盔甲 3 槽 + 下面的垃圾桶)
 	armor_box.offset_right = -12.0
 	armor_box.offset_bottom = -12.0
 	armor_box.alignment = BoxContainer.ALIGNMENT_END
@@ -123,6 +124,17 @@ func _build_ui() -> void:
 	]
 	for n in _armor_slot_nodes:
 		armor_row.add_child(n)
+	# 垃圾桶: 拿起物品 (光标拿着) 拖到这个槽松手 = 永久删除. 放盔甲下面, 红框区分 (危险).
+	var trash_label := Label.new()
+	trash_label.text = "垃圾桶 (拖物品来丢)"
+	trash_label.add_theme_font_size_override("font_size", 11)
+	trash_label.add_theme_color_override("font_color", Color(0.85, 0.5, 0.45))
+	armor_box.add_child(trash_label)
+	var trash_row := HBoxContainer.new()
+	trash_row.alignment = BoxContainer.ALIGNMENT_END   # 跟盔甲槽一样靠右对齐
+	armor_box.add_child(trash_row)
+	_trash_slot = _make_trash_slot()
+	trash_row.add_child(_trash_slot)
 
 	_inv_grid = GridContainer.new()
 	_inv_grid.columns = 9
@@ -778,6 +790,42 @@ func _apply_inv_click(idx: int) -> void:
 		_player_inv.inventory_changed.emit()
 
 
+# 垃圾桶: 红框槽 (危险=删除). 视觉占位, 真正删除逻辑在 _input 松手时判定.
+func _make_trash_slot() -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.add_theme_stylebox_override("panel", _blue_slot_style(Color(0.18, 0.06, 0.06, 0.85), Color(0.78, 0.32, 0.30, 1.0)))
+	var hint := Label.new()
+	hint.text = "丢"
+	hint.add_theme_font_size_override("font_size", 16)
+	hint.add_theme_color_override("font_color", Color(0.85, 0.5, 0.45))
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.add_child(hint)
+	return panel
+
+
+func _is_mouse_over_trash() -> bool:
+	if _trash_slot == null:
+		return false
+	return _trash_slot.get_global_rect().has_point(_trash_slot.get_global_mouse_position())
+
+
+# 把光标 (鼠标拿着) 的物品永久删除. 返回 true 表示删了东西.
+func _trash_cursor_item() -> bool:
+	if _player_inv == null or _player_inv.cursor_slot == null:
+		return false
+	_player_inv.cursor_slot = null
+	_drag_active = false
+	SfxBank.play("break", 0.15)   # 给点"丢掉了"的反馈声
+	if _player_inv.has_signal("inventory_changed"):
+		_player_inv.inventory_changed.emit()
+	return true
+
+
 # 全局监听鼠标松开 → 找鼠标下的 slot → 放下/合并/交换 (没拖动则取消)
 func _input(event: InputEvent) -> void:
 	if not is_open():
@@ -786,6 +834,9 @@ func _input(event: InputEvent) -> void:
 		return
 	var mb := event as InputEventMouseButton
 	if mb.pressed or mb.button_index != MOUSE_BUTTON_LEFT:
+		return
+	# 垃圾桶: 松手时鼠标在垃圾桶上 + 光标拿着东西 → 永久删除 (要在 drag 判定之前, 否则被放回背包)
+	if _is_mouse_over_trash() and _trash_cursor_item():
 		return
 	if not _drag_active:
 		return
