@@ -204,6 +204,20 @@ func test_is_pvp_requires_connected_and_pvp() -> void:
 	assert_false(nm.is_pvp(), "生存模式不是 pvp")
 
 
+# 回归: 新信封 {from,data} 处理路径不能把实体同步弄断 (host→client 怪位置)
+func test_handle_envelope_routes_entity_pos() -> void:
+	watch_signals(nm)
+	nm._handle_envelope({"from": "HOST", "data": '{"type":"ent_pos","id":5,"k":"slime","x":1.0,"y":2.0,"hp":3,"f":1,"a":"hop"}'})
+	assert_signal_emitted(nm, "remote_entity_pos_received")
+
+
+# 回归: client→host 伤害消息经信封处理仍到 (host 给真怪扣血)
+func test_handle_envelope_routes_entity_dmg() -> void:
+	watch_signals(nm)
+	nm._handle_envelope({"from": "P2", "data": '{"type":"ent_dmg","id":9,"dmg":5,"kb":120.0,"sx":1.0,"sy":2.0}'})
+	assert_signal_emitted(nm, "remote_entity_damage_received")
+
+
 # pdmg payload 带 by (攻击者), to (被打者)
 func test_player_damage_payload() -> void:
 	var data: Variant = JSON.parse_string(nm._player_damage_payload("B", 8, 120.0, 3.0, 4.0))
