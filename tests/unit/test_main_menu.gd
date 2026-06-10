@@ -249,3 +249,17 @@ func test_dropdown_selection_changes_locale():
 	opt.item_selected.emit(1)
 	assert_eq(Locale.current_language(), "en", "选第 2 项应切到英文")
 	Locale.set_language("zh")
+
+
+# 回归: 按钮首次 hover 不该报 "没有 scale_tw meta" (旧 bug: get_meta(name, null) 把 null
+# 当成"没给默认" → meta 不存在时报错). 改用 has_meta 判断后, 首次 + 重复 hover 都正常.
+func test_button_hover_no_meta_error():
+	var mm = _make()
+	await wait_frames(1)
+	var btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
+	assert_false(btn.has_meta("scale_tw"), "首次 hover 前不该有 scale_tw meta")
+	btn.mouse_entered.emit()   # 第一次 hover: 旧代码会在 get_meta(null) 报错
+	assert_true(btn.has_meta("scale_tw"), "hover 后该设上 scale_tw tween (handler 跑通)")
+	btn.mouse_exited.emit()    # 读旧 meta kill 前一个 tween — 不该崩
+	btn.mouse_entered.emit()   # 二次 hover: 走 has_meta=true 分支
+	assert_true(btn.has_meta("scale_tw"), "重复 hover 仍正常")

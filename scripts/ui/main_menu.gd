@@ -519,16 +519,22 @@ func _setup_buttons() -> void:
 		btn.mouse_entered.connect(func():
 			arrow.visible = true
 			# hover: 顺滑放大到 1.12 (CUBIC 缓出, 先杀旧 tween 防连续 hover 抖)
-			var prev = btn.get_meta("scale_tw", null)
-			if prev != null and is_instance_valid(prev) and prev.is_valid(): prev.kill()
+			# 注意: get_meta(name, null) 不行 — Godot 把 null 默认值当"没给默认" → meta 不存在时报错.
+			# 必须先 has_meta 判断 (首次 hover 时还没设过这 meta).
+			if btn.has_meta("scale_tw"):
+				var prev = btn.get_meta("scale_tw")
+				if is_instance_valid(prev) and prev.is_valid(): prev.kill()
 			var tw := create_tween()
 			tw.tween_property(btn, "scale", Vector2(1.12, 1.12), 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			btn.set_meta("scale_tw", tw)
 		)
 		btn.mouse_exited.connect(func():
 			arrow.visible = false
-			var prev = btn.get_meta("scale_tw", null)
-			if prev != null and is_instance_valid(prev) and prev.is_valid(): prev.kill()
+			# 注意: get_meta(name, null) 不行 — Godot 把 null 默认值当"没给默认" → meta 不存在时报错.
+			# 必须先 has_meta 判断 (首次 hover 时还没设过这 meta).
+			if btn.has_meta("scale_tw"):
+				var prev = btn.get_meta("scale_tw")
+				if is_instance_valid(prev) and prev.is_valid(): prev.kill()
 			var tw := create_tween()
 			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			btn.set_meta("scale_tw", tw)
