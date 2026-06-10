@@ -45,6 +45,23 @@ func test_item_poll_unlocks() -> void:
 	assert_true(Achievements.is_unlocked("first_wood"), "拿到木头该解锁'伐木工'")
 
 
+func test_item_any_unlocks_on_any_match() -> void:
+	# 钓到任意一种鱼就解锁"渔获"
+	var main = MainScene.instantiate(); add_child_autofree(main)
+	main.boot_to_game()
+	await wait_frames(5)
+	var player = main.get_node("World").get_player()
+	player.get_node("PlayerInventory").pickup("tuna", 1)   # 鱼列表里的一种
+	Achievements._reset_for_test()
+	Achievements._poll_items()
+	assert_true(Achievements.is_unlocked("fish"), "拿到任一种鱼该解锁'渔获'")
+
+
+func test_player_death_event() -> void:
+	Achievements.fire("player_death")
+	assert_true(Achievements.is_unlocked("first_death"), "倒下该解锁'哎呀'")
+
+
 func test_save_load_roundtrip() -> void:
 	Achievements.unlock("diamond")
 	Achievements._save()

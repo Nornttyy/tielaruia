@@ -26,8 +26,18 @@ const _DEFS := [
 	{"id": "cook",         "name": "干饭人",     "desc": "做出一顿饭",       "item": "bread"},
 	{"id": "slime_hunter", "name": "史莱姆猎人", "desc": "打史莱姆拿到果冻", "item": "slime_jelly"},
 	{"id": "sky",          "name": "云端漫步",   "desc": "上到空岛拿到羽毛", "item": "feather"},
+	{"id": "wool",         "name": "薅羊毛",     "desc": "得到羊毛",         "item": "wool"},
+	{"id": "gold",         "name": "土豪",       "desc": "得到金锭",         "item": "gold_ingot"},
+	{"id": "torch",        "name": "点灯人",     "desc": "做出火把",         "item": "torch"},
+	{"id": "chest",        "name": "收纳控",     "desc": "做出箱子",         "item": "chest"},
+	{"id": "cloud_boots",  "name": "二段跳大师", "desc": "拿到云靴",         "item": "cloud_boots"},
+	{"id": "diamond_sword","name": "终极武器",   "desc": "做出钻石剑",       "item": "diamond_sword"},
+	{"id": "fish",         "name": "渔获",       "desc": "钓到一条鱼",       "item_any": ["salmon", "tuna", "octopus", "sea_urchin", "lobster", "eel", "sweet_shrimp", "scallop"]},
+	{"id": "armor",        "name": "全副武装",   "desc": "拿到一件护甲",     "item_any": ["copper_chest", "iron_chest", "silver_chest", "gold_chest", "diamond_chest", "skeleton_chest"]},
+	{"id": "mage",         "name": "见习法师",   "desc": "做出一把法杖",     "item_any": ["wood_staff", "iron_staff", "hell_staff"]},
 	{"id": "boss_slime",   "name": "屠王者",     "desc": "打赢史莱姆王",     "event": "boss_king_slime"},
 	{"id": "boss_skel",    "name": "骨王克星",   "desc": "打赢骷髅王",       "event": "boss_skeleton_king"},
+	{"id": "first_death",  "name": "哎呀",       "desc": "第一次倒下",       "event": "player_death"},
 ]
 
 var _unlocked: Dictionary = {}   # id → true
@@ -95,9 +105,17 @@ func _poll_items() -> void:
 	if inv == null or not inv.has_method("has_item"):
 		return
 	for d in _DEFS:
-		if d.has("item") and not _unlocked.has(d["id"]):
+		if _unlocked.has(d["id"]):
+			continue
+		if d.has("item"):
 			if inv.has_item(String(d["item"])):
 				unlock(String(d["id"]))
+		elif d.has("item_any"):
+			# 任意一种就算 (钓到任一种鱼 / 穿任一件盔甲 / 做任一把法杖)
+			for it in d["item_any"]:
+				if inv.has_item(String(it)):
+					unlock(String(d["id"]))
+					break
 
 
 func _def_of(id: String) -> Dictionary:

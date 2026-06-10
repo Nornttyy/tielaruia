@@ -88,6 +88,8 @@ func _check_lava_damage() -> void:
 				lava_loss, Color(1.0, 0.4, 0.2))
 		if current_health == 0:
 			died.emit()
+			if typeof(Achievements) != TYPE_NIL:
+				Achievements.fire("player_death")   # 成就: 第一次倒下
 
 
 func _get_chunk_manager() -> Node:
@@ -186,6 +188,8 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	health_changed.emit(current_health, MAX_HEALTH)
 	if current_health == 0:
 		died.emit()
+		if typeof(Achievements) != TYPE_NIL:
+			Achievements.fire("player_death")   # 成就: 第一次倒下
 	return true
 
 
