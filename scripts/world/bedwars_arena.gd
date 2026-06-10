@@ -11,6 +11,29 @@ const FLOOR_Y := 120          # 岛面行
 const SKY_CLEAR_TOP := 55     # 从这行往下清空 → 开口朝天 (有光)
 const VOID_BOTTOM := 150       # 清到这行 → 岛下面是虚空 (掉下去 = 死)
 
+# 每座岛 (每个"队") 一种颜色, 床上方插个彩旗标记 → 一眼分清谁的床
+const ISLAND_COLORS := [
+	Color8(231, 76, 60), Color8(52, 152, 219), Color8(46, 204, 113), Color8(241, 196, 15),
+	Color8(155, 89, 182), Color8(230, 126, 34), Color8(26, 188, 156), Color8(236, 240, 241),
+]
+
+
+# 第 i 座岛的中心列 (固定布局, 各端一致)
+static func island_center_col(i: int) -> int:
+	var step: int = (ISLAND_HALF * 2 + 1) + GAP
+	var total: int = N_ISLANDS * step
+	var left: int = -total / 2
+	return left + i * step + ISLAND_HALF
+
+
+# 某世界列 x 属于哪座岛 (在岛平台范围内返回岛号, 否则 -1)。判"是不是某人的床"用。
+static func island_of_col(col: int) -> int:
+	for i in N_ISLANDS:
+		var cx: int = island_center_col(i)
+		if absi(col - cx) <= ISLAND_HALF:
+			return i
+	return -1
+
 
 static func build(world) -> Dictionary:
 	if world == null or not world.has_method("_set_tile"):
@@ -30,11 +53,20 @@ static func build(world) -> Dictionary:
 			if wlayer != null:
 				wlayer.erase_cell(Vector2i(x, y))
 
+	# 彩色床标记的父节点 (重进同一世界不叠加)
+	var old_markers = world.get_node_or_null("BedwarsBedMarkers")
+	if old_markers != null:
+		old_markers.free()
+	var markers := Node2D.new()
+	markers.name = "BedwarsBedMarkers"
+	markers.z_index = 2
+	world.add_child(markers)
+
 	var spawns: Array = []
 	var iron_points: Array = []
 	var shop_points: Array = []
 	for i in N_ISLANDS:
-		var ix: int = left + i * step + ISLAND_HALF   # 岛中心列
+		var ix: int = island_center_col(i)   # 岛中心列
 		# 石平台 2 行
 		for d in range(-ISLAND_HALF, ISLAND_HALF + 1):
 			world._set_tile(ix + d, FLOOR_Y, Tiles.STONE)
@@ -42,6 +74,12 @@ static func build(world) -> Dictionary:
 		# 床 (床头 + 床尾) 摆在平台上
 		world._set_tile(ix, FLOOR_Y - 1, Tiles.BED)
 		world._set_tile(ix + 1, FLOOR_Y - 1, Tiles.BED_RIGHT)
+		# 床上方的彩色旗 (每座岛不同色 = 不同"队")
+		var flag := ColorRect.new()
+		flag.color = ISLAND_COLORS[i % ISLAND_COLORS.size()]
+		flag.size = Vector2(TILE_SIZE * 2.0, TILE_SIZE * 0.6)
+		flag.position = Vector2(float(ix) * TILE_SIZE, float(FLOOR_Y - 2) * TILE_SIZE - TILE_SIZE * 0.7)
+		markers.add_child(flag)
 		spawns.append(Vector2(float(ix) * TILE_SIZE + TILE_SIZE * 0.5, float(FLOOR_Y - 2) * TILE_SIZE))
 		iron_points.append(Vector2i(ix - 3, FLOOR_Y - 1))
 		shop_points.append(Vector2i(ix + 4, FLOOR_Y - 1))

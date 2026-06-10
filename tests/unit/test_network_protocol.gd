@@ -193,6 +193,13 @@ func test_route_hello_sets_room_mode() -> void:
 	assert_eq(nm.room_mode, "pvp", "client 收 hello 后知道在对战房")
 
 
+# 起床战争分岛: bw_slot → bw_slot_received 信号
+func test_route_bw_slot() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"bw_slot","pid":"P2","slot":3}', "HOST")
+	assert_signal_emitted_with_parameters(nm, "bw_slot_received", ["P2", 3])
+
+
 # 起床战争模式: is_bedwars + combat_enabled (对战房+起床房都能打)
 func test_bedwars_mode_and_combat_enabled() -> void:
 	nm.status = "connected"

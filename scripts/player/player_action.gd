@@ -644,6 +644,11 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 	# 砍床: 2 格宽 (BED 左 + BED_RIGHT 右). 砍任一半 → 联动消另一半 + 清复活点 + 只掉 1 床.
 	# (清复活点防老 bug: 不清的话复活时还指着已变空气的床位置, 玩家从天上掉下)
 	if tid == Tiles.BED or tid == Tiles.BED_RIGHT:
+		# 起床战争: 不能砸自己的床 (只能砸别人的)
+		if NetworkManager != null and NetworkManager.is_bedwars():
+			var bw_mgr: Node = get_tree().get_first_node_in_group("bedwars_manager")
+			if bw_mgr != null and bw_mgr.has_method("owns_bed_col") and bw_mgr.owns_bed_col(tile.x):
+				return   # 自己的床, 拦住
 		var bcm = world.get("chunk_manager")
 		if world.has_method("_set_tile") and bcm != null:
 			# 左砍消右 (x+1); 右砍消左 (x-1). 先确认那格真是另一半再消 (防误删邻居).
