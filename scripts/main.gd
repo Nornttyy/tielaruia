@@ -4,6 +4,7 @@
 extends Node
 
 const WorldScene = preload("res://scenes/world/world.tscn")
+const PvpArena = preload("res://scripts/world/pvp_arena.gd")   # 对战房专属竞技场生成
 const DebugHudScene = preload("res://scenes/ui/debug_hud.tscn")
 const FloatingPromptScene = preload("res://scenes/ui/floating_prompt.tscn")
 const HudScene = preload("res://scenes/ui/hud.tscn")
@@ -572,6 +573,11 @@ func _grant_starter_on_new_game() -> void:
 			var inv_node: Node = player.get_node_or_null("PlayerInventory")
 			if inv_node != null and inv_node.inventory != null:
 				_want_starter = false   # 先置, 防同帧重入
+				# 对战房: 盖专属竞技场 (固定布局, 各端本地生成同图) + 玩家挪到出生台
+				if NetworkManager != null and NetworkManager.is_pvp():
+					var arena_spawn: Vector2 = PvpArena.build(w)
+					if arena_spawn != Vector2.ZERO:
+						player.global_position = arena_spawn
 				# 角色系统: 老角色 (已有背包) 进新世界 → 带着角色的东西, 不发起步包;
 				# 全新角色 (背包空) → 照常发起步包 (随后 autosave 把它存进角色卡)。
 				# GUT 测试跳过 → 永远走起步包分支, 不被 current 残留影响。
