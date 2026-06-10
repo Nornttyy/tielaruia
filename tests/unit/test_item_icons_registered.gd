@@ -1,5 +1,19 @@
 extends GutTest
 
+const ItemsArt = preload("res://scripts/art/items_art.gd")
+
+
+# 全面守卫: 凡是 items_art 手画了图标 (_ICONS) 的物品, 运行时 ArtCache 都必须取得到。
+# ArtCache 有一份写死的注册清单, 加了图但漏加清单 → 背包/掉落空白 + "未知 item icon" warning。
+# (枪械就栽在这: 图在 _ICONS 里, 但忘了加 art_cache.gd 的清单。) 遍历所有手画图标兜底防再漏。
+func test_every_drawn_icon_registered_in_artcache():
+	var missing := []
+	for id in ItemsArt._ICONS.keys():
+		if ArtCache.get_inventory_icon(id) == null:
+			missing.append(id)
+	assert_eq(missing, [], "这些物品有手画图标但没在 ArtCache 清单注册 (运行时会空白): %s" % str(missing))
+
+
 # 回归守卫: 游戏里取物品图标走 ArtCache.get_inventory_icon (不是直接 ItemsArt.get_icon)。
 # ArtCache 有一份写死的 item_icons 清单, 漏加 → 背包/掉落没图 + console warning。
 # 这里把所有料理 + 钓鱼物品都断言"有图", 防再漏 (鱼竿没图就是栽在这)。

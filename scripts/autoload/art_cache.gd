@@ -291,6 +291,9 @@ func _build_items() -> void:
 			"grappling_hook",
 			"hell_fruit", "obsidian", "hell_stone",
 			"wood_bow", "wood_arrow", "hell_crystal_ingot", "hell_alloy_ingot",
+			# 枪械: 常规 4 + 特殊 3 + 手枪 + 子弹 (必须在这注册, 否则运行时 "未知 item icon")
+			"pistol", "bullet", "smg", "assault_rifle", "shotgun", "sniper",
+			"laser_gun", "flamethrower", "freeze_ray",
 			# 盔甲: 15 件 (5 tier × 3 件)
 			"copper_helmet", "copper_chest", "copper_pants",
 			"iron_helmet", "iron_chest", "iron_pants",
