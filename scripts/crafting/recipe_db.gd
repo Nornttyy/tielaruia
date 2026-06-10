@@ -829,6 +829,12 @@ const _RECIPES := [
 		"pattern": [["hell_crystal", "silver_ingot"]],
 		"output_id": "mana_potion", "output_count": 2, "mirror_ok": true,
 	},
+	# 生命药水: 2 苹果 + 1 史莱姆胶 (2x1, 徒手可合, 常见料). 出 2 瓶
+	{
+		"id": "health_potion", "grid_size": Vector2i(2, 1),
+		"pattern": [["apple", "slime_jelly"]],
+		"output_id": "health_potion", "output_count": 2, "mirror_ok": true,
+	},
 	# === 地狱武器 (tier 8): 3 alloy + 1 crystal (魔晶护手/装饰) + 2 planks (柄) ===
 	# 剑形: . X .  /  . X .  /  . X .  + crystal 当装饰
 	{
