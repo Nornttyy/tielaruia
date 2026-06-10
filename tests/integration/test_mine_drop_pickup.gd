@@ -94,3 +94,22 @@ func test_q_drop_empty_slot_noop():
 	var before: int = get_tree().get_nodes_in_group("item_drops").size()
 	assert_false(player._drop_one_selected(), "空格按 Q 应不丢")
 	assert_eq(get_tree().get_nodes_in_group("item_drops").size(), before, "空格不该生成掉落物")
+
+
+# 丢弃掉落物带初速度 (朝鼠标飞一小段): 非零 toss_velocity → _ready 用它当初速度
+func test_item_drop_uses_toss_velocity():
+	var scene = load("res://scenes/items/item_drop.tscn")
+	var drop = scene.instantiate()
+	drop.item_id = "dirt"
+	drop.toss_velocity = Vector2(140.0, -20.0)
+	add_child_autofree(drop)   # _ready 同步跑 (还没过物理帧, velocity 应=toss)
+	assert_eq(drop.velocity, Vector2(140.0, -20.0), "丢弃初速度该等于 toss_velocity")
+
+
+# 普通掉落 (挖矿/死亡, 没设 toss) 仍是随机弹跳 (y 初速度 -60), 不被改坏
+func test_item_drop_default_random_bounce():
+	var scene = load("res://scenes/items/item_drop.tscn")
+	var drop = scene.instantiate()
+	drop.item_id = "dirt"
+	add_child_autofree(drop)
+	assert_eq(drop.velocity.y, -60.0, "默认掉落 y 初速度 -60 (随机弹跳)")

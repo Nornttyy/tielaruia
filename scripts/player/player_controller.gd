@@ -6,6 +6,7 @@ const Chunk = preload("res://scripts/world/chunk.gd")
 const ItemsArt = preload("res://scripts/art/items_art.gd")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")   # 按 Q 丢弃用
 const DROP_REPEAT_INTERVAL := 0.18   # 按住 Q 连续丢的间隔 (秒)
+const DROP_TOSS_SPEED := 140.0       # 丢弃时朝鼠标方向飞出去的初速度 (px/s, 飞一小段)
 var _drop_timer: float = 0.0         # 距下次可丢的倒计时
 const CAVE_DEPTH_THRESHOLD := 10   # 玩家离原始地表 >10 格才算"地下" (即使顶上方块挖掉了)
 
@@ -149,15 +150,18 @@ func _drop_one_selected() -> bool:
 	var taken: int = pinv.consume_current(1)   # 从选中格扣 1, 发 inventory_changed 刷新 UI
 	if taken <= 0:
 		return false
-	# 丢到玩家身前一点 (朝当前朝向), 稍抬高像"扔出去"
-	var face: float = 1.0 if _facing_right else -1.0
-	var pos: Vector2 = global_position + Vector2(face * 10.0, -4.0)
-	_spawn_dropped_item(item_id, taken, pos)
+	# 朝鼠标方向扔出去一小段: 方向 = 玩家中心 → 鼠标. 鼠标贴着玩家时退回用当前朝向兜底.
+	var to_mouse: Vector2 = get_global_mouse_position() - global_position
+	var dir: Vector2 = to_mouse.normalized() if to_mouse.length() > 1.0 \
+		else Vector2(1.0 if _facing_right else -1.0, -0.3).normalized()
+	var pos: Vector2 = global_position + dir * 8.0 + Vector2(0, -4.0)
+	_spawn_dropped_item(item_id, taken, pos, dir * DROP_TOSS_SPEED)
 	return true
 
 
 # 生成掉落物 (照 player_action._spawn_drop: 联机 client 交 host 权威生成, 否则本地刷).
-func _spawn_dropped_item(item_id: String, count: int, pos: Vector2) -> void:
+# toss = 初速度 (朝鼠标飞一小段); 联机交 host 那条不带 toss (host 权威 spawn, 不同步这点视觉).
+func _spawn_dropped_item(item_id: String, count: int, pos: Vector2, toss: Vector2 = Vector2.ZERO) -> void:
 	if NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host:
 		NetworkManager.send_drop_request(item_id, count, pos.x, pos.y)
 		return
@@ -165,6 +169,7 @@ func _spawn_dropped_item(item_id: String, count: int, pos: Vector2) -> void:
 	drop.item_id = item_id
 	drop.count = count
 	drop.global_position = pos
+	drop.toss_velocity = toss   # _ready 里非零就用它当初速度 (在 add_child 前设, _ready 才读得到)
 	var entities: Node = get_tree().get_first_node_in_group("entities_root")
 	if entities == null:
 		entities = get_parent()

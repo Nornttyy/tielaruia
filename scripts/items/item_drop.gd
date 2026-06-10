@@ -13,6 +13,8 @@ const TILE_SIZE := 12
 # 联机: client 端的 remote drop 用 host 给的 ent_id (跨实例稳定 id),
 # host 端不需要预设 (用 entity_id_for(self) 自动算).
 @export var ent_id: int = 0
+# 非零 = 丢弃时给的初速度 (朝鼠标飞一小段). 为零则用默认随机弹跳 (挖矿/死亡掉落).
+@export var toss_velocity: Vector2 = Vector2.ZERO
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var lifetime: Timer = $Lifetime
@@ -29,8 +31,11 @@ func _ready() -> void:
 	lifetime.one_shot = true
 	lifetime.start()
 	lifetime.timeout.connect(queue_free)
-	# 初始随机弹跳动量
-	velocity = Vector2(randf_range(-22.0, 22.0), -60.0)
+	# 初速度: 丢弃 (toss_velocity 非零) 时朝鼠标飞一小段; 否则随机弹跳 (挖矿/死亡掉落)
+	if toss_velocity != Vector2.ZERO:
+		velocity = toss_velocity
+	else:
+		velocity = Vector2(randf_range(-22.0, 22.0), -60.0)
 	# 短暂延迟才可拾取；到时再扫一次已重叠的 body（玩家跟着掉落同帧重叠时
 	# body_entered 不会触发，需要主动检查）
 	get_tree().create_timer(PICKUP_DELAY).timeout.connect(_on_pickup_ready)
