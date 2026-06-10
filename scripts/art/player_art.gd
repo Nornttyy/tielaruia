@@ -369,9 +369,9 @@ static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 		"fall":     # 双腿张开
 			_put_leg(g, 4, _HIP, 4, leg, foot)
 			_put_leg(g, 10, _HIP, 4, leg, foot)
-		_:          # idle/hurt: 站立, 两腿稍分
+		_:          # idle/hurt: 站立, 两腿分开 (脚之间留空隙, 不挨着)
 			_put_leg(g, 5, _HIP, 4, leg, foot)
-			_put_leg(g, 8, _HIP, 4, leg, foot)
+			_put_leg(g, 9, _HIP, 4, leg, foot)
 	if ps == 2:
 		_place(g, _HIP - 1, 4, _SKIRT)   # 裙子盖胯+大腿上段, 裸腿露在裙下
 	return g
