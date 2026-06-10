@@ -175,17 +175,17 @@ func test_slider_change_updates_game_settings():
 func test_mp_settings_rows_exist_and_wire():
 	var mm = _make()
 	# 三个多人设置行都在
-	assert_not_null(mm.get_node_or_null("SettingsPanel/VBox/MpNamesRow/CheckBox"), "显示名字开关在")
-	assert_not_null(mm.get_node_or_null("SettingsPanel/VBox/MpChatRow/CheckBox"), "聊天开关在")
-	assert_not_null(mm.get_node_or_null("SettingsPanel/VBox/MpMaxRow/Slider"), "房间人数滑条在")
+	assert_not_null(mm.get_node_or_null("MultiplayerPanel/VBox/MpNamesRow/CheckBox"), "显示名字开关在")
+	assert_not_null(mm.get_node_or_null("MultiplayerPanel/VBox/MpChatRow/CheckBox"), "聊天开关在")
+	assert_not_null(mm.get_node_or_null("MultiplayerPanel/VBox/MpMaxRow/Slider"), "房间人数滑条在")
 	# 切名字开关 → 改 GameSettings
-	var names_cb: CheckBox = mm.get_node("SettingsPanel/VBox/MpNamesRow/CheckBox")
+	var names_cb: CheckBox = mm.get_node("MultiplayerPanel/VBox/MpNamesRow/CheckBox")
 	names_cb.button_pressed = false
 	names_cb.toggled.emit(false)
 	assert_false(GameSettings.mp_show_names, "关名字开关 → mp_show_names=false")
 	GameSettings.mp_show_names = true   # 恢复
 	# 房间人数滑条 → 改 mp_max_players
-	var sl: HSlider = mm.get_node("SettingsPanel/VBox/MpMaxRow/Slider")
+	var sl: HSlider = mm.get_node("MultiplayerPanel/VBox/MpMaxRow/Slider")
 	sl.value = 4.0
 	sl.value_changed.emit(4.0)
 	assert_eq(GameSettings.mp_max_players, 4, "滑条改房间人数")

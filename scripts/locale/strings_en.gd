@@ -14,7 +14,7 @@ const S := {
 	"settings_master_volume": "Volume",
 	"settings_camera_zoom": "Zoom",
 	"settings_scroll_zoom": "Scroll-wheel zoom",
-	"settings_mp_section": "Multiplayer",
+	"settings_mp_section": "Room Settings",
 	"settings_mp_show_names": "Show player names",
 	"settings_mp_chat": "Chat",
 	"settings_mp_max_players": "Max players / room",

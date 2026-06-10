@@ -117,11 +117,11 @@ func _refresh_localized_text() -> void:
 	$SettingsPanel/VBox/EnemyHpBarRow/Label.text = Locale.t("settings_enemy_hp_bar")
 	$SettingsPanel/VBox/EnemyHpNumberRow/Label.text = Locale.t("settings_enemy_hp_number")
 	$SettingsPanel/VBox/ScrollWheelRow/Label.text = Locale.t("settings_scroll_zoom")
-	$SettingsPanel/VBox/MpSectionLabel.text = Locale.t("settings_mp_section")
-	$SettingsPanel/VBox/MpNamesRow/Label.text = Locale.t("settings_mp_show_names")
-	$SettingsPanel/VBox/MpChatRow/Label.text = Locale.t("settings_mp_chat")
-	$SettingsPanel/VBox/MpMaxRow/Label.text = Locale.t("settings_mp_max_players")
-	$SettingsPanel/VBox/MpDiffRow/Label.text = Locale.t("settings_mp_difficulty")
+	$MultiplayerPanel/VBox/MpSectionLabel.text = Locale.t("settings_mp_section")
+	$MultiplayerPanel/VBox/MpNamesRow/Label.text = Locale.t("settings_mp_show_names")
+	$MultiplayerPanel/VBox/MpChatRow/Label.text = Locale.t("settings_mp_chat")
+	$MultiplayerPanel/VBox/MpMaxRow/Label.text = Locale.t("settings_mp_max_players")
+	$MultiplayerPanel/VBox/MpDiffRow/Label.text = Locale.t("settings_mp_difficulty")
 	$SettingsPanel/VBox/BackButton.text = Locale.t("settings_back")
 
 	# 世界选择面板
@@ -1129,21 +1129,21 @@ func _setup_settings_panel() -> void:
 	scroll_cb.button_pressed = GameSettings.scroll_wheel_zoom
 	scroll_cb.toggled.connect(func(p: bool): GameSettings.scroll_wheel_zoom = p)
 	# 多人游戏: 显示名字 / 聊天 开关 + 房间人数滑条
-	var names_cb: CheckBox = $SettingsPanel/VBox/MpNamesRow/CheckBox
+	var names_cb: CheckBox = $MultiplayerPanel/VBox/MpNamesRow/CheckBox
 	names_cb.button_pressed = GameSettings.mp_show_names
 	names_cb.toggled.connect(func(p: bool): GameSettings.mp_show_names = p)
-	var chat_cb: CheckBox = $SettingsPanel/VBox/MpChatRow/CheckBox
+	var chat_cb: CheckBox = $MultiplayerPanel/VBox/MpChatRow/CheckBox
 	chat_cb.button_pressed = GameSettings.mp_chat_enabled
 	chat_cb.toggled.connect(func(p: bool): GameSettings.mp_chat_enabled = p)
-	var max_slider: HSlider = $SettingsPanel/VBox/MpMaxRow/Slider
-	var max_value_label: Label = $SettingsPanel/VBox/MpMaxRow/Value
+	var max_slider: HSlider = $MultiplayerPanel/VBox/MpMaxRow/Slider
+	var max_value_label: Label = $MultiplayerPanel/VBox/MpMaxRow/Value
 	max_slider.value = GameSettings.mp_max_players
 	max_value_label.text = str(GameSettings.mp_max_players)
 	max_slider.value_changed.connect(func(v: float):
 		GameSettings.mp_max_players = int(v)
 		max_value_label.text = str(int(v)))
 	# 开房难度下拉 (简单/普通/困难). 我当 host 时这个难度同步给所有人。
-	var diff_opt: OptionButton = $SettingsPanel/VBox/MpDiffRow/OptionButton
+	var diff_opt: OptionButton = $MultiplayerPanel/VBox/MpDiffRow/OptionButton
 	diff_opt.clear()
 	diff_opt.add_item(Locale.t("newgame_difficulty_easy"))
 	diff_opt.add_item(Locale.t("newgame_difficulty_normal"))
