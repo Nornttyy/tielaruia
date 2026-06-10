@@ -15,10 +15,10 @@ const LERP_SPEED := 8.0   # 每秒收敛 8/s, 0.1s 内大致到位
 
 
 func _ready() -> void:
-	# 远程玩家暂用默认外观 (联机外观同步是后续, 见 spec 非目标). 加 modulate 偏色区分.
+	# 远程玩家用跟本地玩家一样的正常外观 (用户要求联机不给玩家染色). 靠头顶名字区分谁是谁.
 	_sprite.sprite_frames = ArtCache.player_frames
 	_sprite.play("idle")
-	_sprite.modulate = Color(0.7, 0.9, 1.0)  # 偏蓝, 跟本地玩家 (白) 区分
+	_sprite.modulate = Color.WHITE  # 不染色, 正常颜色
 	z_index = 1
 	add_to_group("remote_player")   # 聊天气泡靠这个组找到对方位置
 
@@ -59,14 +59,14 @@ func flash_hit() -> void:
 		return
 	_sprite.modulate = Color(1.0, 0.35, 0.35)
 	var tw := create_tween()
-	tw.tween_property(_sprite, "modulate", Color(0.7, 0.9, 1.0), 0.18)
+	tw.tween_property(_sprite, "modulate", Color.WHITE, 0.18)
 
 
-# 对方死亡 → 半透明灰"幽灵"; 复活 → 恢复偏蓝. 由 world 收到 pdead/pres 调.
+# 对方死亡 → 半透明"幽灵"(只调透明度, 不染色); 复活 → 恢复正常. 由 world 收到 pdead/pres 调.
 func set_dead(dead: bool) -> void:
 	if _sprite == null:
 		return
 	if dead:
-		_sprite.modulate = Color(0.6, 0.6, 0.7, 0.35)
+		_sprite.modulate = Color(1, 1, 1, 0.35)   # 只变淡 (死了), 不偏色
 	else:
-		_sprite.modulate = Color(0.7, 0.9, 1.0)  # 跟 _ready 一致的偏蓝
+		_sprite.modulate = Color.WHITE  # 跟 _ready 一致, 正常颜色
