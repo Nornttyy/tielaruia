@@ -100,9 +100,9 @@ const _HAIR_PONY := [
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
-	"Hhhhhhhh...hh.",
-	"Hhhhhhh.......",
-	".HHhhh........",
+	"HHhhhhhh...HH.",
+	"HHHhhhh.......",
+	".HHHhh........",
 	"..HHh.........",
 ]
 const _PONY_TAIL := [   # 后脑扎起垂下的一束 (拼在后脑外侧)
@@ -123,9 +123,9 @@ const _HAIR_AHOGE := [
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
-	"Hhhhhhhh...hh.",
-	"Hhhhhhh.......",
-	".HHhhh........",
+	"HHhhhhhh...HH.",
+	"HHHhhhh.......",
+	".HHHhh........",
 	"..HHh.........",
 ]
 
@@ -140,14 +140,14 @@ const _BACKLOCK_F := [
 	".H.",
 ]
 
-# 侧躯干 (衬衫 w / 阴影 D / 高光 c)。领口 D + 前缘高光 + 下摆。7 宽 × 6 高。
+# 侧躯干 (衬衫 w / 阴影 D / 高光 c)。领口 + 门襟中缝 + 后侧阴暗 + 前缘高光 + 下摆。7 宽 × 6 高。
 const _TORSO := [
 	".wwDww.",
-	"wwwwwwc",
-	"Dwwwwwc",
-	"Dwwwwwc",
-	"Dwwwwww",
-	".DwwwD.",
+	"DwwDwwc",
+	"DwwDwwc",
+	"DwwDwwc",
+	"DwwDwww",
+	".DwDwD.",
 ]
 # 手臂 (袖 w/D + 手 s/k), 垂下。2 宽 × 6 高。
 const _ARM := [
@@ -158,12 +158,12 @@ const _ARM := [
 	"ss",
 	"kk",
 ]
-# 单腿 (裤 b / 阴影 B / 高光 P 在前缘)。3 宽 × 4 高。
+# 单腿 (裤 b / 阴影 B / 高光 P)。外侧裤缝 B + 前缘高光 P + 裤脚深阴影。3 宽 × 4 高。
 const _LEG := [
-	"bbP",
-	"bbP",
 	"BbP",
-	"Bbb",
+	"BbP",
+	"BbP",
+	"BBb",
 ]
 # 侧鞋 (o / O / 高光 q)。鞋尖朝右 (前) + 鞋面高光 + 鞋带。5 宽 × 3 高。
 const _SHOE_B := [
@@ -282,9 +282,9 @@ static func _female_torso(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
 		".wwDww...",   # 肩 + 领口 (D)
-		"wwwwwwc..",   # 上胸 (前缘高光 c)
-		"wwwwwwc..",   # 中胸
-		"wwwwwwc..",   # 下胸
+		"DwwDwwc..",   # 上胸 (后阴暗 + 中缝 + 前缘高光 c)
+		"DwwDwwc..",   # 中胸
+		"DwwDwwc..",   # 下胸
 		".Dww.....",   # 腰 (超窄 = 明显沙漏)
 		"Dwwwww...",   # 胯 (外扩, 比腰宽一截)
 	]
