@@ -105,12 +105,13 @@ func _start_game(seed_or_opts = 0) -> void:
 	if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL:
 		CharacterManager.ensure_current()
 		if CharacterManager.current != null:
-			# 选角色 UI 还没上线 → 设置里的"玩家名"是唯一改名入口, 让它说了算。
-			# 把它写进当前角色存档; 否则下次进游戏角色里的旧名字会把它盖回去 (= 改名不生效 bug)。
-			var chosen: String = GameSettings.player_name
-			if chosen != "" and CharacterManager.current.character_name != chosen:
-				CharacterManager.current.character_name = chosen
-				CharacterManager.save_character(CharacterManager.current)
+			# 名字以"角色"为准 (捏人/选角色 UI 已是改名入口). 反向同步: 把角色名写进 GameSettings.player_name,
+			# 让聊天/击杀榜/死亡画面显示用角色名。
+			# (旧逻辑相反: 硬把角色改名成 player_name 再 save_character → 按新名存了文件却没删旧名档,
+			#  选角色界面就凭空多出一个副本角色. 见 character_manager.save_character 按名字存盘.)
+			var cname: String = CharacterManager.current.character_name
+			if cname != "" and "player_name" in GameSettings and GameSettings.player_name != cname:
+				GameSettings.player_name = cname
 	# 是否新游戏 (非继续): 决定发不发起步包 (此刻判, 因为 _pending_save_data 稍后会被清).
 	_want_starter = (_pending_save_data == null)
 	# 新游戏重置昼夜到早晨; 继续游戏稍后由 _apply_save_data 还原存档时间.
