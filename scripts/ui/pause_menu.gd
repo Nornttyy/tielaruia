@@ -81,9 +81,22 @@ func open() -> void:
 	_vbox.visible = true
 	_host_panel.visible = false
 	_refresh_creative_text()
+	_update_creative_availability()
+
+
+# 联机房 (生存房/对战房) 不让改游戏模式 — 大家得统一是生存, 不然有人创造飞天秒挖不公平.
+# 联机时直接把"创造模式"按钮藏掉.
+func _update_creative_availability() -> void:
+	if _creative_button == null:
+		return
+	var mp: bool = NetworkManager != null and NetworkManager.connected()
+	_creative_button.visible = not mp
 
 
 func _on_creative_pressed() -> void:
+	# 联机时禁止切游戏模式 (按钮本已藏, 这里再兜底防止信号被别处触发)
+	if NetworkManager != null and NetworkManager.connected():
+		return
 	if GameSettings != null:
 		GameSettings.creative_mode = not GameSettings.creative_mode
 	_refresh_creative_text()
