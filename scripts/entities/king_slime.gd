@@ -241,6 +241,9 @@ func _die() -> void:
 	# 联机: 通知 client 删掉它那只远程王 (漏发会让客机看到死掉的王卡住/残留)
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
+	# 成就: 打赢史莱姆王
+	if typeof(Achievements) != TYPE_NIL:
+		Achievements.fire("boss_king_slime")
 	# 掉 1 个 slime_ball + 一大堆 slime_jelly
 	_spawn_drop("slime_ball")
 	var n := JELLY_DROP_MIN + (randi() % (JELLY_DROP_MAX - JELLY_DROP_MIN + 1))

@@ -353,6 +353,9 @@ func _spawn_drop(item_id: String) -> void:
 
 func _die() -> void:
 	_is_dying = true
+	# 成就: 打赢骷髅王
+	if typeof(Achievements) != TYPE_NIL:
+		Achievements.fire("boss_skeleton_king")
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
 	# 必掉: 一大堆骨头 + 骨剑 (阔剑)

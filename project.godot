@@ -37,6 +37,7 @@ SfxBank="*res://scripts/audio/sfx_bank.gd"
 MusicBank="*res://scripts/audio/music_bank.gd"
 NetworkManager="*res://scripts/net/network_manager.gd"
 ChestStorage="*res://scripts/autoload/chest_storage.gd"
+Achievements="*res://scripts/autoload/achievements.gd"
 
 [display]
 
