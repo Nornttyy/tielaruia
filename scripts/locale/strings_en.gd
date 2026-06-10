@@ -55,7 +55,6 @@ const S := {
 	"mp_rooms_title": "Rooms",
 	"mp_public_survival": "Public Survival",
 	"mp_public_pvp": "Public PvP",
-	"mp_public_bedwars": "Bed Wars",
 	"mp_join_title": "Join Room",
 	"mp_entering_public": "Entering public room…",
 	"mp_room_code_prompt": "Enter the 6-digit room code from your friend",

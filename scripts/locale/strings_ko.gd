@@ -55,7 +55,6 @@ const S := {
 	"mp_rooms_title": "방",
 	"mp_public_survival": "공개 서바이벌",
 	"mp_public_pvp": "공개 대전",
-	"mp_public_bedwars": "침대 전쟁",
 	"mp_join_title": "방 참여",
 	"mp_entering_public": "공개 방 입장 중…",
 	"mp_room_code_prompt": "친구에게 받은 6자리 방 코드 입력",

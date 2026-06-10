@@ -193,39 +193,15 @@ func test_route_hello_sets_room_mode() -> void:
 	assert_eq(nm.room_mode, "pvp", "client 收 hello 后知道在对战房")
 
 
-# 起床战争分岛: bw_slot → bw_slot_received 信号
-func test_route_bw_slot() -> void:
-	watch_signals(nm)
-	nm._route_message('{"type":"bw_slot","pid":"P2","slot":3}', "HOST")
-	assert_signal_emitted_with_parameters(nm, "bw_slot_received", ["P2", 3])
-
-
-# 起床战争: 床破/出局/胜利 消息路由
-func test_route_bedwars_events() -> void:
-	watch_signals(nm)
-	nm._route_message('{"type":"bw_bed","slot":2}', "HOST")
-	assert_signal_emitted_with_parameters(nm, "bw_bed_broken", [2])
-	nm._route_message('{"type":"bw_out","pid":"P5"}', "HOST")
-	assert_signal_emitted_with_parameters(nm, "bw_out", ["P5"])
-	nm._route_message('{"type":"bw_win","pid":"P7"}', "HOST")
-	assert_signal_emitted_with_parameters(nm, "bw_win", ["P7"])
-
-
-# 起床战争模式: is_bedwars + combat_enabled (对战房+起床房都能打)
-func test_bedwars_mode_and_combat_enabled() -> void:
+# combat_enabled: 只对战房(pvp)能打人, 生存房不能
+func test_combat_enabled_pvp_only() -> void:
 	nm.status = "connected"
-	nm.room_mode = "bedwars"
-	assert_true(nm.is_bedwars(), "bedwars 模式")
-	assert_true(nm.combat_enabled(), "起床房能打人")
-	assert_false(nm.is_pvp(), "bedwars 不是 pvp")
 	nm.room_mode = "pvp"
 	assert_true(nm.combat_enabled(), "对战房能打人")
-	assert_false(nm.is_bedwars())
 	nm.room_mode = "survival"
 	assert_false(nm.combat_enabled(), "生存房不能打人")
 
 
-# 私人房创造模式: hello 带 creative, client 收到设 shared_world_creative
 func test_hello_creative_roundtrip() -> void:
 	nm.shared_world_creative = true
 	var data: Variant = JSON.parse_string(nm._hello_payload(1, 1, 1))
