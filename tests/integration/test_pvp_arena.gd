@@ -29,5 +29,7 @@ func test_arena_builds_floor_platforms_symmetric() -> void:
 		assert_eq(cm.get_tile(cx - d, fy - 4), cm.get_tile(cx + d, fy - 4), "平台关于中心对称 (d=%d)" % d)
 	# 空气墙节点已建 (防逃出)
 	assert_not_null(world.get_node_or_null("ArenaWalls"), "该有看不见的空气墙 ArenaWalls")
+	# 背景墙清掉了 (用户要求)
+	assert_eq(cm.get_wall(cx, fy - 10), Tiles.AIR, "竞技场背景墙该清空")
 	# 出生点返回非零
 	assert_ne(spawn, Vector2.ZERO, "该返回出生点坐标")

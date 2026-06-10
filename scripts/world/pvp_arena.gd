@@ -26,10 +26,17 @@ static func build(world) -> Vector2:
 	var cx: int = CENTER_X
 	var floor_y: int = FLOOR_Y
 
-	# 1. 清空: 从高处 (SKY_CLEAR_TOP) 一直清到地面下 → 开口朝天 (有光) + 去掉天然山丘
+	# 1. 清空: 从高处 (SKY_CLEAR_TOP) 一直清到地面下 → 开口朝天 (有光) + 去掉天然山丘。
+	#    顺手把背景墙也清掉 (用户要求"删背景墙" → 竞技场背景干净见天空)。
+	var cm = world.get("chunk_manager")
+	var wlayer = world.get("wall_layer")
 	for x in range(cx - HALF, cx + HALF + 1):
 		for y in range(SKY_CLEAR_TOP, floor_y + 3):
 			world._set_tile(x, y, Tiles.AIR)
+			if cm != null:
+				cm.set_wall(x, y, Tiles.AIR)         # 清背景墙数据
+			if wlayer != null:
+				wlayer.erase_cell(Vector2i(x, y))    # 清背景墙视觉
 
 	# 2. 地面: 2 行实心石, 全宽
 	for x in range(cx - HALF, cx + HALF + 1):
@@ -50,6 +57,13 @@ static func build(world) -> Vector2:
 
 	# 5. 空气墙 (看不见的碰撞墙): 左/右/顶 关住玩家, 防搭方块逃出竞技场
 	_build_air_walls(world, cx, floor_y)
+
+	# 6. 小地图开局就全探索完 (用户要求): 把竞技场整片标记成已探索, 不用走过去才显。
+	var mm = world.get("minimap_data")
+	if mm != null and cm != null:
+		for x in range(cx - HALF, cx + HALF + 1):
+			for y in range(CEIL_Y - 2, floor_y + 2):
+				mm.mark_one(cm, x, y)
 
 	# 出生点: 左侧出生台正上方
 	return Vector2(float(cx - 140) * TILE_SIZE + TILE_SIZE * 0.5, float(floor_y - 5) * TILE_SIZE)
