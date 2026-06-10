@@ -614,6 +614,8 @@ const _ZH_NAMES := {
 	"laser_gun": "激光枪",
 	"flamethrower": "火焰喷射器",
 	"freeze_ray": "冰冻枪",
+	"arcane_gun": "追踪魔弹枪",
+	"poison_gun": "毒液枪",
 	"bullet": "子弹",
 	"hell_crystal_ingot": "魔晶锭",
 	"hell_alloy_ore": "地狱合金矿",

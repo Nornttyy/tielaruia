@@ -104,6 +104,9 @@ const _DEFS := {
 	"laser_gun":     {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.3, "gun_damage": 8, "bullet_speed": 900, "gun_pierce": true, "gun_visual": "laser"},  # 激光: 穿透一排怪
 	"flamethrower":  {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.05, "gun_damage": 3, "bullet_speed": 260, "gun_spread_deg": 18.0, "gun_pierce": true, "gun_visual": "fire", "bullet_lifetime": 0.28},  # 火焰: 近距连续烧
 	"freeze_ray":    {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.4, "gun_damage": 5, "bullet_speed": 480, "gun_visual": "ice", "gun_slow_factor": 0.4, "gun_slow_dur": 2.5},  # 冰冻: 命中减速
+	# 魔法枪 (耗魔力 mana_cost, 不耗子弹): 追踪 / 毒
+	"arcane_gun":    {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8, "gun_cooldown": 0.35, "gun_damage": 12, "bullet_speed": 420, "gun_visual": "magic", "gun_homing": 6.0},  # 追踪魔弹: 自动追怪
+	"poison_gun":    {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 6, "gun_cooldown": 0.3, "gun_damage": 4, "bullet_speed": 480, "gun_visual": "poison", "gun_dot_dps": 6, "gun_dot_dur": 4.0},  # 毒液: 命中中毒持续掉血
 	"bullet":        {"placeable_tile_id": -1, "tool_kind": "",    "tool_tier": 0, "max_stack": 99},
 	# === 地狱矿石 ===
 	"hell_crystal_ingot": {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},

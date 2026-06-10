@@ -976,6 +976,30 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": false,
 	},
+	# 追踪魔弹枪 (魔法): 钻石(魔法焦点) + 银 + 铁 + 木握把
+	{
+		"id": "arcane_gun",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["diamond",      "silver_ingot", "iron_ingot"],
+			["",             "planks",       ""],
+		],
+		"output_id": "arcane_gun",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 毒液枪 (魔法): 史莱姆冻(毒液) + 铁枪身 + 木握把
+	{
+		"id": "poison_gun",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["slime_jelly", "slime_jelly", "iron_ingot"],
+			["",            "planks",      ""],
+		],
+		"output_id": "poison_gun",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
 	# === 锤子 (破墙): 形状 X X X / X X . / . X . (区别于镐 XXX/.X./.X. 和斧 XX./XX./.X.)
 	# 头=材质, 柄=planks. 木锤全 planks 也不撞木镐 (silhouette 不同).
 	{

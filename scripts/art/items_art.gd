@@ -902,6 +902,46 @@ const _FREEZE_RAY := [
 	"................",
 ]
 
+# 追踪魔弹枪 icon: 灰枪身 + 顶上品红魔法球(M/m) + 木握把. 一眼是魔法枪.
+const _ARCANE_GUN := [
+	"................",
+	"................",
+	"......nMn.......",
+	".....nMMMn......",
+	".....nMmMn..nnn.",
+	"...nnnMMMnnBBBn.",
+	"..nBBBBBBBBBBn..",
+	"..nKKnnKnnnnn...",
+	".nhHHn.nn.......",
+	".nhHHHn.........",
+	".nhHHn..........",
+	"..nnn...........",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
+# 毒液枪 icon: 灰枪身 + 下方绿色毒液罐(o/O 史莱姆绿) + 握把. 一眼是毒.
+const _POISON_GUN := [
+	"................",
+	"................",
+	"....nnnnnn......",
+	"...nBBBBBn.nnn..",
+	"...nBKKKBnnBBn..",
+	"...nBKKKBnnnn...",
+	"..nhBKBn........",
+	"..nhhhn.........",
+	".nooOon.........",
+	".noOOOn.........",
+	".noOOon.........",
+	"..nooon.........",
+	"...nnn..........",
+	"................",
+	"................",
+	"................",
+]
+
 # 火果 icon: 圆果红身 + 棕枝 + 绿叶 + 高光. 用 items_art PALETTE: A=苹果红, a=红高光, m=暗红影, S=棕梗, L=绿叶, n=黑描边, y=沙黄高光.
 const _HELL_FRUIT_ICON := [
 	"................",
@@ -1393,6 +1433,26 @@ const _MANA_POTION := [
 	"....nNNNNNNn....",
 	"....nNNNNNNn....",
 	".....nNNNNn.....",
+	".....nnnnn......",
+	"................",
+]
+
+# 生命药水: 同瓶形, 红色液体 (A=苹果红基, a=红高光, m=暗红影), 跟魔力药水蓝色区分.
+const _HEALTH_POTION := [
+	"................",
+	"......nhhn......",
+	"......nhhn......",
+	".....nAAAAn.....",
+	".....nAaAAn.....",
+	"....nAAmmAAn....",
+	"....nAmmmmAn....",
+	"....nAmAmmAn....",
+	"....nAAmmmAn....",
+	"....nAmmmAAn....",
+	"....nAmmAmAn....",
+	"....nAAAAAAn....",
+	"....nAAAAAAn....",
+	".....nAAAAn.....",
 	".....nnnnn......",
 	"................",
 ]
@@ -2351,6 +2411,7 @@ const _ICONS := {
 	"hell_staff": _HELL_STAFF,
 	"wood_staff": _WOOD_STAFF, "iron_staff": _IRON_STAFF,
 	"mana_potion": _MANA_POTION,
+	"health_potion": _HEALTH_POTION,
 	"wood_bow": _WOOD_BOW,
 	"wood_arrow": _WOOD_ARROW,
 	"pistol": _PISTOL,
@@ -2361,6 +2422,8 @@ const _ICONS := {
 	"laser_gun": _LASER_GUN,
 	"flamethrower": _FLAMETHROWER,
 	"freeze_ray": _FREEZE_RAY,
+	"arcane_gun": _ARCANE_GUN,
+	"poison_gun": _POISON_GUN,
 	"bullet": _BULLET,
 	"slime_crown": _SLIME_CROWN,
 	"slime_ball": _SLIME_BALL,

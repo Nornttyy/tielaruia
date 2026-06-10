@@ -80,6 +80,11 @@ var _is_provoked: bool = false
 # 冰冻减速: 1.0=正常, <1=被冰冻枪打中变慢 (跳得矮/近/少). _slow_t 倒计时, 到 0 恢复.
 var _slow_mult: float = 1.0
 var _slow_t: float = 0.0
+# 中毒 (毒液枪): 每 POISON_TICK 秒掉 _poison_dps×tick 血, 持续 _poison_t 秒.
+const POISON_TICK := 0.5
+var _poison_dps: int = 0
+var _poison_t: float = 0.0
+var _poison_tick_t: float = 0.0
 
 
 func _is_hostile() -> bool:
@@ -90,6 +95,12 @@ func _is_hostile() -> bool:
 func apply_slow(factor: float, dur: float) -> void:
 	_slow_mult = min(_slow_mult, clampf(factor, 0.15, 1.0))
 	_slow_t = max(_slow_t, dur)
+
+
+# 毒液枪命中: 上毒, 每秒掉 dps 血, 持续 dur 秒. 多次命中取更毒/更久.
+func apply_poison(dps: int, dur: float) -> void:
+	_poison_dps = max(_poison_dps, dps)
+	_poison_t = max(_poison_t, dur)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -185,6 +196,15 @@ func _physics_process(delta: float) -> void:
 				sprite.modulate = _base_tint   # 解冻 → 恢复本色
 		elif _hit_flash <= 0.0 and sprite != null:
 			sprite.modulate = _base_tint * Color(0.55, 0.8, 1.5)  # 冻住时偏冰蓝
+	# 中毒: 每 POISON_TICK 秒掉一截血 (毒液枪). take_damage 自带受击闪光当反馈.
+	if _poison_t > 0.0:
+		_poison_t -= delta
+		_poison_tick_t -= delta
+		if _poison_tick_t <= 0.0:
+			_poison_tick_t = POISON_TICK
+			take_damage(max(1, int(round(_poison_dps * POISON_TICK))), global_position)
+		if _poison_t <= 0.0:
+			_poison_dps = 0
 
 	# 史莱姆怕水: 碰到水继续正常重力下沉 + 每 0.5s 扣 1 HP (玩家可用水陷阱杀)
 	var in_water: bool = _is_in_water()

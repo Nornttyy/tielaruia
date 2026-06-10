@@ -19,8 +19,12 @@ var _shooter: Node = null       # 谁射的 (玩家), 避免自伤
 var pierce: bool = false        # true=命中不消失, 继续飞穿过去 (激光枪)
 var slow_factor: float = 0.0    # >0=命中给怪减速到此倍率 (冰冻枪)
 var slow_dur: float = 0.0
-var _visual: String = "bullet"  # bullet / laser / fire / ice → 选不同贴图
+var _visual: String = "bullet"  # bullet / laser / fire / ice / magic / poison → 选不同贴图
 var _hit_ids: Dictionary = {}   # 穿透时记下已命中的怪, 同一只不重复打
+# 魔法机制 (从 opts 读): 追踪 / 毒
+var homing: float = 0.0         # >0 = 每秒朝最近怪转向 homing 弧度 (追踪魔弹枪)
+var dot_dps: int = 0            # >0 = 命中给怪上毒, 每秒掉 dot_dps 血 (毒液枪)
+var dot_dur: float = 0.0
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -34,6 +38,9 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, spe
 	slow_factor = float(opts.get("slow_factor", 0.0))
 	slow_dur = float(opts.get("slow_dur", 0.0))
 	_visual = String(opts.get("visual", "bullet"))
+	homing = float(opts.get("homing", 0.0))
+	dot_dps = int(opts.get("dot_dps", 0))
+	dot_dur = float(opts.get("dot_dur", 0.0))
 	var lt: float = float(opts.get("lifetime", 0.0))
 	if lt > 0.0:
 		_lifetime = lt
@@ -50,9 +57,11 @@ func _apply_visual() -> void:
 		return
 	var frames: SpriteFrames = null
 	match _visual:
-		"laser": frames = ArtCache.laser_proj_frames
-		"fire":  frames = ArtCache.fireball_frames      # 火焰喷射器复用火球粒子
-		"ice":   frames = ArtCache.spell_frames_ice     # 冰冻枪复用蓝色冰弹
+		"laser":  frames = ArtCache.laser_proj_frames
+		"fire":   frames = ArtCache.fireball_frames      # 火焰喷射器复用火球粒子
+		"ice":    frames = ArtCache.spell_frames_ice     # 冰冻枪复用蓝色冰弹
+		"magic":  frames = ArtCache.magic_proj_frames    # 追踪魔弹枪: 紫色奥术弹
+		"poison": frames = ArtCache.spell_frames_nature  # 毒液枪复用绿色自然弹
 	if frames == null:
 		return
 	sprite.sprite_frames = frames
@@ -75,6 +84,16 @@ func _physics_process(delta: float) -> void:
 	if _life_t >= _lifetime:
 		_destroy()
 		return
+	# 追踪: 每帧把速度方向朝最近的怪转 homing*delta 弧度 (保持速率不变)
+	if homing > 0.0:
+		var tgt: Node2D = _nearest_enemy()
+		if tgt != null:
+			var want: Vector2 = (tgt.global_position - global_position)
+			if want.length() > 0.01:
+				var cur_ang: float = velocity.angle()
+				var new_ang: float = cur_ang + clampf(angle_difference(cur_ang, want.angle()), -homing * delta, homing * delta)
+				velocity = Vector2(cos(new_ang), sin(new_ang)) * velocity.length()
+				rotation = new_ang
 	# 注意: 没有 velocity.y += GRAVITY — 子弹笔直飞, 不下坠 (跟箭最大区别)
 	var next: Vector2 = global_position + velocity * delta
 	var cm = _get_cm()
@@ -120,11 +139,29 @@ func _check_enemy_hit() -> void:
 				# 冰冻枪: 命中给怪减速 (本地权威端才挂; 联机对端 host 各管各的)
 				if slow_factor > 0.0 and enemy.has_method("apply_slow"):
 					enemy.apply_slow(slow_factor, slow_dur)
+				# 毒液枪: 命中给怪上毒 (持续掉血)
+				if dot_dps > 0 and enemy.has_method("apply_poison"):
+					enemy.apply_poison(dot_dps, dot_dur)
 			if not pierce:
 				_destroy()
 				return
 			# pierce (激光): 不销毁, 继续飞, 可同帧/后续帧再命中别的怪
 
+
+
+# 找最近的怪 (slimes + animals), 给追踪用. 没有则 null.
+func _nearest_enemy() -> Node2D:
+	var best: Node2D = null
+	var best_d: float = INF
+	for group in ["slimes", "animals"]:
+		for e in get_tree().get_nodes_in_group(group):
+			if e == _shooter or not is_instance_valid(e) or not e is Node2D:
+				continue
+			var d: float = global_position.distance_to((e as Node2D).global_position)
+			if d < best_d:
+				best_d = d
+				best = e
+	return best
 
 func _destroy() -> void:
 	if _is_dead:

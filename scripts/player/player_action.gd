@@ -1801,13 +1801,22 @@ func _try_fire_gun() -> void:
 	var inv: Node = _inventory_node()
 	if inv == null:
 		return
-	var consumed: bool = false
-	if inv.has_method("consume_first"):
-		consumed = inv.consume_first("bullet", 1)   # 一次扣 1 发 (霰弹也只 1 发, 出 N 弹丸, 划算)
-	if not consumed:
-		return
-	# 每把枪自带参数 (从 item def 读); 没配的用手枪默认值. 加新枪只改 item_db, 不动这里.
+	# 先读 def 决定弹药来源: 魔法枪 (有 mana_cost) 耗魔力不耗子弹; 普通枪耗 1 发子弹.
 	var def: Variant = _current_tool_def()
+	var mana_cost: int = int(def.get("mana_cost", 0)) if def != null else 0
+	if mana_cost > 0:
+		var mana_n: Node = get_parent().get_node_or_null("PlayerMana")
+		if mana_n == null or not mana_n.has_method("try_consume"):
+			return
+		if not mana_n.try_consume(mana_cost):
+			return   # 魔力不够 → 不发, 不进 cooldown
+	else:
+		var consumed: bool = false
+		if inv.has_method("consume_first"):
+			consumed = inv.consume_first("bullet", 1)   # 一次扣 1 发 (霰弹也只 1 发, 出 N 弹丸, 划算)
+		if not consumed:
+			return
+	# 每把枪自带参数 (从 item def 读); 没配的用手枪默认值. 加新枪只改 item_db, 不动这里.
 	var cd: float = float(def.get("gun_cooldown", GUN_COOLDOWN)) if def != null else GUN_COOLDOWN
 	var base_dmg: int = int(def.get("gun_damage", GUN_BULLET_DAMAGE)) if def != null else GUN_BULLET_DAMAGE
 	var pellets: int = int(def.get("gun_pellets", 1)) if def != null else 1
@@ -1825,6 +1834,12 @@ func _try_fire_gun() -> void:
 			opts["visual"] = String(def.get("gun_visual"))
 		if def.has("bullet_lifetime"):
 			opts["lifetime"] = float(def.get("bullet_lifetime"))
+		# 魔法机制: 追踪 (每帧转向最近怪) / 毒 (命中持续掉血)
+		if def.has("gun_homing"):
+			opts["homing"] = float(def.get("gun_homing"))
+		if def.has("gun_dot_dps"):
+			opts["dot_dps"] = int(def.get("gun_dot_dps"))
+			opts["dot_dur"] = float(def.get("gun_dot_dur", 3.0))
 	_attack_cooldown = cd
 	var parent: Node2D = get_parent() as Node2D
 	if parent == null:

@@ -31,6 +31,7 @@ const FireballArt = preload("res://scripts/art/fireball_art.gd")
 const ArrowProjArt = preload("res://scripts/art/arrow_proj_art.gd")
 const BulletProjArt = preload("res://scripts/art/bullet_proj_art.gd")
 const LaserProjArt = preload("res://scripts/art/laser_proj_art.gd")
+const MagicProjArt = preload("res://scripts/art/magic_proj_art.gd")
 const MummyArt = preload("res://scripts/art/mummy_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
@@ -59,6 +60,7 @@ var spell_frames_nature: SpriteFrames   # 木法杖绿弹
 var arrow_proj_frames: SpriteFrames
 var bullet_proj_frames: SpriteFrames
 var laser_proj_frames: SpriteFrames
+var magic_proj_frames: SpriteFrames
 var mummy_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
@@ -294,13 +296,14 @@ func _build_items() -> void:
 			# 枪械: 常规 4 + 特殊 3 + 手枪 + 子弹 (必须在这注册, 否则运行时 "未知 item icon")
 			"pistol", "bullet", "smg", "assault_rifle", "shotgun", "sniper",
 			"laser_gun", "flamethrower", "freeze_ray",
+			"arcane_gun", "poison_gun",   # 魔法枪 (耗魔力)
 			# 盔甲: 15 件 (5 tier × 3 件)
 			"copper_helmet", "copper_chest", "copper_pants",
 			"iron_helmet", "iron_chest", "iron_pants",
 			"silver_helmet", "silver_chest", "silver_pants",
 			"gold_helmet", "gold_chest", "gold_pants",
 			"diamond_helmet", "diamond_chest", "diamond_pants",
-			"hell_staff", "wood_staff", "iron_staff", "mana_potion",
+			"hell_staff", "wood_staff", "iron_staff", "mana_potion", "health_potion",
 			# 用户加: 小麦 / 种子 之前漏了, 收割掉地没图
 			"wheat", "wheat_seed",
 			# 史莱姆王 Boss 掉落 + 合成材料
@@ -375,6 +378,8 @@ func _build_entities() -> void:
 	bullet_proj_frames = BulletProjArt.build_sprite_frames()
 	# 激光投射物 (激光枪用, 穿透)
 	laser_proj_frames = LaserProjArt.build_sprite_frames()
+	# 奥术魔弹 (追踪魔弹枪用, 紫色追踪)
+	magic_proj_frames = MagicProjArt.build_sprite_frames()
 	# 木乃伊: 金字塔守卫
 	mummy_frames = MummyArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)
