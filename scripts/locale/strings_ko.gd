@@ -18,6 +18,7 @@ const S := {
 	"settings_mp_show_names": "플레이어 이름 표시",
 	"settings_mp_chat": "채팅",
 	"settings_mp_max_players": "방 최대 인원",
+	"settings_mp_difficulty": "방 난이도",
 	"settings_player_name": "플레이어 이름",
 	"settings_player_name_placeholder": "플레이어",
 	"settings_enemy_hp_bar": "적 HP 바",

@@ -18,6 +18,7 @@ const S := {
 	"settings_mp_show_names": "プレイヤー名を表示",
 	"settings_mp_chat": "チャット",
 	"settings_mp_max_players": "部屋の最大人数",
+	"settings_mp_difficulty": "ホスト難易度",
 	"settings_player_name": "プレイヤー名",
 	"settings_player_name_placeholder": "プレイヤー",
 	"settings_enemy_hp_bar": "敵のHPバー",

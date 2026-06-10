@@ -121,6 +121,7 @@ func _refresh_localized_text() -> void:
 	$SettingsPanel/VBox/MpNamesRow/Label.text = Locale.t("settings_mp_show_names")
 	$SettingsPanel/VBox/MpChatRow/Label.text = Locale.t("settings_mp_chat")
 	$SettingsPanel/VBox/MpMaxRow/Label.text = Locale.t("settings_mp_max_players")
+	$SettingsPanel/VBox/MpDiffRow/Label.text = Locale.t("settings_mp_difficulty")
 	$SettingsPanel/VBox/BackButton.text = Locale.t("settings_back")
 
 	# 世界选择面板
@@ -1011,7 +1012,7 @@ func _on_public_pvp_pressed() -> void:
 # 真·进公共房 (选完角色后调). tag = "SV" 生存 / "PVP" 对战.
 func _do_enter_public(tag: String) -> void:
 	_entering_public = true
-	NetworkManager.enter_public(tag, MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, MpRooms.PUBLIC_SV_DIFF)
+	NetworkManager.enter_public(tag, MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, GameSettings.mp_host_difficulty)
 	$MultiplayerPanel.visible = true   # 重新露出面板显示"正在进入"状态
 	$MultiplayerPanel/VBox/StatusLabel.text = Locale.t("mp_entering_public")
 	_refresh_multiplayer_status()
@@ -1022,7 +1023,7 @@ func _on_mp_status_changed(_s: String) -> void:
 	# client 不在这里进: 它要等 host 的 hello (见 _on_mp_hello_received) 拿到一致 seed.
 	if _entering_public and NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		_entering_public = false
-		_start_multiplayer_game(MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, MpRooms.PUBLIC_SV_DIFF)
+		_start_multiplayer_game(MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, GameSettings.mp_host_difficulty)
 		return
 	_refresh_multiplayer_status()
 
@@ -1132,6 +1133,14 @@ func _setup_settings_panel() -> void:
 	max_slider.value_changed.connect(func(v: float):
 		GameSettings.mp_max_players = int(v)
 		max_value_label.text = str(int(v)))
+	# 开房难度下拉 (简单/普通/困难). 我当 host 时这个难度同步给所有人。
+	var diff_opt: OptionButton = $SettingsPanel/VBox/MpDiffRow/OptionButton
+	diff_opt.clear()
+	diff_opt.add_item(Locale.t("newgame_difficulty_easy"))
+	diff_opt.add_item(Locale.t("newgame_difficulty_normal"))
+	diff_opt.add_item(Locale.t("newgame_difficulty_hard"))
+	diff_opt.selected = clampi(GameSettings.mp_host_difficulty, 0, 2)
+	diff_opt.item_selected.connect(func(idx: int): GameSettings.mp_host_difficulty = idx)
 	_apply_button_style(back_btn)
 	back_btn.pressed.connect(_on_settings_back_pressed)
 

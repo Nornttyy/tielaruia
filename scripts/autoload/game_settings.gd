@@ -166,6 +166,13 @@ var mp_max_players: int = 8:
 		if mp_max_players == c: return
 		mp_max_players = c
 		_save()
+# 我开房时的难度 (0简/1普/2难). 我当 host → 这个难度同步给所有人 (经 hello)。
+var mp_host_difficulty: int = 1:
+	set(v):
+		var c: int = clampi(v, 0, 2)
+		if mp_host_difficulty == c: return
+		mp_host_difficulty = c
+		_save()
 
 
 # 难度对玩家受伤的乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x
@@ -216,6 +223,7 @@ func _save() -> void:
 	cfg.set_value("mp", "show_names", mp_show_names)
 	cfg.set_value("mp", "chat_enabled", mp_chat_enabled)
 	cfg.set_value("mp", "max_players", mp_max_players)
+	cfg.set_value("mp", "host_difficulty", mp_host_difficulty)
 	cfg.save(SETTINGS_PATH)
 
 
@@ -243,3 +251,4 @@ func _load() -> void:
 	mp_show_names = bool(cfg.get_value("mp", "show_names", true))
 	mp_chat_enabled = bool(cfg.get_value("mp", "chat_enabled", true))
 	mp_max_players = clampi(int(cfg.get_value("mp", "max_players", 8)), 2, 8)
+	mp_host_difficulty = clampi(int(cfg.get_value("mp", "host_difficulty", 1)), 0, 2)

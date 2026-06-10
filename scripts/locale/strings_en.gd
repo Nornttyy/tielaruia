@@ -18,6 +18,7 @@ const S := {
 	"settings_mp_show_names": "Show player names",
 	"settings_mp_chat": "Chat",
 	"settings_mp_max_players": "Max players / room",
+	"settings_mp_difficulty": "Host difficulty",
 	"settings_player_name": "Player Name",
 	"settings_player_name_placeholder": "Player",
 	"settings_enemy_hp_bar": "Enemy HP Bar",

@@ -22,6 +22,7 @@ const S := {
 	"settings_mp_show_names": "显示玩家名字",
 	"settings_mp_chat": "聊天",
 	"settings_mp_max_players": "房间最多人数",
+	"settings_mp_difficulty": "开房难度",
 	"settings_player_name": "玩家名",
 	"settings_player_name_placeholder": "玩家",
 	"settings_enemy_hp_bar": "怪物血条",
