@@ -934,6 +934,42 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": false,
 	},
+	# 激光枪: 银枪身 + 铁 + 钻石(透镜) + 木握把 → 穿透
+	{
+		"id": "laser_gun",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["silver_ingot", "iron_ingot", "diamond"],
+			["",             "planks",     ""],
+		],
+		"output_id": "laser_gun",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 火焰喷射器: 铁枪管 + 双煤(燃料) → 喷火
+	{
+		"id": "flamethrower",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["iron_ingot", "iron_ingot", "iron_ingot"],
+			["coal",       "coal",       ""],
+		],
+		"output_id": "flamethrower",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 冰冻枪: 钻石(冰晶) + 铁枪身 + 右下木握把 → 减速
+	{
+		"id": "freeze_ray",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["diamond",    "iron_ingot", "iron_ingot"],
+			["",           "",           "planks"],
+		],
+		"output_id": "freeze_ray",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
 	# === 锤子 (破墙): 形状 X X X / X X . / . X . (区别于镐 XXX/.X./.X. 和斧 XX./XX./.X.)
 	# 头=材质, 柄=planks. 木锤全 planks 也不撞木镐 (silhouette 不同).
 	{
