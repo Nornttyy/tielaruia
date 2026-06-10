@@ -303,15 +303,15 @@ static func _female_torso(cs: int) -> Array:
 
 static func _arm_layer(ap: Dictionary, pose: String, dy: int) -> Array:
 	var g := _blank()
-	# 默认 (idle/hurt): 垂在躯干前 (右)。走路前后摆; 跳/落抬高。
+	# 默认 (idle/hurt): 垂在躯干中间 (用户要求手放中间)。走路前后摆; 跳/落抬高。
 	var top := 13
-	var left := 10
+	var left := 8
 	match pose:
-		"walk_a": left = 11; top = 13   # 手向前
-		"walk_c": left = 9;  top = 14   # 手向后
-		"jump":   left = 10; top = 11   # 抬手
-		"fall":   left = 11; top = 11
-		"hurt":   left = 10; top = 11
+		"walk_a": left = 9;  top = 13   # 手向前
+		"walk_c": left = 7;  top = 14   # 手向后
+		"jump":   left = 8;  top = 11   # 抬手
+		"fall":   left = 9;  top = 11
+		"hurt":   left = 8;  top = 11
 	var ss := int(ap.get("shirt_style", 0))
 	var arm: Array = _ARM_BARE if (ss == 1 or ss == 6) else _ARM   # 背心/泳衣 露胳膊
 	_place(g, top + dy, left, arm)
