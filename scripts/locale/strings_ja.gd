@@ -14,6 +14,7 @@ const S := {
 	"settings_master_volume": "音量",
 	"settings_camera_zoom": "カメラ",
 	"settings_scroll_zoom": "ホイールでズーム",
+	"settings_continuous_place": "連続設置",
 	"settings_mp_section": "ルーム設定",
 	"settings_mp_show_names": "プレイヤー名を表示",
 	"settings_mp_chat": "チャット",

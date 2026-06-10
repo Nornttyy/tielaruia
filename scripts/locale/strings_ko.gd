@@ -14,6 +14,7 @@ const S := {
 	"settings_master_volume": "마스터 볼륨",
 	"settings_camera_zoom": "카메라",
 	"settings_scroll_zoom": "휠로 줌",
+	"settings_continuous_place": "연속 설치",
 	"settings_mp_section": "방 설정",
 	"settings_mp_show_names": "플레이어 이름 표시",
 	"settings_mp_chat": "채팅",

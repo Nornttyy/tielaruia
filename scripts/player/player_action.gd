@@ -1084,6 +1084,10 @@ func _effective_sword_damage() -> int:
 	return max(1, int(round(float(base) * dmg_mult)))
 
 
+const PLACE_HOLD_INTERVAL := 0.13   # 连续放置时每隔多久放一个 (按住右键)
+var _place_hold_cd: float = 0.0
+
+
 func _update_eat_or_place(delta: float) -> void:
 	# 优先级: place_override (测试) → 进食 → 放置
 	if place_override:
@@ -1271,10 +1275,16 @@ func _update_eat_or_place(delta: float) -> void:
 		_eat_item_id = ""
 		_stop_eat_anim()
 
-	# 退回放置逻辑（与原行为一致）
+	# 放置: 单击放一个; "连续放置"设置开 + 按住右键 → 隔一小段连续放
+	_place_hold_cd = max(0.0, _place_hold_cd - delta)
 	if just:
 		if try_place():
-			_play_place_anim()   # 放方块: 朝放置点按一下的动画
+			_play_place_anim()
+		_place_hold_cd = PLACE_HOLD_INTERVAL   # 刚放完, 按住的连放等一个间隔再开始
+	elif held and _place_hold_cd <= 0.0 and GameSettings != null and GameSettings.continuous_place:
+		if try_place():
+			_play_place_anim()
+		_place_hold_cd = PLACE_HOLD_INTERVAL   # 放方块: 朝放置点按一下的动画
 
 
 # 进食动画: 食物在玩家手里 上下抖动 + 微微旋转, 像在啃咬

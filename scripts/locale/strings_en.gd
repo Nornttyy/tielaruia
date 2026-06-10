@@ -14,6 +14,7 @@ const S := {
 	"settings_master_volume": "Volume",
 	"settings_camera_zoom": "Zoom",
 	"settings_scroll_zoom": "Scroll-wheel zoom",
+	"settings_continuous_place": "Continuous place",
 	"settings_mp_section": "Room Settings",
 	"settings_mp_show_names": "Show player names",
 	"settings_mp_chat": "Chat",

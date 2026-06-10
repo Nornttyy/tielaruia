@@ -107,6 +107,12 @@ var scroll_wheel_zoom: bool = false:
 		if scroll_wheel_zoom == v: return
 		scroll_wheel_zoom = v
 		_save_and_emit()
+# 连续放置: 按住右键就连续放方块 (默认开, 像 Terraria); 关掉就一下一个
+var continuous_place: bool = true:
+	set(v):
+		if continuous_place == v: return
+		continuous_place = v
+		_save()
 
 # creative_mode: 创造模式 (飞行/秒挖秒放/无限方块/不掉血). 会话变量 — 按"每个世界"存在
 # save_data 里, 不写全局 settings.cfg. 读档/新建/暂停切时由 main / pause_menu 设置它.
@@ -220,6 +226,7 @@ func _save() -> void:
 	cfg.set_value("hud", "enemy_hp_bar", show_enemy_hp_bar)
 	cfg.set_value("hud", "enemy_hp_number", show_enemy_hp_number)
 	cfg.set_value("input", "scroll_wheel_zoom", scroll_wheel_zoom)
+	cfg.set_value("input", "continuous_place", continuous_place)
 	cfg.set_value("mp", "show_names", mp_show_names)
 	cfg.set_value("mp", "chat_enabled", mp_chat_enabled)
 	cfg.set_value("mp", "max_players", mp_max_players)
@@ -247,6 +254,7 @@ func _load() -> void:
 	show_enemy_hp_bar = bool(cfg.get_value("hud", "enemy_hp_bar", true))
 	show_enemy_hp_number = bool(cfg.get_value("hud", "enemy_hp_number", true))
 	scroll_wheel_zoom = bool(cfg.get_value("input", "scroll_wheel_zoom", false))
+	continuous_place = bool(cfg.get_value("input", "continuous_place", true))
 	# 多人游戏设置
 	mp_show_names = bool(cfg.get_value("mp", "show_names", true))
 	mp_chat_enabled = bool(cfg.get_value("mp", "chat_enabled", true))

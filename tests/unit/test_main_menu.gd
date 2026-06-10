@@ -192,6 +192,16 @@ func test_mp_settings_rows_exist_and_wire():
 	GameSettings.mp_max_players = 8   # 恢复
 
 
+func test_continuous_place_setting():
+	var mm = _make()
+	var cb: CheckBox = mm.get_node_or_null("SettingsPanel/VBox/ContinuousPlaceRow/CheckBox")
+	assert_not_null(cb, "连续放置开关在")
+	cb.button_pressed = false
+	cb.toggled.emit(false)
+	assert_false(GameSettings.continuous_place, "关 → continuous_place=false")
+	GameSettings.continuous_place = true   # 恢复默认
+
+
 func test_settings_button_opens_panel():
 	var mm = _make()
 	mm._on_settings_pressed()

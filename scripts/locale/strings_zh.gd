@@ -18,6 +18,7 @@ const S := {
 	"settings_master_volume": "主音量",
 	"settings_camera_zoom": "镜头",
 	"settings_scroll_zoom": "滚轮缩放镜头",
+	"settings_continuous_place": "连续放置",
 	"settings_mp_section": "房间设置",
 	"settings_mp_show_names": "显示玩家名字",
 	"settings_mp_chat": "聊天",
