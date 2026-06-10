@@ -171,40 +171,40 @@ const _SHOE_B := [
 	"qoOoo",
 	"OOOOO",
 ]
-# 背心款手臂 (露胳膊, 全皮肤; 跟 T恤的袖子区分)。2 宽 × 6 高。
+# 背心款手臂 (露胳膊, 全皮肤 + 前缘高光 p)。2 宽 × 6 高。
 const _ARM_BARE := [
-	"ss",
-	"ss",
+	"sp",
+	"sp",
 	"ks",
 	"ks",
-	"ss",
+	"sp",
 	"kk",
 ]
-# 裙子款的裸腿 (皮肤色, 裙下露小腿)。3 宽 × 4 高。
+# 裙子款的裸腿 (皮肤色 + 前缘高光 p)。3 宽 × 4 高。
 const _LEG_SKIN := [
-	"sss",
-	"sss",
+	"ssp",
+	"ssp",
 	"kss",
 	"kss",
 ]
-# 裙子 (裤色 b/B 梯形, 盖胯 + 大腿上段, 裸腿露在裙下)。9 宽 × 3 高。
+# 裙子 (裤色 b/B 梯形 + 前缘高光 P + 褶/下摆阴影 B)。9 宽 × 3 高。
 const _SKIRT := [
-	".bbbbbbb.",
-	"bbbbbbbbb",
-	"BbbbbbbbB",
+	".bbbbbbP.",
+	"BbbbbbbPb",
+	"BbbbbBbPB",
 ]
-# 泳裤款的腿 (上段短裤 b/B + 下段裸腿 s/k)。3 宽 × 4 高。
+# 泳裤款的腿 (上段短裤 b/B + 前缘高光 P + 下段裸腿 s/k)。3 宽 × 4 高。
 const _LEG_TRUNK := [
-	"bbb",
-	"Bbb",
+	"bbP",
+	"BbP",
 	"kss",
 	"kss",
 ]
-# 泳衣款男躯干 (光膀子: 整片皮肤胸膛 + 肚脐, 男生只穿泳裤)。7 宽 × 6 高。
+# 泳衣款男躯干 (光膀子: 皮肤胸膛 + 前缘高光 p + 肚脐 k, 男生只穿泳裤)。7 宽 × 6 高。
 const _TORSO_SWIM := [
 	".sssss.",
-	"sssssss",
-	"kssssss",
+	"sssssps",
+	"kssssps",
 	".sssss.",
 	".sskss.",
 	"..sss..",
@@ -262,9 +262,9 @@ static func _female_torso_swim(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
 		".wwwww...",   # 上胸
-		"wwwwwww..",   # 胸
-		"wwwwwww..",   # 胸下沿 (衣底)
-		".sssss...",   # 肚 (皮肤)
+		"wwwwwwc..",   # 胸 (前缘高光 c)
+		"wwwwwwc..",   # 胸下沿 (衣底)
+		".ssssp...",   # 肚 (皮肤 + 高光 p)
 		".Dss.....",   # 腰 (皮肤, 收窄)
 		"ksssk....",   # 胯 (皮肤)
 	]
