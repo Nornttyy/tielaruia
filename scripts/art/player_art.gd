@@ -166,6 +166,25 @@ const _LEG := [
 	"BbP",
 	"BBb",
 ]
+# 女款细腿 (2 宽, 苗条): 长裤 / 裙下裸腿 / 泳裤 各一版。
+const _LEG_F := [
+	"bP",
+	"bP",
+	"BP",
+	"Bb",
+]
+const _LEG_SKIN_F := [
+	"sp",
+	"sp",
+	"ks",
+	"ks",
+]
+const _LEG_TRUNK_F := [
+	"bP",
+	"bP",
+	"ks",
+	"ks",
+]
 # 侧鞋 (o / O / 高光 q)。3 宽 × 3 高 (= 腿宽, 两脚分开不重叠成一坨, 不显大)。
 const _SHOE_B := [
 	"oo.",
@@ -351,11 +370,14 @@ static func _hair_layer(ap: Dictionary, dy: int) -> Array:
 static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 	var g := _blank()
 	var ps := int(ap.get("pants_style", 0))
-	var leg: Array = _LEG
+	var female := int(ap.get("gender", 0)) == 1   # 女腿细 1px (苗条)
+	var leg: Array
 	if ps == 2:
-		leg = _LEG_SKIN       # 裙子: 裸腿 (上面盖裙)
+		leg = _LEG_SKIN_F if female else _LEG_SKIN       # 裙子: 裸腿 (上面盖裙)
 	elif ps == 7:
-		leg = _LEG_TRUNK      # 泳裤: 上段短裤 + 下段裸腿
+		leg = _LEG_TRUNK_F if female else _LEG_TRUNK      # 泳裤: 上段短裤 + 下段裸腿
+	else:
+		leg = _LEG_F if female else _LEG
 	var foot: Array = _FOOT_BARE if ps == 7 else _SHOE_B   # 泳裤光脚, 其余穿鞋
 	match pose:
 		"walk_a":   # 迈开: 两脚分开都落地 (宽站, 重心稳)
