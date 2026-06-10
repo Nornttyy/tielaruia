@@ -200,13 +200,13 @@ const _LEG_TRUNK := [
 	"kss",
 	"kss",
 ]
-# 泳衣款男躯干 (露肚短上衣: 上 3 行衣 w + 下 3 行肚皮肤 s)。7 宽 × 6 高。
+# 泳衣款男躯干 (光膀子: 整片皮肤胸膛 + 肚脐, 男生只穿泳裤)。7 宽 × 6 高。
 const _TORSO_SWIM := [
-	".wwwww.",
-	"wwwwwww",
-	"wwwwwww",
 	".sssss.",
+	"sssssss",
+	"kssssss",
 	".sssss.",
+	".sskss.",
 	"..sss..",
 ]
 
