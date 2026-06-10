@@ -98,6 +98,9 @@ func fire(event_id: String) -> void:
 
 
 func unlock(id: String) -> void:
+	# 对战房 (PvP/起床战争) 不解锁也不弹成就 — 竞技场里成就提示分散注意, 也不公平.
+	if typeof(NetworkManager) != TYPE_NIL and NetworkManager.combat_enabled():
+		return
 	if _unlocked.has(id):
 		return
 	var def: Dictionary = _def_of(id)

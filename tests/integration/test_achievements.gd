@@ -62,6 +62,19 @@ func test_player_death_event() -> void:
 	assert_true(Achievements.is_unlocked("first_death"), "倒下该解锁'哎呀'")
 
 
+func test_no_achievements_in_pvp_room() -> void:
+	var prev_status = NetworkManager.status
+	var prev_mode = NetworkManager.room_mode
+	NetworkManager.status = "connected"
+	NetworkManager.room_mode = "pvp"   # 模拟在对战房
+	Achievements.fire("boss_king_slime")
+	Achievements.unlock("diamond")
+	assert_false(Achievements.is_unlocked("boss_slime"), "对战房不解锁成就(事件)")
+	assert_false(Achievements.is_unlocked("diamond"), "对战房不解锁成就(直接)")
+	NetworkManager.status = prev_status
+	NetworkManager.room_mode = prev_mode
+
+
 func test_has_lots_of_achievements() -> void:
 	assert_gte(Achievements.all_defs().size(), 35, "成就数应已扩到 35+")
 

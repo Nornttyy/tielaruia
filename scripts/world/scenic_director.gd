@@ -161,6 +161,9 @@ static func compute_cave_t(player_y_px: float) -> float:
 # === 实例方法: 算玩家当前所在 X 列的真实 depth_below_surface (in tiles) ===
 
 func _player_depth_below_surface_tiles() -> float:
+	# 对战房 (PvP/起床战争): 永远当地表 → 天空背景, 不乱切地底 (用户报"战斗房背景有时变地底").
+	if typeof(NetworkManager) != TYPE_NIL and NetworkManager.combat_enabled():
+		return 0.0
 	var p: Node2D = _get_player_node()
 	if p == null:
 		return 0.0

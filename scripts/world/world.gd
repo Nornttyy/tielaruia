@@ -683,8 +683,8 @@ func _process(delta: float) -> void:
 	_sweep_falling_water(delta)   # 下落水视觉淡出 (每帧)
 	# 联机 client (不是 host) 跳过怪物/动物刷新 (host 权威, client 只接受 ent_pos 同步)
 	var is_mp_client: bool = NetworkManager != null and NetworkManager.connected() and not NetworkManager.is_host
-	# 对战房 (PvP) 不刷怪/动物 — 纯玩家对战 (作物/门照常)
-	var no_mobs: bool = NetworkManager != null and NetworkManager.is_pvp()
+	# 对战房 (PvP/起床战争) 不刷怪/动物 — 纯玩家对战 (作物/门照常)
+	var no_mobs: bool = _no_mob_room()
 	if not is_mp_client and not no_mobs:
 		_slime_spawn_timer -= delta
 		if _slime_spawn_timer <= 0.0:
@@ -1427,7 +1427,14 @@ func spawn_boss(boss_id: String, pos: Vector2) -> bool:
 # 金字塔守卫: 给一组 spawn 点 (世界坐标) 召 mummy. chunk_manager 在
 # chunk 加载时调. 用 _pyramid_chunks_spawned 防同 chunk 重 spawn.
 var _pyramid_chunks_spawned: Dictionary = {}   # chunk_x int → true
+# 对战房 (PvP / 起床战争): 不刷任何怪 — 定时刷 + chunk 加载触发的 (木乃伊/矿井蜘蛛/哈比鸟) 都拦.
+func _no_mob_room() -> bool:
+	return NetworkManager != null and NetworkManager.combat_enabled()
+
+
 func spawn_mummies_for_chunk(chunk_x: int, spots: Array) -> void:
+	if _no_mob_room():
+		return   # 对战房不刷怪 (chunk 加载触发的也要拦)
 	if spots.is_empty():
 		return
 	if _pyramid_chunks_spawned.has(chunk_x):
@@ -1540,6 +1547,8 @@ func _close_door_at(bottom: Vector2i) -> void:
 # 废弃矿井守卫蜘蛛: 同款机制
 var _mineshaft_chunks_spawned: Dictionary = {}   # chunk_x int → true
 func spawn_mineshaft_spiders_for_chunk(chunk_x: int, spots: Array) -> void:
+	if _no_mob_room():
+		return   # 对战房不刷怪
 	if spots.is_empty():
 		return
 	if _mineshaft_chunks_spawned.has(chunk_x):
@@ -1557,6 +1566,8 @@ func spawn_mineshaft_spiders_for_chunk(chunk_x: int, spots: Array) -> void:
 # 空岛哈比鸟: 同款 spot→spawn 机制 (dedup, chunk 重载不重生)
 var _harpy_chunks_spawned: Dictionary = {}   # chunk_x int → true
 func spawn_harpies_for_chunk(chunk_x: int, spots: Array) -> void:
+	if _no_mob_room():
+		return   # 对战房不刷怪
 	if spots.is_empty():
 		return
 	if _harpy_chunks_spawned.has(chunk_x):
@@ -1663,7 +1674,7 @@ func respawn_player() -> void:
 	var difficulty: int = GameSettings.current_difficulty if GameSettings != null else 1
 	var wood_kit := {"wood_sword": true, "wood_pickaxe": true, "wood_axe": true}
 	# 对战房复活不掉东西 (装备留着继续打)
-	var pvp: bool = NetworkManager != null and NetworkManager.is_pvp()
+	var pvp: bool = NetworkManager != null and NetworkManager.combat_enabled()
 	if inv_node != null and inv_node.inventory != null and difficulty > 0 and not pvp:
 		var inv = inv_node.inventory
 		for i in inv.slots.size():
