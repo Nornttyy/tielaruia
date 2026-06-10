@@ -65,9 +65,19 @@ var room_mode: String = "survival"    # "survival" / "pvp" (对战房). client �
 var shared_world_creative: bool = false   # 私人房可创造 (host 当前世界的模式); 公共房永远 false. client 从 hello 拿
 
 
-# 当前是否在对战房 (联机 + pvp 模式). 打人/不刷怪/战斗开局包都靠它门控.
+# 当前是否在对战房 (联机 + pvp 模式). PvP 专属 (竞技场/PvP装备/3s复活).
 func is_pvp() -> bool:
 	return connected() and room_mode == "pvp"
+
+
+# 当前是否在起床战争房.
+func is_bedwars() -> bool:
+	return connected() and room_mode == "bedwars"
+
+
+# 能不能打人 + 不刷怪 (对战房 + 起床战争房都行). 战斗/箭命中玩家/不刷怪用它门控.
+func combat_enabled() -> bool:
+	return is_pvp() or is_bedwars()
 var remote_player_name: String = ""  # 对方玩家名, 收到 name 消息后存; remote_player spawn 时取用
 var pending_initial_deltas: Dictionary = {}  # client 收 hello 时存入, world 加载后取走应用
 var _pos_send_timer: float = 0.0
@@ -318,7 +328,11 @@ func join(code: String) -> void:
 # 进公共房: 由 bridge 抢占式决定本端成 host 还是 client (谁先到谁当 host, 房满顺延下一号).
 # 先设好固定世界参数 (万一本端成 host, 连上后要 send_hello 这些值给 client).
 func enter_public(tag: String, seed_val: int, size_val: int, diff_val: int) -> void:
-	room_mode = "pvp" if tag == "PVP" else "survival"   # 对战房 = pvp; 其它公共房 = survival
+	# 房间类型 → 模式: PVP 对战房 / BW 起床战争 / 其它生存
+	match tag:
+		"PVP": room_mode = "pvp"
+		"BW": room_mode = "bedwars"
+		_: room_mode = "survival"
 	shared_world_creative = false   # 公共房永远生存 (不让陌生人创造乱飞)
 	if _bridge == null:
 		_try_reload_bridge()

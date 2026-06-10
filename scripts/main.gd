@@ -5,6 +5,7 @@ extends Node
 
 const WorldScene = preload("res://scenes/world/world.tscn")
 const PvpArena = preload("res://scripts/world/pvp_arena.gd")   # 对战房专属竞技场生成
+const BedwarsArena = preload("res://scripts/world/bedwars_arena.gd")   # 起床战争地图生成
 const DebugHudScene = preload("res://scenes/ui/debug_hud.tscn")
 const FloatingPromptScene = preload("res://scenes/ui/floating_prompt.tscn")
 const HudScene = preload("res://scenes/ui/hud.tscn")
@@ -592,11 +593,23 @@ func _grant_starter_on_new_game() -> void:
 						TimeOfDay.time = 0.4
 						TimeOfDay.time_multiplier = 0.0
 					SkyLightGrid.recompute_from([])
+				elif NetworkManager != null and NetworkManager.is_bedwars():
+					# 起床战争: 盖每人一岛的地图 (Phase 1 先放岛 0; slot 分配 Phase 2) + 永久白天
+					var bw: Dictionary = BedwarsArena.build(w)
+					var bw_spawns: Array = bw.get("spawns", [])
+					if bw_spawns.size() > 0:
+						player.global_position = bw_spawns[0]
+					if TimeOfDay != null:
+						TimeOfDay.time = 0.4
+						TimeOfDay.time_multiplier = 0.0
+					SkyLightGrid.recompute_from([])
 				# 角色系统: 老角色 (已有背包) 进新世界 → 带着角色的东西, 不发起步包;
 				# 全新角色 (背包空) → 照常发起步包 (随后 autosave 把它存进角色卡)。
 				# GUT 测试跳过 → 永远走起步包分支, 不被 current 残留影响。
 				if NetworkManager != null and NetworkManager.is_pvp():
 					_grant_starter_inventory(player)   # 对战房: 永远固定战斗装备包, 不管角色带啥
+				elif NetworkManager != null and NetworkManager.is_bedwars():
+					_grant_bedwars_loadout(player)   # 起床战争开局包 (木剑+方块, 其余靠商店)
 				elif not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL \
 						and CharacterManager.current != null \
 						and _character_has_items(CharacterManager.current):
@@ -646,6 +659,16 @@ func _grant_pvp_loadout(inv_node: Node) -> void:
 	inv_node.set_armor("pants", {"item_id": "iron_pants", "count": 1})
 
 
+# 起床战争开局包: 木剑 + 镐 + 一叠方块 (搭桥/防守); 更好的装备靠商店买 (Phase 4)。
+func _grant_bedwars_loadout(player: Node) -> void:
+	var inv_node: Node = player.get_node_or_null("PlayerInventory")
+	if inv_node == null or inv_node.inventory == null:
+		return
+	inv_node.pickup("wood_sword", 1)
+	inv_node.pickup("wood_pickaxe", 1)
+	inv_node.pickup("stone", 64)
+
+
 func _return_to_menu() -> void:
 	# 退出前最后存一次档
 	if _state == "game":
@@ -665,7 +688,7 @@ func _return_to_menu() -> void:
 
 # PvP: 收到"你被某人打了 X 点" → 在自己这端扣自己的血 (带无敌帧防连击)。
 func _on_player_damaged(to_pid: String, dmg: int, kb: float, sx: float, sy: float, by_pid: String) -> void:
-	if NetworkManager == null or not NetworkManager.is_pvp():
+	if NetworkManager == null or not NetworkManager.combat_enabled():
 		return
 	if to_pid != NetworkManager.my_peer_id():
 		return   # 不是打我的, 忽略 (转发途中经过)
@@ -683,7 +706,7 @@ func _on_player_damaged(to_pid: String, dmg: int, kb: float, sx: float, sy: floa
 
 # PvP: 本地玩家死 → 把击杀记给凶手 + 几秒后自动满血复活 (不掉东西)。
 func _on_local_death_pvp() -> void:
-	if NetworkManager == null or not NetworkManager.is_pvp():
+	if NetworkManager == null or not NetworkManager.combat_enabled():
 		return
 	if _last_attacker_pid != "":
 		NetworkManager.send_kill(_last_attacker_pid, NetworkManager.my_peer_id())

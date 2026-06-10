@@ -152,6 +152,7 @@ func _refresh_localized_text() -> void:
 	$MultiplayerPanel/VBox/RoomsLabel.text = Locale.t("mp_rooms_title")
 	$MultiplayerPanel/VBox/PublicSurvivalButton.text = Locale.t("mp_public_survival")
 	$MultiplayerPanel/VBox/PublicPvpButton.text = Locale.t("mp_public_pvp")
+	$MultiplayerPanel/VBox/PublicBedwarsButton.text = Locale.t("mp_public_bedwars")
 	$MultiplayerPanel/VBox/JoinTitleLabel.text = Locale.t("mp_join_title")
 	$MultiplayerPanel/VBox/JoinRow/JoinInput.placeholder_text = Locale.t("mp_room_code_placeholder")
 	$MultiplayerPanel/VBox/JoinRow/JoinButton.text = Locale.t("mp_join_label")
@@ -948,14 +949,17 @@ func _setup_multiplayer_panel_once() -> void:
 	var back_btn: Button = panel.get_node("VBox/BackButton")
 	var pub_btn: Button = panel.get_node("VBox/PublicSurvivalButton")
 	var pvp_btn: Button = panel.get_node("VBox/PublicPvpButton")
+	var bw_btn: Button = panel.get_node("VBox/PublicBedwarsButton")
 	_apply_button_style(join_btn)
 	_apply_button_style(back_btn)
 	_apply_button_style(pub_btn)
 	_apply_button_style(pvp_btn)
+	_apply_button_style(bw_btn)
 	join_btn.pressed.connect(_on_join_pressed)
 	back_btn.pressed.connect(_on_multiplayer_back_pressed)
 	pub_btn.pressed.connect(_on_public_survival_pressed)
 	pvp_btn.pressed.connect(_on_public_pvp_pressed)
+	bw_btn.pressed.connect(_on_public_bedwars_pressed)
 	# 接 NetworkManager 信号 (autoload, 一直在). host 已移到 PauseMenu, 主菜单只 join.
 	if NetworkManager != null:
 		if not NetworkManager.status_changed.is_connected(_on_mp_status_changed):
@@ -1007,6 +1011,10 @@ func _on_public_survival_pressed() -> void:
 
 func _on_public_pvp_pressed() -> void:
 	_start_mp_after_character(_do_enter_public.bind("PVP"))
+
+
+func _on_public_bedwars_pressed() -> void:
+	_start_mp_after_character(_do_enter_public.bind("BW"))
 
 
 # 真·进公共房 (选完角色后调). tag = "SV" 生存 / "PVP" 对战.

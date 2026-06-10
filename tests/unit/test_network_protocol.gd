@@ -193,6 +193,20 @@ func test_route_hello_sets_room_mode() -> void:
 	assert_eq(nm.room_mode, "pvp", "client 收 hello 后知道在对战房")
 
 
+# 起床战争模式: is_bedwars + combat_enabled (对战房+起床房都能打)
+func test_bedwars_mode_and_combat_enabled() -> void:
+	nm.status = "connected"
+	nm.room_mode = "bedwars"
+	assert_true(nm.is_bedwars(), "bedwars 模式")
+	assert_true(nm.combat_enabled(), "起床房能打人")
+	assert_false(nm.is_pvp(), "bedwars 不是 pvp")
+	nm.room_mode = "pvp"
+	assert_true(nm.combat_enabled(), "对战房能打人")
+	assert_false(nm.is_bedwars())
+	nm.room_mode = "survival"
+	assert_false(nm.combat_enabled(), "生存房不能打人")
+
+
 # 私人房创造模式: hello 带 creative, client 收到设 shared_world_creative
 func test_hello_creative_roundtrip() -> void:
 	nm.shared_world_creative = true

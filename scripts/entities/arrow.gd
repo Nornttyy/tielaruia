@@ -87,7 +87,7 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 			_destroy()
 			return
 	# PvP: 对战房里箭也能射到远程玩家 (本地箭判命中 → 发伤害给对方, 对方扣自己血)
-	if NetworkManager != null and NetworkManager.is_pvp():
+	if NetworkManager != null and NetworkManager.combat_enabled():
 		for s in get_tree().get_nodes_in_group("remote_player"):
 			var rp := s as Node2D
 			if rp == null or not is_instance_valid(rp):

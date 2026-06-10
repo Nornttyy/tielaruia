@@ -600,7 +600,7 @@ func _crack_overlay() -> Node:
 func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapLayer) -> void:
 	var world: Node = terrain.get_parent()
 	# 对战房: 天然/竞技场地形挖不动, 只有玩家放下的格能挖 (挖掉后取消标记).
-	if NetworkManager != null and NetworkManager.is_pvp():
+	if NetworkManager != null and NetworkManager.combat_enabled():
 		var cm_pvp = world.get("chunk_manager") if world != null else null
 		if cm_pvp != null and cm_pvp.has_method("is_pvp_placed"):
 			if not cm_pvp.is_pvp_placed(tile):
@@ -699,14 +699,14 @@ func _drop_unsupported_plants_above(world: Node, tile: Vector2i, tool_kind: Stri
 func _consume_one(inv: Node) -> void:
 	if GameSettings != null and GameSettings.creative_mode:
 		return
-	if NetworkManager != null and NetworkManager.is_pvp():
+	if NetworkManager != null and NetworkManager.combat_enabled():
 		return   # 对战房: 方块/消耗品无限
 	inv.consume_current(1)
 
 
 # 对战房: 标记"这格是玩家放的" (天然/竞技场地形不标 → 挖不动; 玩家放的才能挖)
 func _pvp_mark_placed(world: Node, c: Vector2i) -> void:
-	if NetworkManager == null or not NetworkManager.is_pvp():
+	if NetworkManager == null or not NetworkManager.combat_enabled():
 		return
 	var cm = world.get("chunk_manager") if world != null else null
 	if cm != null and cm.has_method("mark_pvp_placed"):
@@ -1230,7 +1230,7 @@ func _update_eat_or_place(delta: float) -> void:
 			if mana_node.has_signal("mana_changed"):
 				mana_node.mana_changed.emit(mana_node.current_mana, mana_node.MAX_MANA)
 			SfxBank.play("eat", 0.10)
-			if NetworkManager == null or not NetworkManager.is_pvp():
+			if NetworkManager == null or not NetworkManager.combat_enabled():
 				inv.consume_current(1)   # 对战房: 药水无限
 			_stop_eat_anim()
 		return
@@ -1260,7 +1260,7 @@ func _update_eat_or_place(delta: float) -> void:
 				if buffs != null:
 					buffs.apply(ItemDB.food_buff_kind(slot.item_id), ItemDB.food_buff_secs(slot.item_id))
 			SfxBank.play("eat", 0.10)
-			if NetworkManager == null or not NetworkManager.is_pvp():
+			if NetworkManager == null or not NetworkManager.combat_enabled():
 				inv.consume_current(1)   # 对战房: 食物/生命药水无限
 			_stop_eat_anim()  # 吃完一口, 下次按住会重新开始
 		return
@@ -1611,7 +1611,7 @@ func _check_sword_blade_hits() -> void:
 		_sword_hit_this_attack[thrust_target.get_instance_id()] = true
 		_deal_enemy_damage(thrust_target, _sword_attack_damage, tip_world, _sword_attack_knockback)
 	# PvP: 对战房里剑也能扫到远程玩家
-	if NetworkManager != null and NetworkManager.is_pvp():
+	if NetworkManager != null and NetworkManager.combat_enabled():
 		var player2: Node2D = get_parent() as Node2D
 		for s in get_tree().get_nodes_in_group("remote_player"):
 			var rp := s as Node2D
@@ -1633,7 +1633,7 @@ func _check_sword_blade_hits() -> void:
 
 # PvP: 命中某远程玩家 → 发伤害消息 (对方那端扣自己的血) + 本地闪红反馈。
 func _hit_remote_player(rp: Node2D, dmg: int, src: Vector2, kb: float) -> void:
-	if NetworkManager == null or not NetworkManager.is_pvp():
+	if NetworkManager == null or not NetworkManager.combat_enabled():
 		return
 	var pid: String = String(rp.peer_id) if "peer_id" in rp else ""
 	if pid == "":
@@ -1780,7 +1780,7 @@ func _try_fire_bow() -> void:
 		return
 	# 找到任意 wood_arrow 槽并消耗 1 (对战房: 箭无限, 不扣也能射)
 	var consumed: bool = false
-	if NetworkManager != null and NetworkManager.is_pvp():
+	if NetworkManager != null and NetworkManager.combat_enabled():
 		consumed = true
 	elif inv.has_method("consume_first"):
 		consumed = inv.consume_first("wood_arrow", 1)

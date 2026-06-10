@@ -27,7 +27,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	# 只在对战房露脸
-	visible = NetworkManager != null and NetworkManager.is_pvp()
+	visible = NetworkManager != null and NetworkManager.combat_enabled()
 
 
 func _on_kill_scored(killer_pid: String, _victim_pid: String) -> void:
