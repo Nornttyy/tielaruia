@@ -84,6 +84,10 @@ func _ready() -> void:
 
 func _build_ui() -> void:
 	# ===== 背包面板 (左上) =====
+	# 去掉背包外面那个大方框/背景板 (用户要求): 套空 stylebox → 只剩里面的小格子.
+	var inv_panel: PanelContainer = $InvAnchor/InvPanel
+	if inv_panel != null:
+		inv_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	var inv_title := Label.new()
 	inv_title.text = "背包"
 	inv_title.add_theme_font_size_override("font_size", 16)
