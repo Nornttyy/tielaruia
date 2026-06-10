@@ -851,19 +851,13 @@ func try_place() -> bool:
 	var pt: Vector2i = player_tile()
 	if tile == pt or tile == pt - Vector2i(0, 1):
 		return false
-	# 支撑判定: 上下左右至少有 1 个相邻方块 OR 当前格背景有墙 (允许靠墙挂方块).
-	# 创造模式随处放 (无需支撑).
+	# 支撑判定: 上下左右至少有 1 个相邻"实心方块"才能放 (防隔空放)。
+	# 背景墙不算支撑 — 这世界背景墙铺满, 算的话处处能放就没意义了。创造模式随处放。
 	var has_support: bool = GameSettings != null and GameSettings.creative_mode
 	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		if terrain.get_cell_source_id(tile + offset) != -1:
 			has_support = true
 			break
-	if not has_support:
-		# 检查这格背后有没有墙 (wall_layer 跟 terrain 同父 World)
-		var w_node: Node = terrain.get_parent()
-		var wall_layer = w_node.get_node_or_null("WallLayer") if w_node != null else null
-		if wall_layer != null and wall_layer.get_cell_source_id(tile) != -1:
-			has_support = true
 	if not has_support:
 		return false
 	var def = ItemDB.get_def(slot.item_id)
