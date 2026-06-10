@@ -267,19 +267,19 @@ static func _shirt_layer(ap: Dictionary, dy: int) -> Array:
 # 女泳衣躯干 (露肚: 上 3 行衣+胸, 下 3 行肚皮肤)。沙漏腰; cs 简化两档前鼓。
 static func _female_torso_swim(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
-	# 一字带泳衣 (bandeau): 胸口一道横带盖住胸 (左右包住), 肩膀和肚子都露 (不是一整块布)。
+	# 比基尼上衣 👙: 罩杯盖住胸 + 挂脖细带(往上到脖) + 后背横系带, 肩/背/肚露皮肤。
 	var rows := [
-		".sssss...",   # 肩: 露肩 (skin)
-		"swwwwwc..",   # 上胸: 泳衣横带 (w 包住前胸) + 高光 c
-		"sDwwwwc..",   # 下胸: 横带 + 下沿阴影 D (有边像衣服)
+		".sssws...",   # 肩/脖: 挂脖细带 (w)
+		"sssswwc..",   # 上胸: 罩杯顶 + 高光
+		"swwwwwc..",   # 下胸: 罩杯 + 后背横系带 (一道细带绕到背) + 高光
 		".ssssp...",   # 肚: 露肚 (皮肤 + 高光 p)
 		".Dss.....",   # 腰 (皮肤, 收窄)
 		"ksssk....",   # 胯 (皮肤)
 	]
 	if cs >= 2:
-		rows[1] = _set_char(rows[1], 7, "w")   # 胸前鼓, 横带跟着包住
+		rows[2] = _set_char(rows[2], 7, "w")   # 胸前鼓, 罩杯跟着包住
 	if cs >= 4:
-		rows[2] = _set_char(rows[2], 7, "w")
+		rows[1] = _set_char(rows[1], 7, "w")
 	return rows
 
 
