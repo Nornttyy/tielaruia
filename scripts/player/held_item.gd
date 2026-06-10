@@ -263,9 +263,10 @@ func play_bow_shoot(target_angle: float) -> void:
 	var mouse_on_right: bool = cos(target_angle) >= 0.0
 	set_facing(mouse_on_right)
 	_attack_locked = true
-	# 弓图标的"开口/射击口"朝 +x (右). rotation = target_angle 就让开口朝鼠标 (不像剑尖朝上要 +PI/2).
-	# 但 set_facing 瞄左时把 sprite 水平镜像了, 会把开口翻到 -x → 减 PI 补回来, 开口才真朝鼠标.
-	rotation = wrapf(target_angle - (0.0 if mouse_on_right else PI), -PI, PI)
+	# 弓图标的"射击口"朝 -x (左: 弓臂在左鼓出, 弦在右, 箭往弓臂那侧飞出). 要让射击口朝鼠标:
+	# 没镜像 (瞄右 sx=+1) 时屏幕射向 = rotation + PI → rotation = target_angle - PI;
+	# 镜像了 (瞄左 sx=-1) 时屏幕射向 = rotation → rotation = target_angle. (之前 bug: 两分支接反 = 方向反了)
+	rotation = wrapf(target_angle - (PI if mouse_on_right else 0.0), -PI, PI)
 	var base_pos := Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
 	position = base_pos
 	var nudge := Vector2(cos(target_angle), sin(target_angle)) * BOW_RECOIL_PX
