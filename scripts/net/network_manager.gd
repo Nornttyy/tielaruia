@@ -313,7 +313,11 @@ func host(p_seed: int = 0, p_size: int = 1, p_diff: int = 1) -> void:
 	# 共享世界大小: client 收 hello 后用它生成同样大小的世界 (不传 → 地形/大小不一致 bug)
 	shared_world_size = p_size
 	shared_world_difficulty = p_diff
-	_bridge.host()
+	# 私人房也用"房间最多人数"设置 (玩家在多人设置里调; 不传则 bridge 默认 8)
+	var max_p: int = 8
+	if gs_h != null and "mp_max_players" in gs_h:
+		max_p = clampi(int(gs_h.mp_max_players), 2, MpRooms.MAX_PEERS)
+	_bridge.host(max_p)
 
 
 func join(code: String) -> void:

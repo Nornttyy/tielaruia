@@ -132,14 +132,14 @@
     }
 
     // ===== 私人房: host (6 位码) =====
-    bridge.host = function() {
+    bridge.host = function(maxPeers) {
         bridge.disconnect();
         bridge._gen++;
         bridge._isHost = true;
         bridge._status = 'hosting';
         bridge._lastError = '';
         bridge._hostRetries = 0;
-        bridge._maxPeers = 8;
+        bridge._maxPeers = maxPeers || 8;   // 私人房用玩家设的"房间最多人数"
         _hostAttempt(bridge._gen);
     };
 

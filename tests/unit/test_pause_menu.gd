@@ -191,3 +191,14 @@ func test_mp_settings_built_in_hostpanel():
 					has_checkbox = true
 	assert_true(has_label, "暂停菜单多人面板有'多人设置'区")
 	assert_true(has_checkbox, "多人设置里有开关 (名字/聊天)")
+
+
+# 用户要求: 先调好多人设置, 再点"创建房间"才开房 (不是一点多人游戏就立刻开)
+func test_create_room_button_flow():
+	_reset_nm()
+	var pm = _make()
+	pm._on_multiplayer_pressed()
+	assert_true(pm._create_room_button.visible, "点'多人游戏'先显示'创建房间'按钮")
+	assert_eq(NetworkManager.status, "idle", "开多人面板时还没真开房")
+	pm._on_create_room_pressed()
+	assert_false(pm._create_room_button.visible, "点了'创建房间'后按钮隐藏")

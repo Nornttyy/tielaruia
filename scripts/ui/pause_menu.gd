@@ -73,6 +73,7 @@ var _kick_button: Button = null
 var _kick_panel: Panel = null
 var _kick_list: VBoxContainer = null
 var _close_mp_button: Button = null   # 房主"关闭联机"按钮: 停房间但留在当前世界继续玩
+var _create_room_button: Button = null   # "创建房间"按钮: 调好多人设置后点它才真开房 (出房号)
 
 
 func _build_kick_ui() -> void:
@@ -160,9 +161,17 @@ func _build_mp_settings() -> void:
 	opt.item_selected.connect(func(i: int): GameSettings.mp_host_difficulty = i)
 	diff_row.add_child(opt)
 	vb.add_child(diff_row)
-	# "关闭"按钮挪到最底 (设置显示在它上面)
-	if _close_button != null:
-		vb.move_child(_close_button, -1)
+	# 创建房间按钮: 调好上面设置后点它才真开房 (用户要求: 先设置再创建房号)
+	_create_room_button = Button.new()
+	_create_room_button.text = "创建房间"
+	UIStyle.style_button(_create_room_button)
+	_create_room_button.pressed.connect(_on_create_room_pressed)
+	vb.add_child(_create_room_button)
+	# 调顺序: 标题/提示 → 多人设置 → 创建房间 → 房间码/状态 → 关闭
+	# (把房间码/状态/关闭 移到创建按钮下面)
+	if _room_code_label != null: vb.move_child(_room_code_label, -1)
+	if _status_label != null: vb.move_child(_status_label, -1)
+	if _close_button != null: vb.move_child(_close_button, -1)
 
 
 func _mp_checkbox_row(text: String, initial: bool, on_toggle: Callable) -> HBoxContainer:
@@ -305,10 +314,25 @@ func _on_multiplayer_pressed() -> void:
 		_status_label.text = Locale.t("pause_mp_no_network")
 		return
 	if NetworkManager.is_host and NetworkManager.status in ["hosting", "connected"]:
-		# 已经 host 过, 直接显示已有的房间码
+		# 已经 host 过, 直接显示已有的房间码, 藏掉"创建房间"
 		_room_code_label.text = NetworkManager.my_room_code if NetworkManager.my_room_code != "" else "------"
 		_status_label.text = Locale.t("pause_mp_already_hosting") if NetworkManager.status == "hosting" else Locale.t("pause_mp_already_connected")
+		if _create_room_button != null:
+			_create_room_button.visible = false
 		return
+	# 还没开房: 先让玩家调好上面的多人设置, 点"创建房间"才真开 (用户要求).
+	_room_code_label.text = "------"
+	_status_label.text = "调好上面的设置, 再点「创建房间」"
+	if _create_room_button != null:
+		_create_room_button.visible = true
+
+
+# 点"创建房间": 这时才真正 host (开房出房号). 之前只是让玩家调设置.
+func _on_create_room_pressed() -> void:
+	if NetworkManager == null:
+		return
+	if _create_room_button != null:
+		_create_room_button.visible = false
 	# 拿当前 world 的 seed 给 host (新 client 用同 seed 重建一致地形)
 	var world: Node = get_tree().get_first_node_in_group("world")
 	var seed_val: int = 0
