@@ -32,6 +32,7 @@ var _autosave_timer: Timer = null
 var _pending_save_data: Resource = null
 var _want_starter: bool = false   # 本局是否该发起步包 (新游戏 true, 继续游戏 false). 一次性, 发完置 false.
 var _last_attacker_pid: String = ""   # PvP: 最近把我打掉血的人 (死了算他击杀)
+var _is_multiplayer: bool = false   # 本局是否联机 (生存房/对战房/加入). 联机时绝不存档 (不污染单机存档)
 
 var world: Node2D:
 	get:
@@ -83,6 +84,7 @@ func _start_game(seed_or_opts = 0) -> void:
 		difficulty = int(opts.get("difficulty", 1))
 		world_size = int(opts.get("world_size", 1))
 		creative_mode = bool(opts.get("creative_mode", false))
+		_is_multiplayer = bool(opts.get("multiplayer", false))   # 联机局 → 全程不存档
 	else:
 		world_seed = int(seed_or_opts)
 	if "current_difficulty" in GameSettings:
@@ -298,6 +300,9 @@ func _stop_autosave() -> void:
 # 存世界 + 存当前角色卡 (玩家状态)。autosave / 退出 / F5 都走这。
 # 复用 CharacterManager.save_current_from_player 的就绪护栏 (inventory 未就绪不写, 防丢三件套)。
 func _save_all() -> void:
+	# 联机局绝不存档: 生存房/对战房/加入的世界 + 物品都不写回单机存档 (不污染你的角色/世界)。
+	if _is_multiplayer:
+		return
 	SaveManager.save(self)
 	# GUT 测试跳过角色存 (防 _return_to_menu 把物品灌进残留 current 污染后续测试)。
 	if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL and CharacterManager.current != null:
@@ -575,7 +580,9 @@ func _grant_starter_on_new_game() -> void:
 				# 角色系统: 老角色 (已有背包) 进新世界 → 带着角色的东西, 不发起步包;
 				# 全新角色 (背包空) → 照常发起步包 (随后 autosave 把它存进角色卡)。
 				# GUT 测试跳过 → 永远走起步包分支, 不被 current 残留影响。
-				if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL \
+				if NetworkManager != null and NetworkManager.is_pvp():
+					_grant_starter_inventory(player)   # 对战房: 永远固定战斗装备包, 不管角色带啥
+				elif not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL \
 						and CharacterManager.current != null \
 						and _character_has_items(CharacterManager.current):
 					CharacterManager.apply_to_player(player)
@@ -633,6 +640,7 @@ func _return_to_menu() -> void:
 			n.queue_free()
 	_game_nodes.clear()
 	get_tree().paused = false
+	_is_multiplayer = false   # 回菜单, 清联机标记 (下局单机能正常存档)
 	_show_menu_state()
 
 
