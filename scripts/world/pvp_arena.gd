@@ -55,7 +55,16 @@ static func build(world) -> Vector2:
 		world._set_tile(cx - 140 + d, floor_y - 4, Tiles.WOOD_PLATFORM)
 		world._set_tile(cx + 140 + d, floor_y - 4, Tiles.WOOD_PLATFORM)
 
-	# 5. 空气墙 (看不见的碰撞墙): 左/右/顶 关住玩家, 防搭方块逃出竞技场
+	# 4.5 左右两面砌实心石墙 (用户: 空气墙换成真方块; 顶那道保留隐形). 2 格厚, 从地面升到天花板高度,
+	#     看得见 + 挡住玩家. 顶上故意不砌实心 → 留隐形天花板, 光照样从上面开口透进来 (不挡光)。
+	for dx in range(0, 2):
+		var lx: int = cx - HALF + dx          # 左墙 2 列 (最外 + 内一格)
+		var rx: int = cx + HALF - dx          # 右墙 2 列
+		for y in range(CEIL_Y, floor_y):      # 天花板高度 → 地面上方一格 (地面行本身已是石)
+			world._set_tile(lx, y, Tiles.STONE)
+			world._set_tile(rx, y, Tiles.STONE)
+
+	# 5. 隐形天花板 (看不见的碰撞顶): 只关顶, 防玩家从上面逃出 (左右已是实心石墙)
 	_build_air_walls(world, cx, floor_y)
 
 	# 6. 小地图开局就全探索完 (用户要求): 把竞技场整片标记成已探索, 不用走过去才显。
@@ -69,8 +78,8 @@ static func build(world) -> Vector2:
 	return Vector2(float(cx - 140) * TILE_SIZE + TILE_SIZE * 0.5, float(floor_y - 5) * TILE_SIZE)
 
 
-# 看不见的碰撞墙: 一个 StaticBody2D, 3 块矩形 (左墙/右墙/天花板). collision_layer=1
-# (bit0 实心方块层); 玩家 collision_mask 含 bit0 → 挡得住, 但不画出来 = 空气墙.
+# 看不见的天花板: 一个 StaticBody2D, 只 1 块顶部矩形 (左右墙已换成实心石方块, 见 build 步骤 4.5).
+# collision_layer=1 (bit0 实心方块层); 玩家 mask 含 bit0 → 顶挡得住但不画出来 = 隐形顶, 不挡光.
 static func _build_air_walls(world, cx: int, floor_y: int) -> void:
 	var old = world.get_node_or_null("ArenaWalls")
 	if old != null:
@@ -82,13 +91,9 @@ static func _build_air_walls(world, cx: int, floor_y: int) -> void:
 	var left_px: float = float(cx - HALF) * TILE_SIZE
 	var right_px: float = float(cx + HALF + 1) * TILE_SIZE
 	var ceil_px: float = float(CEIL_Y) * TILE_SIZE
-	var bot_px: float = float(floor_y + 2) * TILE_SIZE
-	var box_h: float = bot_px - ceil_px
 	var box_w: float = right_px - left_px
 	var thick := 16.0
-	_add_wall(body, Vector2(left_px - thick * 0.5, (ceil_px + bot_px) * 0.5), Vector2(thick, box_h))      # 左
-	_add_wall(body, Vector2(right_px + thick * 0.5, (ceil_px + bot_px) * 0.5), Vector2(thick, box_h))     # 右
-	_add_wall(body, Vector2((left_px + right_px) * 0.5, ceil_px - thick * 0.5), Vector2(box_w, thick))    # 顶
+	_add_wall(body, Vector2((left_px + right_px) * 0.5, ceil_px - thick * 0.5), Vector2(box_w, thick))    # 顶 (隐形)
 	world.add_child(body)
 
 
