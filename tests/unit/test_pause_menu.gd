@@ -136,3 +136,41 @@ func test_close_mp_disconnects_and_stays_in_world():
 	assert_eq(NetworkManager.status, "idle", "关闭联机后已断开 (status=idle)")
 	NetworkManager.status = prev_status
 	NetworkManager.is_host = prev_host
+
+
+# ---- 公共房不显示"多人游戏/踢人" (用户: 公共房本来就是多人游戏) ----
+
+func _reset_nm() -> void:
+	NetworkManager.status = "idle"
+	NetworkManager.is_host = false
+	NetworkManager.in_public_room = false
+
+
+func test_public_room_hides_mp_and_kick():
+	NetworkManager.status = "connected"
+	NetworkManager.is_host = true
+	NetworkManager.in_public_room = true
+	var pm = _make()
+	pm.open()
+	assert_false(pm._multiplayer_button.visible, "公共房不该显示'多人游戏'按钮")
+	assert_false(pm._kick_button.visible, "公共房不该显示'踢人'")
+	_reset_nm()
+
+
+func test_single_player_shows_mp_button():
+	_reset_nm()
+	var pm = _make()
+	pm.open()
+	assert_true(pm._multiplayer_button.visible, "单机该显示'多人游戏'按钮(可开房邀请)")
+	assert_false(pm._kick_button.visible, "单机没人可踢")
+
+
+func test_private_host_shows_mp_and_kick():
+	NetworkManager.status = "connected"
+	NetworkManager.is_host = true
+	NetworkManager.in_public_room = false   # 私人房
+	var pm = _make()
+	pm.open()
+	assert_true(pm._multiplayer_button.visible, "私人房该显示'多人游戏'(可看房间码)")
+	assert_true(pm._kick_button.visible, "私人房房主该能踢人")
+	_reset_nm()

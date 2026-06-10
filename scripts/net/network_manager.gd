@@ -27,10 +27,6 @@ signal error_occurred(msg: String)
 signal peer_joined(peer_id: String)
 signal peer_left(peer_id: String)
 signal kicked_by_host()   # 本端 client 被房主踢了 → main 收到后断开回主菜单
-signal bw_slot_received(peer_id: String, slot: int)   # 起床战争: host 分给某玩家的岛号 (slot)
-signal bw_bed_broken(slot: int)        # 起床战争: 某岛的床被砸了 (host 广播)
-signal bw_out(peer_id: String)          # 起床战争: 某玩家出局
-signal bw_win(peer_id: String)          # 起床战争: 某玩家获胜 (最后剩的)
 
 # 高层协议事件 (parse 后):
 signal hello_received(world_seed: int, world_size: int, difficulty: int)  # host → client, seed+大小+难度 (双方一致)
@@ -61,6 +57,7 @@ const POS_SEND_INTERVAL := 0.1  # 玩家位置每 0.1s 发一次 (10Hz)
 var status: String = "idle"
 var my_room_code: String = ""
 var is_host: bool = false
+var in_public_room: bool = false   # true=公共房(enter_public); false=单机/私人房(host/join). 暂停菜单据此隐藏"多人游戏/踢人"
 var last_error: String = ""
 var shared_world_seed: int = 0  # host 创建房间时生成的种子, client 从 hello 拿
 var shared_world_size: int = 1  # host 的世界大小 (0小/1中/2大); client 从 hello 拿. 不传会致两端地形/大小不一致
@@ -69,19 +66,19 @@ var room_mode: String = "survival"    # "survival" / "pvp" (对战房). client �
 var shared_world_creative: bool = false   # 私人房可创造 (host 当前世界的模式); 公共房永远 false. client 从 hello 拿
 
 
+# 在公共房 (公共生存房/对战房). 暂停菜单用: 公共房本来就是多人, 不显示"多人游戏/踢人/关闭联机".
+func is_public_room() -> bool:
+	return connected() and in_public_room
+
+
 # 当前是否在对战房 (联机 + pvp 模式). PvP 专属 (竞技场/PvP装备/3s复活).
 func is_pvp() -> bool:
 	return connected() and room_mode == "pvp"
 
 
-# 当前是否在起床战争房.
-func is_bedwars() -> bool:
-	return connected() and room_mode == "bedwars"
-
-
-# 能不能打人 + 不刷怪 (对战房 + 起床战争房都行). 战斗/箭命中玩家/不刷怪用它门控.
+# 能不能打人 + 不刷怪 (对战房). 战斗/箭命中玩家/不刷怪用它门控.
 func combat_enabled() -> bool:
-	return is_pvp() or is_bedwars()
+	return is_pvp()
 var remote_player_name: String = ""  # 对方玩家名, 收到 name 消息后存; remote_player spawn 时取用
 var pending_initial_deltas: Dictionary = {}  # client 收 hello 时存入, world 加载后取走应用
 var _pos_send_timer: float = 0.0
@@ -255,14 +252,6 @@ func _route_message(raw: String, from_peer: String = "HOST") -> void:
 			kill_scored.emit(String(data.get("killer", "")), String(data.get("victim", "")))
 		"__kicked":
 			kicked_by_host.emit()
-		"bw_slot":
-			bw_slot_received.emit(String(data.get("pid", "")), int(data.get("slot", 0)))
-		"bw_bed":
-			bw_bed_broken.emit(int(data.get("slot", -1)))
-		"bw_out":
-			bw_out.emit(String(data.get("pid", "")))
-		"bw_win":
-			bw_win.emit(String(data.get("pid", "")))
 		"drop_req":
 			remote_drop_request_received.emit(
 				String(data.get("item", "")), int(data.get("n", 1)),
@@ -313,6 +302,7 @@ func host(p_seed: int = 0, p_size: int = 1, p_diff: int = 1) -> void:
 		_emit_no_bridge_error()
 		return
 	is_host = true
+	in_public_room = false   # 私人房 (有房间码邀请)
 	my_room_code = ""
 	room_mode = "survival"   # 私人房不打人
 	# 私人房: 把当前世界的创造/生存模式带给加入者 (只私人房能创造)
@@ -333,6 +323,7 @@ func join(code: String) -> void:
 		_emit_no_bridge_error()
 		return
 	is_host = false
+	in_public_room = false   # 私人房 (输房间码加入)
 	room_mode = "survival"   # 私人房不打人 (host 会发 hello 覆盖, 这里先给默认)
 	_bridge.join(code.strip_edges().to_upper())
 
@@ -340,10 +331,10 @@ func join(code: String) -> void:
 # 进公共房: 由 bridge 抢占式决定本端成 host 还是 client (谁先到谁当 host, 房满顺延下一号).
 # 先设好固定世界参数 (万一本端成 host, 连上后要 send_hello 这些值给 client).
 func enter_public(tag: String, seed_val: int, size_val: int, diff_val: int) -> void:
+	in_public_room = true   # 公共房 (本来就是多人, 暂停菜单不显示"多人游戏/踢人")
 	# 房间类型 → 模式: PVP 对战房 / BW 起床战争 / 其它生存
 	match tag:
 		"PVP": room_mode = "pvp"
-		"BW": room_mode = "bedwars"
 		_: room_mode = "survival"
 	shared_world_creative = false   # 公共房永远生存 (不让陌生人创造乱飞)
 	if _bridge == null:
@@ -524,23 +515,6 @@ func kick_peer(peer_id: String) -> void:
 		_bridge.kick(peer_id)
 
 
-# 起床战争 (host): 告诉某玩家分到的岛号 (广播, 各 client 按 pid==自己 认领)。
-func send_bw_slot(pid: String, slot: int) -> void:
-	send(JSON.stringify({"type": "bw_slot", "pid": pid, "slot": slot}))
-
-
-func send_bw_bed_broken(slot: int) -> void:
-	send(JSON.stringify({"type": "bw_bed", "slot": slot}))
-
-
-func send_bw_out(pid: String) -> void:
-	send(JSON.stringify({"type": "bw_out", "pid": pid}))
-
-
-func send_bw_win(pid: String) -> void:
-	send(JSON.stringify({"type": "bw_win", "pid": pid}))
-
-
 # client → host: 请求在 (x,y) 生成掉落. host 权威 spawn 后经 drop_pos 广播给两边.
 func send_drop_request(item_id: String, count: int, x: float, y: float) -> void:
 	send(JSON.stringify({
@@ -617,6 +591,7 @@ func disconnect_room() -> void:
 	status = "idle"
 	my_room_code = ""
 	is_host = false
+	in_public_room = false
 	# 清掉本局会话状态, 否则 NetworkManager (autoload) 会把上一局的 chunk deltas / 对方名字
 	# 带到下一局, 污染新世界地形 (bug: 返回菜单再开新游戏看到旧改动)
 	pending_initial_deltas = {}

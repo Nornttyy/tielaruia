@@ -171,8 +171,11 @@ func open() -> void:
 	get_tree().paused = true
 	# 每次开都回到主面板 (要看房间码再点一下 多人游戏 即可)
 	_vbox.visible = true
-	# 踢人按钮 + 关闭联机按钮: 只房主 + 联机时显示
-	var host_online: bool = NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host
+	# 公共房本来就是多人游戏 → 不显示"多人游戏/踢人/关闭联机" (这些是用来开/管自己私人房的).
+	var in_public: bool = NetworkManager != null and NetworkManager.is_public_room()
+	_multiplayer_button.visible = not in_public
+	# 踢人 + 关闭联机: 只"私人房房主"显示 (公共房不显示)
+	var host_online: bool = NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host and not in_public
 	if _kick_button != null:
 		_kick_button.visible = host_online
 	if _close_mp_button != null:
