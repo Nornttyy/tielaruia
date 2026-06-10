@@ -141,14 +141,15 @@ const _BACKLOCK_F := [
 	".H.",
 ]
 
-# 侧躯干 (衬衫 w / 阴影 D / 高光 c)。领口 + 门襟中缝 + 后侧阴暗 + 前缘高光 + 下摆。7 宽 × 6 高。
+# 有扣衬衫: 后背深阴影E + 前襟纽扣(亮c+下阴D=凸起) + 领口 + 褶皱 + 下摆。
+# 细节放可见区 (中间 col3-4 被手臂挡, 不放细节)。7 宽 × 6 高。
 const _TORSO := [
-	".wwDww.",
-	"DwwDwwc",
-	"DwwDwwc",
-	"DwwDwwc",
-	"DwwDwww",
-	".DwDwD.",
+	".wwwDDc",   # 领口 DD + 前缘高光 c
+	"EwwwwDc",   # 后深阴 E + 纽扣 D(深色才看得见) + 前高光 c
+	"Dwwwwwc",   # 扣间 (门襟)
+	"EwwwwDc",   # 纽扣 D
+	"DEwwwwc",   # 后侧褶皱 E
+	".EDDDE.",   # 下摆深阴
 ]
 # 手臂 (袖子+手), 垂在身体前。后缘深 D + 前缘亮 c = 有体积的胳膊, 跟同色躯干分得开。2 宽 × 6 高。
 const _ARM := [
@@ -159,12 +160,12 @@ const _ARM := [
 	"ks",
 	"kk",
 ]
-# 单腿 (裤 b / 阴影 B / 高光 P)。外侧裤缝 B + 前缘高光 P + 裤脚深阴影。3 宽 × 4 高。
+# 单腿 (裤 b / 阴影 B / 深阴 A / 高光 P)。外侧裤缝深A + 前缘高光P + 膝褶 + 裤脚深阴。3 宽 × 4 高。
 const _LEG := [
-	"BbP",
-	"BbP",
-	"BbP",
-	"BBb",
+	"AbP",
+	"ABP",
+	"AbP",
+	"AAb",
 ]
 # 女款细腿 (2 宽, 苗条): 长裤 / 裙下裸腿 / 泳裤 各一版。
 const _LEG_F := [
@@ -308,11 +309,11 @@ static func _female_torso_swim(cs: int) -> Array:
 static func _female_torso(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
-		".wwDww...",   # 肩 + 领口 (D)
-		"DwwDwwc..",   # 上胸 (后阴暗 + 中缝 + 前缘高光 c)
-		"DwwDwwc..",   # 中胸
-		"DwwDwwc..",   # 下胸
-		"Dwww.....",   # 腰 (收腰; 后背对齐 col0 一条直线, 不歪)
+		".wwwDDc..",   # 肩 + 领口 DD + 前高光 c
+		"EwwwwDc..",   # 上胸 (后深阴E + 纽扣D + 前高光c)
+		"Dwwwwwc..",   # 中胸 (扣间门襟)
+		"EwwwwDc..",   # 下胸 (纽扣D)
+		"Dwww.....",   # 腰 (收腰; 后背 col0 一条直线, 不歪)
 		"Dwwwww...",   # 胯 (外扩, 比腰宽一截)
 	]
 	if cs >= 1:
@@ -417,8 +418,8 @@ static func _palette_from(ap: Dictionary) -> Dictionary:
 		".": Color(0, 0, 0, 0),
 		"s": skin, "k": skin.darkened(0.18), "p": skin.lightened(0.16),   # p=皮肤高光
 		"h": hair, "H": hair.darkened(0.28), "g": hair.lightened(0.32),   # g=头发高光
-		"w": shirt, "D": shirt.darkened(0.18), "c": shirt.lightened(0.22), # c=衬衫高光
-		"b": pants, "B": pants.darkened(0.28), "P": pants.lightened(0.26), # P=裤子高光
+		"w": shirt, "D": shirt.darkened(0.18), "c": shirt.lightened(0.24), "E": shirt.darkened(0.40), # c高光 E深阴影
+		"b": pants, "B": pants.darkened(0.28), "P": pants.lightened(0.26), "A": pants.darkened(0.45), # P高光 A深阴影
 		"i": eye, "W": _WHITE, "e": skin.darkened(0.30),
 		"o": shoe, "O": shoe.darkened(0.36), "q": shoe.lightened(0.28),   # 鞋(可换色) + 高光 q
 		"L": _OUTLINE,
