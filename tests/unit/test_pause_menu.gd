@@ -98,3 +98,41 @@ func test_creative_toggle_works_singleplayer():
 	assert_true(GameSettings.creative_mode, "单机时能切创造模式")
 	NetworkManager.status = prev_status
 	GameSettings.creative_mode = prev_creative
+
+
+# ---- 关闭联机按钮 (房主停房间但留在世界继续玩) ----
+
+func test_close_mp_button_host_only():
+	var prev_status = NetworkManager.status
+	var prev_host = NetworkManager.is_host
+	# 房主 + 联机 → 显示
+	NetworkManager.status = "connected"
+	NetworkManager.is_host = true
+	var pm = _make()
+	pm.open()
+	assert_true(pm._close_mp_button.visible, "房主联机时显示关闭联机按钮")
+	pm.close()
+	# 加入方 (非房主) → 不显示 (离开用回主菜单)
+	NetworkManager.is_host = false
+	pm.open()
+	assert_false(pm._close_mp_button.visible, "加入方不显示关闭联机按钮")
+	NetworkManager.status = prev_status
+	NetworkManager.is_host = prev_host
+
+
+func test_close_mp_disconnects_and_stays_in_world():
+	var prev_status = NetworkManager.status
+	var prev_host = NetworkManager.is_host
+	NetworkManager.status = "connected"
+	NetworkManager.is_host = true
+	var pm = _make()
+	pm.open()
+	var went_menu := [false]
+	pm.return_to_menu.connect(func(): went_menu[0] = true)
+	pm._on_close_mp_pressed()
+	assert_false(pm.visible, "关闭联机后暂停菜单收起 (恢复游戏)")
+	assert_false(get_tree().paused, "关闭联机后不暂停 (继续玩)")
+	assert_false(went_menu[0], "关闭联机不该回主菜单")
+	assert_eq(NetworkManager.status, "idle", "关闭联机后已断开 (status=idle)")
+	NetworkManager.status = prev_status
+	NetworkManager.is_host = prev_host

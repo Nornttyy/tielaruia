@@ -71,6 +71,7 @@ func _refresh_texts(_new_lang: String) -> void:
 var _kick_button: Button = null
 var _kick_panel: Panel = null
 var _kick_list: VBoxContainer = null
+var _close_mp_button: Button = null   # 房主"关闭联机"按钮: 停房间但留在当前世界继续玩
 
 
 func _build_kick_ui() -> void:
@@ -82,6 +83,15 @@ func _build_kick_ui() -> void:
 	_vbox.add_child(_kick_button)
 	_vbox.move_child(_kick_button, _multiplayer_button.get_index() + 1)
 	_kick_button.visible = false
+	# 关闭联机按钮: 房主点了停止房间 (断开所有人), 自己留在当前世界继续单机玩, 不退回主菜单。
+	# 放在"多人游戏"按钮正下方 (= 开/关联机挨着). 只房主 + 联机时显示 (跟踢人同条件)。
+	_close_mp_button = Button.new()
+	_close_mp_button.text = "关闭联机"
+	UIStyle.style_button(_close_mp_button)
+	_close_mp_button.pressed.connect(_on_close_mp_pressed)
+	_vbox.add_child(_close_mp_button)
+	_vbox.move_child(_close_mp_button, _multiplayer_button.get_index() + 1)
+	_close_mp_button.visible = false
 	# 踢人面板 (列玩家 + 踢按钮), 代码建, 默认隐藏
 	_kick_panel = Panel.new()
 	_kick_panel.add_theme_stylebox_override("panel", UIStyle.panel())
@@ -161,9 +171,12 @@ func open() -> void:
 	get_tree().paused = true
 	# 每次开都回到主面板 (要看房间码再点一下 多人游戏 即可)
 	_vbox.visible = true
-	# 踢人按钮: 只房主 + 联机时显示
+	# 踢人按钮 + 关闭联机按钮: 只房主 + 联机时显示
+	var host_online: bool = NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host
 	if _kick_button != null:
-		_kick_button.visible = NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host
+		_kick_button.visible = host_online
+	if _close_mp_button != null:
+		_close_mp_button.visible = host_online
 	if _kick_panel != null:
 		_kick_panel.visible = false
 	_host_panel.visible = false
@@ -215,6 +228,13 @@ func _on_return_to_menu_pressed() -> void:
 	if NetworkManager != null and NetworkManager.status != "idle":
 		NetworkManager.disconnect_room()
 	return_to_menu.emit()
+
+
+func _on_close_mp_pressed() -> void:
+	# 关闭联机: 停掉房间 (断开所有人), 但不回主菜单 — 房主留在当前世界继续单机玩。
+	if NetworkManager != null and NetworkManager.status != "idle":
+		NetworkManager.disconnect_room()
+	close()   # 收起暂停菜单, 恢复游戏 (留在世界里)
 
 
 # ----- 多人游戏 (host 模式) -----
