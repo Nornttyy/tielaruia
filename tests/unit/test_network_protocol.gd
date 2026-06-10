@@ -200,6 +200,17 @@ func test_route_bw_slot() -> void:
 	assert_signal_emitted_with_parameters(nm, "bw_slot_received", ["P2", 3])
 
 
+# 起床战争: 床破/出局/胜利 消息路由
+func test_route_bedwars_events() -> void:
+	watch_signals(nm)
+	nm._route_message('{"type":"bw_bed","slot":2}', "HOST")
+	assert_signal_emitted_with_parameters(nm, "bw_bed_broken", [2])
+	nm._route_message('{"type":"bw_out","pid":"P5"}', "HOST")
+	assert_signal_emitted_with_parameters(nm, "bw_out", ["P5"])
+	nm._route_message('{"type":"bw_win","pid":"P7"}', "HOST")
+	assert_signal_emitted_with_parameters(nm, "bw_win", ["P7"])
+
+
 # 起床战争模式: is_bedwars + combat_enabled (对战房+起床房都能打)
 func test_bedwars_mode_and_combat_enabled() -> void:
 	nm.status = "connected"

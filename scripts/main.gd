@@ -7,6 +7,7 @@ const WorldScene = preload("res://scenes/world/world.tscn")
 const PvpArena = preload("res://scripts/world/pvp_arena.gd")   # 对战房专属竞技场生成
 const BedwarsArena = preload("res://scripts/world/bedwars_arena.gd")   # 起床战争地图生成
 const BedwarsManagerScript = preload("res://scripts/net/bedwars_manager.gd")   # 起床战争分岛/床归属
+const BedwarsHudScript = preload("res://scripts/ui/bedwars_hud.gd")   # 起床战争横幅 (床破/出局/胜利)
 const DebugHudScene = preload("res://scenes/ui/debug_hud.tscn")
 const FloatingPromptScene = preload("res://scenes/ui/floating_prompt.tscn")
 const HudScene = preload("res://scenes/ui/hud.tscn")
@@ -610,6 +611,10 @@ func _grant_starter_on_new_game() -> void:
 					add_child(bw_mgr)
 					bw_mgr.setup(w, bw_spawns)
 					_game_nodes.append(bw_mgr)
+					var bw_hud = BedwarsHudScript.new()   # 床破/出局/胜利横幅 (须在 manager 之后建)
+					bw_hud.name = "BedwarsHud"
+					add_child(bw_hud)
+					_game_nodes.append(bw_hud)
 				# 角色系统: 老角色 (已有背包) 进新世界 → 带着角色的东西, 不发起步包;
 				# 全新角色 (背包空) → 照常发起步包 (随后 autosave 把它存进角色卡)。
 				# GUT 测试跳过 → 永远走起步包分支, 不被 current 残留影响。
@@ -711,18 +716,52 @@ func _on_player_damaged(to_pid: String, dmg: int, kb: float, sx: float, sy: floa
 			_last_attacker_pid = by_pid   # 真扣到血了才记凶手 (iframe 内没扣不算)
 
 
-# PvP: 本地玩家死 → 把击杀记给凶手 + 几秒后自动满血复活 (不掉东西)。
+# PvP/起床战争: 本地玩家死 → 记击杀 + 复活/出局。
 func _on_local_death_pvp() -> void:
 	if NetworkManager == null or not NetworkManager.combat_enabled():
 		return
 	if _last_attacker_pid != "":
 		NetworkManager.send_kill(_last_attacker_pid, NetworkManager.my_peer_id())
 		_last_attacker_pid = ""
-	# 3 秒后自动复活 (死亡屏先显示, 到点自动 _on_respawn 收掉它)
+	# 起床战争: 床还在 → 回自己岛复活; 床破了 → 出局 (不复活)
+	if NetworkManager.is_bedwars():
+		var mgr: Node = get_tree().get_first_node_in_group("bedwars_manager")
+		if mgr != null and not mgr.local_bed_alive():
+			mgr.declare_out()           # 床没了 → 出局
+			_death_screen.hide_death()  # 不弹常规复活按钮
+			return
+		# 床还在: 3 秒后回自己岛满血复活
+		var bw_t := get_tree().create_timer(3.0)
+		bw_t.timeout.connect(func():
+			if _state != "game":
+				return
+			_death_screen.hide_death()
+			_bedwars_respawn())
+		return
+	# 对战房: 3 秒后原地满血复活
 	var t := get_tree().create_timer(3.0)
 	t.timeout.connect(func():
 		if _state == "game":
 			_on_respawn())
+
+
+# 起床战争复活: 回自己岛 + 满血满魔 (不走 world.respawn_player 的世界出生点)
+func _bedwars_respawn() -> void:
+	var w := world
+	if w == null or not w.has_method("get_player"):
+		return
+	var player: Node2D = w.get_player()
+	if player == null:
+		return
+	var mgr: Node = get_tree().get_first_node_in_group("bedwars_manager")
+	if mgr != null and mgr.has_method("my_spawn"):
+		player.global_position = mgr.my_spawn()
+	var hp: Node = player.get_node_or_null("PlayerHealth")
+	if hp != null and hp.has_method("revive_full"):
+		hp.revive_full()
+	var mn: Node = player.get_node_or_null("PlayerMana")
+	if mn != null and mn.has_method("refill_full"):
+		mn.refill_full()
 
 
 func _on_kicked_by_host() -> void:

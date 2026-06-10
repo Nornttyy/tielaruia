@@ -28,6 +28,9 @@ signal peer_joined(peer_id: String)
 signal peer_left(peer_id: String)
 signal kicked_by_host()   # 本端 client 被房主踢了 → main 收到后断开回主菜单
 signal bw_slot_received(peer_id: String, slot: int)   # 起床战争: host 分给某玩家的岛号 (slot)
+signal bw_bed_broken(slot: int)        # 起床战争: 某岛的床被砸了 (host 广播)
+signal bw_out(peer_id: String)          # 起床战争: 某玩家出局
+signal bw_win(peer_id: String)          # 起床战争: 某玩家获胜 (最后剩的)
 
 # 高层协议事件 (parse 后):
 signal hello_received(world_seed: int, world_size: int, difficulty: int)  # host → client, seed+大小+难度 (双方一致)
@@ -254,6 +257,12 @@ func _route_message(raw: String, from_peer: String = "HOST") -> void:
 			kicked_by_host.emit()
 		"bw_slot":
 			bw_slot_received.emit(String(data.get("pid", "")), int(data.get("slot", 0)))
+		"bw_bed":
+			bw_bed_broken.emit(int(data.get("slot", -1)))
+		"bw_out":
+			bw_out.emit(String(data.get("pid", "")))
+		"bw_win":
+			bw_win.emit(String(data.get("pid", "")))
 		"drop_req":
 			remote_drop_request_received.emit(
 				String(data.get("item", "")), int(data.get("n", 1)),
@@ -518,6 +527,18 @@ func kick_peer(peer_id: String) -> void:
 # 起床战争 (host): 告诉某玩家分到的岛号 (广播, 各 client 按 pid==自己 认领)。
 func send_bw_slot(pid: String, slot: int) -> void:
 	send(JSON.stringify({"type": "bw_slot", "pid": pid, "slot": slot}))
+
+
+func send_bw_bed_broken(slot: int) -> void:
+	send(JSON.stringify({"type": "bw_bed", "slot": slot}))
+
+
+func send_bw_out(pid: String) -> void:
+	send(JSON.stringify({"type": "bw_out", "pid": pid}))
+
+
+func send_bw_win(pid: String) -> void:
+	send(JSON.stringify({"type": "bw_win", "pid": pid}))
 
 
 # client → host: 请求在 (x,y) 生成掉落. host 权威 spawn 后经 drop_pos 广播给两边.
