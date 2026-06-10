@@ -94,15 +94,28 @@ func _build_ui() -> void:
 	inv_title.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
 	inv_vbox.add_child(inv_title)
 
-	# 盔甲槽 (3 个): 头盔 / 胸甲 / 裤子. 右键背包物品 → 装备到匹配槽
+	# 盔甲槽 (3 个): 头盔 / 胸甲 / 裤子. 右键背包物品 → 装备到匹配槽.
+	# 用户要求: 放到屏幕右下角 (独立容器锚右下), 不跟背包格挤左上.
+	var armor_box := VBoxContainer.new()
+	armor_box.anchor_left = 1.0
+	armor_box.anchor_top = 1.0
+	armor_box.anchor_right = 1.0
+	armor_box.anchor_bottom = 1.0
+	armor_box.offset_left = -150.0   # 离右边 ~150px
+	armor_box.offset_top = -96.0     # 离底边 ~96px
+	armor_box.offset_right = -12.0
+	armor_box.offset_bottom = -12.0
+	armor_box.alignment = BoxContainer.ALIGNMENT_END
+	add_child(armor_box)
 	var armor_label := Label.new()
 	armor_label.text = "盔甲 (右键背包装备)"
 	armor_label.add_theme_font_size_override("font_size", 11)
 	armor_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
-	inv_vbox.add_child(armor_label)
+	armor_box.add_child(armor_label)
 	var armor_row := HBoxContainer.new()
 	armor_row.add_theme_constant_override("separation", 4)
-	inv_vbox.add_child(armor_row)
+	armor_row.alignment = BoxContainer.ALIGNMENT_END   # 槽靠右对齐
+	armor_box.add_child(armor_row)
 	_armor_slot_nodes = [
 		_make_armor_slot("helmet", "头"),
 		_make_armor_slot("chest",  "胸"),
