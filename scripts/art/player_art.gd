@@ -180,32 +180,32 @@ const _ARM_BARE := [
 	"sp",
 	"kk",
 ]
-# 裙子款的裸腿 (皮肤色 + 前缘高光 p)。3 宽 × 4 高。
+# 裙子款的裸腿 (皮肤色 + 前缘高光 p + 后缘阴影 k)。3 宽 × 4 高。
 const _LEG_SKIN := [
-	"ssp",
-	"ssp",
+	"ksp",
+	"ksp",
 	"kss",
 	"kss",
 ]
-# 裙子 (裤色 b/B 梯形 + 前缘高光 P + 褶/下摆阴影 B)。9 宽 × 3 高。
+# 裙子 (裤色 b/B 梯形 + 竖褶缝 B + 前缘高光 P + 腰带/下摆阴影)。9 宽 × 3 高。
 const _SKIRT := [
-	".bbbbbbP.",
-	"BbbbbbbPb",
-	"BbbbbBbPB",
+	".bBbBbbP.",
+	"BbBbBbbPb",
+	"BBbBbBbPB",
 ]
-# 泳裤款的腿 (上段短裤 b/B + 前缘高光 P + 下段裸腿 s/k)。3 宽 × 4 高。
+# 泳裤款的腿 (上段短裤 b/B + 外侧裤缝 B + 前缘高光 P + 下段裸腿 s/k)。3 宽 × 4 高。
 const _LEG_TRUNK := [
-	"bbP",
+	"BbP",
 	"BbP",
 	"kss",
 	"kss",
 ]
-# 泳衣款男躯干 (光膀子: 皮肤胸膛 + 前缘高光 p + 肚脐 k, 男生只穿泳裤)。7 宽 × 6 高。
+# 泳衣款男躯干 (光膀子: 皮肤胸膛 + 前缘高光 p + 侧/锁骨阴影 k + 肚脐, 男生只穿泳裤)。7 宽 × 6 高。
 const _TORSO_SWIM := [
-	".sssss.",
-	"sssssps",
+	".kssss.",
 	"kssssps",
-	".sssss.",
+	"kssssps",
+	".kssss.",
 	".sskss.",
 	"..sss..",
 ]
@@ -261,9 +261,9 @@ static func _shirt_layer(ap: Dictionary, dy: int) -> Array:
 static func _female_torso_swim(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
-		".wwwww...",   # 上胸
-		"wwwwwwc..",   # 胸 (前缘高光 c)
-		"wwwwwwc..",   # 胸下沿 (衣底)
+		".wwDww...",   # 上胸 + 领口
+		"DwwDwwc..",   # 胸 (后阴暗 + 中缝 + 前缘高光 c)
+		"DwwDwwc..",   # 胸下沿 (衣底)
 		".ssssp...",   # 肚 (皮肤 + 高光 p)
 		".Dss.....",   # 腰 (皮肤, 收窄)
 		"ksssk....",   # 胯 (皮肤)
