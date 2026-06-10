@@ -1790,6 +1790,10 @@ func _try_fire_bow() -> void:
 	# 弓 tier 加伤: tier1 ×1.0, 后续 tier 加 (留口子未来 add bow tier 2-7)
 	dmg = int(round(float(dmg) * _tool_damage_mult()))
 	arrow.setup(start, target, dmg, parent)
+	# 让手里的弓转向鼠标 (修 bug: 之前箭朝鼠标飞, 但弓一直竖着不转 = 看着没瞄准)
+	var held: Node = _held_item_node()
+	if held != null and held.has_method("play_bow_shoot"):
+		held.play_bow_shoot((target - parent.global_position).angle())
 	if NetworkManager != null and NetworkManager.connected():
 		NetworkManager.send_projectile("arrow", start.x, start.y, target.x, target.y)
 	SfxBank.play("break", 0.10)  # 暂用破方块声当弓弦声; 以后加专属

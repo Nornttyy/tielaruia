@@ -248,6 +248,37 @@ func play_swing_directional(target_angle: float) -> void:
 	_tween.tween_callback(func(): _attack_locked = false)
 
 
+const BOW_SHOOT_DURATION := 0.35   # 放箭后弓朝鼠标保持 + 回正的总时长 (略长过冷却才看得到瞄准姿势)
+const BOW_RECOIL_PX := 4.0         # 放箭瞬间弓沿瞄准方向小幅前冲再收回 (松弦反冲感)
+
+# 射箭姿势: 让手里的弓转向鼠标 (之前 bug: 箭朝鼠标飞但弓一直竖着不转, 看着没瞄准).
+# target_angle: 鼠标相对玩家的角度 (radians, 0 = 右).
+func play_bow_shoot(target_angle: float) -> void:
+	if not _has_item:
+		return
+	_show_for(BOW_SHOOT_DURATION)
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	_attack_locked = false
+	var mouse_on_right: bool = cos(target_angle) >= 0.0
+	set_facing(mouse_on_right)
+	_attack_locked = true
+	# 弓图标的"开口/射击口"朝 +x (右). rotation = target_angle 就让开口朝鼠标 (不像剑尖朝上要 +PI/2).
+	# 但 set_facing 瞄左时把 sprite 水平镜像了, 会把开口翻到 -x → 减 PI 补回来, 开口才真朝鼠标.
+	rotation = wrapf(target_angle - (0.0 if mouse_on_right else PI), -PI, PI)
+	var base_pos := Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
+	position = base_pos
+	var nudge := Vector2(cos(target_angle), sin(target_angle)) * BOW_RECOIL_PX
+	_tween = create_tween()
+	_tween.tween_property(self, "position", base_pos + nudge, BOW_SHOOT_DURATION * 0.25).set_ease(Tween.EASE_OUT)
+	_tween.tween_interval(BOW_SHOOT_DURATION * 0.35)
+	_tween.tween_property(self, "position", base_pos, BOW_SHOOT_DURATION * 0.40).set_ease(Tween.EASE_IN)
+	_tween.tween_callback(func():
+		rotation = 0.0
+		_attack_locked = false
+	)
+
+
 func _on_changed(_arg = null) -> void:
 	_refresh()
 
