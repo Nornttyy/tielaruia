@@ -107,6 +107,9 @@ const _DEFS := {
 	# 魔法枪 (耗魔力 mana_cost, 不耗子弹): 追踪 / 毒
 	"arcane_gun":    {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8, "gun_cooldown": 0.35, "gun_damage": 12, "bullet_speed": 420, "gun_visual": "magic", "gun_homing": 6.0},  # 追踪魔弹: 自动追怪
 	"poison_gun":    {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 6, "gun_cooldown": 0.3, "gun_damage": 4, "bullet_speed": 480, "gun_visual": "poison", "gun_dot_dps": 6, "gun_dot_dur": 4.0},  # 毒液: 命中中毒持续掉血
+	"lightning_gun": {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 10, "gun_cooldown": 0.4, "gun_damage": 9, "bullet_speed": 700, "gun_visual": "lightning", "gun_chain": 3, "gun_chain_radius": 64.0},  # 闪电链: 电一只跳附近 3 只
+	"star_gun":      {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 5, "gun_cooldown": 0.25, "gun_damage": 6, "bullet_speed": 380, "gun_visual": "star", "gun_bounce": 4, "bullet_lifetime": 2.5},  # 星星炮: 撞墙反弹 4 次
+	"slime_gun":     {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 3, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 4, "gun_cooldown": 0.3, "gun_damage": 7, "bullet_speed": 320, "gun_visual": "slimeblob", "gun_bounce": 3, "gun_gravity": 500.0, "bullet_lifetime": 2.5},  # 史莱姆枪: 弹跳果冻团
 	"bullet":        {"placeable_tile_id": -1, "tool_kind": "",    "tool_tier": 0, "max_stack": 99},
 	# === 地狱矿石 ===
 	"hell_crystal_ingot": {"placeable_tile_id": -1,                "tool_kind": "",        "tool_tier": 0, "max_stack": 99},

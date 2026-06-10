@@ -32,6 +32,9 @@ const ArrowProjArt = preload("res://scripts/art/arrow_proj_art.gd")
 const BulletProjArt = preload("res://scripts/art/bullet_proj_art.gd")
 const LaserProjArt = preload("res://scripts/art/laser_proj_art.gd")
 const MagicProjArt = preload("res://scripts/art/magic_proj_art.gd")
+const LightningProjArt = preload("res://scripts/art/lightning_proj_art.gd")
+const StarProjArt = preload("res://scripts/art/star_proj_art.gd")
+const SlimeBlobProjArt = preload("res://scripts/art/slime_blob_proj_art.gd")
 const MummyArt = preload("res://scripts/art/mummy_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
@@ -61,6 +64,9 @@ var arrow_proj_frames: SpriteFrames
 var bullet_proj_frames: SpriteFrames
 var laser_proj_frames: SpriteFrames
 var magic_proj_frames: SpriteFrames
+var lightning_proj_frames: SpriteFrames
+var star_proj_frames: SpriteFrames
+var slime_blob_proj_frames: SpriteFrames
 var mummy_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
@@ -296,7 +302,7 @@ func _build_items() -> void:
 			# 枪械: 常规 4 + 特殊 3 + 手枪 + 子弹 (必须在这注册, 否则运行时 "未知 item icon")
 			"pistol", "bullet", "smg", "assault_rifle", "shotgun", "sniper",
 			"laser_gun", "flamethrower", "freeze_ray",
-			"arcane_gun", "poison_gun",   # 魔法枪 (耗魔力)
+			"arcane_gun", "poison_gun", "lightning_gun", "star_gun", "slime_gun",   # 魔法枪 (耗魔力)
 			# 盔甲: 15 件 (5 tier × 3 件)
 			"copper_helmet", "copper_chest", "copper_pants",
 			"iron_helmet", "iron_chest", "iron_pants",
@@ -380,6 +386,10 @@ func _build_entities() -> void:
 	laser_proj_frames = LaserProjArt.build_sprite_frames()
 	# 奥术魔弹 (追踪魔弹枪用, 紫色追踪)
 	magic_proj_frames = MagicProjArt.build_sprite_frames()
+	# 闪电弹 / 星星弹 / 史莱姆弹 (3b 魔法枪)
+	lightning_proj_frames = LightningProjArt.build_sprite_frames()
+	star_proj_frames = StarProjArt.build_sprite_frames()
+	slime_blob_proj_frames = SlimeBlobProjArt.build_sprite_frames()
 	# 木乃伊: 金字塔守卫
 	mummy_frames = MummyArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)

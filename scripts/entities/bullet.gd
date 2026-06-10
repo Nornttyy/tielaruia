@@ -21,10 +21,14 @@ var slow_factor: float = 0.0    # >0=命中给怪减速到此倍率 (冰冻枪)
 var slow_dur: float = 0.0
 var _visual: String = "bullet"  # bullet / laser / fire / ice / magic / poison → 选不同贴图
 var _hit_ids: Dictionary = {}   # 穿透时记下已命中的怪, 同一只不重复打
-# 魔法机制 (从 opts 读): 追踪 / 毒
+# 魔法机制 (从 opts 读): 追踪 / 毒 / 连锁 / 反弹 / 重力
 var homing: float = 0.0         # >0 = 每秒朝最近怪转向 homing 弧度 (追踪魔弹枪)
 var dot_dps: int = 0            # >0 = 命中给怪上毒, 每秒掉 dot_dps 血 (毒液枪)
 var dot_dur: float = 0.0
+var chain: int = 0              # >0 = 命中时再电附近 chain 只怪 (闪电链枪)
+var chain_radius: float = 60.0  # 连锁跳跃半径
+var bounce: int = 0             # >0 = 撞墙反弹而不消失, 剩余次数 (星星炮/史莱姆枪)
+var grav: float = 0.0           # >0 = 每帧下坠 (史莱姆枪弹丸抛物线弹跳)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -41,6 +45,10 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, spe
 	homing = float(opts.get("homing", 0.0))
 	dot_dps = int(opts.get("dot_dps", 0))
 	dot_dur = float(opts.get("dot_dur", 0.0))
+	chain = int(opts.get("chain", 0))
+	chain_radius = float(opts.get("chain_radius", 60.0))
+	bounce = int(opts.get("bounce", 0))
+	grav = float(opts.get("gravity", 0.0))
 	var lt: float = float(opts.get("lifetime", 0.0))
 	if lt > 0.0:
 		_lifetime = lt
@@ -60,8 +68,11 @@ func _apply_visual() -> void:
 		"laser":  frames = ArtCache.laser_proj_frames
 		"fire":   frames = ArtCache.fireball_frames      # 火焰喷射器复用火球粒子
 		"ice":    frames = ArtCache.spell_frames_ice     # 冰冻枪复用蓝色冰弹
-		"magic":  frames = ArtCache.magic_proj_frames    # 追踪魔弹枪: 紫色奥术弹
-		"poison": frames = ArtCache.spell_frames_nature  # 毒液枪复用绿色自然弹
+		"magic":     frames = ArtCache.magic_proj_frames    # 追踪魔弹枪: 紫色奥术弹
+		"poison":    frames = ArtCache.spell_frames_nature  # 毒液枪复用绿色自然弹
+		"lightning": frames = ArtCache.lightning_proj_frames # 闪电链枪: 黄电球
+		"star":      frames = ArtCache.star_proj_frames      # 星星炮: 金色星
+		"slimeblob": frames = ArtCache.slime_blob_proj_frames # 史莱姆枪: 绿果冻团
 	if frames == null:
 		return
 	sprite.sprite_frames = frames
@@ -94,14 +105,30 @@ func _physics_process(delta: float) -> void:
 				var new_ang: float = cur_ang + clampf(angle_difference(cur_ang, want.angle()), -homing * delta, homing * delta)
 				velocity = Vector2(cos(new_ang), sin(new_ang)) * velocity.length()
 				rotation = new_ang
-	# 注意: 没有 velocity.y += GRAVITY — 子弹笔直飞, 不下坠 (跟箭最大区别)
+	# 史莱姆枪弹丸: 重力下坠 → 抛物线 (普通子弹 grav=0 笔直飞)
+	if grav > 0.0:
+		velocity.y += grav * delta
 	var next: Vector2 = global_position + velocity * delta
 	var cm = _get_cm()
 	if cm != null:
 		var tx: int = int(floor(next.x / TILE_SIZE))
 		var ty: int = int(floor(next.y / TILE_SIZE))
-		var t: int = cm.get_tile(tx, ty)
-		if t != Tiles.AIR and Tiles.is_solid(t):
+		if _solid_at(cm, tx, ty):
+			if bounce > 0:
+				# 反弹: 判断撞横墙还是地板/天花板, 翻对应速度分量, 不移进墙
+				bounce -= 1
+				var cx: int = int(floor(global_position.x / TILE_SIZE))
+				var cy: int = int(floor(global_position.y / TILE_SIZE))
+				var hit_h: bool = _solid_at(cm, tx, cy)
+				var hit_v: bool = _solid_at(cm, cx, ty)
+				if hit_h and not hit_v:
+					velocity.x = -velocity.x
+				elif hit_v and not hit_h:
+					velocity.y = -velocity.y
+				else:
+					velocity = -velocity
+				rotation = velocity.angle()
+				return
 			_destroy()
 			return
 	global_position = next
@@ -142,6 +169,9 @@ func _check_enemy_hit() -> void:
 				# 毒液枪: 命中给怪上毒 (持续掉血)
 				if dot_dps > 0 and enemy.has_method("apply_poison"):
 					enemy.apply_poison(dot_dps, dot_dur)
+				# 闪电链枪: 命中后再电附近几只
+				if chain > 0:
+					_do_chain(enemy as Node2D, src)
 			if not pierce:
 				_destroy()
 				return
@@ -168,6 +198,35 @@ func _destroy() -> void:
 		return
 	_is_dead = true
 	queue_free()
+
+
+# 某格是不是实心墙 (反弹/撞墙判断用)
+func _solid_at(cm, x: int, y: int) -> bool:
+	var t: int = cm.get_tile(x, y)
+	return t != Tiles.AIR and Tiles.is_solid(t)
+
+
+# 闪电连锁: 从 from_enemy 跳到半径内最近的 chain 只其他怪, 各扣 damage.
+func _do_chain(from_enemy: Node2D, src: Vector2) -> void:
+	if from_enemy == null:
+		return
+	var origin: Vector2 = from_enemy.global_position
+	var cands: Array = []
+	for group in ["slimes", "animals"]:
+		for e in get_tree().get_nodes_in_group(group):
+			if e == from_enemy or e == _shooter or not is_instance_valid(e) or not e is Node2D:
+				continue
+			if e.has_meta("is_remote"):
+				continue
+			var d: float = origin.distance_to((e as Node2D).global_position)
+			if d <= chain_radius:
+				cands.append({"e": e, "d": d})
+	cands.sort_custom(func(a, b): return a["d"] < b["d"])
+	var n: int = min(chain, cands.size())
+	for i in n:
+		var e = cands[i]["e"]
+		if e.has_method("take_damage"):
+			e.take_damage(damage, src, 80.0)
 
 
 func _get_cm():

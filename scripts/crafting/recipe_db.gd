@@ -1000,6 +1000,42 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": false,
 	},
+	# 闪电链枪 (魔法): 金(导电) + 钻石 + 铁 + 木握把
+	{
+		"id": "lightning_gun",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["gold_ingot", "diamond", "iron_ingot"],
+			["",           "planks",  ""],
+		],
+		"output_id": "lightning_gun",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 星星炮 (魔法): 双金 + 钻石(闪亮) + 木握把
+	{
+		"id": "star_gun",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["gold_ingot", "diamond", "gold_ingot"],
+			["",           "planks",  ""],
+		],
+		"output_id": "star_gun",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
+	# 史莱姆枪 (魔法): 3 史莱姆冻 + 铁(中下)
+	{
+		"id": "slime_gun",
+		"grid_size": Vector2i(3, 2),
+		"pattern": [
+			["slime_jelly", "slime_jelly", "slime_jelly"],
+			["",            "iron_ingot",  ""],
+		],
+		"output_id": "slime_gun",
+		"output_count": 1,
+		"mirror_ok": false,
+	},
 	# === 锤子 (破墙): 形状 X X X / X X . / . X . (区别于镐 XXX/.X./.X. 和斧 XX./XX./.X.)
 	# 头=材质, 柄=planks. 木锤全 planks 也不撞木镐 (silhouette 不同).
 	{

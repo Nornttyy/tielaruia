@@ -1838,12 +1838,19 @@ func _try_fire_gun() -> void:
 			opts["visual"] = String(def.get("gun_visual"))
 		if def.has("bullet_lifetime"):
 			opts["lifetime"] = float(def.get("bullet_lifetime"))
-		# 魔法机制: 追踪 (每帧转向最近怪) / 毒 (命中持续掉血)
+		# 魔法机制: 追踪 / 毒 / 连锁 / 反弹 / 重力
 		if def.has("gun_homing"):
 			opts["homing"] = float(def.get("gun_homing"))
 		if def.has("gun_dot_dps"):
 			opts["dot_dps"] = int(def.get("gun_dot_dps"))
 			opts["dot_dur"] = float(def.get("gun_dot_dur", 3.0))
+		if def.has("gun_chain"):
+			opts["chain"] = int(def.get("gun_chain"))
+			opts["chain_radius"] = float(def.get("gun_chain_radius", 60.0))
+		if def.has("gun_bounce"):
+			opts["bounce"] = int(def.get("gun_bounce"))
+		if def.has("gun_gravity"):
+			opts["gravity"] = float(def.get("gun_gravity"))
 	_attack_cooldown = cd
 	var parent: Node2D = get_parent() as Node2D
 	if parent == null:

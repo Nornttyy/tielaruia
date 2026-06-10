@@ -942,6 +942,66 @@ const _POISON_GUN := [
 	"................",
 ]
 
+# 闪电链枪 icon: 灰枪身 + 枪口黄色电火花(z金/y沙黄) + 木握把.
+const _LIGHTNING_GUN := [
+	"................",
+	"................",
+	"....nnnnnn......",
+	"...nBBBBBBn.....",
+	"...nBKKKKBnnn...",
+	"...nBKKKKBnyzn..",
+	"..nhBnnnBnzyn...",
+	"..nhhhn..nzn....",
+	"..nhHhn.........",
+	"..nhHhn.........",
+	"...nhn..........",
+	"...nn...........",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
+# 星星炮 icon: 顶上金色五角星(z亮/R深) + 灰枪身 + 木握把.
+const _STAR_GUN := [
+	"................",
+	".......z........",
+	"......zRz.......",
+	"...zzzRRRzzz....",
+	"....zRRRRRz.....",
+	".....zRRRz......",
+	"....nzRzRn.nnn..",
+	"..nBBBBBBBBBBn..",
+	"..nKKnnKnnnnn...",
+	".nhHHn.nn.......",
+	".nhHHHn.........",
+	"..nnn...........",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
+# 史莱姆枪 icon: 顶上绿色史莱姆团(o/O/q) + 灰枪身 + 木握把. (毒液枪是底部绿罐, 区别开)
+const _SLIME_GUN := [
+	"................",
+	".....ooo........",
+	"....oqqqo.......",
+	"...ooOOOoo......",
+	"...oOOOOOo.nnn..",
+	"..noOOOOOonBBn..",
+	"..nBBoooBBBBBn..",
+	"..nKKnnKnnnn....",
+	".nhHHn.nn.......",
+	".nhHHHn.........",
+	".nhHHn..........",
+	"..nnn...........",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
 # 火果 icon: 圆果红身 + 棕枝 + 绿叶 + 高光. 用 items_art PALETTE: A=苹果红, a=红高光, m=暗红影, S=棕梗, L=绿叶, n=黑描边, y=沙黄高光.
 const _HELL_FRUIT_ICON := [
 	"................",
@@ -2424,6 +2484,9 @@ const _ICONS := {
 	"freeze_ray": _FREEZE_RAY,
 	"arcane_gun": _ARCANE_GUN,
 	"poison_gun": _POISON_GUN,
+	"lightning_gun": _LIGHTNING_GUN,
+	"star_gun": _STAR_GUN,
+	"slime_gun": _SLIME_GUN,
 	"bullet": _BULLET,
 	"slime_crown": _SLIME_CROWN,
 	"slime_ball": _SLIME_BALL,
