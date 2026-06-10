@@ -62,6 +62,21 @@ func test_player_death_event() -> void:
 	assert_true(Achievements.is_unlocked("first_death"), "倒下该解锁'哎呀'")
 
 
+func test_has_lots_of_achievements() -> void:
+	assert_gte(Achievements.all_defs().size(), 35, "成就数应已扩到 35+")
+
+
+func test_pickaxe_any_unlocks_miner() -> void:
+	var main = MainScene.instantiate(); add_child_autofree(main)
+	main.boot_to_game()
+	await wait_frames(5)
+	var player = main.get_node("World").get_player()
+	player.get_node("PlayerInventory").pickup("stone_pickaxe", 1)
+	Achievements._reset_for_test()
+	Achievements._poll_items()
+	assert_true(Achievements.is_unlocked("miner"), "做出任一把镐该解锁'矿工'")
+
+
 func test_save_load_roundtrip() -> void:
 	Achievements.unlock("diamond")
 	Achievements._save()
