@@ -55,7 +55,7 @@ func test_magic_gun_uses_mana_not_bullet() -> void:
 	action._try_fire_gun()
 	await wait_frames(1)
 	assert_eq(_count_bullets(world) - before, 1, "魔法枪没子弹也能发 (耗魔力)")
-	assert_eq(mana.current_mana, 92, "应扣 8 魔力 (arcane_gun mana_cost=8)")
+	assert_eq(mana.current_mana, 96, "应扣 4 魔力 (arcane_gun mana_cost=4)")
 
 
 # 魔力不够 → 不发

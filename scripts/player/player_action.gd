@@ -238,7 +238,7 @@ func _physics_process(delta: float) -> void:
 		var primary_pressed_g: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed_g and _attack_cooldown <= 0.0:
 			_try_fire_gun()
-			_flash_held()   # 开枪时闪一下显示枪
+			_aim_held_at_mouse()   # 开枪时枪朝鼠标方向显示
 	elif kind == "staff":
 		# 法杖: LMB 按下 → 火球 (普通法杖) 或 召唤友方骷髅 (骷髅法杖 summons_minion).
 		_reset_mining()
@@ -1302,6 +1302,22 @@ func _flash_held() -> void:
 	var held: Node = _held_item_node()
 	if held != null and held.has_method("flash"):
 		held.flash()
+
+
+# 枪: 显示 + 整把朝鼠标方向 (枪面向鼠标). 没有 aim_gun 方法就退回 flash.
+func _aim_held_at_mouse() -> void:
+	var held: Node = _held_item_node()
+	if held == null:
+		return
+	var parent: Node2D = get_parent() as Node2D
+	if parent == null or not held.has_method("aim_gun"):
+		if held.has_method("flash"):
+			held.flash()
+		return
+	var hand: Vector2 = parent.global_position + Vector2(0, -8)
+	var target: Vector2 = mouse_world_override if mouse_world_override != null else parent.get_global_mouse_position()
+	var angle: float = (target - hand).angle() if hand.distance_to(target) > 0.01 else 0.0
+	held.aim_gun(angle)
 
 
 # 放方块动画: 手里的方块朝放置点"按"出去一下 (方块也只在使用时显示).

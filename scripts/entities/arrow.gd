@@ -28,7 +28,7 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node) -> 
 	rotation = velocity.angle()   # sprite 朝飞行方向
 
 
-const HIT_RADIUS_PX := 8.0   # 箭中心到怪中心 ≤ 此值算击中
+const HIT_RADIUS_PX := 10.0   # 飞行线段到怪中心 ≤ 此值算击中 (大点更好打中)
 
 func _ready() -> void:
 	sprite.sprite_frames = ArtCache.arrow_proj_frames
@@ -53,14 +53,16 @@ func _physics_process(delta: float) -> void:
 		if t != Tiles.AIR and Tiles.is_solid(t):
 			_destroy()
 			return
+	var prev_pos: Vector2 = global_position
 	global_position = next
 	rotation = velocity.angle()   # 箭头随飞行方向转 (下坠时朝下), 抛物线才自然
 	# 手动撞怪. 联机视觉副本 (is_remote) 不撞, 伤害由发起端 host 算.
 	if not has_meta("is_remote"):
-		_check_enemy_hit()
+		_check_enemy_hit(prev_pos)
 
 
-func _check_enemy_hit() -> void:
+# from_pos = 这一帧移动前的位置. 用"线段(上一帧→这一帧)到怪的最近距离"判定, 防箭飞太快跳过怪.
+func _check_enemy_hit(from_pos: Vector2) -> void:
 	# 扫两组: slimes (敌对怪) + animals (牛羊猪 — 弓应该能射). 否则箭穿过动物.
 	for group in ["slimes", "animals"]:
 		for enemy in get_tree().get_nodes_in_group(group):
@@ -70,7 +72,7 @@ func _check_enemy_hit() -> void:
 				continue
 			# 大怪/Boss 给身子半径 (跟近战一致), 否则箭只认中心一点, 从大身子上飞过去不算命中
 			var radius: float = enemy.melee_hit_radius() if enemy.has_method("melee_hit_radius") else 0.0
-			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX + radius:
+			if _seg_point_dist(from_pos, global_position, (enemy as Node2D).global_position) > HIT_RADIUS_PX + radius:
 				continue
 			# 击退源位置: 沿飞行反方向退 32px, 让 (enemy - source).normalized 指向飞行方向.
 			var src: Vector2 = global_position - velocity.normalized() * 32.0
@@ -91,7 +93,7 @@ func _check_enemy_hit() -> void:
 			if rp == null or not is_instance_valid(rp):
 				continue
 			var radius2: float = rp.melee_hit_radius() if rp.has_method("melee_hit_radius") else 8.0
-			if global_position.distance_to(rp.global_position) > HIT_RADIUS_PX + radius2:
+			if _seg_point_dist(from_pos, global_position, rp.global_position) > HIT_RADIUS_PX + radius2:
 				continue
 			var src2: Vector2 = global_position - velocity.normalized() * 32.0
 			var pid: String = String(rp.peer_id) if "peer_id" in rp else ""
@@ -101,6 +103,16 @@ func _check_enemy_hit() -> void:
 					rp.flash_hit()
 			_destroy()
 			return
+
+
+# 点 p 到线段 [a,b] 的最近距离 (扫掠命中: 防快箭两帧间跳过怪)
+func _seg_point_dist(a: Vector2, b: Vector2, p: Vector2) -> float:
+	var ab: Vector2 = b - a
+	var len2: float = ab.length_squared()
+	var t: float = 0.0
+	if len2 > 0.0001:
+		t = clampf((p - a).dot(ab) / len2, 0.0, 1.0)
+	return p.distance_to(a + ab * t)
 
 
 func _destroy() -> void:

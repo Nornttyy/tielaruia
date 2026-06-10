@@ -81,7 +81,7 @@ func _apply_visual() -> void:
 		sprite.play(names[0])
 
 
-const HIT_RADIUS_PX := 8.0   # 子弹中心到怪中心 ≤ 此值算击中
+const HIT_RADIUS_PX := 10.0   # 飞行线段到怪中心 ≤ 此值算击中 (大点更好打中, 不那么"擦边没伤害")
 
 func _ready() -> void:
 	sprite.sprite_frames = ArtCache.bullet_proj_frames
@@ -131,13 +131,16 @@ func _physics_process(delta: float) -> void:
 				return
 			_destroy()
 			return
+	var prev_pos: Vector2 = global_position
 	global_position = next
 	# 手动撞怪. 联机视觉副本 (is_remote) 不撞, 伤害由发起端 host 算.
 	if not has_meta("is_remote"):
-		_check_enemy_hit()
+		_check_enemy_hit(prev_pos)
 
 
-func _check_enemy_hit() -> void:
+# from_pos = 这一帧移动前的位置. 用"线段(上一帧→这一帧)到怪的最近距离"判定,
+# 而不是只看落点那一个点 — 否则子弹飞太快 (步长 > 命中半径) 会从怪身上跳过去不算命中.
+func _check_enemy_hit(from_pos: Vector2) -> void:
 	# 扫两组: slimes (敌对怪) + animals (牛羊猪 — 枪也该能打). 照 arrow.gd.
 	for group in ["slimes", "animals"]:
 		for enemy in get_tree().get_nodes_in_group(group):
@@ -149,7 +152,7 @@ func _check_enemy_hit() -> void:
 				continue   # 穿透时: 这只已经打过, 不重复扣血
 			# 大怪/Boss 给身子半径 (跟近战一致), 否则子弹只认中心一点, 从大身子飞过去不算命中
 			var radius: float = enemy.melee_hit_radius() if enemy.has_method("melee_hit_radius") else 0.0
-			if global_position.distance_to((enemy as Node2D).global_position) > HIT_RADIUS_PX + radius:
+			if _seg_point_dist(from_pos, global_position, (enemy as Node2D).global_position) > HIT_RADIUS_PX + radius:
 				continue
 			_hit_ids[enemy.get_instance_id()] = true
 			# 击退源位置: 沿飞行反方向退 32px, 让 (enemy - source).normalized 指向飞行方向.
@@ -198,6 +201,16 @@ func _destroy() -> void:
 		return
 	_is_dead = true
 	queue_free()
+
+
+# 点 p 到线段 [a,b] 的最近距离 (扫掠命中判定: 防快子弹两帧间跳过怪)
+func _seg_point_dist(a: Vector2, b: Vector2, p: Vector2) -> float:
+	var ab: Vector2 = b - a
+	var len2: float = ab.length_squared()
+	var t: float = 0.0
+	if len2 > 0.0001:
+		t = clampf((p - a).dot(ab) / len2, 0.0, 1.0)
+	return p.distance_to(a + ab * t)
 
 
 # 某格是不是实心墙 (反弹/撞墙判断用)

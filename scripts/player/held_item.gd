@@ -26,6 +26,7 @@ const _HIDE_GRACE := 0.35     # 动作结束后再多显示这么久 (防连挥/
 # 攻击期间锁 facing: player_controller 每帧 set_facing 跟玩家走路方向,
 # 攻击中翻 facing 会让 sprite 镜像但旋转值还是攻击时算的 → 朝向乱套. 锁住期间忽略.
 var _attack_locked: bool = false
+var _aiming_gun: bool = false   # 枪瞄准态: 临时用居中支点绕枪中心转 (跟剑底端支点不同)
 
 
 func _ready() -> void:
@@ -50,8 +51,41 @@ func bind_inventory(inv: Node) -> void:
 func _show_for(anim_dur: float) -> void:
 	if not _has_item:
 		return
+	_reset_aim_transform()   # 任何普通显示都先退出枪瞄准态 (恢复底端支点); aim_gun 不走这
 	visible = true
 	_use_timer = maxf(_use_timer, anim_dur + _HIDE_GRACE)
+
+
+# 从枪瞄准态切回普通显示 (恢复 centered=false + 底端支点 offset + 解锁 facing).
+func _reset_aim_transform() -> void:
+	if not _aiming_gun:
+		return
+	_aiming_gun = false
+	_attack_locked = false
+	centered = false
+	offset = Vector2(-8, -16)
+	rotation = 0.0
+	_apply_scale()
+
+
+# 枪: 整把朝鼠标方向. angle = 鼠标相对玩家的角度 (rad, 0=右). 贴图朝右(+X),
+# 朝左半边竖直翻转 (scale.y 取负) 防止枪倒置 (握把始终朝下).
+func aim_gun(angle: float) -> void:
+	if not _has_item:
+		return
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	_aiming_gun = true
+	_attack_locked = true
+	visible = true
+	_use_timer = maxf(_use_timer, 0.18 + _HIDE_GRACE)
+	centered = true          # 绕枪中心转 (不是底端)
+	offset = Vector2.ZERO
+	var on_right: bool = cos(angle) >= 0.0
+	var sz: float = _current_size
+	scale = Vector2(sz, sz if on_right else -sz)
+	rotation = angle
+	position = Vector2(HAND_OFFSET_X if on_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
 
 
 # 短暂闪一下 (射箭 / 施法 等没有专门动画的"使用"给点反馈)
