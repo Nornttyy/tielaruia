@@ -37,8 +37,8 @@ const _FACE := [
 	"...ssss..",
 	".sssssss.",
 	"sssssssss",
-	"sssssskks",
-	"ssssssWis",   # 眼 (2宽×3高): 眼珠填满 + 后上角 1px 白高光; 上行 kk = 眉毛
+	"sssssssss",
+	"ssssssWis",   # 眼 (2宽×3高): 眼珠填满 + 后上角 1px 白高光 (眉毛已按用户要求去掉)
 	"ssssssiis",
 	"ssssssiis",
 	"sssssssks",   # 脸颊 + 前下颌一点阴影
