@@ -1,60 +1,87 @@
-# 对战房专属竞技场: 在世界里 stamp 一座大型左右对称的竞技场 (300 宽 × 35 高).
+# 对战房专属竞技场: 在世界里 stamp 一座大型左右对称的竞技场.
 # 固定布局 (不靠随机种子) → 每个客户端各自本地生成同一张图 = 公平 + 不用同步上万 tile.
-# 关于中心列 cx 左右镜像; 地面+对称平台掩体+中央高台+两端出生台.
-# 天然地形 / 竞技场地形都不在 chunk_manager._pvp_placed 里 → 对战房挖不动; 只有玩家放的能挖.
+# 关于中心列 cx 左右镜像; 地面 + 少量矮平台掩体 + 两端出生台.
+# 改 (用户): 删中央石柱"墙"; 平台更少更矮 (跳得上去); 清到天上 = 永久白天全亮; 加空气墙防逃出.
 extends RefCounted
 
-const WIDTH := 300          # 总宽 (用户要求"做大点": 300 格)
-const HEIGHT := 35          # 总高
-const HALF := 150           # 半宽 (WIDTH / 2)
-const CENTER_X := 0         # 固定中心列 (=spawn 所在 chunk 0 附近; 固定 → 各客户端同坐标 = 公平)
-const FLOOR_Y := 122        # 固定地面行 (近地表; 清带后建地面, 不依赖天然地形)
-const TILE_SIZE := 12       # 格子像素 (跟全项目一致)
+const WIDTH := 300          # 总宽 (300 格)
+const HALF := 150           # 半宽
+const CENTER_X := 0         # 固定中心列 (各客户端同坐标 = 公平)
+const FLOOR_Y := 122        # 固定地面行 (近地表)
+const TILE_SIZE := 12
+const SKY_CLEAR_TOP := 50   # 从这行往下全清空 → 竞技场开口朝天, 配永久白天 = 全亮 (治"黑漆漆")
+const CEIL_Y := FLOOR_Y - 26   # 看不见的天花板行 (空气墙顶; 上面留开口进光)
 
-# 平台层 (相对地面的高度 dy, 距中心 from..to 列). 每层关于中心对称.
+# 平台层 (相对地面高度 dy, 距中心 from..to 列). 关于中心对称. 少 + 矮 (玩家跳得上).
 const _TIERS := [
-	{"dy": 6,  "from": 18, "to": 70},
-	{"dy": 12, "from": 44, "to": 96},
-	{"dy": 18, "from": 14, "to": 52},
-	{"dy": 24, "from": 60, "to": 104},
-	{"dy": 30, "from": 30, "to": 74},
+	{"dy": 4, "from": 18, "to": 70},
+	{"dy": 9, "from": 40, "to": 96},
 ]
 
-# 在 world 里盖竞技场, 中心放在世界出生点 (那附近区块已加载). 返回出生用世界像素坐标 (左侧出生台上).
+
+# 在 world 盖竞技场, 中心放世界出生点. 返回出生用世界像素坐标 (左侧出生台上).
 static func build(world) -> Vector2:
 	if world == null or not world.has_method("_set_tile"):
 		return Vector2.ZERO
-	var cx: int = CENTER_X        # 竞技场中心列 (固定, 多人各端一致)
-	var floor_y: int = FLOOR_Y    # 地面行 (固定)
-	var top_y: int = floor_y - (HEIGHT - 1)
+	var cx: int = CENTER_X
+	var floor_y: int = FLOOR_Y
 
-	# 1. 清空竞技场竖带 → 空气 (去掉天然山丘, 露出干净竞技场)
+	# 1. 清空: 从高处 (SKY_CLEAR_TOP) 一直清到地面下 → 开口朝天 (有光) + 去掉天然山丘
 	for x in range(cx - HALF, cx + HALF + 1):
-		for y in range(top_y, floor_y + 3):
+		for y in range(SKY_CLEAR_TOP, floor_y + 3):
 			world._set_tile(x, y, Tiles.AIR)
 
-	# 2. 地面: 2 行实心石 (脚下 + 下面一行), 全宽
+	# 2. 地面: 2 行实心石, 全宽
 	for x in range(cx - HALF, cx + HALF + 1):
 		world._set_tile(x, floor_y, Tiles.STONE)
 		world._set_tile(x, floor_y + 1, Tiles.STONE)
 
-	# 3. 对称平台掩体 (木平台, 关于中心镜像). 中央 ±from 内留空当通道.
+	# 3. 对称矮平台掩体 (木平台). 中央 ±from 内留通道. (已删中央石柱 + 中央高台)
 	for t in _TIERS:
 		var py: int = floor_y - int(t["dy"])
 		for d in range(int(t["from"]), int(t["to"]) + 1):
 			world._set_tile(cx - d, py, Tiles.WOOD_PLATFORM)
 			world._set_tile(cx + d, py, Tiles.WOOD_PLATFORM)
 
-	# 4. 中央高台: 一根石柱 + 顶部小平台
-	for y in range(floor_y - 22, floor_y):
-		world._set_tile(cx, y, Tiles.STONE)
-	for d in range(-4, 5):
-		world._set_tile(cx + d, floor_y - 22, Tiles.WOOD_PLATFORM)
-
-	# 5. 两端对称出生台 (离中心远, 给弓拉开距离)
+	# 4. 两端对称出生台 (离中心远, 给弓拉开距离)
 	for d in range(-3, 4):
 		world._set_tile(cx - 140 + d, floor_y - 4, Tiles.WOOD_PLATFORM)
 		world._set_tile(cx + 140 + d, floor_y - 4, Tiles.WOOD_PLATFORM)
 
+	# 5. 空气墙 (看不见的碰撞墙): 左/右/顶 关住玩家, 防搭方块逃出竞技场
+	_build_air_walls(world, cx, floor_y)
+
 	# 出生点: 左侧出生台正上方
 	return Vector2(float(cx - 140) * TILE_SIZE + TILE_SIZE * 0.5, float(floor_y - 5) * TILE_SIZE)
+
+
+# 看不见的碰撞墙: 一个 StaticBody2D, 3 块矩形 (左墙/右墙/天花板). collision_layer=1
+# (bit0 实心方块层); 玩家 collision_mask 含 bit0 → 挡得住, 但不画出来 = 空气墙.
+static func _build_air_walls(world, cx: int, floor_y: int) -> void:
+	var old = world.get_node_or_null("ArenaWalls")
+	if old != null:
+		old.free()   # 重进同一世界不叠加
+	var body := StaticBody2D.new()
+	body.name = "ArenaWalls"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var left_px: float = float(cx - HALF) * TILE_SIZE
+	var right_px: float = float(cx + HALF + 1) * TILE_SIZE
+	var ceil_px: float = float(CEIL_Y) * TILE_SIZE
+	var bot_px: float = float(floor_y + 2) * TILE_SIZE
+	var box_h: float = bot_px - ceil_px
+	var box_w: float = right_px - left_px
+	var thick := 16.0
+	_add_wall(body, Vector2(left_px - thick * 0.5, (ceil_px + bot_px) * 0.5), Vector2(thick, box_h))      # 左
+	_add_wall(body, Vector2(right_px + thick * 0.5, (ceil_px + bot_px) * 0.5), Vector2(thick, box_h))     # 右
+	_add_wall(body, Vector2((left_px + right_px) * 0.5, ceil_px - thick * 0.5), Vector2(box_w, thick))    # 顶
+	world.add_child(body)
+
+
+static func _add_wall(body: StaticBody2D, center: Vector2, size: Vector2) -> void:
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = size
+	cs.shape = rect
+	cs.position = center
+	body.add_child(cs)

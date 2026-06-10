@@ -583,6 +583,11 @@ func _grant_starter_on_new_game() -> void:
 					var arena_spawn: Vector2 = PvpArena.build(w)
 					if arena_spawn != Vector2.ZERO:
 						player.global_position = arena_spawn
+					# 对战房永久白天 (冻结时间在白天) + 重算光照 (竞技场刚 stamp 完, 否则黑漆漆)
+					if TimeOfDay != null:
+						TimeOfDay.time = 0.4
+						TimeOfDay.time_multiplier = 0.0
+					SkyLightGrid.recompute_from([])
 				# 角色系统: 老角色 (已有背包) 进新世界 → 带着角色的东西, 不发起步包;
 				# 全新角色 (背包空) → 照常发起步包 (随后 autosave 把它存进角色卡)。
 				# GUT 测试跳过 → 永远走起步包分支, 不被 current 残留影响。
@@ -649,6 +654,8 @@ func _return_to_menu() -> void:
 	_game_nodes.clear()
 	get_tree().paused = false
 	_is_multiplayer = false   # 回菜单, 清联机标记 (下局单机能正常存档)
+	if TimeOfDay != null:
+		TimeOfDay.time_multiplier = 1.0   # 恢复时间流动 (对战房冻结过)
 	_show_menu_state()
 
 

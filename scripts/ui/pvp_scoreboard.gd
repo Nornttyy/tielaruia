@@ -10,10 +10,11 @@ func _ready() -> void:
 	layer = 48   # 世界之上、HUD(50) 之下
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var panel := PanelContainer.new()
+	# 放小地图左边 (小地图右上角, 左缘约在 -448): 击杀榜紧贴它左侧
 	panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	panel.offset_left = -190.0
-	panel.offset_right = -8.0
-	panel.offset_top = 8.0
+	panel.offset_left = -636.0
+	panel.offset_right = -456.0
+	panel.offset_top = 12.0
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(panel)
 	_vbox = VBoxContainer.new()
