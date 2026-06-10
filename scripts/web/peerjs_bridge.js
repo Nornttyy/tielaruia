@@ -283,13 +283,16 @@
                 // 被房主拒绝 (房满) → 试下一号房
                 try { if (JSON.parse(String(d)).__full) { settled = true; _nextRoom(gen); } } catch (e) {}
             });
-            // 一段时间没连上 → 这号房可能没人开 → 去抢占当 host
+            // 一段时间没连上 → 这号房可能没人开 → 去抢占当 host.
+            // 注意: 房里"没人"会触发 peer-unavailable 错误 (走上面 on('error') 立刻抢 host),
+            // 这个超时只兜底"信令慢/卡住"的情况. 免费信令服首次握手常 >5s, 太短会让第二个人
+            // 误判"没人开房"→自己也去抢 host→落单 (= 用户报的"公共房只有一个人"). 放宽到 12s.
             setTimeout(function() {
                 if (gen !== bridge._gen || settled) return;
                 settled = true;
                 try { bridge._peer.destroy(); } catch (e) {}
                 _hostPublic(gen);
-            }, 5000);
+            }, 12000);
         });
         bridge._peer.on('error', function(err) {
             if (gen !== bridge._gen) return;
