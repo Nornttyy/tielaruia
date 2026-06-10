@@ -402,5 +402,16 @@
     };
 
     window.MultiplayerBridge = bridge;
+
+    // 保活: 网页开着时每 4 分钟戳一下信令服务器, 别让免费版睡着 (睡醒要 ~50s = "连不进").
+    // no-cors + catch: 纯粹叫醒服务器, 不关心返回, 失败也不报错。
+    if (PEER_HOST) {
+        setInterval(function() {
+            try {
+                fetch('https://' + PEER_HOST + '/', {mode: 'no-cors', cache: 'no-store'}).catch(function() {});
+            } catch (e) {}
+        }, 240000);
+    }
+
     console.log('[MultiplayerBridge] loaded');
 })();
