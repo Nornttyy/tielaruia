@@ -596,11 +596,10 @@ func _grant_starter_on_new_game() -> void:
 			var inv_node: Node = player.get_node_or_null("PlayerInventory")
 			if inv_node != null and inv_node.inventory != null:
 				_want_starter = false   # 先置, 防同帧重入
-				# 对战房: 盖专属竞技场 (固定布局, 各端本地生成同图) + 玩家挪到出生台
+				# 对战房: 盖专属竞技场 (固定布局, 各端本地生成同图) + 玩家挪到随机出生点 (各玩家不重叠)
 				if NetworkManager != null and NetworkManager.is_pvp():
-					var arena_spawn: Vector2 = PvpArena.build(w)
-					if arena_spawn != Vector2.ZERO:
-						player.global_position = arena_spawn
+					PvpArena.build(w)
+					player.global_position = PvpArena.random_spawn()
 					# 对战房全亮 (用户: 战斗时光照遮挡视野) — 黑暗层整片透明, 不挡视野
 					TileLightGrid.force_full_bright = true
 					# 对战房永久白天 (冻结时间在白天) + 重算光照 (竞技场刚 stamp 完, 否则黑漆漆)

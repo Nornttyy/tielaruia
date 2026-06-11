@@ -2,8 +2,14 @@
 # 监听 NetworkManager.kill_scored 累加 (各端独立统计, 靠 pkill 广播保持一致)。
 extends CanvasLayer
 
+const PvpArena = preload("res://scripts/world/pvp_arena.gd")
+const WIN_SCORE := 20        # 积分到 20 = 胜利 (用户要求)
+const RESET_DELAY := 4.0     # 胜利后多久重置地图 (给玩家看胜利横幅)
+
 var _vbox: VBoxContainer
 var _kills: Dictionary = {}   # peer_id(String) → 击杀数(int)
+var _match_over: bool = false   # 已有人到 20 → 等重置 (防重复触发)
+var _banner: Label = null       # "X 胜利!" 横幅
 
 
 func _ready() -> void:
@@ -20,6 +26,7 @@ func _ready() -> void:
 	_vbox = VBoxContainer.new()
 	_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(_vbox)
+	_build_banner()
 	_refresh()
 	if NetworkManager != null and NetworkManager.has_signal("kill_scored"):
 		NetworkManager.kill_scored.connect(_on_kill_scored)
@@ -36,6 +43,52 @@ func _on_kill_scored(killer_pid: String, _victim_pid: String) -> void:
 		return   # 没凶手 (掉虚空/自杀) 不计
 	_kills[killer_pid] = int(_kills.get(killer_pid, 0)) + 1
 	_refresh()
+	# 到 20 → 胜利 (各端击杀数同步, 所以各端同时判出同一个赢家, 各自本地重置 → 一致)
+	if not _match_over and int(_kills[killer_pid]) >= WIN_SCORE:
+		_trigger_win(killer_pid)
+
+
+# 顶部居中胜利横幅 (常驻隐藏)。
+func _build_banner() -> void:
+	_banner = Label.new()
+	_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_banner.offset_top = 70.0
+	_banner.offset_bottom = 150.0
+	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_banner.add_theme_font_size_override("font_size", 40)
+	_banner.add_theme_color_override("font_color", Color(1, 0.9, 0.3))
+	_banner.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_banner.add_theme_constant_override("outline_size", 6)
+	_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_banner.visible = false
+	add_child(_banner)
+
+
+func _trigger_win(winner_pid: String) -> void:
+	_match_over = true
+	if _banner != null:
+		_banner.text = "%s 胜利!  地图重置中…" % _name_for(winner_pid)
+		_banner.visible = true
+	get_tree().create_timer(RESET_DELAY).timeout.connect(_reset_match)
+
+
+# 重置: 清积分 + 重建竞技场 (清玩家搭的方块) + 本地玩家随机出生 + 满血。各端独立跑, 结果一致。
+func _reset_match() -> void:
+	_kills.clear()
+	_match_over = false
+	_refresh()
+	if _banner != null:
+		_banner.visible = false
+	var w: Node = get_tree().get_first_node_in_group("world")
+	if w != null and w.has_method("_set_tile"):
+		PvpArena.build(w)
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player != null:
+		(player as Node2D).global_position = PvpArena.random_spawn()
+		var hp: Node = player.get_node_or_null("PlayerHealth")
+		if hp != null and hp.has_method("revive_full"):
+			hp.revive_full()
 
 
 func _name_for(pid: String) -> String:

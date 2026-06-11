@@ -22,6 +22,13 @@ const DEATH_DROP := 18      # 掉到地面下 18 格 = 死亡线 (越过即秒�
 static func death_y_px() -> float:
 	return float(FLOOR_Y + DEATH_DROP) * TILE_SIZE
 
+
+# 随机出生点 (沿地面随机铺开 → 各玩家/每次复活落点不同, 用户: 出生点不能一样 + 防蹲点)。
+# x 在平台内随机, y 在地面上方 5 格 (落到地面/平台上)。
+static func random_spawn() -> Vector2:
+	var x: int = CENTER_X + randi_range(-HALF + 12, HALF - 12)
+	return Vector2(float(x) * TILE_SIZE + TILE_SIZE * 0.5, float(FLOOR_Y - 5) * TILE_SIZE)
+
 # 平台层 (相对地面高度 dy, 距中心 from..to 列). 关于中心对称. 少 + 矮 (玩家跳得上).
 const _TIERS := [
 	{"dy": 4, "from": 18, "to": 70},
