@@ -122,7 +122,12 @@ func unload_far_from(center_cx: int, keep_radius: int) -> void:
 
 
 func _load_chunk(cx: int) -> void:
-	var c := WorldGenerator.generate_chunk(world_seed, cx, ChunkConstants.WORLD_HEIGHT)
+	# 战斗房: 世界只留竞技场 (用户: 别的方块不要) → 所有 chunk 生成空气, 竞技场靠 _deltas 还原。
+	var c: Chunk
+	if NetworkManager != null and NetworkManager.is_pvp():
+		c = WorldGenerator.empty_chunk(cx, ChunkConstants.WORLD_HEIGHT)
+	else:
+		c = WorldGenerator.generate_chunk(world_seed, cx, ChunkConstants.WORLD_HEIGHT)
 	# 应用之前累积的 delta (如果有). 玩家挖过的 chest tile delta 优先, 不会再 spawn 物品.
 	if _deltas.has(cx):
 		c.apply_delta(_deltas[cx])

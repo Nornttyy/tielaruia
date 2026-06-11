@@ -224,3 +224,16 @@ func test_bedrock_never_air() -> void:
 			for y in range(h - 2, h):  # BEDROCK_ROWS = 2
 				assert_ne(c.tiles[x][y], Tiles.AIR,
 					"seed=%d (%d,%d) BEDROCK 不应被挖空" % [seed_v, x, y])
+
+
+# 战斗房空世界: empty_chunk 全是空气 (用户: 战斗房只留竞技场, 别的方块不要)
+func test_empty_chunk_is_all_air():
+	var c = WorldGenerator.empty_chunk(0, 128)
+	var width: int = c.tiles.size()
+	assert_gt(width, 0, "chunk 该有宽度")
+	var all_air := true
+	for lx in width:
+		for y in 128:
+			if c.get_tile(lx, y) != Tiles.AIR:
+				all_air = false
+	assert_true(all_air, "空 chunk 每格都该是空气 (战斗房只留竞技场)")

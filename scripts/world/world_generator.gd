@@ -168,6 +168,13 @@ const _SPECIES_PARAMS := {
 
 # 生成一柱地形。world_x = chunk_x * CHUNK_WIDTH + local_x。
 # 同 seed + chunk_x → 同结果 (deterministic)。
+# 空 chunk (全空气, 不跑任何地形生成). 战斗房用 — 世界只留竞技场 (用户要求), 别的方块都不要。
+static func empty_chunk(chunk_x: int, height: int = ChunkConstants.WORLD_HEIGHT) -> Chunk:
+	var c := Chunk.new(chunk_x)
+	c.init_empty(height)
+	return c
+
+
 static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkConstants.WORLD_HEIGHT) -> Chunk:
 	var chunk_width := ChunkConstants.CHUNK_WIDTH
 	var c := Chunk.new(chunk_x)
