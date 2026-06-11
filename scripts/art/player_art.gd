@@ -149,7 +149,7 @@ const _TORSO := [
 	"Dwwwwwc",   # 扣间 (门襟)
 	"EwwwwDc",   # 纽扣 D
 	"DEwwwwc",   # 后侧褶皱 E
-	".OOOOOq",   # 腰间皮带 (皮革色 O) + 亮扣 q
+	".EDDDE.",   # 下摆深阴
 ]
 # 手臂 (袖子+手), 垂在身体前。后缘深 D + 前缘亮 c = 有体积的胳膊, 跟同色躯干分得开。2 宽 × 6 高。
 const _ARM := [
@@ -313,7 +313,7 @@ static func _female_torso(cs: int) -> Array:
 		"EwwwwDc..",   # 上胸 (后深阴E + 纽扣D + 前高光c)
 		"Dwwwwwc..",   # 中胸 (扣间门襟)
 		"EwwwwDc..",   # 下胸 (纽扣D)
-		"OOOq.....",   # 腰 (收腰 + 皮带 O + 亮扣 q; 后背 col0 直线)
+		"Dwww.....",   # 腰 (收腰; 后背 col0 一条直线, 不歪)
 		"Dwwwww...",   # 胯 (外扩, 比腰宽一截)
 	]
 	if cs >= 1:
