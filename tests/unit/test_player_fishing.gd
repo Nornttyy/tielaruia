@@ -34,10 +34,26 @@ func test_bite_timeout_escapes():
 	watch_signals(fish)
 	fish.on_rod_click(Vector2i(5, 5), true)
 	fish._force_bite()
-	for i in 120:
-		fish._process(1.0 / 60.0)               # 模拟 2s > REEL_WINDOW(1.5)
+	for i in 240:
+		fish._process(1.0 / 60.0)               # 模拟 4s > REEL_WINDOW(2.8)
 	assert_signal_not_emitted(fish, "caught", "超时不该钓到")
 	assert_eq(fish.state(), "idle")
+
+
+# 收竿窗口放宽 (用户: 之前太难). 至少 2.5s 才好反应
+func test_reel_window_is_generous():
+	assert_gte(fish.REEL_WINDOW, 2.5, "收竿窗口该够宽 (≥2.5s)")
+
+
+# 咬钩要有明显信号: 头顶冒出"!" (用户: 之前不知道上钩没)
+func test_bite_spawns_exclaim_indicator():
+	fish.on_rod_click(Vector2i(5, 5), true)
+	assert_null(fish._exclaim, "还没咬钩时没有 '!'")
+	fish._force_bite()
+	assert_not_null(fish._exclaim, "咬钩该冒出 '!' 提示")
+	# 收竿后清掉
+	fish.on_rod_click(Vector2i(5, 5), true)
+	assert_null(fish._exclaim, "收竿后 '!' 该消失")
 
 # 收获都在 9 种海鲜里 (权重抽样)
 func test_catch_in_valid_set():

@@ -25,10 +25,27 @@ const _BOBBER_PAL := {
 	"r": Color8(220, 60, 60),
 	"w": Color8(245, 245, 245),
 }
+# 咬钩时浮标头顶跳出的大"!" (一眼看到 = 该收竿了)。亮黄 + 深棕描边。
+const _EXCLAIM := [
+	"..oo..",
+	".oyyo.",
+	".oyyo.",
+	".oyyo.",
+	".oyyo.",
+	"..oo..",
+	"......",
+	".oyyo.",
+	"..oo..",
+]
+const _EXCLAIM_PAL := {
+	".": Color(0, 0, 0, 0),
+	"o": Color8(140, 70, 10),
+	"y": Color8(255, 220, 40),
+}
 
 const BITE_WAIT_MIN := 2.0       # 最短等待 (秒)
 const BITE_WAIT_MAX := 5.0       # 最长等待
-const REEL_WINDOW := 1.5         # 咬钩后收竿窗口 (秒, 调宽点不太难)
+const REEL_WINDOW := 2.8         # 咬钩后收竿窗口 (秒). 放宽 (1.5→2.8): 更容易反应过来收竿
 const TILE_SIZE := 12
 
 # 收获表: [item_id, weight]. 权重相对, 不必凑 100 (调稀有度改数字即可)。
@@ -44,6 +61,8 @@ var _bobber_tile: Vector2i = Vector2i.ZERO
 var _bobber: Sprite2D = null
 var _line: Line2D = null
 var _bobber_base_y: float = 0.0   # 浮标静止 y (咬钩时往下沉)
+var _exclaim: Sprite2D = null     # 咬钩时头顶的"!" (生物钩信号)
+var _bite_anim_t: float = 0.0     # 咬钩动画时间累积 (浮标抖 + "!"跳)
 
 
 func _ready() -> void:
@@ -104,6 +123,12 @@ func _process(delta: float) -> void:
 		if _timer <= 0.0:
 			_reset()       # 收竿窗口过了, 鱼跑
 			return
+		# 咬钩动画: 浮标一沉一跳地猛抖 + "!"上下蹦 → 一眼看到该收竿了
+		_bite_anim_t += delta
+		if _bobber != null and is_instance_valid(_bobber):
+			_bobber.global_position.y = _bobber_base_y + 6.0 + sin(_bite_anim_t * 22.0) * 3.0
+		if _exclaim != null and is_instance_valid(_exclaim):
+			_exclaim.global_position.y = _bobber_base_y - 18.0 + sin(_bite_anim_t * 9.0) * 3.0
 	# 视觉: 鱼线跟着玩家; 玩家走太远则取消
 	if _state != "idle":
 		var p := get_parent() as Node2D
@@ -178,12 +203,22 @@ func _spawn_bobber(tile: Vector2i) -> void:
 	_update_line()
 
 
-# 咬钩: 浮标猛地往下沉几 px (视觉 cue, 不弹文字), 配轻音效
+# 咬钩: 浮标猛地下沉 + 头顶跳出大"!" + 明显音效 (用户: 之前太弱, 不知道上钩没)
 func _on_bite() -> void:
+	_bite_anim_t = 0.0
 	if _bobber != null and is_instance_valid(_bobber):
-		_bobber.global_position.y = _bobber_base_y + 4.0
+		_bobber.global_position.y = _bobber_base_y + 6.0
+		# 浮标也放大一下更扎眼
+		_bobber.scale = Vector2(1.4, 1.4)
+		# 头顶冒"!" (放大 2x, 挂浮标上方)
+		_exclaim = Sprite2D.new()
+		_exclaim.texture = PixelArt.grid_to_texture(_EXCLAIM, _EXCLAIM_PAL)
+		_exclaim.scale = Vector2(2.0, 2.0)
+		_exclaim.top_level = true
+		_exclaim.global_position = Vector2(_bobber.global_position.x, _bobber_base_y - 18.0)
+		_effects_root().add_child(_exclaim)
 	if SfxBank != null:
-		SfxBank.play("place", 0.08)   # 轻"咚" (复用放置声, 小音量)
+		SfxBank.play("place", 0.7)    # 明显的"咚" (之前 0.08 太轻, 调到 0.7)
 
 
 func _update_line() -> void:
@@ -201,6 +236,9 @@ func _despawn_bobber() -> void:
 	if _bobber != null and is_instance_valid(_bobber):
 		_bobber.queue_free()
 	_bobber = null
+	if _exclaim != null and is_instance_valid(_exclaim):
+		_exclaim.queue_free()
+	_exclaim = null
 	if _line != null and is_instance_valid(_line):
 		_line.queue_free()
 	_line = null
