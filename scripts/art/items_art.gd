@@ -1578,6 +1578,66 @@ const _HELL_STAFF := [
 	"......nKKKn.....",   # 杖底黑
 ]
 
+# 闪电法杖 icon: 黄电球(z金/y沙黄/f白闪) + 木杖身.
+const _LIGHTNING_STAFF := [
+	"......nnnn......",
+	".....nzyyzn.....",
+	"....nzyfyzn.....",
+	"....nzyyyyzn....",
+	"....nzyyyzn.....",
+	".....nnnnn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhfn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nHHn......",
+]
+
+# 毒液法杖 icon: 绿毒球(o/O/q + f白闪) + 木杖身.
+const _POISON_STAFF := [
+	"......nnnn......",
+	".....noOOon.....",
+	"....noOfOon.....",
+	"....noOOOOon....",
+	"....noOOOon.....",
+	".....nnnnn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhfn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nHHn......",
+]
+
+# 多重魔弹法杖 icon: 品红魔法球(M/m + f白闪) + 木杖身.
+const _MULTI_STAFF := [
+	"......nnnn......",
+	".....nMmmMn.....",
+	"....nMmfmMn.....",
+	"....nMmmmmMn....",
+	"....nMmmmMn.....",
+	".....nnnnn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhfn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nHHn......",
+]
+
 # 地狱合金锭 icon: 真·紫黑底 + 银闪光 (修 bug: 之前用 N/T 钻石蓝, 现在用 @/#/+ 紫).
 const _HELL_ALLOY_INGOT := [
 	"................",
@@ -2510,6 +2570,7 @@ const _ICONS := {
 	"hell_sword": _HELL_SWORD, "hell_pickaxe": _HELL_PICKAXE, "hell_axe": _HELL_AXE,
 	"hell_staff": _HELL_STAFF,
 	"wood_staff": _WOOD_STAFF, "iron_staff": _IRON_STAFF,
+	"lightning_staff": _LIGHTNING_STAFF, "poison_staff": _POISON_STAFF, "multi_staff": _MULTI_STAFF,
 	"mana_potion": _MANA_POTION,
 	"health_potion": _HEALTH_POTION,
 	"wood_bow": _WOOD_BOW,

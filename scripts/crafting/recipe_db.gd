@@ -823,6 +823,24 @@ const _RECIPES := [
 		"pattern": [["hell_crystal_ingot"], ["hell_crystal_ingot"], ["hell_alloy_ingot"]],
 		"output_id": "hell_staff", "output_count": 1, "mirror_ok": false,
 	},
+	# 闪电法杖: 金锭(顶, 导电) + 2 木板
+	{
+		"id": "lightning_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["gold_ingot"], ["planks"], ["planks"]],
+		"output_id": "lightning_staff", "output_count": 1, "mirror_ok": false,
+	},
+	# 毒液法杖: 史莱姆冻(顶, 毒) + 2 木板
+	{
+		"id": "poison_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["slime_jelly"], ["planks"], ["planks"]],
+		"output_id": "poison_staff", "output_count": 1, "mirror_ok": false,
+	},
+	# 多重魔弹法杖: 钻石(顶) + 2 木板
+	{
+		"id": "multi_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["diamond"], ["planks"], ["planks"]],
+		"output_id": "multi_staff", "output_count": 1, "mirror_ok": false,
+	},
 	# 魔力药水: 1 hell_crystal + 1 silver_ingot (2x1 横排, 工作台). 出 2 瓶
 	{
 		"id": "mana_potion", "grid_size": Vector2i(2, 1),

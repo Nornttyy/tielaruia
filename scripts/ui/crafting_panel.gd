@@ -676,6 +676,9 @@ const _ZH_NAMES := {
 	"skeleton_chest": "骷髅胸甲",
 	"skeleton_pants": "骷髅腿甲",
 	"skull_staff": "骷髅法杖",
+	"lightning_staff": "闪电法杖",
+	"poison_staff": "毒液法杖",
+	"multi_staff": "多重魔弹法杖",
 }
 
 

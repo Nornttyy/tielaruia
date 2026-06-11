@@ -313,6 +313,7 @@ func _build_items() -> void:
 			"gold_helmet", "gold_chest", "gold_pants",
 			"diamond_helmet", "diamond_chest", "diamond_pants",
 			"hell_staff", "wood_staff", "iron_staff", "mana_potion", "health_potion",
+			"lightning_staff", "poison_staff", "multi_staff",   # 新机制法杖
 			# 用户加: 小麦 / 种子 之前漏了, 收割掉地没图
 			"wheat", "wheat_seed",
 			# 史莱姆王 Boss 掉落 + 合成材料
