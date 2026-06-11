@@ -313,13 +313,13 @@ static func _female_torso(cs: int) -> Array:
 		"wwwwwDc..",   # 上胸 (纽扣D + 前高光c, 删后背缝)
 		"wwwwwwc..",   # 中胸 (光面, 去内部暗纹)
 		"wwwwwDc..",   # 下胸 (纽扣D)
-		"wwww.....",   # 腰 (收腰; 后背 col0 改衬衫色保直背不歪, 无暗缝)
-		"wwwwww...",   # 胯 (外扩, 比腰宽一截)
+		"wwwwww...",   # 腰 (收腰只浅 1px + 露在手臂外, 前沿平滑不折=不歪; 后背直 col0)
+		"wwwwwww..",   # 胯 (外扩, 比腰宽 1px)
 	]
 	if cs >= 1:
-		rows[3] = _set_char(rows[3], 7, "w")   # 下胸前鼓 1px
+		rows[2] = _set_char(rows[2], 7, "w")   # 中胸前鼓 1px (默认胸在中胸, 不贴着腰=不显歪)
 	if cs >= 2:
-		rows[2] = _set_char(rows[2], 7, "w")   # 中胸也鼓 (竖弧变高)
+		rows[3] = _set_char(rows[3], 7, "w")   # 下胸也鼓 (竖弧往下长)
 	if cs >= 3:
 		rows[1] = _set_char(rows[1], 7, "w")   # 上胸也鼓 (满 1px 竖弧)
 	if cs >= 4:
