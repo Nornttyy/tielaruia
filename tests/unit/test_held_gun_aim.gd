@@ -33,3 +33,19 @@ func test_switch_back_resets_pivot() -> void:
 	assert_true(h.centered, "瞄准时居中")
 	h._show_for(0.0)                    # 任何普通显示 (挥/挖/放) 都该退出枪瞄准态
 	assert_false(h.centered, "切回普通显示 → 恢复底端支点 (非居中)")
+
+
+# 弓: 射箭时该绕"握把"(贴图中心) 转, 不是绕底端 — 否则一旋转弓就甩出手外 (用户报"弓箭位置不对")
+func test_bow_shoot_uses_centered_pivot() -> void:
+	var h := _make_held()
+	h.play_bow_shoot(0.0)               # 朝右射
+	assert_true(h.centered, "射箭时该居中支点 (绕弓中心转, 不甩出手)")
+	assert_eq(h.offset, Vector2.ZERO, "居中时 offset 清零")
+
+
+func test_bow_shoot_resets_pivot_on_next_show() -> void:
+	var h := _make_held()
+	h.play_bow_shoot(0.0)
+	assert_true(h.centered, "射箭时居中")
+	h._show_for(0.0)                    # 下次普通显示该还原底端支点
+	assert_false(h.centered, "射完切普通显示 → 恢复底端支点")

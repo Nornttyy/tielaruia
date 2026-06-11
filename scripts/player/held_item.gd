@@ -297,9 +297,15 @@ func play_bow_shoot(target_angle: float) -> void:
 	var mouse_on_right: bool = cos(target_angle) >= 0.0
 	set_facing(mouse_on_right)
 	_attack_locked = true
+	# 弓绕"握把"(贴图中心) 转, 不是绕底端 — 否则一旋转弓就甩到手外, 看着位置不对 (照枪 aim_gun).
+	# 复用居中支点标志: 下次普通显示 _show_for 会 _reset_aim_transform 还原成底端支点 (剑/方块用).
+	_aiming_gun = true
+	centered = true
+	offset = Vector2.ZERO
 	# 弓图标的"射击口"朝 -x (左: 弓臂在左鼓出, 弦在右, 箭往弓臂那侧飞出). 要让射击口朝鼠标:
 	# 没镜像 (瞄右 sx=+1) 时屏幕射向 = rotation + PI → rotation = target_angle - PI;
 	# 镜像了 (瞄左 sx=-1) 时屏幕射向 = rotation → rotation = target_angle. (之前 bug: 两分支接反 = 方向反了)
+	# 注: rotation 公式不受支点影响 — 支点只改弓画在哪, 不改弓指向.
 	rotation = wrapf(target_angle - (PI if mouse_on_right else 0.0), -PI, PI)
 	var base_pos := Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
 	position = base_pos
@@ -311,6 +317,7 @@ func play_bow_shoot(target_angle: float) -> void:
 	_tween.tween_callback(func():
 		rotation = 0.0
 		_attack_locked = false
+		_reset_aim_transform()   # 射完还原底端支点 (别在收起前用居中支点显示, 防位置跳一下)
 	)
 
 
