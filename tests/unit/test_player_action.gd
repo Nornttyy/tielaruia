@@ -251,3 +251,16 @@ func test_sword_swing_aims_at_mouse_direction():
 	var expected_center: Vector2 = player_pos + expected_dir * 13.5
 	assert_almost_eq(action.last_swing_center.x, expected_center.x, 1.0)
 	assert_almost_eq(action.last_swing_center.y, expected_center.y, 1.0)
+
+
+# 连续放置补路径: 两格间直线连续无跳格 (防搭路留空)
+func test_line_tiles_contiguous():
+	const PA = preload("res://scripts/player/player_action.gd")
+	var line: Array = PA._line_tiles(Vector2i(0, 0), Vector2i(4, 0))
+	assert_eq(line.size(), 5, "(0,0)→(4,0) 该 5 格")
+	# 每相邻两格紧挨 (曼哈顿距离 1), 没空格
+	for i in range(1, line.size()):
+		var d: int = abs(line[i].x - line[i-1].x) + abs(line[i].y - line[i-1].y)
+		assert_eq(d, 1, "相邻补格紧挨, 不跳格")
+	assert_eq(line[0], Vector2i(0, 0))
+	assert_eq(line[4], Vector2i(4, 0))

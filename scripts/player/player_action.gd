@@ -814,7 +814,7 @@ func _spawn_drop(item_id: String, tile: Vector2i) -> void:
 
 
 # 返回 true 表示成功放置 (用于测试断言)
-func try_place() -> bool:
+func try_place(force_tile: Variant = null) -> bool:
 	var terrain := _terrain()
 	var inv: Node = _inventory_node()
 	if terrain == null or inv == null:
@@ -824,7 +824,8 @@ func try_place() -> bool:
 		return false
 	if not ItemDB.is_placeable(slot.item_id):
 		return false
-	var tile: Vector2i = aim_tile_coord()
+	# force_tile: 连续放置补路径时指定格; 否则用鼠标对准格
+	var tile: Vector2i = (force_tile as Vector2i) if force_tile != null else aim_tile_coord()
 	if not in_reach(tile):
 		return false
 	# === 墙 (wall item): 走 world._set_wall (持久化 + autotile + 存档), 不挡走路 ===
@@ -856,7 +857,8 @@ func try_place() -> bool:
 	var has_support: bool = GameSettings != null and GameSettings.creative_mode
 	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		var ntid: int = terrain.get_cell_source_id(tile + offset)
-		if ntid != -1 and Tiles.is_solid(ntid):
+		# 结实方块 OR 木平台 都能当支撑 (站得住的都行); 水/草/火把不算。
+		if ntid != -1 and (Tiles.is_solid(ntid) or ntid == Tiles.WOOD_PLATFORM):
 			has_support = true
 			break
 	if not has_support:
@@ -1081,6 +1083,34 @@ func _effective_sword_damage() -> int:
 
 const PLACE_HOLD_INTERVAL := 0.05   # 连续放置时每隔多久放一个 (按住右键)
 var _place_hold_cd: float = 0.0
+var _last_place_tile: Vector2i = Vector2i.ZERO   # 连续放置上次放的格 (补路径用)
+var _has_last_place: bool = false
+
+
+# 两格之间的整数直线 (Bresenham), 含端点. 连续放置补满划过的路径防跳格留空。
+static func _line_tiles(a: Vector2i, b: Vector2i) -> Array:
+	var out: Array = []
+	var dx: int = abs(b.x - a.x)
+	var dy: int = -abs(b.y - a.y)
+	var sx: int = 1 if a.x < b.x else -1
+	var sy: int = 1 if a.y < b.y else -1
+	var err: int = dx + dy
+	var x: int = a.x
+	var y: int = a.y
+	while true:
+		out.append(Vector2i(x, y))
+		if x == b.x and y == b.y:
+			break
+		if out.size() > 64:   # 安全上限 (防一次填太长)
+			break
+		var e2: int = 2 * err
+		if e2 >= dy:
+			err += dy
+			x += sx
+		if e2 <= dx:
+			err += dx
+			y += sy
+	return out
 
 
 func _update_eat_or_place(delta: float) -> void:
@@ -1270,16 +1300,33 @@ func _update_eat_or_place(delta: float) -> void:
 		_eat_item_id = ""
 		_stop_eat_anim()
 
-	# 放置: 单击放一个; "连续放置"设置开 + 按住右键 → 隔一小段连续放
+	# 放置: 单击放一个; "连续放置"开 + 按住右键 → 沿划过的路径补满 (防跳格留空)
 	_place_hold_cd = max(0.0, _place_hold_cd - delta)
 	if just:
 		if try_place():
 			_play_place_anim()
-		_place_hold_cd = PLACE_HOLD_INTERVAL   # 刚放完, 按住的连放等一个间隔再开始
-	elif held and _place_hold_cd <= 0.0 and GameSettings != null and GameSettings.continuous_place:
-		if try_place():
-			_play_place_anim()
-		_place_hold_cd = PLACE_HOLD_INTERVAL   # 放方块: 朝放置点按一下的动画
+		_last_place_tile = aim_tile_coord()
+		_has_last_place = true
+		_place_hold_cd = PLACE_HOLD_INTERVAL
+	elif held and GameSettings != null and GameSettings.continuous_place:
+		if _place_hold_cd <= 0.0:
+			var cur: Vector2i = aim_tile_coord()
+			var placed_any: bool = false
+			if _has_last_place and _last_place_tile != cur:
+				# 沿 上次格→当前格 直线补放, 跳过起点 (上次已放)
+				var path: Array = _line_tiles(_last_place_tile, cur)
+				for ti in range(1, path.size()):
+					if try_place(path[ti]):
+						placed_any = true
+			elif try_place(cur):
+				placed_any = true
+			if placed_any:
+				_play_place_anim()
+			_last_place_tile = cur
+			_has_last_place = true
+			_place_hold_cd = PLACE_HOLD_INTERVAL
+	else:
+		_has_last_place = false   # 松开右键 → 下次重新起点 (不跨段连线)   # 放方块: 朝放置点按一下的动画
 
 
 # 进食动画: 食物在玩家手里 上下抖动 + 微微旋转, 像在啃咬
