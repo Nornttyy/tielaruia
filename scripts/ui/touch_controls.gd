@@ -36,14 +36,19 @@ func _build_ui() -> void:
 	joy.offset_bottom = -EDGE_MARGIN
 	add_child(joy)
 
-	# 右下 3 按钮 (从右到左: 跳 / 用 / 击, 主按钮 "击" 最靠右好按)
+	# 右下 第 0 排 (从右到左: 击 / 用 / 跳, 主按钮 "击" 最靠右好按)
 	_add_action_button("BtnAttack", "primary", "击", 0, Color(1.0, 0.45, 0.35))
 	_add_action_button("BtnUse", "secondary", "用", 1, Color(0.45, 0.85, 0.45))
 	_add_action_button("BtnJump", "jump", "跳", 2, Color(0.45, 0.65, 1.0))
+	# 右下 第 1 排 (上方): 背包 (interact) / 丢 (drop_item)
+	_add_action_button("BtnBag", "interact", "包", 0, Color(0.95, 0.78, 0.4), 1)
+	_add_action_button("BtnDrop", "drop_item", "丢", 1, Color(0.7, 0.7, 0.75), 1)
+	# 右上角: 暂停
+	_add_pause_button()
 
 
-# index 0 = 最右 (主), 1 = 中, 2 = 最左
-func _add_action_button(node_name: String, action: String, label: String, index: int, color: Color) -> void:
+# index 0 = 最右 (主), 1 = 中, 2 = 最左. row 0 = 最下排, 1 = 上一排.
+func _add_action_button(node_name: String, action: String, label: String, index: int, color: Color, row: int = 0) -> void:
 	var btn := Button.new()
 	btn.name = node_name
 	btn.text = label
@@ -59,9 +64,10 @@ func _add_action_button(node_name: String, action: String, label: String, index:
 	var x_offset: float = -(EDGE_MARGIN + (BTN_RADIUS * 2.0 + BTN_SPACING) * (index + 1) - BTN_SPACING)
 	btn.offset_left = x_offset
 	btn.offset_right = x_offset + BTN_RADIUS * 2.0
-	# 跳/用 排第二行 (按钮多了挤), 击 单独最低. 简化: 都同一行, 用 horizontal 排.
-	btn.offset_top = -(BTN_RADIUS * 2.0 + EDGE_MARGIN)
-	btn.offset_bottom = -EDGE_MARGIN
+	# row 抬高一排: 每排高 = 按钮直径 + 间距
+	var row_h: float = BTN_RADIUS * 2.0 + BTN_SPACING
+	btn.offset_top = -(BTN_RADIUS * 2.0 + EDGE_MARGIN) - row * row_h
+	btn.offset_bottom = -EDGE_MARGIN - row * row_h
 	# 圆形外观 (StyleBoxFlat 圆角 = 半径)
 	var sb_normal := StyleBoxFlat.new()
 	sb_normal.bg_color = Color(color.r, color.g, color.b, 0.55)
@@ -86,6 +92,44 @@ func _add_action_button(node_name: String, action: String, label: String, index:
 	btn.button_down.connect(func(): Input.action_press(action))
 	btn.button_up.connect(func(): Input.action_release(action))
 	add_child(btn)
+
+
+# 右上角暂停钮. main 用事件方式收 ui_pause (Input.action_press 不触发) → 注入动作事件。
+func _add_pause_button() -> void:
+	var r := 32.0
+	var btn := Button.new()
+	btn.name = "BtnPause"
+	btn.text = "暂停"
+	btn.flat = true
+	btn.anchor_left = 1.0
+	btn.anchor_top = 0.0
+	btn.anchor_right = 1.0
+	btn.anchor_bottom = 0.0
+	btn.offset_left = -(EDGE_MARGIN + r * 2.0)
+	btn.offset_right = -EDGE_MARGIN
+	btn.offset_top = EDGE_MARGIN
+	btn.offset_bottom = EDGE_MARGIN + r * 2.0
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.1, 0.12, 0.2, 0.6)
+	sb.set_corner_radius_all(int(r))
+	sb.set_border_width_all(2)
+	sb.border_color = Color(1, 1, 1, 0.6)
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb)
+	var sbp := sb.duplicate() as StyleBoxFlat
+	sbp.bg_color = Color(0.15, 0.18, 0.3, 0.9)
+	btn.add_theme_stylebox_override("pressed", sbp)
+	btn.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
+	btn.add_theme_font_size_override("font_size", 18)
+	btn.pressed.connect(_on_pause_pressed)
+	add_child(btn)
+
+
+func _on_pause_pressed() -> void:
+	var ev := InputEventAction.new()
+	ev.action = "ui_pause"
+	ev.pressed = true
+	Input.parse_input_event(ev)
 
 
 # 检测是否手机/平板, 给 main.gd 调用决定是否实例化.
