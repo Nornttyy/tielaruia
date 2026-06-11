@@ -322,8 +322,10 @@ func _try_open_workbench_or_close() -> void:
 			var inv2: Node = _inventory_node()
 			chest_p2.open(near_chest, inv2)
 		return
-	# 战斗房: 删掉合成功能, 这个键 (E / 触屏"包") 改成开/关"切换武器"面板 (用户要求)
-	if NetworkManager != null and NetworkManager.combat_enabled():
+	# 战斗房: 删掉合成功能, 这个键 (E / 触屏"包") 改成开/关"切换武器"面板 (用户要求)。
+	# 用 room_mode=="pvp" 而非 combat_enabled() (后者要 connected()): 切模式时会断开重连,
+	# 那一瞬 connected()=false → E 会漏到合成界面 (用户报"有时变合成"). 跟 pvp_mode_panel 同款门控。
+	if NetworkManager != null and NetworkManager.room_mode == "pvp":
 		var mp: Node = get_tree().get_first_node_in_group("pvp_mode_panel")
 		if mp != null and mp.has_method("toggle_weapon_switch"):
 			mp.toggle_weapon_switch()
