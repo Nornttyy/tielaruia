@@ -1884,7 +1884,9 @@ func _try_fire_gun() -> void:
 			return   # 魔力不够 → 不发, 不进 cooldown
 	else:
 		var consumed: bool = false
-		if inv.has_method("consume_first"):
+		if NetworkManager != null and NetworkManager.combat_enabled():
+			consumed = true   # 对战房: 子弹无限 (照箭)
+		elif inv.has_method("consume_first"):
 			consumed = inv.consume_first("bullet", 1)   # 一次扣 1 发 (霰弹也只 1 发, 出 N 弹丸, 划算)
 		if not consumed:
 			return

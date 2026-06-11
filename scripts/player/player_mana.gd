@@ -32,6 +32,9 @@ func _process(delta: float) -> void:
 func try_consume(cost: int) -> bool:
 	if cost <= 0:
 		return true
+	# 对战房: 魔力无限 (不扣) → 法杖/魔法枪随便放, 跟箭/子弹/血药/方块一样无限
+	if NetworkManager != null and NetworkManager.combat_enabled():
+		return true
 	if current_mana < cost:
 		return false
 	current_mana -= cost
