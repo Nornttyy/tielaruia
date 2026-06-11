@@ -168,6 +168,10 @@ const _DEFS := {
 	"explosive_staff": {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 14, "spell_damage": 8, "spell_kind": "bullet", "gun_visual": "fire", "gun_explode_radius": 32.0, "gun_explode_dmg": 14, "bullet_speed": 400},  # 爆裂火球: 命中炸一片
 	"water_staff":     {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8, "spell_damage": 6, "spell_kind": "bullet", "gun_visual": "ice", "gun_gravity": 380.0, "gun_explode_radius": 22.0, "gun_explode_dmg": 8, "bullet_speed": 320},  # 水之: 抛物线 + 小爆炸(不破方块)
 	"wind_staff":      {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 6, "spell_damage": 3, "spell_kind": "bullet", "gun_visual": "wind", "gun_knockback": 460.0, "gun_launch": true, "bullet_speed": 520},  # 狂风: 把怪弹飞
+	# C 波法杖 (全新机制, 不发普通弹):
+	"heal_staff":  {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 16, "heal_amount": 35},  # 治疗: 耗魔力给自己回血
+	"bird_staff":  {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 14, "summons_minion": true, "summon_kind": "bird"},  # 雀宝宝: 召唤会飞的小鸟帮打
+	"crack_staff": {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 12, "spell_damage": 7, "ground_crack": true},  # 地裂: 地上裂缝持续伤害
 	# 魔力药水: 喝下 → 立刻 +30 mana (类似食物回血但回魔)
 	"mana_potion":   {"placeable_tile_id": -1, "tool_kind": "",        "tool_tier": 0, "max_stack": 16, "mana_refill": 30},
 	# 生命药水: 喝下立刻回 50 HP (复用食物回血路径 food_fill; is_potion 标记 = 显示/手感算药水非食物)

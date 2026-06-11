@@ -1698,6 +1698,66 @@ const _WIND_STAFF := [
 	"......nHHn......",
 ]
 
+# 治疗法杖 icon: 绿生命球(o绿/j白心) + 木杖身.
+const _HEAL_STAFF := [
+	"......nnnn......",
+	".....noooon.....",
+	"....noojoon.....",
+	"....noooooon....",
+	"....nooooon.....",
+	".....nnnnn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhjn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nHHn......",
+]
+
+# 雀宝宝法杖 icon: 金黄鸟球(y金/P亮/a红点=眼) + 木杖身.
+const _BIRD_STAFF := [
+	"......nnnn......",
+	".....nyPPyn.....",
+	"....nyPaPyn.....",
+	"....nyPPPPyn....",
+	"....nyPPPyn.....",
+	".....nnnnn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhPn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nHHn......",
+]
+
+# 地裂法杖 icon: 橙褐裂石球(H褐/a橙/n裂缝) + 木杖身.
+const _CRACK_STAFF := [
+	"......nnnn......",
+	".....nHaaHn.....",
+	"....nHanaHn.....",
+	"....nHaaaaHn....",
+	"....nHaaaHn.....",
+	".....nnnnn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhan......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nhHn......",
+	"......nHHn......",
+]
+
 # 地狱合金锭 icon: 真·紫黑底 + 银闪光 (修 bug: 之前用 N/T 钻石蓝, 现在用 @/#/+ 紫).
 const _HELL_ALLOY_INGOT := [
 	"................",
@@ -2632,6 +2692,7 @@ const _ICONS := {
 	"wood_staff": _WOOD_STAFF, "iron_staff": _IRON_STAFF,
 	"lightning_staff": _LIGHTNING_STAFF, "poison_staff": _POISON_STAFF, "multi_staff": _MULTI_STAFF,
 	"explosive_staff": _EXPLOSIVE_STAFF, "water_staff": _WATER_STAFF, "wind_staff": _WIND_STAFF,
+	"heal_staff": _HEAL_STAFF, "bird_staff": _BIRD_STAFF, "crack_staff": _CRACK_STAFF,
 	"mana_potion": _MANA_POTION,
 	"health_potion": _HEALTH_POTION,
 	"wood_bow": _WOOD_BOW,

@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://b_friendly_bird_2026"]
+
+[ext_resource type="Script" path="res://scripts/entities/friendly_bird.gd" id="1_fb"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fb"]
+size = Vector2(10, 10)
+
+[node name="FriendlyBird" type="CharacterBody2D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_fb")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+centered = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_fb")

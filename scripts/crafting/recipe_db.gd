@@ -859,6 +859,24 @@ const _RECIPES := [
 		"pattern": [["feather"], ["planks"], ["planks"]],
 		"output_id": "wind_staff", "output_count": 1, "mirror_ok": false,
 	},
+	# 治疗法杖: 2 蘑菇(回血) + 1 木板
+	{
+		"id": "heal_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["mushroom"], ["mushroom"], ["planks"]],
+		"output_id": "heal_staff", "output_count": 1, "mirror_ok": false,
+	},
+	# 雀宝宝法杖: 2 羽毛(鸟) + 1 木板
+	{
+		"id": "bird_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["feather"], ["feather"], ["planks"]],
+		"output_id": "bird_staff", "output_count": 1, "mirror_ok": false,
+	},
+	# 地裂法杖: 铁锭(顶) + 石头 + 木板
+	{
+		"id": "crack_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["iron_ingot"], ["stone"], ["planks"]],
+		"output_id": "crack_staff", "output_count": 1, "mirror_ok": false,
+	},
 	# 魔力药水: 1 hell_crystal + 1 silver_ingot (2x1 横排, 工作台). 出 2 瓶
 	{
 		"id": "mana_potion", "grid_size": Vector2i(2, 1),
