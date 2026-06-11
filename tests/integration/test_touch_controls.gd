@@ -30,6 +30,7 @@ func test_touch_has_bag_drop_pause_buttons():
 	assert_not_null(tc.get_node_or_null("BtnBag"), "有背包钮")
 	assert_not_null(tc.get_node_or_null("BtnDrop"), "有丢弃钮")
 	assert_not_null(tc.get_node_or_null("BtnPause"), "有暂停钮")
-	# 原有的也还在
-	assert_not_null(tc.get_node_or_null("BtnAttack"), "击钮还在")
-	assert_not_null(tc.get_node_or_null("BtnJump"), "跳钮还在")
+	assert_not_null(tc.get_node_or_null("BtnAttack"), "击钮(物品图标)还在")
+	# 新增右下瞄准摇杆; 跳钮删了 (左摇杆上推包办跳)
+	assert_not_null(tc.get_node_or_null("AimJoystick"), "有瞄准摇杆")
+	assert_null(tc.get_node_or_null("BtnJump"), "跳钮已删 (左摇杆上推 = 跳)")

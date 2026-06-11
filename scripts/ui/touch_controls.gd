@@ -12,11 +12,21 @@ const BTN_RADIUS := 52.0           # 按钮可点半径
 const BTN_SPACING := 18.0          # 按钮之间间距
 const EDGE_MARGIN := 36.0          # 距屏幕边
 const VIEWPORT_SIZE := Vector2(1280, 720)
+const AIM_REACH_PX := 110.0        # 准星离玩家(屏幕)的距离 (瞄准摇杆控方向)
+
+var _aim_joy: Control = null        # 右下瞄准摇杆 (控制准星)
+var _attack_btn: Button = null      # "击"钮: 显示手里物品图标, 点一下使用
+var _aim_dir: Vector2 = Vector2(1.0, 0.0)   # 当前瞄准方向 (默认朝右), 摇杆更新
 
 
 func _ready() -> void:
 	layer = 60   # 在 HUD (50) 之上
 	_build_ui()
+
+
+func _process(_delta: float) -> void:
+	_update_attack_icon()   # "击"钮跟着选中物品换图标
+	_update_aim()           # 瞄准摇杆 → 把虚拟鼠标钉到准星处
 
 
 func _build_ui() -> void:
@@ -36,11 +46,27 @@ func _build_ui() -> void:
 	joy.offset_bottom = -EDGE_MARGIN
 	add_child(joy)
 
-	# 右下 第 0 排 (从右到左: 击 / 用 / 跳, 主按钮 "击" 最靠右好按)
-	_add_action_button("BtnAttack", "primary", "击", 0, Color(1.0, 0.45, 0.35))
+	# 右下角: 瞄准摇杆 (拖动 → 准星朝那方向; 跳由左摇杆上推包办, 省掉跳钮)
+	_aim_joy = TouchJoystick.new()
+	_aim_joy.name = "AimJoystick"
+	_aim_joy.aim_mode = true
+	var aim_r: float = TouchJoystick.RADIUS
+	_aim_joy.anchor_left = 1.0
+	_aim_joy.anchor_top = 1.0
+	_aim_joy.anchor_right = 1.0
+	_aim_joy.anchor_bottom = 1.0
+	_aim_joy.offset_left = -(aim_r * 2.0 + EDGE_MARGIN)
+	_aim_joy.offset_top = -(aim_r * 2.0 + EDGE_MARGIN)
+	_aim_joy.offset_right = -EDGE_MARGIN
+	_aim_joy.offset_bottom = -EDGE_MARGIN
+	add_child(_aim_joy)
+	# 击 (主): 显示手里物品图标, 点一下使用 (text="" → 只有图标). 放瞄准摇杆左边。
+	_add_action_button("BtnAttack", "primary", "", 0, Color(1.0, 0.45, 0.35))
+	_attack_btn = get_node_or_null("BtnAttack")
+	if _attack_btn != null:
+		_attack_btn.expand_icon = true   # 物品图标填满按钮 (像素图 NEAREST 不糊)
+	# 用 (放方块/副操作) + 背包 + 丢
 	_add_action_button("BtnUse", "secondary", "用", 1, Color(0.45, 0.85, 0.45))
-	_add_action_button("BtnJump", "jump", "跳", 2, Color(0.45, 0.65, 1.0))
-	# 右下 第 1 排 (上方): 背包 (interact) / 丢 (drop_item)
 	_add_action_button("BtnBag", "interact", "包", 0, Color(0.95, 0.78, 0.4), 1)
 	_add_action_button("BtnDrop", "drop_item", "丢", 1, Color(0.7, 0.7, 0.75), 1)
 	# 右上角: 暂停
@@ -60,8 +86,9 @@ func _add_action_button(node_name: String, action: String, label: String, index:
 	btn.anchor_top = 1.0
 	btn.anchor_right = 1.0
 	btn.anchor_bottom = 1.0
-	# 右起 offset: index 0 最右, index 1 往左一档...
-	var x_offset: float = -(EDGE_MARGIN + (BTN_RADIUS * 2.0 + BTN_SPACING) * (index + 1) - BTN_SPACING)
+	# 右起 offset: index 0 最右, index 1 往左一档... 整体往左让出右下瞄准摇杆的位
+	var aim_clear: float = TouchJoystick.RADIUS * 2.0 + BTN_SPACING
+	var x_offset: float = -(EDGE_MARGIN + aim_clear + (BTN_RADIUS * 2.0 + BTN_SPACING) * (index + 1) - BTN_SPACING)
 	btn.offset_left = x_offset
 	btn.offset_right = x_offset + BTN_RADIUS * 2.0
 	# row 抬高一排: 每排高 = 按钮直径 + 间距
@@ -130,6 +157,68 @@ func _on_pause_pressed() -> void:
 	ev.action = "ui_pause"
 	ev.pressed = true
 	Input.parse_input_event(ev)
+
+
+# "击"钮跟着当前选中的物品换图标 (没物品 → 退回显示"击"字)。
+func _update_attack_icon() -> void:
+	if _attack_btn == null:
+		return
+	var tex: Texture2D = _held_item_icon()
+	if tex != null:
+		_attack_btn.icon = tex
+		_attack_btn.text = ""
+	else:
+		_attack_btn.icon = null
+		_attack_btn.text = "击"
+
+
+func _held_item_icon() -> Texture2D:
+	var p: Node = get_tree().get_first_node_in_group("player")
+	if p == null:
+		return null
+	var pinv: Node = p.get_node_or_null("PlayerInventory")
+	if pinv == null or not pinv.has_method("current_hotbar_slot"):
+		return null
+	var slot = pinv.current_hotbar_slot()
+	if slot == null:
+		return null
+	if typeof(ArtCache) == TYPE_NIL or not ArtCache.has_method("get_inventory_icon"):
+		return null
+	return ArtCache.get_inventory_icon(String(slot.item_id))
+
+
+# 瞄准摇杆 → 把虚拟鼠标钉在 (玩家屏幕位置 + 瞄准方向 × 距离): 现有所有瞄准 (挖/放/弓) + 准星
+# 都按鼠标走, 所以这一招就让它们全跟着摇杆. 摇杆没推时保持上次方向 (准星不乱跳)。
+func _update_aim() -> void:
+	if _aim_joy == null or not _aim_joy.has_method("aim_vector"):
+		return
+	if _ui_blocking():
+		return   # 背包/箱子开着 或 暂停时 不抢鼠标 (让玩家正常拖物品)
+	var av: Vector2 = _aim_joy.aim_vector()
+	if av.length() > 0.28:   # 超过死区才更新方向
+		_aim_dir = av.normalized()
+	var anchor: Vector2 = _player_screen_pos()
+	Input.warp_mouse(anchor + _aim_dir * AIM_REACH_PX)
+
+
+func _player_screen_pos() -> Vector2:
+	var p: Node = get_tree().get_first_node_in_group("player")
+	if p != null and p is Node2D:
+		return (p as Node2D).get_global_transform_with_canvas().origin
+	return get_viewport().get_visible_rect().size * 0.5
+
+
+# 背包/箱子开着 或 游戏暂停 → 别抢鼠标 (玩家要用鼠标拖物品/点菜单)。
+func _ui_blocking() -> bool:
+	if get_tree().paused:
+		return true
+	var c: Node = get_tree().get_first_node_in_group("crafting_panel")
+	if c != null and c.has_method("is_open") and c.is_open():
+		return true
+	var ch: Node = get_tree().get_first_node_in_group("chest_panel")
+	if ch != null and ch.has_method("is_open") and ch.is_open():
+		return true
+	return false
 
 
 # 检测是否手机/平板, 给 main.gd 调用决定是否实例化.

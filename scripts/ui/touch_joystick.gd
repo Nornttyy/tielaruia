@@ -11,6 +11,13 @@ const JUMP_THRESH := 35.0       # 垂直上推阈值 (knob.y ≤ -此值触发 j
 var _knob_offset: Vector2 = Vector2.ZERO   # knob 相对 center 的偏移
 var _touch_active: bool = false
 var _pressed_actions: Dictionary = {}      # action → true (跟踪状态防重复 press)
+# 瞄准模式: 不注入 move/jump, 只报方向 (aim_vector) 给 touch_controls 控制准星。
+var aim_mode: bool = false
+
+
+# 当前推杆方向 (归一到 0..1, 死区内/没按时长度≈0)。瞄准摇杆用。
+func aim_vector() -> Vector2:
+	return _knob_offset / RADIUS
 
 
 func _ready() -> void:
@@ -63,6 +70,8 @@ func _update_knob(local_pos: Vector2) -> void:
 
 
 func _apply_input() -> void:
+	if aim_mode:
+		return   # 瞄准摇杆不注入移动/跳, 只供 aim_vector() 读方向
 	# 左右
 	if _knob_offset.x < -DEADZONE:
 		_press("move_left")
