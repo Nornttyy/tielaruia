@@ -287,19 +287,29 @@ static func _shirt_layer(ap: Dictionary, dy: int) -> Array:
 # 女泳衣躯干 (露肚: 上 3 行衣+胸, 下 3 行肚皮肤)。沙漏腰; cs 简化两档前鼓。
 static func _female_torso_swim(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
-	# 比基尼上衣 👙: 罩杯(镶边D + 高光c) + 挂脖细带 + 后背横系带 + 凸起下沿深阴E。
+	# 比基尼上衣 👙 (10宽): 罩杯(镶边D + 高光c) + 挂脖细带。胸前鼓跟 _female_torso 同款大小。
+	# 腰/胯皮肤色 (露肚), 形状跟 T恤同款细腰 (用户要身材跨衣服一致)。
 	var rows := [
-		".sssws...",   # 肩/脖: 挂脖细带 (w)
-		"sssDwwc..",   # 上胸: 罩杯上沿镶边 D + 罩杯 + 高光 c
-		"swwwwDc..",   # 下胸: 罩杯 + 后背横系带 + 下沿镶边 D + 高光 c
-		".sssep...",   # 肚: 露肚 + 罩杯下皮肤阴影 e (胸凸起的投影; 裸露处用皮肤色)
-		".kss.....",   # 腰 (皮肤阴影 k)
-		"ksssk....",   # 胯 (皮肤)
+		".sssws....",   # 肩/脖: 挂脖细带 (w)
+		"sssDwwc...",   # 上胸: 罩杯上沿镶边 D + 罩杯 + 高光 c
+		"swwwwDc...",   # 下胸: 罩杯 + 后背横系带 + 下沿镶边 D + 高光 c
+		".sssep....",   # 肚: 露肚 + 罩杯下皮肤阴影 e
+		".kss......",   # 腰 (皮肤; 细腰 cols1-3)
+		"ksssk.....",   # 胯 (皮肤; cols0-4)
 	]
+	# 胸前鼓 col7-9 (跟 T恤大小一致): cs1=1px → cs3=2px → cs5=3px。
+	if cs >= 1:
+		rows[2] = _set_char(rows[2], 7, "w")   # 罩杯 col7 (1px)
 	if cs >= 2:
-		rows[2] = _set_char(rows[2], 7, "w")   # 胸前鼓, 罩杯跟着包住
+		rows[1] = _set_char(rows[1], 7, "w")   # 上胸罩杯 col7
+		rows[2] = _set_char(rows[2], 8, "w")   # 罩杯 col8 (2px)
+	if cs >= 3:
+		rows[1] = _set_char(rows[1], 8, "w")   # 上胸 col8
+		rows[3] = _set_char(rows[3], 7, "w")   # 罩杯下沿前鼓 col7 (圆)
 	if cs >= 4:
-		rows[1] = _set_char(rows[1], 7, "w")
+		rows[2] = _set_char(rows[2], 9, "w")   # 罩杯 col9 (3px)
+	if cs >= 5:
+		rows[1] = _set_char(rows[1], 9, "w")   # 上胸 col9
 	return rows
 
 
@@ -313,8 +323,8 @@ static func _female_torso(cs: int) -> Array:
 		"wwwwwDc...",   # 上胸 (纽扣D + 前高光c)
 		"wwwwwwc...",   # 中胸 (光面)
 		"wwwwwDc...",   # 下胸 (纽扣D)
-		"wwwwww....",   # 腰 (收腰浅 1px + 露手臂外, 前沿平滑不折=不歪; 后背直 col0)
-		"wwwwwww...",   # 胯 (外扩, 比腰宽 1px)
+		".www......",   # 腰 (照泳衣细腰: cols1-3 = composite 6-8, 后背收1px+前收)
+		"wwwww.....",   # 胯 (照泳衣: cols0-4 = composite 5-9)
 	]
 	if cs >= 1:
 		rows[2] = _set_char(rows[2], 7, "w")   # 中胸 col7 (鼓 1px)
