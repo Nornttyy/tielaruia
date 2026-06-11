@@ -92,6 +92,9 @@ func _ready() -> void:
 		sprite.sprite_frames = ArtCache.player_frames
 	sprite.play("idle")
 	add_to_group("player")
+	# 角色永远明亮 (用户要求): 画在光照层(DarknessLayer z=10)之上, 黑暗盖不到玩家 →
+	# 眼白等永远清楚, 山洞/夜里也看得清自己 (其它实体仍随光变暗).
+	z_index = 11
 	# 斜坡: 默认 floor_max_angle=45° 正好卡边界, 45° 斜砖会被当墙. 调到 ~51° 让斜面算地面能走上去.
 	floor_max_angle = 0.90
 	# 连受击信号
