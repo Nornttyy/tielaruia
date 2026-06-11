@@ -14,6 +14,10 @@ const MAX_LIGHT := 15
 const PLAYER_LIGHT := 5
 const TORCH_LIGHT := 14
 
+# 战斗房全亮 (用户: 战斗时光照遮挡视野). 置 true → compute_region 整片返回 MAX_LIGHT,
+# 黑暗层 alpha 全 0 = 没有黑. main.gd 进/出对战房竞技场时开关. static = 全局共享 (compute_region 是 static).
+static var force_full_bright: bool = false
+
 # 天光: 沿空气低衰减 (从开口灌满整个房间), 但配合 _bfs 的 no_spread_from_solid =
 # "实心块只接收光不再外传" → 围起来的密闭空间=黑, 留个开口=光从那灌满里面 (用户要的效果).
 # 实心块本身仍受光 (墙面/地表会亮), SKY_ATTEN_SOLID 控它接收到多亮.
@@ -33,6 +37,12 @@ static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: i
 	var w: int = x1 - x0
 	var h: int = y1 - y0
 	var size: int = w * h
+	# 战斗房全亮: 整片填满最高光值 → 黑暗层 alpha 全 0, 不挡视野. (跳过两套 BFS)
+	if force_full_bright:
+		var bright: PackedByteArray = PackedByteArray()
+		bright.resize(size)
+		bright.fill(MAX_LIGHT)
+		return bright
 	# Pass 1: 天光.
 	var sky: PackedByteArray = PackedByteArray()
 	sky.resize(size)
