@@ -336,10 +336,11 @@ func join(code: String) -> void:
 # 先设好固定世界参数 (万一本端成 host, 连上后要 send_hello 这些值给 client).
 func enter_public(tag: String, seed_val: int, size_val: int, diff_val: int) -> void:
 	in_public_room = true   # 公共房 (本来就是多人, 暂停菜单不显示"多人游戏/踢人")
-	# 房间类型 → 模式: PVP 对战房 / BW 起床战争 / 其它生存
-	match tag:
-		"PVP": room_mode = "pvp"
-		_: room_mode = "survival"
+	# 房间类型 → 模式: PVP* 对战房 (PVP/PVP-MAGIC/PVP-GUN 按对战装备分房) / BW 起床战争 / 其它生存
+	if tag.begins_with("PVP"):
+		room_mode = "pvp"
+	else:
+		room_mode = "survival"
 	shared_world_creative = false   # 公共房永远生存 (不让陌生人创造乱飞)
 	if _bridge == null:
 		_try_reload_bridge()

@@ -1,31 +1,51 @@
-# 对战房模式选择面板: 进对战房后自动弹出, 玩家自己选 经典/魔法/枪械 三种对战。
-# 选了 → 清空背包重发对应整套装备 (各人各选各的, 本地决定, 不强制统一)。之后按 M 可重选。
-# 注: 组队/混战 + 胜负判定是更大的后续, 这版只做"对战装备类型"选择。
-# 非对战房 (生存/起床战争) 永不弹出 → 可一直挂在游戏里无副作用。
+# 对战房模式选择面板 + 常驻"切换模式"按钮 (击杀榜左边)。
+# 三种对战: 经典(剑+弓) / 魔法(选 1 种法杖) / 枪械(选 1 种枪)。
+# 不同模式 = 不同房间: 经典→公共房 PVP, 魔法→PVP-MAGIC, 枪械→PVP-GUN。选了别的模式会自动
+# 断开重连到那个模式的公共房 (竞技场布局固定不变, 只是换成跟同模式的人一起)。同模式里换武器
+# 只换装备不换房。非对战房 (生存/起床战争) 永不弹、按钮也不显示。
 extends CanvasLayer
 
 const UIStyle = preload("res://scripts/ui/ui_style.gd")
+const MpRooms = preload("res://scripts/net/mp_rooms.gd")
 
-# 共用装备 (三种模式都给): 石头(搭掩体) + 镐(挖方块) + 血药。盔甲单独 set_armor。
+# 每种模式对应的公共房 tag (bridge 据此分房号: teilaruia-PUB-<tag>-N)。
+const _MODE_TAG := {"classic": "PVP", "magic": "PVP-MAGIC", "gun": "PVP-GUN"}
+# 三模式都给的共用装备 (盔甲单独 set_armor)。
 const _COMMON := [["stone", 64], ["iron_pickaxe", 1], ["health_potion", 5]]
-# 每种模式的主武器 (放背包最前面, 选中 slot 0)。
-const _MODES := {
-	"classic": {"name": "经典对战", "weapons": [["iron_sword", 1], ["wood_bow", 1], ["wood_arrow", 99]]},
-	"magic":   {"name": "魔法对战", "weapons": [["iron_staff", 1], ["mana_potion", 10]]},
-	"gun":     {"name": "枪械对战", "weapons": [["smg", 1], ["bullet", 200]]},
-}
-const _ORDER := ["classic", "magic", "gun"]
+# 可选武器 (用户要求: 全部都能选)。[id, 中文名]
+const _STAFFS := [
+	["wood_staff", "木魔草杖"], ["iron_staff", "铁蓝晶杖"],
+	["hell_staff", "地狱魔火法杖"], ["skull_staff", "骷髅法杖"],
+]
+const _GUNS := [
+	["pistol", "手枪"], ["smg", "冲锋枪"], ["assault_rifle", "突击步枪"], ["shotgun", "霰弹枪"],
+	["sniper", "狙击枪"], ["laser_gun", "激光枪"], ["flamethrower", "火焰喷射器"], ["freeze_ray", "冰冻枪"],
+	["arcane_gun", "追踪魔弹枪"], ["poison_gun", "毒液枪"], ["lightning_gun", "闪电链枪"], ["star_gun", "星星炮"],
+	["slime_gun", "史莱姆枪"], ["frost_gun", "冰雪枪"], ["leaf_gun", "绿叶枪"],
+]
 
 var _panel: Panel = null
-var _chosen: bool = false   # 已选过一次 (不再自动弹; 按 M 才重开)
+var _content: VBoxContainer = null    # 面板里随层级切换内容 (模式按钮 / 武器列表)
+var _switch_btn: Button = null        # 常驻"切换模式"按钮 (击杀榜左边)
+var _opened_once: bool = false        # 进房后自动弹过一次没
+var _current_tag: String = "PVP"      # 当前所在公共房 tag (经典默认; 菜单进的是 PVP)
 
 
-# 某模式的整套物品清单 [[id,count],...] (武器在前 + 共用; 不含盔甲)。纯数据, 供测试 + grant 复用。
-static func mode_loadout(key: String) -> Array:
+# 某模式整套物品 [[id,count],...] (武器在前 + 共用; 不含盔甲)。纯数据, 供测试 + grant 复用。
+# weapon_id: 魔法/枪械 要传选中的武器; 经典忽略。
+static func mode_loadout(key: String, weapon_id: String = "") -> Array:
 	var out: Array = []
-	if _MODES.has(key):
-		for w in _MODES[key]["weapons"]:
-			out.append(w)
+	match key:
+		"magic":
+			out.append([weapon_id if weapon_id != "" else "iron_staff", 1])
+			out.append(["mana_potion", 10])
+		"gun":
+			out.append([weapon_id if weapon_id != "" else "pistol", 1])
+			out.append(["bullet", 200])
+		_:
+			out.append(["iron_sword", 1])
+			out.append(["wood_bow", 1])
+			out.append(["wood_arrow", 99])
 	for c in _COMMON:
 		out.append(c)
 	return out
@@ -42,69 +62,125 @@ func _build() -> void:
 	_panel = Panel.new()
 	_panel.add_theme_stylebox_override("panel", UIStyle.panel())
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.custom_minimum_size = Vector2(360, 300)
-	_panel.size = Vector2(360, 300)
-	_panel.position = Vector2(-180, -150)
+	_panel.custom_minimum_size = Vector2(380, 440)
+	_panel.size = Vector2(380, 440)
+	_panel.position = Vector2(-190, -220)
 	add_child(_panel)
-	var vb := VBoxContainer.new()
-	vb.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vb.offset_left = 20
-	vb.offset_top = 20
-	vb.offset_right = -20
-	vb.offset_bottom = -20
-	vb.add_theme_constant_override("separation", 14)
-	_panel.add_child(vb)
+	var outer := VBoxContainer.new()
+	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	outer.offset_left = 18
+	outer.offset_top = 18
+	outer.offset_right = -18
+	outer.offset_bottom = -18
+	outer.add_theme_constant_override("separation", 10)
+	_panel.add_child(outer)
 	var title := Label.new()
 	title.text = "选择对战模式"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color(0.949, 0.761, 0.396))
-	vb.add_child(title)
-	var hint := Label.new()
-	hint.text = "每人各选各的 · 之后按 M 可重选"
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_font_size_override("font_size", 12)
-	hint.add_theme_color_override("font_color", Color(0.8, 0.78, 0.7))
-	vb.add_child(hint)
-	for key in _ORDER:
-		var b := Button.new()
-		b.text = _MODES[key]["name"]
-		b.custom_minimum_size = Vector2(0, 50)
-		UIStyle.style_button(b)
-		b.pressed.connect(_on_mode_pressed.bind(key))
-		vb.add_child(b)
+	outer.add_child(title)
+	# 内容区 (用 ScrollContainer 包 VBox, 枪多了能滚)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	outer.add_child(scroll)
+	_content = VBoxContainer.new()
+	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content.add_theme_constant_override("separation", 8)
+	scroll.add_child(_content)
+	# 常驻"切换模式"按钮: 击杀榜在右上 (左边沿距右 636px), 按钮放它左边一点。
+	_switch_btn = Button.new()
+	_switch_btn.text = "切换模式"
+	UIStyle.style_button(_switch_btn)
+	_switch_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_switch_btn.offset_right = -642.0
+	_switch_btn.offset_left = -762.0
+	_switch_btn.offset_top = 12.0
+	_switch_btn.offset_bottom = 42.0
+	_switch_btn.pressed.connect(_open)
+	add_child(_switch_btn)
+	_switch_btn.visible = false
 
 
-# 每帧轻量检查: 在对战房 + 玩家就绪 + 还没选过 → 自动弹出 (只弹一次)。
+# 一个可点的列表条目按钮 (模式 / 武器)。
+func _add_choice(label: String, cb: Callable) -> void:
+	var b := Button.new()
+	b.text = label
+	b.custom_minimum_size = Vector2(0, 44)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	UIStyle.style_button(b)
+	b.pressed.connect(cb)
+	_content.add_child(b)
+
+
+func _clear_content() -> void:
+	for c in _content.get_children():
+		c.queue_free()
+
+
+# 第一层: 三个模式按钮。
+func _show_modes() -> void:
+	_clear_content()
+	_add_choice("经典对战 (剑 + 弓)", _on_classic)
+	_add_choice("魔法对战 (选法杖)", func(): _show_weapons("magic"))
+	_add_choice("枪械对战 (选枪)", func(): _show_weapons("gun"))
+
+
+# 第二层: 列出该类全部武器 (可滚动)。
+func _show_weapons(category: String) -> void:
+	_clear_content()
+	_add_choice("← 返回", _show_modes)
+	var list: Array = _STAFFS if category == "magic" else _GUNS
+	for pair in list:
+		var wid: String = String(pair[0])
+		_add_choice(String(pair[1]), func(): _pick(category, wid))
+
+
 func _process(_delta: float) -> void:
-	if _chosen or visible:
-		return
-	if NetworkManager == null or not NetworkManager.is_pvp():
-		return
-	if _local_inventory() != null:
+	var in_pvp: bool = NetworkManager != null and NetworkManager.is_pvp()
+	if _switch_btn != null:
+		_switch_btn.visible = in_pvp and not visible
+	# 进对战房后自动弹一次 (让玩家先选)
+	if not _opened_once and not visible and in_pvp and _local_inventory() != null:
 		_open()
 
 
 func _input(event: InputEvent) -> void:
-	# 对战房里按 M 重新选模式 (M 没绑别的 action)
 	if event is InputEventKey and event.pressed and not event.echo \
-			and event.keycode == KEY_M \
-			and NetworkManager != null and NetworkManager.is_pvp() \
-			and not visible:
+			and event.keycode == KEY_M and not visible \
+			and NetworkManager != null and NetworkManager.is_pvp():
 		_open()
 
 
 func _open() -> void:
+	_opened_once = true
+	_show_modes()
 	visible = true
 
 
-func _on_mode_pressed(key: String) -> void:
-	_grant_loadout(key)
-	_chosen = true
+func _on_classic() -> void:
+	_pick("classic", "")
+
+
+# 选定模式 (+武器): 发装备; 模式 (房间 tag) 变了就转到对应公共房。
+func _pick(mode_key: String, weapon_id: String) -> void:
+	_grant_loadout(mode_key, weapon_id)
 	visible = false
+	var new_tag: String = String(_MODE_TAG.get(mode_key, "PVP"))
+	if new_tag != _current_tag and NetworkManager != null and NetworkManager.is_public_room():
+		_current_tag = new_tag
+		_reroute(new_tag)
 
 
-# 找本地玩家的 PlayerInventory (没就绪返 null)。
+# 断开当前公共房 + 连到新模式的公共房 (竞技场不变, 只换同伴)。
+func _reroute(tag: String) -> void:
+	if NetworkManager == null:
+		return
+	NetworkManager.disconnect_room()
+	NetworkManager.enter_public(tag, MpRooms.PUBLIC_SV_SEED, MpRooms.PUBLIC_SV_SIZE, MpRooms.PUBLIC_SV_DIFF)
+
+
 func _local_inventory() -> Node:
 	var player: Node = get_tree().get_first_node_in_group("player")
 	if player == null:
@@ -117,19 +193,19 @@ func _local_inventory() -> Node:
 
 # 清空背包 + 重发该模式整套装备 (武器在前 → 选中 slot 0) + 铁甲。
 # inv_arg 仅供测试注入; 正常传 null 自动找本地玩家。
-func _grant_loadout(key: String, inv_arg: Node = null) -> bool:
+func _grant_loadout(mode_key: String, weapon_id: String, inv_arg: Node = null) -> bool:
 	var inv_node: Node = inv_arg if inv_arg != null else _local_inventory()
 	if inv_node == null or inv_node.inventory == null:
 		return false
 	for i in inv_node.inventory.slots.size():
-		inv_node.inventory.slots[i] = null   # 清空, 重发干净 (换模式不残留上一套)
-	for pair in mode_loadout(key):
+		inv_node.inventory.slots[i] = null
+	for pair in mode_loadout(mode_key, weapon_id):
 		inv_node.pickup(String(pair[0]), int(pair[1]))
 	inv_node.set_armor("helmet", {"item_id": "iron_helmet", "count": 1})
 	inv_node.set_armor("chest", {"item_id": "iron_chest", "count": 1})
 	inv_node.set_armor("pants", {"item_id": "iron_pants", "count": 1})
 	if inv_node.has_method("set_hotbar_selection"):
-		inv_node.set_hotbar_selection(0)   # 选中 slot 0 = 主武器
+		inv_node.set_hotbar_selection(0)
 	if inv_node.has_signal("inventory_changed"):
 		inv_node.inventory_changed.emit()
 	return true
