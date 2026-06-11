@@ -14,8 +14,10 @@ const MAX_LIGHT := 15
 const PLAYER_LIGHT := 5
 const TORCH_LIGHT := 14
 
-# 天光: 穿空气衰减很大, 模拟"洞穴里没几格就黑"
-const SKY_ATTEN_AIR := 3
+# 天光: 沿空气低衰减 (从开口灌满整个房间), 但配合 _bfs 的 no_spread_from_solid =
+# "实心块只接收光不再外传" → 围起来的密闭空间=黑, 留个开口=光从那灌满里面 (用户要的效果).
+# 实心块本身仍受光 (墙面/地表会亮), SKY_ATTEN_SOLID 控它接收到多亮.
+const SKY_ATTEN_AIR := 1
 const SKY_ATTEN_SOLID := 4
 
 # 火把/玩家: 穿空气慢衰减, 火把能照亮一圈
@@ -43,7 +45,8 @@ static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: i
 				var idx: int = (y - y0) * w + (x - x0)
 				sky[idx] = sky_light
 				sky_queue.append(idx)
-	_bfs(chunk_manager, x0, y0, w, h, sky, sky_queue, SKY_ATTEN_AIR, SKY_ATTEN_SOLID)
+	# 天光: no_spread_from_solid=true → 实心块接到光但不往后传 (墙挡住, 不漏进墙后的密闭空间)
+	_bfs(chunk_manager, x0, y0, w, h, sky, sky_queue, SKY_ATTEN_AIR, SKY_ATTEN_SOLID, true)
 
 	# Pass 2: 火把 + 玩家. 独立 BFS, 低衰减.
 	var pt: PackedByteArray = PackedByteArray()
@@ -61,7 +64,8 @@ static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: i
 		if pt[pi] < PLAYER_LIGHT:
 			pt[pi] = PLAYER_LIGHT
 			pt_queue.append(pi)
-	_bfs(chunk_manager, x0, y0, w, h, pt, pt_queue, PT_ATTEN_AIR, PT_ATTEN_SOLID)
+	# 火把/玩家: 照常穿空气+少量穿墙 (no_spread_from_solid=false) → 火把放墙缝也能透一点
+	_bfs(chunk_manager, x0, y0, w, h, pt, pt_queue, PT_ATTEN_AIR, PT_ATTEN_SOLID, false)
 
 	# 合并: 每 tile 取 max(sky, pt) (合并写回 sky)
 	for i in range(size):
@@ -74,7 +78,7 @@ static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: i
 # 用 pop_back() (O(1)) 不用 pop_front() (O(n)). max-decrement 算法跟顺序无关.
 static func _bfs(chunk_manager: Node, x0: int, y0: int, w: int, h: int,
 		grid: PackedByteArray, queue: PackedInt32Array,
-		atten_air: int, atten_solid: int) -> void:
+		atten_air: int, atten_solid: int, no_spread_from_solid: bool = false) -> void:
 	while not queue.is_empty():
 		var idx: int = queue[queue.size() - 1]
 		queue.remove_at(queue.size() - 1)
@@ -84,6 +88,11 @@ static func _bfs(chunk_manager: Node, x0: int, y0: int, w: int, h: int,
 		# 由 idx 反推 lx, ly (区域局部坐标)
 		var ly: int = idx / w
 		var lx: int = idx % w
+		# 天光: 实心块接到光后不再往外传 (墙挡光). 它自己保留亮度渲染, 但不把光漏给后面的格.
+		if no_spread_from_solid:
+			var ctid: int = chunk_manager.get_tile(x0 + lx, y0 + ly)
+			if ctid != Tiles.AIR and Tiles.is_solid(ctid):
+				continue
 		# 4 个方向: 右 / 左 / 下 / 上 (lx+1, lx-1, ly+1, ly-1)
 		# 边界检查直接用 lx, ly (省去 - x0)
 		# 右
