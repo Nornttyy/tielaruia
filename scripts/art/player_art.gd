@@ -145,18 +145,18 @@ const _BACKLOCK_F := [
 # 细节放可见区 (中间 col3-4 被手臂挡, 不放细节)。7 宽 × 6 高。
 const _TORSO := [
 	".wwwDDc",   # 领口 DD + 前缘高光 c
-	"EwwwwDc",   # 后深阴 E + 纽扣 D(深色才看得见) + 前高光 c
-	"Dwwwwwc",   # 扣间 (门襟)
+	"EwwwwDc",   # 后深阴 E + 纽扣 D + 前高光 c
+	"DwwwwEc",   # 扣下阴影 E (纽扣凸起感)
 	"EwwwwDc",   # 纽扣 D
-	"DEwwwwc",   # 后侧褶皱 E
+	"DEwwwEc",   # 后侧褶皱 E + 扣下阴影 E
 	".EDDDE.",   # 下摆深阴
 ]
-# 手臂 (袖子+手), 垂在身体前。后缘深 D + 前缘亮 c = 有体积的胳膊, 跟同色躯干分得开。2 宽 × 6 高。
+# 手臂 (袖子+手), 垂在身体前。后缘深 D + 前缘亮 c; 手腕一道袖口 cc (凸起)。2 宽 × 6 高。
 const _ARM := [
 	"Dc",
 	"Dc",
 	"Dc",
-	"Dc",
+	"cc",
 	"ks",
 	"kk",
 ]
@@ -311,7 +311,7 @@ static func _female_torso(cs: int) -> Array:
 	var rows := [
 		".wwwDDc..",   # 肩 + 领口 DD + 前高光 c
 		"EwwwwDc..",   # 上胸 (后深阴E + 纽扣D + 前高光c)
-		"Dwwwwwc..",   # 中胸 (扣间门襟)
+		"DwwwwEc..",   # 中胸 (扣下阴影E = 纽扣凸起)
 		"EwwwwDc..",   # 下胸 (纽扣D)
 		"Dwww.....",   # 腰 (收腰; 后背 col0 一条直线, 不歪)
 		"Dwwwww...",   # 胯 (外扩, 比腰宽一截)
