@@ -414,14 +414,15 @@ static func _palette_from(ap: Dictionary) -> Dictionary:
 	var pants: Color = ap.get("pants_color", DEFAULT_APPEARANCE["pants_color"])
 	var eye: Color = ap.get("eye_color", DEFAULT_APPEARANCE["eye_color"])
 	var shoe: Color = ap.get("shoe_color", DEFAULT_APPEARANCE["shoe_color"])
+	# 加强对比 (用户要求): 深的更深、亮的更亮, 让缝/纽扣/褶皱/明暗更跳眼。
 	return {
 		".": Color(0, 0, 0, 0),
-		"s": skin, "k": skin.darkened(0.18), "p": skin.lightened(0.16),   # p=皮肤高光
-		"h": hair, "H": hair.darkened(0.28), "g": hair.lightened(0.32),   # g=头发高光
-		"w": shirt, "D": shirt.darkened(0.18), "c": shirt.lightened(0.24), "E": shirt.darkened(0.40), # c高光 E深阴影
-		"b": pants, "B": pants.darkened(0.28), "P": pants.lightened(0.26), "A": pants.darkened(0.45), # P高光 A深阴影
-		"i": eye, "W": _WHITE, "e": skin.darkened(0.30),
-		"o": shoe, "O": shoe.darkened(0.36), "q": shoe.lightened(0.28),   # 鞋(可换色) + 高光 q
+		"s": skin, "k": skin.darkened(0.26), "p": skin.lightened(0.26),   # p=皮肤高光
+		"h": hair, "H": hair.darkened(0.42), "g": hair.lightened(0.48),   # g=头发高光
+		"w": shirt, "D": shirt.darkened(0.32), "c": shirt.lightened(0.42), "E": shirt.darkened(0.56), # c高光 E深阴影
+		"b": pants, "B": pants.darkened(0.42), "P": pants.lightened(0.44), "A": pants.darkened(0.60), # P高光 A深阴影
+		"i": eye, "W": _WHITE, "e": skin.darkened(0.40),
+		"o": shoe, "O": shoe.darkened(0.48), "q": shoe.lightened(0.44),   # 鞋(可换色) + 高光 q
 		"L": _OUTLINE,
 	}
 
