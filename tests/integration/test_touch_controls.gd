@@ -14,12 +14,13 @@ func test_hotbar_tap_selects_slot():
 	add_child_autofree(pinv)
 	await wait_frames(1)
 	hv.bind(pinv)
-	# 模拟点第 4 格 (idx 3)
+	# 模拟在容器横坐标 x≈140 处点击 (槽宽 40 → idx = 140/40 = 3 = 第 4 格)
 	var ev := InputEventMouseButton.new()
 	ev.button_index = MOUSE_BUTTON_LEFT
 	ev.pressed = true
-	hv._on_slot_input(ev, 3)
-	assert_eq(pinv.hotbar_selected, 3, "点 hotbar 第 4 格应选中它")
+	ev.position = Vector2(140, 18)
+	hv._gui_input(ev)
+	assert_eq(pinv.hotbar_selected, 3, "点 hotbar x≈140 应选第 4 格")
 
 
 func test_touch_has_bag_drop_pause_buttons():

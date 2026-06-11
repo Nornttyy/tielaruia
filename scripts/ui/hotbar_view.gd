@@ -11,20 +11,25 @@ var _cached_chest_panel: Node = null
 
 
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_STOP   # 整条 hotbar 收点击/触摸 → 选格子 (手机切快捷栏)
 	for i in 9:
 		var slot := _make_slot()
-		slot.gui_input.connect(_on_slot_input.bind(i))   # 点/触屏点格子 → 选中 (手机切快捷栏)
 		add_child(slot)
 		_slot_nodes.append(slot)
 	add_theme_constant_override("separation", 4)
 
 
-# 点击/触摸某个 hotbar 格 → 选中它 (手机没数字键, 靠点; 桌面点也能选)。
-func _on_slot_input(event: InputEvent, idx: int) -> void:
+# 点/触屏点 hotbar → 按横坐标算出点了第几格并选中 (手机没数字键; 桌面点也能选)。
+# 在容器层统一收, 比每个小格子单独收更稳 (嵌套容器的触摸拾取有时会漏)。
+func _gui_input(event: InputEvent) -> void:
 	var pressed: bool = (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) \
 			or (event is InputEventScreenTouch and event.pressed)
-	if pressed and _player_inv != null and _player_inv.has_method("set_hotbar_selection"):
-		_player_inv.set_hotbar_selection(idx)
+	if not pressed or _player_inv == null or not _player_inv.has_method("set_hotbar_selection"):
+		return
+	var step: float = float(SLOT_SIZE) + 4.0   # 槽宽 + separation
+	var idx: int = clampi(int(event.position.x / step), 0, 8)
+	_player_inv.set_hotbar_selection(idx)
+	accept_event()
 
 
 # UI (背包/合成/箱子) 打开时隐藏 hotbar — 用户要求
@@ -44,7 +49,7 @@ func _process(_delta: float) -> void:
 func _make_slot() -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP   # 接收点击 → 选中该格 (见 _on_slot_input)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE   # 格子不抢输入, 交给整条 hotbar 的 _gui_input
 	panel.clip_contents = true   # 防溢出影响相邻槽
 	# 蓝色圆角槽 (用户要求): 深蓝半透底 + 中蓝边 + 圆角
 	var style := StyleBoxFlat.new()
