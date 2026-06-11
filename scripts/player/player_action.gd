@@ -246,7 +246,11 @@ func _physics_process(delta: float) -> void:
 		if primary_pressed_s and _attack_cooldown <= 0.0:
 			var sdef: Variant = _current_tool_def()
 			if sdef != null and sdef.get("summons_minion", false):
-				_summon_friendly()
+				# 对战房禁用召唤 (骷髅法杖太轮椅: 放完小兵就能摆烂). 只在单机/生存房能召唤。
+				if NetworkManager != null and NetworkManager.combat_enabled():
+					pass
+				else:
+					_summon_friendly()
 			else:
 				_try_cast_staff()
 			_flash_held()   # 施法时显示法杖
@@ -1949,11 +1953,19 @@ func _try_fire_gun() -> void:
 
 # 法杖发火球: 检查 mana 够 → 扣 → spawn fireball 朝鼠标飞.
 # damage 跟 mana_cost 由 ItemDB.get_def() 配置 (hell_staff: 22 dmg / 20 mana).
+# 法杖魔力消耗: 正常局 ×0.5 (减半), 对战房 ×0.2 (减 80%). 至少花 1 点. 纯函数, 供测试。
+static func staff_mana_cost(base: int, combat: bool) -> int:
+	var mult: float = 0.2 if combat else 0.5
+	return maxi(1, int(round(float(base) * mult)))
+
+
 func _try_cast_staff() -> void:
 	var def: Variant = _current_tool_def()
 	if def == null:
 		return
-	var mana_cost: int = def.get("mana_cost", 20)
+	# 魔力消耗调低 (用户: 法杖太费魔力): 正常局减半, 对战房减 80% (随便放).
+	var in_combat: bool = NetworkManager != null and NetworkManager.combat_enabled()
+	var mana_cost: int = staff_mana_cost(int(def.get("mana_cost", 20)), in_combat)
 	var spell_dmg: int = def.get("spell_damage", 14)
 	var element: String = String(def.get("spell_element", "fire"))
 	var player: Node2D = get_parent() as Node2D
@@ -1970,10 +1982,15 @@ func _try_cast_staff() -> void:
 	_attack_cooldown = STAFF_COOLDOWN
 	var start: Vector2 = player.global_position + Vector2(0, -8)
 	var target: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
-	var fb = FireballScene.instantiate()
 	var entities: Node = get_tree().get_first_node_in_group("entities_root")
 	if entities == null:
 		entities = player.get_parent()
+	# 新机制法杖 (spell_kind=="bullet"): 发"带机制的魔法弹"(复用枪的 bullet: 连锁/毒/多重等);
+	# 老元素法杖 (fire/ice/nature) 还是发元素火球.
+	if String(def.get("spell_kind", "fireball")) == "bullet":
+		_cast_bullet_spell(def, start, target, player, entities)
+		return
+	var fb = FireballScene.instantiate()
 	entities.add_child(fb)
 	# damage_mult 让未来高 tier 法杖加伤
 	var final_dmg: int = int(round(float(spell_dmg) * _tool_damage_mult()))
@@ -1981,6 +1998,58 @@ func _try_cast_staff() -> void:
 	if NetworkManager != null and NetworkManager.connected():
 		# kind 带上元素 (fireball_nature/ice/fire), 对端按后缀还原弹色
 		NetworkManager.send_projectile("fireball_" + element, start.x, start.y, target.x, target.y)
+	SfxBank.play("break", 0.12)
+
+
+# 从 def 的 gun_*/bullet_* 字段构建 bullet opts (枪 + 新法杖共用; 字段名沿用 gun_*,
+# bullet 不在乎名字, 都是"投射物机制": 穿透/减速/毒/连锁/反弹/重力/追踪/外观/寿命).
+func _proj_opts_from_def(def: Variant) -> Dictionary:
+	var opts: Dictionary = {}
+	if def == null:
+		return opts
+	if bool(def.get("gun_pierce", false)):
+		opts["pierce"] = true
+	if def.has("gun_slow_factor"):
+		opts["slow_factor"] = float(def.get("gun_slow_factor"))
+		opts["slow_dur"] = float(def.get("gun_slow_dur", 2.0))
+	if def.has("gun_visual"):
+		opts["visual"] = String(def.get("gun_visual"))
+	if def.has("bullet_lifetime"):
+		opts["lifetime"] = float(def.get("bullet_lifetime"))
+	if def.has("gun_homing"):
+		opts["homing"] = float(def.get("gun_homing"))
+	if def.has("gun_dot_dps"):
+		opts["dot_dps"] = int(def.get("gun_dot_dps"))
+		opts["dot_dur"] = float(def.get("gun_dot_dur", 3.0))
+	if def.has("gun_chain"):
+		opts["chain"] = int(def.get("gun_chain"))
+		opts["chain_radius"] = float(def.get("gun_chain_radius", 60.0))
+	if def.has("gun_bounce"):
+		opts["bounce"] = int(def.get("gun_bounce"))
+	if def.has("gun_gravity"):
+		opts["gravity"] = float(def.get("gun_gravity"))
+	return opts
+
+
+# 机制法杖发弹: 跟枪同一套 bullet (含多重 gun_pellets / 扇形 gun_spread_deg). 已扣 mana.
+func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: Node2D, entities: Node) -> void:
+	var dmg: int = int(round(float(def.get("spell_damage", 10)) * _tool_damage_mult()))
+	var speed: float = float(def.get("bullet_speed", 0.0))
+	var pellets: int = int(def.get("gun_pellets", 1))
+	var spread_deg: float = float(def.get("gun_spread_deg", 0.0))
+	var opts: Dictionary = _proj_opts_from_def(def)
+	var base_dir: Vector2 = target - start
+	base_dir = base_dir.normalized() if base_dir.length() > 0.01 else Vector2.RIGHT
+	for _i in max(1, pellets):
+		var dir: Vector2 = base_dir
+		if spread_deg > 0.0:
+			dir = base_dir.rotated(deg_to_rad(randf_range(-spread_deg * 0.5, spread_deg * 0.5)))
+		var aim: Vector2 = start + dir * 100.0
+		var b = BulletScene.instantiate()
+		entities.add_child(b)
+		b.setup(start, aim, dmg, parent, speed, opts)
+		if NetworkManager != null and NetworkManager.connected():
+			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
 	SfxBank.play("break", 0.12)
 
 

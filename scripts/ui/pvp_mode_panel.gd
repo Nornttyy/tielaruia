@@ -13,9 +13,10 @@ const MpRooms = preload("res://scripts/net/mp_rooms.gd")
 
 const _MODE_TAG := {"classic": "PVP", "magic": "PVP-MAGIC", "gun": "PVP-GUN"}
 const _COMMON := [["stone", 64], ["iron_pickaxe", 1], ["health_potion", 5]]
+# 骷髅法杖故意不列 (用户: 对战房太轮椅, 放完小兵摆烂); 召唤动作也在 player_action 里被对战房屏蔽
 const _STAFFS := [
 	["wood_staff", "木魔草杖"], ["iron_staff", "铁蓝晶杖"],
-	["hell_staff", "地狱魔火法杖"], ["skull_staff", "骷髅法杖"],
+	["hell_staff", "地狱魔火法杖"],
 ]
 const _GUNS := [
 	["pistol", "手枪"], ["smg", "冲锋枪"], ["assault_rifle", "突击步枪"], ["shotgun", "霰弹枪"],
