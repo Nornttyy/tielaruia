@@ -297,19 +297,19 @@ static func _female_torso_swim(cs: int) -> Array:
 		".kss......",   # 腰 (皮肤; 细腰 cols1-3)
 		"ksssk.....",   # 胯 (皮肤; cols0-4)
 	]
-	# 胸前鼓 col7-9 (跟 T恤大小一致): cs1=1px → cs3=2px → cs5=3px。
+	# 圆润罩杯 (跟 T恤同款圆弧): 下胸罩杯(row2)=峰, 上沿(row1)/下沿(row3)收圆。最大 2-3-2。
 	if cs >= 1:
-		rows[2] = _set_char(rows[2], 7, "w")   # 罩杯 col7 (1px)
+		rows[2] = _set_char(rows[2], 7, "w")   # 罩杯 col7 (峰 1px)
 	if cs >= 2:
-		rows[1] = _set_char(rows[1], 7, "w")   # 上胸罩杯 col7
-		rows[2] = _set_char(rows[2], 8, "w")   # 罩杯 col8 (2px)
+		rows[1] = _set_char(rows[1], 7, "w")   # 上胸罩杯 col7 (上沿)
+		rows[3] = _set_char(rows[3], 7, "w")   # 下沿 col7
 	if cs >= 3:
-		rows[1] = _set_char(rows[1], 8, "w")   # 上胸 col8
-		rows[3] = _set_char(rows[3], 7, "w")   # 罩杯下沿前鼓 col7 (圆)
+		rows[2] = _set_char(rows[2], 8, "w")   # 罩杯 col8 (峰 2px)
+		rows[3] = _set_char(rows[3], 8, "w")   # 下沿 col8
 	if cs >= 4:
-		rows[2] = _set_char(rows[2], 9, "w")   # 罩杯 col9 (3px)
+		rows[2] = _set_char(rows[2], 9, "w")   # 罩杯 col9 (峰 3px)
 	if cs >= 5:
-		rows[1] = _set_char(rows[1], 9, "w")   # 上胸 col9
+		rows[1] = _set_char(rows[1], 8, "w")   # 上沿 col8 (收圆 → 2-3-2)
 	return rows
 
 
@@ -326,19 +326,20 @@ static func _female_torso(cs: int) -> Array:
 		".www......",   # 腰 (照泳衣细腰: cols1-3 = composite 6-8, 后背收1px+前收)
 		"wwwww.....",   # 胯 (照泳衣: cols0-4 = composite 5-9)
 	]
+	# 圆润胸: 中胸(row2)=峰最鼓, 上沿(row1)/下沿(row3)渐收成圆弧 (不是方块)。
+	# 最大 cs5 = 上2/中3/下2 的圆菱形 (下沿不跟中胸齐宽=不方)。
 	if cs >= 1:
-		rows[2] = _set_char(rows[2], 7, "w")   # 中胸 col7 (鼓 1px)
-		rows[3] = _set_char(rows[3], 7, "w")   # 下胸 col7
+		rows[2] = _set_char(rows[2], 7, "w")   # 中胸 col7 (峰 1px)
 	if cs >= 2:
-		rows[1] = _set_char(rows[1], 7, "w")   # 上胸 col7 (竖弧满)
-		rows[2] = _set_char(rows[2], 8, "w")   # 中胸 col8 (鼓 2px)
+		rows[1] = _set_char(rows[1], 7, "w")   # 上胸 col7 (上沿)
+		rows[3] = _set_char(rows[3], 7, "w")   # 下胸 col7 (下沿)
 	if cs >= 3:
-		rows[3] = _set_char(rows[3], 8, "w")   # 下胸 col8 (圆润饱满)
-		rows[1] = _set_char(rows[1], 8, "w")   # 上胸 col8
+		rows[2] = _set_char(rows[2], 8, "w")   # 中胸 col8 (峰 2px)
+		rows[3] = _set_char(rows[3], 8, "w")   # 下胸 col8 (下沿略满=自然下垂)
 	if cs >= 4:
-		rows[2] = _set_char(rows[2], 9, "w")   # 中胸 col9 (鼓 3px, 最饱满)
+		rows[2] = _set_char(rows[2], 9, "w")   # 中胸 col9 (峰 3px)
 	if cs >= 5:
-		rows[3] = _set_char(rows[3], 9, "w")   # 下胸 col9 (很大)
+		rows[1] = _set_char(rows[1], 8, "w")   # 上胸 col8 (上沿收圆 → 2-3-2 圆)
 	return rows
 
 
