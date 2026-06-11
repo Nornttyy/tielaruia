@@ -13,6 +13,7 @@ const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const WorldGenerator = preload("res://scripts/world/world_generator.gd")  # 静态 _biome_at / _biome_water_tile (画水按列染色用)
 const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
 const VillagePlacer = preload("res://scripts/world/village_placer.gd")
+const PvpArena = preload("res://scripts/world/pvp_arena.gd")   # 对战房随机出生点
 const PlayerScene = preload("res://scenes/player/player.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
@@ -339,10 +340,16 @@ func _mp_broadcast_initial_state() -> void:
 	# host 进 world 后调. 拿 chunk_manager._deltas 序列化广播
 	if chunk_manager == null:
 		return
+	# 对战房: 各端本地生成同一座竞技场 + 方块独立, 不广播地形 delta (否则把 host 的改动同步过去)。
+	if NetworkManager != null and NetworkManager.room_mode == "pvp":
+		return
 	NetworkManager.send_initial_state(chunk_manager._deltas)
 
 
 func _on_initial_state(deltas: Dictionary) -> void:
+	# 对战房: 不应用别人的地形 (各房独立, 自己本地已 build 竞技场)。
+	if NetworkManager != null and NetworkManager.room_mode == "pvp":
+		return
 	_apply_initial_state(deltas)
 
 
@@ -573,6 +580,9 @@ func end_tile_batch() -> void:
 
 
 func _on_remote_tile_batch(changes: PackedInt32Array) -> void:
+	# 对战房: 方块各房独立, 忽略对方的方块改动 (防御: 正常 pvp 端根本不发)。
+	if NetworkManager != null and NetworkManager.room_mode == "pvp":
+		return
 	var i: int = 0
 	while i + 2 < changes.size():
 		var x: int = changes[i]
@@ -587,6 +597,9 @@ func _on_remote_tile_batch(changes: PackedInt32Array) -> void:
 
 
 func _on_remote_tile(x: int, y: int, tile_id: int) -> void:
+	# 对战房: 方块各房独立, 忽略对方的方块改动 (防御: 正常 pvp 端根本不发)。
+	if NetworkManager != null and NetworkManager.room_mode == "pvp":
+		return
 	# 对方挖/放方块 → 本地应用, 不再广播 (from_remote=true)
 	# 水类 tile 走 fast path (跳过 darkness/lighting 防卡帧)
 	if tile_id == Tiles.WATER or tile_id == Tiles.WATER_L1 \
@@ -1739,7 +1752,8 @@ func respawn_player() -> void:
 	# 重置 spawn timer, 给玩家几秒缓冲再开始刷新
 	_slime_spawn_timer = 5.0
 	# 传送回出生点 + 满血 + 满魔 (老 bug: mana 不回, 持法杖死了复活就发不出火球)
-	player.global_position = _spawn_world_pos()
+	# 对战房: 随机出生点 (各次不同, 防蹲点 + 出生不重叠); 否则回世界出生点。
+	player.global_position = PvpArena.random_spawn() if pvp else _spawn_world_pos()
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_method("revive_full"):
 		hp.revive_full()
@@ -1815,7 +1829,9 @@ func get_crack_overlay() -> Node:
 func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_sand: bool = false) -> void:
 	# skip_sand=true 防止沙子物理递归 (沙下落时不再触发它自己)
 	# from_remote=true 时不再广播 (避免循环). 本地玩家挖/放 → 广播给联机对方
-	if not from_remote and NetworkManager != null and NetworkManager.connected():
+	# 对战房: 方块各房独立, 不广播 (用户要求 — 每个模式是独立房间, 改地形互不影响)。
+	if not from_remote and NetworkManager != null and NetworkManager.connected() \
+			and NetworkManager.room_mode != "pvp":
 		if _tile_batching:
 			_tile_batch.append(x); _tile_batch.append(y); _tile_batch.append(tile_id)
 		else:
@@ -2010,7 +2026,9 @@ func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = fals
 	else:
 		terrain_layer.set_cell(pos, _display_water_tile(x, tile_id), Vector2i.ZERO)
 	# host 广播给 client (但不接收方再回播, 避免回声). 批量模式累积到 buf
-	if not from_remote and NetworkManager != null and NetworkManager.connected():
+	# 对战房: 方块各房独立, 不广播 (用户要求 — 每个模式是独立房间, 改地形互不影响)。
+	if not from_remote and NetworkManager != null and NetworkManager.connected() \
+			and NetworkManager.room_mode != "pvp":
 		if _tile_batching:
 			_tile_batch.append(x); _tile_batch.append(y); _tile_batch.append(tile_id)
 		else:
