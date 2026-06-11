@@ -38,9 +38,9 @@ const _FACE := [
 	".sssssss.",
 	"sssssssss",
 	"sssssssss",
-	"ssssssWis",   # 眼 (2宽×3高): 眼珠填满 i + 后上角 1px 白高光 W (不要大白块=震惊眼, 用户反复否过)
-	"ssssssiis",   # 眼珠填满
-	"ssssssiis",   # 眼珠填满
+	"ssssssWis",   # 眼 (2宽×3高): 后列眼白 W (3px竖条) + 前列眼珠 i — 侧脸眼珠朝前 (非震惊眼: 眼珠占满前列整条)
+	"ssssssWis",   # 眼白 + 眼珠
+	"ssssssWis",   # 眼白 + 眼珠
 	"sssssssks",   # 脸颊 + 前下颌一点阴影
 	"..sssss..",
 	"...sss...",   # 脖子
@@ -51,9 +51,9 @@ const _FACE_F := [
 	".sssssss.",
 	"sssssssss",
 	"sssssssss",
-	"sssssseis",   # 睫毛(后, e) + 眼珠(前)
-	"ssssssiis",   # 眼珠填满
-	"ssssssiis",   # 眼珠填满
+	"sssssseis",   # 睫毛(顶后, e) + 眼珠(前)
+	"ssssssWis",   # 眼白(后) + 眼珠(前)
+	"ssssssWis",   # 眼白 + 眼珠
 	"sssssssks",
 	"..sssss..",
 	"...sss...",
