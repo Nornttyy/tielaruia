@@ -6,6 +6,8 @@ signal health_changed(current: int, maximum: int)
 signal damaged(amount: int, source_pos: Vector2)
 signal died
 
+const PvpArena = preload("res://scripts/world/pvp_arena.gd")   # 对战房虚空死亡线
+
 const BASE_MAX_HEALTH := 100        # 起始上限 (5 颗心)
 const MAX_HEALTH_CAP := 400         # 永久 +HP 上限 (20 颗心, Terraria 风)
 const HP_PER_CRYSTAL := 20          # 生命水晶 +20 max HP
@@ -29,6 +31,7 @@ var _since_hit_t: float = 999.0      # 初始视为很久没被打 (一开始未
 
 
 func _physics_process(delta: float) -> void:
+	_check_pvp_void_death()   # 对战房: 掉到死亡线以下 = 秒杀 (每帧查, 便宜的 Y 比较)
 	if _iframe_timer > 0.0:
 		_iframe_timer = max(0.0, _iframe_timer - delta)
 		_update_iframe_flash()
@@ -56,6 +59,25 @@ func _physics_process(delta: float) -> void:
 # 判断 tile id 是否为岩浆 (含 3 个流动深度 L1/L2/L3 + 满格 LAVA)
 func _is_lava(tid: int) -> bool:
 	return tid == Tiles.LAVA or tid == Tiles.LAVA_L1 or tid == Tiles.LAVA_L2 or tid == Tiles.LAVA_L3
+
+
+# 对战房虚空死: 掉到死亡线 (PvpArena.death_y_px) 以下 → 秒杀。
+# 用户: 删了竞技场两侧墙, 掉下去直接死。只对战房 (room_mode==pvp) 生效, 单机/生存掉落不死。
+func _check_pvp_void_death() -> void:
+	if not is_alive():
+		return
+	if NetworkManager == null or NetworkManager.room_mode != "pvp":
+		return
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	if player.global_position.y < PvpArena.death_y_px():
+		return
+	current_health = 0
+	health_changed.emit(current_health, MAX_HEALTH)
+	died.emit()
+	if typeof(Achievements) != TYPE_NIL:
+		Achievements.fire("player_death")
 
 
 # 检查玩家脚 + 头 tile 有没有 LAVA, 有就扣血. 用 chunk_manager 查 tile.

@@ -12,7 +12,15 @@ const TILE_SIZE := 12
 const SKY_CLEAR_TOP := 50   # 从这行往下全清空 → 竞技场开口朝天 (上方留natural air, 不用清)
 const CEIL_TILES_ABOVE := 150       # 顶部空气墙离地面 150 格 (用户要求: 竖直空间很大)
 const CEIL_Y := FLOOR_Y - CEIL_TILES_ABOVE   # 看不见的天花板行 (顶空气墙)
-const SIDE_WALL_HEIGHT_PX := 200000.0   # 两侧空气墙"无限高" (从地面一直往上, 翻不出去)
+# 用户改: 删两侧空气墙 → 竞技场做成漂浮平台, 掉下去 = 死。
+const EDGE_VOID := 30       # 平台两侧再往外清 30 格虚空 (踩出/被打出边缘 = 掉下去)
+const VOID_DEPTH := 30      # 地面往下清 30 格虚空 (平台漂浮, 下面是空)
+const DEATH_DROP := 18      # 掉到地面下 18 格 = 死亡线 (越过即秒杀, 见 PlayerHealth)
+
+
+# 掉到这个 y (像素) 以下 = 虚空死. PlayerHealth 每帧查 (对战房才生效)。
+static func death_y_px() -> float:
+	return float(FLOOR_Y + DEATH_DROP) * TILE_SIZE
 
 # 平台层 (相对地面高度 dy, 距中心 from..to 列). 关于中心对称. 少 + 矮 (玩家跳得上).
 const _TIERS := [
@@ -32,8 +40,9 @@ static func build(world) -> Vector2:
 	#    顺手把背景墙也清掉 (用户要求"删背景墙" → 竞技场背景干净见天空)。
 	var cm = world.get("chunk_manager")
 	var wlayer = world.get("wall_layer")
-	for x in range(cx - HALF, cx + HALF + 1):
-		for y in range(SKY_CLEAR_TOP, floor_y + 3):
+	# 清得比地面宽 (两侧各多 EDGE_VOID 格) + 比地面深 (往下 VOID_DEPTH 格) → 平台两侧+下面是虚空。
+	for x in range(cx - HALF - EDGE_VOID, cx + HALF + EDGE_VOID + 1):
+		for y in range(SKY_CLEAR_TOP, floor_y + VOID_DEPTH + 1):
 			world._set_tile(x, y, Tiles.AIR)
 			if cm != null:
 				cm.set_wall(x, y, Tiles.AIR)         # 清背景墙数据
@@ -57,9 +66,9 @@ static func build(world) -> Vector2:
 		world._set_tile(cx - 140 + d, floor_y - 4, Tiles.WOOD_PLATFORM)
 		world._set_tile(cx + 140 + d, floor_y - 4, Tiles.WOOD_PLATFORM)
 
-	# 4.5 (用户: 改回纯空气墙) — 左右不再砌实心石墙, 改成隐形空气墙 (见步骤 5), 两侧"无限高"翻不出去。
+	# 4.5 (用户: 删两侧空气墙) — 平台两侧敞开, 掉下去 = 死 (见步骤 1 清出的虚空 + PlayerHealth 死亡线)。
 
-	# 5. 空气墙 (隐形碰撞): 顶 (离地 150 格) + 左右两面无限高. 防玩家逃出, 不挡视野/光。
+	# 5. 只剩顶部隐形天花板 (防云靴二段跳飞出顶); 两侧不再有墙, 掉下去会死。
 	_build_air_walls(world, cx, floor_y)
 
 	# 6. 小地图开局就全探索完 (用户要求): 标记竞技场地面附近一片 (天花板 150 格太高, 上面是空, 不用标)。
@@ -73,8 +82,8 @@ static func build(world) -> Vector2:
 	return Vector2(float(cx - 140) * TILE_SIZE + TILE_SIZE * 0.5, float(floor_y - 5) * TILE_SIZE)
 
 
-# 隐形空气墙 (StaticBody2D): 顶 (离地 CEIL_TILES_ABOVE=150 格) + 左右两面无限高.
-# collision_layer=1 (bit0 实心方块层); 玩家 mask 含 bit0 → 挡得住但不画出来 = 隐形, 不挡光/视野.
+# 只剩顶部隐形天花板 (离地 CEIL_TILES_ABOVE=150 格), 防云靴二段跳飞出顶。
+# 两侧不再有墙 (用户: 掉下去 = 死). collision_layer=1 (实心方块层), 隐形不挡光/视野。
 static func _build_air_walls(world, cx: int, floor_y: int) -> void:
 	var old = world.get_node_or_null("ArenaWalls")
 	if old != null:
@@ -86,15 +95,10 @@ static func _build_air_walls(world, cx: int, floor_y: int) -> void:
 	var left_px: float = float(cx - HALF) * TILE_SIZE
 	var right_px: float = float(cx + HALF + 1) * TILE_SIZE
 	var ceil_px: float = float(CEIL_Y) * TILE_SIZE
-	var floor_px: float = float(floor_y) * TILE_SIZE
 	var box_w: float = right_px - left_px
 	var thick := 16.0
-	# 顶 (隐形天花板, 离地 150 格)
+	# 顶 (隐形天花板, 离地 150 格) — 只剩这一道
 	_add_wall(body, Vector2((left_px + right_px) * 0.5, ceil_px - thick * 0.5), Vector2(box_w, thick))
-	# 左右两面"无限高"空气墙: 从地面一路往上 SIDE_WALL_HEIGHT_PX (远超天花板, 翻不出去)
-	var wall_cy: float = floor_px - SIDE_WALL_HEIGHT_PX * 0.5   # 矩形中心 y (底=地面, 顶=极高处)
-	_add_wall(body, Vector2(left_px - thick * 0.5, wall_cy), Vector2(thick, SIDE_WALL_HEIGHT_PX))   # 左墙
-	_add_wall(body, Vector2(right_px + thick * 0.5, wall_cy), Vector2(thick, SIDE_WALL_HEIGHT_PX))  # 右墙
 	world.add_child(body)
 
 
