@@ -28,8 +28,16 @@ func test_arena_builds_floor_platforms_symmetric() -> void:
 	for d in [18, 30, 44]:
 		assert_eq(cm.get_tile(cx - d, fy - 4), cm.get_tile(cx + d, fy - 4), "平台关于中心对称 (d=%d)" % d)
 	# 空气墙节点已建 (防逃出)
-	assert_not_null(world.get_node_or_null("ArenaWalls"), "该有看不见的空气墙 ArenaWalls")
+	var walls := world.get_node_or_null("ArenaWalls")
+	assert_not_null(walls, "该有看不见的空气墙 ArenaWalls")
+	# 用户改: 顶 + 左 + 右 三面隐形空气墙 (不再是 2 列实心石侧墙)
+	assert_eq(walls.get_child_count(), 3, "空气墙该有 3 块碰撞 (顶/左/右)")
+	# 两侧不再是实心石 (改回纯空气墙了)
+	assert_ne(cm.get_tile(cx - PvpArena.HALF, fy - 10), Tiles.STONE, "左侧不再砌实心石墙 (改空气墙)")
+	assert_ne(cm.get_tile(cx + PvpArena.HALF, fy - 10), Tiles.STONE, "右侧不再砌实心石墙")
 	# 背景墙清掉了 (用户要求)
 	assert_eq(cm.get_wall(cx, fy - 10), Tiles.AIR, "竞技场背景墙该清空")
+	# 顶部空气墙离地 150 格 (用户要求)
+	assert_eq(PvpArena.CEIL_Y, PvpArena.FLOOR_Y - 150, "顶部空气墙离地面 150 格")
 	# 出生点返回非零
 	assert_ne(spawn, Vector2.ZERO, "该返回出生点坐标")

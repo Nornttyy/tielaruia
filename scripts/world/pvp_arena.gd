@@ -9,8 +9,10 @@ const HALF := 150           # 半宽
 const CENTER_X := 0         # 固定中心列 (各客户端同坐标 = 公平)
 const FLOOR_Y := 122        # 固定地面行 (近地表)
 const TILE_SIZE := 12
-const SKY_CLEAR_TOP := 50   # 从这行往下全清空 → 竞技场开口朝天, 配永久白天 = 全亮 (治"黑漆漆")
-const CEIL_Y := FLOOR_Y - 26   # 看不见的天花板行 (空气墙顶; 上面留开口进光)
+const SKY_CLEAR_TOP := 50   # 从这行往下全清空 → 竞技场开口朝天 (上方留natural air, 不用清)
+const CEIL_TILES_ABOVE := 150       # 顶部空气墙离地面 150 格 (用户要求: 竖直空间很大)
+const CEIL_Y := FLOOR_Y - CEIL_TILES_ABOVE   # 看不见的天花板行 (顶空气墙)
+const SIDE_WALL_HEIGHT_PX := 200000.0   # 两侧空气墙"无限高" (从地面一直往上, 翻不出去)
 
 # 平台层 (相对地面高度 dy, 距中心 from..to 列). 关于中心对称. 少 + 矮 (玩家跳得上).
 const _TIERS := [
@@ -55,31 +57,24 @@ static func build(world) -> Vector2:
 		world._set_tile(cx - 140 + d, floor_y - 4, Tiles.WOOD_PLATFORM)
 		world._set_tile(cx + 140 + d, floor_y - 4, Tiles.WOOD_PLATFORM)
 
-	# 4.5 左右两面砌实心石墙 (用户: 空气墙换成真方块; 顶那道保留隐形). 2 格厚, 从地面升到天花板高度,
-	#     看得见 + 挡住玩家. 顶上故意不砌实心 → 留隐形天花板, 光照样从上面开口透进来 (不挡光)。
-	for dx in range(0, 2):
-		var lx: int = cx - HALF + dx          # 左墙 2 列 (最外 + 内一格)
-		var rx: int = cx + HALF - dx          # 右墙 2 列
-		for y in range(CEIL_Y, floor_y):      # 天花板高度 → 地面上方一格 (地面行本身已是石)
-			world._set_tile(lx, y, Tiles.STONE)
-			world._set_tile(rx, y, Tiles.STONE)
+	# 4.5 (用户: 改回纯空气墙) — 左右不再砌实心石墙, 改成隐形空气墙 (见步骤 5), 两侧"无限高"翻不出去。
 
-	# 5. 隐形天花板 (看不见的碰撞顶): 只关顶, 防玩家从上面逃出 (左右已是实心石墙)
+	# 5. 空气墙 (隐形碰撞): 顶 (离地 150 格) + 左右两面无限高. 防玩家逃出, 不挡视野/光。
 	_build_air_walls(world, cx, floor_y)
 
-	# 6. 小地图开局就全探索完 (用户要求): 把竞技场整片标记成已探索, 不用走过去才显。
+	# 6. 小地图开局就全探索完 (用户要求): 标记竞技场地面附近一片 (天花板 150 格太高, 上面是空, 不用标)。
 	var mm = world.get("minimap_data")
 	if mm != null and cm != null:
 		for x in range(cx - HALF, cx + HALF + 1):
-			for y in range(CEIL_Y - 2, floor_y + 2):
+			for y in range(floor_y - 40, floor_y + 2):
 				mm.mark_one(cm, x, y)
 
 	# 出生点: 左侧出生台正上方
 	return Vector2(float(cx - 140) * TILE_SIZE + TILE_SIZE * 0.5, float(floor_y - 5) * TILE_SIZE)
 
 
-# 看不见的天花板: 一个 StaticBody2D, 只 1 块顶部矩形 (左右墙已换成实心石方块, 见 build 步骤 4.5).
-# collision_layer=1 (bit0 实心方块层); 玩家 mask 含 bit0 → 顶挡得住但不画出来 = 隐形顶, 不挡光.
+# 隐形空气墙 (StaticBody2D): 顶 (离地 CEIL_TILES_ABOVE=150 格) + 左右两面无限高.
+# collision_layer=1 (bit0 实心方块层); 玩家 mask 含 bit0 → 挡得住但不画出来 = 隐形, 不挡光/视野.
 static func _build_air_walls(world, cx: int, floor_y: int) -> void:
 	var old = world.get_node_or_null("ArenaWalls")
 	if old != null:
@@ -91,9 +86,15 @@ static func _build_air_walls(world, cx: int, floor_y: int) -> void:
 	var left_px: float = float(cx - HALF) * TILE_SIZE
 	var right_px: float = float(cx + HALF + 1) * TILE_SIZE
 	var ceil_px: float = float(CEIL_Y) * TILE_SIZE
+	var floor_px: float = float(floor_y) * TILE_SIZE
 	var box_w: float = right_px - left_px
 	var thick := 16.0
-	_add_wall(body, Vector2((left_px + right_px) * 0.5, ceil_px - thick * 0.5), Vector2(box_w, thick))    # 顶 (隐形)
+	# 顶 (隐形天花板, 离地 150 格)
+	_add_wall(body, Vector2((left_px + right_px) * 0.5, ceil_px - thick * 0.5), Vector2(box_w, thick))
+	# 左右两面"无限高"空气墙: 从地面一路往上 SIDE_WALL_HEIGHT_PX (远超天花板, 翻不出去)
+	var wall_cy: float = floor_px - SIDE_WALL_HEIGHT_PX * 0.5   # 矩形中心 y (底=地面, 顶=极高处)
+	_add_wall(body, Vector2(left_px - thick * 0.5, wall_cy), Vector2(thick, SIDE_WALL_HEIGHT_PX))   # 左墙
+	_add_wall(body, Vector2(right_px + thick * 0.5, wall_cy), Vector2(thick, SIDE_WALL_HEIGHT_PX))  # 右墙
 	world.add_child(body)
 
 
