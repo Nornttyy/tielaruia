@@ -17,6 +17,7 @@ const PvpModePanelScript = preload("res://scripts/ui/pvp_mode_panel.gd")   # PvP
 const LoadingScreenScene = preload("res://scenes/ui/loading_screen.tscn")
 const TouchControlsScript = preload("res://scripts/ui/touch_controls.gd")
 const LoadPlanner = preload("res://scripts/world/load_planner.gd")
+const CursorArt = preload("res://scripts/art/cursor_art.gd")   # 主菜单/选择界面用箭头光标
 const _ChunkClass = preload("res://scripts/world/chunk.gd")   # 读档后算玩家落点 chunk_x 用
 
 @onready var _main_menu: CanvasLayer = $MainMenu
@@ -61,6 +62,9 @@ func _ready() -> void:
 
 func _show_menu_state() -> void:
 	_state = "menu"
+	# 主菜单/选择界面用普通箭头光标 (游戏里的十字准星由 World 下 CursorManager 管,
+	# 回菜单 World 已 free, 这里把光标复位成箭头).
+	Input.set_custom_mouse_cursor(CursorArt.arrow(), Input.CURSOR_ARROW, Vector2.ZERO)
 	# 主菜单永远放自己的音乐(day), 不被刚才游戏里的夜/洞穴音乐带跑.
 	# (游戏里 player_controller 会按昼夜/洞穴切 context; 回菜单要复位, 否则菜单还放着洞穴 drone)
 	MusicBank.set_context("day")

@@ -63,8 +63,38 @@ const _PICK := [
 ]
 
 
+# --- 十字准星: 白线 + 黑描边 (任何背景都看得见), 中间留空好瞄. hotspot=(8,8) 正中 ---
+const _P_CROSS := {
+	"o": Color8(20, 16, 8),       # 黑描边
+	"w": Color8(250, 250, 255),   # 白线
+}
+
+const _CROSS := [
+	".......oo.......",
+	"......owwo......",
+	"......owwo......",
+	"......owwo......",
+	"......owwo......",
+	"......o..o......",
+	".oooo......oooo.",
+	"owwwwo....owwwwo",
+	"owwwwo....owwwwo",
+	".oooo......oooo.",
+	"......o..o......",
+	"......owwo......",
+	"......owwo......",
+	"......owwo......",
+	"......owwo......",
+	".......oo.......",
+]
+
+
 static func arrow() -> ImageTexture:
 	return PixelArt.grid_to_texture(_ARROW, _P_ARROW)
+
+
+static func crosshair() -> ImageTexture:
+	return PixelArt.grid_to_texture(_CROSS, _P_CROSS)
 
 
 static func pickaxe() -> ImageTexture:
