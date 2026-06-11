@@ -161,3 +161,28 @@ func test_apply_depths_player_in_shallow_zone_no_cave():
 	sd._process(0.016)  # 直接调, 不靠帧
 	assert_almost_eq(fake_mtn.modulate.a, 1.0, 0.05, "上 10 格山仍全显")
 	assert_almost_eq(fake_cave.modulate.a, 0.0, 0.05, "上 10 格矿洞 0 不见")
+
+
+# 战斗房: 世界空 (surfaces 全 0) 会误判玩家深埋地底 → 背景变地底. 对战房该强制天空背景。
+func test_pvp_forces_surface_background():
+	var prev_mode = NetworkManager.room_mode
+	NetworkManager.room_mode = "pvp"
+	# surface_y=100, 玩家 y=140 (正常算 40 格深 = 深区), 但对战房该当地表 (depth 0)
+	var fake_chunk := MockChunk.new(100)
+	var fake_cm := MockChunkManager.new(fake_chunk)
+	var player := MockPlayer.new()
+	add_child_autofree(player)
+	player.global_position = Vector2(0, 140 * TILE_SIZE)
+	var world := MockWorld.new(player, fake_cm)
+	add_child_autofree(world)
+	var fake_mtn := Node2D.new()
+	add_child_autofree(fake_mtn)
+	var fake_cave := Node2D.new()
+	add_child_autofree(fake_cave)
+	var sd: ScenicDirector = ScenicDirector.new()
+	add_child_autofree(sd)
+	sd.setup({"world": world, "mountains": fake_mtn, "cave_bg": fake_cave})
+	sd._process(0.016)
+	assert_almost_eq(fake_cave.modulate.a, 0.0, 0.05, "对战房矿洞背景该 0 (天空背景, 不显地底)")
+	assert_almost_eq(fake_mtn.modulate.a, 1.0, 0.05, "对战房山/地表层全显")
+	NetworkManager.room_mode = prev_mode

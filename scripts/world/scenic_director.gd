@@ -100,6 +100,11 @@ func _process(delta: float) -> void:
 	if _update_timer > 0.0:
 		return
 	_update_timer = _UPDATE_INTERVAL
+	# 战斗房: 世界是空的 (chunk.surfaces 全 0), 按深度算会误判玩家在地底 → 背景变地底 (用户报).
+	# 竞技场永远当地表处理 (天空背景, 配全亮), depth=0.
+	if NetworkManager != null and NetworkManager.room_mode == "pvp":
+		_apply_depths(0.0, 0.0)
+		return
 	var depth_tiles: float = _player_depth_below_surface_tiles()
 	var shallow_t: float = compute_shallow_t_from_depth(depth_tiles)
 	var deep_t: float = compute_deep_t_from_depth(depth_tiles)
