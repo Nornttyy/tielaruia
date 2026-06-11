@@ -141,15 +141,15 @@ const _BACKLOCK_F := [
 	".H.",
 ]
 
-# 有扣衬衫: 后背深阴影E + 前襟纽扣(亮c+下阴D=凸起) + 领口 + 褶皱 + 下摆。
+# 干净衬衫 (用户要求删缝): 无后背竖缝/无内部暗纹, 只留领口 + 2 颗纽扣 + 前缘高光 c。
 # 细节放可见区 (中间 col3-4 被手臂挡, 不放细节)。7 宽 × 6 高。
 const _TORSO := [
 	".wwwDDc",   # 领口 DD + 前缘高光 c
-	"EwwwwDc",   # 后深阴 E + 纽扣 D + 前高光 c
-	"DwwwwEc",   # 扣下阴影 E (纽扣凸起感)
-	"EwwwwDc",   # 纽扣 D
-	"DEwwwEc",   # 后侧褶皱 E + 扣下阴影 E
-	".EDDDE.",   # 下摆深阴
+	"wwwwwDc",   # 纽扣 D + 前高光 c (后背改平, 无缝)
+	"wwwwwwc",   # 光面 (去内部暗缝)
+	"wwwwwDc",   # 纽扣 D + 前高光 c
+	"wwwwwwc",   # 光面
+	".wwwww.",   # 下摆 (平, 去深阴缝)
 ]
 # 手臂 (袖子+手), 垂在身体前。后缘深 D + 前缘亮 c; 手腕一道袖口 cc (凸起)。2 宽 × 6 高。
 const _ARM := [
@@ -160,19 +160,19 @@ const _ARM := [
 	"ks",
 	"kk",
 ]
-# 单腿 (裤 b / 阴影 B / 深阴 A / 高光 P)。外侧裤缝深A + 前缘高光P + 膝褶 + 裤脚深阴。3 宽 × 4 高。
+# 单腿 (裤 b / 阴影 B / 高光 P)。删外侧裤缝 A → 平裤腿, 只留前缘高光 P + 轻膝褶。3 宽 × 4 高。
 const _LEG := [
-	"AbP",
-	"ABP",
-	"AbP",
-	"AAb",
+	"bbP",
+	"bBP",
+	"bbP",
+	"bbb",
 ]
-# 女款细腿 (2 宽, 苗条): 长裤 / 裙下裸腿 / 泳裤 各一版。外侧深裤缝 A + 前高光 P。
+# 女款细腿 (2 宽, 苗条): 长裤 / 裙下裸腿 / 泳裤 各一版。删外侧裤缝, 只留前高光 P。
 const _LEG_F := [
-	"AP",
-	"AP",
-	"AP",
-	"Ab",
+	"bP",
+	"bP",
+	"bP",
+	"bb",
 ]
 const _LEG_SKIN_F := [
 	"kp",
@@ -181,8 +181,8 @@ const _LEG_SKIN_F := [
 	"ks",
 ]
 const _LEG_TRUNK_F := [
-	"AP",
-	"AP",
+	"bP",
+	"bP",
 	"ks",
 	"ks",
 ]
@@ -214,16 +214,16 @@ const _LEG_SKIN := [
 	"kss",
 	"kss",
 ]
-# 裙子 (裤色 b/B 梯形 + 腰带B + 竖褶缝 + 前高光P + 下摆深阴A)。9 宽 × 3 高。
+# 裙子 (裤色 b 梯形 + 平裙身, 删竖褶缝 + 前高光P + 下摆软角B)。9 宽 × 3 高。
 const _SKIRT := [
-	".BBBBBbP.",
-	"bBbBbbbPb",
-	"ABbBbbBPA",
+	".bbbbbbP.",
+	"bbbbbbbPb",
+	"BbbbbbbPB",
 ]
-# 泳裤款的腿 (上段短裤 b/B + 外侧深裤缝 A + 前缘高光 P + 下段裸腿 s/k)。3 宽 × 4 高。
+# 泳裤款的腿 (上段短裤 b + 删外侧裤缝 + 前缘高光 P + 下段裸腿 s/k)。3 宽 × 4 高。
 const _LEG_TRUNK := [
-	"AbP",
-	"AbP",
+	"bbP",
+	"bbP",
 	"kss",
 	"kss",
 ]
@@ -310,11 +310,11 @@ static func _female_torso(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
 		".wwwDDc..",   # 肩 + 领口 DD + 前高光 c
-		"EwwwwDc..",   # 上胸 (后深阴E + 纽扣D + 前高光c)
-		"DwwwwEc..",   # 中胸 (扣下阴影E = 纽扣凸起)
-		"EwwwwDc..",   # 下胸 (纽扣D)
-		"Dwww.....",   # 腰 (收腰; 后背 col0 一条直线, 不歪)
-		"Dwwwww...",   # 胯 (外扩, 比腰宽一截)
+		"wwwwwDc..",   # 上胸 (纽扣D + 前高光c, 删后背缝)
+		"wwwwwwc..",   # 中胸 (光面, 去内部暗纹)
+		"wwwwwDc..",   # 下胸 (纽扣D)
+		"wwww.....",   # 腰 (收腰; 后背 col0 改衬衫色保直背不歪, 无暗缝)
+		"wwwwww...",   # 胯 (外扩, 比腰宽一截)
 	]
 	if cs >= 1:
 		rows[3] = _set_char(rows[3], 7, "w")   # 下胸前鼓 1px
