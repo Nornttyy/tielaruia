@@ -26,8 +26,9 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	# 只在对战房露脸
-	visible = NetworkManager != null and NetworkManager.combat_enabled()
+	# 只在对战房露脸. 用 room_mode=="pvp" 而非 combat_enabled(): 切模式转房断开重连期间
+	# connected()=false 但 room_mode 仍 pvp → 击杀榜不会消失一阵 (用户反馈)。
+	visible = NetworkManager != null and NetworkManager.room_mode == "pvp"
 
 
 func _on_kill_scored(killer_pid: String, _victim_pid: String) -> void:

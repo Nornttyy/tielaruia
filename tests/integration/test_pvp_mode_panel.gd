@@ -115,3 +115,12 @@ func test_panel_in_group_for_crafting_key():
 	await wait_frames(1)
 	assert_true(panel.is_in_group("pvp_mode_panel"), "战斗房合成键靠这个 group 找到面板")
 	assert_true(panel.has_method("open_weapon_switch"), "该有 open_weapon_switch 给合成键调")
+
+
+# 用户: 首次进战斗房选模式时不给"关闭" (必须选一个才开始); 之后重开才有关闭。
+func test_first_entry_modes_have_no_close():
+	var panel = PvpModePanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	panel._show_modes(false)
+	assert_eq(panel._content.get_child_count(), 3, "首次: 只 3 个模式, 无关闭按钮")

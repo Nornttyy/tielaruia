@@ -122,14 +122,16 @@ func _clear_content() -> void:
 
 
 # ---- 模式选择视图 (进游戏自动弹 / M 键 / "切换模式"按钮): 只选模式, 不选武器 ----
-func _show_modes() -> void:
+# allow_close=false: 首次进战斗房必须选一个模式才开始 (不给"关闭"); 之后用按钮重开才给关闭。
+func _show_modes(allow_close: bool = true) -> void:
 	if _title != null:
 		_title.text = "选择对战模式"
 	_clear_content()
 	_add_choice("经典对战 (剑 + 弓)", _pick_mode.bind("classic"))
 	_add_choice("魔法对战 (法杖)", _pick_mode.bind("magic"))
 	_add_choice("枪械对战 (枪)", _pick_mode.bind("gun"))
-	_add_choice("关闭 (返回游戏)", _close)   # 用户: 退出只关面板回游戏 (离开整个房间走暂停菜单)
+	if allow_close:
+		_add_choice("关闭 (返回游戏)", _close)   # 用户: 退出只关面板回游戏 (离开整个房间走暂停菜单)
 
 
 # 选一个模式: 发该模式默认装备 + (换了模式才) 重连到那模式的房间. 武器之后在"切武器"面板换。
@@ -145,7 +147,7 @@ func _pick_mode(mode_key: String) -> void:
 
 # ---- 切武器视图 (战斗房合成键打开): 列出当前模式全部武器, 点一下换上, 不换房 ----
 func open_weapon_switch() -> void:
-	if NetworkManager == null or not NetworkManager.is_pvp():
+	if NetworkManager == null or NetworkManager.room_mode != "pvp":
 		return
 	if _local_inventory() == null:
 		return
@@ -177,19 +179,21 @@ func _switch_weapon(weapon_id: String) -> void:
 
 
 func _process(_delta: float) -> void:
-	var in_pvp: bool = NetworkManager != null and NetworkManager.is_pvp()
+	# 用 room_mode=="pvp" 而非 is_pvp(): 切模式转房断开重连期间 connected()=false, 但 room_mode
+	# 仍 pvp → 切换模式键不会消失一阵 (用户反馈). 击杀榜同款修在 pvp_scoreboard。
+	var in_pvp: bool = NetworkManager != null and NetworkManager.room_mode == "pvp"
 	var picking: bool = _panel != null and _panel.visible
 	if _switch_btn != null:
 		_switch_btn.visible = in_pvp and not picking
-	# 进对战房自动弹一次模式选择 (用户: 进游戏才选哪个战斗)
+	# 进对战房自动弹一次模式选择 (用户: 进游戏才选哪个战斗). 首次不给"关闭" — 必须选一个才开始。
 	if not _opened_once and not picking and in_pvp and _local_inventory() != null:
-		_open_modes()
+		_open_modes(false)
 
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo \
 			and event.keycode == KEY_M and (_panel == null or not _panel.visible) \
-			and NetworkManager != null and NetworkManager.is_pvp():
+			and NetworkManager != null and NetworkManager.room_mode == "pvp":
 		_open_modes()
 
 
@@ -202,9 +206,9 @@ func _set_open(open: bool, pause: bool = true) -> void:
 	get_tree().paused = open and pause
 
 
-func _open_modes() -> void:
+func _open_modes(allow_close: bool = true) -> void:
 	_opened_once = true
-	_show_modes()
+	_show_modes(allow_close)
 	_set_open(true, true)   # 模式选择: 暂停 (滚轮不缩放 + 看清选项)
 
 
