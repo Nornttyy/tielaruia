@@ -1428,8 +1428,12 @@ func spawn_boss(boss_id: String, pos: Vector2) -> bool:
 # chunk 加载时调. 用 _pyramid_chunks_spawned 防同 chunk 重 spawn.
 var _pyramid_chunks_spawned: Dictionary = {}   # chunk_x int → true
 # 对战房 (PvP / 起床战争): 不刷任何怪 — 定时刷 + chunk 加载触发的 (木乃伊/矿井蜘蛛/哈比鸟) 都拦.
+# 用 room_mode=="pvp" 而不只 combat_enabled(): 连接中 / 切模式转房断开期间 connected() 是 false,
+# 但 room_mode 已置 pvp → 这段窗口也别刷怪 (修"对战房会刷生物")。
 func _no_mob_room() -> bool:
-	return NetworkManager != null and NetworkManager.combat_enabled()
+	if NetworkManager == null:
+		return false
+	return NetworkManager.combat_enabled() or NetworkManager.room_mode == "pvp"
 
 
 func spawn_mummies_for_chunk(chunk_x: int, spots: Array) -> void:

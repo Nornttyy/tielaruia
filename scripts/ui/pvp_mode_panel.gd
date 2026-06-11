@@ -3,16 +3,16 @@
 # 不同模式 = 不同房间: 经典→公共房 PVP, 魔法→PVP-MAGIC, 枪械→PVP-GUN。选了别的模式会自动
 # 断开重连到那个模式的公共房 (竞技场布局固定不变, 只是换成跟同模式的人一起)。同模式里换武器
 # 只换装备不换房。非对战房 (生存/起床战争) 永不弹、按钮也不显示。
+#
+# 注意: CanvasLayer 本身一直 visible (否则常驻按钮也会被一起藏); 只切里面 _panel 的 visible。
+# 开面板时暂停游戏 (paused) → 滚轮选枪不会同时缩放镜头 + 进游戏强制先选模式。
 extends CanvasLayer
 
 const UIStyle = preload("res://scripts/ui/ui_style.gd")
 const MpRooms = preload("res://scripts/net/mp_rooms.gd")
 
-# 每种模式对应的公共房 tag (bridge 据此分房号: teilaruia-PUB-<tag>-N)。
 const _MODE_TAG := {"classic": "PVP", "magic": "PVP-MAGIC", "gun": "PVP-GUN"}
-# 三模式都给的共用装备 (盔甲单独 set_armor)。
 const _COMMON := [["stone", 64], ["iron_pickaxe", 1], ["health_potion", 5]]
-# 可选武器 (用户要求: 全部都能选)。[id, 中文名]
 const _STAFFS := [
 	["wood_staff", "木魔草杖"], ["iron_staff", "铁蓝晶杖"],
 	["hell_staff", "地狱魔火法杖"], ["skull_staff", "骷髅法杖"],
@@ -25,14 +25,13 @@ const _GUNS := [
 ]
 
 var _panel: Panel = null
-var _content: VBoxContainer = null    # 面板里随层级切换内容 (模式按钮 / 武器列表)
-var _switch_btn: Button = null        # 常驻"切换模式"按钮 (击杀榜左边)
-var _opened_once: bool = false        # 进房后自动弹过一次没
-var _current_tag: String = "PVP"      # 当前所在公共房 tag (经典默认; 菜单进的是 PVP)
+var _content: VBoxContainer = null
+var _switch_btn: Button = null
+var _opened_once: bool = false
+var _current_tag: String = "PVP"
 
 
 # 某模式整套物品 [[id,count],...] (武器在前 + 共用; 不含盔甲)。纯数据, 供测试 + grant 复用。
-# weapon_id: 魔法/枪械 要传选中的武器; 经典忽略。
 static func mode_loadout(key: String, weapon_id: String = "") -> Array:
 	var out: Array = []
 	match key:
@@ -53,9 +52,9 @@ static func mode_loadout(key: String, weapon_id: String = "") -> Array:
 
 func _ready() -> void:
 	layer = 50
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	process_mode = Node.PROCESS_MODE_ALWAYS   # 暂停时面板仍能点 + 网络仍跑
 	_build()
-	visible = false
+	_panel.visible = false   # 只藏 panel, 不藏整个 CanvasLayer (否则按钮也没了)
 
 
 func _build() -> void:
@@ -80,7 +79,6 @@ func _build() -> void:
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color(0.949, 0.761, 0.396))
 	outer.add_child(title)
-	# 内容区 (用 ScrollContainer 包 VBox, 枪多了能滚)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -103,7 +101,6 @@ func _build() -> void:
 	_switch_btn.visible = false
 
 
-# 一个可点的列表条目按钮 (模式 / 武器)。
 func _add_choice(label: String, cb: Callable) -> void:
 	var b := Button.new()
 	b.text = label
@@ -119,61 +116,65 @@ func _clear_content() -> void:
 		c.queue_free()
 
 
-# 第一层: 三个模式按钮。
 func _show_modes() -> void:
 	_clear_content()
 	_add_choice("经典对战 (剑 + 弓)", _on_classic)
-	_add_choice("魔法对战 (选法杖)", func(): _show_weapons("magic"))
-	_add_choice("枪械对战 (选枪)", func(): _show_weapons("gun"))
+	_add_choice("魔法对战 (选法杖)", _show_weapons.bind("magic"))
+	_add_choice("枪械对战 (选枪)", _show_weapons.bind("gun"))
 
 
-# 第二层: 列出该类全部武器 (可滚动)。
+# 列出该类全部武器 (可滚动)。用 .bind 绑值, 不能用闭包 — 闭包会让所有按钮都指向最后一个武器。
 func _show_weapons(category: String) -> void:
 	_clear_content()
 	_add_choice("← 返回", _show_modes)
 	var list: Array = _STAFFS if category == "magic" else _GUNS
 	for pair in list:
-		var wid: String = String(pair[0])
-		_add_choice(String(pair[1]), func(): _pick(category, wid))
+		_add_choice(String(pair[1]), _pick.bind(category, String(pair[0])))
 
 
 func _process(_delta: float) -> void:
 	var in_pvp: bool = NetworkManager != null and NetworkManager.is_pvp()
+	var picking: bool = _panel != null and _panel.visible
 	if _switch_btn != null:
-		_switch_btn.visible = in_pvp and not visible
-	# 进对战房后自动弹一次 (让玩家先选)
-	if not _opened_once and not visible and in_pvp and _local_inventory() != null:
+		_switch_btn.visible = in_pvp and not picking
+	if not _opened_once and not picking and in_pvp and _local_inventory() != null:
 		_open()
 
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo \
-			and event.keycode == KEY_M and not visible \
+			and event.keycode == KEY_M and (_panel == null or not _panel.visible) \
 			and NetworkManager != null and NetworkManager.is_pvp():
 		_open()
+
+
+func _set_open(open: bool) -> void:
+	if _panel != null:
+		_panel.visible = open
+	if _switch_btn != null and open:
+		_switch_btn.visible = false
+	get_tree().paused = open   # 选模式时暂停: 滚轮不缩放镜头 + 强制先选
 
 
 func _open() -> void:
 	_opened_once = true
 	_show_modes()
-	visible = true
+	_set_open(true)
 
 
 func _on_classic() -> void:
 	_pick("classic", "")
 
 
-# 选定模式 (+武器): 发装备; 模式 (房间 tag) 变了就转到对应公共房。
 func _pick(mode_key: String, weapon_id: String) -> void:
 	_grant_loadout(mode_key, weapon_id)
-	visible = false
+	_set_open(false)
 	var new_tag: String = String(_MODE_TAG.get(mode_key, "PVP"))
 	if new_tag != _current_tag and NetworkManager != null and NetworkManager.is_public_room():
 		_current_tag = new_tag
 		_reroute(new_tag)
 
 
-# 断开当前公共房 + 连到新模式的公共房 (竞技场不变, 只换同伴)。
 func _reroute(tag: String) -> void:
 	if NetworkManager == null:
 		return
