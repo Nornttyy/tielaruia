@@ -679,6 +679,9 @@ const _ZH_NAMES := {
 	"lightning_staff": "闪电法杖",
 	"poison_staff": "毒液法杖",
 	"multi_staff": "多重魔弹法杖",
+	"explosive_staff": "爆裂火球法杖",
+	"water_staff": "水之法杖",
+	"wind_staff": "狂风法杖",
 }
 
 

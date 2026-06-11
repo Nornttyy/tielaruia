@@ -841,6 +841,24 @@ const _RECIPES := [
 		"pattern": [["diamond"], ["planks"], ["planks"]],
 		"output_id": "multi_staff", "output_count": 1, "mirror_ok": false,
 	},
+	# 爆裂火球法杖: 黑曜石(顶, 火) + 2 木板
+	{
+		"id": "explosive_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["obsidian"], ["planks"], ["planks"]],
+		"output_id": "explosive_staff", "output_count": 1, "mirror_ok": false,
+	},
+	# 水之法杖: 银锭(顶, 水) + 2 木板
+	{
+		"id": "water_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["silver_ingot"], ["planks"], ["planks"]],
+		"output_id": "water_staff", "output_count": 1, "mirror_ok": false,
+	},
+	# 狂风法杖: 羽毛(顶, 风) + 2 木板
+	{
+		"id": "wind_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["feather"], ["planks"], ["planks"]],
+		"output_id": "wind_staff", "output_count": 1, "mirror_ok": false,
+	},
 	# 魔力药水: 1 hell_crystal + 1 silver_ingot (2x1 横排, 工作台). 出 2 瓶
 	{
 		"id": "mana_potion", "grid_size": Vector2i(2, 1),

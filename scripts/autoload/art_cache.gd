@@ -36,6 +36,7 @@ const LightningProjArt = preload("res://scripts/art/lightning_proj_art.gd")
 const StarProjArt = preload("res://scripts/art/star_proj_art.gd")
 const SlimeBlobProjArt = preload("res://scripts/art/slime_blob_proj_art.gd")
 const LeafProjArt = preload("res://scripts/art/leaf_proj_art.gd")
+const WindProjArt = preload("res://scripts/art/wind_proj_art.gd")
 const MummyArt = preload("res://scripts/art/mummy_art.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
@@ -69,6 +70,7 @@ var lightning_proj_frames: SpriteFrames
 var star_proj_frames: SpriteFrames
 var slime_blob_proj_frames: SpriteFrames
 var leaf_proj_frames: SpriteFrames
+var wind_proj_frames: SpriteFrames
 var mummy_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
@@ -313,7 +315,8 @@ func _build_items() -> void:
 			"gold_helmet", "gold_chest", "gold_pants",
 			"diamond_helmet", "diamond_chest", "diamond_pants",
 			"hell_staff", "wood_staff", "iron_staff", "mana_potion", "health_potion",
-			"lightning_staff", "poison_staff", "multi_staff",   # 新机制法杖
+			"lightning_staff", "poison_staff", "multi_staff",   # 新机制法杖 (A 波)
+			"explosive_staff", "water_staff", "wind_staff",     # B 波法杖
 			# 用户加: 小麦 / 种子 之前漏了, 收割掉地没图
 			"wheat", "wheat_seed",
 			# 史莱姆王 Boss 掉落 + 合成材料
@@ -395,6 +398,7 @@ func _build_entities() -> void:
 	star_proj_frames = StarProjArt.build_sprite_frames()
 	slime_blob_proj_frames = SlimeBlobProjArt.build_sprite_frames()
 	leaf_proj_frames = LeafProjArt.build_sprite_frames()
+	wind_proj_frames = WindProjArt.build_sprite_frames()
 	# 木乃伊: 金字塔守卫
 	mummy_frames = MummyArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)

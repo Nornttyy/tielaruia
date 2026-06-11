@@ -2034,6 +2034,14 @@ func _proj_opts_from_def(def: Variant) -> Dictionary:
 		opts["bounce"] = int(def.get("gun_bounce"))
 	if def.has("gun_gravity"):
 		opts["gravity"] = float(def.get("gun_gravity"))
+	# B 波法杖: 爆炸范围伤害 / 击飞
+	if def.has("gun_explode_radius"):
+		opts["explode_radius"] = float(def.get("gun_explode_radius"))
+		opts["explode_dmg"] = int(def.get("gun_explode_dmg", 0))
+	if def.has("gun_knockback"):
+		opts["knockback"] = float(def.get("gun_knockback"))
+	if bool(def.get("gun_launch", false)):
+		opts["launch"] = true
 	return opts
 
 

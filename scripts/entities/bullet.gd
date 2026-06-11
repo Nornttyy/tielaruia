@@ -29,6 +29,11 @@ var chain: int = 0              # >0 = 命中时再电附近 chain 只怪 (闪�
 var chain_radius: float = 60.0  # 连锁跳跃半径
 var bounce: int = 0             # >0 = 撞墙反弹而不消失, 剩余次数 (星星炮/史莱姆枪)
 var grav: float = 0.0           # >0 = 每帧下坠 (史莱姆枪弹丸抛物线弹跳)
+# B 波法杖机制: 爆炸范围伤害 / 击飞
+var explode_radius: float = 0.0 # >0 = 命中/撞墙时炸一圈, 半径内的怪都受 explode_dmg (爆裂火球/水之法杖)
+var explode_dmg: int = 0        # 爆炸伤害 (0 → 用 damage)
+var knockback: float = 140.0    # 击退力度 (狂风法杖调很大 = 弹飞)
+var launch: bool = false        # true = 击退带上抛 (把怪打飞起来, 狂风法杖)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -49,6 +54,10 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, spe
 	chain_radius = float(opts.get("chain_radius", 60.0))
 	bounce = int(opts.get("bounce", 0))
 	grav = float(opts.get("gravity", 0.0))
+	explode_radius = float(opts.get("explode_radius", 0.0))
+	explode_dmg = int(opts.get("explode_dmg", 0))
+	knockback = float(opts.get("knockback", 140.0))
+	launch = bool(opts.get("launch", false))
 	var lt: float = float(opts.get("lifetime", 0.0))
 	if lt > 0.0:
 		_lifetime = lt
@@ -74,6 +83,7 @@ func _apply_visual() -> void:
 		"star":      frames = ArtCache.star_proj_frames      # 星星炮: 金色星
 		"slimeblob": frames = ArtCache.slime_blob_proj_frames # 史莱姆枪: 绿果冻团
 		"leaf":      frames = ArtCache.leaf_proj_frames       # 绿叶枪: 绿叶片
+		"wind":      frames = ArtCache.wind_proj_frames       # 狂风法杖: 白青气流
 	if frames == null:
 		return
 	sprite.sprite_frames = frames
@@ -130,6 +140,9 @@ func _physics_process(delta: float) -> void:
 					velocity = -velocity
 				rotation = velocity.angle()
 				return
+			# 爆裂/水之: 撞墙也炸 (只伤怪, 不破方块)
+			if explode_radius > 0.0:
+				_explode(global_position)
 			_destroy()
 			return
 	var prev_pos: Vector2 = global_position
@@ -158,15 +171,23 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 			_hit_ids[enemy.get_instance_id()] = true
 			# 击退源位置: 沿飞行反方向退 32px, 让 (enemy - source).normalized 指向飞行方向.
 			var src: Vector2 = global_position - velocity.normalized() * 32.0
+			# 爆裂/水之: 命中即炸 (范围伤害), 不再单体打
+			if explode_radius > 0.0:
+				_explode(global_position)
+				_destroy()
+				return
+			var kb_src: Vector2 = src
+			if launch and enemy is Node2D:
+				kb_src = (enemy as Node2D).global_position - (velocity.normalized() + Vector2(0, -1.2)).normalized() * 32.0
 			if enemy.has_meta("is_remote"):
 				# 联机 client: 远程怪 host 权威, 发伤害给 host, 不本地打视觉副本
 				if NetworkManager != null and NetworkManager.connected():
 					var rid: int = int(enemy.get_meta("remote_id", 0))
 					if rid != 0:
-						NetworkManager.send_entity_damage(rid, damage, 140.0, src.x, src.y)
+						NetworkManager.send_entity_damage(rid, damage, knockback, kb_src.x, kb_src.y)
 			else:
 				if enemy.has_method("take_damage"):
-					enemy.take_damage(damage, src, 140.0)
+					enemy.take_damage(damage, kb_src, knockback)
 				# 冰冻枪: 命中给怪减速 (本地权威端才挂; 联机对端 host 各管各的)
 				if slow_factor > 0.0 and enemy.has_method("apply_slow"):
 					enemy.apply_slow(slow_factor, slow_dur)
@@ -196,6 +217,19 @@ func _nearest_enemy() -> Node2D:
 				best_d = d
 				best = e
 	return best
+
+# 爆炸: 爆心 pos 半径 explode_radius 内的怪都受伤 (爆裂火球/水之法杖); 只伤怪, 不破方块.
+func _explode(pos: Vector2) -> void:
+	var dmg: int = explode_dmg if explode_dmg > 0 else damage
+	for group in ["slimes", "animals"]:
+		for e in get_tree().get_nodes_in_group(group):
+			if e == _shooter or not is_instance_valid(e) or not e is Node2D or e.has_meta("is_remote"):
+				continue
+			var ep: Vector2 = (e as Node2D).global_position
+			var r: float = e.melee_hit_radius() if e.has_method("melee_hit_radius") else 0.0
+			if pos.distance_to(ep) <= explode_radius + r and e.has_method("take_damage"):
+				e.take_damage(dmg, pos, knockback)   # src=爆心 → 击退朝外
+
 
 func _destroy() -> void:
 	if _is_dead:

@@ -164,6 +164,10 @@ const _DEFS := {
 	"lightning_staff": {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8, "spell_damage": 10, "spell_kind": "bullet", "gun_visual": "lightning", "gun_chain": 3, "gun_chain_radius": 64.0, "bullet_speed": 600},  # 闪电: 电链跳怪
 	"poison_staff":    {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 6, "spell_damage": 4, "spell_kind": "bullet", "gun_visual": "poison", "gun_dot_dps": 6, "gun_dot_dur": 4.0, "bullet_speed": 480},  # 毒液: 持续掉血
 	"multi_staff":     {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 10, "spell_damage": 6, "spell_kind": "bullet", "gun_visual": "magic", "gun_pellets": 3, "gun_spread_deg": 20.0, "bullet_speed": 420},  # 多重: 一次 3 发扇形
+	# B 波法杖: 爆炸范围 / 抛物线 / 击飞
+	"explosive_staff": {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 14, "spell_damage": 8, "spell_kind": "bullet", "gun_visual": "fire", "gun_explode_radius": 32.0, "gun_explode_dmg": 14, "bullet_speed": 400},  # 爆裂火球: 命中炸一片
+	"water_staff":     {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8, "spell_damage": 6, "spell_kind": "bullet", "gun_visual": "ice", "gun_gravity": 380.0, "gun_explode_radius": 22.0, "gun_explode_dmg": 8, "bullet_speed": 320},  # 水之: 抛物线 + 小爆炸(不破方块)
+	"wind_staff":      {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 6, "spell_damage": 3, "spell_kind": "bullet", "gun_visual": "wind", "gun_knockback": 460.0, "gun_launch": true, "bullet_speed": 520},  # 狂风: 把怪弹飞
 	# 魔力药水: 喝下 → 立刻 +30 mana (类似食物回血但回魔)
 	"mana_potion":   {"placeable_tile_id": -1, "tool_kind": "",        "tool_tier": 0, "max_stack": 16, "mana_refill": 30},
 	# 生命药水: 喝下立刻回 50 HP (复用食物回血路径 food_fill; is_potion 标记 = 显示/手感算药水非食物)
