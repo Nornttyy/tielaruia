@@ -288,6 +288,12 @@ func _crafting_open() -> bool:
 
 
 func _toggle_crafting(n: int) -> void:
+	# 战斗房: 删掉合成功能, 合成键改成开"切换武器"面板 (用户要求)
+	if NetworkManager != null and NetworkManager.combat_enabled():
+		var mp: Node = get_tree().get_first_node_in_group("pvp_mode_panel")
+		if mp != null and mp.has_method("open_weapon_switch"):
+			mp.open_weapon_switch()
+		return
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
 	if cp == null:
 		return

@@ -72,3 +72,46 @@ func test_grant_clears_and_swaps_loadout():
 			ids[s.item_id] = true
 	assert_true(ids.has("sniper"), "换枪后该有狙击枪")
 	assert_false(ids.has("hell_staff"), "换枪后不该还留着法杖")
+
+
+# --- T4: 模式面板只选模式 + 关闭按钮; 武器在独立"切武器"视图 ---
+
+func test_mode_view_has_3_modes_plus_close():
+	var panel = PvpModePanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	panel._show_modes()
+	# 经典 + 魔法 + 枪械 + 关闭 = 4 个按钮 (用户: 退出按钮 / 只选模式不选武器)
+	assert_eq(panel._content.get_child_count(), 4, "模式视图: 3 模式 + 关闭")
+
+
+func test_weapons_for_each_mode():
+	var panel = PvpModePanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	# 魔法 = 3 法杖 (骷髅法杖已删)
+	assert_eq(panel._weapons_for("magic").size(), 3, "魔法 3 法杖 (无骷髅)")
+	assert_false(_list_has(panel._weapons_for("magic"), "skull_staff"), "切武器列表无骷髅法杖")
+	# 枪械 = 15 把枪
+	assert_eq(panel._weapons_for("gun").size(), 15, "枪械 15 把")
+	# 经典 = 剑 + 弓
+	assert_true(_list_has(panel._weapons_for("classic"), "iron_sword"), "经典含剑")
+	assert_true(_list_has(panel._weapons_for("classic"), "wood_bow"), "经典含弓")
+
+
+func test_weapon_switch_view_lists_current_mode():
+	var panel = PvpModePanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	panel._current_mode_key = "magic"
+	panel._show_weapon_switch()
+	# ← 切换模式 + 3 法杖 + 关闭 = 5
+	assert_eq(panel._content.get_child_count(), 5, "切武器视图: 返回 + 3 法杖 + 关闭")
+
+
+func test_panel_in_group_for_crafting_key():
+	var panel = PvpModePanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	assert_true(panel.is_in_group("pvp_mode_panel"), "战斗房合成键靠这个 group 找到面板")
+	assert_true(panel.has_method("open_weapon_switch"), "该有 open_weapon_switch 给合成键调")
