@@ -119,6 +119,26 @@ func test_panel_in_group_for_crafting_key():
 	assert_true(panel.has_method("toggle_weapon_switch"), "该有 toggle_weapon_switch 给 E 键调")
 
 
+# 切换模式必须重连到该模式的房间 (每模式一房), 哪怕刚进房还没 connected() (用户报: 只换武器没换房)
+func test_pick_mode_reroutes_even_when_not_connected():
+	var prev_pub = NetworkManager.in_public_room
+	var prev_mode = NetworkManager.room_mode
+	var prev_status = NetworkManager.status
+	NetworkManager.in_public_room = true
+	NetworkManager.room_mode = "pvp"
+	NetworkManager.status = "hosting"   # 在公共房但还没 connected() (connected()=false)
+	var panel = PvpModePanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	panel._current_tag = "PVP"          # 当前在经典房
+	panel._pick_mode("magic")           # 选魔法 → 该重连到 PVP-MAGIC
+	assert_eq(panel._current_tag, "PVP-MAGIC", "选魔法该重连到 PVP-MAGIC 房 (没连上也要 reroute)")
+	# 还原
+	NetworkManager.in_public_room = prev_pub
+	NetworkManager.room_mode = prev_mode
+	NetworkManager.status = prev_status
+
+
 # E 是开关键: 面板开着再按 → 关掉
 func test_toggle_weapon_switch_closes_when_open():
 	var panel = PvpModePanel.new()

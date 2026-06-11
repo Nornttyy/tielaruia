@@ -140,7 +140,9 @@ func _pick_mode(mode_key: String) -> void:
 	_grant_loadout(mode_key, "")   # 默认武器 (魔法=铁杖, 枪=手枪, 经典=剑+弓)
 	_close()
 	var new_tag: String = String(_MODE_TAG.get(mode_key, "PVP"))
-	if new_tag != _current_tag and NetworkManager != null and NetworkManager.is_public_room():
+	# 用 in_public_room (进房同步置位) 而非 is_public_room() — 后者要 connected()=true, 但进房自动弹
+	# 面板时 bridge 还没连上 (connected 慢一两秒). 那会儿选模式会漏掉 reroute → 换了武器没换房 (用户报)。
+	if new_tag != _current_tag and NetworkManager != null and NetworkManager.in_public_room:
 		_current_tag = new_tag
 		_reroute(new_tag)   # 每个模式一个房间, 互不同步 (用户要求)
 
