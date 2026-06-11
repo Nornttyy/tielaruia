@@ -288,12 +288,6 @@ func _crafting_open() -> bool:
 
 
 func _toggle_crafting(n: int) -> void:
-	# 战斗房: 删掉合成功能, 合成键改成开"切换武器"面板 (用户要求)
-	if NetworkManager != null and NetworkManager.combat_enabled():
-		var mp: Node = get_tree().get_first_node_in_group("pvp_mode_panel")
-		if mp != null and mp.has_method("open_weapon_switch"):
-			mp.open_weapon_switch()
-		return
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
 	if cp == null:
 		return
@@ -327,6 +321,12 @@ func _try_open_workbench_or_close() -> void:
 		if chest_p2 != null and chest_p2.has_method("open"):
 			var inv2: Node = _inventory_node()
 			chest_p2.open(near_chest, inv2)
+		return
+	# 战斗房: 删掉合成功能, 这个键 (E / 触屏"包") 改成开/关"切换武器"面板 (用户要求)
+	if NetworkManager != null and NetworkManager.combat_enabled():
+		var mp: Node = get_tree().get_first_node_in_group("pvp_mode_panel")
+		if mp != null and mp.has_method("toggle_weapon_switch"):
+			mp.toggle_weapon_switch()
 		return
 	# 优先级 3: 合成面板 (工作台 → 3x3, 否则 2x2)
 	var cp: CanvasLayer = get_tree().get_first_node_in_group("crafting_panel")
@@ -1824,6 +1824,8 @@ const BulletScene = preload("res://scenes/entities/bullet.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
 const SlimeBallScene = preload("res://scenes/entities/slime_ball.tscn")
 const FriendlySkeletonScene = preload("res://scenes/entities/friendly_skeleton.tscn")
+const FriendlyBirdScene = preload("res://scenes/entities/friendly_bird.tscn")   # 雀宝宝法杖召唤
+const EarthCrackScene = preload("res://scenes/entities/earth_crack.tscn")        # 地裂法杖
 const BOW_COOLDOWN := 0.4
 const BOW_ARROW_DAMAGE := 5    # base, 后续乘 tier multiplier
 const GUN_COOLDOWN := 0.22     # 比弓快 (连发感)
@@ -1986,11 +1988,22 @@ func _try_cast_staff() -> void:
 		# mana 不够
 		return
 	_attack_cooldown = STAFF_COOLDOWN
+	# 治疗法杖: 不发弹, 耗魔力给自己回血 (mana 已扣).
+	if def.has("heal_amount"):
+		var hp: Node = player.get_node_or_null("PlayerHealth")
+		if hp != null and hp.has_method("heal"):
+			hp.heal(int(def.get("heal_amount")))
+		SfxBank.play("pickup", 0.1)
+		return
 	var start: Vector2 = player.global_position + Vector2(0, -8)
 	var target: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
 	var entities: Node = get_tree().get_first_node_in_group("entities_root")
 	if entities == null:
 		entities = player.get_parent()
+	# 地裂法杖: 在目标地面生成一道伤害裂缝 (站上面的怪持续受伤), 不发弹.
+	if def.has("ground_crack"):
+		_cast_ground_crack(def, start, target, player, entities)
+		return
 	# 新机制法杖 (spell_kind=="bullet"): 发"带机制的魔法弹"(复用枪的 bullet: 连锁/毒/多重等);
 	# 老元素法杖 (fire/ice/nature) 还是发元素火球.
 	if String(def.get("spell_kind", "fireball")) == "bullet":
@@ -2085,13 +2098,45 @@ func _summon_friendly() -> void:
 		if not mana.try_consume(cost):
 			return
 	_attack_cooldown = SUMMON_STAFF_COOLDOWN
-	var fs = FriendlySkeletonScene.instantiate()
+	# summon_kind 决定召谁: "bird" → 雀宝宝 (飞), 默认 → 友方骷髅 (走)
+	var summon_kind: String = String(def.get("summon_kind", "skeleton"))
+	var minion = FriendlyBirdScene.instantiate() if summon_kind == "bird" else FriendlySkeletonScene.instantiate()
 	var entities: Node = get_tree().get_first_node_in_group("entities_root")
 	if entities == null:
 		entities = player.get_parent()
-	entities.add_child(fs)
-	fs.global_position = player.global_position + Vector2(randf_range(-16.0, 16.0), -4.0)
+	entities.add_child(minion)
+	# 鸟从头顶冒出来, 骷髅从脚边
+	var spawn_off: Vector2 = Vector2(randf_range(-16.0, 16.0), -28.0 if summon_kind == "bird" else -4.0)
+	minion.global_position = player.global_position + spawn_off
 	SfxBank.play("place", 0.15)
+
+
+# 地裂法杖: 从瞄准点向下找地面, 在地表生成一道裂缝 (earth_crack). 已扣 mana.
+func _cast_ground_crack(def: Variant, _start: Vector2, target: Vector2, player: Node2D, entities: Node) -> void:
+	var terrain: TileMapLayer = _terrain()
+	if terrain == null:
+		return
+	# 从瞄准点所在格往下扫, 找到第一块实心方块 → 裂缝放在它顶上
+	var tile: Vector2i = terrain.local_to_map(terrain.to_local(target))
+	var ground_y: int = -9999
+	for dy in range(0, 20):   # 最多往下找 20 格
+		var c: Vector2i = tile + Vector2i(0, dy)
+		if terrain.get_cell_source_id(c) != -1:
+			ground_y = c.y
+			break
+	var crack_pos: Vector2
+	if ground_y > -9999:
+		# 实心格顶部 = 该格中心上移半格
+		crack_pos = terrain.to_global(terrain.map_to_local(Vector2i(tile.x, ground_y))) + Vector2(0, -8)
+	else:
+		# 没找到地面 (空中): 就放在瞄准点
+		crack_pos = target
+	var crack = EarthCrackScene.instantiate()
+	entities.add_child(crack)
+	crack.global_position = crack_pos
+	if crack.has_method("setup"):
+		crack.setup(int(round(float(def.get("spell_damage", 6)) * _tool_damage_mult())), player)
+	SfxBank.play("break", 0.18)
 
 
 # 手持召唤道具 (slime_crown) 使用 → 在玩家附近召唤 Boss, 成功则消耗 1.

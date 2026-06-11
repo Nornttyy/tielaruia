@@ -2,7 +2,7 @@
 #   ① 模式选择 (进游戏自动弹 / M 键 / 切换模式按钮): 只选经典/魔法/枪械 → 发默认装备 + 重连到
 #      该模式的公共房。每个模式一个房间 (经典 PVP / 魔法 PVP-MAGIC / 枪械 PVP-GUN), 互不同步。
 #      这个视图会暂停游戏 (强制先选 + 滚轮不缩放)。
-#   ② 切武器 (战斗房按合成键打开, 见 player_action._toggle_crafting): 列当前模式全部武器, 点一下
+#   ② 切武器 (战斗房按 E/包键打开, 见 player_action._try_open_workbench_or_close): 列当前模式全部武器, 点一下
 #      换上, 不换房不暂停 (战斗中快速换装)。骷髅法杖不列。
 # 退出 = "关闭"按钮只关面板回游戏 (离开整个房间走暂停菜单)。非对战房永不弹、按钮也不显示。
 #
@@ -145,7 +145,15 @@ func _pick_mode(mode_key: String) -> void:
 		_reroute(new_tag)   # 每个模式一个房间, 互不同步 (用户要求)
 
 
-# ---- 切武器视图 (战斗房合成键打开): 列出当前模式全部武器, 点一下换上, 不换房 ----
+# ---- 切武器视图 (战斗房按 E/包键打开, 见 player_action._try_open_workbench_or_close) ----
+# 列出当前模式全部武器, 点一下换上, 不换房。E 再按一下关掉 (开关键)。
+func toggle_weapon_switch() -> void:
+	if _panel != null and _panel.visible:
+		_close()
+	else:
+		open_weapon_switch()
+
+
 func open_weapon_switch() -> void:
 	if NetworkManager == null or NetworkManager.room_mode != "pvp":
 		return

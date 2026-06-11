@@ -115,6 +115,20 @@ func test_panel_in_group_for_crafting_key():
 	await wait_frames(1)
 	assert_true(panel.is_in_group("pvp_mode_panel"), "战斗房合成键靠这个 group 找到面板")
 	assert_true(panel.has_method("open_weapon_switch"), "该有 open_weapon_switch 给合成键调")
+	# E 键走 player_action._try_open_workbench_or_close → mp.toggle_weapon_switch (开/关)
+	assert_true(panel.has_method("toggle_weapon_switch"), "该有 toggle_weapon_switch 给 E 键调")
+
+
+# E 是开关键: 面板开着再按 → 关掉
+func test_toggle_weapon_switch_closes_when_open():
+	var panel = PvpModePanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	panel._show_weapon_switch()
+	panel._set_open(true, false)
+	assert_true(panel._panel.visible, "先打开切武器面板")
+	panel.toggle_weapon_switch()   # 已开 → 关
+	assert_false(panel._panel.visible, "再按一下该关掉")
 
 
 # 用户: 首次进战斗房选模式时不给"关闭" (必须选一个才开始); 之后重开才有关闭。
