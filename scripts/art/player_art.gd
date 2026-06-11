@@ -302,6 +302,7 @@ static func _female_torso_swim(cs: int) -> Array:
 		rows[2] = _set_char(rows[2], 7, "w")   # 罩杯 col7 (峰 1px)
 	if cs >= 2:
 		rows[1] = _set_char(rows[1], 7, "w")   # 上胸罩杯 col7 (上沿)
+		rows[3] = _set_char(rows[3], 6, "w")   # 下沿 col6 (连住肚, 不留缝=跟背心一样大)
 		rows[3] = _set_char(rows[3], 7, "w")   # 下沿 col7
 	if cs >= 3:
 		rows[2] = _set_char(rows[2], 8, "w")   # 罩杯 col8 (峰 2px)
