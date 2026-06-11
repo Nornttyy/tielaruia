@@ -115,3 +115,12 @@ func _all_labels(node: Node) -> Array:
 	if node is Label: out.append(node)
 	for c in node.get_children(): out += _all_labels(c)
 	return out
+
+# 回归: 捏人预览用最近邻过滤 (像素清晰); 否则放大 3x 时 1px 眼白被线性插值糊成灰 (用户报)
+func test_creator_preview_nearest_filter():
+	panels.open_select()
+	await wait_frames(1)
+	panels._on_new_character()
+	await wait_frames(1)
+	assert_eq(panels._preview.texture_filter, CanvasItem.TEXTURE_FILTER_NEAREST,
+		"捏人预览该用最近邻过滤 (眼白不糊成灰)")

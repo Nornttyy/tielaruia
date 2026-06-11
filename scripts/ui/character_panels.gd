@@ -164,6 +164,9 @@ func _build_creator_panel() -> void:
 	_preview = AnimatedSprite2D.new()
 	_preview.position = Vector2(90, 250)
 	_preview.scale = Vector2(3, 3)
+	# 强制最近邻过滤: 放大 3 倍的像素画必须清晰, 否则 1px 眼白会被线性插值糊成灰色
+	# (捏人预览在 UI 层下, 可能继承到 linear; 世界里玩家走项目默认 nearest 所以不糊).
+	_preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_creator_panel.add_child(_preview)
 	# 右: 选项 VBox
 	var vbox := VBoxContainer.new()

@@ -38,22 +38,22 @@ const _FACE := [
 	".sssssss.",
 	"sssssssss",
 	"sssssssss",
-	"ssssssWis",   # 眼 (2宽×3高): 眼珠填满 + 后上角 1px 白高光 (眉毛已按用户要求去掉)
-	"ssssssiis",
-	"ssssssiis",
+	"ssssssWWs",   # 眼 (2宽×3高): 白眼白 W 为主 + 1px 小眼珠 i (用户要 白眼白/小眼珠, 不要灰)
+	"ssssssWis",   # 眼白 + 前方小眼珠
+	"ssssssWWs",   # 眼白
 	"sssssssks",   # 脸颊 + 前下颌一点阴影
 	"..sssss..",
 	"...sss...",   # 脖子
 ]
-# 女脸: 眼顶加睫毛 (e, 露在发下) + 同款 2×3 小眼珠。
+# 女脸: 眼顶加睫毛 (e, 露在发下) + 白眼白 + 小眼珠。
 const _FACE_F := [
 	"...ssss..",
 	".sssssss.",
 	"sssssssss",
 	"sssssssss",
-	"sssssseis",   # 睫毛(后) + 眼珠(前)
-	"ssssssiis",   # 眼珠填满
-	"ssssssiis",   # 眼珠
+	"sssssseWs",   # 睫毛(后) + 眼白(前)
+	"ssssssWis",   # 眼白 + 前方小眼珠
+	"ssssssWWs",   # 眼白
 	"sssssssks",
 	"..sssss..",
 	"...sss...",
@@ -192,10 +192,10 @@ const _SHOE_B := [
 	"qoq",
 	"OOO",
 ]
-# 光脚 (泳裤时用)。脚背高光 p + 脚底一条深阴 e (踩地的边, 跟鞋一样看得见到地面)。3 宽 × 3 高。
+# 光脚 (泳裤时用)。脚踝一道深阴 e (跟裸小腿分开, 脚成独立一截不像长一条) + 脚背高光 + 脚底深阴。3 宽 × 3 高。
 const _FOOT_BARE := [
-	"sp.",
-	"sss",
+	"ee.",
+	"sps",
 	"eee",
 ]
 # 背心款手臂 (露胳膊, 全皮肤 + 前缘高光 p)。2 宽 × 6 高。
