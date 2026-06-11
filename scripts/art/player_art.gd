@@ -10,7 +10,7 @@ const H := 26
 
 const DEFAULT_APPEARANCE := {
 	"gender": 0, "hair_style": 0, "shirt_style": 0, "pants_style": 0,
-	"cape_style": 0, "chest_size": 1,
+	"cape_style": 0, "chest_size": 3,
 	"skin_color": Color8(255, 218, 185), "hair_color": Color8(190, 110, 60),
 	"shirt_color": Color8(220, 210, 180), "pants_color": Color8(70, 90, 150),
 	"cape_color": Color8(150, 40, 50), "eye_color": Color8(70, 110, 170),
@@ -303,29 +303,32 @@ static func _female_torso_swim(cs: int) -> Array:
 	return rows
 
 
-# 女躯干 (9 宽): 沙漏身, 胸在躯干前 (右)。chest_size 越大胸越饱满。
-# 胸只前鼓 1px (col7), 占 row1-3 满宽胸区, 随 cs 从下往上长成一道圆润竖弧 + 下沿阴影。
-# 不再戳 2px 大包 (旧版戳出手臂外侧 + 腰行留悬空像素 = '怪'), 低龄克制。
+# 女躯干 (10 宽): 沙漏身, 胸在躯干前 (右)。chest_size 越大胸越饱满。
+# 加宽到 10 (composite col5-14) 给胸留鼓的空间: 胸前鼓占 col7-9 = composite 12-14, 最大 3px。
+# 胸是前鼓的圆弧 (中胸最饱满, 上下渐收), cs 越大越鼓越大。
 static func _female_torso(cs: int) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
-		".wwwDDc..",   # 肩 + 领口 DD + 前高光 c
-		"wwwwwDc..",   # 上胸 (纽扣D + 前高光c, 删后背缝)
-		"wwwwwwc..",   # 中胸 (光面, 去内部暗纹)
-		"wwwwwDc..",   # 下胸 (纽扣D)
-		"wwwwww...",   # 腰 (收腰只浅 1px + 露在手臂外, 前沿平滑不折=不歪; 后背直 col0)
-		"wwwwwww..",   # 胯 (外扩, 比腰宽 1px)
+		".wwwDDc...",   # 肩 + 领口 DD + 前高光 c
+		"wwwwwDc...",   # 上胸 (纽扣D + 前高光c)
+		"wwwwwwc...",   # 中胸 (光面)
+		"wwwwwDc...",   # 下胸 (纽扣D)
+		"wwwwww....",   # 腰 (收腰浅 1px + 露手臂外, 前沿平滑不折=不歪; 后背直 col0)
+		"wwwwwww...",   # 胯 (外扩, 比腰宽 1px)
 	]
 	if cs >= 1:
-		rows[2] = _set_char(rows[2], 7, "w")   # 中胸前鼓 1px (默认胸在中胸, 不贴着腰=不显歪)
+		rows[2] = _set_char(rows[2], 7, "w")   # 中胸 col7 (鼓 1px)
+		rows[3] = _set_char(rows[3], 7, "w")   # 下胸 col7
 	if cs >= 2:
-		rows[3] = _set_char(rows[3], 7, "w")   # 下胸也鼓 (竖弧往下长)
+		rows[1] = _set_char(rows[1], 7, "w")   # 上胸 col7 (竖弧满)
+		rows[2] = _set_char(rows[2], 8, "w")   # 中胸 col8 (鼓 2px)
 	if cs >= 3:
-		rows[1] = _set_char(rows[1], 7, "w")   # 上胸也鼓 (满 1px 竖弧)
+		rows[3] = _set_char(rows[3], 8, "w")   # 下胸 col8 (圆润饱满)
+		rows[1] = _set_char(rows[1], 8, "w")   # 上胸 col8
 	if cs >= 4:
-		rows[2] = _set_char(rows[2], 8, "w")   # 最饱满处 (中胸) 再前 1px 小圆点
+		rows[2] = _set_char(rows[2], 9, "w")   # 中胸 col9 (鼓 3px, 最饱满)
 	if cs >= 5:
-		rows[3] = _set_char(rows[3], 8, "D")   # 下尖收阴影 = 圆角收口
+		rows[3] = _set_char(rows[3], 9, "w")   # 下胸 col9 (很大)
 	return rows
 
 
