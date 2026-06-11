@@ -82,9 +82,14 @@ func save_character(c: CharacterData) -> bool:
 		return false
 	var rename_err: int = DirAccess.rename_absolute(tmp_path, path)
 	if rename_err != OK:
-		push_error("save_character: rename 失败 err=%d" % rename_err)
-		DirAccess.remove_absolute(tmp_path)
-		return false
+		# 网页 (HTML5) 文件系统 rename 偶尔失败 → 角色会卡成 .tmp.tres (列表跳过这种文件) =
+		# "保存了却没出现在列表里" (用户报). 兜底: 直接写最终路径, 别让 rename 失败把角色弄丢。
+		push_warning("save_character: rename 失败 err=%d, 改直接写最终路径" % rename_err)
+		var direct_err: int = ResourceSaver.save(c, path)
+		DirAccess.remove_absolute(tmp_path)   # 清掉残留的 .tmp.tres
+		if direct_err != OK:
+			push_error("save_character: 直接写也失败 err=%d" % direct_err)
+			return false
 	_flush_web_filesystem()
 	character_saved.emit()
 	return true

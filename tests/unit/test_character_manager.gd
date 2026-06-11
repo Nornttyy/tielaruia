@@ -54,6 +54,22 @@ func test_delete():
 	cm.delete_character_by_name("待删")
 	assert_false(cm.has_any(), "删后空")
 
+# 保存后不该留下 .tmp.tres (列表跳过这种文件 → 会"存了却不显示"). 网页 rename 失败兜底也要保证最终是 .tres。
+func test_save_leaves_no_tmp_file():
+	assert_true(cm.save_character(_make("小明")), "存盘成功")
+	var d = DirAccess.open(cm.chars_dir())
+	d.list_dir_begin()
+	var f = d.get_next()
+	var tmp_count := 0
+	var tres_count := 0
+	while f != "":
+		if f.ends_with(".tmp.tres"): tmp_count += 1
+		elif f.ends_with(".tres"): tres_count += 1
+		f = d.get_next()
+	d.list_dir_end()
+	assert_eq(tmp_count, 0, "不该留下 .tmp.tres (否则角色不显示)")
+	assert_eq(tres_count, 1, "该有 1 个正式 .tres")
+
 func test_reject_path_injection_on_save():
 	var c = _make("../../evil")
 	cm.save_character(c)
