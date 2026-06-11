@@ -14,10 +14,14 @@ const MpRooms = preload("res://scripts/net/mp_rooms.gd")
 
 const _MODE_TAG := {"classic": "PVP", "magic": "PVP-MAGIC", "gun": "PVP-GUN"}
 const _COMMON := [["stone", 64], ["iron_pickaxe", 1], ["health_potion", 5]]
-# 骷髅法杖故意不列 (用户: 对战房太轮椅, 放完小兵摆烂); 召唤动作也在 player_action 里被对战房屏蔽
+# 骷髅法杖 + 雀宝宝法杖故意不列 (召唤类: 对战房太轮椅 + 召唤动作在 player_action 里已被对战房屏蔽 → 列了也放不出)
 const _STAFFS := [
 	["wood_staff", "木魔草杖"], ["iron_staff", "铁蓝晶杖"],
 	["hell_staff", "地狱魔火法杖"],
+	# 新机制法杖 (A/B/C 波): 闪电链 / 毒 / 多重 / 爆裂 / 水弹 / 狂风 / 治疗 / 地裂
+	["lightning_staff", "闪电法杖"], ["poison_staff", "毒液法杖"], ["multi_staff", "多重魔弹法杖"],
+	["explosive_staff", "爆裂火球法杖"], ["water_staff", "水之法杖"], ["wind_staff", "狂风法杖"],
+	["heal_staff", "治疗法杖"], ["crack_staff", "地裂法杖"],
 ]
 const _GUNS := [
 	["pistol", "手枪"], ["smg", "冲锋枪"], ["assault_rifle", "突击步枪"], ["shotgun", "霰弹枪"],

@@ -68,8 +68,23 @@ func _damage_enemies() -> void:
 			if e.has_meta("is_remote"):
 				continue
 			var ep: Vector2 = (e as Node2D).global_position
-			if abs(ep.x - global_position.x) <= HALF_WIDTH \
-					and ep.y <= global_position.y + VERT_DOWN and ep.y >= global_position.y - VERT_UP:
-				if e.has_method("take_damage"):
-					# 从下往上顶一下 (src 在裂缝下方 → 击退朝上)
-					e.take_damage(damage, Vector2(ep.x, global_position.y + 24.0), 70.0)
+			if _in_band(ep) and e.has_method("take_damage"):
+				# 从下往上顶一下 (src 在裂缝下方 → 击退朝上)
+				e.take_damage(damage, Vector2(ep.x, global_position.y + 24.0), 70.0)
+	# PvP: 对战房里裂缝也能伤站上面的远程玩家 (发伤害给对方, 对方扣自己血)
+	if NetworkManager != null and NetworkManager.combat_enabled():
+		for s in get_tree().get_nodes_in_group("remote_player"):
+			var rp := s as Node2D
+			if rp == null or not is_instance_valid(rp) or not _in_band(rp.global_position):
+				continue
+			var pid: String = String(rp.peer_id) if "peer_id" in rp else ""
+			if pid != "":
+				NetworkManager.send_player_damage(pid, damage, 70.0, rp.global_position.x, global_position.y + 24.0)
+				if rp.has_method("flash_hit"):
+					rp.flash_hit()
+
+
+# 点是否落在裂缝的横向带 + 上方一点点 (= "站在裂缝上")
+func _in_band(p: Vector2) -> bool:
+	return abs(p.x - global_position.x) <= HALF_WIDTH \
+			and p.y <= global_position.y + VERT_DOWN and p.y >= global_position.y - VERT_UP

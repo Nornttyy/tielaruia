@@ -201,6 +201,29 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 				_destroy()
 				return
 			# pierce (激光): 不销毁, 继续飞, 可同帧/后续帧再命中别的怪
+	# PvP: 对战房里子弹也能打到远程玩家 (本地判命中 → 发伤害给对方, 对方扣自己血). 照 arrow.gd.
+	if NetworkManager != null and NetworkManager.combat_enabled():
+		for s in get_tree().get_nodes_in_group("remote_player"):
+			var rp := s as Node2D
+			if rp == null or not is_instance_valid(rp):
+				continue
+			if _hit_ids.has(rp.get_instance_id()):
+				continue   # 穿透: 同一个玩家不重复发伤害
+			var radius2: float = rp.melee_hit_radius() if rp.has_method("melee_hit_radius") else 8.0
+			if _seg_point_dist(from_pos, global_position, rp.global_position) > HIT_RADIUS_PX + radius2:
+				continue
+			_hit_ids[rp.get_instance_id()] = true
+			var psrc: Vector2 = global_position - velocity.normalized() * 32.0
+			var pid: String = String(rp.peer_id) if "peer_id" in rp else ""
+			if pid != "":
+				NetworkManager.send_player_damage(pid, damage, knockback, psrc.x, psrc.y)
+				if rp.has_method("flash_hit"):
+					rp.flash_hit()
+			if explode_radius > 0.0:
+				_explode(global_position)   # 爆裂/水之: 命中玩家也炸 (AoE 只伤怪, 直击靠上面 send_player_damage)
+			if not pierce:
+				_destroy()
+				return
 
 
 
