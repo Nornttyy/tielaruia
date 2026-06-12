@@ -46,3 +46,24 @@ func test_bullet_impact_spawns_particles_on_destroy() -> void:
 	await wait_frames(1)
 	# spawn_explosion 往树里塞 30 颗粒子 → 全树节点数明显变多 (扣掉销毁的子弹自身也还净增很多)
 	assert_gt(get_tree().get_node_count(), before + 10, "法杖弹销毁该冒一片火花粒子")
+
+
+func test_water_staff_carries_splash_opt() -> void:
+	# 水之法杖 def 带 gun_splash → _proj_opts_from_def 转成 opts.splash
+	var pa = PlayerAction.new()
+	add_child_autofree(pa)
+	var def: Variant = ItemDB.get_def("water_staff")
+	assert_true(bool(def.get("gun_splash", false)), "水之法杖 def 带 gun_splash")
+	var opts: Dictionary = pa._proj_opts_from_def(def)
+	assert_true(opts.get("splash", false), "_proj_opts_from_def 把 gun_splash 转成 opts.splash")
+
+
+func test_water_bullet_splashes_on_explode() -> void:
+	# 水弹炸开 (落地/命中) 该溅一片水花 (spawn_splash 8 颗水滴)
+	var b = BulletScene.instantiate()
+	add_child_autofree(b)
+	b.setup(Vector2(0, 0), Vector2(100, 0), 5, null, 200.0, {"explode_radius": 22.0, "splash": true})
+	var before: int = get_tree().get_node_count()
+	b._explode(b.global_position)
+	await wait_frames(1)
+	assert_gt(get_tree().get_node_count(), before + 3, "水弹炸开该溅水花粒子")

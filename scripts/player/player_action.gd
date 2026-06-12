@@ -2066,6 +2066,9 @@ func _proj_opts_from_def(def: Variant) -> Dictionary:
 		opts["knockback"] = float(def.get("gun_knockback"))
 	if bool(def.get("gun_launch", false)):
 		opts["launch"] = true
+	# 水之法杖: 炸开时额外溅水花
+	if bool(def.get("gun_splash", false)):
+		opts["splash"] = true
 	return opts
 
 
