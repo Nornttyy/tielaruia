@@ -116,6 +116,11 @@
     var MAX_RETRIES = 4;
     var RETRY_DELAY_MS = 1500;
     var JOIN_TIMEOUT_MS = 12000;
+    // 抢公共房脑裂保护: client 连不上占用者 → 去抢 host → "id taken" → 又退回 client → 无限 ping-pong
+    // (零间隔, 刷爆控制台且永远连不上). 每翻转一次 host↔client 计数; 加随机退避打散两端并给 WebRTC
+    // 协商时间; 翻转超上限就退一格房号重来, 房号用完才友好报错。
+    bridge._pubFlips = 0;
+    var MAX_PUB_FLIPS = 8;
     var _RETRYABLE = {'network': 1, 'server-error': 1, 'socket-error': 1, 'socket-closed': 1, 'unavailable-id': 1};
 
     function _friendlyError(et) {
@@ -255,6 +260,7 @@
         bridge._maxRooms = maxRooms || 20;
         bridge._pubTag = tag;
         bridge._pubIndex = 1;
+        bridge._pubFlips = 0;
         bridge._isHost = false;
         bridge._status = 'joining';
         bridge._lastError = '';
@@ -288,6 +294,7 @@
                 settled = true;
                 bridge._isHost = false;
                 bridge._hostConn = conn;
+                bridge._pubFlips = 0;   // 连上 host = 稳了, 翻转计数清零
                 _setupConn(conn, false);
                 bridge._status = 'connected';
             });
@@ -310,8 +317,8 @@
             if (gen !== bridge._gen) return;
             var et = err.type || err.message || err;
             if (et === 'peer-unavailable') {
-                try { bridge._peer.destroy(); } catch (e) {}
-                _hostPublic(gen);   // 没人开这号房 → 抢占当 host
+                // 没人开这号房(或占用者刚注册还没好) → 退避后抢占当 host (不立刻, 防 ping-pong 刷屏)
+                _flipPublic(gen, _hostPublic);
             } else if (_RETRYABLE[et]) {
                 bridge._lastError = _friendlyError(et);   // 服务器忙, 保持 joining 等超时
             } else {
@@ -335,6 +342,7 @@
             if (gen !== bridge._gen) return;
             bridge._isHost = true;
             bridge._myId = _pubId(bridge._pubIndex);
+            bridge._pubFlips = 0;           // 当上 host = 稳了, 翻转计数清零
             bridge._status = 'connected';   // host 自己即"连上" (房里就他一个也能玩)
         });
         bridge._peer.on('connection', function(conn) { _onIncoming(conn, gen); });
@@ -342,10 +350,9 @@
             if (gen !== bridge._gen) return;
             var et = err.type || err.message || err;
             if (et === 'unavailable-id') {
-                // 并发竞争: 别人刚抢到这号房 → 退回当 client 再连它
-                try { bridge._peer.destroy(); } catch (e) {}
+                // 并发竞争: 别人刚抢到这号房 → 退避后退回当 client 再连它 (不立刻, 防 ping-pong)
                 bridge._isHost = false;
-                _tryJoinPublic(gen);
+                _flipPublic(gen, _tryJoinPublic);
             } else {
                 bridge._lastError = _friendlyError(et);
                 bridge._status = 'error';
@@ -357,7 +364,24 @@
         if (gen !== bridge._gen) return;
         try { if (bridge._peer) bridge._peer.destroy(); } catch (e) {}
         bridge._pubIndex++;
+        bridge._pubFlips = 0;   // 换了房号, 翻转计数重来
         _tryJoinPublic(gen);
+    }
+
+    // host↔client 翻转 (抢房竞态). 加随机退避打散两端 + 给 WebRTC 协商时间; 翻转太多 = 脑裂
+    // (双方都连不上对方) → 退一格房号重来, 房号用完才报错。fn = _tryJoinPublic 或 _hostPublic。
+    function _flipPublic(gen, fn) {
+        if (gen !== bridge._gen) return;
+        try { if (bridge._peer) bridge._peer.destroy(); } catch (e) {}
+        bridge._pubFlips = (bridge._pubFlips || 0) + 1;
+        if (bridge._pubFlips > MAX_PUB_FLIPS) {
+            if (bridge._pubIndex < bridge._maxRooms) { _nextRoom(gen); return; }
+            bridge._lastError = '连接不太稳, 刷新页面再进一次对战房';
+            bridge._status = 'error';
+            return;
+        }
+        var delay = 250 + Math.floor(Math.random() * 600);   // 退避 250~850ms, 打散同时抢的两端
+        setTimeout(function() { if (gen === bridge._gen) fn(gen); }, delay);
     }
 
     // ===== 发送 =====
