@@ -64,3 +64,26 @@ func test_aim_joystick_feeds_world_override_both_directions():
 	tc._aim_dir = Vector2.RIGHT
 	tc._update_aim()
 	assert_gt(action.mouse_world_override.x, player.global_position.x, "朝右瞄 → 目标在玩家右侧")
+
+
+# 用户: 击/用合一. 一个物品图标钮, 按住自动选对操作 (方块/食物/药水=secondary, 工具/武器=primary)。
+func test_merged_use_button_picks_right_action():
+	var player := Node2D.new()
+	player.add_to_group("player")
+	var pinv = PlayerInventory.new()
+	pinv.name = "PlayerInventory"
+	player.add_child(pinv)
+	add_child_autofree(player)
+	await wait_frames(1)
+	var tc = TouchControls.new()
+	add_child_autofree(tc)
+	await wait_frames(1)
+	pinv.hotbar_selected = 0
+	pinv.inventory.slots[0] = {"item_id": "dirt", "count": 1}
+	assert_eq(tc._use_action_for_held(), "secondary", "拿方块按住=放(secondary)")
+	pinv.inventory.slots[0] = {"item_id": "wood_pickaxe", "count": 1}
+	assert_eq(tc._use_action_for_held(), "primary", "拿工具按住=挖(primary)")
+	pinv.inventory.slots[0] = {"item_id": "health_potion", "count": 1}
+	assert_eq(tc._use_action_for_held(), "secondary", "拿药水按住=喝(secondary)")
+	# 没了"用"钮 (击/用合一)
+	assert_null(tc.get_node_or_null("BtnUse"), "用钮已删 (击/用合一)")

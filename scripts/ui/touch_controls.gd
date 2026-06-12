@@ -60,16 +60,18 @@ func _build_ui() -> void:
 	_aim_joy.offset_right = -EDGE_MARGIN
 	_aim_joy.offset_bottom = -EDGE_MARGIN
 	add_child(_aim_joy)
-	# 击 (主): 显示手里物品图标, 点一下使用 (text="" → 只有图标). 放瞄准摇杆左边。
-	_add_action_button("BtnAttack", "primary", "", 0, Color(1.0, 0.45, 0.35))
+	# 击/用合一 (用户: 只留一个图标钮): 显示手里物品图标, 按住自动用对的操作 —
+	#   拿方块/食物/药水 → 放/吃/喝 (secondary); 拿工具/武器/法杖 → 挖/砍/攻击/射 (primary)。
+	# action="" → _add_action_button 不接固定 action, 下面自接 _on_use_down/up。
+	_add_action_button("BtnAttack", "", "", 0, Color(1.0, 0.45, 0.35))
 	_attack_btn = get_node_or_null("BtnAttack")
 	if _attack_btn != null:
 		_attack_btn.expand_icon = true   # 物品图标填满按钮 (像素图 NEAREST 不糊)
-	# 用 (放方块/副操作) + 背包 + 丢 — 都用图标, 不要字 (用户要求)
-	_add_action_button("BtnUse", "secondary", "", 1, Color(0.45, 0.85, 0.45))
+		_attack_btn.button_down.connect(_on_use_down)
+		_attack_btn.button_up.connect(_on_use_up)
+	# 背包 + 丢 (图标)
 	_add_action_button("BtnBag", "interact", "", 0, Color(0.95, 0.78, 0.4), 1)
 	_add_action_button("BtnDrop", "drop_item", "", 1, Color(0.7, 0.7, 0.75), 1)
-	_set_btn_icon("BtnUse", _glyph_icon("use"))
 	_set_btn_icon("BtnBag", _glyph_icon("bag"))
 	_set_btn_icon("BtnDrop", _glyph_icon("drop"))
 	# 右上角: 暂停
@@ -118,9 +120,10 @@ func _add_action_button(node_name: String, action: String, label: String, index:
 	btn.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
 	btn.add_theme_color_override("font_pressed_color", Color(1, 1, 1, 1.0))
 	btn.add_theme_font_size_override("font_size", 24)
-	# 按下/松开 → action_press/release. 按住一直按时长效.
-	btn.button_down.connect(func(): Input.action_press(action))
-	btn.button_up.connect(func(): Input.action_release(action))
+	# 按下/松开 → action_press/release. action="" 时不接 (调用方自接, 如击/用合一钮)。
+	if action != "":
+		btn.button_down.connect(func(): Input.action_press(action))
+		btn.button_up.connect(func(): Input.action_release(action))
 	add_child(btn)
 
 
@@ -172,19 +175,53 @@ func _update_attack_icon() -> void:
 	_attack_btn.text = ""
 
 
-func _held_item_icon() -> Texture2D:
+func _held_slot():
 	var p: Node = get_tree().get_first_node_in_group("player")
 	if p == null:
 		return null
 	var pinv: Node = p.get_node_or_null("PlayerInventory")
 	if pinv == null or not pinv.has_method("current_hotbar_slot"):
 		return null
-	var slot = pinv.current_hotbar_slot()
+	return pinv.current_hotbar_slot()
+
+
+func _held_item_icon() -> Texture2D:
+	var slot = _held_slot()
 	if slot == null:
 		return null
 	if typeof(ArtCache) == TYPE_NIL or not ArtCache.has_method("get_inventory_icon"):
 		return null
 	return ArtCache.get_inventory_icon(String(slot.item_id))
+
+
+# 按住"物品图标"钮 → 用哪个 action: 方块/食物/药水 = secondary (放/吃/喝); 工具/武器 = primary (挖/砍/攻击/射)。
+func _use_action_for_held() -> String:
+	var slot = _held_slot()
+	if slot == null:
+		return "primary"
+	if typeof(ItemDB) == TYPE_NIL or not ItemDB.has_method("get_def"):
+		return "primary"
+	var d = ItemDB.get_def(String(slot.item_id))
+	if typeof(d) != TYPE_DICTIONARY:
+		return "primary"
+	if int(d.get("placeable_tile_id", -1)) >= 0:
+		return "secondary"
+	if int(d.get("food_fill", 0)) > 0 or bool(d.get("is_potion", false)):
+		return "secondary"
+	return "primary"
+
+
+var _use_action: String = ""
+
+func _on_use_down() -> void:
+	_use_action = _use_action_for_held()
+	Input.action_press(_use_action)
+
+
+func _on_use_up() -> void:
+	if _use_action != "":
+		Input.action_release(_use_action)
+		_use_action = ""
 
 
 # 瞄准摇杆 → 把虚拟鼠标钉在 (玩家屏幕位置 + 瞄准方向 × 距离): 现有所有瞄准 (挖/放/弓) + 准星
