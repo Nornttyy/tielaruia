@@ -112,6 +112,44 @@ func spawn_muzzle_flash(pos: Vector2, dir: Vector2, color: Color) -> void:
 		_spell_one(pos, cols[i % cols.size()], Vector2(cos(ang), sin(ang)) * sp)
 
 
+# 闪电电弧: from→to 锯齿折线, 双层 (宽辉光 + 亮芯), 0.18s 淡出自毁.
+# 闪电链每跳一只怪画一道, 一眼看清电到了谁. 线宽 ≥2px (FX 可见性规矩).
+func spawn_lightning_arc(from: Vector2, to: Vector2) -> void:
+	var root: Node = _root()
+	var seg: Vector2 = to - from
+	var n: int = clampi(int(seg.length() / 14.0) + 2, 3, 8)
+	var normal: Vector2 = seg.normalized().orthogonal() if seg.length() > 0.01 else Vector2.UP
+	var pts := PackedVector2Array()
+	pts.append(Vector2.ZERO)
+	for i in range(1, n):
+		# 中间点垂直随机抖 → 锯齿 (真闪电不走直线)
+		pts.append(seg * (float(i) / float(n)) + normal * randf_range(-5.0, 5.0))
+	pts.append(seg)
+	var glow := Line2D.new()
+	glow.points = pts
+	glow.width = 5.0
+	glow.default_color = Color(1.0, 0.95, 0.55, 0.5)
+	glow.position = from
+	glow.z_index = 60
+	var core := Line2D.new()
+	core.points = pts
+	core.width = 2.5
+	core.default_color = Color8(255, 248, 190)
+	core.position = from
+	core.z_index = 61
+	root.add_child(glow)
+	root.add_child(core)
+	var tw := core.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(core, "modulate:a", 0.0, 0.18)
+	tw.tween_property(glow, "modulate:a", 0.0, 0.18)
+	tw.chain().tween_callback(func() -> void:
+		if is_instance_valid(glow):
+			glow.queue_free()
+		if is_instance_valid(core):
+			core.queue_free())
+
+
 # 法杖命中特效分发: 每种法杖 = 一个"招牌形状"(画出来的电弧/环/云) + 一撮配套粒子。
 # kind: spark(闪电弧) / gas(毒云) / sparkle(符文环) / gust(旋风) / explosion(冲击波) / splash(涟漪)
 func spawn_spell_impact(kind: String, world_pos: Vector2, base: Color = Color(1, 1, 1, 1)) -> void:

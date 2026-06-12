@@ -292,27 +292,42 @@ func _solid_at(cm, x: int, y: int) -> bool:
 	return t != Tiles.AIR and Tiles.is_solid(t)
 
 
-# 闪电连锁: 从 from_enemy 跳到半径内最近的 chain 只其他怪, 各扣 damage.
+# 闪电连锁 (接力式): 第一只 → 最近 → 次近 依次跳, 每跳从上一只出发量半径 + 画一道电弧.
+# 敌对怪 (slimes) 优先, 动物只在没敌对怪时垫底 (跟 _nearest_enemy 同规矩).
 func _do_chain(from_enemy: Node2D, src: Vector2) -> void:
 	if from_enemy == null:
 		return
-	var origin: Vector2 = from_enemy.global_position
-	var cands: Array = []
+	var hit: Dictionary = {from_enemy.get_instance_id(): true}
+	var current: Node2D = from_enemy
+	for _i in chain:
+		var next: Node2D = _chain_next(current, hit)
+		if next == null:
+			break   # 链断: 半径内没新目标了
+		hit[next.get_instance_id()] = true
+		if Effects != null and Effects.has_method("spawn_lightning_arc"):
+			Effects.spawn_lightning_arc(current.global_position, next.global_position)
+		if next.has_method("take_damage"):
+			next.take_damage(damage, src, 80.0)
+		current = next
+
+
+# 接力下一跳: current 周围 chain_radius 内没电过的怪, 敌对优先取最近. 没有 → null (链断).
+func _chain_next(current: Node2D, hit: Dictionary) -> Node2D:
 	for group in ["slimes", "animals"]:
+		var best: Node2D = null
+		var best_d: float = INF
 		for e in get_tree().get_nodes_in_group(group):
-			if e == from_enemy or e == _shooter or not is_instance_valid(e) or not e is Node2D:
+			if e == _shooter or not is_instance_valid(e) or not e is Node2D:
 				continue
-			if e.has_meta("is_remote"):
+			if e.has_meta("is_remote") or hit.has(e.get_instance_id()):
 				continue
-			var d: float = origin.distance_to((e as Node2D).global_position)
-			if d <= chain_radius:
-				cands.append({"e": e, "d": d})
-	cands.sort_custom(func(a, b): return a["d"] < b["d"])
-	var n: int = min(chain, cands.size())
-	for i in n:
-		var e = cands[i]["e"]
-		if e.has_method("take_damage"):
-			e.take_damage(damage, src, 80.0)
+			var d: float = current.global_position.distance_to((e as Node2D).global_position)
+			if d <= chain_radius and d < best_d:
+				best_d = d
+				best = e
+		if best != null:
+			return best
+	return null
 
 
 func _get_cm():
