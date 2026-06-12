@@ -1960,6 +1960,16 @@ func _try_fire_gun() -> void:
 		bullet.setup(start, aim, dmg, parent, speed, opts)
 		if NetworkManager != null and NetworkManager.connected():
 			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
+	# 枪口火光: 多弹丸也只闪一次; 颜色跟 gun_visual 走 (普通子弹枪 = 暖黄白)
+	if Effects != null and Effects.has_method("spawn_muzzle_flash"):
+		var mf_color: Color = Color8(255, 220, 140)
+		if def != null and def.has("gun_visual"):
+			mf_color = _spell_fx_color(String(def.get("gun_visual")))
+		Effects.spawn_muzzle_flash(start + base_dir * 10.0, base_dir, mf_color)
+	# 大威力枪开火震屏 (gun_shake 字段; 快枪不配 = 不震, 防晕)
+	var shake_amt: float = float(def.get("gun_shake", 0.0)) if def != null else 0.0
+	if shake_amt > 0.0 and parent.has_method("shake"):
+		parent.shake(shake_amt)
 	# 每把枪自己的声音 (gun_sfx 字段; 没配 = 默认砰)
 	SfxBank.play(String(def.get("gun_sfx", "gunshot")) if def != null else "gunshot", 0.08)
 
@@ -2121,6 +2131,10 @@ func _spell_impact_fx(visual: String) -> String:
 		"fire":      return "explosion"  # 爆裂: 大爆炸
 		"ice":       return "splash"     # 水之: 溅水花
 		"wind":      return "gust"       # 狂风: 横向风条
+		"laser":     return "spark"      # 激光/电磁炮: 星形快火花
+		"star":      return "sparkle"    # 星星: 魔法星
+		"slimeblob": return "gas"        # 史莱姆: 黏液团散开
+		"leaf":      return "sparkle"    # 绿叶: 叶屑飘散
 		_:           return "sparkle"
 
 
@@ -2132,6 +2146,10 @@ func _spell_fx_color(visual: String) -> Color:
 		"fire":      return Color8(255, 150, 40)    # 橙火
 		"ice":       return Color8(90, 180, 240)    # 冰蓝
 		"wind":      return Color8(210, 240, 255)   # 白青
+		"laser":     return Color8(255, 90, 80)     # 激光红
+		"star":      return Color8(255, 215, 90)    # 星金
+		"slimeblob": return Color8(110, 220, 90)    # 黏液绿
+		"leaf":      return Color8(120, 200, 80)    # 叶绿
 		_:           return Color8(180, 100, 235)   # 紫 (多重/魔法弹默认)
 
 

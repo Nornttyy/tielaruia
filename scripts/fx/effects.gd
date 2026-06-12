@@ -101,6 +101,17 @@ func spawn_splash(world_pos: Vector2) -> void:
 		chip.setup(world_pos + Vector2(randf_range(-3, 3), -2.0), drops[i % drops.size()], vel)
 
 
+# 枪口火光: 开火瞬间枪口处一撮亮火花朝射击方向喷 (0.1s 级短促). color 跟枪属性走.
+# FX 可见性规矩: 亮白芯 + 高速高 alpha, 一眼能看见.
+func spawn_muzzle_flash(pos: Vector2, dir: Vector2, color: Color) -> void:
+	var d: Vector2 = dir.normalized() if dir.length() > 0.01 else Vector2.RIGHT
+	var cols := [Color(1, 1, 1, 1), color, color.lightened(0.35)]
+	for i in 6:
+		var ang: float = d.angle() + randf_range(-0.45, 0.45)
+		var sp: float = randf_range(160.0, 300.0)
+		_spell_one(pos, cols[i % cols.size()], Vector2(cos(ang), sin(ang)) * sp)
+
+
 # 法杖命中特效分发: 每种法杖 = 一个"招牌形状"(画出来的电弧/环/云) + 一撮配套粒子。
 # kind: spark(闪电弧) / gas(毒云) / sparkle(符文环) / gust(旋风) / explosion(冲击波) / splash(涟漪)
 func spawn_spell_impact(kind: String, world_pos: Vector2, base: Color = Color(1, 1, 1, 1)) -> void:
