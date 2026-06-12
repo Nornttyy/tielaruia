@@ -149,6 +149,15 @@ const _DEFS := {
 	"skeleton_helmet": {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 1, "armor_slot": "helmet", "defense": 12},
 	"skeleton_chest":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 1, "armor_slot": "chest",  "defense": 20},
 	"skeleton_pants":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 1, "armor_slot": "pants",  "defense": 12},
+	# === 地狱恶魔领主 (Demon Lord): 召唤道具 + 神装掉落 (见 spec 2026-06-12) ===
+	"demon_heart":   {"placeable_tile_id": -1, "tool_kind": "summon", "tool_tier": 0, "max_stack": 1, "summon_boss": "demon_lord"},  # 恶魔之心: 地狱合成, 右键召唤恶魔领主
+	"demon_trident": {"placeable_tile_id": -1, "tool_kind": "sword",  "tool_tier": 9, "max_stack": 1, "damage_mult": 1.4, "sword_style": "sweep"},  # 恶魔三叉戟: 比地狱剑更强的近战
+	"inferno_staff": {"placeable_tile_id": -1, "tool_kind": "staff",  "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 14, "spell_damage": 26, "spell_kind": "bullet", "gun_visual": "fire", "gun_homing": 6.0, "gun_explode_radius": 30.0, "gun_explode_dmg": 14, "bullet_speed": 420},  # 烈焰法杖: 追踪爆裂大火球
+	"demon_wings":   {"placeable_tile_id": -1, "tool_kind": "",       "tool_tier": 0, "max_stack": 1},  # 恶魔之翼: 持有即生效 = 二段跳 + 滑翔 (见 player_controller)
+	# 恶魔盔甲 (各 40% 掉, 略强于骷髅套): 头14/胸22/腿14 = 总50
+	"demon_helmet":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 1, "armor_slot": "helmet", "defense": 14},
+	"demon_chest":   {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 1, "armor_slot": "chest",  "defense": 22},
+	"demon_pants":   {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 1, "armor_slot": "pants",  "defense": 14},
 	# === 地狱武器 (tier 8): 用 hell_alloy_ingot + hell_crystal_ingot 合 ===
 	"hell_sword":    {"placeable_tile_id": -1, "tool_kind": "sword",   "tool_tier": 8, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"hell_pickaxe":  {"placeable_tile_id": -1, "tool_kind": "pickaxe", "tool_tier": 8, "max_stack": 1, "damage_mult": 0.5},
@@ -175,7 +184,7 @@ const _DEFS := {
 	"multi_staff":     {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 10, "spell_damage": 6, "spell_kind": "bullet", "gun_visual": "magic", "gun_pellets": 3, "gun_spread_deg": 20.0, "bullet_speed": 420},  # 多重: 一次 3 发扇形
 	# B 波法杖: 爆炸范围 / 抛物线 / 击飞
 	"explosive_staff": {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 14, "spell_damage": 8, "spell_kind": "bullet", "gun_visual": "fire", "gun_explode_radius": 32.0, "gun_explode_dmg": 14, "bullet_speed": 400},  # 爆裂火球: 命中炸一片
-	"water_staff":     {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8, "spell_damage": 6, "spell_kind": "bullet", "gun_visual": "ice", "gun_gravity": 380.0, "gun_explode_radius": 22.0, "gun_explode_dmg": 8, "bullet_speed": 320},  # 水之: 抛物线 + 落地溅水花(visual=ice→splash, 不破方块)
+	"water_staff":     {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8, "spell_damage": 6, "spell_kind": "bullet", "gun_visual": "ice", "gun_gravity": 380.0, "gun_explode_radius": 22.0, "gun_explode_dmg": 8, "gun_explode_on_land_only": true, "bullet_lifetime": 6.0, "bullet_speed": 320},  # 水之: 抛物线水球, 一直飞到落到方块才炸溅水(穿过怪不炸, 长寿命)
 	"wind_staff":      {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 6, "spell_damage": 3, "spell_kind": "bullet", "gun_visual": "wind", "gun_knockback": 460.0, "gun_launch": true, "bullet_speed": 520},  # 狂风: 把怪弹飞
 	# C 波法杖 (全新机制, 不发普通弹):
 	"heal_staff":  {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 16, "heal_amount": 35},  # 治疗: 耗魔力给自己回血

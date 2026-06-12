@@ -1833,6 +1833,7 @@ const BOW_ARROW_DAMAGE := 5    # base, 后续乘 tier multiplier
 const GUN_COOLDOWN := 0.22     # 比弓快 (连发感)
 const GUN_BULLET_DAMAGE := 9   # base, 比箭(5)狠; 后续乘 tier multiplier
 const STAFF_COOLDOWN := 0.5    # 法杖 cd (mana 限制为主, cd 防自动连发)
+const STAFF_BULLET_LIFETIME := 2.5   # 法杖球默认寿命 (秒) → 射程; 比枪弹 1.2 长一倍多 (用户要求加大距离)
 const SUMMON_STAFF_COOLDOWN := 0.6   # 骷髅法杖召唤 cd
 const FRIENDLY_CAP := 3              # 场上最多几个友方骷髅
 const SLIMEBALL_COOLDOWN := 0.45
@@ -2068,8 +2069,8 @@ func _proj_opts_from_def(def: Variant) -> Dictionary:
 	if def.has("gun_explode_radius"):
 		opts["explode_radius"] = float(def.get("gun_explode_radius"))
 		opts["explode_dmg"] = int(def.get("gun_explode_dmg", 0))
-	# 水之法杖 (gun_splash): 只落地才炸, 空中穿过怪不引爆 (用户要求)
-	if bool(def.get("gun_splash", false)):
+	# 水之法杖: 只落地(撞实心方块)才炸, 空中穿过怪不引爆 → 球一直飞到落到方块 (用户要求)
+	if bool(def.get("gun_explode_on_land_only", false)):
 		opts["explode_on_land_only"] = true
 	if def.has("gun_knockback"):
 		opts["knockback"] = float(def.get("gun_knockback"))
@@ -2090,6 +2091,9 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 	var vis: String = String(def.get("gun_visual", "magic"))
 	opts["impact_fx"] = _spell_impact_fx(vis)
 	opts["impact_color"] = _spell_fx_color(vis)
+	# 法杖球射程: 没单独设 bullet_lifetime 的, 用更长的默认寿命 (用户: 加大法球距离上限)
+	if not opts.has("lifetime"):
+		opts["lifetime"] = STAFF_BULLET_LIFETIME
 	var base_dir: Vector2 = target - start
 	base_dir = base_dir.normalized() if base_dir.length() > 0.01 else Vector2.RIGHT
 	for _i in max(1, pellets):
