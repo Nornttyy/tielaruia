@@ -29,6 +29,7 @@ const HarpyScene = preload("res://scenes/entities/harpy.tscn")
 const MummyScene = preload("res://scenes/entities/mummy.tscn")
 const KingSlimeScene = preload("res://scenes/entities/king_slime.tscn")
 const SkeletonKingScene = preload("res://scenes/entities/skeleton_king.tscn")
+const DemonLordScene = preload("res://scenes/entities/demon_lord.tscn")
 const CowScene = preload("res://scenes/entities/cow.tscn")
 const SheepScene = preload("res://scenes/entities/sheep.tscn")
 const PigScene = preload("res://scenes/entities/pig.tscn")
@@ -96,6 +97,7 @@ const _MP_ENTITY_SYNC_INTERVAL := 0.2
 var weather: Node
 var _active_king_slime: Node = null  # 当前存活的史莱姆王 Boss (一次只准一个)
 var _active_skeleton_king: Node = null  # 当前存活的骷髅王 Boss (一次只准一个)
+var _active_demon_lord: Node = null  # 当前存活的地狱恶魔领主 Boss (一次只准一个)
 var _slime_spawn_timer: float = 3.0  # 启动后 3s 开始刷
 var _animal_spawn_timer: float = 5.0  # 启动后 5s 开始刷动物
 var _crop_grow_timer: float = 60.0   # 作物生长 tick: 每 60s 一次, 每个 WHEAT_0/1/2 升一阶概率
@@ -503,6 +505,7 @@ func _spawn_remote_entity(kind: String) -> Node:
 	match kind:
 		"king": scene = KingSlimeScene   # 史莱姆王 Boss: client 也用真 scene → 有王冠/大体型/进 group boss → 顶部血条显示
 		"skeleton_king": scene = SkeletonKingScene   # 骷髅王 Boss: client 也用真 scene (王冠/大体型/boss 血条)
+		"demon_lord": scene = DemonLordScene   # 恶魔领主 Boss: client 也用真 scene (飞行体型/boss 血条)
 		"slime": scene = SlimeScene
 		"zombie": scene = ZombieScene
 		"spider": scene = SpiderScene
@@ -1428,8 +1431,21 @@ func spawn_boss(boss_id: String, pos: Vector2) -> bool:
 	match boss_id:
 		"skeleton_king":
 			return spawn_skeleton_king(pos)
+		"demon_lord":
+			return spawn_demon_lord(pos)
 		_:
 			return spawn_king_slime(pos)
+
+
+# 召唤地狱恶魔领主到 pos. 已有存活 → 拒绝 (一次只准一个)。生在 pos 上方一点 (飞行怪).
+func spawn_demon_lord(pos: Vector2) -> bool:
+	if _active_demon_lord != null and is_instance_valid(_active_demon_lord):
+		return false
+	var boss = DemonLordScene.instantiate()
+	entities_root.add_child(boss)
+	boss.global_position = pos + Vector2(0, -64)   # 头顶飞出
+	_active_demon_lord = boss
+	return true
 
 
 # 金字塔守卫: 给一组 spawn 点 (世界坐标) 召 mummy. chunk_manager 在
