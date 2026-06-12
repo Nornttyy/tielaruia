@@ -1912,31 +1912,13 @@ func _try_fire_gun() -> void:
 	var pellets: int = int(def.get("gun_pellets", 1)) if def != null else 1
 	var spread_deg: float = float(def.get("gun_spread_deg", 0.0)) if def != null else 0.0
 	var speed: float = float(def.get("bullet_speed", 0.0)) if def != null else 0.0  # 0 = 子弹默认速度
-	# 特殊枪机制 (激光穿透 / 冰冻减速 / 火焰外观+短寿命); 普通枪这些字段都没配 → opts 空.
-	var opts: Dictionary = {}
-	if def != null:
-		if bool(def.get("gun_pierce", false)):
-			opts["pierce"] = true
-		if def.has("gun_slow_factor"):
-			opts["slow_factor"] = float(def.get("gun_slow_factor"))
-			opts["slow_dur"] = float(def.get("gun_slow_dur", 2.0))
-		if def.has("gun_visual"):
-			opts["visual"] = String(def.get("gun_visual"))
-		if def.has("bullet_lifetime"):
-			opts["lifetime"] = float(def.get("bullet_lifetime"))
-		# 魔法机制: 追踪 / 毒 / 连锁 / 反弹 / 重力
-		if def.has("gun_homing"):
-			opts["homing"] = float(def.get("gun_homing"))
-		if def.has("gun_dot_dps"):
-			opts["dot_dps"] = int(def.get("gun_dot_dps"))
-			opts["dot_dur"] = float(def.get("gun_dot_dur", 3.0))
-		if def.has("gun_chain"):
-			opts["chain"] = int(def.get("gun_chain"))
-			opts["chain_radius"] = float(def.get("gun_chain_radius", 60.0))
-		if def.has("gun_bounce"):
-			opts["bounce"] = int(def.get("gun_bounce"))
-		if def.has("gun_gravity"):
-			opts["gravity"] = float(def.get("gun_gravity"))
+	# opts 统一走 _proj_opts_from_def (跟机制法杖共用, 一处维护; 之前这里手搓一遍重复 25 行)
+	var opts: Dictionary = _proj_opts_from_def(def)
+	# 强力枪命中特效: 慢而狠的枪 (gun_impact) 命中也放招牌特效; 快枪不配 → 不喷 (防刷屏)
+	if def != null and bool(def.get("gun_impact", false)):
+		var iv: String = String(def.get("gun_visual", ""))
+		opts["impact_fx"] = _spell_impact_fx(iv) if iv != "" else "spark"
+		opts["impact_color"] = _spell_fx_color(iv) if iv != "" else Color8(255, 230, 150)
 	_attack_cooldown = cd
 	var parent: Node2D = get_parent() as Node2D
 	if parent == null:
