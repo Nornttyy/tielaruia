@@ -11,6 +11,7 @@ extends CanvasLayer
 
 const UIStyle = preload("res://scripts/ui/ui_style.gd")
 const MpRooms = preload("res://scripts/net/mp_rooms.gd")
+const PvpArena = preload("res://scripts/world/pvp_arena.gd")   # 切模式重置竞技场 (清掉搭的方块)
 
 const _MODE_TAG := {"classic": "PVP", "magic": "PVP-MAGIC", "gun": "PVP-GUN"}
 const _COMMON := [["dirt", 64], ["iron_pickaxe", 1], ["health_potion", 5]]
@@ -149,9 +150,10 @@ func _show_modes(allow_close: bool = true) -> void:
 		_add_choice("关闭 (返回游戏)", _close)   # 用户: 退出只关面板回游戏 (离开整个房间走暂停菜单)
 
 
-# 选一个模式: 发该模式默认装备 + (换了模式才) 重连到那模式的房间. 武器之后在"切武器"面板换。
+# 选一个模式: 重置竞技场 (清掉搭的方块) + 发该模式默认装备 + (换了模式才) 重连到那模式的房间。
 func _pick_mode(mode_key: String) -> void:
 	_current_mode_key = mode_key
+	_reset_arena()                 # 切模式 = 新的一局: 把自己搭的方块清掉, 竞技场恢复干净 (用户要求)
 	_grant_loadout(mode_key, "")   # 默认武器 (魔法=铁杖, 枪=手枪, 经典=剑+弓)
 	_close()
 	var new_tag: String = String(_MODE_TAG.get(mode_key, "PVP"))
@@ -160,6 +162,21 @@ func _pick_mode(mode_key: String) -> void:
 	if new_tag != _current_tag and NetworkManager != null and NetworkManager.in_public_room:
 		_current_tag = new_tag
 		_reroute(new_tag)   # 每个模式一个房间, 互不同步 (用户要求)
+
+
+# 重置竞技场: 重新 stamp 干净竞技场 (PvpArena.build 会先清整片再铺) → 把玩家搭的方块清掉,
+# 顺手清 pvp 放置记录 + 把玩家挪回出生台. 跟"局结束重开"(pvp_scoreboard) 同款。
+func _reset_arena() -> void:
+	var w: Node = get_tree().get_first_node_in_group("world")
+	if w == null or not w.has_method("_set_tile"):
+		return
+	PvpArena.build(w)
+	var cm = w.get("chunk_manager")
+	if cm != null and cm.has_method("clear_pvp_placed"):
+		cm.clear_pvp_placed()
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player is Node2D:
+		(player as Node2D).global_position = PvpArena.random_spawn()
 
 
 # 面板 (选模式 / 切武器) 是否开着. player_inventory 据此挡滚轮 (开着时滚轮不缩放摄像机)。
