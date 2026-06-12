@@ -26,15 +26,15 @@ func _ready() -> void:
 		_:         _dur = 0.3
 
 
-# 3 道从中心向外的分叉锯齿电弧 (一次定下来, _draw 里只改透明度闪烁)
+# 5 道从中心向外的分叉锯齿电弧 (一次定下来, _draw 里只改透明度闪烁). 更长更分叉 = 更夸张
 func _gen_bolts() -> void:
-	for b in 3:
+	for b in 5:
 		var ang: float = randf_range(-PI, PI)
 		var dir: Vector2 = Vector2(cos(ang), sin(ang))
 		var p: Vector2 = Vector2.ZERO
 		var pts: PackedVector2Array = PackedVector2Array([p])
-		for seg in 4:
-			p += dir * randf_range(7.0, 13.0) + Vector2(randf_range(-6, 6), randf_range(-6, 6))
+		for seg in 5:
+			p += dir * randf_range(11.0, 20.0) + Vector2(randf_range(-9, 9), randf_range(-9, 9))
 			pts.append(p)
 		_bolts.append(pts)
 
@@ -51,38 +51,45 @@ func _draw() -> void:
 	var f: float = _t / _dur          # 进度 0→1
 	var fade: float = 1.0 - f          # 透明 1→0
 	var c: Color = base
+	# 起手白闪核: 前 25% 寿命有一团亮白圆"砰"一下 (让命中更夸张, 各形状通用)
+	if f < 0.25:
+		var ca: float = (1.0 - f / 0.25)
+		draw_circle(Vector2.ZERO, lerpf(10.0, 4.0, f / 0.25), Color(1, 1, 1, 0.7 * ca))
 	match kind:
 		"spark":
-			# 闪电: 分叉电弧 + 高频闪烁, 白芯
-			var a: float = fade * (0.55 + 0.45 * sin(_t * 90.0))
+			# 闪电: 5 道分叉电弧 + 高频闪烁, 粗白芯
+			var a: float = fade * (0.6 + 0.4 * sin(_t * 90.0))
 			for pts in _bolts:
-				draw_polyline(pts, Color(c.r, c.g, c.b, a), 2.5)
-				draw_polyline(pts, Color(1, 1, 1, a * 0.85), 1.0)
+				draw_polyline(pts, Color(c.r, c.g, c.b, a), 4.5)
+				draw_polyline(pts, Color(1, 1, 1, a * 0.9), 2.0)
 		"explosion":
-			# 火: 扩散冲击波环 (由小变大变淡)
-			var r: float = lerpf(3.0, 44.0, f)
-			draw_arc(Vector2.ZERO, r, 0.0, TAU, 40, Color(c.r, c.g, c.b, fade), 3.0 * fade + 0.8)
+			# 火: 两道扩散冲击波环 (大 + 粗 + 内圈实)
+			var r: float = lerpf(4.0, 66.0, f)
+			draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(c.r, c.g, c.b, fade), 5.0 * fade + 1.5)
+			draw_arc(Vector2.ZERO, r * 0.6, 0.0, TAU, 40, Color(c.lightened(0.3).r, c.lightened(0.3).g, c.lightened(0.3).b, fade * 0.8), 3.0 * fade + 1.0)
 		"splash":
-			# 水: 两道错开的涟漪环
-			for k in 2:
-				var rr: float = lerpf(2.0, 30.0, clampf(f + k * 0.28, 0.0, 1.0))
-				draw_arc(Vector2.ZERO, rr, 0.0, TAU, 32, Color(c.r, c.g, c.b, fade * 0.85), 2.0)
+			# 水: 三道错开的涟漪环 (更大)
+			for k in 3:
+				var rr: float = lerpf(2.0, 42.0, clampf(f + k * 0.22, 0.0, 1.0))
+				draw_arc(Vector2.ZERO, rr, 0.0, TAU, 36, Color(c.r, c.g, c.b, fade * 0.9), 3.0)
 		"gas":
-			# 毒: 扩散的半透明绿云 (实心圆变大变淡)
-			var rg: float = lerpf(4.0, 26.0, f)
-			draw_circle(Vector2.ZERO, rg, Color(c.r, c.g, c.b, fade * 0.33))
+			# 毒: 两层扩散的半透明绿云 (更大更浓)
+			var rg: float = lerpf(5.0, 38.0, f)
+			draw_circle(Vector2.ZERO, rg, Color(c.r, c.g, c.b, fade * 0.38))
+			draw_circle(Vector2.ZERO, rg * 0.6, Color(c.darkened(0.2).r, c.darkened(0.2).g, c.darkened(0.2).b, fade * 0.45))
 		"sparkle":
-			# 魔法: 旋转符文环 (环 + 6 根放射刻度)
-			var rad: float = lerpf(4.0, 22.0, f)
-			draw_arc(Vector2.ZERO, rad, 0.0, TAU, 28, Color(c.r, c.g, c.b, fade), 1.5)
+			# 魔法: 旋转符文双环 (环 + 8 根放射刻度, 更大更粗)
+			var rad: float = lerpf(5.0, 32.0, f)
+			draw_arc(Vector2.ZERO, rad, 0.0, TAU, 32, Color(c.r, c.g, c.b, fade), 3.0)
+			draw_arc(Vector2.ZERO, rad * 0.55, 0.0, TAU, 24, Color(c.lightened(0.4).r, c.lightened(0.4).g, c.lightened(0.4).b, fade * 0.8), 2.0)
 			var rot: float = _t * 6.0
-			for i in 6:
-				var ang: float = rot + i * TAU / 6.0
+			for i in 8:
+				var ang: float = rot + i * TAU / 8.0
 				var d: Vector2 = Vector2(cos(ang), sin(ang))
-				draw_line(d * (rad - 3.0), d * (rad + 3.0), Color(1, 1, 1, fade * 0.8), 1.0)
+				draw_line(d * (rad - 5.0), d * (rad + 5.0), Color(1, 1, 1, fade * 0.85), 2.0)
 		"gust":
-			# 风: 3 条向外扫的旋臂弧
-			var ext: float = lerpf(6.0, 30.0, f)
-			for i in 3:
-				var a0: float = i * TAU / 3.0 + _t * 4.0
-				draw_arc(Vector2.ZERO, ext, a0, a0 + 1.6, 12, Color(c.r, c.g, c.b, fade), 2.0)
+			# 风: 4 条向外扫的长旋臂弧 (更大更粗)
+			var ext: float = lerpf(8.0, 46.0, f)
+			for i in 4:
+				var a0: float = i * TAU / 4.0 + _t * 4.5
+				draw_arc(Vector2.ZERO, ext, a0, a0 + 2.0, 16, Color(c.r, c.g, c.b, fade), 3.5)

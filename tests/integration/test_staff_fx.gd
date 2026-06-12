@@ -52,6 +52,23 @@ func test_gun_bullet_has_no_impact_fx() -> void:
 	assert_eq(b._impact_fx, "", "枪弹不放命中特效")
 
 
+func test_staff_bullet_has_trail_and_glow() -> void:
+	# 法杖弹 (带 impact_fx) → 弹体放大 + 发光光晕 + 拖尾; 普通枪弹没有
+	var b = BulletScene.instantiate()
+	add_child_autofree(b)
+	b.setup(Vector2(0, 0), Vector2(100, 0), 5, null, 200.0, {"impact_fx": "spark", "impact_color": Color8(255, 235, 90)})
+	await wait_frames(2)
+	assert_true(b._trail != null, "法杖弹该有拖尾")
+	assert_true(b._glow != null, "法杖弹该有发光光晕")
+	assert_gt(b._trail.get_point_count(), 0, "拖尾飞几帧后该记下点")
+
+	var g = BulletScene.instantiate()
+	add_child_autofree(g)
+	g.setup(Vector2(0, 0), Vector2(100, 0), 5, null, 200.0, {})
+	await wait_frames(2)
+	assert_true(g._trail == null and g._glow == null, "普通枪弹不加拖尾/光晕")
+
+
 func test_bullet_impact_spawns_particles_on_destroy() -> void:
 	var b = BulletScene.instantiate()
 	add_child_autofree(b)

@@ -37,6 +37,9 @@ var knockback: float = 140.0    # 击退力度 (狂风法杖调很大 = 弹飞)
 var launch: bool = false        # true = 击退带上抛 (把怪打飞起来, 狂风法杖)
 var _impact_color: Color = Color(0, 0, 0, 0)  # 命中特效的基色 (法杖才设; 枪不设 → 不喷, 防快枪刷屏)
 var _impact_fx: String = ""     # 命中特效形状 spark/gas/sparkle/gust/explosion/splash (空=不放, 给枪用)
+var _trail: Line2D = null       # 法杖弹的发光拖尾 (top_level, 记录飞过的点)
+var _glow: Sprite2D = null      # 法杖弹的发光光晕 (弹体后面一圈柔光)
+const TRAIL_MAX_PTS := 12       # 拖尾最多记几个点 (越多越长)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -72,6 +75,9 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, spe
 	velocity = dir * spd
 	rotation = velocity.angle()   # sprite 朝飞行方向 (子弹直线, 整程不变向)
 	_apply_visual()   # setup 在 add_child 后调 → sprite 已就绪, 换成对应贴图
+	# 法杖弹 (impact_fx 有值): 弹体放大 + 加发光光晕 + 拖尾, 让它"更像魔法弹" (枪弹不加)
+	if _impact_fx != "" and _impact_color.a > 0.0:
+		_make_staff_visuals(_impact_color)
 
 
 # 按 _visual 换投射物贴图 (激光/火焰/冰用现成的发光弹贴图, 普通用子弹).
@@ -96,6 +102,52 @@ func _apply_visual() -> void:
 	var names: PackedStringArray = frames.get_animation_names()
 	if names.size() > 0:
 		sprite.play(names[0])
+
+
+# 法杖弹专属"重画": 弹体放大 1.5x + 身后一圈加色柔光 (additive) + 一条发光拖尾。
+func _make_staff_visuals(color: Color) -> void:
+	if sprite != null:
+		sprite.scale = Vector2(1.5, 1.5)   # 弹体更大更显眼
+	# 发光光晕: 柔光圆 + 叠加混合 (发光感), 放弹体后面
+	var glow := Sprite2D.new()
+	glow.texture = ArtCache.radial_gradient(20)
+	glow.modulate = Color(color.r, color.g, color.b, 0.75)
+	glow.scale = Vector2(1.6, 1.6)
+	glow.z_index = -1
+	var gmat := CanvasItemMaterial.new()
+	gmat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = gmat
+	add_child(glow)
+	_glow = glow
+	# 拖尾: top_level Line2D 记飞过的点, 头粗尾细 + 头亮尾透明 (像彗星尾)
+	var tr := Line2D.new()
+	tr.top_level = true            # 不跟弹体旋转/位移, 点用世界坐标
+	tr.width = 7.0
+	tr.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	tr.end_cap_mode = Line2D.LINE_CAP_ROUND
+	tr.joint_mode = Line2D.LINE_JOINT_ROUND
+	var wc := Curve.new()
+	wc.add_point(Vector2(0.0, 0.0))   # 尾 (旧点) 细
+	wc.add_point(Vector2(1.0, 1.0))   # 头 (新点) 粗
+	tr.width_curve = wc
+	var grad := Gradient.new()
+	grad.set_color(0, Color(color.r, color.g, color.b, 0.0))   # 尾透明
+	grad.set_color(1, Color(color.r, color.g, color.b, 0.7))   # 头亮
+	tr.gradient = grad
+	var tmat := CanvasItemMaterial.new()
+	tmat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	tr.material = tmat
+	add_child(tr)
+	_trail = tr
+
+
+# 每帧把当前位置塞进拖尾尾端, 超长就丢最旧的点 (尾巴跟着弹体走)
+func _update_trail() -> void:
+	if _trail == null:
+		return
+	_trail.add_point(global_position)
+	while _trail.get_point_count() > TRAIL_MAX_PTS:
+		_trail.remove_point(0)
 
 
 const HIT_RADIUS_PX := 10.0   # 飞行线段到怪中心 ≤ 此值算击中 (大点更好打中, 不那么"擦边没伤害")
@@ -153,6 +205,7 @@ func _physics_process(delta: float) -> void:
 			return
 	var prev_pos: Vector2 = global_position
 	global_position = next
+	_update_trail()   # 弹体走到哪, 拖尾跟到哪
 	# 手动撞怪. 联机视觉副本 (is_remote) 不撞, 伤害由发起端 host 算.
 	if not has_meta("is_remote"):
 		_check_enemy_hit(prev_pos)
@@ -273,7 +326,24 @@ func _destroy() -> void:
 	# 法杖命中特效: 按 _impact_fx 形状放 (闪电星/毒云/魔法星/风条/火爆/水花). 枪没设 → 跳过 (防刷屏)。
 	if _impact_fx != "" and Effects != null:
 		Effects.spawn_spell_impact(_impact_fx, global_position, _impact_color)
+	_release_trail()   # 拖尾别跟着弹一起瞬间消失 → 脱离弹体, 原地渐隐 0.25s
 	queue_free()
+
+
+# 销毁时把拖尾交还给场景, 渐隐后自删 (否则拖尾随弹 queue_free 一下子没了, 很突兀)
+func _release_trail() -> void:
+	if _trail == null or not is_instance_valid(_trail):
+		return
+	var tr := _trail
+	_trail = null
+	var parent := get_parent()
+	if parent == null:
+		return
+	remove_child(tr)
+	parent.add_child(tr)
+	var tw := tr.create_tween()
+	tw.tween_property(tr, "modulate:a", 0.0, 0.25)
+	tw.tween_callback(tr.queue_free)
 
 
 # 点 p 到线段 [a,b] 的最近距离 (扫掠命中判定: 防快子弹两帧间跳过怪)
