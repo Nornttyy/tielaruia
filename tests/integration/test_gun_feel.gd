@@ -107,7 +107,7 @@ func test_muzzle_fx_kind_per_gun_family() -> void:
 		"arcane_gun": "rune", "twin_magic_gun": "rune",
 		"poison_gun": "drip", "venom_gun": "drip",
 		"slime_gun": "splat", "leaf_gun": "leaves",
-		"star_gun": "star", "ricochet_gun": "star",
+		"star_gun": "star", "slime_smg": "splat",
 	}
 	for id in expect:
 		assert_eq(pa._muzzle_fx_kind(ItemDB.get_def(id)), expect[id], id + " 的枪口形状")

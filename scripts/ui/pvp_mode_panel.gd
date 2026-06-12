@@ -31,7 +31,7 @@ const _STAFFS := [
 const _GUNS := [
 	# 第二批 (用户加, 排最上面方便找)
 	["minigun", "加特林"], ["twin_magic_gun", "双管魔枪"], ["rocket_gun", "追踪火箭枪"],
-	["ricochet_gun", "弹跳枪"], ["tesla_gun", "特斯拉枪"], ["cryo_gun", "寒冰炮"],
+	["slime_smg", "史莱姆冲锋枪"], ["tesla_gun", "特斯拉枪"], ["cryo_gun", "寒冰炮"],
 	["venom_gun", "剧毒枪"], ["railgun", "电磁炮"],
 	# 第一批
 	["pistol", "手枪"], ["smg", "冲锋枪"], ["assault_rifle", "突击步枪"], ["shotgun", "霰弹枪"],

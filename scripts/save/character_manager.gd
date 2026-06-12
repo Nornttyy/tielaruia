@@ -193,6 +193,7 @@ func apply_to_player(player: Node) -> void:
 			break
 	if inv_node != null and inv_node.inventory != null and card_has_items:
 		inv_node.inventory.slots = current.inventory_slots.duplicate(true)
+		ItemDB.canon_slots(inv_node.inventory.slots)   # 改名物品兼容 (弹跳枪→史莱姆冲锋枪)
 		if "hotbar_selected" in inv_node:
 			inv_node.hotbar_selected = current.hotbar_selection
 		if inv_node.has_signal("inventory_changed"):

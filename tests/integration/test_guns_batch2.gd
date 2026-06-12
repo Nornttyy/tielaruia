@@ -5,7 +5,7 @@ const CraftingPanel = preload("res://scripts/ui/crafting_panel.gd")
 const PvpModePanel = preload("res://scripts/ui/pvp_mode_panel.gd")
 
 const NEW_GUNS := [
-	"minigun", "twin_magic_gun", "rocket_gun", "ricochet_gun",
+	"minigun", "twin_magic_gun", "rocket_gun", "slime_smg",
 	"tesla_gun", "cryo_gun", "venom_gun", "railgun",
 ]
 

@@ -15,7 +15,7 @@ const GUNS := [
 	"pistol", "smg", "assault_rifle", "shotgun", "sniper", "laser_gun",
 	"flamethrower", "freeze_ray", "arcane_gun", "poison_gun", "lightning_gun",
 	"star_gun", "slime_gun", "frost_gun", "leaf_gun", "minigun", "twin_magic_gun",
-	"rocket_gun", "ricochet_gun", "tesla_gun", "cryo_gun", "venom_gun", "railgun",
+	"rocket_gun", "slime_smg", "tesla_gun", "cryo_gun", "venom_gun", "railgun",
 ]
 const STAVES := [
 	"wood_staff", "iron_staff", "hell_staff", "skull_staff", "lightning_staff",

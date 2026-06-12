@@ -653,7 +653,7 @@ const _ZH_NAMES := {
 	"minigun": "加特林",
 	"twin_magic_gun": "双管魔枪",
 	"rocket_gun": "追踪火箭枪",
-	"ricochet_gun": "弹跳枪",
+	"slime_smg": "史莱姆冲锋枪",
 	"tesla_gun": "特斯拉枪",
 	"cryo_gun": "寒冰炮",
 	"venom_gun": "剧毒枪",

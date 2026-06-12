@@ -473,6 +473,7 @@ func _apply_save_data(data: Resource) -> void:
 	var inv_node: Node = player.get_node_or_null("PlayerInventory")
 	if inv_node != null and inv_node.inventory != null:
 		inv_node.inventory.slots = data.inventory_slots.duplicate()
+		ItemDB.canon_slots(inv_node.inventory.slots)   # 改名物品兼容 (弹跳枪→史莱姆冲锋枪)
 		if "hotbar_selected" in inv_node:
 			inv_node.hotbar_selected = data.hotbar_selection
 		if inv_node.has_signal("inventory_changed"):

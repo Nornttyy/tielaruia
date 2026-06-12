@@ -1188,11 +1188,11 @@ const _RECIPES := [
 		"pattern": [["iron_ingot", "iron_ingot", "coal"], ["gold_ingot", "planks", ""]],
 		"output_id": "rocket_gun", "output_count": 1, "mirror_ok": false,
 	},
-	# 弹跳枪: 银 + 金 + 银 + 木握把
+	# 史莱姆冲锋枪: 2 史莱姆冻 + 铁枪身 + 木握把 (原弹跳枪改造)
 	{
-		"id": "ricochet_gun", "grid_size": Vector2i(3, 2),
-		"pattern": [["silver_ingot", "gold_ingot", "silver_ingot"], ["", "planks", ""]],
-		"output_id": "ricochet_gun", "output_count": 1, "mirror_ok": false,
+		"id": "slime_smg", "grid_size": Vector2i(3, 2),
+		"pattern": [["slime_jelly", "iron_ingot", "slime_jelly"], ["", "planks", ""]],
+		"output_id": "slime_smg", "output_count": 1, "mirror_ok": false,
 	},
 	# 特斯拉枪: 金 + 钻(电核) + 金 + 木握把
 	{

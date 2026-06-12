@@ -203,4 +203,7 @@ func restore(data: Dictionary) -> void:
 		if parts.size() != 2:
 			continue
 		var tile := Vector2i(int(parts[0]), int(parts[1]))
-		_chests[tile] = chests_dict[k]
+		var arr = chests_dict[k]
+		if arr is Array:
+			ItemDB.canon_slots(arr)   # 改名物品兼容 (弹跳枪→史莱姆冲锋枪)
+		_chests[tile] = arr

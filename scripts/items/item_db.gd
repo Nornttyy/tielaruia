@@ -116,7 +116,7 @@ const _DEFS := {
 	"minigun":       {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.05, "gun_damage": 4, "gun_spread_deg": 6.0, "bullet_speed": 720, "gun_sfx": "gunshot_rapid"},  # 加特林: 超快连发, 微飘, 单发弱
 	"twin_magic_gun":{"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 3, "gun_cooldown": 0.18, "gun_damage": 8, "bullet_speed": 600, "gun_visual": "magic", "gun_pellets": 2, "gun_spread_deg": 10.0, "gun_sfx": "gunshot_magic"},  # 双管魔枪: 一次 2 发魔弹
 	"rocket_gun":    {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 4, "gun_cooldown": 0.7, "gun_damage": 15, "bullet_speed": 340, "gun_visual": "fire", "gun_homing": 8.0, "bullet_lifetime": 3.0, "gun_sfx": "gunshot_heavy", "gun_shake": 2.0},  # 追踪火箭: 自动追怪
-	"ricochet_gun":  {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "gun_cooldown": 0.3, "gun_damage": 7, "bullet_speed": 520, "gun_visual": "star", "gun_bounce": 8, "bullet_lifetime": 3.0},  # 弹跳枪: 撞墙弹 8 次满屏跳
+	"slime_smg":     {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 1, "gun_cooldown": 0.09, "gun_damage": 4, "gun_spread_deg": 8.0, "bullet_speed": 460, "gun_visual": "slimeblob", "gun_bounce": 2, "gun_gravity": 420.0, "bullet_lifetime": 1.6, "gun_sfx": "gunshot_rapid"},  # 史莱姆冲锋枪: 超快喷果冻弹, 弹墙 2 次 (原弹跳枪改造)
 	"tesla_gun":     {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 5, "gun_cooldown": 0.4, "gun_damage": 8, "bullet_speed": 720, "gun_visual": "lightning", "gun_chain": 6, "gun_chain_radius": 95.0, "gun_sfx": "gunshot_laser"},  # 特斯拉: 闪电连锁 6 个
 	"cryo_gun":      {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 4, "gun_cooldown": 0.5, "gun_damage": 5, "bullet_speed": 380, "gun_visual": "ice", "gun_pellets": 3, "gun_spread_deg": 22.0, "gun_slow_factor": 0.3, "gun_slow_dur": 3.0, "bullet_lifetime": 1.0, "gun_sfx": "gunshot_ice"},  # 寒冰炮: 扇形 + 大幅冻住
 	"venom_gun":     {"placeable_tile_id": -1, "tool_kind": "gun", "tool_tier": 4, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 3, "gun_cooldown": 0.3, "gun_damage": 3, "bullet_speed": 480, "gun_visual": "poison", "gun_pierce": true, "gun_dot_dps": 9, "gun_dot_dur": 5.0, "gun_sfx": "gunshot_magic"},  # 剧毒枪: 穿透 + 强中毒
@@ -256,6 +256,23 @@ const _DEFS := {
 
 func get_def(item_id: String) -> Variant:
 	return _DEFS.get(item_id, null)
+
+
+# 改名过的物品: 旧 id → 新 id (老存档兼容). 读档时过一遍 canon_slots 就不会丢东西.
+const _RENAMED_IDS := {"ricochet_gun": "slime_smg"}
+
+
+# 单个 id 规范化 (没改过名的原样返回)
+func canon_id(item_id: String) -> String:
+	return _RENAMED_IDS.get(item_id, item_id)
+
+
+# 就地把一组槽位里的旧 id 换成新 id (读档用; 槽 = null 或 {"item_id", "count"})
+func canon_slots(slots: Array) -> void:
+	for i in slots.size():
+		var s = slots[i]
+		if s is Dictionary and s.has("item_id"):
+			s["item_id"] = canon_id(String(s["item_id"]))
 
 
 # 全部物品 id (创造模式"物品大全"用)
