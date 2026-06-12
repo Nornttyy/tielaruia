@@ -1913,9 +1913,14 @@ func _try_fire_gun() -> void:
 	var pellets: int = int(def.get("gun_pellets", 1)) if def != null else 1
 	var spread_deg: float = float(def.get("gun_spread_deg", 0.0)) if def != null else 0.0
 	var speed: float = float(def.get("bullet_speed", 0.0)) if def != null else 0.0  # 0 = 子弹默认速度
+	# 枪系颜色: 枪口形状/子弹命中爆闪/打墙火星都用它 (普通子弹枪 = 暖黄白)
+	var fam_color: Color = Color8(255, 220, 140)
+	if def != null and def.has("gun_visual"):
+		fam_color = _spell_fx_color(String(def.get("gun_visual")))
 	# opts 统一走 _proj_opts_from_def (跟机制法杖共用, 一处维护; 之前这里手搓一遍重复 25 行)
 	var opts: Dictionary = _proj_opts_from_def(def)
-	# 强力枪命中特效: 慢而狠的枪 (gun_impact) 命中也放招牌特效; 快枪不配 → 不喷 (防刷屏)
+	opts["fx_color"] = fam_color   # 子弹小命中特效 (打怪爆闪/打墙火星) 跟枪系色走
+	# 强力枪命中特效: 慢而狠的枪 (gun_impact) 命中还放大招牌特效; 快枪不配 (防刷屏)
 	if def != null and bool(def.get("gun_impact", false)):
 		var iv: String = String(def.get("gun_visual", ""))
 		opts["impact_fx"] = _spell_impact_fx(iv) if iv != "" else "spark"
@@ -1948,12 +1953,9 @@ func _try_fire_gun() -> void:
 	if shake_amt > 0.0 and parent.has_method("shake"):
 		parent.shake(shake_amt)
 	# 枪口火光: 每个枪系一种招牌形状 (星闪/扇楔/光束/火锥...), 多弹丸也只闪一次;
-	# 颜色跟 gun_visual 走 (普通子弹枪 = 暖黄白); 大威力枪形状更大 (跟 gun_shake 挂钩)
+	# 大威力枪形状更大 (跟 gun_shake 挂钩)
 	if Effects != null and Effects.has_method("spawn_muzzle_flash"):
-		var mf_color: Color = Color8(255, 220, 140)
-		if def != null and def.has("gun_visual"):
-			mf_color = _spell_fx_color(String(def.get("gun_visual")))
-		Effects.spawn_muzzle_flash(start + base_dir * 10.0, base_dir, mf_color, _muzzle_fx_kind(def), 1.0 + shake_amt * 0.25)
+		Effects.spawn_muzzle_flash(start + base_dir * 10.0, base_dir, fam_color, _muzzle_fx_kind(def), 1.0 + shake_amt * 0.25)
 	# 每把枪自己的声音 (gun_sfx 字段; 没配 = 默认砰)
 	SfxBank.play(String(def.get("gun_sfx", "gunshot")) if def != null else "gunshot", 0.08)
 
@@ -2091,6 +2093,7 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 	var vis: String = String(def.get("gun_visual", "magic"))
 	opts["impact_fx"] = _spell_impact_fx(vis)
 	opts["impact_color"] = _spell_fx_color(vis)
+	opts["fx_color"] = _spell_fx_color(vis)   # 小命中特效 (打怪爆闪/打墙火星) 同色
 	# 法杖球射程: 没单独设 bullet_lifetime 的, 用更长的默认寿命 (用户: 加大法球距离上限)
 	if not opts.has("lifetime"):
 		opts["lifetime"] = STAFF_BULLET_LIFETIME

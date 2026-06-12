@@ -102,22 +102,25 @@ func spawn_splash(world_pos: Vector2) -> void:
 		chip.setup(world_pos + Vector2(randf_range(-3, 3), -2.0), drops[i % drops.size()], vel)
 
 
-# 枪口火光: 招牌形状 (每个枪系不一样: 星闪/扇楔/光束/火锥/冰刺/电弧/符文/毒滴/果冻/叶旋)
-# + 一小撮配套火花. kind 由 player_action 按枪系映射; power 大威力枪 >1 形状更大.
+# 枪口火光: 招牌形状 (每个枪系不一样: 星闪/扇楔/光束/火锥/冰刺/电弧/符文/毒滴/果冻/叶旋).
+# 纯形状零粒子 (用户: 把粒子删除). kind 由 player_action 按枪系映射; power 大威力枪 >1 形状更大.
 func spawn_muzzle_flash(pos: Vector2, dir: Vector2, color: Color, kind: String = "star", power: float = 1.0) -> void:
 	var d: Vector2 = dir.normalized() if dir.length() > 0.01 else Vector2.RIGHT
-	# 招牌形状 (用户: 不要全是粒子 — 形状才有辨识度)
 	var fx = MuzzleFlashFxScene.instantiate()
 	_root().add_child(fx)
 	fx.global_position = pos
 	if fx.has_method("setup"):
 		fx.setup(kind, d, color, power)
-	# 配套火花减量 (3 颗点缀, 主角是形状)
-	var cols := [Color(1, 1, 1, 1), color, color.lightened(0.35)]
-	for i in 3:
-		var ang: float = d.angle() + randf_range(-0.45, 0.45)
-		var sp: float = randf_range(160.0, 300.0)
-		_spell_one(pos, cols[i % cols.size()], Vector2(cos(ang), sin(ang)) * sp)
+
+
+# 子弹命中特效: kind="hit" 打中怪的放射爆闪 / "wallhit" 打到方块的反弹火星.
+# dir = 子弹飞行方向 (wallhit 的火星往反方向溅). 所有枪都放 (寿命 ~0.17s, 快枪也不堆).
+func spawn_bullet_impact(pos: Vector2, dir: Vector2, color: Color, kind: String = "hit") -> void:
+	var fx = MuzzleFlashFxScene.instantiate()
+	_root().add_child(fx)
+	fx.global_position = pos
+	if fx.has_method("setup"):
+		fx.setup(kind, dir, color, 1.0)
 
 
 # 闪电电弧: from→to 锯齿折线, 双层 (宽辉光 + 亮芯), 0.18s 淡出自毁.

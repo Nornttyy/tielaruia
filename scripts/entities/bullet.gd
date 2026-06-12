@@ -35,8 +35,9 @@ var explode_dmg: int = 0        # 爆炸伤害 (0 → 用 damage)
 var explode_on_land_only: bool = false  # true = 只在落地(撞实心)才炸, 空中穿过怪不炸 (水之法杖: 像水球, 砸地才溅)
 var knockback: float = 140.0    # 击退力度 (狂风法杖调很大 = 弹飞)
 var launch: bool = false        # true = 击退带上抛 (把怪打飞起来, 狂风法杖)
-var _impact_color: Color = Color(0, 0, 0, 0)  # 命中特效的基色 (法杖才设; 枪不设 → 不喷, 防快枪刷屏)
-var _impact_fx: String = ""     # 命中特效形状 spark/gas/sparkle/gust/explosion/splash (空=不放, 给枪用)
+var _impact_color: Color = Color(0, 0, 0, 0)  # 大招牌特效的基色 (法杖/gun_impact 强力枪才设)
+var _impact_fx: String = ""     # 大招牌特效形状 spark/gas/sparkle/gust/explosion/splash (空=不放)
+var _fx_color: Color = Color8(255, 220, 140)  # 小命中特效基色 (所有弹都有: 打怪爆闪/打墙火星, 跟枪系色走)
 var _trail: Line2D = null       # 法杖弹的发光拖尾 (top_level, 记录飞过的点)
 var _glow: Sprite2D = null      # 法杖弹的发光光晕 (弹体后面一圈柔光)
 const TRAIL_MAX_PTS := 12       # 拖尾最多记几个点 (越多越长)
@@ -67,6 +68,7 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, spe
 	launch = bool(opts.get("launch", false))
 	_impact_color = opts.get("impact_color", Color(0, 0, 0, 0))
 	_impact_fx = String(opts.get("impact_fx", ""))
+	_fx_color = opts.get("fx_color", Color8(255, 220, 140))
 	var lt: float = float(opts.get("lifetime", 0.0))
 	if lt > 0.0:
 		_lifetime = lt
@@ -183,6 +185,7 @@ func _physics_process(delta: float) -> void:
 		var tx: int = int(floor(next.x / TILE_SIZE))
 		var ty: int = int(floor(next.y / TILE_SIZE))
 		if _solid_at(cm, tx, ty):
+			var in_dir: Vector2 = velocity   # 撞墙前的飞行方向 (火星往反方向溅)
 			if bounce > 0:
 				# 反弹: 判断撞横墙还是地板/天花板, 翻对应速度分量, 不移进墙
 				bounce -= 1
@@ -197,10 +200,16 @@ func _physics_process(delta: float) -> void:
 				else:
 					velocity = -velocity
 				rotation = velocity.angle()
+				# 弹墙火星: 每次反弹都闪一下 (看清在哪弹的)
+				if Effects != null and Effects.has_method("spawn_bullet_impact"):
+					Effects.spawn_bullet_impact(global_position, in_dir, _fx_color, "wallhit")
 				return
 			# 爆裂/水之: 撞墙也炸 (只伤怪, 不破方块)
 			if explode_radius > 0.0:
 				_explode(global_position)
+			# 打到方块: 反弹火星特效 (所有枪都有, 看清子弹打哪了)
+			if Effects != null and Effects.has_method("spawn_bullet_impact"):
+				Effects.spawn_bullet_impact(global_position, in_dir, _fx_color, "wallhit")
 			_destroy()
 			return
 	var prev_pos: Vector2 = global_position
@@ -241,6 +250,9 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 			var kb_src: Vector2 = src
 			if launch and enemy is Node2D:
 				kb_src = (enemy as Node2D).global_position - (velocity.normalized() + Vector2(0, -1.2)).normalized() * 32.0
+			# 打中怪: 放射爆闪特效 (所有枪都有, 颜色跟枪系走; 本地/远程怪都放 — 纯视觉)
+			if Effects != null and Effects.has_method("spawn_bullet_impact"):
+				Effects.spawn_bullet_impact(global_position, velocity, _fx_color, "hit")
 			if enemy.has_meta("is_remote"):
 				# 联机 client: 远程怪 host 权威, 发伤害给 host, 不本地打视觉副本
 				if NetworkManager != null and NetworkManager.connected():
@@ -281,6 +293,9 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 				NetworkManager.send_player_damage(pid, damage, knockback, psrc.x, psrc.y)
 				if rp.has_method("flash_hit"):
 					rp.flash_hit()
+				# PvP 打中对方玩家也放爆闪 (跟打怪一致)
+				if Effects != null and Effects.has_method("spawn_bullet_impact"):
+					Effects.spawn_bullet_impact(global_position, velocity, _fx_color, "hit")
 			if explode_radius > 0.0:
 				_explode(global_position)   # 爆裂/水之: 命中玩家也炸 (AoE 只伤怪, 直击靠上面 send_player_damage)
 			if not pierce:

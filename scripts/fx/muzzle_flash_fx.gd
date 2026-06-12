@@ -1,8 +1,9 @@
-# 枪口"招牌形状"特效: 每个枪系开火形状不一样 (用户: 不要全是粒子) —
-#   star=经典四角星枪口闪 / fan=霰弹扇楔 / beam=激光短光束 / flame=火锥 / frost=冰晶刺
-#   arc=小电弧 / rune=旋转符文环 / drip=毒液喷珠 / splat=果冻溅开 / leaves=叶片回旋
+# 枪械"招牌形状"特效 (开火 + 命中通用, 全部画出来, 零粒子) —
+# 枪口: star=四角星闪 / fan=霰弹扇楔 / beam=激光光束 / flame=火锥 / frost=冰晶刺
+#       arc=小电弧 / rune=旋转符文环 / drip=毒液喷珠 / splat=果冻溅开 / leaves=叶片回旋
+# 命中: hit=打中怪的放射爆闪 / wallhit=打到方块的反弹火星
 # 跟法杖 spell_impact_fx 一个套路: _draw 画形状 + 渐隐 + 寿命到自删.
-# 节点整体旋转朝射击方向, 形状全画在 +X 方向.
+# 节点整体旋转朝射击/飞行方向, 形状全画在 +X 方向.
 extends Node2D
 
 var kind: String = "star"
@@ -32,6 +33,8 @@ func _ready() -> void:
 		"leaves": _dur = 0.22
 		"frost":  _dur = 0.18
 		"beam":   _dur = 0.12
+		"hit":    _dur = 0.16; _gen_burst()
+		"wallhit": _dur = 0.18; _gen_sparks()
 		_:        _dur = 0.12
 
 
@@ -46,6 +49,20 @@ func _gen_bolts() -> void:
 			p += dir * randf_range(5.0, 9.0) * power + Vector2(randf_range(-4, 4), randf_range(-4, 4))
 			pts.append(p)
 		_bolts.append(pts)
+
+
+# 打中怪: 5 根全方向放射刺 (角度随机偏一点, 长短不一) — 一次定下来
+func _gen_burst() -> void:
+	for i in 5:
+		var ang: float = i * TAU / 5.0 + randf_range(-0.3, 0.3)
+		_bolts.append([Vector2(cos(ang), sin(ang)), randf_range(0.7, 1.3)])
+
+
+# 打到方块: 3 根往后上方反弹的火星线 (子弹朝 +X 飞来 → 火星往 -X 半球溅)
+func _gen_sparks() -> void:
+	for i in 3:
+		var ang: float = PI + randf_range(-0.9, 0.9)   # -X 方向 ± 50°
+		_bolts.append([Vector2(cos(ang), sin(ang)), randf_range(0.6, 1.2)])
 
 
 func _process(delta: float) -> void:
@@ -130,3 +147,23 @@ func _draw() -> void:
 			for i in 3:
 				var a0: float = i * TAU / 3.0 + _t * 7.0
 				draw_arc(Vector2(4, 0), ext, a0, a0 + 1.6, 8, Color(c.r, c.g, c.b, fade), 2.2)
+		"hit":
+			# 打中怪: 放射爆闪 — 5 根外冲短刺 (白芯) + 亮芯圆 + 小扩散环
+			var L: float = lerpf(3.0, 11.0, f) * power
+			for e in _bolts:
+				var d: Vector2 = e[0]
+				var m: float = e[1]
+				draw_line(d * 2.0, d * L * m, Color(c.r, c.g, c.b, fade), 2.2)
+				draw_line(d * 2.0, d * L * m * 0.6, Color(1, 1, 1, fade * 0.9), 1.2)
+			draw_circle(Vector2.ZERO, 2.5 * power * fade + 0.5, Color(1, 1, 0.9, fade))
+			draw_arc(Vector2.ZERO, lerpf(2.0, 9.0, f) * power, 0.0, TAU, 14, Color(c.r, c.g, c.b, fade * 0.6), 1.5)
+		"wallhit":
+			# 打到方块: 火星往来向反弹溅 (线越飞越远越淡) + 撞点小亮闪
+			var L: float = lerpf(2.0, 13.0, f) * power
+			for e in _bolts:
+				var d: Vector2 = e[0]
+				var m: float = e[1]
+				var tip: Vector2 = d * L * m + Vector2(0, f * 4.0)   # 火星微微下坠
+				draw_line(d * L * m * 0.4 + Vector2(0, f * 2.0), tip, Color(1, 0.9, 0.6, fade), 1.8)
+				draw_circle(tip, 1.2 * fade + 0.3, Color(c.r, c.g, c.b, fade))
+			draw_circle(Vector2.ZERO, 2.0 * power * fade + 0.5, Color(1, 1, 1, fade * 0.9))

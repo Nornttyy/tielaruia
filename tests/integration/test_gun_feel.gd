@@ -1,17 +1,83 @@
-# T3 验收: 枪口火光粒子生成; 大威力枪 def 配了合理 gun_shake; 快枪不震 (防晕).
-# 追加: 枪口招牌形状 — 每个枪系开火形状不同 (用户: 不要全是粒子).
+# T3 验收: 枪口招牌形状生成 (纯形状零粒子); 大威力枪 gun_shake 合理; 快枪不震 (防晕).
+# 追加: 子弹命中特效 — 打中怪放射爆闪 / 打到方块反弹火星 (所有枪都有).
 extends GutTest
 
 const PlayerAction = preload("res://scripts/player/player_action.gd")
 const MuzzleFxScript = preload("res://scripts/fx/muzzle_flash_fx.gd")
+const BulletScene = preload("res://scenes/entities/bullet.tscn")
 
 
-func test_muzzle_flash_spawns_particles() -> void:
+class StubMob:
+	extends Node2D
+	var hits: int = 0
+	func _ready() -> void:
+		add_to_group("slimes")
+	func take_damage(_d: int, _src: Vector2, _kb: float = 0.0) -> void:
+		hits += 1
+
+
+class StubCM:
+	extends Node
+	func _ready() -> void:
+		add_to_group("chunk_manager")
+	func get_tile(_x: int, _y: int) -> int:
+		return Tiles.STONE   # 处处实心 → 子弹一飞就撞墙
+
+
+func _fx_with_kind(root: Node, want: String) -> Node:
+	for c in root.get_children():
+		if c.get_script() == MuzzleFxScript and String(c.kind) == want:
+			return c
+	return null
+
+
+func test_muzzle_flash_spawns_shape_only() -> void:
 	var root := Node2D.new()
 	root.add_to_group("effects_root")
 	add_child_autofree(root)
 	Effects.spawn_muzzle_flash(Vector2(10, 10), Vector2.RIGHT, Color8(255, 220, 140))
-	assert_gt(root.get_child_count(), 0, "枪口火光该生成粒子")
+	assert_eq(root.get_child_count(), 1, "枪口该只生成 1 个形状节点 (零粒子)")
+	assert_eq(root.get_child(0).get_script(), MuzzleFxScript, "生成的该是招牌形状节点")
+
+
+# 子弹打中怪 → 放射爆闪 (kind=hit)
+func test_bullet_hit_enemy_spawns_burst() -> void:
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	var mob := StubMob.new()
+	add_child_autofree(mob)
+	mob.global_position = Vector2(30, 0)
+	var bullet = BulletScene.instantiate()
+	add_child_autofree(bullet)
+	bullet.setup(Vector2.ZERO, Vector2(200, 0), 5, null, 300.0, {})
+	var found: Node = null
+	for _f in 30:
+		await wait_frames(1)
+		found = _fx_with_kind(root, "hit")
+		if found != null:
+			break
+	assert_gt(mob.hits, 0, "子弹该打中怪")
+	assert_not_null(found, "打中怪该放放射爆闪 (kind=hit)")
+
+
+# 子弹打到方块 → 反弹火星 (kind=wallhit)
+func test_bullet_hit_wall_spawns_sparks() -> void:
+	var root := Node2D.new()
+	root.add_to_group("effects_root")
+	add_child_autofree(root)
+	var cm := StubCM.new()
+	add_child_autofree(cm)
+	var bullet = BulletScene.instantiate()
+	add_child_autofree(bullet)
+	bullet.setup(Vector2.ZERO, Vector2(200, 0), 5, null, 300.0, {})
+	var found: Node = null
+	for _f in 10:
+		await wait_frames(1)
+		found = _fx_with_kind(root, "wallhit")
+		if found != null:
+			break
+	assert_not_null(found, "打到方块该溅反弹火星 (kind=wallhit)")
 
 
 # 枪口招牌形状: 节点真的生成 + kind 传进去了
