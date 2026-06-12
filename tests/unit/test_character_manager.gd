@@ -36,6 +36,15 @@ func _make(name: String) -> CharacterData:
 func test_has_any_false_when_empty():
 	assert_false(cm.has_any(), "空目录 has_any=false")
 
+# 回归 (用户报: 每次进游戏多出一个"我的角色"): 开机 _ready 不该自动造角色。
+# 旧版 _ready 调 _migrate_from_world_saves, 网页 FS 没就绪时 has_any 误判 → 每次启动造一个。
+func test_ready_does_not_autocreate_character():
+	add_child(cm)                      # 触发 _ready (new() 不跑 _ready)
+	await get_tree().process_frame
+	assert_false(cm.has_any(), "_ready 不该自动造角色")
+	assert_eq(cm.list_characters().size(), 0, "_ready 后列表该为空")
+	remove_child(cm)
+
 func test_save_then_list_and_load():
 	var c = _make("阿狗")
 	c.player_max_hp = 160

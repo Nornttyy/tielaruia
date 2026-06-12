@@ -22,7 +22,11 @@ func chars_dir() -> String:
 func _ready() -> void:
 	if not DirAccess.dir_exists_absolute(chars_dir()):
 		DirAccess.make_dir_absolute(chars_dir())
-	_migrate_from_world_saves()
+	# 不再开机自动迁移/造默认角色 (用户报: 每次进游戏多出一个"我的角色")。
+	# 根因: 这行每次启动都跑, 而网页(IndexedDB)在 autoload _ready 时常还没同步好 →
+	# has_any() 误判"没角色" → 又造一个 (名字 = player_name, 多半就是"我的角色")。
+	# 现在角色创建/选择全靠显式 UI; 真没角色时由 ensure_current 在"开始游戏"那刻兜底 (那会儿 FS 已就绪)。
+	# migrate_with_saves 函数保留 (可显式调 / 老测试用), 只是不再开机自动跑。
 
 
 # 文件名清洗: 把路径相关 / 文件系统非法字符替换为 _ (照 save_manager.gd)。
