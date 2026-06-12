@@ -39,7 +39,9 @@ var _content: VBoxContainer = null
 var _title: Label = null
 var _switch_btn: Button = null
 var _opened_once: bool = false
-var _current_tag: String = "PVP"
+# 默认在"中转房"PVP-LOBBY (菜单进对战房先连这里). 选任意模式 (含经典 PVP) 都 != LOBBY → 都会搬房,
+# 所以经典玩家也离开中转房, 三个对战房里只剩主动选了该模式的人 (用户: 不同模式互不干扰)。
+var _current_tag: String = "PVP-LOBBY"
 var _current_mode_key: String = "classic"   # 当前对战模式 (切武器面板按它列武器)
 
 

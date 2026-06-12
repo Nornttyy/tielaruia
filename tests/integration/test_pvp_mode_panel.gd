@@ -143,6 +143,26 @@ func test_pick_mode_reroutes_even_when_not_connected():
 	NetworkManager.status = prev_status
 
 
+# 入口是独立中转房 PVP-LOBBY: 选经典也要搬到自己的 "PVP" 房, 不跟"还没选模式的人"同房。
+# (用户: 每个模式独立房间, 不同模式互不干扰。bug 是经典默认 tag=PVP=入口房, 选经典不搬家 → 串台)
+func test_classic_reroutes_out_of_lobby():
+	var prev_pub = NetworkManager.in_public_room
+	var prev_mode = NetworkManager.room_mode
+	var prev_status = NetworkManager.status
+	NetworkManager.in_public_room = true
+	NetworkManager.room_mode = "pvp"
+	NetworkManager.status = "hosting"
+	var panel = PvpModePanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	assert_eq(panel._current_tag, "PVP-LOBBY", "进对战房默认在中转房 PVP-LOBBY")
+	panel._pick_mode("classic")
+	assert_eq(panel._current_tag, "PVP", "选经典该搬到经典房 PVP (离开中转房, 不跟未选的人同房)")
+	NetworkManager.in_public_room = prev_pub
+	NetworkManager.room_mode = prev_mode
+	NetworkManager.status = prev_status
+
+
 # E 是开关键: 面板开着再按 → 关掉
 func test_toggle_weapon_switch_closes_when_open():
 	var panel = PvpModePanel.new()

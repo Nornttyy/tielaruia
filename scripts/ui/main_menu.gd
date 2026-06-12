@@ -1007,7 +1007,10 @@ func _on_public_survival_pressed() -> void:
 
 
 func _on_public_pvp_pressed() -> void:
-	_start_mp_after_character(_do_enter_public.bind("PVP"))
+	# 进"中转房"PVP-LOBBY (不是任何一个对战房): 进去先暂停弹模式选择, 选完才搬到对应模式的房。
+	# 这样三个对战房 (PVP/PVP-MAGIC/PVP-GUN) 里永远只有"主动选了该模式"的人, 还没选的人都在 LOBBY,
+	# 绝不串台 (用户: 每个模式独立房间, 不同模式互不干扰)。
+	_start_mp_after_character(_do_enter_public.bind("PVP-LOBBY"))
 
 
 # 真·进公共房 (选完角色后调). tag = "SV" 生存 / "PVP" 对战.
