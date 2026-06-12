@@ -1894,7 +1894,9 @@ func _try_fire_gun() -> void:
 		var mana_n: Node = get_parent().get_node_or_null("PlayerMana")
 		if mana_n == null or not mana_n.has_method("try_consume"):
 			return
-		if not mana_n.try_consume(mana_cost):
+		# 魔法枪跟法杖同款折扣 (修不一致: 之前法杖半价、魔法枪全价)
+		var in_combat_gun: bool = NetworkManager != null and NetworkManager.combat_enabled()
+		if not mana_n.try_consume(staff_mana_cost(mana_cost, in_combat_gun)):
 			return   # 魔力不够 → 不发, 不进 cooldown
 	else:
 		var consumed: bool = false
@@ -2072,6 +2074,9 @@ func _proj_opts_from_def(def: Variant) -> Dictionary:
 	if def.has("gun_explode_radius"):
 		opts["explode_radius"] = float(def.get("gun_explode_radius"))
 		opts["explode_dmg"] = int(def.get("gun_explode_dmg", 0))
+	# 水之法杖 (gun_splash): 只落地才炸, 空中穿过怪不引爆 (用户要求)
+	if bool(def.get("gun_splash", false)):
+		opts["explode_on_land_only"] = true
 	if def.has("gun_knockback"):
 		opts["knockback"] = float(def.get("gun_knockback"))
 	if bool(def.get("gun_launch", false)):

@@ -32,6 +32,7 @@ var grav: float = 0.0           # >0 = 每帧下坠 (史莱姆枪弹丸抛物线
 # B 波法杖机制: 爆炸范围伤害 / 击飞
 var explode_radius: float = 0.0 # >0 = 命中/撞墙时炸一圈, 半径内的怪都受 explode_dmg (爆裂火球/水之法杖)
 var explode_dmg: int = 0        # 爆炸伤害 (0 → 用 damage)
+var explode_on_land_only: bool = false  # true = 只在落地(撞实心)才炸, 空中穿过怪不炸 (水之法杖: 像水球, 砸地才溅)
 var knockback: float = 140.0    # 击退力度 (狂风法杖调很大 = 弹飞)
 var launch: bool = false        # true = 击退带上抛 (把怪打飞起来, 狂风法杖)
 var _impact_color: Color = Color(0, 0, 0, 0)  # 命中特效的基色 (法杖才设; 枪不设 → 不喷, 防快枪刷屏)
@@ -58,6 +59,7 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, spe
 	grav = float(opts.get("gravity", 0.0))
 	explode_radius = float(opts.get("explode_radius", 0.0))
 	explode_dmg = int(opts.get("explode_dmg", 0))
+	explode_on_land_only = bool(opts.get("explode_on_land_only", false))
 	knockback = float(opts.get("knockback", 140.0))
 	launch = bool(opts.get("launch", false))
 	_impact_color = opts.get("impact_color", Color(0, 0, 0, 0))
@@ -159,6 +161,9 @@ func _physics_process(delta: float) -> void:
 # from_pos = 这一帧移动前的位置. 用"线段(上一帧→这一帧)到怪的最近距离"判定,
 # 而不是只看落点那一个点 — 否则子弹飞太快 (步长 > 命中半径) 会从怪身上跳过去不算命中.
 func _check_enemy_hit(from_pos: Vector2) -> void:
+	# 水之法杖: 只落地才炸 → 空中直接穿过怪, 不在半空命中/引爆 (用户要求: 像水球砸地才溅).
+	if explode_on_land_only:
+		return
 	# 扫两组: slimes (敌对怪) + animals (牛羊猪 — 枪也该能打). 照 arrow.gd.
 	for group in ["slimes", "animals"]:
 		for enemy in get_tree().get_nodes_in_group(group):
@@ -231,11 +236,11 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 
 
 
-# 找最近的怪 (slimes + animals), 给追踪用. 没有则 null.
+# 找追踪目标: 敌对怪 (slimes) 优先, 一只都没有才考虑动物 — 追踪弹别丢下僵尸去追小猪.
 func _nearest_enemy() -> Node2D:
-	var best: Node2D = null
-	var best_d: float = INF
 	for group in ["slimes", "animals"]:
+		var best: Node2D = null
+		var best_d: float = INF
 		for e in get_tree().get_nodes_in_group(group):
 			if e == _shooter or not is_instance_valid(e) or not e is Node2D:
 				continue
@@ -243,7 +248,9 @@ func _nearest_enemy() -> Node2D:
 			if d < best_d:
 				best_d = d
 				best = e
-	return best
+		if best != null:
+			return best
+	return null
 
 # 爆炸: 爆心 pos 半径 explode_radius 内的怪都受伤 (爆裂火球/水之法杖); 只伤怪, 不破方块.
 func _explode(pos: Vector2) -> void:
