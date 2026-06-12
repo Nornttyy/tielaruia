@@ -13,7 +13,7 @@ const UIStyle = preload("res://scripts/ui/ui_style.gd")
 const MpRooms = preload("res://scripts/net/mp_rooms.gd")
 
 const _MODE_TAG := {"classic": "PVP", "magic": "PVP-MAGIC", "gun": "PVP-GUN"}
-const _COMMON := [["stone", 64], ["iron_pickaxe", 1], ["health_potion", 5]]
+const _COMMON := [["dirt", 64], ["iron_pickaxe", 1], ["health_potion", 5]]
 # 骷髅法杖 + 雀宝宝法杖故意不列 (召唤类: 对战房太轮椅 + 召唤动作在 player_action 里已被对战房屏蔽 → 列了也放不出)
 const _STAFFS := [
 	["wood_staff", "木魔草杖"], ["iron_staff", "铁蓝晶杖"],
