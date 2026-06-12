@@ -16,26 +16,27 @@ const _MODE_TAG := {"classic": "PVP", "magic": "PVP-MAGIC", "gun": "PVP-GUN"}
 const _COMMON := [["dirt", 64], ["iron_pickaxe", 1], ["health_potion", 5]]
 # 骷髅法杖 + 雀宝宝法杖故意不列 (召唤类: 对战房太轮椅 + 召唤动作在 player_action 里已被对战房屏蔽 → 列了也放不出)
 const _STAFFS := [
-	["wood_staff", "木魔草杖"], ["iron_staff", "铁蓝晶杖"],
-	["hell_staff", "地狱魔火法杖"],
-	# 新机制法杖 (A/B/C 波): 闪电链 / 毒 / 多重 / 爆裂 / 水弹 / 狂风 / 治疗 / 地裂
-	["lightning_staff", "闪电法杖"], ["poison_staff", "毒液法杖"], ["multi_staff", "多重魔弹法杖"],
-	["explosive_staff", "爆裂火球法杖"], ["water_staff", "水之法杖"], ["wind_staff", "狂风法杖"],
-	["heal_staff", "治疗法杖"], ["crack_staff", "地裂法杖"],
-	# 第二批 (用户加): 追踪/穿透 · 冰霜控制 · 华丽大招 · 辅助
+	# 第二批 (用户加, 排最上面方便找): 追踪/穿透 · 冰霜控制 · 华丽大招 · 辅助
 	["homing_staff", "追踪魔弹杖"], ["beam_staff", "穿透激光杖"], ["frost_staff", "冰冻减速杖"],
 	["bounce_star_staff", "弹跳星杖"], ["meteor_staff", "流星雨杖"], ["penta_staff", "五重魔弹杖"],
 	["greater_heal_staff", "强化治疗杖"], ["shield_staff", "护盾杖"],
+	# 第一批
+	["wood_staff", "木魔草杖"], ["iron_staff", "铁蓝晶杖"],
+	["hell_staff", "地狱魔火法杖"],
+	["lightning_staff", "闪电法杖"], ["poison_staff", "毒液法杖"], ["multi_staff", "多重魔弹法杖"],
+	["explosive_staff", "爆裂火球法杖"], ["water_staff", "水之法杖"], ["wind_staff", "狂风法杖"],
+	["heal_staff", "治疗法杖"], ["crack_staff", "地裂法杖"],
 ]
 const _GUNS := [
+	# 第二批 (用户加, 排最上面方便找)
+	["minigun", "加特林"], ["twin_magic_gun", "双管魔枪"], ["rocket_gun", "追踪火箭枪"],
+	["ricochet_gun", "弹跳枪"], ["tesla_gun", "特斯拉枪"], ["cryo_gun", "寒冰炮"],
+	["venom_gun", "剧毒枪"], ["railgun", "电磁炮"],
+	# 第一批
 	["pistol", "手枪"], ["smg", "冲锋枪"], ["assault_rifle", "突击步枪"], ["shotgun", "霰弹枪"],
 	["sniper", "狙击枪"], ["laser_gun", "激光枪"], ["flamethrower", "火焰喷射器"], ["freeze_ray", "冰冻枪"],
 	["arcane_gun", "追踪魔弹枪"], ["poison_gun", "毒液枪"], ["lightning_gun", "闪电链枪"], ["star_gun", "星星炮"],
 	["slime_gun", "史莱姆枪"], ["frost_gun", "冰雪枪"], ["leaf_gun", "绿叶枪"],
-	# 第二批 (用户加)
-	["minigun", "加特林"], ["twin_magic_gun", "双管魔枪"], ["rocket_gun", "追踪火箭枪"],
-	["ricochet_gun", "弹跳枪"], ["tesla_gun", "特斯拉枪"], ["cryo_gun", "寒冰炮"],
-	["venom_gun", "剧毒枪"], ["railgun", "电磁炮"],
 ]
 
 var _panel: Panel = null
