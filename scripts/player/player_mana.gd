@@ -42,6 +42,14 @@ func try_consume(cost: int) -> bool:
 	return true
 
 
+# 退还魔力 (施法取消时调, 如地裂没找到地面 → 别白扣)
+func refund(amount: int) -> void:
+	if amount <= 0:
+		return
+	current_mana = min(MAX_MANA, current_mana + amount)
+	mana_changed.emit(current_mana, MAX_MANA)
+
+
 # 满魔 (复活时调)
 func refill_full() -> void:
 	current_mana = MAX_MANA

@@ -2008,8 +2008,12 @@ func _try_cast_staff() -> void:
 	if entities == null:
 		entities = player.get_parent()
 	# 地裂法杖: 在目标地面生成一道伤害裂缝 (站上面的怪持续受伤), 不发弹.
+	# 瞄到虚空 (下方没地面) 不放 → 退还魔力 + 取消冷却 (用户: 地裂不能放在虚空)。
 	if def.has("ground_crack"):
-		_cast_ground_crack(def, start, target, player, entities)
+		if not _cast_ground_crack(def, start, target, player, entities):
+			if mana.has_method("refund"):
+				mana.refund(mana_cost)
+			_attack_cooldown = 0.0
 		return
 	# 新机制法杖 (spell_kind=="bullet"): 发"带机制的魔法弹"(复用枪的 bullet: 连锁/毒/多重等);
 	# 老元素法杖 (fire/ice/nature) 还是发元素火球.
@@ -2136,10 +2140,12 @@ func _summon_friendly() -> void:
 
 
 # 地裂法杖: 从瞄准点向下找地面, 在地表生成一道裂缝 (earth_crack). 已扣 mana.
-func _cast_ground_crack(def: Variant, _start: Vector2, target: Vector2, player: Node2D, entities: Node) -> void:
+# 在瞄准点下方的地面生成裂缝。返回 true=放好了; false=瞄到虚空(下方没地面)没放,
+# 调用方据此退还魔力 (用户: 地裂不能放在虚空)。
+func _cast_ground_crack(def: Variant, _start: Vector2, target: Vector2, player: Node2D, entities: Node) -> bool:
 	var terrain: TileMapLayer = _terrain()
 	if terrain == null:
-		return
+		return false
 	# 从瞄准点所在格往下扫, 找到第一块实心方块 → 裂缝放在它顶上
 	var tile: Vector2i = terrain.local_to_map(terrain.to_local(target))
 	var ground_y: int = -9999
@@ -2148,19 +2154,17 @@ func _cast_ground_crack(def: Variant, _start: Vector2, target: Vector2, player: 
 		if terrain.get_cell_source_id(c) != -1:
 			ground_y = c.y
 			break
-	var crack_pos: Vector2
-	if ground_y > -9999:
-		# 实心格顶部 = 该格中心上移半格
-		crack_pos = terrain.to_global(terrain.map_to_local(Vector2i(tile.x, ground_y))) + Vector2(0, -8)
-	else:
-		# 没找到地面 (空中): 就放在瞄准点
-		crack_pos = target
+	if ground_y == -9999:
+		return false   # 瞄准点下方 20 格内没地面 = 虚空, 不放 (魔力由调用方退还)
+	# 实心格顶部 = 该格中心上移半格
+	var crack_pos: Vector2 = terrain.to_global(terrain.map_to_local(Vector2i(tile.x, ground_y))) + Vector2(0, -8)
 	var crack = EarthCrackScene.instantiate()
 	entities.add_child(crack)
 	crack.global_position = crack_pos
 	if crack.has_method("setup"):
 		crack.setup(int(round(float(def.get("spell_damage", 6)) * _tool_damage_mult())), player)
 	SfxBank.play("break", 0.18)
+	return true
 
 
 # 手持召唤道具 (slime_crown) 使用 → 在玩家附近召唤 Boss, 成功则消耗 1.
