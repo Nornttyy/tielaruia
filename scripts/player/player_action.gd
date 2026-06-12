@@ -1960,7 +1960,8 @@ func _try_fire_gun() -> void:
 		bullet.setup(start, aim, dmg, parent, speed, opts)
 		if NetworkManager != null and NetworkManager.connected():
 			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
-	SfxBank.play("gunshot", 0.08)
+	# 每把枪自己的声音 (gun_sfx 字段; 没配 = 默认砰)
+	SfxBank.play(String(def.get("gun_sfx", "gunshot")) if def != null else "gunshot", 0.08)
 
 
 # 法杖发火球: 检查 mana 够 → 扣 → spawn fireball 朝鼠标飞.
@@ -2040,7 +2041,7 @@ func _try_cast_staff() -> void:
 	if NetworkManager != null and NetworkManager.connected():
 		# kind 带上元素 (fireball_nature/ice/fire), 对端按后缀还原弹色
 		NetworkManager.send_projectile("fireball_" + element, start.x, start.y, target.x, target.y)
-	SfxBank.play("break", 0.12)
+	SfxBank.play("cast", 0.12)
 
 
 # 从 def 的 gun_*/bullet_* 字段构建 bullet opts (枪 + 新法杖共用; 字段名沿用 gun_*,
@@ -2108,7 +2109,7 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 		b.setup(start, aim, dmg, parent, speed, opts)
 		if NetworkManager != null and NetworkManager.connected():
 			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
-	SfxBank.play("break", 0.12)
+	SfxBank.play("cast", 0.12)
 
 
 # 法杖弹的 visual → 命中特效的"形状" (每把法杖不同, 不再全是同一种爆炸)

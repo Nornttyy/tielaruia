@@ -25,6 +25,11 @@ func _ready() -> void:
 	_build_all()
 
 
+# 音效名是否已注册 (测试用: 防 def 里 gun_sfx 写错名)
+func has_sound(sfx_name: String) -> bool:
+	return _sfx.has(sfx_name)
+
+
 func play(sfx_name: String, pitch_variation: float = 0.05, volume_db: float = 0.0) -> void:
 	var s: AudioStreamWAV = _sfx.get(sfx_name)
 	if s == null:
@@ -91,6 +96,14 @@ func _build_all() -> void:
 	_sfx["splash"] = _whoosh(0.22, 800.0, 200.0, 0.32)
 	# 枪声: 短促"砰" — 复用 thunk 但更短/更高频/更响, 比破方块声尖利
 	_sfx["gunshot"] = _thunk(0.10, 175.0, 0.5)
+	# 枪械专属音 (T2): 不同枪不同声 — 重炮"轰" / 激光"啾" / 冰"叮" / 魔法"嗖" / 连发"哒" / 火焰"呼"
+	_sfx["gunshot_heavy"] = _thunk(0.3, 60.0, 0.8)            # 狙击/电磁炮/霰弹: 低频长轰
+	_sfx["gunshot_laser"] = _moan(0.12, 1200.0, 300.0, 0.3)   # 激光/电: 下滑"啾"
+	_sfx["gunshot_ice"] = _bell(0.12, 1500.0, 0.25)           # 冰系: 高频短叮
+	_sfx["gunshot_magic"] = _moan(0.12, 500.0, 1050.0, 0.28)  # 魔弹: 上扬"嗖"
+	_sfx["gunshot_rapid"] = _thunk(0.06, 220.0, 0.4)          # 冲锋枪/加特林: 更轻更短"哒"
+	_sfx["gunshot_flame"] = _whoosh(0.12, 0.0, 0.0, 0.4)      # 火焰喷射器: 喷气"呼"
+	_sfx["cast"] = _moan(0.2, 450.0, 1150.0, 0.3)             # 法杖施法: 魔法上扬"嗖~" (替换挖土声)
 
 
 # 雷声: 棕噪声 + 三阶超低通 + 缓慢衰减包络, 拟远距离闷雷
