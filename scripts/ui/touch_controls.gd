@@ -65,10 +65,13 @@ func _build_ui() -> void:
 	_attack_btn = get_node_or_null("BtnAttack")
 	if _attack_btn != null:
 		_attack_btn.expand_icon = true   # 物品图标填满按钮 (像素图 NEAREST 不糊)
-	# 用 (放方块/副操作) + 背包 + 丢
-	_add_action_button("BtnUse", "secondary", "用", 1, Color(0.45, 0.85, 0.45))
-	_add_action_button("BtnBag", "interact", "包", 0, Color(0.95, 0.78, 0.4), 1)
-	_add_action_button("BtnDrop", "drop_item", "丢", 1, Color(0.7, 0.7, 0.75), 1)
+	# 用 (放方块/副操作) + 背包 + 丢 — 都用图标, 不要字 (用户要求)
+	_add_action_button("BtnUse", "secondary", "", 1, Color(0.45, 0.85, 0.45))
+	_add_action_button("BtnBag", "interact", "", 0, Color(0.95, 0.78, 0.4), 1)
+	_add_action_button("BtnDrop", "drop_item", "", 1, Color(0.7, 0.7, 0.75), 1)
+	_set_btn_icon("BtnUse", _glyph_icon("use"))
+	_set_btn_icon("BtnBag", _glyph_icon("bag"))
+	_set_btn_icon("BtnDrop", _glyph_icon("drop"))
 	# 右上角: 暂停
 	_add_pause_button()
 
@@ -126,7 +129,9 @@ func _add_pause_button() -> void:
 	var r := 32.0
 	var btn := Button.new()
 	btn.name = "BtnPause"
-	btn.text = "暂停"
+	btn.text = ""
+	btn.icon = _glyph_icon("pause")
+	btn.expand_icon = true
 	btn.flat = true
 	btn.anchor_left = 1.0
 	btn.anchor_top = 0.0
@@ -159,17 +164,12 @@ func _on_pause_pressed() -> void:
 	Input.parse_input_event(ev)
 
 
-# "击"钮跟着当前选中的物品换图标 (没物品 → 退回显示"击"字)。
+# "击"钮跟着当前选中的物品换图标 (用户: 不要"击"字, 只要图标; 没物品就空着)。
 func _update_attack_icon() -> void:
 	if _attack_btn == null:
 		return
-	var tex: Texture2D = _held_item_icon()
-	if tex != null:
-		_attack_btn.icon = tex
-		_attack_btn.text = ""
-	else:
-		_attack_btn.icon = null
-		_attack_btn.text = "击"
+	_attack_btn.icon = _held_item_icon()
+	_attack_btn.text = ""
 
 
 func _held_item_icon() -> Texture2D:
@@ -219,6 +219,46 @@ func _ui_blocking() -> bool:
 	if ch != null and ch.has_method("is_open") and ch.is_open():
 		return true
 	return false
+
+
+# 给某按钮设图标 (填满 + 清文字)。
+func _set_btn_icon(node_name: String, tex: Texture2D) -> void:
+	var b: Button = get_node_or_null(node_name)
+	if b != null:
+		b.icon = tex
+		b.expand_icon = true
+		b.text = ""
+
+
+func _fill_rect(img: Image, x: int, y: int, w: int, h: int, col: Color) -> void:
+	for yy in range(y, y + h):
+		for xx in range(x, x + w):
+			if xx >= 0 and xx < img.get_width() and yy >= 0 and yy < img.get_height():
+				img.set_pixel(xx, yy, col)
+
+
+# 程序画的简单白色像素图标 (按钮用). kind: use(方块) / bag(箱子) / drop(下箭头) / pause(双竖杠)。
+func _glyph_icon(kind: String) -> ImageTexture:
+	var s := 24
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var w := Color(1, 1, 1, 0.95)
+	match kind:
+		"use":     # 放方块: 一个实心小方块
+			_fill_rect(img, 6, 6, 12, 12, w)
+		"bag":     # 背包/箱子: 箱身 + 盖
+			_fill_rect(img, 7, 5, 10, 3, w)     # 盖
+			_fill_rect(img, 5, 8, 14, 12, w)    # 箱身
+			_fill_rect(img, 11, 11, 2, 4, w)    # 锁扣 (深色靠透明做不出, 留白点意思)
+		"drop":    # 丢: 向下箭头 (杆 + 三角)
+			_fill_rect(img, 10, 3, 4, 11, w)    # 杆
+			for i in range(7):                  # 三角 (越往下越窄)
+				var hw := 7 - i
+				_fill_rect(img, 12 - hw, 14 + i, hw * 2, 1, w)
+		"pause":   # 暂停: 两条竖杠
+			_fill_rect(img, 6, 5, 4, 14, w)
+			_fill_rect(img, 14, 5, 4, 14, w)
+	return ImageTexture.create_from_image(img)
 
 
 # 检测是否手机/平板, 给 main.gd 调用决定是否实例化.
