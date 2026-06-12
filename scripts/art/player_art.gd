@@ -192,11 +192,10 @@ const _SHOE_B := [
 	"qoq",
 	"OOO",
 ]
-# 光脚 (泳裤时用)。实心脚: 脚背高光 p + 脚底深阴 e (踩地边)。腿被泳裤盖住, 脚是唯一裸皮肤=跟鞋一样分明。3 宽 × 3 高。
+# 光脚 (泳裤时用)。实心脚: 脚背高光 p。删脚底那排(用户要求)。腿被泳裤盖住, 脚是唯一裸皮肤。3 宽 × 2 高。
 const _FOOT_BARE := [
 	"sp.",
 	"sss",
-	"eee",
 ]
 # 背心款手臂 (露胳膊, 全皮肤 + 前缘高光 p)。2 宽 × 6 高。
 const _ARM_BARE := [
@@ -411,6 +410,11 @@ static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 		_:          # idle/hurt: 站立, 两腿分开 (脚之间留空隙, 不挨着)
 			_put_leg(g, 5, _HIP, 4, leg, foot)
 			_put_leg(g, 9, _HIP, 4, leg, foot)
+			# 两腿顶部连接 (用户要求): 填裆缝上 2 行, 腿从胯下一截才分开
+			var lw := (leg[0] as String).length()
+			if 4 - lw > 0:
+				var crotch := "b".repeat(4 - lw)
+				_place(g, _HIP, 5 + lw, [crotch, crotch])
 	if ps == 2:
 		_place(g, _HIP - 1, 4, _SKIRT)   # 裙子盖胯+大腿上段, 裸腿露在裙下
 	return g
