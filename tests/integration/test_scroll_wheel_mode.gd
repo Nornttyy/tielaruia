@@ -40,3 +40,22 @@ func test_scroll_switches_items_or_zooms() -> void:
 	# 还原设置 (setter 会落盘)
 	GameSettings.scroll_wheel_zoom = saved_mode
 	GameSettings.camera_zoom = saved_zoom
+
+
+# 用户报: 对战房选武器面板滑动时摄像机会跟着缩放. 面板开着 → 滚轮该被挡 (不缩放)。
+func test_weapon_panel_open_blocks_scroll_zoom() -> void:
+	var prev_mode = NetworkManager.room_mode
+	var panel = preload("res://scripts/ui/pvp_mode_panel.gd").new()
+	add_child_autofree(panel)
+	var inv = preload("res://scripts/player/player_inventory.gd").new()
+	add_child_autofree(inv)
+	await wait_frames(1)
+	assert_false(inv._is_inventory_ui_open(), "面板没开时: 滚轮正常 (可缩放)")
+	NetworkManager.room_mode = "pvp"
+	panel._show_weapon_switch()
+	panel._set_open(true, false)   # 开切武器面板 (不暂停)
+	assert_true(panel.is_open(), "切武器面板开着")
+	assert_true(inv._is_inventory_ui_open(), "切武器面板开着 → 滚轮被挡, 不缩放摄像机")
+	panel._close()
+	assert_false(inv._is_inventory_ui_open(), "关掉后滚轮恢复")
+	NetworkManager.room_mode = prev_mode

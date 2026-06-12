@@ -151,6 +151,11 @@ func _pick_mode(mode_key: String) -> void:
 		_reroute(new_tag)   # 每个模式一个房间, 互不同步 (用户要求)
 
 
+# 面板 (选模式 / 切武器) 是否开着. player_inventory 据此挡滚轮 (开着时滚轮不缩放摄像机)。
+func is_open() -> bool:
+	return _panel != null and _panel.visible
+
+
 # ---- 切武器视图 (战斗房按 E/包键打开, 见 player_action._try_open_workbench_or_close) ----
 # 列出当前模式全部武器, 点一下换上, 不换房。E 再按一下关掉 (开关键)。
 func toggle_weapon_switch() -> void:

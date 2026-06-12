@@ -45,13 +45,17 @@ func _unhandled_input(event: InputEvent) -> void:
 				set_hotbar_selection((hotbar_selected + 1) % 9)
 
 
-# 合成/箱子面板任一打开 → 滚轮归面板里的列表滚动 (不缩放摄像机, 不切快捷栏)
+# 合成/箱子/对战房切武器 面板任一打开 → 滚轮归面板列表滚动 (不缩放摄像机, 不切快捷栏)
 func _is_inventory_ui_open() -> bool:
 	var c: Node = get_tree().get_first_node_in_group("crafting_panel")
 	var ch: Node = get_tree().get_first_node_in_group("chest_panel")
 	if c != null and c.has_method("is_open") and c.is_open():
 		return true
 	if ch != null and ch.has_method("is_open") and ch.is_open():
+		return true
+	# 对战房选武器/选模式面板开着时, 滚轮别缩放摄像机 (用户报: 选武器滑动时摄像机会变)
+	var mp: Node = get_tree().get_first_node_in_group("pvp_mode_panel")
+	if mp != null and mp.has_method("is_open") and mp.is_open():
 		return true
 	return false
 
