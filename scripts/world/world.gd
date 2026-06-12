@@ -381,6 +381,7 @@ var _remote_entities: Dictionary = {}
 var _picked_up_drop_ids: Dictionary = {}   # client 已捡 ent_id (防 host 0.2s 广播复活)
 var _tile_batch: PackedInt32Array = PackedInt32Array()  # 批量广播 buf
 var _tile_batching: bool = false
+var _arena_building: bool = false   # PvpArena.build 期间 true: 地基铺设不广播 (各端本地铺, 防洪水)
 
 
 # 取字典里的 remote 实体, 自动清理 freed 引用 (queue_free 后 Node 引用不变 null,
@@ -580,9 +581,6 @@ func end_tile_batch() -> void:
 
 
 func _on_remote_tile_batch(changes: PackedInt32Array) -> void:
-	# 对战房: 方块各房独立, 忽略对方的方块改动 (防御: 正常 pvp 端根本不发)。
-	if NetworkManager != null and NetworkManager.room_mode == "pvp":
-		return
 	var i: int = 0
 	while i + 2 < changes.size():
 		var x: int = changes[i]
@@ -597,9 +595,6 @@ func _on_remote_tile_batch(changes: PackedInt32Array) -> void:
 
 
 func _on_remote_tile(x: int, y: int, tile_id: int) -> void:
-	# 对战房: 方块各房独立, 忽略对方的方块改动 (防御: 正常 pvp 端根本不发)。
-	if NetworkManager != null and NetworkManager.room_mode == "pvp":
-		return
 	# 对方挖/放方块 → 本地应用, 不再广播 (from_remote=true)
 	# 水类 tile 走 fast path (跳过 darkness/lighting 防卡帧)
 	if tile_id == Tiles.WATER or tile_id == Tiles.WATER_L1 \
@@ -1829,9 +1824,10 @@ func get_crack_overlay() -> Node:
 func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_sand: bool = false) -> void:
 	# skip_sand=true 防止沙子物理递归 (沙下落时不再触发它自己)
 	# from_remote=true 时不再广播 (避免循环). 本地玩家挖/放 → 广播给联机对方
-	# 对战房: 方块各房独立, 不广播 (用户要求 — 每个模式是独立房间, 改地形互不影响)。
+	# 玩家挖/放 → 广播给同房间的人 (对战房也广播 = 看得到彼此搭的方块, 用户改).
+	# 但竞技场地基 (PvpArena.build 几万格) 不广播: _arena_building 期间跳过, 各端本地自己铺 (防洪水)。
 	if not from_remote and NetworkManager != null and NetworkManager.connected() \
-			and NetworkManager.room_mode != "pvp":
+			and not _arena_building:
 		if _tile_batching:
 			_tile_batch.append(x); _tile_batch.append(y); _tile_batch.append(tile_id)
 		else:
@@ -2026,9 +2022,9 @@ func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = fals
 	else:
 		terrain_layer.set_cell(pos, _display_water_tile(x, tile_id), Vector2i.ZERO)
 	# host 广播给 client (但不接收方再回播, 避免回声). 批量模式累积到 buf
-	# 对战房: 方块各房独立, 不广播 (用户要求 — 每个模式是独立房间, 改地形互不影响)。
+	# 对战房也广播 (看得到彼此); 但竞技场地基期间 (_arena_building) 不广播 (防洪水)。
 	if not from_remote and NetworkManager != null and NetworkManager.connected() \
-			and NetworkManager.room_mode != "pvp":
+			and not _arena_building:
 		if _tile_batching:
 			_tile_batch.append(x); _tile_batch.append(y); _tile_batch.append(tile_id)
 		else:

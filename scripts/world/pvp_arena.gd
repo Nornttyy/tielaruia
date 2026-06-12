@@ -40,6 +40,9 @@ const _TIERS := [
 static func build(world) -> Vector2:
 	if world == null or not world.has_method("_set_tile"):
 		return Vector2.ZERO
+	# 地基铺设期间不广播 tile (几万格): 各端各自本地铺同一张图, 只有玩家手动搭/挖才同步 (防洪水)。
+	if "_arena_building" in world:
+		world._arena_building = true
 	var cx: int = CENTER_X
 	var floor_y: int = FLOOR_Y
 
@@ -85,6 +88,8 @@ static func build(world) -> Vector2:
 			for y in range(floor_y - 40, floor_y + 2):
 				mm.mark_one(cm, x, y)
 
+	if "_arena_building" in world:
+		world._arena_building = false   # 地基铺完, 之后玩家搭/挖正常广播
 	# 出生点: 左侧出生台正上方
 	return Vector2(float(cx - 140) * TILE_SIZE + TILE_SIZE * 0.5, float(floor_y - 5) * TILE_SIZE)
 
