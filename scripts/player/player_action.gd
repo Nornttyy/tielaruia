@@ -2084,8 +2084,9 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 	opts["impact_color"] = fx_color
 	var base_dir: Vector2 = target - start
 	base_dir = base_dir.normalized() if base_dir.length() > 0.01 else Vector2.RIGHT
-	# 杖头施法闪: 在身前一点喷一撮同色火花 (每次施法都看得到, 哪怕没命中)
-	if Effects != null:
+	# 杖头施法闪: 在身前一点喷一撮同色火花 (每次施法都看得到, 哪怕没命中)。
+	# 抛物线/溅水类法杖 (水之) 跳过 — 它的特效是"落地溅水花", 发射时再闪会被当成"还没落地就触发了" (用户反馈)。
+	if Effects != null and _staff_has_cast_flash(def):
 		Effects.spawn_explosion(start + base_dir * 14.0, fx_color)
 	for _i in max(1, pellets):
 		var dir: Vector2 = base_dir
@@ -2098,6 +2099,12 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 		if NetworkManager != null and NetworkManager.connected():
 			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
 	SfxBank.play("break", 0.12)
+
+
+# 这把法杖发射时杖头要不要闪一下. 抛物线落地类 (gun_splash, 如水之) 不闪 —
+# 它的特效是"落地溅水花", 发射就闪会让人以为"还没飞出去就触发了" (用户反馈)。
+func _staff_has_cast_flash(def: Variant) -> bool:
+	return not bool(def.get("gun_splash", false))
 
 
 # 法杖弹的 visual → 施法/命中火花的颜色 (跟弹色一致, 一眼能认是哪把法杖)

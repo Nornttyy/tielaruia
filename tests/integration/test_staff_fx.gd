@@ -58,6 +58,15 @@ func test_water_staff_carries_splash_opt() -> void:
 	assert_true(opts.get("splash", false), "_proj_opts_from_def 把 gun_splash 转成 opts.splash")
 
 
+func test_water_staff_no_cast_flash_others_yes() -> void:
+	# 用户: 水之法杖发射时不该闪 (它的特效是落地溅水); 别的法杖发射闪一下 OK
+	var pa = PlayerAction.new()
+	add_child_autofree(pa)
+	assert_false(pa._staff_has_cast_flash(ItemDB.get_def("water_staff")), "水之法杖发射不闪 (特效在落地)")
+	assert_true(pa._staff_has_cast_flash(ItemDB.get_def("lightning_staff")), "闪电法杖发射要闪")
+	assert_true(pa._staff_has_cast_flash(ItemDB.get_def("poison_staff")), "毒液法杖发射要闪")
+
+
 func test_water_bullet_splashes_on_explode() -> void:
 	# 水弹炸开 (落地/命中) 该溅一片水花 (spawn_splash 8 颗水滴)
 	var b = BulletScene.instantiate()
