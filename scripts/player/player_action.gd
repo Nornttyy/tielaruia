@@ -1995,9 +1995,10 @@ func _try_cast_staff() -> void:
 		var hp: Node = player.get_node_or_null("PlayerHealth")
 		if hp != null and hp.has_method("heal"):
 			hp.heal(int(def.get("heal_amount")))
-		# 治疗特效: 玩家身上爆一撮绿色 + 飘个绿色回血数字 (一眼看出"我在回血")
+		# 治疗特效: 玩家身上飘散一圈绿色魔法星 + 绿色回血数字 (一眼看出"我在回血")
 		if Effects != null:
-			Effects.spawn_explosion(player.global_position + Vector2(0, -8), Color8(120, 230, 110))
+			if Effects.has_method("spawn_spell_impact"):
+				Effects.spawn_spell_impact("sparkle", player.global_position + Vector2(0, -8), Color8(120, 230, 110))
 			if Effects.has_method("spawn_damage_number"):
 				Effects.spawn_damage_number(player.global_position + Vector2(0, -18), int(def.get("heal_amount")), Color8(120, 230, 110))
 		SfxBank.play("pickup", 0.1)
@@ -2066,9 +2067,6 @@ func _proj_opts_from_def(def: Variant) -> Dictionary:
 		opts["knockback"] = float(def.get("gun_knockback"))
 	if bool(def.get("gun_launch", false)):
 		opts["launch"] = true
-	# 水之法杖: 炸开时额外溅水花
-	if bool(def.get("gun_splash", false)):
-		opts["splash"] = true
 	return opts
 
 
@@ -2079,15 +2077,13 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 	var pellets: int = int(def.get("gun_pellets", 1))
 	var spread_deg: float = float(def.get("gun_spread_deg", 0.0))
 	var opts: Dictionary = _proj_opts_from_def(def)
-	# 法杖特效: 命中爆一撮元素色火花 (bullet 销毁时放). 颜色按弹的 visual 走。
-	var fx_color: Color = _spell_fx_color(String(def.get("gun_visual", "magic")))
-	opts["impact_color"] = fx_color
+	# 法杖特效: 命中时按 visual 放对应形状的粒子 (闪电星/毒云/魔法星/风条/火爆/水花), 颜色也按 visual。
+	# 不再发射时闪 (用户: 别的法杖也别在发射就触发) — 飞行弹本身就看得见, 命中才放特效。
+	var vis: String = String(def.get("gun_visual", "magic"))
+	opts["impact_fx"] = _spell_impact_fx(vis)
+	opts["impact_color"] = _spell_fx_color(vis)
 	var base_dir: Vector2 = target - start
 	base_dir = base_dir.normalized() if base_dir.length() > 0.01 else Vector2.RIGHT
-	# 杖头施法闪: 在身前一点喷一撮同色火花 (每次施法都看得到, 哪怕没命中)。
-	# 抛物线/溅水类法杖 (水之) 跳过 — 它的特效是"落地溅水花", 发射时再闪会被当成"还没落地就触发了" (用户反馈)。
-	if Effects != null and _staff_has_cast_flash(def):
-		Effects.spawn_explosion(start + base_dir * 14.0, fx_color)
 	for _i in max(1, pellets):
 		var dir: Vector2 = base_dir
 		if spread_deg > 0.0:
@@ -2101,10 +2097,16 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 	SfxBank.play("break", 0.12)
 
 
-# 这把法杖发射时杖头要不要闪一下. 抛物线落地类 (gun_splash, 如水之) 不闪 —
-# 它的特效是"落地溅水花", 发射就闪会让人以为"还没飞出去就触发了" (用户反馈)。
-func _staff_has_cast_flash(def: Variant) -> bool:
-	return not bool(def.get("gun_splash", false))
+# 法杖弹的 visual → 命中特效的"形状" (每把法杖不同, 不再全是同一种爆炸)
+func _spell_impact_fx(visual: String) -> String:
+	match visual:
+		"lightning": return "spark"      # 闪电: 星形快火花
+		"poison":    return "gas"        # 毒: 慢散毒云
+		"magic":     return "sparkle"    # 多重: 飘散魔法星
+		"fire":      return "explosion"  # 爆裂: 大爆炸
+		"ice":       return "splash"     # 水之: 溅水花
+		"wind":      return "gust"       # 狂风: 横向风条
+		_:           return "sparkle"
 
 
 # 法杖弹的 visual → 施法/命中火花的颜色 (跟弹色一致, 一眼能认是哪把法杖)

@@ -100,6 +100,47 @@ func spawn_splash(world_pos: Vector2) -> void:
 		chip.setup(world_pos + Vector2(randf_range(-3, 3), -2.0), drops[i % drops.size()], vel)
 
 
+# 法杖命中特效分发: 每种法杖一种"形状"的粒子, 不再全是同一种爆炸只换颜色。
+# kind: spark(闪电星) / gas(毒云) / sparkle(魔法星) / gust(风条) / explosion(火爆) / splash(水花)
+func spawn_spell_impact(kind: String, world_pos: Vector2, base: Color = Color(1, 1, 1, 1)) -> void:
+	match kind:
+		"splash":
+			spawn_splash(world_pos)
+		"spark":
+			# 闪电: 8 道均匀星形 + 白芯, 飞得又快又直 (像电"啪"地炸开)
+			_spell_chips(world_pos, [Color(1, 1, 1, 1), base, base.lightened(0.4)], 8, 240.0, 380.0, true)
+		"gas":
+			# 毒: 12 颗慢速绿粒挤在一起慢慢散 (像一团毒气)
+			_spell_chips(world_pos, [base, base.darkened(0.25), base.lightened(0.2)], 12, 12.0, 50.0, false)
+		"sparkle":
+			# 魔法: 10 颗小星慢慢飘散 (紫+粉+白闪)
+			_spell_chips(world_pos, [base, base.lightened(0.45), Color(1, 1, 1, 1)], 10, 25.0, 75.0, false)
+		"gust":
+			# 风: 左右两侧横向喷条 (像一阵风刮过)
+			var cols := [Color(1, 1, 1, 0.95), base, base.lightened(0.3)]
+			for i in 8:
+				var side: float = 1.0 if i % 2 == 0 else -1.0
+				var ang: float = randf_range(-0.35, 0.35)
+				var sp: float = randf_range(150.0, 260.0)
+				_spell_one(world_pos, cols[i % cols.size()], Vector2(cos(ang) * side, sin(ang) * 0.5) * sp)
+		_:
+			spawn_explosion(world_pos, base)
+
+
+# n 颗碎片爆发. even_star=true → 角度均匀成星形 (闪电); false → 全向随机.
+func _spell_chips(pos: Vector2, cols: Array, n: int, smin: float, smax: float, even_star: bool) -> void:
+	for i in n:
+		var ang: float = (float(i) / float(n) * TAU + randf_range(-0.15, 0.15)) if even_star else randf_range(-PI, PI)
+		var sp: float = randf_range(smin, smax)
+		_spell_one(pos, cols[i % cols.size()], Vector2(cos(ang), sin(ang)) * sp)
+
+
+func _spell_one(pos: Vector2, color: Color, vel: Vector2) -> void:
+	var chip = BlockBreakParticleScene.instantiate()
+	_root().add_child(chip)
+	chip.setup(pos + Vector2(randf_range(-3, 3), randf_range(-3, 3)), color, vel)
+
+
 func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1, 0.9, 0.5)) -> void:
 	# 砍怪 / 玩家受伤时, 头上飘一个 "-N" 数字, 0.7s 上升 + 渐隐.
 	# color: 默认暖黄 (打怪); 玩家受伤可传 Color(1, 0.4, 0.4) 暗红.

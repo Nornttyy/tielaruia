@@ -175,7 +175,7 @@ const _DEFS := {
 	"multi_staff":     {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 10, "spell_damage": 6, "spell_kind": "bullet", "gun_visual": "magic", "gun_pellets": 3, "gun_spread_deg": 20.0, "bullet_speed": 420},  # 多重: 一次 3 发扇形
 	# B 波法杖: 爆炸范围 / 抛物线 / 击飞
 	"explosive_staff": {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 14, "spell_damage": 8, "spell_kind": "bullet", "gun_visual": "fire", "gun_explode_radius": 32.0, "gun_explode_dmg": 14, "bullet_speed": 400},  # 爆裂火球: 命中炸一片
-	"water_staff":     {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8, "spell_damage": 6, "spell_kind": "bullet", "gun_visual": "ice", "gun_gravity": 380.0, "gun_explode_radius": 22.0, "gun_explode_dmg": 8, "gun_splash": true, "bullet_speed": 320},  # 水之: 抛物线 + 落地小爆炸溅水花(不破方块)
+	"water_staff":     {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8, "spell_damage": 6, "spell_kind": "bullet", "gun_visual": "ice", "gun_gravity": 380.0, "gun_explode_radius": 22.0, "gun_explode_dmg": 8, "bullet_speed": 320},  # 水之: 抛物线 + 落地溅水花(visual=ice→splash, 不破方块)
 	"wind_staff":      {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 6, "spell_damage": 3, "spell_kind": "bullet", "gun_visual": "wind", "gun_knockback": 460.0, "gun_launch": true, "bullet_speed": 520},  # 狂风: 把怪弹飞
 	# C 波法杖 (全新机制, 不发普通弹):
 	"heal_staff":  {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 16, "heal_amount": 35},  # 治疗: 耗魔力给自己回血

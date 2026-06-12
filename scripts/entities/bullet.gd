@@ -34,8 +34,8 @@ var explode_radius: float = 0.0 # >0 = 命中/撞墙时炸一圈, 半径内的�
 var explode_dmg: int = 0        # 爆炸伤害 (0 → 用 damage)
 var knockback: float = 140.0    # 击退力度 (狂风法杖调很大 = 弹飞)
 var launch: bool = false        # true = 击退带上抛 (把怪打飞起来, 狂风法杖)
-var _impact_color: Color = Color(0, 0, 0, 0)  # a>0 = 销毁时爆一撮此色火花 (法杖命中特效; 枪不设 → 不喷, 防刷屏)
-var _splash: bool = false       # true = 炸开时额外溅一片水花 (水之法杖: 落地/命中都溅水)
+var _impact_color: Color = Color(0, 0, 0, 0)  # 命中特效的基色 (法杖才设; 枪不设 → 不喷, 防快枪刷屏)
+var _impact_fx: String = ""     # 命中特效形状 spark/gas/sparkle/gust/explosion/splash (空=不放, 给枪用)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -61,7 +61,7 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, spe
 	knockback = float(opts.get("knockback", 140.0))
 	launch = bool(opts.get("launch", false))
 	_impact_color = opts.get("impact_color", Color(0, 0, 0, 0))
-	_splash = bool(opts.get("splash", false))
+	_impact_fx = String(opts.get("impact_fx", ""))
 	var lt: float = float(opts.get("lifetime", 0.0))
 	if lt > 0.0:
 		_lifetime = lt
@@ -247,9 +247,7 @@ func _nearest_enemy() -> Node2D:
 
 # 爆炸: 爆心 pos 半径 explode_radius 内的怪都受伤 (爆裂火球/水之法杖); 只伤怪, 不破方块.
 func _explode(pos: Vector2) -> void:
-	# 水之法杖: 炸开时溅一片蓝水花 (落地 / 命中都溅, 比纯爆炸更"水")
-	if _splash and Effects != null:
-		Effects.spawn_splash(pos)
+	# 注: 视觉特效由 _destroy 的 _impact_fx 分发统一放 (爆裂=explosion/水之=splash), 这里只算 AoE 伤害。
 	var dmg: int = explode_dmg if explode_dmg > 0 else damage
 	for group in ["slimes", "animals"]:
 		for e in get_tree().get_nodes_in_group(group):
@@ -265,9 +263,9 @@ func _destroy() -> void:
 	if _is_dead:
 		return
 	_is_dead = true
-	# 法杖命中特效: 爆一撮元素色火花 (枪没设 impact_color → a=0 跳过, 不给快枪刷屏)
-	if _impact_color.a > 0.0 and Effects != null:
-		Effects.spawn_explosion(global_position, _impact_color)
+	# 法杖命中特效: 按 _impact_fx 形状放 (闪电星/毒云/魔法星/风条/火爆/水花). 枪没设 → 跳过 (防刷屏)。
+	if _impact_fx != "" and Effects != null:
+		Effects.spawn_spell_impact(_impact_fx, global_position, _impact_color)
 	queue_free()
 
 
