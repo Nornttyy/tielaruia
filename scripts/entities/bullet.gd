@@ -34,6 +34,7 @@ var explode_radius: float = 0.0 # >0 = 命中/撞墙时炸一圈, 半径内的�
 var explode_dmg: int = 0        # 爆炸伤害 (0 → 用 damage)
 var knockback: float = 140.0    # 击退力度 (狂风法杖调很大 = 弹飞)
 var launch: bool = false        # true = 击退带上抛 (把怪打飞起来, 狂风法杖)
+var _impact_color: Color = Color(0, 0, 0, 0)  # a>0 = 销毁时爆一撮此色火花 (法杖命中特效; 枪不设 → 不喷, 防刷屏)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -58,6 +59,7 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, spe
 	explode_dmg = int(opts.get("explode_dmg", 0))
 	knockback = float(opts.get("knockback", 140.0))
 	launch = bool(opts.get("launch", false))
+	_impact_color = opts.get("impact_color", Color(0, 0, 0, 0))
 	var lt: float = float(opts.get("lifetime", 0.0))
 	if lt > 0.0:
 		_lifetime = lt
@@ -258,6 +260,9 @@ func _destroy() -> void:
 	if _is_dead:
 		return
 	_is_dead = true
+	# 法杖命中特效: 爆一撮元素色火花 (枪没设 impact_color → a=0 跳过, 不给快枪刷屏)
+	if _impact_color.a > 0.0 and Effects != null:
+		Effects.spawn_explosion(global_position, _impact_color)
 	queue_free()
 
 

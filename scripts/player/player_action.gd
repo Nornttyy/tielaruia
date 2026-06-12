@@ -1995,6 +1995,11 @@ func _try_cast_staff() -> void:
 		var hp: Node = player.get_node_or_null("PlayerHealth")
 		if hp != null and hp.has_method("heal"):
 			hp.heal(int(def.get("heal_amount")))
+		# 治疗特效: 玩家身上爆一撮绿色 + 飘个绿色回血数字 (一眼看出"我在回血")
+		if Effects != null:
+			Effects.spawn_explosion(player.global_position + Vector2(0, -8), Color8(120, 230, 110))
+			if Effects.has_method("spawn_damage_number"):
+				Effects.spawn_damage_number(player.global_position + Vector2(0, -18), int(def.get("heal_amount")), Color8(120, 230, 110))
 		SfxBank.play("pickup", 0.1)
 		return
 	var start: Vector2 = player.global_position + Vector2(0, -8)
@@ -2067,8 +2072,14 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 	var pellets: int = int(def.get("gun_pellets", 1))
 	var spread_deg: float = float(def.get("gun_spread_deg", 0.0))
 	var opts: Dictionary = _proj_opts_from_def(def)
+	# 法杖特效: 命中爆一撮元素色火花 (bullet 销毁时放). 颜色按弹的 visual 走。
+	var fx_color: Color = _spell_fx_color(String(def.get("gun_visual", "magic")))
+	opts["impact_color"] = fx_color
 	var base_dir: Vector2 = target - start
 	base_dir = base_dir.normalized() if base_dir.length() > 0.01 else Vector2.RIGHT
+	# 杖头施法闪: 在身前一点喷一撮同色火花 (每次施法都看得到, 哪怕没命中)
+	if Effects != null:
+		Effects.spawn_explosion(start + base_dir * 14.0, fx_color)
 	for _i in max(1, pellets):
 		var dir: Vector2 = base_dir
 		if spread_deg > 0.0:
@@ -2080,6 +2091,17 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 		if NetworkManager != null and NetworkManager.connected():
 			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
 	SfxBank.play("break", 0.12)
+
+
+# 法杖弹的 visual → 施法/命中火花的颜色 (跟弹色一致, 一眼能认是哪把法杖)
+func _spell_fx_color(visual: String) -> Color:
+	match visual:
+		"lightning": return Color8(255, 235, 90)   # 黄电
+		"poison":    return Color8(120, 200, 60)    # 绿毒
+		"fire":      return Color8(255, 150, 40)    # 橙火
+		"ice":       return Color8(90, 180, 240)    # 冰蓝
+		"wind":      return Color8(210, 240, 255)   # 白青
+		_:           return Color8(180, 100, 235)   # 紫 (多重/魔法弹默认)
 
 
 # 骷髅法杖: 消耗 mana → 在玩家旁召唤 1 个友方骷髅 (上限 FRIENDLY_CAP). 不发火球。
