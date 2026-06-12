@@ -19,6 +19,9 @@ var _chest_slider: HSlider
 var _step_vals: Dictionary = {}
 var _named_refresh: Dictionary = {}   # key → Callable, 给"显中文名"的款式选择器刷新用
 var _appearance: Dictionary = {}
+# 捏人当前是"改造现有角色"(非空 = 正在改的角色名, 保存时覆盖它) 还是"新建"(空 = 重名才加2/3)。
+# 没这个标志的话, 想给自己角色改样子保存 → 每次都自动改名加2/3 → 角色越堆越多 (用户报)。
+var _editing_name: String = ""
 
 # 自由调色: 选部位 (◀ ▶) + 3 滑杆 (色相/饱和度/亮度), 任意颜色随便调。
 const _COLOR_PARTS := [["皮肤", "skin_color"], ["头发", "hair_color"], ["衬衫", "shirt_color"], ["裤子", "pants_color"], ["鞋", "shoe_color"], ["眼珠", "eye_color"]]
@@ -116,6 +119,12 @@ func _make_row(char_name: String) -> void:
 	UIStyle.style_button(pick)
 	pick.pressed.connect(func(): _choose_character(char_name))
 	row.add_child(pick)
+	# 改造型: 把这个角色 load 进捏人改样子, 保存覆盖原角色 (不新建 → 不会越改越多)。
+	var edit := Button.new()
+	edit.text = "改造型"
+	UIStyle.style_button(edit)
+	edit.pressed.connect(func(): _on_edit_character(char_name))
+	row.add_child(edit)
 	var del := Button.new()
 	del.text = "删除"
 	UIStyle.style_button(del)
@@ -140,6 +149,7 @@ func _choose_character(char_name: String) -> void:
 # ---- 捏人面板 ----
 
 func _on_new_character() -> void:
+	_editing_name = ""   # 新建模式: 保存时重名才加2/3 (能建多个角色)
 	_appearance = PlayerArt.DEFAULT_APPEARANCE.duplicate(true)
 	if _creator_panel == null:
 		_build_creator_panel()
@@ -150,6 +160,25 @@ func _on_new_character() -> void:
 	_set_gender(int(_appearance["gender"]))
 	if _hue_slider != null:
 		_set_active_color_index(_active_part_index)   # 重开捏人: 滑杆同步到新角色颜色
+	_rebuild_preview()
+
+
+# 改造型: 把现有角色 load 进捏人 (样子 + 名字), 保存时覆盖它 (不新建 → 不会越改越多)。
+func _on_edit_character(char_name: String) -> void:
+	var c = CharacterManager.load_character_by_name(char_name)
+	if c == null:
+		return
+	_editing_name = char_name   # 编辑模式: 保存覆盖这个角色
+	_appearance = c.appearance_dict().duplicate(true)
+	if _creator_panel == null:
+		_build_creator_panel()
+	_name_edit.text = char_name
+	_select_panel.visible = false
+	_creator_panel.visible = true
+	visible = true
+	_set_gender(int(_appearance["gender"]))
+	if _hue_slider != null:
+		_set_active_color_index(_active_part_index)   # 滑杆同步到该角色颜色
 	_rebuild_preview()
 
 
@@ -414,8 +443,16 @@ func _save_creator() -> void:
 	var nm: String = _name_edit.text.strip_edges()
 	if nm == "":
 		nm = "我的角色"
-	# 自动取不重名: 存档文件名按角色名算, 重名会覆盖 → 这里重名就加 2/3/… 保证每次都是新角色
-	c.character_name = _unique_character_name(nm)
+	if _editing_name != "":
+		# 改造现有角色: 用这个名字直接覆盖原角色 (不自动改名, 否则又多一个)。
+		if nm == _editing_name:
+			c.character_name = nm                       # 原地覆盖
+		else:
+			c.character_name = _unique_character_name(nm)  # 改了名 = 当新名 (防撞别的角色)
+			CharacterManager.delete_character_by_name(_editing_name)  # 删旧名档, 别留副本
+	else:
+		# 新建: 重名才加 2/3/… (防覆盖别的角色), 保证能建多个角色
+		c.character_name = _unique_character_name(nm)
 	c.gender = int(_appearance["gender"])
 	c.hair_style = int(_appearance["hair_style"])
 	c.shirt_style = int(_appearance.get("shirt_style", 0))
@@ -428,8 +465,10 @@ func _save_creator() -> void:
 	c.pants_color = _appearance["pants_color"]
 	c.eye_color = _appearance["eye_color"]
 	c.shoe_color = _appearance.get("shoe_color", Color8(74, 47, 26))
+	c.cape_color = _appearance.get("cape_color", Color8(150, 40, 50))   # 改造型 load 回来的披风色别丢
 	CharacterManager.save_character(c)
 	CharacterManager.current = c
+	_editing_name = ""   # 退出编辑模式 (下次默认新建)
 	_creator_panel.visible = false
 	_select_panel.visible = true
 	_refresh_list()

@@ -110,6 +110,38 @@ func test_second_character_same_name_not_overwritten():
 	assert_eq(CharacterManager.list_characters().size(), 2, "两次创建该有 2 个角色, 不互相覆盖")
 
 
+# 用户报: 每次捏人都多一个角色。修: "改造型"按钮 load 现有角色 → 保存覆盖, 不新建。
+func test_edit_character_overwrites_not_duplicates():
+	var c = CharacterData.new(); c.character_name = "小明"; c.hair_style = 1
+	CharacterManager.save_character(c)
+	panels.open_select()
+	await wait_frames(1)
+	panels._on_edit_character("小明")   # 改造型: load 小明
+	await wait_frames(1)
+	assert_eq(panels._name_edit.text, "小明", "改造型该把原名填进去")
+	panels._appearance["hair_style"] = 3   # 改个发型
+	panels._save_creator()
+	assert_eq(CharacterManager.list_characters().size(), 1, "改造保存该覆盖, 不多出一个角色")
+	var loaded = CharacterManager.load_character_by_name("小明")
+	assert_eq(loaded.hair_style, 3, "改的发型存进去了")
+	assert_null(CharacterManager.load_character_by_name("小明 2"), "不该冒出'小明 2'")
+
+
+# 改造时改了名字 → 旧名删掉, 新名一份, 总数不变 (不留旧副本)。
+func test_edit_rename_deletes_old():
+	var c = CharacterData.new(); c.character_name = "阿花"
+	CharacterManager.save_character(c)
+	panels.open_select()
+	await wait_frames(1)
+	panels._on_edit_character("阿花")
+	await wait_frames(1)
+	panels._set_creator_name("阿花花")
+	panels._save_creator()
+	assert_eq(CharacterManager.list_characters().size(), 1, "改名后仍只 1 个 (旧名删了)")
+	assert_null(CharacterManager.load_character_by_name("阿花"), "旧名'阿花'该没了")
+	assert_not_null(CharacterManager.load_character_by_name("阿花花"), "新名'阿花花'在")
+
+
 func _all_labels(node: Node) -> Array:
 	var out: Array = []
 	if node is Label: out.append(node)
