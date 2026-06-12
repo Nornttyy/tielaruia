@@ -95,8 +95,9 @@ func test_weapons_for_each_mode():
 	assert_true(_list_has(panel._weapons_for("magic"), "lightning_staff"), "魔法含闪电法杖 (新加)")
 	assert_false(_list_has(panel._weapons_for("magic"), "skull_staff"), "切武器列表无骷髅法杖 (召唤类)")
 	assert_false(_list_has(panel._weapons_for("magic"), "bird_staff"), "切武器列表无雀宝宝法杖 (召唤类)")
-	# 枪械 = 15 把枪
-	assert_eq(panel._weapons_for("gun").size(), 15, "枪械 15 把")
+	# 枪械 = 23 把枪 (第一批 15 + 第二批 8)
+	assert_eq(panel._weapons_for("gun").size(), 23, "枪械 23 把 (15+8)")
+	assert_true(_list_has(panel._weapons_for("gun"), "railgun"), "枪械含电磁炮 (新加)")
 	# 经典 = 剑 + 弓
 	assert_true(_list_has(panel._weapons_for("classic"), "iron_sword"), "经典含剑")
 	assert_true(_list_has(panel._weapons_for("classic"), "wood_bow"), "经典含弓")

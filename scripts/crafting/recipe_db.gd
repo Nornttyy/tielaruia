@@ -1114,6 +1114,55 @@ const _RECIPES := [
 		"output_count": 1,
 		"mirror_ok": false,
 	},
+	# === 第二批枪 (用户加) ===
+	# 加特林: 一堆铁 + 金 + 木握把 → 超快连发
+	{
+		"id": "minigun", "grid_size": Vector2i(3, 2),
+		"pattern": [["iron_ingot", "iron_ingot", "iron_ingot"], ["gold_ingot", "planks", "gold_ingot"]],
+		"output_id": "minigun", "output_count": 1, "mirror_ok": false,
+	},
+	# 双管魔枪: 双钻(魔焦) + 银 + 木握把
+	{
+		"id": "twin_magic_gun", "grid_size": Vector2i(3, 2),
+		"pattern": [["diamond", "silver_ingot", "diamond"], ["", "planks", ""]],
+		"output_id": "twin_magic_gun", "output_count": 1, "mirror_ok": false,
+	},
+	# 追踪火箭枪: 铁枪管 + 煤(推进) + 金 + 木握把
+	{
+		"id": "rocket_gun", "grid_size": Vector2i(3, 2),
+		"pattern": [["iron_ingot", "iron_ingot", "coal"], ["gold_ingot", "planks", ""]],
+		"output_id": "rocket_gun", "output_count": 1, "mirror_ok": false,
+	},
+	# 弹跳枪: 银 + 金 + 银 + 木握把
+	{
+		"id": "ricochet_gun", "grid_size": Vector2i(3, 2),
+		"pattern": [["silver_ingot", "gold_ingot", "silver_ingot"], ["", "planks", ""]],
+		"output_id": "ricochet_gun", "output_count": 1, "mirror_ok": false,
+	},
+	# 特斯拉枪: 金 + 钻(电核) + 金 + 木握把
+	{
+		"id": "tesla_gun", "grid_size": Vector2i(3, 2),
+		"pattern": [["gold_ingot", "diamond", "gold_ingot"], ["", "planks", ""]],
+		"output_id": "tesla_gun", "output_count": 1, "mirror_ok": false,
+	},
+	# 寒冰炮: 双钻(冰晶) + 铁 + 木握把
+	{
+		"id": "cryo_gun", "grid_size": Vector2i(3, 2),
+		"pattern": [["diamond", "diamond", "iron_ingot"], ["", "planks", ""]],
+		"output_id": "cryo_gun", "output_count": 1, "mirror_ok": false,
+	},
+	# 剧毒枪: 史莱姆球(毒液) + 铁枪身 + 木握把
+	{
+		"id": "venom_gun", "grid_size": Vector2i(3, 2),
+		"pattern": [["slime_ball", "iron_ingot", "slime_ball"], ["", "planks", ""]],
+		"output_id": "venom_gun", "output_count": 1, "mirror_ok": false,
+	},
+	# 电磁炮 (顶级): 双钻 + 金 + 双银 + 木握把
+	{
+		"id": "railgun", "grid_size": Vector2i(3, 2),
+		"pattern": [["diamond", "gold_ingot", "diamond"], ["silver_ingot", "planks", "silver_ingot"]],
+		"output_id": "railgun", "output_count": 1, "mirror_ok": false,
+	},
 	# === 锤子 (破墙): 形状 X X X / X X . / . X . (区别于镐 XXX/.X./.X. 和斧 XX./XX./.X.)
 	# 头=材质, 柄=planks. 木锤全 planks 也不撞木镐 (silhouette 不同).
 	{

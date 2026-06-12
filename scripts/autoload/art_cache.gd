@@ -308,6 +308,9 @@ func _build_items() -> void:
 			"laser_gun", "flamethrower", "freeze_ray",
 			"arcane_gun", "poison_gun", "lightning_gun", "star_gun", "slime_gun",   # 魔法枪 (耗魔力)
 			"frost_gun", "leaf_gun",
+			# 第二批枪 (用户加): 高速扫射 / 花式弹道 / 元素异常
+			"minigun", "twin_magic_gun", "rocket_gun", "ricochet_gun",
+			"tesla_gun", "cryo_gun", "venom_gun", "railgun",
 			# 盔甲: 15 件 (5 tier × 3 件)
 			"copper_helmet", "copper_chest", "copper_pants",
 			"iron_helmet", "iron_chest", "iron_pants",

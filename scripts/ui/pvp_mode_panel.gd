@@ -28,6 +28,10 @@ const _GUNS := [
 	["sniper", "狙击枪"], ["laser_gun", "激光枪"], ["flamethrower", "火焰喷射器"], ["freeze_ray", "冰冻枪"],
 	["arcane_gun", "追踪魔弹枪"], ["poison_gun", "毒液枪"], ["lightning_gun", "闪电链枪"], ["star_gun", "星星炮"],
 	["slime_gun", "史莱姆枪"], ["frost_gun", "冰雪枪"], ["leaf_gun", "绿叶枪"],
+	# 第二批 (用户加)
+	["minigun", "加特林"], ["twin_magic_gun", "双管魔枪"], ["rocket_gun", "追踪火箭枪"],
+	["ricochet_gun", "弹跳枪"], ["tesla_gun", "特斯拉枪"], ["cryo_gun", "寒冰炮"],
+	["venom_gun", "剧毒枪"], ["railgun", "电磁炮"],
 ]
 
 var _panel: Panel = null
