@@ -55,7 +55,7 @@ func test_magic_gun_uses_mana_not_bullet() -> void:
 	action._try_fire_gun()
 	await wait_frames(1)
 	assert_eq(_count_bullets(world) - before, 1, "魔法枪没子弹也能发 (耗魔力)")
-	assert_eq(mana.current_mana, 96, "应扣 4 魔力 (arcane_gun mana_cost=4)")
+	assert_eq(mana.current_mana, 98, "应扣 2 魔力 (arcane_gun mana_cost=4, 法杖同款折扣 ×0.5)")
 
 
 # 魔力不够 → 不发
@@ -69,7 +69,7 @@ func test_magic_gun_no_mana_no_fire() -> void:
 	inv.pickup("arcane_gun", 1)
 	inv.hotbar_selected = 0
 	var mana = player.get_node("PlayerMana")
-	mana.current_mana = 2                 # 不够 8
+	mana.current_mana = 1                 # 折后要 2 (mana_cost=4 ×0.5), 1 点不够
 	var action = player.get_node("PlayerAction")
 	action.mouse_world_override = player.global_position + Vector2(240, 0)
 	action._try_fire_gun()
