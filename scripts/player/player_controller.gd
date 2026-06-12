@@ -13,6 +13,7 @@ const CAVE_DEPTH_THRESHOLD := 10   # 玩家离原始地表 >10 格才算"地下"
 const SPEED := 105.0
 const JUMP_VELOCITY := -240.0
 const GRAVITY := 675.0
+const GLIDE_FALL_SPEED := 55.0     # 恶魔之翼滑翔时的最大下落速度 (缓降, 远低于自由落体)
 const COYOTE_TIME := 0.10
 const LAND_VY_THRESHOLD := 150.0    # 落地时 vy 超此值才扬大灰
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
@@ -424,6 +425,9 @@ func _physics_process(delta: float) -> void:
 	else:
 		if not on_floor_now:
 			velocity.y += GRAVITY * delta
+			# 恶魔之翼滑翔: 下落时按住跳 → 缓降 (限速). 不影响二段跳/上升。
+			if velocity.y > GLIDE_FALL_SPEED and is_gliding():
+				velocity.y = GLIDE_FALL_SPEED
 			_coyote_timer = max(0.0, _coyote_timer - delta)
 		else:
 			_coyote_timer = COYOTE_TIME
@@ -703,12 +707,25 @@ func _buff_jump_mul() -> float:
 	return 1.0 if b == null else b.jump_mul()
 
 
-# 持有云靴 → 解锁二段跳 (持有即生效, 不占装备槽)
+# 持有云靴 或 恶魔之翼 → 解锁二段跳 (持有即生效, 不占装备槽)
 func _has_cloud_boots() -> bool:
 	var pinv: Node = get_node_or_null("PlayerInventory")
-	return pinv != null and pinv.has_method("has_item") and pinv.has_item("cloud_boots")
+	if pinv == null or not pinv.has_method("has_item"):
+		return false
+	return pinv.has_item("cloud_boots") or pinv.has_item("demon_wings")
 
 
-# 二段跳是否可用 (供测试 + 逻辑): 在空中 + 没用过 + 有云靴
+# 持有恶魔之翼 → 还能滑翔 (空中按住跳缓降)
+func _has_glide_wings() -> bool:
+	var pinv: Node = get_node_or_null("PlayerInventory")
+	return pinv != null and pinv.has_method("has_item") and pinv.has_item("demon_wings")
+
+
+# 二段跳是否可用 (供测试 + 逻辑): 在空中 + 没用过 + 有云靴/翼
 func can_double_jump() -> bool:
 	return not is_on_floor() and not _double_jump_used and _has_cloud_boots()
+
+
+# 滑翔是否生效中: 在空中 + 正在下落 + 按住跳 + 有翼
+func is_gliding() -> bool:
+	return not is_on_floor() and velocity.y > 0.0 and Input.is_action_pressed("jump") and _has_glide_wings()
