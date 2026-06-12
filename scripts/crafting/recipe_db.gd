@@ -427,6 +427,20 @@ const _RECIPES := [
 		"requires": "workbench",
 		"mirror_ok": true,
 	},
+	# === 恶魔之心 (召唤地狱恶魔领主, 工作台): 5 地狱水晶围 1 地狱石成心形 ===
+	{
+		"id": "demon_heart",
+		"grid_size": Vector2i(3, 3),
+		"pattern": [
+			["hell_crystal", "",           "hell_crystal"],
+			["hell_crystal", "hell_stone", "hell_crystal"],
+			["",             "hell_crystal", ""],
+		],
+		"output_id": "demon_heart",
+		"output_count": 1,
+		"requires": "workbench",
+		"mirror_ok": true,
+	},
 	# 云靴: 2 云块 + 2 羽毛 → 二段跳鞋 (要工作台). 羽毛打哈比鸟掉, 云块挖空岛.
 	{
 		"id": "cloud_boots",

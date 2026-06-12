@@ -332,6 +332,9 @@ func _build_items() -> void:
 			"skull_summon", "bone_sword",
 			"skeleton_helmet", "skeleton_chest", "skeleton_pants",
 			"skull_staff",
+			# 地狱恶魔领主 Boss: 召唤(恶魔之心) + 神装(三叉戟/烈焰法杖/恶魔之翼) + 恶魔盔甲(头/胸/腿)
+			"demon_heart", "demon_trident", "inferno_staff", "demon_wings",
+			"demon_helmet", "demon_chest", "demon_pants",
 			# 空岛: 羽毛(哈比鸟掉) + 云靴(二段跳) — 之前漏注册, 背包没图
 			"feather", "cloud_boots",
 			# 厨房第 1 步: 8 道料理 (cooked_meat 已在上面)
