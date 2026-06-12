@@ -283,14 +283,12 @@ static func should_show() -> bool:
 	# 1. OS feature "mobile" = iOS/Android 原生 (HTML5 export 不算)
 	if OS.has_feature("mobile"):
 		return true
-	# 2. HTML5 + 小屏: 视口宽 ≤ 900 或 触屏类型 (iPad/手机浏览器)
+	# 2. HTML5: 查"真有触屏"才显 (用 navigator.maxTouchPoints / ontouchstart)。
+	#    旧版用窗口大小猜 → 桌面浏览器窗口稍小 (高≤700) 就被误判成手机, 触屏准星抢鼠标 →
+	#    弓/武器只朝一个方向 (用户报: Mac+鼠标却中招). Mac/桌面无触屏 → maxTouchPoints=0 → 不显。
 	if OS.get_name() == "Web":
-		# Web 没法直接查触屏, 用窗口宽近似: 手机/iPad 竖屏宽都 ≤ 900
-		# 注: window_get_size 返 Vector2i, 用 Vector2i 接 (老 Vector2 严格类型可能炸)
-		var vp_size: Vector2i = DisplayServer.window_get_size()
-		if vp_size.x <= 900 or vp_size.y <= 700:
-			return true
-		# 主流台式机宽 > 900, 这里 false
-		return false
+		var has_touch = JavaScriptBridge.eval(
+			"((navigator.maxTouchPoints||0) > 0) || ('ontouchstart' in window)", true)
+		return bool(has_touch)
 	# 3. 其它平台 (Linux/Mac/Windows 桌面) 默认不显
 	return false
