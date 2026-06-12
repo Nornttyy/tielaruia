@@ -69,3 +69,14 @@ func test_every_impact_kind_spawns_particles() -> void:
 		Effects.spawn_spell_impact(kind, Vector2(0, 0), Color8(120, 200, 60))
 		await wait_frames(1)
 		assert_gt(get_tree().get_node_count(), before + 3, "%s 特效该冒粒子" % kind)
+
+
+func test_signature_shape_node_draws_each_kind() -> void:
+	# 招牌形状节点 (电弧/环/云) 每种都能 _ready + _process + _draw 跑过不崩
+	var scene = load("res://scenes/fx/spell_impact_fx.tscn")
+	for kind in ["spark", "gas", "sparkle", "gust", "explosion", "splash"]:
+		var fx = scene.instantiate()
+		add_child_autofree(fx)
+		fx.setup(kind, Color8(255, 235, 90))
+		await wait_frames(2)
+		assert_true(is_instance_valid(fx), "%s 招牌形状节点正常 (画图没崩)" % kind)

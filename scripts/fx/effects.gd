@@ -3,6 +3,7 @@
 extends Node
 
 const BlockBreakParticleScene = preload("res://scenes/fx/block_break_particle.tscn")
+const SpellImpactFxScene = preload("res://scenes/fx/spell_impact_fx.tscn")  # 法杖招牌形状特效 (电弧/环/云...)
 const DustParticleScene = preload("res://scenes/fx/dust_particle.tscn")
 const PlaceBounceScene = preload("res://scenes/fx/place_bounce.tscn")
 const WaterGrainScene = preload("res://scenes/fx/water_grain_particle.tscn")
@@ -100,9 +101,16 @@ func spawn_splash(world_pos: Vector2) -> void:
 		chip.setup(world_pos + Vector2(randf_range(-3, 3), -2.0), drops[i % drops.size()], vel)
 
 
-# 法杖命中特效分发: 每种法杖一种"形状"的粒子, 不再全是同一种爆炸只换颜色。
-# kind: spark(闪电星) / gas(毒云) / sparkle(魔法星) / gust(风条) / explosion(火爆) / splash(水花)
+# 法杖命中特效分发: 每种法杖 = 一个"招牌形状"(画出来的电弧/环/云) + 一撮配套粒子。
+# kind: spark(闪电弧) / gas(毒云) / sparkle(符文环) / gust(旋风) / explosion(冲击波) / splash(涟漪)
 func spawn_spell_impact(kind: String, world_pos: Vector2, base: Color = Color(1, 1, 1, 1)) -> void:
+	# 招牌形状: 不是粒子, 是 _draw 画的线/环/云 (给每种法术辨识度)
+	var fx = SpellImpactFxScene.instantiate()
+	_root().add_child(fx)
+	fx.global_position = world_pos
+	if fx.has_method("setup"):
+		fx.setup(kind, base)
+	# 再补一撮配套粒子增加质感
 	match kind:
 		"splash":
 			spawn_splash(world_pos)
