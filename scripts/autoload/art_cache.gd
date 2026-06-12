@@ -321,6 +321,9 @@ func _build_items() -> void:
 			"lightning_staff", "poison_staff", "multi_staff",   # 新机制法杖 (A 波)
 			"explosive_staff", "water_staff", "wind_staff",     # B 波法杖
 			"heal_staff", "bird_staff", "crack_staff",          # C 波法杖 (治疗/召唤鸟/地裂)
+			# 第二批法杖 (用户加): 追踪/穿透 · 冰霜控制 · 华丽大招 · 辅助
+			"homing_staff", "beam_staff", "frost_staff", "bounce_star_staff",
+			"meteor_staff", "penta_staff", "greater_heal_staff", "shield_staff",
 			# 用户加: 小麦 / 种子 之前漏了, 收割掉地没图
 			"wheat", "wheat_seed",
 			# 史莱姆王 Boss 掉落 + 合成材料

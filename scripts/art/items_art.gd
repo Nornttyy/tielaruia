@@ -1912,6 +1912,56 @@ const _CRACK_STAFF := [
 	"......nHHn......",
 ]
 
+# === 第二批法杖 icon (用户加): 都是"宝珠 + 木杖" 模板, 只换珠子颜色 ===
+const _HOMING_STAFF := [   # 追踪魔弹杖: 紫珠 (@/+)
+	"......nnnn......", ".....n@++@n.....", "....n@+f+@n.....", "....n@++++@n....",
+	"....n@+++@n.....", ".....nnnnn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhfn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhHn......", "......nhHn......", "......nHHn......",
+]
+const _BEAM_STAFF := [   # 穿透激光杖: 深蓝珠 (T/N)
+	"......nnnn......", ".....nTNNTn.....", "....nTNfNTn.....", "....nTNNNNTn....",
+	"....nTNNNTn.....", ".....nnnnn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhfn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhHn......", "......nhHn......", "......nHHn......",
+]
+const _FROST_STAFF := [   # 冰冻减速杖: 亮冰珠 (N/Q)
+	"......nnnn......", ".....nNQQNn.....", "....nNQfQNn.....", "....nNQQQQNn....",
+	"....nNQQQNn.....", ".....nnnnn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhfn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhHn......", "......nhHn......", "......nHHn......",
+]
+const _BOUNCE_STAR_STAFF := [   # 弹跳星杖: 金星珠 (R/z)
+	"......nnnn......", ".....nRzzRn.....", "....nRzfzRn.....", "....nRzzzzRn....",
+	"....nRzzzRn.....", ".....nnnnn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhfn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhHn......", "......nhHn......", "......nHHn......",
+]
+const _METEOR_STAFF := [   # 流星雨杖: 红黄火珠 (A/z)
+	"......nnnn......", ".....nAzzAn.....", "....nAzfzAn.....", "....nAzzzzAn....",
+	"....nAzzzAn.....", ".....nnnnn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhfn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhHn......", "......nhHn......", "......nHHn......",
+]
+const _PENTA_STAFF := [   # 五重魔弹杖: 银白珠 (s/d)
+	"......nnnn......", ".....nsddsn.....", "....nsdfdsn.....", "....nsddddsn....",
+	"....nsdddsn.....", ".....nnnnn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhfn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhHn......", "......nhHn......", "......nHHn......",
+]
+const _GREATER_HEAL_STAFF := [   # 强化治疗杖: 亮绿珠 (4/6)
+	"......nnnn......", ".....n4664n.....", "....n46f64n.....", "....n466664n....",
+	"....n46664n.....", ".....nnnnn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhfn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhHn......", "......nhHn......", "......nHHn......",
+]
+const _SHIELD_STAFF := [   # 护盾杖: 钢蓝珠 (e/F)
+	"......nnnn......", ".....neFFen.....", "....neFfFen.....", "....neFFFFen....",
+	"....neFFFen.....", ".....nnnnn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhfn......", "......nhHn......", "......nhHn......",
+	"......nhHn......", "......nhHn......", "......nhHn......", "......nHHn......",
+]
+
 # 地狱合金锭 icon: 真·紫黑底 + 银闪光 (修 bug: 之前用 N/T 钻石蓝, 现在用 @/#/+ 紫).
 const _HELL_ALLOY_INGOT := [
 	"................",
@@ -2847,6 +2897,9 @@ const _ICONS := {
 	"lightning_staff": _LIGHTNING_STAFF, "poison_staff": _POISON_STAFF, "multi_staff": _MULTI_STAFF,
 	"explosive_staff": _EXPLOSIVE_STAFF, "water_staff": _WATER_STAFF, "wind_staff": _WIND_STAFF,
 	"heal_staff": _HEAL_STAFF, "bird_staff": _BIRD_STAFF, "crack_staff": _CRACK_STAFF,
+	"homing_staff": _HOMING_STAFF, "beam_staff": _BEAM_STAFF, "frost_staff": _FROST_STAFF,
+	"bounce_star_staff": _BOUNCE_STAR_STAFF, "meteor_staff": _METEOR_STAFF, "penta_staff": _PENTA_STAFF,
+	"greater_heal_staff": _GREATER_HEAL_STAFF, "shield_staff": _SHIELD_STAFF,
 	"mana_potion": _MANA_POTION,
 	"health_potion": _HEALTH_POTION,
 	"wood_bow": _WOOD_BOW,

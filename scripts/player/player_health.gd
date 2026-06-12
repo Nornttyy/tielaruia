@@ -222,6 +222,11 @@ func heal(amount: int) -> void:
 	health_changed.emit(current_health, MAX_HEALTH)
 
 
+# 护盾杖: 给玩家几秒无敌 (借用 i-frame; 远超 IFRAMES_SEC → 不红闪, 跟睡觉无敌同机制)。
+func grant_shield(seconds: float) -> void:
+	_iframe_timer = max(_iframe_timer, seconds)
+
+
 # 复活时调
 func revive_full() -> void:
 	current_health = MAX_HEALTH

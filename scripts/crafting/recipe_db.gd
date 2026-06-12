@@ -877,6 +877,47 @@ const _RECIPES := [
 		"pattern": [["iron_ingot"], ["stone"], ["planks"]],
 		"output_id": "crack_staff", "output_count": 1, "mirror_ok": false,
 	},
+	# === 第二批法杖 (用户加): 都是 1x3 宝石+杖身 ===
+	{
+		"id": "homing_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["diamond"], ["gold_ingot"], ["planks"]],
+		"output_id": "homing_staff", "output_count": 1, "mirror_ok": false,
+	},
+	{
+		"id": "beam_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["diamond"], ["silver_ingot"], ["planks"]],
+		"output_id": "beam_staff", "output_count": 1, "mirror_ok": false,
+	},
+	{
+		"id": "frost_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["diamond"], ["diamond"], ["planks"]],
+		"output_id": "frost_staff", "output_count": 1, "mirror_ok": false,
+	},
+	{
+		"id": "bounce_star_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["gold_ingot"], ["silver_ingot"], ["planks"]],
+		"output_id": "bounce_star_staff", "output_count": 1, "mirror_ok": false,
+	},
+	{
+		"id": "meteor_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["hell_crystal_ingot"], ["gold_ingot"], ["planks"]],
+		"output_id": "meteor_staff", "output_count": 1, "mirror_ok": false,
+	},
+	{
+		"id": "penta_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["silver_ingot"], ["gold_ingot"], ["planks"]],
+		"output_id": "penta_staff", "output_count": 1, "mirror_ok": false,
+	},
+	{
+		"id": "greater_heal_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["diamond"], ["gold_ingot"], ["gold_ingot"]],
+		"output_id": "greater_heal_staff", "output_count": 1, "mirror_ok": false,
+	},
+	{
+		"id": "shield_staff", "grid_size": Vector2i(1, 3),
+		"pattern": [["diamond"], ["silver_ingot"], ["silver_ingot"]],
+		"output_id": "shield_staff", "output_count": 1, "mirror_ok": false,
+	},
 	# 魔力药水: 1 hell_crystal + 1 silver_ingot (2x1 横排, 工作台). 出 2 瓶
 	{
 		"id": "mana_potion", "grid_size": Vector2i(2, 1),

@@ -181,6 +181,15 @@ const _DEFS := {
 	"heal_staff":  {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 16, "heal_amount": 35},  # 治疗: 耗魔力给自己回血
 	"bird_staff":  {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 14, "summons_minion": true, "summon_kind": "bird"},  # 雀宝宝: 召唤会飞的小鸟帮打
 	"crack_staff": {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 12, "spell_damage": 7, "ground_crack": true},  # 地裂: 地上裂缝持续伤害
+	# === 第二批法杖 (用户加): 追踪/穿透 · 冰霜控制 · 华丽大招 · 辅助 ===
+	"homing_staff":      {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8,  "spell_damage": 9,  "spell_kind": "bullet", "gun_visual": "magic", "gun_homing": 7.0, "bullet_speed": 360},  # 追踪魔弹杖: 自动追怪
+	"beam_staff":        {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 10, "spell_damage": 12, "spell_kind": "bullet", "gun_visual": "laser", "gun_pierce": true, "bullet_speed": 900},  # 穿透激光杖: 一束穿一排
+	"frost_staff":       {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8,  "spell_damage": 6,  "spell_kind": "bullet", "gun_visual": "ice", "gun_slow_factor": 0.3, "gun_slow_dur": 3.0, "bullet_speed": 420},  # 冰冻减速杖: 真冻住
+	"bounce_star_staff": {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 8,  "spell_damage": 7,  "spell_kind": "bullet", "gun_visual": "star", "gun_bounce": 6, "bullet_lifetime": 3.0, "bullet_speed": 500},  # 弹跳星杖: 满屏弹
+	"meteor_staff":      {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 18, "spell_damage": 12, "spell_kind": "bullet", "gun_visual": "fire", "gun_explode_radius": 40.0, "gun_explode_dmg": 18, "gun_gravity": 220.0, "bullet_speed": 360},  # 流星雨杖: 砸地大爆炸
+	"penta_staff":       {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "damage_mult": 1.0, "mana_cost": 14, "spell_damage": 5,  "spell_kind": "bullet", "gun_visual": "magic", "gun_pellets": 5, "gun_spread_deg": 30.0, "bullet_speed": 460},  # 五重魔弹杖: 一次 5 发扇形
+	"greater_heal_staff":{"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 24, "heal_amount": 70},  # 强化治疗杖: 一口气回 70 血
+	"shield_staff":      {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 20, "shield_sec": 4.0},  # 护盾杖: 4 秒无敌护盾
 	# 魔力药水: 喝下 → 立刻 +30 mana (类似食物回血但回魔)
 	"mana_potion":   {"placeable_tile_id": -1, "tool_kind": "",        "tool_tier": 0, "max_stack": 16, "mana_refill": 30},
 	# 生命药水: 喝下立刻回 50 HP (复用食物回血路径 food_fill; is_potion 标记 = 显示/手感算药水非食物)

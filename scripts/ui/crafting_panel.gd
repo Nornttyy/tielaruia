@@ -693,6 +693,14 @@ const _ZH_NAMES := {
 	"heal_staff": "治疗法杖",
 	"bird_staff": "雀宝宝法杖",
 	"crack_staff": "地裂法杖",
+	"homing_staff": "追踪魔弹杖",
+	"beam_staff": "穿透激光杖",
+	"frost_staff": "冰冻减速杖",
+	"bounce_star_staff": "弹跳星杖",
+	"meteor_staff": "流星雨杖",
+	"penta_staff": "五重魔弹杖",
+	"greater_heal_staff": "强化治疗杖",
+	"shield_staff": "护盾杖",
 }
 
 

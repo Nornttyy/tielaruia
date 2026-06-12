@@ -22,6 +22,10 @@ const _STAFFS := [
 	["lightning_staff", "闪电法杖"], ["poison_staff", "毒液法杖"], ["multi_staff", "多重魔弹法杖"],
 	["explosive_staff", "爆裂火球法杖"], ["water_staff", "水之法杖"], ["wind_staff", "狂风法杖"],
 	["heal_staff", "治疗法杖"], ["crack_staff", "地裂法杖"],
+	# 第二批 (用户加): 追踪/穿透 · 冰霜控制 · 华丽大招 · 辅助
+	["homing_staff", "追踪魔弹杖"], ["beam_staff", "穿透激光杖"], ["frost_staff", "冰冻减速杖"],
+	["bounce_star_staff", "弹跳星杖"], ["meteor_staff", "流星雨杖"], ["penta_staff", "五重魔弹杖"],
+	["greater_heal_staff", "强化治疗杖"], ["shield_staff", "护盾杖"],
 ]
 const _GUNS := [
 	["pistol", "手枪"], ["smg", "冲锋枪"], ["assault_rifle", "突击步枪"], ["shotgun", "霰弹枪"],

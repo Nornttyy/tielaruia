@@ -2003,6 +2003,15 @@ func _try_cast_staff() -> void:
 				Effects.spawn_damage_number(player.global_position + Vector2(0, -18), int(def.get("heal_amount")), Color8(120, 230, 110))
 		SfxBank.play("pickup", 0.1)
 		return
+	# 护盾法杖: 不发弹, 给自己几秒无敌护盾 (mana 已扣).
+	if def.has("shield_sec"):
+		var hp2: Node = player.get_node_or_null("PlayerHealth")
+		if hp2 != null and hp2.has_method("grant_shield"):
+			hp2.grant_shield(float(def.get("shield_sec")))
+		if Effects != null and Effects.has_method("spawn_spell_impact"):
+			Effects.spawn_spell_impact("sparkle", player.global_position + Vector2(0, -8), Color8(120, 180, 255))
+		SfxBank.play("pickup", 0.12)
+		return
 	var start: Vector2 = player.global_position + Vector2(0, -8)
 	var target: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
 	var entities: Node = get_tree().get_first_node_in_group("entities_root")
