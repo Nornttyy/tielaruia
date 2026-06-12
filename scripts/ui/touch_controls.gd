@@ -192,13 +192,30 @@ func _held_item_icon() -> Texture2D:
 func _update_aim() -> void:
 	if _aim_joy == null or not _aim_joy.has_method("aim_vector"):
 		return
+	var pa: Node = _player_action()
 	if _ui_blocking():
-		return   # 背包/箱子开着 或 暂停时 不抢鼠标 (让玩家正常拖物品)
+		# 背包/箱子开着 或 暂停: 不抢鼠标 + 清掉瞄准覆盖 (让玩家正常拖物品/点菜单)
+		if pa != null:
+			pa.mouse_world_override = null
+		return
 	var av: Vector2 = _aim_joy.aim_vector()
 	if av.length() > 0.28:   # 超过死区才更新方向
 		_aim_dir = av.normalized()
+	# 直接把瞄准方向喂给 PlayerAction (弓/枪/法杖/剑都读 mouse_world_override)。
+	# 网页(HTML5) Input.warp_mouse 不生效 → 虚拟鼠标卡在"击"钮角落 → 武器永远朝一个方向 (用户报)。
+	# 用世界坐标朝瞄准方向投射 (距离只决定方向, 多远无所谓)。
+	if pa != null:
+		var pn := get_tree().get_first_node_in_group("player") as Node2D
+		if pn != null:
+			pa.mouse_world_override = pn.global_position + _aim_dir * AIM_REACH_PX
+	# 仍 warp 一下 (能用的平台顺带更新真准星; 网页失效也无妨)
 	var anchor: Vector2 = _player_screen_pos()
 	Input.warp_mouse(anchor + _aim_dir * AIM_REACH_PX)
+
+
+func _player_action() -> Node:
+	var p: Node = get_tree().get_first_node_in_group("player")
+	return p.get_node_or_null("PlayerAction") if p != null else null
 
 
 func _player_screen_pos() -> Vector2:

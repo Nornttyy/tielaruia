@@ -34,3 +34,33 @@ func test_touch_has_bag_drop_pause_buttons():
 	# 新增右下瞄准摇杆; 跳钮删了 (左摇杆上推包办跳)
 	assert_not_null(tc.get_node_or_null("AimJoystick"), "有瞄准摇杆")
 	assert_null(tc.get_node_or_null("BtnJump"), "跳钮已删 (左摇杆上推 = 跳)")
+
+
+# 桩: 假 PlayerAction, 只要个 mouse_world_override 字段
+class StubAction:
+	extends Node
+	var mouse_world_override = null
+
+
+# 用户报: 武器(弓)只往一个方向. 根因: 触屏瞄准靠 warp_mouse, 网页失效 → 鼠标卡在"击"钮角落。
+# 修: 瞄准摇杆方向直接喂 PlayerAction.mouse_world_override. 这里验证左/右瞄 → 目标在玩家对应侧。
+func test_aim_joystick_feeds_world_override_both_directions():
+	var player := Node2D.new()
+	player.add_to_group("player")
+	player.global_position = Vector2(500, 300)
+	var action := StubAction.new()
+	action.name = "PlayerAction"
+	player.add_child(action)
+	add_child_autofree(player)
+	var tc = TouchControls.new()
+	add_child_autofree(tc)
+	await wait_frames(1)
+	# 朝左瞄
+	tc._aim_dir = Vector2.LEFT
+	tc._update_aim()
+	assert_not_null(action.mouse_world_override, "该把瞄准目标喂给 PlayerAction")
+	assert_lt(action.mouse_world_override.x, player.global_position.x, "朝左瞄 → 目标在玩家左侧")
+	# 朝右瞄
+	tc._aim_dir = Vector2.RIGHT
+	tc._update_aim()
+	assert_gt(action.mouse_world_override.x, player.global_position.x, "朝右瞄 → 目标在玩家右侧")
