@@ -219,6 +219,12 @@ const _SKIRT := [
 	"bbbbbbbPb",
 	"BbbbbbbPB",
 ]
+# 女三角裤🩲 (比基尼底): 腰带→收窄→裆, 倒三角, 裸腿从两侧+下面露出。裤色 b。6 宽 × 3 高, 放 col5 row_HIP。
+const _BIKINI_BOTTOM := [
+	"BbbbbP",
+	".BbbP.",
+	"..bb..",
+]
 # 泳裤款的腿 (全长盖腿 b + 前缘高光 P; 只脚裸露=跟鞋一样分明, 不再裸腿糊成一条)。3 宽 × 4 高。
 const _LEG_TRUNK := [
 	"bbP",
@@ -390,7 +396,7 @@ static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 	if ps == 2:
 		leg = _LEG_SKIN_F if female else _LEG_SKIN       # 裙子: 裸腿 (上面盖裙)
 	elif ps == 7:
-		leg = _LEG_TRUNK_F if female else _LEG_TRUNK      # 泳裤: 上段短裤 + 下段裸腿
+		leg = _LEG_SKIN_F if female else _LEG_TRUNK      # 泳裤: 女裸腿(配三角裤) / 男全长短裤
 	else:
 		leg = _LEG_F if female else _LEG
 	var foot: Array = _FOOT_BARE if ps == 7 else _SHOE_B   # 泳裤光脚, 其余穿鞋
@@ -417,6 +423,8 @@ static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 				_place(g, _HIP, 5 + lw, [crotch, crotch])
 	if ps == 2:
 		_place(g, _HIP - 1, 4, _SKIRT)   # 裙子盖胯+大腿上段, 裸腿露在裙下
+	elif ps == 7 and female:
+		_place(g, _HIP, 5, _BIKINI_BOTTOM)   # 三角裤盖裆+胯, 裸腿露在两侧/下面
 	return g
 
 
