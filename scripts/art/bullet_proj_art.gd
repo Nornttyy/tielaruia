@@ -1,5 +1,5 @@
-# 子弹投射物 sprite (玩家手枪射出的飞行子弹). 单帧 16x16, 横向 (右飞).
-# 黄铜壳(y/Y) + 铜尖(u/t)朝右 + 身后速度线(s). bullet.gd 按飞行方向旋转 sprite.
+# 子弹投射物 sprite (玩家枪射出的飞行子弹). 单帧 16x16, 横向 (右飞).
+# 黄铜壳 + 白热芯 + 铜尖朝右 + 身后半透速度线. bullet.gd 按飞行方向旋转 sprite.
 extends RefCounted
 
 const PixelArt = preload("res://scripts/art/pixel_art.gd")
@@ -11,6 +11,7 @@ const PALETTE := {
 	"Y": Color8(168, 128, 66),      # 黄铜壳暗
 	"u": Color8(176, 108, 64),      # 铜尖基
 	"t": Color8(220, 150, 96),      # 铜尖高光
+	"w": Color8(255, 250, 220),     # 白热芯 (弹头发光感)
 	"s": Color8(255, 238, 180, 170),# 速度线 (半透淡黄)
 }
 
@@ -21,11 +22,11 @@ const _PROJ := [
 	"................",
 	"................",
 	"................",
-	"......nnnnnn....",
-	"..s..nyyYYuttn..",
-	".ss..nyyYYuutn..",
-	"..s..nyyYYuttn..",
-	"......nnnnnn....",
+	".....nnnnnnn....",
+	"..ss.nyyyYutn...",
+	".sssnyywyYuttn..",
+	"..ss.nyyyYutn...",
+	".....nnnnnnn....",
 	"................",
 	"................",
 	"................",

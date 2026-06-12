@@ -1,28 +1,47 @@
-# 闪电弹 sprite (闪电链枪). 16x16 带尖刺的电球 (黄+白核). bullet.gd 按方向旋转.
+# 闪电弹 sprite (闪电链枪/特斯拉). 16x16 电球 + 四向电刺, 2 帧交替 (直刺/斜刺) = 闪烁感.
 extends RefCounted
 
 const PixelArt = preload("res://scripts/art/pixel_art.gd")
 
 const PALETTE := {
 	".": Color(0, 0, 0, 0),
-	"y": Color8(255, 230, 90),       # 电黄
-	"Y": Color8(220, 180, 40),       # 暗黄
+	"y": Color8(255, 235, 90),       # 电黄亮
+	"Y": Color8(212, 175, 30),       # 电黄深
 	"w": Color8(255, 255, 235),      # 白热核心
 }
 
-const _PROJ := [
-	"................",
-	"................",
+const _F1 := [
 	"................",
 	"................",
 	"................",
 	".......y........",
-	"......yYy.......",
-	"...y.ywwy.y.....",
-	"..yYywwwyYy.....",
-	"...y.ywwy.y.....",
-	"......yYy.......",
 	".......y........",
+	"......yYy.......",
+	"..yy.yYwYy......",
+	".....yYwwYy.yy..",
+	"......yYwYy.....",
+	".......yYy......",
+	"........y.......",
+	"........y.......",
+	"................",
+	"................",
+	"................",
+	"................",
+]
+
+const _F2 := [
+	"................",
+	"................",
+	"................",
+	"................",
+	"....y......y....",
+	".....y....y.....",
+	"......yYYy......",
+	".....yYwwYy.....",
+	"......yYYy......",
+	".....y....y.....",
+	"....y......y....",
+	"................",
 	"................",
 	"................",
 	"................",
@@ -33,9 +52,9 @@ const _PROJ := [
 static func build_sprite_frames() -> SpriteFrames:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	var t := PixelArt.grid_to_texture(_PROJ, PALETTE)
 	sf.add_animation("fly")
-	sf.set_animation_speed("fly", 1.0)
-	sf.set_animation_loop("fly", false)
-	sf.add_frame("fly", t)
+	sf.set_animation_speed("fly", 10.0)
+	sf.set_animation_loop("fly", true)
+	sf.add_frame("fly", PixelArt.grid_to_texture(_F1, PALETTE))
+	sf.add_frame("fly", PixelArt.grid_to_texture(_F2, PALETTE))
 	return sf
