@@ -4,6 +4,7 @@ extends Node
 
 const BlockBreakParticleScene = preload("res://scenes/fx/block_break_particle.tscn")
 const SpellImpactFxScene = preload("res://scenes/fx/spell_impact_fx.tscn")  # 法杖招牌形状特效 (电弧/环/云...)
+const MuzzleFlashFxScene = preload("res://scenes/fx/muzzle_flash_fx.tscn")  # 枪口招牌形状特效 (星闪/扇楔/光束...)
 const DustParticleScene = preload("res://scenes/fx/dust_particle.tscn")
 const PlaceBounceScene = preload("res://scenes/fx/place_bounce.tscn")
 const WaterGrainScene = preload("res://scenes/fx/water_grain_particle.tscn")
@@ -101,12 +102,19 @@ func spawn_splash(world_pos: Vector2) -> void:
 		chip.setup(world_pos + Vector2(randf_range(-3, 3), -2.0), drops[i % drops.size()], vel)
 
 
-# 枪口火光: 开火瞬间枪口处一撮亮火花朝射击方向喷 (0.1s 级短促). color 跟枪属性走.
-# FX 可见性规矩: 亮白芯 + 高速高 alpha, 一眼能看见.
-func spawn_muzzle_flash(pos: Vector2, dir: Vector2, color: Color) -> void:
+# 枪口火光: 招牌形状 (每个枪系不一样: 星闪/扇楔/光束/火锥/冰刺/电弧/符文/毒滴/果冻/叶旋)
+# + 一小撮配套火花. kind 由 player_action 按枪系映射; power 大威力枪 >1 形状更大.
+func spawn_muzzle_flash(pos: Vector2, dir: Vector2, color: Color, kind: String = "star", power: float = 1.0) -> void:
 	var d: Vector2 = dir.normalized() if dir.length() > 0.01 else Vector2.RIGHT
+	# 招牌形状 (用户: 不要全是粒子 — 形状才有辨识度)
+	var fx = MuzzleFlashFxScene.instantiate()
+	_root().add_child(fx)
+	fx.global_position = pos
+	if fx.has_method("setup"):
+		fx.setup(kind, d, color, power)
+	# 配套火花减量 (3 颗点缀, 主角是形状)
 	var cols := [Color(1, 1, 1, 1), color, color.lightened(0.35)]
-	for i in 6:
+	for i in 3:
 		var ang: float = d.angle() + randf_range(-0.45, 0.45)
 		var sp: float = randf_range(160.0, 300.0)
 		_spell_one(pos, cols[i % cols.size()], Vector2(cos(ang), sin(ang)) * sp)

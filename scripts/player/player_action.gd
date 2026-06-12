@@ -1942,16 +1942,17 @@ func _try_fire_gun() -> void:
 		bullet.setup(start, aim, dmg, parent, speed, opts)
 		if NetworkManager != null and NetworkManager.connected():
 			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
-	# 枪口火光: 多弹丸也只闪一次; 颜色跟 gun_visual 走 (普通子弹枪 = 暖黄白)
-	if Effects != null and Effects.has_method("spawn_muzzle_flash"):
-		var mf_color: Color = Color8(255, 220, 140)
-		if def != null and def.has("gun_visual"):
-			mf_color = _spell_fx_color(String(def.get("gun_visual")))
-		Effects.spawn_muzzle_flash(start + base_dir * 10.0, base_dir, mf_color)
 	# 大威力枪开火震屏 (gun_shake 字段; 快枪不配 = 不震, 防晕)
 	var shake_amt: float = float(def.get("gun_shake", 0.0)) if def != null else 0.0
 	if shake_amt > 0.0 and parent.has_method("shake"):
 		parent.shake(shake_amt)
+	# 枪口火光: 每个枪系一种招牌形状 (星闪/扇楔/光束/火锥...), 多弹丸也只闪一次;
+	# 颜色跟 gun_visual 走 (普通子弹枪 = 暖黄白); 大威力枪形状更大 (跟 gun_shake 挂钩)
+	if Effects != null and Effects.has_method("spawn_muzzle_flash"):
+		var mf_color: Color = Color8(255, 220, 140)
+		if def != null and def.has("gun_visual"):
+			mf_color = _spell_fx_color(String(def.get("gun_visual")))
+		Effects.spawn_muzzle_flash(start + base_dir * 10.0, base_dir, mf_color, _muzzle_fx_kind(def), 1.0 + shake_amt * 0.25)
 	# 每把枪自己的声音 (gun_sfx 字段; 没配 = 默认砰)
 	SfxBank.play(String(def.get("gun_sfx", "gunshot")) if def != null else "gunshot", 0.08)
 
@@ -2102,6 +2103,24 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 		if NetworkManager != null and NetworkManager.connected():
 			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
 	SfxBank.play("cast", 0.12)
+
+
+# 枪系 → 枪口招牌形状 (照法杖招牌特效思路, 每个枪系开火形状不同, 不再全是粒子)
+func _muzzle_fx_kind(def: Variant) -> String:
+	if def == null:
+		return "star"
+	match String(def.get("gun_visual", "")):
+		"laser":     return "beam"    # 激光/电磁炮: 短光束
+		"fire":      return "flame"   # 火焰/火箭: 火锥
+		"ice":       return "frost"   # 冰系: 冰晶刺
+		"lightning": return "arc"     # 闪电/特斯拉: 小电弧
+		"magic":     return "rune"    # 魔法枪: 旋转符文环
+		"poison":    return "drip"    # 毒系: 喷液珠
+		"slimeblob": return "splat"   # 史莱姆: 果冻溅开
+		"leaf":      return "leaves"  # 绿叶: 叶片回旋
+		"star":      return "star"    # 星星/弹跳: 金色星闪
+	# 无属性枪: 多弹丸 (霰弹) 用扇楔, 其余经典枪口星
+	return "fan" if int(def.get("gun_pellets", 1)) > 1 else "star"
 
 
 # 法杖弹的 visual → 命中特效的"形状" (每把法杖不同, 不再全是同一种爆炸)
