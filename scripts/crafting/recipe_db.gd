@@ -935,6 +935,15 @@ const _RECIPES := [
 		"pattern": [["stone", "iron_ingot", "stone"], ["", "planks", ""], ["", "planks", ""]],
 		"output_id": "warhammer", "output_count": 1, "mirror_ok": true,
 	},
+	# === 近战材质变种 (金/钻: 基础配方把铁换成金锭/钻石) ===
+	{"id": "gold_spear", "grid_size": Vector2i(1, 3), "pattern": [["gold_ingot"], ["planks"], ["planks"]], "output_id": "gold_spear", "output_count": 1, "mirror_ok": false},
+	{"id": "diamond_spear", "grid_size": Vector2i(1, 3), "pattern": [["diamond"], ["planks"], ["planks"]], "output_id": "diamond_spear", "output_count": 1, "mirror_ok": false},
+	{"id": "gold_dual_blade", "grid_size": Vector2i(2, 1), "pattern": [["gold_ingot", "gold_ingot"]], "output_id": "gold_dual_blade", "output_count": 1, "mirror_ok": false},
+	{"id": "diamond_dual_blade", "grid_size": Vector2i(2, 1), "pattern": [["diamond", "diamond"]], "output_id": "diamond_dual_blade", "output_count": 1, "mirror_ok": false},
+	{"id": "gold_flail", "grid_size": Vector2i(1, 3), "pattern": [["gold_ingot"], ["leather"], ["gold_ingot"]], "output_id": "gold_flail", "output_count": 1, "mirror_ok": false},
+	{"id": "diamond_flail", "grid_size": Vector2i(1, 3), "pattern": [["diamond"], ["leather"], ["diamond"]], "output_id": "diamond_flail", "output_count": 1, "mirror_ok": false},
+	{"id": "gold_warhammer", "grid_size": Vector2i(3, 3), "pattern": [["stone", "gold_ingot", "stone"], ["", "planks", ""], ["", "planks", ""]], "output_id": "gold_warhammer", "output_count": 1, "mirror_ok": true},
+	{"id": "diamond_warhammer", "grid_size": Vector2i(3, 3), "pattern": [["stone", "diamond", "stone"], ["", "planks", ""], ["", "planks", ""]], "output_id": "diamond_warhammer", "output_count": 1, "mirror_ok": true},
 	# === 第二批法杖 (用户加): 都是 1x3 宝石+杖身 ===
 	{
 		"id": "homing_staff", "grid_size": Vector2i(1, 3),

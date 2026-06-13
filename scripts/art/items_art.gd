@@ -3366,15 +3366,45 @@ static func _hammer_grid(mats: Array) -> Array:
 	]
 
 
+# 新武器材质变种: 哪些基础武器支持 gold_/diamond_ 升级 (图标 = 基础形状换金属色)
+const _TIER_WEAPONS := {"spear": true, "dual_blade": true, "flail": true, "warhammer": true,
+	"shuriken": true, "boomerang": true}   # bomb 不换(它是黑壳, 换色没意义)
+const _GOLD_SWAP := {"K": "R", "G": "Z", "g": "Z", "j": "P"}      # 灰钢 → 金
+const _DIAMOND_SWAP := {"K": "T", "G": "N", "g": "N", "j": "Q"}   # 灰钢 → 钻石蓝
+
+
+# 把图标 grid 里的金属色字母按 swap 换掉 (材质 tier 用)。木/其它色不动。
+static func _recolor_grid(grid: Array, swap: Dictionary) -> Array:
+	var out: Array = []
+	for row in grid:
+		var s: String = ""
+		for ch in row:
+			s += String(swap.get(ch, ch))
+		out.append(s)
+	return out
+
+
+# item_id 是不是 gold_/diamond_ 材质变种 → 返回 [基础id, swap表] 或 []
+static func _tier_variant(item_id: String) -> Array:
+	if item_id.begins_with("gold_") and _TIER_WEAPONS.has(item_id.substr(5)):
+		return [item_id.substr(5), _GOLD_SWAP]
+	if item_id.begins_with("diamond_") and _TIER_WEAPONS.has(item_id.substr(8)):
+		return [item_id.substr(8), _DIAMOND_SWAP]
+	return []
+
+
 static func get_icon(item_id: String) -> ImageTexture:
 	if _HAMMER_MATS.has(item_id):
 		return PixelArt.grid_to_texture(_hammer_grid(_HAMMER_MATS[item_id]), PALETTE)
+	var tv: Array = _tier_variant(item_id)
+	if not tv.is_empty():
+		return PixelArt.grid_to_texture(_recolor_grid(_ICONS[tv[0]], tv[1]), PALETTE)
 	assert(_ICONS.has(item_id), "未知物品 icon: %s" % item_id)
 	return PixelArt.grid_to_texture(_ICONS[item_id], PALETTE)
 
 
 static func has_icon(item_id: String) -> bool:
-	return _ICONS.has(item_id) or _HAMMER_MATS.has(item_id)
+	return _ICONS.has(item_id) or _HAMMER_MATS.has(item_id) or not _tier_variant(item_id).is_empty()
 
 
 # 钩爪飞行时显示的小钩头 (16x16, 默认朝右; sprite 用 rotation 跟方向).
