@@ -13,6 +13,19 @@ const TILE_SIZE := 12
 const CHIPS_PER_BREAK := 6
 const MAX_WATER_GRAINS := 250        # 全局存活水珠硬上限 (网页安全)
 var _grain_count: int = 0            # 当前存活水珠数 (发 +1, 回池 -1)
+const MAX_CHIPS := 400               # 全局存活碎片粒子硬上限 (爆炸/火花/挖矿/特效共用)。
+var _chip_count: int = 0             # 当前存活碎片数; 超上限丢弃 → 战斗特效爆发时不卡 (网页/手机)
+
+
+# 统一出碎片粒子: 超全局上限就丢弃 (软护栏, 防短命 Sprite2D 狂生狂灭卡网页)。pos 是最终位置(调用方自带抖动)。
+func _emit_chip(pos: Vector2, color: Color, vel: Vector2) -> void:
+	if _chip_count >= MAX_CHIPS:
+		return
+	var chip = BlockBreakParticleScene.instantiate()
+	_root().add_child(chip)
+	chip.setup(pos, color, vel)
+	_chip_count += 1
+	chip.tree_exited.connect(func() -> void: _chip_count -= 1)
 var grains_emitted: int = 0          # 调试/测试计数: 累计成功发射次数 (只增)
 
 
@@ -32,15 +45,12 @@ func spawn_block_break(tile_coord: Vector2i, tile_id: int) -> void:
 		tile_coord.y * TILE_SIZE + TILE_SIZE / 2.0
 	)
 	var palette: Array = BlocksArt.get_palette(tile_id)
-	var parent: Node = _root()
 	for i in CHIPS_PER_BREAK:
-		var chip = BlockBreakParticleScene.instantiate()
-		parent.add_child(chip)
 		var angle: float = randf_range(-PI, 0.0)  # 向上半圆
 		var speed: float = randf_range(60.0, 140.0)
 		var vel := Vector2(cos(angle), sin(angle)) * speed
 		var color: Color = palette[i % palette.size()]
-		chip.setup(center + Vector2(randf_range(-4, 4), randf_range(-4, 4)), color, vel)
+		_emit_chip(center + Vector2(randf_range(-4, 4), randf_range(-4, 4)), color, vel)
 
 
 func spawn_place_bounce(tile_coord: Vector2i, tile_id: int = -1) -> void:
@@ -91,15 +101,12 @@ func spawn_steam_puff(world_pos: Vector2) -> void:
 
 func spawn_splash(world_pos: Vector2) -> void:
 	# 落水溅水花: 8 颗蓝色水滴向上扇形飞散 + 落回 (复用 block_break 粒子, 够明显)
-	var parent: Node = _root()
 	var drops := [Color(0.55, 0.8, 0.96, 0.95), Color(0.72, 0.9, 1.0, 0.95), Color(0.38, 0.64, 0.92, 0.92)]
 	for i in 8:
-		var chip = BlockBreakParticleScene.instantiate()
-		parent.add_child(chip)
 		var angle: float = randf_range(-PI * 0.85, -PI * 0.15)  # 向上扇形 (含两侧)
 		var speed: float = randf_range(70.0, 150.0)
 		var vel := Vector2(cos(angle), sin(angle)) * speed
-		chip.setup(world_pos + Vector2(randf_range(-3, 3), -2.0), drops[i % drops.size()], vel)
+		_emit_chip(world_pos + Vector2(randf_range(-3, 3), -2.0), drops[i % drops.size()], vel)
 
 
 # 枪口火光: 招牌形状 (每个枪系不一样: 星闪/扇楔/光束/火锥/冰刺/电弧/符文/毒滴/果冻/叶旋).
@@ -204,9 +211,7 @@ func _spell_chips(pos: Vector2, cols: Array, n: int, smin: float, smax: float, e
 
 
 func _spell_one(pos: Vector2, color: Color, vel: Vector2) -> void:
-	var chip = BlockBreakParticleScene.instantiate()
-	_root().add_child(chip)
-	chip.setup(pos + Vector2(randf_range(-3, 3), randf_range(-3, 3)), color, vel)
+	_emit_chip(pos + Vector2(randf_range(-3, 3), randf_range(-3, 3)), color, vel)
 
 
 func spawn_damage_number(world_pos: Vector2, amount: int, color: Color = Color(1, 0.9, 0.5)) -> void:
@@ -249,7 +254,6 @@ func spawn_walk_puff(world_pos: Vector2) -> void:
 # 爆炸 (死人箱触发): 红黄火光粒子 30 颗向四面散开 + 黑烟 + 飞溅木屑碎片.
 # 用 BlockBreakParticle 当弹片 (颜色覆盖成爆炸色).
 func spawn_explosion(world_pos: Vector2, tint: Color = Color(0, 0, 0, 0)) -> void:
-	var parent: Node = _root()
 	# 爆炸色板: 默认红 → 橙 → 黄 → 黑烟; 传了 tint (法杖元素色) 就围着 tint 配一套深浅.
 	var explosion_palette: Array
 	if tint.a <= 0.0:
@@ -271,13 +275,11 @@ func spawn_explosion(world_pos: Vector2, tint: Color = Color(0, 0, 0, 0)) -> voi
 			tint.darkened(0.5),     # 更暗
 		]
 	for i in 30:  # 比普通破方块 6 颗多很多 → "爆炸感"
-		var chip = BlockBreakParticleScene.instantiate()
-		parent.add_child(chip)
 		var angle: float = randf_range(-PI, PI)   # 全方向 (不只是向上)
 		var speed: float = randf_range(120.0, 280.0)
 		var vel := Vector2(cos(angle), sin(angle)) * speed
 		var color: Color = explosion_palette[i % explosion_palette.size()]
-		chip.setup(world_pos + Vector2(randf_range(-6, 6), randf_range(-6, 6)), color, vel)
+		_emit_chip(world_pos + Vector2(randf_range(-6, 6), randf_range(-6, 6)), color, vel)
 
 
 # 活水颗粒发射: 从流动的水冒小水珠 (纯视觉)。
