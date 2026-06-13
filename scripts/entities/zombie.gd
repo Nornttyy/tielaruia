@@ -4,6 +4,7 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
+const MobNav = preload("res://scripts/entities/mob_nav.gd")
 
 const GRAVITY := 675.0
 const SWIM_GRAVITY := 150.0
@@ -33,6 +34,7 @@ const ENEMY_IFRAME_SEC := 0.2
 var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _jump_cooldown: float = 0.0
+var _nav = MobNav.new()         # 寻路跟随器 (节流重算 A* + 路点跟随)
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -90,8 +92,22 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 
 	var player := _find_player()
+	var used_path: bool = false
 	if player != null and global_position.distance_to(player.global_position) <= aggro_range_px:
+		# 优先 A* 寻路: 算出朝下一路点的方向 + 要不要跳; 没路 (太远/翻不过) 退回反应式"朝玩家走"。
 		var dir: float = signf(player.global_position.x - global_position.x)
+		var cm = _get_cm()
+		if cm != null:
+			var from_t := Vector2i(int(floor(global_position.x / TILE_SIZE)), int(floor(global_position.y / TILE_SIZE)))
+			var goal_t := Vector2i(int(floor(player.global_position.x / TILE_SIZE)), int(floor(player.global_position.y / TILE_SIZE)))
+			var nd: int = _nav.steer(cm, from_t, goal_t, delta)
+			if nd != MobNav.NO_PATH:
+				used_path = true
+				dir = float(nd)
+				# 寻路要跳 (爬台阶/跨坑) → 落地 + 冷却好就跳
+				if _nav.want_jump and is_on_floor() and _jump_cooldown <= 0.0:
+					velocity.y = JUMP_VY
+					_jump_cooldown = 0.5
 		velocity.x = dir * walk_speed
 		sprite.flip_h = dir < 0
 		if sprite.animation != "walk":
@@ -102,11 +118,10 @@ func _physics_process(delta: float) -> void:
 			sprite.play("idle")
 
 	move_and_slide()
-	# 撞墙 + 落地 → 小跳避障. 但: 玩家在下方时不要跳 (跳起来反而砸头顶或飞过去).
-	if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
+	# 反应式避障 (只在没走寻路时兜底): 撞墙 + 落地 → 小跳。玩家在下方时不跳 (免得砸头顶/飞过去)。
+	if not used_path and is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
 		var skip_jump: bool = false
 		if player != null:
-			# 玩家比 zombie 低 1.5 tile 以上 → 不跳, 寻别的路 (或撞墙等)
 			if player.global_position.y - global_position.y > float(TILE_SIZE) * 1.5:
 				skip_jump = true
 		if not skip_jump:
