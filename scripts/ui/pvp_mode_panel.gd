@@ -150,10 +150,11 @@ func _show_modes(allow_close: bool = true) -> void:
 		_add_choice("关闭 (返回游戏)", _close)   # 用户: 退出只关面板回游戏 (离开整个房间走暂停菜单)
 
 
-# 选一个模式: 重置竞技场 (清掉搭的方块) + 发该模式默认装备 + (换了模式才) 重连到那模式的房间。
+# 选一个模式: 发该模式默认装备 + (换了模式才) 重连到那模式的房间。
+# 切模式不再清方块 (用户改主意: 搭的东西要留着). 清场只发生在: 赢了重开 (pvp_scoreboard)
+# 或 房间没别人满 1 分钟 (pvp_scoreboard 空房计时)。_reset_arena 函数保留给那些用。
 func _pick_mode(mode_key: String) -> void:
 	_current_mode_key = mode_key
-	_reset_arena()                 # 切模式 = 新的一局: 把自己搭的方块清掉, 竞技场恢复干净 (用户要求)
 	_grant_loadout(mode_key, "")   # 默认武器 (魔法=铁杖, 枪=手枪, 经典=剑+弓)
 	_close()
 	var new_tag: String = String(_MODE_TAG.get(mode_key, "PVP"))

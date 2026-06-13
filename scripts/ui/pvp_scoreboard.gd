@@ -5,11 +5,13 @@ extends CanvasLayer
 const PvpArena = preload("res://scripts/world/pvp_arena.gd")
 const WIN_SCORE := 20        # 积分到 20 = 胜利 (用户要求)
 const RESET_DELAY := 4.0     # 胜利后多久重置地图 (给玩家看胜利横幅)
+const EMPTY_RESET_SEC := 60.0   # 房间没别人 + 搭过方块, 满这么久 → 自动清场 (用户要求)
 
 var _vbox: VBoxContainer
 var _kills: Dictionary = {}   # peer_id(String) → 击杀数(int)
 var _match_over: bool = false   # 已有人到 20 → 等重置 (防重复触发)
 var _banner: Label = null       # "X 胜利!" 横幅
+var _empty_timer: float = 0.0   # 独自一人持续时长 (满 EMPTY_RESET_SEC 清场)
 
 
 func _ready() -> void:
@@ -32,10 +34,42 @@ func _ready() -> void:
 		NetworkManager.kill_scored.connect(_on_kill_scored)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	# 只在对战房露脸. 用 room_mode=="pvp" 而非 combat_enabled(): 切模式转房断开重连期间
 	# connected()=false 但 room_mode 仍 pvp → 击杀榜不会消失一阵 (用户反馈)。
-	visible = NetworkManager != null and NetworkManager.room_mode == "pvp"
+	var in_pvp: bool = NetworkManager != null and NetworkManager.room_mode == "pvp"
+	visible = in_pvp
+	_tick_empty_reset(delta, in_pvp)
+
+
+# 房间没别人 (只剩自己) 且搭过方块 → 持续满 1 分钟自动清场. 有别人/没搭过 → 计时清零。
+# (用户要求: 切模式保留方块, 但空房放久了自动重置, 给后来的人干净竞技场。)
+func _tick_empty_reset(delta: float, in_pvp: bool) -> void:
+	if not in_pvp or _match_over:
+		_empty_timer = 0.0
+		return
+	if _other_players_present() or not _has_placed_blocks():
+		_empty_timer = 0.0
+		return
+	_empty_timer += delta
+	if _empty_timer >= EMPTY_RESET_SEC:
+		_empty_timer = 0.0
+		_clean_arena()
+
+
+func _other_players_present() -> bool:
+	var w: Node = get_tree().get_first_node_in_group("world")
+	if w != null and w.has_method("get_remote_player_list"):
+		return not (w.get_remote_player_list() as Array).is_empty()
+	return false
+
+
+func _has_placed_blocks() -> bool:
+	var w: Node = get_tree().get_first_node_in_group("world")
+	if w == null:
+		return false
+	var cm = w.get("chunk_manager")
+	return cm != null and "_pvp_placed" in cm and not (cm._pvp_placed as Dictionary).is_empty()
 
 
 func _on_kill_scored(killer_pid: String, _victim_pid: String) -> void:
@@ -73,22 +107,35 @@ func _trigger_win(winner_pid: String) -> void:
 	get_tree().create_timer(RESET_DELAY).timeout.connect(_reset_match)
 
 
-# 重置: 清积分 + 重建竞技场 (清玩家搭的方块) + 本地玩家随机出生 + 满血。各端独立跑, 结果一致。
+# 重置: 清积分 + 清场 (重建竞技场 + 清搭的方块 + 随机出生) + 满血。各端独立跑, 结果一致。
 func _reset_match() -> void:
 	_kills.clear()
 	_match_over = false
+	_empty_timer = 0.0
 	_refresh()
 	if _banner != null:
 		_banner.visible = false
-	var w: Node = get_tree().get_first_node_in_group("world")
-	if w != null and w.has_method("_set_tile"):
-		PvpArena.build(w)
+	_clean_arena()
 	var player: Node = get_tree().get_first_node_in_group("player")
 	if player != null:
-		(player as Node2D).global_position = PvpArena.random_spawn()
 		var hp: Node = player.get_node_or_null("PlayerHealth")
 		if hp != null and hp.has_method("revive_full"):
 			hp.revive_full()
+
+
+# 清场: 重建干净竞技场 (清玩家搭的方块) + 清放置记录 + 本地玩家挪回随机出生台。
+# 赢了重开 / 空房满 1 分钟 都用它。
+func _clean_arena() -> void:
+	var w: Node = get_tree().get_first_node_in_group("world")
+	if w == null or not w.has_method("_set_tile"):
+		return
+	PvpArena.build(w)
+	var cm = w.get("chunk_manager")
+	if cm != null and cm.has_method("clear_pvp_placed"):
+		cm.clear_pvp_placed()
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if player is Node2D:
+		(player as Node2D).global_position = PvpArena.random_spawn()
 
 
 func _name_for(pid: String) -> String:

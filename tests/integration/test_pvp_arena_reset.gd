@@ -1,4 +1,5 @@
-# 切模式 = 新一局: 重置竞技场, 把玩家搭的方块清掉 (用户报: 换模式方块还在)。
+# _reset_arena 工具: 重建竞技场把搭的方块清掉。
+# (注: 切模式已不再调它 — 用户改主意要保留方块; 清场只发生在 赢了重开 / 空房满 1 分钟。)
 extends GutTest
 
 const MainScene = preload("res://scenes/main.tscn")
