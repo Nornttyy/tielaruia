@@ -1872,6 +1872,7 @@ const BulletScene = preload("res://scenes/entities/bullet.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
 const SlimeBallScene = preload("res://scenes/entities/slime_ball.tscn")
 const BoomerangScene = preload("res://scenes/entities/boomerang.tscn")   # 回旋镖 (投掷武器)
+const ShurikenScene = preload("res://scenes/entities/shuriken.tscn")     # 手里剑 (物理飞镖, 非魔法)
 const FriendlySkeletonScene = preload("res://scenes/entities/friendly_skeleton.tscn")
 const FriendlyBirdScene = preload("res://scenes/entities/friendly_bird.tscn")   # 雀宝宝法杖召唤
 const EarthCrackScene = preload("res://scenes/entities/earth_crack.tscn")        # 地裂法杖
@@ -2344,10 +2345,18 @@ func _try_throw_weapon() -> void:
 		entities = player.get_parent()
 	var dmg: int = int(round(float(def.get("thrown_damage", 6)) * _tool_damage_mult()))
 	_attack_cooldown = float(def.get("throw_cooldown", 0.4))
-	if String(def.get("throw_kind", "bullet")) == "boomerang":
+	var tkind: String = String(def.get("throw_kind", "bullet"))
+	if tkind == "boomerang":
 		var bm = BoomerangScene.instantiate()
 		entities.add_child(bm)
 		bm.setup(start, target, dmg, player)
+		SfxBank.play("break", 0.10)
+		return
+	if tkind == "shuriken":
+		# 手里剑: 物理金属飞镖 (旋转图标 + 穿透 + 小火星), 不走魔法弹 → 没星星贴图/没魔法拖尾 (用户报)
+		var shk = ShurikenScene.instantiate()
+		entities.add_child(shk)
+		shk.setup(start, target, dmg, player)
 		SfxBank.play("break", 0.10)
 		return
 	# 手里剑/炸弹: 复用 bullet (炸弹靠 gun_gravity+gun_explode_*, 手里剑靠 gun_pierce) + 命中招牌特效

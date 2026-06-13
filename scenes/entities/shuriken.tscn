@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_shuriken_2026"]
+
+[ext_resource type="Script" path="res://scripts/entities/shuriken.gd" id="1_shk"]
+
+[node name="Shuriken" type="Area2D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_shk")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]

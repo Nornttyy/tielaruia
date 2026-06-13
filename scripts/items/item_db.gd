@@ -22,7 +22,7 @@ const _DEFS := {
 	"skull_summon": {"placeable_tile_id": -1,              "tool_kind": "summon",    "tool_tier": 0, "max_stack": 1, "summon_boss": "skeleton_king"},  # 骷髅头骨: 召唤骷髅王
 	"slime_ball":   {"placeable_tile_id": -1,              "tool_kind": "slimeball", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0},  # Boss 掉落武器, tier 5 让伤害高于铁剑 (tier 4)
 	# 投掷武器 (tool_kind "thrown"): 朝鼠标扔, 无弹药, cd 由 throw_cooldown
-	"shuriken":     {"placeable_tile_id": -1,              "tool_kind": "thrown", "tool_tier": 1, "max_stack": 1, "throw_kind": "bullet", "thrown_damage": 6, "bullet_speed": 540, "gun_visual": "star", "gun_pierce": true, "throw_cooldown": 0.16},  # 手里剑: 飞快+穿透连发
+	"shuriken":     {"placeable_tile_id": -1,              "tool_kind": "thrown", "tool_tier": 1, "max_stack": 1, "throw_kind": "shuriken", "thrown_damage": 6, "throw_cooldown": 0.16},  # 手里剑: 物理金属飞镖(旋转+穿透), 非魔法
 	"bomb":         {"placeable_tile_id": -1,              "tool_kind": "thrown", "tool_tier": 1, "max_stack": 1, "throw_kind": "bullet", "thrown_damage": 5, "bullet_speed": 300, "gun_gravity": 420.0, "gun_explode_radius": 34.0, "gun_explode_dmg": 18, "gun_explode_on_land_only": true, "gun_visual": "fire", "throw_cooldown": 0.7},  # 炸弹: 抛物线, 落地炸一片
 	"boomerang":    {"placeable_tile_id": -1,              "tool_kind": "thrown", "tool_tier": 1, "max_stack": 1, "throw_kind": "boomerang", "thrown_damage": 9, "throw_cooldown": 0.5},  # 回旋镖: 飞出去再飞回, 来回都打
 	"bone_sword":   {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 7, "max_stack": 1, "damage_mult": 1.3, "sword_style": "sweep"},  # 骷髅王掉落, 阔剑(横扫), 比普通阔剑(1.2)更强
