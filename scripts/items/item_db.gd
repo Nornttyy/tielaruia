@@ -289,9 +289,15 @@ func is_placeable(item_id: String) -> bool:
 	return def != null and def.placeable_tile_id != -1
 
 
+# 堆叠上限统一抬到 9999: 凡是本来能堆 (max_stack > 1, 如方块/矿/材料) 的一律 9999;
+# 工具/武器 (max_stack == 1, 不能叠) 保持 1。改这一处, 全游戏 + 以后新物品都自动生效。
+const STACK_CAP := 9999
+
 func max_stack(item_id: String) -> int:
 	var def = get_def(item_id)
-	return 0 if def == null else def.max_stack
+	if def == null:
+		return 0
+	return STACK_CAP if def.max_stack > 1 else def.max_stack
 
 
 # 剑的攻击方式: "thrust"(短剑·戳) / "sweep"(阔剑·扫) / ""(非剑或没标).

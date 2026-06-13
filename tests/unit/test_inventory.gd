@@ -27,16 +27,19 @@ func test_add_stacks_onto_same_id():
 
 
 func test_add_overflows_to_next_slot_when_max_stack_hit():
-	inv.add("dirt", 60)
-	inv.add("dirt", 10)  # 60+10=70, max=64 → 第一槽 64，第二槽 6
-	assert_eq(inv.slots[0].count, 64)
+	var cap: int = ItemDB.max_stack("dirt")  # 堆叠上限 (现在 9999)
+	inv.add("dirt", cap - 4)   # 离满还差 4
+	inv.add("dirt", 10)        # 填满第一槽, 多的 6 进第二槽
+	assert_eq(inv.slots[0].count, cap)
 	assert_eq(inv.slots[1].item_id, "dirt")
 	assert_eq(inv.slots[1].count, 6)
 
 
 func test_add_returns_leftover_when_full():
-	# 全 36 槽塞满 dirt → 64*36 = 2304
-	assert_eq(inv.add("dirt", 2304), 0)
+	# 每槽塞满 dirt → cap * 槽数 刚好填满
+	var cap: int = ItemDB.max_stack("dirt")
+	var total: int = cap * inv.slots.size()
+	assert_eq(inv.add("dirt", total), 0)
 	assert_eq(inv.add("dirt", 5), 5, "全满后剩余 5")
 
 
