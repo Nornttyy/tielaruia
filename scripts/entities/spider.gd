@@ -4,6 +4,7 @@ extends CharacterBody2D
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
+const MobNav = preload("res://scripts/entities/mob_nav.gd")
 
 const GRAVITY := 675.0
 const HIT_FLASH_SEC := 0.1
@@ -28,6 +29,7 @@ var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _jump_cooldown: float = 0.0
+var _nav = MobNav.new()   # 寻路跟随器
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -74,8 +76,16 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 	# 追玩家
 	var player := _find_player()
+	var used_path: bool = false
 	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
 		var dir: float = signf(player.global_position.x - global_position.x)
+		var nd: int = _nav.steer_node(self, player, TILE_SIZE, delta)   # A* 寻路优先
+		if nd != MobNav.NO_PATH:
+			used_path = true
+			dir = float(nd)
+			if _nav.want_jump and is_on_floor() and _jump_cooldown <= 0.0:
+				velocity.y = JUMP_VY
+				_jump_cooldown = 0.6
 		velocity.x = dir * WALK_SPEED
 		sprite.flip_h = dir < 0
 		if sprite.animation != "walk":
@@ -85,8 +95,8 @@ func _physics_process(delta: float) -> void:
 		if abs(velocity.x) < 5.0 and sprite.animation != "idle":
 			sprite.play("idle")
 	move_and_slide()
-	# 撞墙 + 落地 → 跳
-	if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
+	# 反应式避障 (没走寻路才兜底): 撞墙 + 落地 → 跳
+	if not used_path and is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
 		velocity.y = JUMP_VY
 		_jump_cooldown = 0.6
 	_check_player_contact()

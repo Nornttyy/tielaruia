@@ -45,3 +45,24 @@ func steer(cm, from_tile: Vector2i, goal_tile: Vector2i, delta: float) -> int:
 
 func _reached(from_tile: Vector2i, wp: Vector2i) -> bool:
 	return from_tile.x == wp.x and absi(from_tile.y - wp.y) <= 1
+
+
+var _cm = null   # 缓存 chunk_manager
+
+func _get_cm(tree) -> Node:
+	if _cm != null and is_instance_valid(_cm):
+		return _cm
+	_cm = tree.get_first_node_in_group("chunk_manager") if tree != null else null
+	return _cm
+
+
+# 便捷: 直接传怪 + 玩家节点, 内部取 chunk_manager + 算格. 返回 -1/0/1 或 NO_PATH。
+func steer_node(mob: Node2D, goal: Node2D, tile_size: int, delta: float) -> int:
+	if mob == null or goal == null:
+		return NO_PATH
+	var cm = _get_cm(mob.get_tree())
+	if cm == null:
+		return NO_PATH
+	var ft := Vector2i(int(floor(mob.global_position.x / tile_size)), int(floor(mob.global_position.y / tile_size)))
+	var gt := Vector2i(int(floor(goal.global_position.x / tile_size)), int(floor(goal.global_position.y / tile_size)))
+	return steer(cm, ft, gt, delta)

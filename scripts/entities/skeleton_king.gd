@@ -4,6 +4,7 @@
 # 照搬 king_slime.gd 模式: group boss + take_damage + boss_display_name + 不与玩家物理碰撞。
 extends CharacterBody2D
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
+const MobNav = preload("res://scripts/entities/mob_nav.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const SkeletonKingArt = preload("res://scripts/art/skeleton_king_art.gd")
@@ -55,6 +56,7 @@ var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _far_timer: float = 0.0
 var _jump_cooldown: float = 0.0
+var _nav = MobNav.new()   # 寻路跟随器
 # 攻击状态机
 var _attack_timer: float = ATTACK_COOLDOWN_FULL
 var _state: String = ""        # "" 平时 / "throw" / "dash" / "sweep"
@@ -134,6 +136,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 	var player := _find_player()
 	var aggro: bool = player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX
+	var used_path: bool = false
 	# 血 < 50% 周期召唤小骷髅 (独立于出招)
 	if current_health < max_health / 2 and player != null:
 		_minion_timer -= delta
@@ -145,6 +148,13 @@ func _physics_process(delta: float) -> void:
 		_run_attack(delta, player)
 	elif aggro:
 		var dir: float = signf(player.global_position.x - global_position.x)
+		var nd: int = _nav.steer_node(self, player, TILE_SIZE, delta)   # A* 寻路优先 (平时走向玩家时)
+		if nd != MobNav.NO_PATH:
+			used_path = true
+			dir = float(nd)
+			if _nav.want_jump and is_on_floor() and _jump_cooldown <= 0.0:
+				velocity.y = JUMP_VY
+				_jump_cooldown = 0.8
 		velocity.x = dir * WALK_SPEED
 		_face(dir)
 		_play("walk")
@@ -155,8 +165,8 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta)
 		_play("idle")
 	move_and_slide()
-	# 撞墙落地 → 跳 (爬台阶过坎); 攻击中不跳; 玩家在下方时不跳 (防砸头顶躲)
-	if _state == "" and is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
+	# 反应式避障 (没走寻路才兜底): 撞墙落地 → 跳; 攻击中不跳; 玩家在下方不跳 (防砸头顶躲)
+	if not used_path and _state == "" and is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
 		if player == null or player.global_position.y - global_position.y <= float(TILE_SIZE) * 1.5:
 			velocity.y = JUMP_VY
 			_jump_cooldown = 0.8
