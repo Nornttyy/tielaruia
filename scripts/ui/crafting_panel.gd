@@ -654,7 +654,7 @@ const _ZH_NAMES := {
 	"twin_magic_gun": "双管魔枪",
 	"rocket_gun": "追踪火箭枪",
 	"slime_smg": "史莱姆冲锋枪",
-	"tesla_gun": "特斯拉枪",
+	"tesla_gun": "闪电枪",
 	"cryo_gun": "寒冰炮",
 	"venom_gun": "剧毒枪",
 	"railgun": "电磁炮",

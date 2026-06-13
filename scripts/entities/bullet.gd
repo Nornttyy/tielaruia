@@ -391,6 +391,9 @@ func _do_chain(from_enemy: Node2D, src: Vector2) -> void:
 		hit[next.get_instance_id()] = true
 		if Effects != null and Effects.has_method("spawn_lightning_arc"):
 			Effects.spawn_lightning_arc(current.global_position, next.global_position)
+		# 每个被电到的怪也爆一下电闪 (跟弹色走), 一眼看出电链电到了谁
+		if Effects != null and Effects.has_method("spawn_bullet_impact"):
+			Effects.spawn_bullet_impact(next.global_position, next.global_position - current.global_position, _fx_color, "hit")
 		if next.has_method("take_damage"):
 			next.take_damage(damage, src, 80.0)
 		current = next
