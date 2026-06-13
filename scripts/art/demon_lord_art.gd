@@ -55,6 +55,25 @@ const _FLAP := [
 	".........ny....yn.......",
 ]
 
+const _WINGS_UP := [
+	".......n........n.......",
+	"...k..nyn......nyn..k...",
+	"..kw.nDyDnnnnDyDn.wk....",
+	"..kw.nkDDDDDDDDDDkn.wk..",
+	".kww.nDhDDddddDDhDn.wwk.",
+	".kww.nDDrRddddRrDDn.wwk.",
+	"..kwwnDDddddddddDDnwwk..",
+	"...wknDDddyyddDDnkw.....",
+	".....nDDddddddddDDn.....",
+	"....nkDDDddddddDDDkn....",
+	"...nkwDDDDddddDDDDwkn...",
+	".....nDDDDDDDDDDDDn.....",
+	"......nDDddddddDDn......",
+	".......nDDddddDDn.......",
+	"........nyn..nyn........",
+	".........ny....yn.......",
+]
+
 const _ATTACK := [
 	".......n........n.......",
 	"......nyn......nyn......",
@@ -76,18 +95,22 @@ const _ATTACK := [
 
 
 static func build_frames() -> SpriteFrames:
-	var idle_tex: ImageTexture = PixelArt.grid_to_texture(_IDLE, _PAL)
-	var flap_tex: ImageTexture = PixelArt.grid_to_texture(_FLAP, _PAL)
-	var atk_tex: ImageTexture = PixelArt.grid_to_texture(_ATTACK, _PAL)
+	var up_tex: ImageTexture = PixelArt.grid_to_texture(_WINGS_UP, _PAL)   # 翅膀抬高
+	var idle_tex: ImageTexture = PixelArt.grid_to_texture(_IDLE, _PAL)     # 翅膀平展
+	var flap_tex: ImageTexture = PixelArt.grid_to_texture(_FLAP, _PAL)     # 翅膀下扇
+	var atk_tex: ImageTexture = PixelArt.grid_to_texture(_ATTACK, _PAL)    # 张嘴喷火
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	# idle = 振翅循环 (平展 ↔ 下扇)
-	sf.add_animation("idle"); sf.set_animation_loop("idle", true); sf.set_animation_speed("idle", 4.0)
-	sf.add_frame("idle", idle_tex); sf.add_frame("idle", flap_tex)
-	# walk 复用 idle (飞行怪没走路)
-	sf.add_animation("walk"); sf.set_animation_loop("walk", true); sf.set_animation_speed("walk", 6.0)
-	sf.add_frame("walk", idle_tex); sf.add_frame("walk", flap_tex)
-	# attack = 张嘴
-	sf.add_animation("attack"); sf.set_animation_loop("attack", false); sf.set_animation_speed("attack", 6.0)
-	sf.add_frame("attack", atk_tex); sf.add_frame("attack", idle_tex)
+	# idle = 平滑振翅循环 (下→中→上→中), 4 帧, 飞行更飘逸 (用户: 多帧更自然)
+	sf.add_animation("idle"); sf.set_animation_loop("idle", true); sf.set_animation_speed("idle", 8.0)
+	for fr in [flap_tex, idle_tex, up_tex, idle_tex]:
+		sf.add_frame("idle", fr)
+	# walk 复用同一套振翅 (飞行怪没走路)
+	sf.add_animation("walk"); sf.set_animation_loop("walk", true); sf.set_animation_speed("walk", 8.0)
+	for fr in [flap_tex, idle_tex, up_tex, idle_tex]:
+		sf.add_frame("walk", fr)
+	# attack = 抬翅蓄力 → 张嘴喷 (2 帧) → 收, 4 帧
+	sf.add_animation("attack"); sf.set_animation_loop("attack", false); sf.set_animation_speed("attack", 10.0)
+	for fr in [up_tex, atk_tex, atk_tex, idle_tex]:
+		sf.add_frame("attack", fr)
 	return sf
