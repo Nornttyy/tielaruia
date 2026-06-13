@@ -11,6 +11,11 @@ var _drop_timer: float = 0.0         # 距下次可丢的倒计时
 const CAVE_DEPTH_THRESHOLD := 10   # 玩家离原始地表 >10 格才算"地下" (即使顶上方块挖掉了)
 
 const SPEED := 105.0
+# 惯性 (px/s²): 不再瞬间到顶速/瞬停, 起步加速、松手滑一小段。地面更跟手, 空中更保留动量。
+const MOVE_ACCEL := 640.0          # 地面加速 (~0.16s 到顶速, 起步有点冲)
+const MOVE_FRICTION := 540.0       # 地面松手减速 (停下滑一小段)
+const MOVE_ACCEL_AIR := 380.0      # 空中加速更弱 (跳起后转向钝一点)
+const MOVE_FRICTION_AIR := 130.0   # 空中几乎不减速 (保留跳跃惯性)
 const JUMP_VELOCITY := -240.0
 const GRAVITY := 675.0
 const GLIDE_FALL_SPEED := 55.0     # 恶魔之翼滑翔时的最大下落速度 (缓降, 远低于自由落体)
@@ -402,7 +407,14 @@ func _physics_process(delta: float) -> void:
 	_was_in_water = in_water
 	var on_rope: bool = _is_on_rope() and not is_on_floor()
 	var speed_mul: float = 0.5 if in_water else 1.0
-	velocity.x = dir * SPEED * speed_mul * _buff_speed_mul()
+	# 惯性: 朝目标速度加速/减速过去, 不再瞬间启停 (起步有冲劲, 松手滑一下)。
+	var target_vx: float = dir * SPEED * speed_mul * _buff_speed_mul()
+	var inertia_rate: float
+	if absf(dir) > 0.05:
+		inertia_rate = MOVE_ACCEL if is_on_floor() else MOVE_ACCEL_AIR
+	else:
+		inertia_rate = MOVE_FRICTION if is_on_floor() else MOVE_FRICTION_AIR
+	velocity.x = move_toward(velocity.x, target_vx, inertia_rate * delta)
 	sprite.modulate = Color(0.7, 0.85, 1.15) if in_water else Color.WHITE
 
 	var on_floor_now := is_on_floor()
