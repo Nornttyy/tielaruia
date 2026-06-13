@@ -7,6 +7,7 @@ const RADIUS := 70.0            # 摇杆底盘半径
 const KNOB_R := 32.0            # 摇杆 knob 半径
 const DEADZONE := 18.0          # 水平死区 (knob.x 绝对值 ≤ 这个不触发左右)
 const JUMP_THRESH := 35.0       # 垂直上推阈值 (knob.y ≤ -此值触发 jump)
+const DOWN_THRESH := 40.0       # 垂直下推阈值 (knob.y ≥ 此值触发 move_down: 创造下降/穿平台)
 
 var _knob_offset: Vector2 = Vector2.ZERO   # knob 相对 center 的偏移
 var _touch_active: bool = false
@@ -87,6 +88,11 @@ func _apply_input() -> void:
 		_press("jump")
 	else:
 		_release("jump")
+	# 下: 下推到 DOWN_THRESH 触发 move_down (创造模式下降 / 穿木平台)
+	if _knob_offset.y > DOWN_THRESH:
+		_press("move_down")
+	else:
+		_release("move_down")
 
 
 func _press(action: String) -> void:

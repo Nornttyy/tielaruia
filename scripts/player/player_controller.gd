@@ -317,7 +317,7 @@ func _creative_fly(delta: float) -> void:
 	var dir := Input.get_axis("move_left", "move_right")
 	velocity.x = dir * SPEED * 1.4
 	var up: bool = Input.is_action_pressed("jump")
-	var down: bool = Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)
+	var down: bool = _down_held()
 	var v_fly: float = SPEED * 1.2
 	if up and not down:
 		velocity.y = -v_fly
@@ -407,7 +407,7 @@ func _physics_process(delta: float) -> void:
 	if on_rope:
 		# 抓绳子: 无重力, jump(W/space) 上爬, S 下爬, 否则悬停
 		var up: bool = Input.is_action_pressed("jump")
-		var down: bool = Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)
+		var down: bool = _down_held()
 		if up and not down:
 			velocity.y = -ROPE_CLIMB_SPEED
 		elif down and not up:
@@ -449,7 +449,7 @@ func _physics_process(delta: float) -> void:
 			did_jump = true
 			SfxBank.play("jump", 0.08)
 		# 下平台: 按 S/Down 时关掉 bit 2 (木平台) 0.3s, 玩家从平台落下
-		if on_floor_now and (Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)):
+		if on_floor_now and _down_held():
 			_drop_through_t = DROP_THROUGH_DURATION
 	# 平台 mask 切换 (放最外层, 任何状态下 timer 都能跑完)
 	if _drop_through_t > 0.0:
@@ -738,6 +738,12 @@ static func fall_damage_for(impact_vy: float) -> int:
 	if impact_vy <= FALL_DMG_VY_SAFE:
 		return 0
 	return mini(FALL_DMG_MAX, int((impact_vy - FALL_DMG_VY_SAFE) * FALL_DMG_PER_VY))
+
+
+# 下键是否按住: 键盘 S/↓ 或 手机左摇杆下推 (move_down). 创造下降/穿木平台/绳子下爬都用它,
+# 这样手机也能下降 (之前只认键盘 → 手机创造模式下不去, 用户报)。
+func _down_held() -> bool:
+	return Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN) or Input.is_action_pressed("move_down")
 
 
 # 二段跳是否可用 (供测试 + 逻辑): 在空中 + 没用过 + 有云靴/翼
