@@ -910,6 +910,31 @@ const _RECIPES := [
 		"pattern": [["planks", "planks"], ["planks", ""]],
 		"output_id": "boomerang", "output_count": 1, "mirror_ok": true,
 	},
+	# === 新近战类型 ===
+	# 长矛: 铁锭(尖) + 2 木杆
+	{
+		"id": "spear", "grid_size": Vector2i(1, 3),
+		"pattern": [["iron_ingot"], ["planks"], ["planks"]],
+		"output_id": "spear", "output_count": 1, "mirror_ok": false,
+	},
+	# 双刀: 2 铁锭并排
+	{
+		"id": "dual_blade", "grid_size": Vector2i(2, 1),
+		"pattern": [["iron_ingot", "iron_ingot"]],
+		"output_id": "dual_blade", "output_count": 1, "mirror_ok": false,
+	},
+	# 流星锤: 铁球 + 皮绳(链) + 铁柄
+	{
+		"id": "flail", "grid_size": Vector2i(1, 3),
+		"pattern": [["iron_ingot"], ["leather"], ["iron_ingot"]],
+		"output_id": "flail", "output_count": 1, "mirror_ok": false,
+	},
+	# 战锤: 石+铁+石 锤头 + 2 木柄
+	{
+		"id": "warhammer", "grid_size": Vector2i(3, 3),
+		"pattern": [["stone", "iron_ingot", "stone"], ["", "planks", ""], ["", "planks", ""]],
+		"output_id": "warhammer", "output_count": 1, "mirror_ok": true,
+	},
 	# === 第二批法杖 (用户加): 都是 1x3 宝石+杖身 ===
 	{
 		"id": "homing_staff", "grid_size": Vector2i(1, 3),

@@ -153,6 +153,7 @@ var _sword_attack_start_rot: float = 0.0   # 挥的起手 rotation (戳不用)
 var _sword_attack_facing_right: bool = true
 var _sword_attack_damage: int = 0
 var _sword_attack_knockback: float = 0.0
+var _sword_attack_reach_bonus: float = 0.0   # 这把武器额外伸长多少剑身 (长矛/链锤够更远; 普通剑=0)
 var _sword_hit_this_attack: Dictionary = {}  # instance_id → true
 
 # 测试用: 记录最近一次挥剑的命中中心点 (玩家中心 + 鼠标方向 * 半径)
@@ -1673,6 +1674,7 @@ func _check_sword_blade_hits() -> void:
 	# 剑尖在 sprite 中心列, 不受 facing 翻转影响, 直接用 blade_rot 算 tip 偏移.
 	# 阔剑(tier3+)半圆挥剑身更长够得更远; 短剑(戳)用基础长度 (SWORD_TIP_LOCAL_Y<0, 减 bonus = 更长).
 	var tip_len: float = SWORD_TIP_LOCAL_Y - SWORD_SWEEP_REACH_BONUS if _sword_attack_is_sweep else SWORD_TIP_LOCAL_Y + DAGGER_BLADE_SHORTEN
+	tip_len -= _sword_attack_reach_bonus   # 武器自带额外射程 (长矛/链锤伸更长; tip_len 越负越远)
 	var tip_world: Vector2 = grip_world + Vector2(0, tip_len).rotated(blade_rot)
 	# 短剑(戳)命中半径比阔剑小 → 命中更"贴", 不糊到远处怪 (用户: 戳得太远)
 	var hit_r: float = SWORD_HIT_RADIUS if _sword_attack_is_sweep else DAGGER_HIT_RADIUS
@@ -1776,7 +1778,9 @@ const THRUST_HALF_WIDTH := 4.5       # 戳带半宽 6px (总宽 12), 鼠标偏�
 
 # 戳: 直线突刺, 范围远 / 伤害 0.8x / 只命中最近 1 个目标
 func _thrust_sword() -> void:
-	_attack_cooldown = THRUST_COOLDOWN
+	var mdef: Variant = _current_tool_def()
+	_attack_cooldown = float(mdef.get("melee_cooldown", THRUST_COOLDOWN)) if mdef != null else THRUST_COOLDOWN
+	_sword_attack_reach_bonus = float(mdef.get("melee_reach_bonus", 0.0)) if mdef != null else 0.0   # 长矛戳更远
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1804,12 +1808,15 @@ func _thrust_sword() -> void:
 	var damage: int = max(1, int(round(float(base) * dmg_mult)))
 	# 用户改: 不再瞬时矩形 AoE, 改成 SWORD_THRUST_DURATION 内每帧扫剑身线段命中.
 	# 戳动画 held.position 三段式 (extend + dwell + retract), 我们 sync 算位置打怪.
-	_start_sword_blade_attack(false, swing_dir, damage, _thrust_knockback())
+	var tkb: float = float(mdef.get("melee_knockback", -1.0)) if mdef != null else -1.0
+	_start_sword_blade_attack(false, swing_dir, damage, tkb if tkb >= 0.0 else _thrust_knockback())
 	# 用户改: 删剑攻击的屏幕抖动
 
 
 func _sweep_sword() -> void:
-	_attack_cooldown = SWORD_COOLDOWN
+	var mdef: Variant = _current_tool_def()
+	_attack_cooldown = float(mdef.get("melee_cooldown", SWORD_COOLDOWN)) if mdef != null else SWORD_COOLDOWN
+	_sword_attack_reach_bonus = float(mdef.get("melee_reach_bonus", 0.0)) if mdef != null else 0.0   # 链锤/战锤抡更大
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1835,7 +1842,8 @@ func _sweep_sword() -> void:
 		return
 	# 用户改: 不再瞬时弧 AoE, 改成 SWORD_SWING_DURATION 内每帧扫剑身线段命中.
 	# 挥半圆 180° rotation, 剑尖按 progress 扫弧 — 实际碰才扣血.
-	_start_sword_blade_attack(true, swing_dir, damage, _sweep_knockback())
+	var skb: float = float(mdef.get("melee_knockback", -1.0)) if mdef != null else -1.0
+	_start_sword_blade_attack(true, swing_dir, damage, skb if skb >= 0.0 else _sweep_knockback())
 	# 用户改: 删剑攻击的屏幕抖动 (之前留着, 现在用户要求删)
 
 

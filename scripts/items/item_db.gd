@@ -26,6 +26,11 @@ const _DEFS := {
 	"bomb":         {"placeable_tile_id": -1,              "tool_kind": "thrown", "tool_tier": 1, "max_stack": 1, "throw_kind": "bullet", "thrown_damage": 5, "bullet_speed": 300, "gun_gravity": 420.0, "gun_explode_radius": 34.0, "gun_explode_dmg": 18, "gun_explode_on_land_only": true, "gun_visual": "fire", "throw_cooldown": 0.7},  # 炸弹: 抛物线, 落地炸一片
 	"boomerang":    {"placeable_tile_id": -1,              "tool_kind": "thrown", "tool_tier": 1, "max_stack": 1, "throw_kind": "boomerang", "thrown_damage": 9, "throw_cooldown": 0.5},  # 回旋镖: 飞出去再飞回, 来回都打
 	"bone_sword":   {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 7, "max_stack": 1, "damage_mult": 1.3, "sword_style": "sweep"},  # 骷髅王掉落, 阔剑(横扫), 比普通阔剑(1.2)更强
+	# 新近战类型 (都 tool_kind sword, 靠 sword_style + melee_* 字段做出不同手感):
+	"spear":        {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 5, "max_stack": 1, "damage_mult": 1.3, "sword_style": "thrust", "melee_reach_bonus": 32.0, "melee_cooldown": 0.42, "melee_knockback": 120.0},  # 长矛: 戳得超远·单体
+	"dual_blade":   {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 5, "max_stack": 1, "damage_mult": 0.7, "sword_style": "sweep",  "melee_cooldown": 0.18, "melee_knockback": 40.0},  # 双刀: 攻速极快·单下伤害低·连斩
+	"flail":        {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 5, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep",  "melee_reach_bonus": 22.0, "melee_cooldown": 0.6, "melee_knockback": 260.0},  # 流星锤: 抡大圈·范围大·强击退
+	"warhammer":    {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 6, "max_stack": 1, "damage_mult": 1.8, "sword_style": "sweep",  "melee_cooldown": 0.72, "melee_knockback": 280.0},  # 战锤: 慢·高伤·把怪砸飞
 	"apple":        {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 25},
 	"stone_sword":   {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 2, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"stone_pickaxe": {"placeable_tile_id": -1,                     "tool_kind": "pickaxe", "tool_tier": 2, "max_stack": 1, "damage_mult": 0.5},
