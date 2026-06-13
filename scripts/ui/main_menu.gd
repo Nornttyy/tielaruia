@@ -67,6 +67,9 @@ func _ready() -> void:
 	_hills.visible = false
 	$BackgroundLayer/Ground.visible = false
 	_setup_trees()
+	# 背景树覆盖填充整屏 (stretch=expand 下窗口变形不"挤到中间"): 现在 + 每次窗口尺寸变都重算
+	_fit_background()
+	get_viewport().size_changed.connect(_fit_background)
 	_setup_title()
 	_start_title_breathing()
 	_setup_buttons()
@@ -212,6 +215,27 @@ func _setup_ground() -> void:
 
 const TREE_W := 22.0    # make_forest_tree 纹理宽
 const TREE_H := 30.0    # 纹理高 (树底贴地用)
+
+
+# 背景树是按 1280×720 死坐标铺的. stretch=expand 后视口比例随窗口变 → 树只占 1280×720 那块,
+# 窗口缩小/变形时就"挤到中间"留空 (用户报)。给树这层做"覆盖填充": 按真实视口缩放居中,
+# 永远铺满整屏 (多出部分均匀裁掉), 不变形不留缝。窗口尺寸变就重算。
+func _fit_background() -> void:
+	var vp := get_viewport()
+	if vp == null:
+		return
+	var t: Dictionary = _cover_transform(vp.get_visible_rect().size, VIEWPORT_SIZE)
+	for layer in [_trees_root, _trees_front]:
+		if layer != null and is_instance_valid(layer):
+			layer.scale = Vector2(t.scale, t.scale)
+			layer.position = t.offset
+
+
+# 纯函数 (好测): 把 base 设计尺寸"覆盖填充"到 view 尺寸 → 缩放系数 + 居中偏移。
+# 取 max → 两个方向都盖满 (cover, 多出裁掉); offset 居中。
+static func _cover_transform(view: Vector2, base: Vector2) -> Dictionary:
+	var sc: float = max(view.x / base.x, view.y / base.y)
+	return {"scale": sc, "offset": (view - base * sc) * 0.5}
 
 
 func _setup_trees() -> void:
