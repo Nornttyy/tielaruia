@@ -261,6 +261,13 @@ func _physics_process(delta: float) -> void:
 		if primary_pressed_sb and _attack_cooldown <= 0.0:
 			_try_throw_slimeball()
 			_flash_held()   # 投掷时显示
+	elif kind == "thrown":
+		# 投掷武器: LMB 按下 → 朝鼠标扔 (手里剑/炸弹/回旋镖). cd 由武器 throw_cooldown 定. 无弹药.
+		_reset_mining()
+		var primary_pressed_t: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
+		if primary_pressed_t and _attack_cooldown <= 0.0:
+			_try_throw_weapon()
+			_aim_held_at_mouse()   # 投掷时武器朝鼠标方向显示
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
@@ -1856,6 +1863,7 @@ const ArrowScene = preload("res://scenes/entities/arrow.tscn")
 const BulletScene = preload("res://scenes/entities/bullet.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
 const SlimeBallScene = preload("res://scenes/entities/slime_ball.tscn")
+const BoomerangScene = preload("res://scenes/entities/boomerang.tscn")   # 回旋镖 (投掷武器)
 const FriendlySkeletonScene = preload("res://scenes/entities/friendly_skeleton.tscn")
 const FriendlyBirdScene = preload("res://scenes/entities/friendly_bird.tscn")   # 雀宝宝法杖召唤
 const EarthCrackScene = preload("res://scenes/entities/earth_crack.tscn")        # 地裂法杖
@@ -2310,6 +2318,44 @@ func _try_throw_slimeball() -> void:
 	entities.add_child(ball)
 	var dmg: int = int(round(float(SLIMEBALL_DAMAGE) * _tool_damage_mult()))
 	ball.setup(start, target, dmg, parent)
+	SfxBank.play("break", 0.10)
+
+
+# 投掷武器: 手里剑/炸弹走 bullet (复用枪/法杖那套机制+特效); 回旋镖走自定义 boomerang。
+func _try_throw_weapon() -> void:
+	var def: Variant = _current_tool_def()
+	if def == null:
+		return
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	var start: Vector2 = player.global_position + Vector2(0, -8)
+	var target: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = player.get_parent()
+	var dmg: int = int(round(float(def.get("thrown_damage", 6)) * _tool_damage_mult()))
+	_attack_cooldown = float(def.get("throw_cooldown", 0.4))
+	if String(def.get("throw_kind", "bullet")) == "boomerang":
+		var bm = BoomerangScene.instantiate()
+		entities.add_child(bm)
+		bm.setup(start, target, dmg, player)
+		SfxBank.play("break", 0.10)
+		return
+	# 手里剑/炸弹: 复用 bullet (炸弹靠 gun_gravity+gun_explode_*, 手里剑靠 gun_pierce) + 命中招牌特效
+	var opts: Dictionary = _proj_opts_from_def(def)
+	var vis: String = String(def.get("gun_visual", "star"))
+	opts["impact_fx"] = _spell_impact_fx(vis)
+	opts["impact_color"] = _spell_fx_color(vis)
+	var speed: float = float(def.get("bullet_speed", 480.0))
+	var base_dir: Vector2 = target - start
+	base_dir = base_dir.normalized() if base_dir.length() > 0.01 else Vector2.RIGHT
+	var aim: Vector2 = start + base_dir * 100.0
+	var b = BulletScene.instantiate()
+	entities.add_child(b)
+	b.setup(start, aim, dmg, player, speed, opts)
+	if NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
 	SfxBank.play("break", 0.10)
 
 

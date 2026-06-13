@@ -328,6 +328,7 @@ func _build_items() -> void:
 			"wheat", "wheat_seed",
 			# 史莱姆王 Boss 掉落 + 合成材料
 			"slime_crown", "slime_ball",
+			"shuriken", "bomb", "boomerang",   # 投掷武器
 			# 骷髅王 Boss: 召唤头骨 + 掉落骨剑(阔剑) + 骷髅盔甲(头/胸/腿) + 骷髅法杖
 			"skull_summon", "bone_sword",
 			"skeleton_helmet", "skeleton_chest", "skeleton_pants",

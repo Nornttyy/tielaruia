@@ -891,6 +891,25 @@ const _RECIPES := [
 		"pattern": [["iron_ingot"], ["stone"], ["planks"]],
 		"output_id": "crack_staff", "output_count": 1, "mirror_ok": false,
 	},
+	# === 投掷武器 ===
+	# 手里剑: 2 铁锭 (磨尖)
+	{
+		"id": "shuriken", "grid_size": Vector2i(1, 2),
+		"pattern": [["iron_ingot"], ["iron_ingot"]],
+		"output_id": "shuriken", "output_count": 1, "mirror_ok": false,
+	},
+	# 炸弹: 煤(顶) + 铁锭 (外壳)
+	{
+		"id": "bomb", "grid_size": Vector2i(1, 2),
+		"pattern": [["coal"], ["iron_ingot"]],
+		"output_id": "bomb", "output_count": 1, "mirror_ok": false,
+	},
+	# 回旋镖: 3 木板 L 形
+	{
+		"id": "boomerang", "grid_size": Vector2i(2, 2),
+		"pattern": [["planks", "planks"], ["planks", ""]],
+		"output_id": "boomerang", "output_count": 1, "mirror_ok": true,
+	},
 	# === 第二批法杖 (用户加): 都是 1x3 宝石+杖身 ===
 	{
 		"id": "homing_staff", "grid_size": Vector2i(1, 3),

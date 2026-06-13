@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_boomerang_2026"]
+
+[ext_resource type="Script" path="res://scripts/entities/boomerang.gd" id="1_bmr"]
+
+[node name="Boomerang" type="Area2D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_bmr")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
