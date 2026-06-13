@@ -116,14 +116,15 @@
     var MAX_RETRIES = 4;
     var RETRY_DELAY_MS = 1500;
     var JOIN_TIMEOUT_MS = 12000;
-    // 抢号竞争中 (已翻转过) 的重连超时: 短一点, 好快速识破"幽灵房主"(号被占但连不上) → 早点换号房,
-    // 不然每次重连都等满 12s, 8 次翻转 = 90s+ 刷屏卡死 (用户报)。首次进房仍用 12s (容忍慢信令)。
-    var CONTEST_JOIN_TIMEOUT_MS = 4500;
+    // 抢号竞争中 (已翻转过) 的重连超时: 比首次(12s)短, 好识破"幽灵房主"(号被占但连不上) → 换号房;
+    // 但别太短 — 4.5s 不够 WebRTC(过 TURN) 完成握手, 抢输的那个总连不上真房主 → 一直跳房 → 落单
+    // ("公共房只能1人"的主因, 用户报)。8s 折中: 给握手时间又不至于卡满 12s。
+    var CONTEST_JOIN_TIMEOUT_MS = 8000;
     // 抢公共房脑裂保护: client 连不上占用者 → 去抢 host → "id taken" → 又退回 client → 无限 ping-pong
     // (零间隔, 刷爆控制台且永远连不上). 每翻转一次 host↔client 计数; 加随机退避打散两端并给 WebRTC
     // 协商时间; 翻转超上限就退一格房号重来, 房号用完才友好报错。
     bridge._pubFlips = 0;
-    var MAX_PUB_FLIPS = 4;   // 翻转这么多次还没连上 → 这号房有幽灵, 换下一号 (原 8 太多, 卡太久)
+    var MAX_PUB_FLIPS = 6;   // 翻转这么多次还没连上 → 这号房有幽灵, 换下一号 (4 太少, 握手没完就跳房 → 落单)
     var _RETRYABLE = {'network': 1, 'server-error': 1, 'socket-error': 1, 'socket-closed': 1, 'unavailable-id': 1};
 
     function _friendlyError(et) {
@@ -393,7 +394,7 @@
             bridge._status = 'error';
             return;
         }
-        var delay = 250 + Math.floor(Math.random() * 600);   // 退避 250~850ms, 打散同时抢的两端
+        var delay = 400 + Math.floor(Math.random() * 1000);   // 退避 400~1400ms, 多打散同时抢的两端 (防 lockstep)
         setTimeout(function() { if (gen === bridge._gen) fn(gen); }, delay);
     }
 

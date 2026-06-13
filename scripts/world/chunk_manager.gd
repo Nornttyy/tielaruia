@@ -124,7 +124,9 @@ func unload_far_from(center_cx: int, keep_radius: int) -> void:
 func _load_chunk(cx: int) -> void:
 	# 战斗房: 世界只留竞技场 (用户: 别的方块不要) → 所有 chunk 生成空气, 竞技场靠 _deltas 还原。
 	var c: Chunk
-	if NetworkManager != null and NetworkManager.is_pvp():
+	# 用 room_mode=="pvp" 而非 is_pvp() (后者要 connected()): 切模式断线重连那一瞬 connected()=false,
+	# 若此时加载 chunk 会生成真地形而不是竞技场空气 → 战斗房露出真地形 (用户报)。跟 pvp_mode_panel 同款门控。
+	if NetworkManager != null and NetworkManager.room_mode == "pvp":
 		c = WorldGenerator.empty_chunk(cx, ChunkConstants.WORLD_HEIGHT)
 	else:
 		c = WorldGenerator.generate_chunk(world_seed, cx, ChunkConstants.WORLD_HEIGHT)

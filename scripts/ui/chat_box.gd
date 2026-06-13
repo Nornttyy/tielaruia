@@ -162,8 +162,12 @@ func _local_name() -> String:
 	return "我"
 
 
-func _remote_name(_peer_id: String = "") -> String:
-	# 多人精确"按 peer 显示各自名字"是后续优化; 现在统一退回最近收到的对方名字, 够用.
-	if NetworkManager != null and NetworkManager.remote_player_name != "":
-		return NetworkManager.remote_player_name
+func _remote_name(peer_id: String = "") -> String:
+	if NetworkManager != null:
+		# 多人: 按 peer 取各自名字 (防串台); 退回最近收到的对方名, 再退 "对方"
+		var by_peer: String = NetworkManager.name_for_peer(peer_id) if peer_id != "" else ""
+		if by_peer != "":
+			return by_peer
+		if NetworkManager.remote_player_name != "":
+			return NetworkManager.remote_player_name
 	return "对方"

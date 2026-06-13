@@ -79,7 +79,8 @@ func is_pvp() -> bool:
 # 能不能打人 + 不刷怪 (对战房). 战斗/箭命中玩家/不刷怪用它门控.
 func combat_enabled() -> bool:
 	return is_pvp()
-var remote_player_name: String = ""  # 对方玩家名, 收到 name 消息后存; remote_player spawn 时取用
+var remote_player_name: String = ""  # 最近收到的对方名 (单人/兜底; 多人按 peer 用下面的 dict)
+var remote_player_names: Dictionary = {}  # peer_id(String) → 玩家名. 多人房按 peer 分开存, 否则名字串台
 var pending_initial_deltas: Dictionary = {}  # client 收 hello 时存入, world 加载后取走应用
 var _pos_send_timer: float = 0.0
 
@@ -204,8 +205,10 @@ func _route_message(raw: String, from_peer: String = "HOST") -> void:
 			hello_received.emit(seed_val, size_val, diff_val)
 		"name":
 			var pname: String = String(data.get("n", ""))
-			remote_player_name = pname
-			remote_name_received.emit(_pid_of(data, from_peer), pname)
+			var npid: String = _pid_of(data, from_peer)
+			remote_player_names[npid] = pname   # 按 peer 存, 多人不串台
+			remote_player_name = pname          # 兜底: 最近一个
+			remote_name_received.emit(npid, pname)
 		"chat":
 			# 对方发来的聊天文字. 截断防超长. chat_box 收到 → 头顶气泡 + 左下聊天栏.
 			var ctext: String = String(data.get("m", "")).substr(0, 120)
@@ -429,6 +432,16 @@ func send_player_name(n: String) -> void:
 	send(_name_payload(n))
 
 
+# 某 peer 的名字 (多人按 peer 分开; 没有则空串). chat/击杀榜/头顶名字都该按 peer 查。
+func name_for_peer(pid: String) -> String:
+	return String(remote_player_names.get(pid, ""))
+
+
+# host 替某个 peer 重发名字 (带 pid): 给晚进来的人补齐房里已有玩家的名字。
+func send_player_name_as(pid: String, n: String) -> void:
+	send(JSON.stringify({"type": "name", "n": n, "pid": pid}))
+
+
 # 联机聊天: 把一句话发给对方 (截断防超长)。
 func send_chat(text: String) -> void:
 	send(JSON.stringify({"type": "chat", "m": text.substr(0, 120)}))
@@ -601,6 +614,7 @@ func disconnect_room() -> void:
 	# 带到下一局, 污染新世界地形 (bug: 返回菜单再开新游戏看到旧改动)
 	pending_initial_deltas = {}
 	remote_player_name = ""
+	remote_player_names.clear()
 	room_mode = "survival"
 	shared_world_creative = false
 

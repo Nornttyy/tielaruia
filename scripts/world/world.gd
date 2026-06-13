@@ -627,15 +627,25 @@ func _spawn_remote_player(peer_id: String) -> Node:
 		spawn_point.x * TILE_SIZE + TILE_SIZE / 2.0,
 		spawn_point.y * TILE_SIZE + TILE_SIZE
 	)
-	# name 消息可能先于 spawn 到达 → spawn 时补上已收到的对方名字
-	if rp.has_method("set_player_name") and NetworkManager.remote_player_name != "":
-		rp.set_player_name(NetworkManager.remote_player_name)
+	# name 消息可能先于 spawn 到达 → spawn 时按这个 peer 补上已收到的名字 (多人不串台)
+	if rp.has_method("set_player_name"):
+		var nm: String = NetworkManager.name_for_peer(peer_id)
+		if nm != "":
+			rp.set_player_name(nm)
 	_remote_players[peer_id] = rp
 	return rp
 
 
 func _on_peer_joined(peer_id: String) -> void:
 	_spawn_remote_player(peer_id)
+	# host: 新人进来 → 补发世界参数(hello) + 方块现状(init_state) + 自己的名字 + 房里已知玩家的名字。
+	# 否则后进的人种子/世界对不上、看不到房主搭的方块、看不到别人的名字 (Fix B + A)。
+	if NetworkManager != null and NetworkManager.is_host:
+		NetworkManager.send_hello(NetworkManager.shared_world_seed, NetworkManager.shared_world_size, NetworkManager.shared_world_difficulty)
+		NetworkManager.send_player_name(NetworkManager._local_player_name())
+		for known_pid in NetworkManager.remote_player_names.keys():
+			NetworkManager.send_player_name_as(String(known_pid), String(NetworkManager.remote_player_names[known_pid]))
+		_mp_broadcast_initial_state()
 
 
 func _on_peer_left(peer_id: String) -> void:
@@ -644,6 +654,9 @@ func _on_peer_left(peer_id: String) -> void:
 		if is_instance_valid(rp):
 			rp.queue_free()
 		_remote_players.erase(peer_id)
+	# 清掉这个 peer 的名字记录 (否则下一个用同 pid 的人显示旧名)
+	if NetworkManager != null:
+		NetworkManager.remote_player_names.erase(peer_id)
 
 
 # 给 chat_box 按 peer 定位头顶气泡用

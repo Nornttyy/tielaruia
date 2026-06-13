@@ -141,9 +141,13 @@ func _clean_arena() -> void:
 func _name_for(pid: String) -> String:
 	if NetworkManager != null and pid == NetworkManager.my_peer_id():
 		return _local_name()
-	# 远程: 暂用最近收到的对方名 (多人精确名是后续优化), 退回 pid
-	if NetworkManager != null and NetworkManager.remote_player_name != "":
-		return NetworkManager.remote_player_name
+	# 远程: 按 peer 取各自名字 (多人不串台), 退回最近对方名, 再退 pid
+	if NetworkManager != null:
+		var by_peer: String = NetworkManager.name_for_peer(pid)
+		if by_peer != "":
+			return by_peer
+		if NetworkManager.remote_player_name != "":
+			return NetworkManager.remote_player_name
 	return pid
 
 
