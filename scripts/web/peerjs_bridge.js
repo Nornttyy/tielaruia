@@ -305,6 +305,14 @@
                 // 被房主拒绝 (房满) → 试下一号房
                 try { if (JSON.parse(String(d)).__full) { settled = true; _nextRoom(gen); } } catch (e) {}
             });
+            conn.on('error', function() {
+                // 连不上这个房主 (ID 被占但连不通 = 幽灵房主/不可入). 能连早就 open 了 →
+                // 别在这号房耗着翻转, 直接跳下一号房 (别人也这么跳 → 在干净的新号房汇合)。
+                // 区分: 空房 = peer-unavailable(下面 peer.on error → 抢 host); 幽灵 = 这里 conn error → 换号。
+                if (gen !== bridge._gen || settled) return;
+                settled = true;
+                _nextRoom(gen);
+            });
             // 一段时间没连上 → 这号房可能没人开 → 去抢占当 host.
             // 注意: 房里"没人"会触发 peer-unavailable 错误 (走上面 on('error') 立刻抢 host),
             // 这个超时只兜底"信令慢/卡住"的情况. 免费信令服首次握手常 >5s, 太短会让第二个人
@@ -458,6 +466,15 @@
     };
 
     window.MultiplayerBridge = bridge;
+
+    // 关页面/刷新/切后台时干净销毁 peer → 信令服务器立刻注销这个房主 ID。
+    // 不这么做的话, 关标签页留下"幽灵房主": ID 还挂在服务器(别人当不了房主, 报 "ID is taken"),
+    // 但人已经走了(连不上, 报 "Could not connect to peer") → 新玩家进不去房 (用户报)。
+    function _cleanupPeer() {
+        try { if (bridge._peer && !bridge._peer.destroyed) bridge._peer.destroy(); } catch (e) {}
+    }
+    window.addEventListener('beforeunload', _cleanupPeer);
+    window.addEventListener('pagehide', _cleanupPeer);   // iOS Safari 不可靠触发 beforeunload, 用 pagehide 兜底
 
     // 保活: 网页开着时每 4 分钟戳一下信令服务器, 别让免费版睡着 (睡醒要 ~50s = "连不进").
     // no-cors + catch: 纯粹叫醒服务器, 不关心返回, 失败也不报错。
