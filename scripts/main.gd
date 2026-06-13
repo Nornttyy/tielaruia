@@ -125,6 +125,9 @@ func _start_game(seed_or_opts = 0) -> void:
 	if _pending_save_data == null and TimeOfDay != null and "time" in TimeOfDay:
 		TimeOfDay.time = 0.35
 	_state = "game"
+	# 每次进游戏先把"对战房全亮"关掉 (无条件, 不靠起步包流程 — 继续读档时那流程不跑, 否则
+	# 打完对战房再读单机存档, 矿洞会一直亮; 用户报). 对战房会在竞技场生成时再开回 true。
+	TileLightGrid.force_full_bright = false
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.visible = false
 	_run_async_load(world_seed)

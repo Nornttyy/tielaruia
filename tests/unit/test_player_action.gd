@@ -131,8 +131,8 @@ func test_place_dirt_consumes_slot_and_creates_tile():
 	assert_eq(inv.inventory.slots[0].count, 4, "槽内 dirt 应减 1")
 
 
-func test_place_on_wall_only_fails():
-	# 改 (用户): 只有背景墙、四周没相邻方块 → 不能放 (防隔空放; 背景墙铺满, 算支撑就处处能放).
+func test_place_on_wall_succeeds():
+	# 改回 (用户): 背后有背景墙 → 能放 (泰拉瑞亚风, 矿洞/墙边贴方块). 四周无相邻方块也行。
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
 	main.boot_to_game()
@@ -142,25 +142,25 @@ func test_place_on_wall_only_fails():
 	var action: Node2D = player.get_node("PlayerAction")
 	var inv: Node = player.get_node("PlayerInventory")
 	var terrain: TileMapLayer = world.get_node("TerrainLayer")
-	var wall_layer: TileMapLayer = world.get_node("WallLayer")
+	var cm = world.chunk_manager
 	inv.inventory.add("dirt", 5)
 	inv.set_hotbar_selection(0)
-	# 空中位置, 周围全空气, 只背后有墙
 	var pt: Vector2i = action.player_tile()
 	var target: Vector2i = pt + Vector2i(2, -2)
+	# 四周清空 (无相邻支撑方块), 但背后放一道背景墙 (chunk_manager 数据层)
 	for dx in [-1, 0, 1]:
 		for dy in [-1, 0, 1]:
 			terrain.set_cell(target + Vector2i(dx, dy), -1)
-	wall_layer.set_cell(target, Tiles.STONE_WALL, Vector2i.ZERO)
+	cm.set_wall(target.x, target.y, Tiles.STONE_WALL)
 	action.aim_override = target
 	action.place_override = true
 	await wait_frames(3)
-	assert_eq(terrain.get_cell_source_id(target), -1, "只靠背景墙 (无相邻方块) 不能放")
-	assert_eq(inv.inventory.slots[0].count, 5, "没放出去, dirt 不该减")
+	assert_eq(terrain.get_cell_source_id(target), Tiles.DIRT, "墙前能放方块 (墙=支撑)")
+	assert_eq(inv.inventory.slots[0].count, 4, "放出去 1 个, dirt 减 1")
 
 
-func test_place_fails_when_no_neighbor():
-	# 空中无邻接方块时不能放
+func test_place_fails_when_no_neighbor_and_no_wall():
+	# 真·空中 (无相邻方块 + 无背景墙) → 不能放 (防隔空放, 如对战房/高空)
 	var main = MainScene.instantiate()
 	add_child_autofree(main)
 	main.boot_to_game()
@@ -170,21 +170,21 @@ func test_place_fails_when_no_neighbor():
 	var action: Node2D = player.get_node("PlayerAction")
 	var inv: Node = player.get_node("PlayerInventory")
 	var terrain: TileMapLayer = world.get_node("TerrainLayer")
+	var cm = world.chunk_manager
 	inv.inventory.add("dirt", 5)
 	inv.set_hotbar_selection(0)
 	var pt: Vector2i = action.player_tile()
-	# 玩家头顶上方 3 格 - 四周都是空气
 	var target: Vector2i = pt + Vector2i(0, -4)
-	# 确保 target 周围都清空 (避免世界生成器恰好放了树之类)
 	for dx in [-1, 0, 1]:
 		for dy in [-1, 0, 1]:
 			if dx == 0 and dy == 0: continue
 			terrain.set_cell(target + Vector2i(dx, dy), -1)
 	terrain.set_cell(target, -1)
+	cm.set_wall(target.x, target.y, Tiles.AIR)   # 确保背后也没墙
 	action.aim_override = target
 	action.place_override = true
 	await wait_frames(3)
-	assert_eq(terrain.get_cell_source_id(target), -1, "无邻接时不应放下")
+	assert_eq(terrain.get_cell_source_id(target), -1, "无邻接 + 无墙时不应放下")
 	assert_eq(inv.inventory.slots[0].count, 5, "未消耗")
 
 

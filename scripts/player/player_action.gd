@@ -864,8 +864,7 @@ func try_place(force_tile: Variant = null) -> bool:
 	var pt: Vector2i = player_tile()
 	if tile == pt or tile == pt - Vector2i(0, 1):
 		return false
-	# 支撑判定: 上下左右至少有 1 个相邻"结实方块"(solid) 才能放 (防隔空放)。
-	# 只认 solid: 水/草/火把/平台这种不结实的不算支撑; 背景墙也不算 (铺满了等于没限制)。创造模式随处放。
+	# 支撑判定: 4 邻有结实方块/木平台, 或 背后有背景墙 → 能放 (防隔空放)。创造模式随处放。
 	var has_support: bool = GameSettings != null and GameSettings.creative_mode
 	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		var ntid: int = terrain.get_cell_source_id(tile + offset)
@@ -873,6 +872,13 @@ func try_place(force_tile: Variant = null) -> bool:
 		if ntid != -1 and (Tiles.is_solid(ntid) or ntid == Tiles.WOOD_PLATFORM):
 			has_support = true
 			break
+	# 背景墙也算支撑 (泰拉瑞亚风: 墙前能贴方块 — 矿洞/墙边能放, 用户要求)。
+	# 对战房是空世界没墙 → 那边仍需相邻方块, 不会隔空放。
+	if not has_support:
+		var wn: Node = terrain.get_parent()
+		var wcm = wn.get("chunk_manager") if wn != null else null
+		if wcm != null and wcm.has_method("get_wall") and wcm.get_wall(tile.x, tile.y) != Tiles.AIR:
+			has_support = true
 	if not has_support:
 		return false
 	var def = ItemDB.get_def(slot.item_id)
