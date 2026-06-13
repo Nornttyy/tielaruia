@@ -56,6 +56,11 @@ jobs:
           touch build/web/.nojekyll
           # 建筑设计器一并发布 (用户直接开网址用, 不用拉本地文件)
           cp building_designer.html build/web/
+          # 杀僵尸 service worker: PWA 曾开过(现已关), 老用户浏览器残留旧 SW 一直缓存已删文件 →
+          # 报 addAll/manifest 404. 把"自杀"SW 放到老 SW 的 URL, 浏览器更新检查时装上 → 注销自己+清缓存。
+          cp scripts/web/kill_sw.js build/web/index.service.worker.js
+          # 残留的 manifest 请求给个空 json, 别再 404
+          echo '{}' > build/web/index.manifest.json
 
       # 检查 Pages 是 "legacy/gh-pages 分支" 模式. workflow 自带的 GITHUB_TOKEN
       # 改不了这个设置 (权限不够), 但只要一次性切对 (用户 PAT 手动 PUT 过),

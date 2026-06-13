@@ -37,7 +37,9 @@
     var _SERVER_ERR = {'network': 1, 'server-error': 1, 'socket-error': 1, 'socket-closed': 1, 'server-disconnected': 1};
 
     function _peerOpts() {
-        var o = { debug: 1 };
+        // debug 0 = 不往控制台刷 PeerJS 红字 (抢号/幽灵房重试会刷屏吓人, 但都是正常重试, 游戏自有友好提示).
+        // 要排查联机时临时改回 1 (errors) 或 2 (warnings).
+        var o = { debug: 0 };
         // 主服务器 (Render): 用自建 host. 备胎模式 (_serverMode=1): 不设 host → 走 PeerJS 默认公共云 (0.peerjs.com), 不睡。
         if (bridge._serverMode === 0 && PEER_HOST) {
             o.host = PEER_HOST;
