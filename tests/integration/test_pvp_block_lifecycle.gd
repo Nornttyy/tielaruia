@@ -75,17 +75,18 @@ func test_clean_arena_clears_blocks():
 	NetworkManager.room_mode = prev_mode
 
 
-# 房间没别人 + 搭过方块 → 满 1 分钟自动清场
-func test_empty_room_resets_after_timeout():
+# 用户改: 不再"空房 1 分钟自动清场" — 单客户端判不准空房, 会把独自一人玩家正在搭的清掉
+# (用户报"有玩家时房间还是会重置"). 现在 _tick_empty_reset 永不清场, 方块保留。
+func test_empty_room_does_not_auto_reset():
 	var prev_mode = NetworkManager.room_mode
 	var ctx = await _boot_pvp_with_block()
 	var world = ctx.world
 	var sb = PvpScoreboard.new()
 	add_child_autofree(sb)
 	await wait_frames(1)
-	# 一次性灌入超过阈值的 delta → 触发清场 (没有远程玩家 = 独自一人)
-	sb._tick_empty_reset(PvpScoreboard.EMPTY_RESET_SEC + 1.0, true)
-	assert_ne(world.chunk_manager.get_tile(ctx.tx, ctx.ty), Tiles.DIRT, "空房满 1 分钟该自动清场")
+	# 灌入远超旧阈值的 delta → 旧逻辑会清场; 新逻辑该保留方块 (不自动清)
+	sb._tick_empty_reset(PvpScoreboard.EMPTY_RESET_SEC + 100.0, true)
+	assert_eq(world.chunk_manager.get_tile(ctx.tx, ctx.ty), Tiles.DIRT, "有玩家时不该自动清场, 方块保留")
 	NetworkManager.room_mode = prev_mode
 
 

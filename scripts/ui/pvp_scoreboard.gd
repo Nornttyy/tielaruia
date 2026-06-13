@@ -42,19 +42,13 @@ func _process(delta: float) -> void:
 	_tick_empty_reset(delta, in_pvp)
 
 
-# 房间没别人 (只剩自己) 且搭过方块 → 持续满 1 分钟自动清场. 有别人/没搭过 → 计时清零。
-# (用户要求: 切模式保留方块, 但空房放久了自动重置, 给后来的人干净竞技场。)
-func _tick_empty_reset(delta: float, in_pvp: bool) -> void:
-	if not in_pvp or _match_over:
-		_empty_timer = 0.0
-		return
-	if _other_players_present() or not _has_placed_blocks():
-		_empty_timer = 0.0
-		return
-	_empty_timer += delta
-	if _empty_timer >= EMPTY_RESET_SEC:
-		_empty_timer = 0.0
-		_clean_arena()
+# 已停用 (用户报: 有玩家时房间还是会重置)。
+# 根因: 这个计时跑在每个客户端上, 而单个客户端永远把自己算"在场" → 只能数"别的玩家"。
+# 你一个人玩(或对方木偶一瞬没数到)就被当"空房", 1 分钟把你正在搭的东西清掉 = 体验很差。
+# 从单个客户端的视角根本判不准"房间真的没人了", 所以干脆不自动清场。
+# 清场只发生在 "赢了一局"(_trigger_win → _clean_arena), 那是正常的开新一局。
+func _tick_empty_reset(_delta: float, _in_pvp: bool) -> void:
+	_empty_timer = 0.0   # 永不自动清场 (保留搭的方块)
 
 
 func _other_players_present() -> bool:
