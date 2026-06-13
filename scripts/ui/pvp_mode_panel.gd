@@ -13,7 +13,8 @@ const UIStyle = preload("res://scripts/ui/ui_style.gd")
 const MpRooms = preload("res://scripts/net/mp_rooms.gd")
 const PvpArena = preload("res://scripts/world/pvp_arena.gd")   # 切模式重置竞技场 (清掉搭的方块)
 
-const _MODE_TAG := {"classic": "PVP", "magic": "PVP-MAGIC", "gun": "PVP-GUN"}
+const _MODE_TAG := {"classic": "PVP", "magic": "PVP-MAGIC", "gun": "PVP-GUN", "throw": "PVP-THROW"}
+const _THROWN := [["shuriken", "手里剑"], ["bomb", "炸弹"], ["boomerang", "回旋镖"]]
 const _COMMON := [["dirt", 64], ["iron_pickaxe", 1], ["health_potion", 5]]
 # 骷髅法杖 + 雀宝宝法杖故意不列 (召唤类: 对战房太轮椅 + 召唤动作在 player_action 里已被对战房屏蔽 → 列了也放不出)
 const _STAFFS := [
@@ -61,6 +62,11 @@ static func mode_loadout(key: String, weapon_id: String = "") -> Array:
 		"gun":
 			out.append([weapon_id if weapon_id != "" else "pistol", 1])
 			out.append(["bullet", 200])
+		"throw":
+			# 投掷武器无弹药 → 直接发齐三件套 (换武器只是重发, weapon_id 忽略, 跟经典同款)
+			out.append(["shuriken", 1])
+			out.append(["bomb", 1])
+			out.append(["boomerang", 1])
 		_:
 			out.append(["iron_sword", 1])
 			out.append(["wood_bow", 1])
@@ -146,6 +152,7 @@ func _show_modes(allow_close: bool = true) -> void:
 	_add_choice("经典对战 (剑 + 弓)", _pick_mode.bind("classic"))
 	_add_choice("魔法对战 (法杖)", _pick_mode.bind("magic"))
 	_add_choice("枪械对战 (枪)", _pick_mode.bind("gun"))
+	_add_choice("投掷对战 (手里剑/炸弹/回旋镖)", _pick_mode.bind("throw"))
 	if allow_close:
 		_add_choice("关闭 (返回游戏)", _close)   # 用户: 退出只关面板回游戏 (离开整个房间走暂停菜单)
 
@@ -220,6 +227,7 @@ func _weapons_for(mode_key: String) -> Array:
 	match mode_key:
 		"magic": return _STAFFS
 		"gun":   return _GUNS
+		"throw": return _THROWN
 		_:       return [["iron_sword", "铁剑"], ["wood_bow", "木弓"]]
 
 

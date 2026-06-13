@@ -29,6 +29,7 @@ func test_mode_to_room_tag():
 	assert_eq(PvpModePanel._MODE_TAG["classic"], "PVP")
 	assert_eq(PvpModePanel._MODE_TAG["magic"], "PVP-MAGIC")
 	assert_eq(PvpModePanel._MODE_TAG["gun"], "PVP-GUN")
+	assert_eq(PvpModePanel._MODE_TAG["throw"], "PVP-THROW")
 
 
 func test_pvp_subtag_rooms_are_combat():
@@ -81,8 +82,8 @@ func test_mode_view_has_3_modes_plus_close():
 	add_child_autofree(panel)
 	await wait_frames(1)
 	panel._show_modes()
-	# 经典 + 魔法 + 枪械 + 关闭 = 4 个按钮 (用户: 退出按钮 / 只选模式不选武器)
-	assert_eq(panel._content.get_child_count(), 4, "模式视图: 3 模式 + 关闭")
+	# 经典 + 魔法 + 枪械 + 投掷 + 关闭 = 5 个按钮 (用户: 退出按钮 / 只选模式不选武器)
+	assert_eq(panel._content.get_child_count(), 5, "模式视图: 4 模式 + 关闭")
 
 
 func test_weapons_for_each_mode():
@@ -101,6 +102,17 @@ func test_weapons_for_each_mode():
 	# 经典 = 剑 + 弓
 	assert_true(_list_has(panel._weapons_for("classic"), "iron_sword"), "经典含剑")
 	assert_true(_list_has(panel._weapons_for("classic"), "wood_bow"), "经典含弓")
+	# 投掷 = 手里剑/炸弹/回旋镖
+	assert_eq(panel._weapons_for("throw").size(), 3, "投掷 3 件")
+	for tid in ["shuriken", "bomb", "boomerang"]:
+		assert_true(_list_has(panel._weapons_for("throw"), tid), "投掷含 %s" % tid)
+
+
+func test_throw_loadout_gives_all_three():
+	var lo: Array = PvpModePanel.mode_loadout("throw")
+	for tid in ["shuriken", "bomb", "boomerang"]:
+		assert_true(_list_has(lo, tid), "投掷开局发 %s" % tid)
+	assert_true(_list_has(lo, "health_potion"), "投掷也发共用血药")
 
 
 func test_weapon_switch_view_lists_current_mode():
@@ -206,4 +218,4 @@ func test_first_entry_modes_have_no_close():
 	add_child_autofree(panel)
 	await wait_frames(1)
 	panel._show_modes(false)
-	assert_eq(panel._content.get_child_count(), 3, "首次: 只 3 个模式, 无关闭按钮")
+	assert_eq(panel._content.get_child_count(), 4, "首次: 只 4 个模式, 无关闭按钮")
