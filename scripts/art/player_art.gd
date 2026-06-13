@@ -247,7 +247,7 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 	var pal := _palette_from(appearance)
 	var anims := {
 		"idle": {"frames": [_frame(appearance, "idle_a"), _frame(appearance, "idle_b")], "fps": 2.0, "loop": true},
-		"walk": {"frames": [_frame(appearance, "walk_a"), _frame(appearance, "idle_a"), _frame(appearance, "walk_c"), _frame(appearance, "idle_a")], "fps": 10.0, "loop": true},
+		"walk": {"frames": [_frame(appearance, "walk_a"), _frame(appearance, "walk_b"), _frame(appearance, "walk_c"), _frame(appearance, "walk_b")], "fps": 10.0, "loop": true},
 		"jump": {"frames": [_frame(appearance, "jump")], "fps": 1.0, "loop": false},
 		"fall": {"frames": [_frame(appearance, "fall")], "fps": 1.0, "loop": false},
 		"hurt": {"frames": [_frame(appearance, "hurt")], "fps": 1.0, "loop": false},
@@ -256,7 +256,11 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 
 
 static func _frame(ap: Dictionary, pose: String) -> Array:
-	var dy := 1 if pose == "idle_b" else 0   # idle_b 上半身下沉 1px = 呼吸
+	var dy := 0
+	if pose == "idle_b":
+		dy = 1     # idle_b 上半身下沉 1px = 呼吸
+	elif pose == "walk_b":
+		dy = -1    # walk_b 过渡帧上半身抬 1px = 走路上下起伏 (更自然)
 	var layers := [
 		_legs_layer(ap, pose),        # 腿+鞋 (+裙子) (最底; 不随呼吸动)
 		_body_layer(ap, dy),          # 脸+脖
@@ -407,6 +411,9 @@ static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 		"walk_c":   # 收拢: 后脚落地, 前脚抬起迈步 (与 walk_a 不同 → 动起来)
 			_put_leg(g, 5, _HIP, 4, leg, foot)
 			_put_leg(g, 8, _HIP, 3, leg, foot)
+		"walk_b":   # 过渡 (passing): 两腿并拢到身体正下方, 配合上半身抬高 = 走路起伏
+			_put_leg(g, 6, _HIP, 4, leg, foot)
+			_put_leg(g, 8, _HIP, 4, leg, foot)
 		"jump":     # 双腿收起
 			_put_leg(g, 5, _HIP, 2, leg, foot)
 			_put_leg(g, 9, _HIP, 2, leg, foot)
