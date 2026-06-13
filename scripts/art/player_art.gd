@@ -59,52 +59,52 @@ const _FACE_F := [
 	"...sss...",
 ]
 
-# 大蓬松短发: h 主色 / H 阴影 / g 高光发丝。14 宽 × 11 高。轮廓不变, 加高光斜束 + 发缕阴影。
+# 大蓬松短发: h 主色 / H 发丝暗线 / g 顶部一点高光。14 宽 × 11 高。轮廓不变, 斜向密发丝。
 const _HAIR_SHORT := [
-	"....hggggh....",
-	"..hggggghhhh..",
-	".hhgggghhhhHh.",
-	"hhhggghhhhhHh.",
-	"hhhhgghhhhhhHh",
-	"Hhhhhgghhhhhh.",
-	"Hhhhhhhhhhhh..",
-	"HHhhhhhh...Hh.",   # 后+顶留发, 中间空出眼睛, 前一缕刘海
-	"HHhhhhh.......",
-	".HHhhh........",
-	"..HHh.........",
+	"....hhHggH....",
+	"..HhhHhhHhhH..",
+	".HhhHhhHhhHhh.",
+	"HhhHhhHhhHhhH.",
+	"hhHhhHhhHhhHhh",
+	"hHhhHhhHhhHhh.",
+	"HhhHhhHhhHhh..",
+	"hhHhhHhh...Hh.",   # 中间空出眼睛, 前一缕刘海
+	"hHhhHhh.......",
+	".hhHhh........",
+	"..Hhh.........",
 ]
-# 长发: 同顶, 后脑一大片垂到腰。14 宽 × 16 高。加高光斜束 + 垂发的发缕竖线 (g 亮丝/H 暗缕)。
+# 长发: 同顶, 后脑一大片垂到腰。14 宽 × 16 高。斜向密发丝 (H 暗丝) + 顶部一点高光。
 const _HAIR_LONG := [
-	"....hggggh....",
-	"..hggggghhhh..",
-	".hhgggghhhhHh.",
-	"hhhggghhhhhHh.",
-	"hhhhgghhhhhhHh",
-	"Hhhhhgghhhhhh.",
-	"Hhhhhhgghhhh..",
-	"hhhgghhh...Hh.",
-	"hHhhghh.......",
-	"hHhhghh.......",
-	"hhHhgh........",
-	"hhHhgh........",
-	"hhHhHH........",
-	"hHHhHH........",
-	"HhHHh.........",
-	".HHHh.........",
+	"....hhHggH....",
+	"..HhhHhhHhhH..",
+	".HhhHhhHhhHhh.",
+	"HhhHhhHhhHhhH.",
+	"hhHhhHhhHhhHhh",
+	"hHhhHhhHhhHhh.",
+	"HhhHhhHhhHhh..",
+	"hhHhhHhh...Hh.",
+	"hHhhHhh.......",
+	"HhhHhhH.......",
+	"hhHhhH........",
+	"hHhhHh........",
+	"HhhHhh........",
+	"hhHhhH........",
+	"hHhhH.........",
+	".hhHh.........",
 ]
 # 马尾: 短发 + 后脑伸出一束 (尾巴另块拼)。
 const _HAIR_PONY := [
-	"....hggggh....",
-	"..hggggghhhh..",
-	".hhgggghhhhHh.",
-	"hhhggghhhhhHh.",
-	"hhhhgghhhhhhHh",
-	"Hhhhhgghhhhhh.",
-	"Hhhhhhhhhhhh..",
-	"HHhhhhhh...HH.",
-	"HHHhhhh.......",
-	".HHHhh........",
-	"..HHh.........",
+	"....hhHggH....",
+	"..HhhHhhHhhH..",
+	".HhhHhhHhhHhh.",
+	"HhhHhhHhhHhhH.",
+	"hhHhhHhhHhhHhh",
+	"hHhhHhhHhhHhh.",
+	"HhhHhhHhhHhh..",
+	"hhHhhHhh...Hh.",
+	"hHhhHhh.......",
+	".hhHhh........",
+	"..Hhh.........",
 ]
 const _PONY_TAIL := [   # 后脑扎起垂下的一束 (拼在后脑外侧)
 	"hh.",
@@ -117,17 +117,17 @@ const _PONY_TAIL := [   # 后脑扎起垂下的一束 (拼在后脑外侧)
 ]
 # 呆毛: 顶上炸开几撮 (尖刺顶)。
 const _HAIR_AHOGE := [
-	"...h.hh.h.h..",
-	"..hggggghhhh..",
-	".hhgggghhhhHh.",
-	"hhhggghhhhhHh.",
-	"hhhhgghhhhhhHh",
-	"Hhhhhgghhhhhh.",
-	"Hhhhhhhhhhhh..",
-	"HHhhhhhh...HH.",
-	"HHHhhhh.......",
-	".HHHhh........",
-	"..HHh.........",
+	"...H.hg.h.h..",
+	"..HhhHhhHhhH..",
+	".HhhHhhHhhHhh.",
+	"HhhHhhHhhHhhH.",
+	"hhHhhHhhHhhHhh",
+	"hHhhHhhHhhHhh.",
+	"HhhHhhHhhHhh..",
+	"hhHhhHhh...Hh.",
+	"hHhhHhh.......",
+	".hhHhh........",
+	"..Hhh.........",
 ]
 
 # 女性专属: 短发/呆毛补的后发 (垂到肩下, 让短发也有女生长度)。3 宽 × 7 高, 拼在后脑外侧。
