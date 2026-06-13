@@ -163,18 +163,39 @@ const _KING_ATTACK := [
 	"........................",
 ]
 
-# 骷髅王身体帧 (idle/walk/attack 暂共用这一精细帧, 走位靠状态机不靠帧)
+# 整张帧竖向平移 dy 像素 (+下 -上), 顶/底补空行. 用来程序生成"起伏"中间帧, 不必重画整帧。
+static func _shift(grid: Array, dy: int) -> Array:
+	var w: int = (grid[0] as String).length()
+	var blank: String = ".".repeat(w)
+	var out: Array = []
+	if dy >= 0:
+		for i in dy: out.append(blank)
+		for i in range(grid.size() - dy): out.append(grid[i])
+	else:
+		for i in range(-dy, grid.size()): out.append(grid[i])
+		for i in (-dy): out.append(blank)
+	return out
+
+
+# 骷髅王身体帧. idle/walk/attack 用程序起伏中间帧加帧, 沉重步态 + 举刀前摇更连贯。
 static func build_frames() -> SpriteFrames:
 	var idle_tex: ImageTexture = PixelArt.grid_to_texture(_KING_IDLE, _KING_PAL)
+	var idle_dn: ImageTexture = PixelArt.grid_to_texture(_shift(_KING_IDLE, 1), _KING_PAL)   # 呼吸下沉
 	var walk_tex: ImageTexture = PixelArt.grid_to_texture(_KING_WALK, _KING_PAL)
+	var walk_up: ImageTexture = PixelArt.grid_to_texture(_shift(_KING_WALK, -1), _KING_PAL)  # 迈步抬起
 	var atk_tex: ImageTexture = PixelArt.grid_to_texture(_KING_ATTACK, _KING_PAL)
+	var atk_up: ImageTexture = PixelArt.grid_to_texture(_shift(_KING_ATTACK, -1), _KING_PAL) # 举刀蓄力
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	sf.add_animation("idle"); sf.set_animation_loop("idle", true); sf.add_frame("idle", idle_tex)
-	# 走: idle ↔ 迈步 两帧轮播
-	sf.add_animation("walk"); sf.set_animation_speed("walk", 5.0); sf.set_animation_loop("walk", true)
-	sf.add_frame("walk", idle_tex); sf.add_frame("walk", walk_tex)
-	# 打: idle ↔ 举刀 两帧轮播
-	sf.add_animation("attack"); sf.set_animation_speed("attack", 7.0); sf.set_animation_loop("attack", true)
-	sf.add_frame("attack", idle_tex); sf.add_frame("attack", atk_tex)
+	# idle: 站立 ↔ 微沉 = 呼吸 (2 帧, 慢)
+	sf.add_animation("idle"); sf.set_animation_speed("idle", 1.5); sf.set_animation_loop("idle", true)
+	sf.add_frame("idle", idle_tex); sf.add_frame("idle", idle_dn)
+	# 走: 站 → 抬步 → 迈步 → 抬步 (4 帧, 沉重起伏)
+	sf.add_animation("walk"); sf.set_animation_speed("walk", 7.0); sf.set_animation_loop("walk", true)
+	for fr in [idle_tex, walk_up, walk_tex, walk_up]:
+		sf.add_frame("walk", fr)
+	# 打: 站 → 举刀蓄力 → 劈 → 劈 (4 帧, 出招有前摇)
+	sf.add_animation("attack"); sf.set_animation_speed("attack", 9.0); sf.set_animation_loop("attack", true)
+	for fr in [idle_tex, atk_up, atk_tex, atk_tex]:
+		sf.add_frame("attack", fr)
 	return sf

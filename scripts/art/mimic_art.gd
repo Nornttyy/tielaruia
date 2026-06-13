@@ -61,21 +61,43 @@ const _ATTACK := [
 	"..nn........nn..",
 ]
 
+# attack 半合: 嘴咬下来 (红膛变薄, 上下牙快咬合) — 跟 _ATTACK 轮播 = 一咬一咬
+const _ATTACK_MID := [
+	"................",
+	"..nnnnnnnnnnnn..",
+	".nmmRRRRRRRRmmn.",
+	".nmRrtttttttRmn.",
+	".nnnRRRRRRRRnnn.",
+	".nwwwerrrrewwwn.",
+	".nwlwerrrrewwwn.",
+	".nwwwwwttwwwwwn.",
+	".nwwwwwwwwwwwwn.",
+	".nwlwwwwwwwwwln.",
+	".nWWwwwwwwwwWWn.",
+	".nmmwwwwwwwwmmn.",
+	".nnnnnnnnnnnnnn.",
+	"..nn........nn..",
+	"..nn........nn..",
+	"................",
+]
+
 
 static func build_sprite_frames() -> SpriteFrames:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 	var idle_tex: ImageTexture = PixelArt.grid_to_texture(_IDLE, PALETTE)
 	var attack_tex: ImageTexture = PixelArt.grid_to_texture(_ATTACK, PALETTE)
+	var attack_mid_tex: ImageTexture = PixelArt.grid_to_texture(_ATTACK_MID, PALETTE)
 	# idle: 闭着 (玩家进 aggro 前)
 	sf.add_animation("idle")
 	sf.set_animation_speed("idle", 1.0)
 	sf.set_animation_loop("idle", true)
 	sf.add_frame("idle", idle_tex)
-	# walk + attack: 一直张嘴扑过来
+	# walk + attack: 张嘴扑 + 一咬一咬 (大张 ↔ 半合 轮播)
 	for anim in ["walk", "attack"]:
 		sf.add_animation(anim)
-		sf.set_animation_speed(anim, 4.0)
+		sf.set_animation_speed(anim, 6.0)
 		sf.set_animation_loop(anim, true)
 		sf.add_frame(anim, attack_tex)
+		sf.add_frame(anim, attack_mid_tex)
 	return sf
