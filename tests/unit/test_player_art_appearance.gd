@@ -37,6 +37,35 @@ func test_action_anims_are_two_frames_no_loop():
 		assert_eq(sf.get_frame_count(anim), 2, "%s 该 2 帧" % anim)
 		assert_false(sf.get_animation_loop(anim), "%s 不循环 (放一次)" % anim)
 
+# 女角色 胸/后发 走路抖动 (secondary motion): 落脚帧软部位下沉/甩, 回位帧归零。
+func test_soft_jiggle_phases():
+	assert_eq(PlayerArt._soft_jiggle("walk_a"), 1, "落脚帧软部位下沉")
+	assert_eq(PlayerArt._soft_jiggle("walk_b"), 0, "腾空(passing)帧回位")
+	assert_eq(PlayerArt._soft_jiggle("idle_a"), 0, "站立不抖")
+
+
+func test_hair_sway_alternates():
+	assert_eq(PlayerArt._hair_sway("walk_a"), 1, "迈左脚发梢甩向后")
+	assert_eq(PlayerArt._hair_sway("walk_c"), -1, "迈右脚发梢甩向前")
+	assert_eq(PlayerArt._hair_sway("idle_a"), 0, "站立发不甩")
+
+
+func test_chest_bounce_shifts_peak():
+	# bounce 让胸隆起整体下移 → 帧不一样 (抖)
+	var rest = PlayerArt._female_torso(4, 0)
+	var down = PlayerArt._female_torso(4, 1)
+	assert_ne(rest, down, "胸 bounce=1 该跟 bounce=0 不同 (隆起下移)")
+
+
+func test_sway_block_moves_lower_half_only():
+	var block = ["abcd", "efgh", "ijkl", "mnop"]   # 4 行
+	var swayed = PlayerArt._sway_block(block, 1)
+	assert_eq(swayed[0], "abcd", "上半发根不动")
+	assert_eq(swayed[1], "efgh", "上半发根不动")
+	assert_ne(swayed[2], "ijkl", "下半发梢右移")
+	assert_eq(PlayerArt._sway_block(block, 0), block, "dir=0 不变")
+
+
 func test_canvas_size():
 	var tex = PlayerArt.build_sprite_frames(_default_appearance()).get_frame_texture("idle", 0)
 	assert_eq(tex.get_width(), PlayerArt.W, "宽 = W")

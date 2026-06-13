@@ -270,11 +270,20 @@ static func _frame(ap: Dictionary, pose: String) -> Array:
 	var layers := [
 		_legs_layer(ap, pose),        # 腿+鞋 (+裙子) (最底; 不随呼吸动)
 		_body_layer(ap, dy),          # 脸+脖
-		_shirt_layer(ap, dy),         # 衬衫躯干
+		_shirt_layer(ap, dy, pose),   # 衬衫躯干 (女: 胸随姿势抖动)
 		_arm_layer(ap, pose, dy),     # 手臂 (盖在躯干前; 背心款裸臂)
-		_hair_layer(ap, dy),          # 头发 (盖在最上)
+		_hair_layer(ap, dy, pose),    # 头发 (盖在最上; 女: 后发随姿势甩)
 	]
 	return _outline(_composite(layers))
+
+
+# 软部位 (女角色的胸 / 后发) 的"滞后位移": 落脚帧下沉, 腾空/passing 帧跟不上 → 走/跳时一弹一弹。
+static func _soft_jiggle(pose: String) -> int:
+	match pose:
+		"walk_a", "walk_c": return 1   # 落脚: 软部位被甩下沉 1px
+		"jump_a", "fall": return 1     # 起跳/下落: 惯性滞后下沉
+		"hurt": return 1               # 挨打: 晃一下
+		_: return 0                    # idle / walk_b(腾空) / jump_b: 回位
 
 
 static func _body_layer(ap: Dictionary, dy: int) -> Array:
@@ -284,15 +293,16 @@ static func _body_layer(ap: Dictionary, dy: int) -> Array:
 	return g
 
 
-static func _shirt_layer(ap: Dictionary, dy: int) -> Array:
+static func _shirt_layer(ap: Dictionary, dy: int, pose: String = "idle_a") -> Array:
 	var g := _blank()
 	var female := int(ap.get("gender", 0)) == 1
 	var cs := int(ap.get("chest_size", 1))
+	var bounce := _soft_jiggle(pose) if female else 0   # 女: 胸随姿势上下弹 1px
 	var torso: Array
 	if int(ap.get("shirt_style", 0)) == 6:        # 泳衣: 露肚短上衣
-		torso = _female_torso_swim(cs) if female else _TORSO_SWIM
+		torso = _female_torso_swim(cs, bounce) if female else _TORSO_SWIM
 	elif female:
-		torso = _female_torso(cs)
+		torso = _female_torso(cs, bounce)
 	else:
 		torso = _TORSO
 	_place(g, _TORSO_TOP + dy, _TORSO_LEFT, torso)
@@ -300,7 +310,7 @@ static func _shirt_layer(ap: Dictionary, dy: int) -> Array:
 
 
 # 女泳衣躯干 (露肚: 上 3 行衣+胸, 下 3 行肚皮肤)。沙漏腰; cs 简化两档前鼓。
-static func _female_torso_swim(cs: int) -> Array:
+static func _female_torso_swim(cs: int, bounce: int = 0) -> Array:
 	cs = clampi(cs, 0, 5)
 	# 比基尼上衣 👙 (10宽): 罩杯(镶边D + 高光c) + 挂脖细带。胸前鼓跟 _female_torso 同款大小。
 	# 腰/胯皮肤色 (露肚), 形状跟 T恤同款细腰 (用户要身材跨衣服一致)。
@@ -312,27 +322,30 @@ static func _female_torso_swim(cs: int) -> Array:
 		".kss......",   # 腰 (皮肤; 细腰 cols1-3)
 		"ksssk.....",   # 胯 (皮肤; cols0-4)
 	]
-	# 圆润罩杯 (跟 T恤同款圆弧): 下胸罩杯(row2)=峰, 上沿(row1)/下沿(row3)收圆。最大 2-3-2。
+	# 圆润罩杯: 上沿/罩杯峰/下沿 三行。bounce>0 整体下移 1px (走/跳落脚帧胸下沉=抖), 夹 1~3 行。
+	var up := clampi(1 + bounce, 1, 3)
+	var mid := clampi(2 + bounce, 1, 3)
+	var low := clampi(3 + bounce, 1, 3)
 	if cs >= 1:
-		rows[2] = _set_char(rows[2], 7, "w")   # 罩杯 col7 (峰 1px)
+		rows[mid] = _set_char(rows[mid], 7, "w")   # 罩杯 col7 (峰 1px)
 	if cs >= 2:
-		rows[1] = _set_char(rows[1], 7, "w")   # 上胸罩杯 col7 (上沿)
-		rows[3] = _set_char(rows[3], 6, "w")   # 下沿 col6 (连住肚, 不留缝=跟背心一样大)
-		rows[3] = _set_char(rows[3], 7, "w")   # 下沿 col7
+		rows[up] = _set_char(rows[up], 7, "w")     # 上沿 col7
+		rows[low] = _set_char(rows[low], 6, "w")   # 下沿 col6 (连住肚)
+		rows[low] = _set_char(rows[low], 7, "w")   # 下沿 col7
 	if cs >= 3:
-		rows[2] = _set_char(rows[2], 8, "w")   # 罩杯 col8 (峰 2px)
+		rows[mid] = _set_char(rows[mid], 8, "w")   # 罩杯 col8 (峰 2px)
 	if cs >= 4:
-		rows[2] = _set_char(rows[2], 9, "c")   # 罩杯 col9 峰顶高光 c (球面感: 顶亮)
-		rows[3] = _set_char(rows[3], 8, "e")   # 下沿 col8 皮肤阴影 e (露肚, 底暗=圆)
+		rows[mid] = _set_char(rows[mid], 9, "c")   # 罩杯 col9 峰顶高光 c
+		rows[low] = _set_char(rows[low], 8, "e")   # 下沿 col8 皮肤阴影 e
 	if cs >= 5:
-		rows[1] = _set_char(rows[1], 8, "w")   # 上沿 col8 (上沿满)
+		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8 (上沿满)
 	return rows
 
 
 # 女躯干 (10 宽): 沙漏身, 胸在躯干前 (右)。chest_size 越大胸越饱满。
 # 加宽到 10 (composite col5-14) 给胸留鼓的空间: 胸前鼓占 col7-9 = composite 12-14, 最大 3px。
 # 胸是前鼓的圆弧 (中胸最饱满, 上下渐收), cs 越大越鼓越大。
-static func _female_torso(cs: int) -> Array:
+static func _female_torso(cs: int, bounce: int = 0) -> Array:
 	cs = clampi(cs, 0, 5)
 	var rows := [
 		".wwwDDc...",   # 肩 + 领口 DD + 前高光 c
@@ -342,20 +355,23 @@ static func _female_torso(cs: int) -> Array:
 		".www......",   # 腰 (照泳衣细腰: cols1-3 = composite 6-8, 后背收1px+前收)
 		"wwwww.....",   # 胯 (照泳衣: cols0-4 = composite 5-9)
 	]
-	# 圆润胸: 中胸(row2)=峰最鼓, 上沿(row1)较满、下沿(row3)收尖成圆弧底 (不是平横边)。
-	# 最大 cs5 = 上2/中3/下1 (下沿收尖=底部往里收圆, 不平切)。下沿再加 D 阴影衬圆。
+	# 圆润胸: 上沿/中胸/下沿 三行画峰。bounce>0 把这三行整体下移 1px (走/跳落脚帧胸下沉=抖),
+	# 夹在 1~3 行内不侵腰。中胸最鼓, 上下渐收。
+	var up := clampi(1 + bounce, 1, 3)
+	var mid := clampi(2 + bounce, 1, 3)
+	var low := clampi(3 + bounce, 1, 3)
 	if cs >= 1:
-		rows[2] = _set_char(rows[2], 7, "w")   # 中胸 col7 (峰 1px)
+		rows[mid] = _set_char(rows[mid], 7, "w")   # 中胸 col7 (峰 1px)
 	if cs >= 2:
-		rows[1] = _set_char(rows[1], 7, "w")   # 上胸 col7 (上沿)
-		rows[3] = _set_char(rows[3], 7, "w")   # 下胸 col7 (下沿, 只 1px = 收尖圆底)
+		rows[up] = _set_char(rows[up], 7, "w")     # 上沿 col7
+		rows[low] = _set_char(rows[low], 7, "w")   # 下沿 col7 (收尖圆底)
 	if cs >= 3:
-		rows[2] = _set_char(rows[2], 8, "w")   # 中胸 col8 (峰 2px)
+		rows[mid] = _set_char(rows[mid], 8, "w")   # 中胸 col8 (峰 2px)
 	if cs >= 4:
-		rows[2] = _set_char(rows[2], 9, "c")   # 中胸 col9 峰顶高光 c (球面感: 顶亮)
-		rows[3] = _set_char(rows[3], 8, "D")   # 下沿 col8 阴影 D (球面感: 底暗 = 圆)
+		rows[mid] = _set_char(rows[mid], 9, "c")   # 中胸 col9 峰顶高光 c (球面感: 顶亮)
+		rows[low] = _set_char(rows[low], 8, "D")   # 下沿 col8 阴影 D (球面感: 底暗 = 圆)
 	if cs >= 5:
-		rows[1] = _set_char(rows[1], 8, "w")   # 上胸 col8 (上沿满)
+		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8 (上沿满)
 	return rows
 
 
@@ -382,24 +398,53 @@ static func _arm_layer(ap: Dictionary, pose: String, dy: int) -> Array:
 	return g
 
 
-static func _hair_layer(ap: Dictionary, dy: int) -> Array:
+# 后发/发尾随姿势左右甩 (女): 走/跳时发梢摆, 发根连头不动 (_sway_block 只动下半截)。
+static func _hair_sway(pose: String) -> int:
+	match pose:
+		"walk_a": return 1     # 迈左脚: 发梢甩向后
+		"walk_c": return -1    # 迈右脚: 发梢甩向前
+		"jump_a", "fall": return 1
+		"hurt": return -1
+		_: return 0
+
+
+# 把块的"下半截"横向移 dir px (上半截不动 = 发根连着头, 不留缝)。dir>0 右移, <0 左移。
+static func _sway_block(block: Array, dir: int) -> Array:
+	if dir == 0:
+		return block
+	var out: Array = []
+	var n: int = block.size()
+	for i in n:
+		var row: String = block[i]
+		if i < n / 2:
+			out.append(row)                       # 上半: 发根, 不动
+		elif dir > 0:
+			out.append(".".repeat(dir) + row)     # 下半右移 (前补透明)
+		else:
+			out.append(row.substr(-dir))          # 下半左移 (砍掉左边)
+	return out
+
+
+static func _hair_layer(ap: Dictionary, dy: int, pose: String = "idle_a") -> Array:
 	var g := _blank()
 	var t := _HAIR_TOP + dy
 	var style := int(ap.get("hair_style", 0))
+	var female := int(ap.get("gender", 0)) == 1
+	var sw := _hair_sway(pose) if female else 0   # 女: 发尾随走/跳甩动
 	match style:
 		1:
-			_place(g, t, _HAIR_LEFT, _HAIR_LONG)
+			_place(g, t, _HAIR_LEFT, _sway_block(_HAIR_LONG, sw))   # 长发: 下半发尾甩, 头顶不动
 		2:
 			_place(g, t, _HAIR_LEFT, _HAIR_PONY)
-			_place(g, t + 7, 1, _PONY_TAIL)   # 后脑发束垂在背后
+			_place(g, t + 7, 1, _sway_block(_PONY_TAIL, sw))   # 后脑发束甩
 		3:
 			_place(g, t, _HAIR_LEFT, _HAIR_AHOGE)
 		_:
 			_place(g, t, _HAIR_LEFT, _HAIR_SHORT)
 	# 女性: 短发/呆毛补后发到肩 → 短发也有女生长度 (脸前侧发绺已按用户要求删除)。
-	if int(ap.get("gender", 0)) == 1:
+	if female:
 		if style == 0 or style == 3:
-			_place(g, t + 8, 1, _BACKLOCK_F)
+			_place(g, t + 8, 1, _sway_block(_BACKLOCK_F, sw))   # 后发甩
 	return g
 
 
