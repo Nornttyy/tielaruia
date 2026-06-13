@@ -150,9 +150,10 @@ func _show_modes(allow_close: bool = true) -> void:
 		_add_choice("关闭 (返回游戏)", _close)   # 用户: 退出只关面板回游戏 (离开整个房间走暂停菜单)
 
 
-# 选一个模式: 发该模式默认装备 + (换了模式才) 重连到那模式的房间。
-# 切模式不再清方块 (用户改主意: 搭的东西要留着). 清场只发生在: 赢了重开 (pvp_scoreboard)
-# 或 房间没别人满 1 分钟 (pvp_scoreboard 空房计时)。_reset_arena 函数保留给那些用。
+# 选一个模式: 发该模式默认装备 + (换了模式才) 重连到那模式的房间 + 重置成干净竞技场。
+# 切到"别的模式" = 换房, 必须把本地竞技场重置干净 — 否则带着上个模式搭的方块进新房,
+# 而新房别人没有这些方块 (对战房方块只在同房内靠 tile 消息共享, 不发整包) → 你看到一堆
+# 只有自己看得见的"幽灵方块"= 用户报"不同模式又开始同步了"。同模式不动; 清场另由 赢了/空房1分钟 触发。
 func _pick_mode(mode_key: String) -> void:
 	_current_mode_key = mode_key
 	_grant_loadout(mode_key, "")   # 默认武器 (魔法=铁杖, 枪=手枪, 经典=剑+弓)
@@ -162,6 +163,7 @@ func _pick_mode(mode_key: String) -> void:
 	# 面板时 bridge 还没连上 (connected 慢一两秒). 那会儿选模式会漏掉 reroute → 换了武器没换房 (用户报)。
 	if new_tag != _current_tag and NetworkManager != null and NetworkManager.in_public_room:
 		_current_tag = new_tag
+		_reset_arena()      # 换模式 = 全新干净竞技场 (清掉上模式带过来的本地方块, 防幽灵块)
 		_reroute(new_tag)   # 每个模式一个房间, 互不同步 (用户要求)
 
 

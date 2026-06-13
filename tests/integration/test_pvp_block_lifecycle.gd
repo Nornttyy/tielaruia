@@ -1,5 +1,6 @@
 # 对战房方块去留 (用户最终要求):
-#   - 切模式/换武器 → 保留搭的方块 (不再清)
+#   - 切到"别的"模式 (换房) → 重置干净竞技场 (防带本地方块进新房成幽灵块, 用户报"模式又同步")
+#   - 选同一模式 / 换武器 (不换房) → 保留搭的方块
 #   - 赢了重开 / 房间没别人满 1 分钟 → 清场
 extends GutTest
 
@@ -24,8 +25,8 @@ func _boot_pvp_with_block():
 	return {"world": world, "tx": tx, "ty": ty}
 
 
-# 切模式不再清方块 (用户改主意: 搭的要留着)
-func test_pick_mode_keeps_placed_blocks():
+# 切到"别的"模式 = 换房 → 重置干净竞技场, 清掉本地方块 (防带去新房成"幽灵块", 用户报"模式又同步")
+func test_pick_different_mode_resets_blocks():
 	var prev_mode = NetworkManager.room_mode
 	var prev_pub = NetworkManager.in_public_room
 	var ctx = await _boot_pvp_with_block()
@@ -35,10 +36,28 @@ func test_pick_mode_keeps_placed_blocks():
 	add_child_autofree(panel)
 	await wait_frames(1)
 	NetworkManager.in_public_room = true
-	panel._current_tag = "PVP-LOBBY"
-	panel._pick_mode("magic")   # 切到魔法模式
+	panel._current_tag = "PVP"          # 当前经典房
+	panel._pick_mode("magic")           # 切到魔法 (不同 tag → reroute + 重置)
 	await wait_frames(1)
-	assert_eq(world.chunk_manager.get_tile(ctx.tx, ctx.ty), Tiles.DIRT, "切模式后方块该还在")
+	assert_ne(world.chunk_manager.get_tile(ctx.tx, ctx.ty), Tiles.DIRT, "切到别的模式该重置成干净竞技场 (方块清掉)")
+	NetworkManager.room_mode = prev_mode
+	NetworkManager.in_public_room = prev_pub
+
+
+# 选"同一个"模式 (没换房) → 不重置, 方块留着
+func test_pick_same_mode_keeps_blocks():
+	var prev_mode = NetworkManager.room_mode
+	var prev_pub = NetworkManager.in_public_room
+	var ctx = await _boot_pvp_with_block()
+	var world = ctx.world
+	var panel = PvpModePanel.new()
+	add_child_autofree(panel)
+	await wait_frames(1)
+	NetworkManager.in_public_room = true
+	panel._current_tag = "PVP-MAGIC"    # 已在魔法房
+	panel._pick_mode("magic")           # 再选魔法 = 同 tag, 不 reroute 不重置
+	await wait_frames(1)
+	assert_eq(world.chunk_manager.get_tile(ctx.tx, ctx.ty), Tiles.DIRT, "同模式不换房 → 方块留着")
 	NetworkManager.room_mode = prev_mode
 	NetworkManager.in_public_room = prev_pub
 
