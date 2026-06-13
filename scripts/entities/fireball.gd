@@ -140,9 +140,12 @@ func _destroy() -> void:
 	if _is_dead:
 		return
 	_is_dead = true
-	# 小爆炸视觉 (颜色跟元素走: 火橙红 / 冰蓝 / 自然绿)
+	# 小爆炸视觉 (颜色跟元素走: 火橙红 / 冰蓝 / 自然绿) + 招牌冲击波环 (跟新法杖一样有辨识度)
 	var vis: Dictionary = ELEMENT_VISUAL.get(element, ELEMENT_VISUAL["fire"])
 	Effects.spawn_explosion(global_position, vis["explosion"])
+	if Effects.has_method("spawn_spell_impact"):
+		var ring_kind: String = "splash" if element == "ice" else "explosion"
+		Effects.spawn_spell_impact(ring_kind, global_position, vis["explosion"])
 	queue_free()
 
 

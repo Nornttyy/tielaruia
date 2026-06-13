@@ -8,6 +8,7 @@ const SPEED := 260.0
 const GRAVITY := 200.0          # 箭飞行中往下坠的加速度 → 抛物线弧度 (越大越弯, 弓越要抬高瞄准)
 const LIFETIME_SEC := 3.0
 const BASE_DAMAGE := 5
+const FX_COLOR := Color8(235, 220, 170)   # 箭命中特效色 (羽毛暖白金)
 
 var velocity: Vector2 = Vector2.ZERO
 var damage: int = BASE_DAMAGE   # 由弓 tier 控制, 外部传入
@@ -51,6 +52,8 @@ func _physics_process(delta: float) -> void:
 		var ty: int = int(floor(next.y / TILE_SIZE))
 		var t: int = cm.get_tile(tx, ty)
 		if t != Tiles.AIR and Tiles.is_solid(t):
+			if Effects != null and Effects.has_method("spawn_bullet_impact"):
+				Effects.spawn_bullet_impact(global_position, velocity, FX_COLOR, "wallhit")   # 射墙: 火星
 			_destroy()
 			return
 	var prev_pos: Vector2 = global_position
@@ -84,6 +87,8 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 						NetworkManager.send_entity_damage(rid, damage, 120.0, src.x, src.y)
 			elif enemy.has_method("take_damage"):
 				enemy.take_damage(damage, src, 120.0)
+			if Effects != null and Effects.has_method("spawn_bullet_impact"):
+				Effects.spawn_bullet_impact(global_position, velocity, FX_COLOR, "hit")   # 射中怪: 放射爆闪
 			_destroy()
 			return
 	# PvP: 对战房里箭也能射到远程玩家 (本地箭判命中 → 发伤害给对方, 对方扣自己血)
@@ -101,6 +106,8 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 				NetworkManager.send_player_damage(pid, damage, 120.0, src2.x, src2.y)
 				if rp.has_method("flash_hit"):
 					rp.flash_hit()
+				if Effects != null and Effects.has_method("spawn_bullet_impact"):
+					Effects.spawn_bullet_impact(global_position, velocity, FX_COLOR, "hit")   # PvP 射中对方: 爆闪
 			_destroy()
 			return
 

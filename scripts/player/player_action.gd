@@ -2040,6 +2040,13 @@ func _try_cast_staff() -> void:
 	# damage_mult 让未来高 tier 法杖加伤
 	var final_dmg: int = int(round(float(spell_dmg) * _tool_damage_mult()))
 	fb.setup(start, target, final_dmg, true, element)   # true = player_cast, element = 元素弹
+	# 火球法杖施法闪: 杖头按元素喷一下 (之前 wood/iron/hell 法杖发射无视觉 — 用户报"没特效")
+	if Effects != null and Effects.has_method("spawn_muzzle_flash"):
+		var fdir: Vector2 = (target - start)
+		fdir = fdir.normalized() if fdir.length() > 0.01 else Vector2.RIGHT
+		var ecol: Color = _spell_fx_color("poison") if element == "nature" else _spell_fx_color(element)
+		var ekind: String = "frost" if element == "ice" else ("leaves" if element == "nature" else "flame")
+		Effects.spawn_muzzle_flash(start + fdir * 10.0, fdir, ecol, ekind)
 	if NetworkManager != null and NetworkManager.connected():
 		# kind 带上元素 (fireball_nature/ice/fire), 对端按后缀还原弹色
 		NetworkManager.send_projectile("fireball_" + element, start.x, start.y, target.x, target.y)
@@ -2195,6 +2202,10 @@ func _summon_friendly() -> void:
 	# 鸟从头顶冒出来, 骷髅从脚边
 	var spawn_off: Vector2 = Vector2(randf_range(-16.0, 16.0), -28.0 if summon_kind == "bird" else -4.0)
 	minion.global_position = player.global_position + spawn_off
+	# 召唤特效: 召出点炸一圈魔法星 (之前召唤法杖只有声音, 没视觉 — 用户报"没特效")
+	if Effects != null and Effects.has_method("spawn_spell_impact"):
+		var summon_col: Color = Color8(255, 230, 120) if summon_kind == "bird" else Color8(190, 160, 235)
+		Effects.spawn_spell_impact("sparkle", minion.global_position, summon_col)
 	SfxBank.play("place", 0.15)
 
 
