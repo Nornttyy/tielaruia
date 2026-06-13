@@ -130,8 +130,37 @@ const _WALK_B := [
 ]
 
 
+# 走 - 过渡 (双脚并拢居中 + 手臂收回): 夹在左伸/右伸之间, 手臂一摆一摆 = 4 帧蹒跚更连贯
+const _WALK_PASS := [
+	"................",
+	".....sssss......",
+	"....shhhhhs.....",
+	"....shsshss.....",
+	"....sseeses.....",
+	"....shhssss.....",
+	".....sssss......",
+	".....SsssS......",
+	"....scccccs.....",
+	"...sccCCccs.....",
+	"...scccccccs....",
+	"...sccccccrs....",
+	"...sCcccccCc....",
+	"....cccccccc....",
+	"....cCccccCc....",
+	"....ccccccc.....",
+	"....cccccc......",
+	"....sssssss.....",
+	"....sssssss.....",
+	"....ssssssss....",
+	".....SS..SS.....",
+	".....SS..SS.....",
+	".....kk..kk.....",
+	"................",
+]
+
+
 static func build_sprite_frames() -> SpriteFrames:
 	return PixelArt.build_sprite_frames({
 		"idle": {"frames": [_IDLE_A, _IDLE_B], "fps": 2.0, "loop": true},
-		"walk": {"frames": [_WALK_A, _WALK_B], "fps": 4.0, "loop": true},
+		"walk": {"frames": [_WALK_A, _WALK_PASS, _WALK_B, _WALK_PASS], "fps": 6.0, "loop": true},
 	}, PALETTE)

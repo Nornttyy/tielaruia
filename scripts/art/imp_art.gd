@@ -56,15 +56,37 @@ const _F1 := [
 ]
 
 
+# 飞行帧 M: 翅膀平展 (上↔下 之间), 夹进去 = 上→平→下→平 4 帧拍翅, 更顺
+const _FM := [
+	"................",
+	"......n..n......",
+	".....nrn.nrn....",
+	".....nrrnrrn....",
+	"....nrrlrlrrn...",
+	"....nrynryrn....",
+	"....nrrnnrrrn...",
+	"....nrronrrrn...",
+	".....nrrrrnn....",
+	"nkkknrrrrnkkkn..",
+	".nkkkkrrkkkkn...",
+	"...nknrrrnkn....",
+	"....nrrrrn......",
+	".....nrrn.......",
+	".....nrrrrn.....",
+	".....nn..nn.....",
+]
+
+
 static func build_sprite_frames() -> SpriteFrames:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 	var t0: ImageTexture = PixelArt.grid_to_texture(_F0, PALETTE)
+	var tm: ImageTexture = PixelArt.grid_to_texture(_FM, PALETTE)
 	var t1: ImageTexture = PixelArt.grid_to_texture(_F1, PALETTE)
 	for anim in ["idle", "move", "attack"]:
 		sf.add_animation(anim)
-		sf.set_animation_speed(anim, 5.0)
+		sf.set_animation_speed(anim, 8.0)
 		sf.set_animation_loop(anim, true)
-		sf.add_frame(anim, t0)
-		sf.add_frame(anim, t1)
+		for fr in [t1, tm, t0, tm]:
+			sf.add_frame(anim, fr)
 	return sf
