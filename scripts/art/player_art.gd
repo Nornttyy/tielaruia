@@ -251,6 +251,9 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 		"jump": {"frames": [_frame(appearance, "jump")], "fps": 1.0, "loop": false},
 		"fall": {"frames": [_frame(appearance, "fall")], "fps": 1.0, "loop": false},
 		"hurt": {"frames": [_frame(appearance, "hurt")], "fps": 1.0, "loop": false},
+		# 动作: 挥击 (蓄力→挥下) / 放置 (抬手→伸手). 一次性, 由 player_controller 触发后短暂盖住站/走。
+		"swing": {"frames": [_frame(appearance, "swing_a"), _frame(appearance, "swing_b")], "fps": 13.0, "loop": false},
+		"place": {"frames": [_frame(appearance, "place_a"), _frame(appearance, "place_b")], "fps": 11.0, "loop": false},
 	}
 	return PixelArt.build_sprite_frames(anims, pal)
 
@@ -364,6 +367,10 @@ static func _arm_layer(ap: Dictionary, pose: String, dy: int) -> Array:
 		"jump":   left = 8;  top = 11   # 抬手
 		"fall":   left = 9;  top = 11
 		"hurt":   left = 8;  top = 11
+		"swing_a": left = 6;  top = 9    # 挥击蓄力: 手臂抬到后上方
+		"swing_b": left = 11; top = 14   # 挥下: 手臂甩到前下方
+		"place_a": left = 9;  top = 11   # 放置抬手
+		"place_b": left = 11; top = 15   # 放置: 手伸到前下方放方块
 	var ss := int(ap.get("shirt_style", 0))
 	var arm: Array = _ARM_BARE if (ss == 1 or ss == 6) else _ARM   # 背心/泳衣 露胳膊
 	_place(g, top + dy, left, arm)

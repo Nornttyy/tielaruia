@@ -25,8 +25,17 @@ func _count_diff(a: Image, b: Image) -> int:
 func test_build_has_all_anims():
 	var sf = PlayerArt.build_sprite_frames(_default_appearance())
 	assert_true(sf is SpriteFrames, "返回 SpriteFrames")
-	for anim in ["idle", "walk", "jump", "fall", "hurt"]:
+	# 新增: 放置(place) + 挥击(swing) 动作 (用户要求)
+	for anim in ["idle", "walk", "jump", "fall", "hurt", "place", "swing"]:
 		assert_true(sf.has_animation(anim), "有动画 %s" % anim)
+
+
+# 挥击/放置都是 2 帧 (蓄力→挥下 / 抬手→伸手), 一次性不循环
+func test_action_anims_are_two_frames_no_loop():
+	var sf = PlayerArt.build_sprite_frames(_default_appearance())
+	for anim in ["swing", "place"]:
+		assert_eq(sf.get_frame_count(anim), 2, "%s 该 2 帧" % anim)
+		assert_false(sf.get_animation_loop(anim), "%s 不循环 (放一次)" % anim)
 
 func test_canvas_size():
 	var tex = PlayerArt.build_sprite_frames(_default_appearance()).get_frame_texture("idle", 0)

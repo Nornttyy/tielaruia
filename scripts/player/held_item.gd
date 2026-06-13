@@ -197,9 +197,17 @@ const PICKAXE_ATTACK_DURATION := 1.0   # 用户改 0.7→1.0 转慢一点
 
 # 镐攻击: 工具全周转 360°. 用户改: 起始朝鼠标 (target_angle), 不再总从上方开始.
 # target_angle: 鼠标相对玩家的角度 (radians, 0 = 右). 默认 -PI/2 = 上 (兼容老调用).
+# 通知玩家身体也做挥击动作 (held_item 是 player 的子节点)。
+func _notify_body_swing() -> void:
+	var p: Node = get_parent()
+	if p != null and p.has_method("play_action_anim"):
+		p.play_action_anim("swing", 0.28)
+
+
 func play_pickaxe_attack(target_angle: float = -PI / 2.0) -> void:
 	if not _has_item:
 		return
+	_notify_body_swing()   # 镐/斧 挥击 (挖矿 + 战斗): 身体也挥一下
 	_show_for(PICKAXE_ATTACK_DURATION)
 	if _tween != null and _tween.is_valid():
 		_tween.kill()

@@ -63,6 +63,9 @@ var _was_on_floor: bool = true
 var _previous_vy: float = 0.0
 var _walk_step_timer: float = 0.0
 var _hurt_timer: float = 0.0
+# 动作覆盖 (挥击/放置): 短暂盖住站/走的姿势, 不锁移动 (跟 hurt 的锁定不同)。受击优先, 不被打断。
+var _action_anim: String = ""
+var _action_timer: float = 0.0
 var _shake_amount: float = 0.0
 # 节流: 音乐场景每 0.5s 检测一次, 日光每 0.1s 检测一次 (节省 chunk_manager 查询)
 const _MUSIC_INTERVAL := 0.5
@@ -116,6 +119,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if _action_timer > 0.0:
+		_action_timer -= delta
 	_sun_timer -= delta
 	if _sun_timer <= 0.0:
 		_sun_timer = _SUN_INTERVAL
@@ -523,6 +528,11 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_animation(dir: float, on_floor: bool) -> void:
+	# 挥击/放置动作进行中: 盖住站/走 (空中也盖, 短暂). 由 play_action_anim 触发, _process 倒计时。
+	if _action_timer > 0.0 and _action_anim != "":
+		if sprite.animation != _action_anim:
+			sprite.play(_action_anim)
+		return
 	var next_anim: String
 	if not on_floor:
 		next_anim = "jump" if velocity.y < 0.0 else "fall"
@@ -532,6 +542,17 @@ func _update_animation(dir: float, on_floor: bool) -> void:
 		next_anim = "idle"
 	if sprite.animation != next_anim:
 		sprite.play(next_anim)
+
+
+# 播一次动作姿势 (挥击 "swing" / 放置 "place"), 持续 dur 秒后自动回到站/走。
+# 受击优先: hurt 期间不被打断。由 player_action / held_item 在挥击/放置时调。
+func play_action_anim(anim: String, dur: float) -> void:
+	if _hurt_timer > 0.0:
+		return
+	_action_anim = anim
+	_action_timer = dur
+	if sprite != null:
+		sprite.play(anim)   # 立刻从第 0 帧重播 (每次挥击都重新起手)
 
 
 func _update_workbench_prompt() -> void:

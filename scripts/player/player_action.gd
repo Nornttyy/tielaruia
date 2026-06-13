@@ -1407,7 +1407,15 @@ func _aim_bow_at_mouse() -> void:
 
 
 # 放方块动画: 手里的方块朝放置点"按"出去一下 (方块也只在使用时显示).
+# 通知玩家身体做动作姿势 (挥击 swing / 放置 place). player_action 是 player 子节点。
+func _body_action(anim: String, dur: float) -> void:
+	var p: Node = get_parent()
+	if p != null and p.has_method("play_action_anim"):
+		p.play_action_anim(anim, dur)
+
+
 func _play_place_anim() -> void:
+	_body_action("place", 0.22)   # 身体放置姿势 (伸手放方块)
 	var held: Node = _held_item_node()
 	if held == null or not held.has_method("play_place"):
 		return
@@ -1604,6 +1612,7 @@ func _deal_enemy_damage(target: Node2D, amount: int, src: Vector2, knockback: fl
 
 # 攻击开始时调一次. 接下来 duration 秒内每帧 _check_sword_blade_hits 扫击中.
 func _start_sword_blade_attack(is_sweep: bool, swing_dir: Vector2, damage: int, knockback: float) -> void:
+	_body_action("swing", 0.3)   # 短剑/阔剑 挥/戳: 身体也挥一下
 	_sword_attack_active = true
 	_sword_attack_t = 0.0
 	_sword_attack_duration = SWORD_SWING_DURATION if is_sweep else SWORD_THRUST_DURATION
