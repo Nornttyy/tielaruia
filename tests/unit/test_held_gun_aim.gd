@@ -49,3 +49,22 @@ func test_bow_shoot_resets_pivot_on_next_show() -> void:
 	assert_true(h.centered, "射箭时居中")
 	h._show_for(0.0)                    # 下次普通显示该还原底端支点
 	assert_false(h.centered, "射完切普通显示 → 恢复底端支点")
+
+
+# 持弓时 aim_bow 让弓一直朝鼠标方向 (用户: 别只朝玩家朝向). 居中支点 + 朝右/左翻面。
+func test_aim_bow_faces_mouse_both_directions() -> void:
+	var h := _make_held()
+	h.aim_bow(0.0)                      # 朝右
+	assert_true(h.centered, "持弓瞄准用居中支点")
+	assert_gt(h.scale.x, 0.0, "朝右瞄 → 不镜像 (scale.x>0)")
+	h.aim_bow(PI)                       # 朝左
+	assert_lt(h.scale.x, 0.0, "朝左瞄 → 镜像 (scale.x<0)")
+
+
+# 同一侧不同仰角 → rotation 不同 (证明是连续朝鼠标, 不是只分左右)
+func test_aim_bow_tracks_angle_not_just_side() -> void:
+	var h := _make_held()
+	h.aim_bow(-PI / 4.0)                # 右上
+	var up_rot: float = h.rotation
+	h.aim_bow(PI / 4.0)                 # 右下
+	assert_ne(up_rot, h.rotation, "右上 vs 右下 弓的角度该不一样 (连续瞄准)")

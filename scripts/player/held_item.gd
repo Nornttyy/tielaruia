@@ -287,6 +287,26 @@ const BOW_RECOIL_PX := 4.0         # 放箭瞬间弓沿瞄准方向小幅前冲�
 
 # 射箭姿势: 让手里的弓转向鼠标 (之前 bug: 箭朝鼠标飞但弓一直竖着不转, 看着没瞄准).
 # target_angle: 鼠标相对玩家的角度 (radians, 0 = 右).
+# 持弓时每帧调: 弓一直朝 angle 方向 (绕握把转, 居中支点). 不带后坐力 tween — 纯瞄准.
+# (射箭的后坐力由 play_bow_shoot 管; 它跑 tween 时这里不抢 position, 让后坐力放完。)
+func aim_bow(angle: float) -> void:
+	if not _has_item:
+		return
+	visible = true
+	_use_timer = maxf(_use_timer, _HIDE_GRACE)   # 持弓期间一直显示 (松手/换手才收)
+	var mouse_on_right: bool = cos(angle) >= 0.0
+	_attack_locked = false
+	set_facing(mouse_on_right)
+	_attack_locked = true
+	_aiming_gun = true       # 复用居中支点标志 → 切别的物品时 _reset_aim_transform 还原底端支点
+	centered = true
+	offset = Vector2.ZERO
+	# 朝向公式同 play_bow_shoot: 瞄右 sx=+1 → rotation=angle-PI; 瞄左 sx=-1 → rotation=angle.
+	rotation = wrapf(angle - (PI if mouse_on_right else 0.0), -PI, PI)
+	if _tween == null or not _tween.is_valid():   # 没在放后坐力 → 把弓放回手部基准位
+		position = Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
+
+
 func play_bow_shoot(target_angle: float) -> void:
 	if not _has_item:
 		return

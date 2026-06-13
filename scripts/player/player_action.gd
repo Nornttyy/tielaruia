@@ -228,10 +228,10 @@ func _physics_process(delta: float) -> void:
 	elif kind == "bow":
 		# 弓: LMB 按下 → 朝鼠标发箭, 消耗 1 wood_arrow. cooldown 0.4s.
 		_reset_mining()
+		_aim_bow_at_mouse()   # 持弓时弓一直朝鼠标方向 (用户: 别只朝玩家朝向)
 		var primary_pressed_b: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed_b and _attack_cooldown <= 0.0:
 			_try_fire_bow()
-			_flash_held()   # 射箭时显示弓 (无挥摆动画, 闪一下)
 	elif kind == "gun":
 		# 枪: LMB 按下 → 朝鼠标射子弹, 消耗 1 bullet. cooldown 0.22s (比弓快).
 		_reset_mining()
@@ -1388,6 +1388,22 @@ func _aim_held_at_mouse() -> void:
 	var target: Vector2 = mouse_world_override if mouse_world_override != null else parent.get_global_mouse_position()
 	var angle: float = (target - hand).angle() if hand.distance_to(target) > 0.01 else 0.0
 	held.aim_gun(angle)
+
+
+# 弓: 持弓时弓一直朝鼠标方向 (每帧调; 没射也朝着). 没 aim_bow 方法就退回 flash.
+func _aim_bow_at_mouse() -> void:
+	var held: Node = _held_item_node()
+	if held == null:
+		return
+	var parent: Node2D = get_parent() as Node2D
+	if parent == null or not held.has_method("aim_bow"):
+		if held.has_method("flash"):
+			held.flash()
+		return
+	var hand: Vector2 = parent.global_position + Vector2(0, -8)
+	var target: Vector2 = mouse_world_override if mouse_world_override != null else parent.get_global_mouse_position()
+	var angle: float = (target - hand).angle() if hand.distance_to(target) > 0.01 else 0.0
+	held.aim_bow(angle)
 
 
 # 放方块动画: 手里的方块朝放置点"按"出去一下 (方块也只在使用时显示).
