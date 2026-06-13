@@ -94,6 +94,12 @@ var _mp_time_sync_timer: float = 0.0   # host 广播时间+天气计时 (Phase F
 const _MP_TIME_SYNC_INTERVAL := 5.0
 var _mp_entity_sync_timer: float = 0.0  # host 广播实体位置计时 (Phase E)
 const _MP_ENTITY_SYNC_INTERVAL := 0.2
+# 省带宽: 实体没动就不重发 (记上次发的状态); 但每隔 _MP_ENTITY_FULL_INTERVAL 强制全发一次
+# (心跳: 让刚加入的人/丢包的人补上静止实体). 离所有玩家都很远的实体(没人看得到)直接不发。
+const _MP_ENTITY_FULL_INTERVAL := 1.5
+const _MP_ENTITY_CULL_PX := 720.0       # 离最近玩家超这么远 = 谁都看不到, 不发
+var _mp_entity_full_timer: float = 0.0
+var _last_ent_sent: Dictionary = {}     # ent_id → "x|y|hp|facing|anim" (上次发的, 没变就跳过)
 var weather: Node
 var _active_king_slime: Node = null  # 当前存活的史莱姆王 Boss (一次只准一个)
 var _active_skeleton_king: Node = null  # 当前存活的骷髅王 Boss (一次只准一个)
@@ -746,12 +752,17 @@ func _process(delta: float) -> void:
 			var ws: String = weather.state if weather != null else "clear"
 			NetworkManager.send_time_weather(TimeOfDay.time, ws)
 		_mp_entity_sync_timer -= delta
+		_mp_entity_full_timer -= delta
 		if _mp_entity_sync_timer <= 0.0:
 			_mp_entity_sync_timer = _MP_ENTITY_SYNC_INTERVAL
-			_mp_broadcast_entities()
+			var force_full: bool = _mp_entity_full_timer <= 0.0   # 心跳: 强制全发 (含静止实体)
+			if force_full:
+				_mp_entity_full_timer = _MP_ENTITY_FULL_INTERVAL
+			_mp_broadcast_entities(force_full)
 
 
-func _mp_broadcast_entities() -> void:
+func _mp_broadcast_entities(force_full: bool = true) -> void:
+	var pps: Array = _all_player_positions()   # 所有玩家(本地+远程)位置, 给距离裁剪用
 	# 怪物 / 动物
 	# 注: 僵尸同时在 "slimes" 和 "zombies" 组, "slimes" 分支已按 scene_path 认出僵尸,
 	# 故这里不再单列 "zombies", 否则每个僵尸每 tick 被广播两遍 (双倍带宽).
@@ -804,6 +815,8 @@ func _mp_broadcast_entities() -> void:
 						kind = "penguin"
 					elif "frog" in scene_path:
 						kind = "frog"
+			if _too_far_from_players(n2d.global_position, pps):
+				continue
 			var espr: AnimatedSprite2D = n2d.get_node_or_null("AnimatedSprite2D")
 			var efacing: int = 1
 			var eanim: String = ""
@@ -811,21 +824,48 @@ func _mp_broadcast_entities() -> void:
 				efacing = -1 if espr.flip_h else 1
 				eanim = String(espr.animation)
 			var ehp: int = int(n2d.get("current_health")) if "current_health" in n2d else 0
-			NetworkManager.send_entity_pos(
-				NetworkManager.entity_id_for(n2d),
-				kind,
-				n2d.global_position.x, n2d.global_position.y, ehp,
-				efacing, eanim
-			)
+			var eid: int = NetworkManager.entity_id_for(n2d)
+			# 没动就不重发 (除非心跳 force_full): key 含 取整位置/血/朝向/动画
+			var ekey: String = "%d|%d|%d|%d|%s" % [roundi(n2d.global_position.x), roundi(n2d.global_position.y), ehp, efacing, eanim]
+			if not force_full and _last_ent_sent.get(eid, "") == ekey:
+				continue
+			_last_ent_sent[eid] = ekey
+			NetworkManager.send_entity_pos(eid, kind, n2d.global_position.x, n2d.global_position.y, ehp, efacing, eanim)
 	# 掉落物: 走单独 drop_pos (带 item_id + count)
 	for drop in get_tree().get_nodes_in_group("item_drops"):
 		if not (drop is Node2D):
 			continue
 		var d: Node2D = drop
+		if _too_far_from_players(d.global_position, pps):
+			continue
 		var did: int = NetworkManager.entity_id_for(d)
 		var item_id: String = String(d.get("item_id")) if "item_id" in d else ""
 		var count: int = int(d.get("count")) if "count" in d else 1
+		var dkey: String = "%d|%d|%s|%d" % [roundi(d.global_position.x), roundi(d.global_position.y), item_id, count]
+		if not force_full and _last_ent_sent.get(did, "") == dkey:
+			continue
+		_last_ent_sent[did] = dkey
 		NetworkManager.send_drop_pos(did, item_id, count, d.global_position.x, d.global_position.y)
+
+
+# 所有玩家(本地 + 远程)的世界坐标 — 实体广播距离裁剪用。
+func _all_player_positions() -> Array:
+	var out: Array = []
+	for grp in ["player", "remote_player"]:
+		for p in get_tree().get_nodes_in_group(grp):
+			if p is Node2D:
+				out.append((p as Node2D).global_position)
+	return out
+
+
+# 这个点离所有玩家都超过裁剪半径? (谁都看不到 → 不必广播). 没玩家时返 false (照发)。
+func _too_far_from_players(pos: Vector2, pps: Array) -> bool:
+	if pps.is_empty():
+		return false
+	for pp in pps:
+		if pos.distance_to(pp) <= _MP_ENTITY_CULL_PX:
+			return false
+	return true
 
 
 func _mark_explored_around_player() -> void:
