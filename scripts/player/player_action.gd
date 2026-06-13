@@ -2138,6 +2138,9 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 		b.setup(start, aim, dmg, parent, speed, opts)
 		if NetworkManager != null and NetworkManager.connected():
 			NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
+	# 施法时法杖头闪一下招牌形状 (跟枪口火光同套路; 用户: 法杖头没闪光)
+	if Effects != null and Effects.has_method("spawn_muzzle_flash"):
+		Effects.spawn_muzzle_flash(start + base_dir * 8.0, base_dir, _spell_fx_color(vis), _muzzle_fx_kind(def), 1.0)
 	SfxBank.play("cast", 0.12)
 
 
