@@ -2,6 +2,7 @@
 # 悬浮在玩家上方盘旋, 三招: 火球弹幕 / 俯冲 / 召唤小兵; 残血(<40%)狂暴 (出招更快 + 火球更多)。
 # 飞行用位置积分 (不走物理碰撞, 穿地形), 接触/招式伤害靠坐标判定。
 extends CharacterBody2D
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const DemonLordArt = preload("res://scripts/art/demon_lord_art.gd")
@@ -100,7 +101,7 @@ func _find_player() -> Node2D:
 	if _cached_player != null and is_instance_valid(_cached_player):
 		return _cached_player
 	var players := get_tree().get_nodes_in_group("player")
-	_cached_player = players[0] if not players.is_empty() else null
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position) if not players.is_empty() else null
 	return _cached_player
 
 

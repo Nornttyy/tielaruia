@@ -3,6 +3,7 @@
 # HP 1200。死: 掉 bone ×15-25 + bone_sword。玩家死/远离 → despawn (不掉)。
 # 照搬 king_slime.gd 模式: group boss + take_damage + boss_display_name + 不与玩家物理碰撞。
 extends CharacterBody2D
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const SkeletonKingArt = preload("res://scripts/art/skeleton_king_art.gd")
@@ -108,7 +109,7 @@ func _find_player() -> Node2D:
 	if players.is_empty():
 		_cached_player = null
 		return null
-	_cached_player = players[0]
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 

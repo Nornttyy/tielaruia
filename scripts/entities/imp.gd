@@ -1,6 +1,7 @@
 # 火魔 (Imp): 地狱飞行远程怪. 不重力, 在玩家周围悬停 + 隔几秒丢火球.
 # HP 22 / dmg 0 (不近战) / 飞行 + 远距离压制. 死了掉 1-2 hell_stone + 偶发 obsidian.
 extends CharacterBody2D
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const FireballScene = preload("res://scenes/entities/fireball.tscn")
@@ -133,7 +134,7 @@ func _find_player() -> Node2D:
 	if players.is_empty():
 		_cached_player = null
 		return null
-	_cached_player = players[0]
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 

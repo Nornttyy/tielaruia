@@ -25,7 +25,7 @@ func _emit_chip(pos: Vector2, color: Color, vel: Vector2) -> void:
 	_root().add_child(chip)
 	chip.setup(pos, color, vel)
 	_chip_count += 1
-	chip.tree_exited.connect(func() -> void: _chip_count -= 1)
+	chip.tree_exited.connect(func() -> void: _chip_count = max(0, _chip_count - 1))
 var grains_emitted: int = 0          # 调试/测试计数: 累计成功发射次数 (只增)
 
 

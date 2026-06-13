@@ -2,6 +2,7 @@
 # 阶段 (后续 task): 血<50% 召唤小史莱姆; 血越少体型越小、跳越快.
 # 收尾 (后续 task): 玩家死/远离 → 消失; 掉 slime_ball + 大量 slime_jelly.
 extends CharacterBody2D
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
@@ -116,7 +117,7 @@ func _find_player() -> Node2D:
 	var players := get_tree().get_nodes_in_group("player")
 	if players.is_empty():
 		return null
-	_cached_player = players[0]
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 

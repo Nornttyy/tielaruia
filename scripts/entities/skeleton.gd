@@ -1,6 +1,7 @@
 # 骨架战士: 地狱近战怪. 跟蜘蛛同结构, 数值更狠 (血厚 + 高伤 + 慢).
 # HP 40 / dmg 10 / 速 35 / 跳 -200. 死了掉 1-2 骨头 + 偶发 raw_meat / spider_eye.
 extends CharacterBody2D
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
@@ -95,7 +96,7 @@ func _find_player() -> Node2D:
 	if players.is_empty():
 		_cached_player = null
 		return null
-	_cached_player = players[0]
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 

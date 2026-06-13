@@ -2,6 +2,7 @@
 # 撞到给 7 伤 + 击退. 撞墙也减速但不死. HP 15 (脆), 速度极快 (120 冲, 60 巡).
 # 死了掉 1-2 spider_eye + 偶发 hell_fruit.
 extends CharacterBody2D
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
@@ -129,7 +130,7 @@ func _find_player() -> Node2D:
 	if players.is_empty():
 		_cached_player = null
 		return null
-	_cached_player = players[0]
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 

@@ -2,6 +2,7 @@
 # Terraria 风血厚怪: HP 90 / 接触 16 dmg. 跳得高 (-340 撞墙跳).
 # 死了掉 1-2 个好东西 (gold_ingot / iron_ingot / diamond_ore 随机).
 extends CharacterBody2D
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
@@ -93,7 +94,7 @@ func _find_player() -> Node2D:
 	if players.is_empty():
 		_cached_player = null
 		return null
-	_cached_player = players[0]
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 
