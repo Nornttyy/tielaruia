@@ -16,6 +16,10 @@ const GRAVITY := 675.0
 const GLIDE_FALL_SPEED := 55.0     # 恶魔之翼滑翔时的最大下落速度 (缓降, 远低于自由落体)
 const COYOTE_TIME := 0.10
 const LAND_VY_THRESHOLD := 150.0    # 落地时 vy 超此值才扬大灰
+# 坠落伤害: 落地冲击速度 (px/s) 超安全值才扣血. 滑翔/落水 vy 被压低 → 自然不疼.
+const FALL_DMG_VY_SAFE := 480.0     # 安全落地速度 (≈13 格内不疼; 普通跳/二段跳都够不着)
+const FALL_DMG_PER_VY := 0.09       # 超出部分每 1 px/s 扣多少血
+const FALL_DMG_MAX := 50            # 单次摔伤上限 (满血 100 摔不死, 对小朋友友好)
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 const TILE_SIZE := 12
 # 游泳物理: 水里重力 ~22%, 按 Space/W 持续上浮.
@@ -470,6 +474,14 @@ func _physics_process(delta: float) -> void:
 		Effects.spawn_land_dust(global_position)
 		SfxBank.play("land", 0.10, -3.0)
 
+	# 坠落伤害：本帧落地 + 冲击速度超安全值 + 不在水里 (水/滑翔会让 vy 很低 → 不疼)
+	if not _was_on_floor and on_floor_after and not in_water:
+		var fall_dmg: int = fall_damage_for(pre_move_vy)
+		if fall_dmg > 0:
+			var hp_fall: Node = get_node_or_null("PlayerHealth")
+			if hp_fall != null and hp_fall.has_method("take_damage"):
+				hp_fall.take_damage(fall_dmg)
+
 	# 走路 puff：在地 + 有移动
 	if on_floor_after and abs(dir) > 0.01:
 		_walk_step_timer -= delta
@@ -719,6 +731,13 @@ func _has_cloud_boots() -> bool:
 func _has_glide_wings() -> bool:
 	var pinv: Node = get_node_or_null("PlayerInventory")
 	return pinv != null and pinv.has_method("has_item") and pinv.has_item("demon_wings")
+
+
+# 落地冲击速度 → 摔伤值 (纯函数, 好测). 安全值内 0; 超出部分线性 + 封顶。
+static func fall_damage_for(impact_vy: float) -> int:
+	if impact_vy <= FALL_DMG_VY_SAFE:
+		return 0
+	return mini(FALL_DMG_MAX, int((impact_vy - FALL_DMG_VY_SAFE) * FALL_DMG_PER_VY))
 
 
 # 二段跳是否可用 (供测试 + 逻辑): 在空中 + 没用过 + 有云靴/翼
