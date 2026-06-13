@@ -248,7 +248,8 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 	var anims := {
 		"idle": {"frames": [_frame(appearance, "idle_a"), _frame(appearance, "idle_b")], "fps": 2.0, "loop": true},
 		"walk": {"frames": [_frame(appearance, "walk_a"), _frame(appearance, "walk_b"), _frame(appearance, "walk_c"), _frame(appearance, "walk_b")], "fps": 10.0, "loop": true},
-		"jump": {"frames": [_frame(appearance, "jump")], "fps": 1.0, "loop": false},
+		# 跳跃 2 帧: 蹬地起跳 → 腾空收腿举手 (一次性, 上升时播完停在腾空帧)
+		"jump": {"frames": [_frame(appearance, "jump_a"), _frame(appearance, "jump_b")], "fps": 10.0, "loop": false},
 		"fall": {"frames": [_frame(appearance, "fall")], "fps": 1.0, "loop": false},
 		"hurt": {"frames": [_frame(appearance, "hurt")], "fps": 1.0, "loop": false},
 		# 动作: 挥击 (蓄力→挥下) / 放置 (抬手→伸手). 一次性, 由 player_controller 触发后短暂盖住站/走。
@@ -264,6 +265,8 @@ static func _frame(ap: Dictionary, pose: String) -> Array:
 		dy = 1     # idle_b 上半身下沉 1px = 呼吸
 	elif pose == "walk_b":
 		dy = -1    # walk_b 过渡帧上半身抬 1px = 走路上下起伏 (更自然)
+	elif pose == "jump_b":
+		dy = -1    # jump_b 腾空: 上半身再拔高 1px = 跃起的舒展感
 	var layers := [
 		_legs_layer(ap, pose),        # 腿+鞋 (+裙子) (最底; 不随呼吸动)
 		_body_layer(ap, dy),          # 脸+脖
@@ -365,6 +368,8 @@ static func _arm_layer(ap: Dictionary, pose: String, dy: int) -> Array:
 		"walk_a": left = 9;  top = 13   # 手向前
 		"walk_c": left = 7;  top = 14   # 手向后
 		"jump":   left = 8;  top = 11   # 抬手
+		"jump_a": left = 9;  top = 12   # 起跳: 手臂往下后甩 (蹬地)
+		"jump_b": left = 8;  top = 8    # 腾空: 手臂高举过头
 		"fall":   left = 9;  top = 11
 		"hurt":   left = 8;  top = 11
 		"swing_a": left = 6;  top = 9    # 挥击蓄力: 手臂抬到后上方
@@ -424,6 +429,12 @@ static func _legs_layer(ap: Dictionary, pose: String) -> Array:
 		"jump":     # 双腿收起
 			_put_leg(g, 5, _HIP, 2, leg, foot)
 			_put_leg(g, 9, _HIP, 2, leg, foot)
+		"jump_a":   # 起跳蹬地: 一腿蹬直一腿略屈 (发力感)
+			_put_leg(g, 5, _HIP, 4, leg, foot)
+			_put_leg(g, 9, _HIP, 3, leg, foot)
+		"jump_b":   # 腾空收腿: 两腿往上收得更紧 (跃起姿态)
+			_put_leg(g, 6, _HIP, 1, leg, foot)
+			_put_leg(g, 9, _HIP, 1, leg, foot)
 		"fall":     # 双腿张开
 			_put_leg(g, 4, _HIP, 4, leg, foot)
 			_put_leg(g, 10, _HIP, 4, leg, foot)

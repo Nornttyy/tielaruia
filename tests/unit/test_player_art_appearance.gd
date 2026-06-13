@@ -30,10 +30,10 @@ func test_build_has_all_anims():
 		assert_true(sf.has_animation(anim), "有动画 %s" % anim)
 
 
-# 挥击/放置都是 2 帧 (蓄力→挥下 / 抬手→伸手), 一次性不循环
+# 挥击/放置/跳跃 都是 2 帧, 一次性不循环 (挥: 蓄力→挥下; 放: 抬手→伸手; 跳: 蹬地→腾空)
 func test_action_anims_are_two_frames_no_loop():
 	var sf = PlayerArt.build_sprite_frames(_default_appearance())
-	for anim in ["swing", "place"]:
+	for anim in ["swing", "place", "jump"]:
 		assert_eq(sf.get_frame_count(anim), 2, "%s 该 2 帧" % anim)
 		assert_false(sf.get_animation_loop(anim), "%s 不循环 (放一次)" % anim)
 
