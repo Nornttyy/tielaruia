@@ -1765,6 +1765,10 @@ func respawn_player() -> void:
 	# 传送回出生点 + 满血 + 满魔 (老 bug: mana 不回, 持法杖死了复活就发不出火球)
 	# 对战房: 随机出生点 (各次不同, 防蹲点 + 出生不重叠); 否则回世界出生点。
 	player.global_position = PvpArena.random_spawn() if pvp else _spawn_world_pos()
+	# 清零速度: 否则死亡那一刻的残留速度 (摔死=高速下坠 / 被炸飞=上抛) 会带进复活,
+	# 让玩家重生后乱飞 / 穿地 / 落不到地 (坠落伤害上线后高发, 用户报)。
+	if "velocity" in player:
+		player.velocity = Vector2.ZERO
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_method("revive_full"):
 		hp.revive_full()
