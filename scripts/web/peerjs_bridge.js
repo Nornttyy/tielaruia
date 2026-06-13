@@ -28,14 +28,18 @@
         _isHost: false,
         _messages: [],
         _lastError: '',
+        _serverMode: 0,    // 0=自建 Render 服务器 (主); 1=PeerJS 公共云 (备胎, 永不睡). Render 连不上自动切。
     };
 
     // ⚙️ 联机服务器配置 ⚙️ (自建 Render 服务器, 稳, 只给自己人用)
     var PEER_HOST = "tielaruia.onrender.com";
+    // 信令服务器级错误 (= 连不上服务器本身, 不是房间问题) → 触发切备胎。unavailable-id 不算 (那是抢号)。
+    var _SERVER_ERR = {'network': 1, 'server-error': 1, 'socket-error': 1, 'socket-closed': 1, 'server-disconnected': 1};
 
     function _peerOpts() {
         var o = { debug: 1 };
-        if (PEER_HOST) {
+        // 主服务器 (Render): 用自建 host. 备胎模式 (_serverMode=1): 不设 host → 走 PeerJS 默认公共云 (0.peerjs.com), 不睡。
+        if (bridge._serverMode === 0 && PEER_HOST) {
             o.host = PEER_HOST;
             o.port = 443;
             o.secure = true;     // Render 是 https → 443 + secure
@@ -127,6 +131,18 @@
     var MAX_PUB_FLIPS = 6;   // 翻转这么多次还没连上 → 这号房有幽灵, 换下一号 (4 太少, 握手没完就跳房 → 落单)
     var _RETRYABLE = {'network': 1, 'server-error': 1, 'socket-error': 1, 'socket-closed': 1, 'unavailable-id': 1};
 
+    // 服务器级错误 + 还在用主服务器(Render) → 切到公共云备胎, 重试当前流程. 返回 true=已接管(调用方该 return).
+    // 治 "tielaruia.onrender.com ERR_CONNECTION_CLOSED" (免费服睡了/挂了): 自动改用永不睡的公共服务器。
+    function _tryServerFallback(gen, et, retryFn) {
+        if (gen !== bridge._gen) return false;
+        if (bridge._serverMode !== 0 || !_SERVER_ERR[et]) return false;
+        bridge._serverMode = 1;
+        bridge._lastError = '主服务器连不上, 改用公共服务器…';
+        try { if (bridge._peer && !bridge._peer.destroyed) bridge._peer.destroy(); } catch (e) {}
+        setTimeout(function() { if (gen === bridge._gen) retryFn(gen); }, 600);
+        return true;
+    }
+
     function _friendlyError(et) {
         switch (et) {
             case 'peer-unavailable': return '找不到房间 — 检查房间码对不对、房主开房间了没';
@@ -176,6 +192,7 @@
         bridge._peer.on('error', function(err) {
             if (gen !== bridge._gen) return;
             var et = err.type || err.message || err;
+            if (_tryServerFallback(gen, et, _hostAttempt)) return;
             if (_RETRYABLE[et]) {
                 if (bridge._myId) {
                     bridge._lastError = _friendlyError(et);
@@ -237,7 +254,9 @@
         });
         bridge._peer.on('error', function(err) {
             if (gen !== bridge._gen) return;
-            _joinRetryOrFail(gen, err.type || err.message || err);
+            var et = err.type || err.message || err;
+            if (_tryServerFallback(gen, et, _joinAttempt)) return;
+            _joinRetryOrFail(gen, et);
         });
     }
 
@@ -330,6 +349,7 @@
         bridge._peer.on('error', function(err) {
             if (gen !== bridge._gen) return;
             var et = err.type || err.message || err;
+            if (_tryServerFallback(gen, et, _tryJoinPublic)) return;
             if (et === 'peer-unavailable') {
                 // 没人开这号房(或占用者刚注册还没好) → 退避后抢占当 host (不立刻, 防 ping-pong 刷屏)
                 _flipPublic(gen, _hostPublic);
@@ -363,6 +383,7 @@
         bridge._peer.on('error', function(err) {
             if (gen !== bridge._gen) return;
             var et = err.type || err.message || err;
+            if (_tryServerFallback(gen, et, _hostPublic)) return;
             if (et === 'unavailable-id') {
                 // 并发竞争: 别人刚抢到这号房 → 退避后退回当 client 再连它 (不立刻, 防 ping-pong)
                 bridge._isHost = false;
