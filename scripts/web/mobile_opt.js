@@ -44,3 +44,29 @@
 		console.warn('[mobile_opt] failed to cap DPR:', e);
 	}
 })();
+
+
+// 桌面超采样 (用户要"增加画质 — 更清晰锐利"): 渲染分辨率拉高 (×1.3, 上限 2.5x) 再让浏览器
+// 缩小显示 = 边缘更平滑、像素更细腻 (SSAA)。手机不做 (上面已 cap, 超采样太吃内存)。
+// 原理: 抬高 devicePixelRatio → Godot 画更多像素 → canvas 按窗口尺寸缩小 = 抗锯齿。
+// 必须在 Godot wasm load 之前注入 (head 顶) 才生效。
+(function() {
+	function isMobile() {
+		if (/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent)) return true;
+		if (window.innerWidth < 1000) return true;
+		return false;
+	}
+	if (isMobile()) return;
+	var real = window.devicePixelRatio || 1;
+	var eff = Math.max(2.0, Math.min(real * 1.3, 2.5));   // 至少 2x, 最多 2.5x (高清又不过分吃显存)
+	if (eff <= real) return;   // 本来就够高 → 不动
+	try {
+		Object.defineProperty(window, 'devicePixelRatio', {
+			get: function () { return eff; },
+			configurable: true
+		});
+		console.log('[hq] 桌面超采样 devicePixelRatio ' + real + ' → ' + eff);
+	} catch (e) {
+		console.warn('[hq] 超采样设置失败:', e);
+	}
+})();
