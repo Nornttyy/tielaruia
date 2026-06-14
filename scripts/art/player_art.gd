@@ -326,7 +326,7 @@ static func _female_torso_swim(cs: int, bounce: int = 0) -> Array:
 	var up := clampi(1 + bounce, 1, 3)
 	var mid := clampi(2 + bounce, 1, 3)
 	var low := clampi(3 + bounce, 1, 3)
-	# 圆弧罩杯跟 T恤胸同款 (身材跨衣服一致): 只有峰行顶到 col9, 上下沿收回 → 圆不方。
+	# 圆弧罩杯跟 T恤胸同款 (身材跨衣服一致): 峰行顶最前, 上下沿收回 → 圆。大档峰到 col10 = 4px 更大。
 	if cs >= 1:
 		rows[mid] = _set_char(rows[mid], 7, "w")   # 罩杯 col7 (峰 1px)
 	if cs >= 2:
@@ -335,16 +335,20 @@ static func _female_torso_swim(cs: int, bounce: int = 0) -> Array:
 		rows[low] = _set_char(rows[low], 6, "w")   # 下沿 col6 (连住肚)
 		rows[low] = _set_char(rows[low], 7, "w")   # 下沿 col7 (收 1px)
 	if cs >= 3:
-		rows[mid] = _set_char(rows[mid], 9, "w")   # 罩杯顶到最前 col9 (峰 3px)
+		rows[mid] = _set_char(rows[mid], 9, "w")   # 罩杯顶到 col9 (峰 3px)
 		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8 (仍收 → 圆)
 		rows[low] = _set_char(rows[low], 8, "w")   # 下沿 col8 (仍收 → 圆)
+		rows[0] = _set_char(rows[0], 7, "w")       # 顶行起鼓收尖 = 上缘圆 + 更高
 	if cs >= 4:
-		rows[0] = _set_char(rows[0], 7, "w")       # 顶行起鼓收尖 = 上缘圆 + 更高更大
-		rows[mid] = _set_char(rows[mid], 9, "c")   # 峰顶高光 c
+		rows[mid] = _set_char(rows[mid], 10, "w")  # 峰顶再往前 col10 (4px! 更大)
+		rows[up] = _set_char(rows[up], 9, "w")     # 上沿 col9 (峰区收 1px)
+		rows[low] = _set_char(rows[low], 9, "w")   # 下沿 col9 (峰区收 1px)
+		rows[0] = _set_char(rows[0], 8, "w")       # 顶行 col8
+		rows[mid] = _set_char(rows[mid], 9, "c")   # 峰高光 c
 		rows[low] = _set_char(rows[low], 8, "e")   # 下缘皮肤阴影 e (圆垂)
 	if cs >= 5:
-		rows[0] = _set_char(rows[0], 8, "w")       # 顶行 col8 (上缘更饱满, 仍收)
-		rows[up] = _set_char(rows[up], 9, "w")     # 上沿也到 col9 (峰区 2 行 → 大, 仍上下收 = 圆)
+		rows[up] = _set_char(rows[up], 10, "w")    # 上沿也到 col10 (峰区 2 行 → 最大)
+		rows[mid] = _set_char(rows[mid], 10, "c")  # 峰顶高光到最前
 	return rows
 
 
@@ -366,7 +370,8 @@ static func _female_torso(cs: int, bounce: int = 0) -> Array:
 	var up := clampi(1 + bounce, 1, 3)
 	var mid := clampi(2 + bounce, 1, 3)
 	var low := clampi(3 + bounce, 1, 3)
-	# 圆弧形 (不能填成方块!): 只有中胸顶到最前 col9 当峰, 上下沿往回收 (col8/col7) → 前缘是弧不是直墙。
+	# 圆弧形 (不能填成方块!): 峰行顶最前, 上下沿收回 → 前缘是弧。大档峰顶到 col10 (出画布边,
+	# 前尖少 1px 黑描边, 可接受) = 4px 深, 更大。
 	if cs >= 1:
 		rows[mid] = _set_char(rows[mid], 7, "w")   # 中胸 col7 (峰 1px)
 	if cs >= 2:
@@ -374,16 +379,20 @@ static func _female_torso(cs: int, bounce: int = 0) -> Array:
 		rows[up] = _set_char(rows[up], 7, "w")     # 上沿 col7 (比峰收 1px)
 		rows[low] = _set_char(rows[low], 7, "w")   # 下沿 col7 (比峰收 1px)
 	if cs >= 3:
-		rows[mid] = _set_char(rows[mid], 9, "w")   # 中胸顶到最前 col9 (峰 3px)
+		rows[mid] = _set_char(rows[mid], 9, "w")   # 中胸顶到 col9 (峰 3px)
 		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8 (仍比峰收 1px → 圆)
 		rows[low] = _set_char(rows[low], 8, "w")   # 下沿 col8 (仍比峰收 1px → 圆)
+		rows[0] = _set_char(rows[0], 7, "w")       # 顶行起鼓收尖 = 上缘圆 + 更高
 	if cs >= 4:
-		rows[0] = _set_char(rows[0], 7, "w")       # 顶行起鼓收尖 col7 = 上缘圆 + 更高更大
-		rows[mid] = _set_char(rows[mid], 9, "c")   # 峰顶高光 c (球面: 顶亮)
-		rows[low] = _set_char(rows[low], 8, "D")   # 下缘阴影 D (球面: 底暗 = 圆垂)
+		rows[mid] = _set_char(rows[mid], 10, "w")  # 峰顶再往前到 col10 (4px! 更大)
+		rows[up] = _set_char(rows[up], 9, "w")     # 上沿到 col9 (峰区收 1px)
+		rows[low] = _set_char(rows[low], 9, "w")   # 下沿到 col9 (峰区收 1px)
+		rows[0] = _set_char(rows[0], 8, "w")       # 顶行 col8
+		rows[low] = _set_char(rows[low], 8, "D")   # 下缘阴影 D (球面圆垂)
 	if cs >= 5:
-		rows[0] = _set_char(rows[0], 8, "w")       # 顶行 col8 (上缘更饱满, 仍收 1px)
-		rows[up] = _set_char(rows[up], 9, "w")     # 上沿也到 col9 (峰区 2 行 → 大, 顶/底仍收 = 圆)
+		rows[up] = _set_char(rows[up], 10, "w")    # 上沿也到 col10 (峰区 2 行 → 最大)
+		rows[mid] = _set_char(rows[mid], 10, "c")  # 峰顶高光到最前
+		rows[up] = _set_char(rows[up], 9, "c")     # 上前高光 → 更挺
 	return rows
 
 
