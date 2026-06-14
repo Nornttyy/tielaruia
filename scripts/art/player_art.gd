@@ -275,13 +275,13 @@ static func _frame(ap: Dictionary, pose: String) -> Array:
 	return _outline(_composite(layers))
 
 
-# 软部位 (女角色的胸 / 后发) 的"滞后位移": 落脚帧下沉, 腾空/passing 帧跟不上 → 走/跳时一弹一弹。
+# 胸的弹动 (女): 返回隆起竖向偏移. 只用 0 / -1 (上弹), 不往下 → 永远在 0~3 行内,
+# 不会塌陷 (旧 bug: +1 时 up/mid/low 撞 clamp 挤同一行 = 胸压扁) 也不侵腰。
+# 身体上抬的帧 (walk_b 腾空 / jump_b) → 胸跟着往上弹一下; 其余回位。
 static func _soft_jiggle(pose: String) -> int:
 	match pose:
-		"walk_a", "walk_c": return 1   # 落脚: 软部位被甩下沉 1px
-		"jump_a", "fall": return 1     # 起跳/下落: 惯性滞后下沉
-		"hurt": return 1               # 挨打: 晃一下
-		_: return 0                    # idle / walk_b(腾空) / jump_b: 回位
+		"walk_b", "jump_b": return -1   # 过渡/腾空: 胸上弹 1px (跟身体起伏)
+		_: return 0                     # 落脚 / 站立: 回位
 
 
 static func _body_layer(ap: Dictionary, dy: int) -> Array:
@@ -321,9 +321,9 @@ static func _female_torso_swim(cs: int, bounce: int = 0) -> Array:
 		"ksssk.....",   # 胯 (皮肤; cols0-4)
 	]
 	# 圆润罩杯: 上沿/罩杯峰/下沿 三行。bounce>0 整体下移 1px (走/跳落脚帧胸下沉=抖), 夹 1~3 行。
-	var up := clampi(1 + bounce, 1, 3)
-	var mid := clampi(2 + bounce, 1, 3)
-	var low := clampi(3 + bounce, 1, 3)
+	var up := clampi(1 + bounce, 0, 3)
+	var mid := clampi(2 + bounce, 0, 3)
+	var low := clampi(3 + bounce, 0, 3)
 	# 圆弧罩杯跟 T恤胸同款 (身材跨衣服一致): 峰行顶最前, 上下沿收回 → 圆。大档峰到 col10 = 4px 更大。
 	if cs >= 1:
 		rows[mid] = _set_char(rows[mid], 7, "w")   # 罩杯 col7 (峰 1px)
@@ -365,9 +365,9 @@ static func _female_torso(cs: int, bounce: int = 0) -> Array:
 	]
 	# 圆润胸: 上沿/中胸/下沿 三行画峰。bounce>0 把这三行整体下移 1px (走/跳落脚帧胸下沉=抖),
 	# 夹在 1~3 行内不侵腰。中胸最鼓, 上下渐收。
-	var up := clampi(1 + bounce, 1, 3)
-	var mid := clampi(2 + bounce, 1, 3)
-	var low := clampi(3 + bounce, 1, 3)
+	var up := clampi(1 + bounce, 0, 3)
+	var mid := clampi(2 + bounce, 0, 3)
+	var low := clampi(3 + bounce, 0, 3)
 	# 圆弧形 (不能填成方块!): 峰行顶最前, 上下沿收回 → 前缘是弧。大档峰顶到 col10 (出画布边,
 	# 前尖少 1px 黑描边, 可接受) = 4px 深, 更大。
 	if cs >= 1:

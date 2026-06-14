@@ -38,11 +38,11 @@ func test_jump_is_two_frames_no_loop():
 	assert_eq(sf.get_frame_count("jump"), 2, "jump 该 2 帧")
 	assert_false(sf.get_animation_loop("jump"), "jump 不循环 (放一次)")
 
-# 女角色 胸/后发 走路抖动 (secondary motion): 落脚帧软部位下沉/甩, 回位帧归零。
+# 女角色 胸弹动: 身体上抬帧 (walk_b/jump_b) 胸上弹 -1, 其余回位 0。只用 0/-1 不塌陷。
 func test_soft_jiggle_phases():
-	assert_eq(PlayerArt._soft_jiggle("walk_a"), 1, "落脚帧软部位下沉")
-	assert_eq(PlayerArt._soft_jiggle("walk_b"), 0, "腾空(passing)帧回位")
-	assert_eq(PlayerArt._soft_jiggle("idle_a"), 0, "站立不抖")
+	assert_eq(PlayerArt._soft_jiggle("walk_b"), -1, "腾空/过渡帧: 胸上弹")
+	assert_eq(PlayerArt._soft_jiggle("walk_a"), 0, "落脚帧: 回位")
+	assert_eq(PlayerArt._soft_jiggle("idle_a"), 0, "站立不弹")
 
 
 func test_hair_sway_alternates():
@@ -51,11 +51,14 @@ func test_hair_sway_alternates():
 	assert_eq(PlayerArt._hair_sway("idle_a"), 0, "站立发不甩")
 
 
-func test_chest_bounce_shifts_peak():
-	# bounce 让胸隆起整体下移 → 帧不一样 (抖)
+func test_chest_bounce_no_collapse():
+	# 修 bug: 上弹 (-1) 该是干净位移, 不塌陷 — 隆起仍占 3 个不同行 (up/mid/low 不挤同一行)。
 	var rest = PlayerArt._female_torso(4, 0)
-	var down = PlayerArt._female_torso(4, 1)
-	assert_ne(rest, down, "胸 bounce=1 该跟 bounce=0 不同 (隆起下移)")
+	var up = PlayerArt._female_torso(4, -1)
+	assert_ne(rest, up, "胸上弹 (-1) 该跟回位 (0) 不同")
+	# 上弹后隆起在 0~2 行, 不撞腰行(4)、不塌成一行 — 校验三行各不相同 (有层次)
+	assert_ne(up[0], up[1], "上弹: 第0行≠第1行 (没塌)")
+	assert_ne(up[1], up[2], "上弹: 第1行≠第2行 (没塌)")
 
 
 func test_sway_block_moves_lower_half_only():
