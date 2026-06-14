@@ -22,9 +22,9 @@ const GLIDE_FALL_SPEED := 55.0     # 恶魔之翼滑翔时的最大下落速度 
 const COYOTE_TIME := 0.10
 const LAND_VY_THRESHOLD := 150.0    # 落地时 vy 超此值才扬大灰
 # 坠落伤害: 落地冲击速度 (px/s) 超安全值才扣血. 滑翔/落水 vy 被压低 → 自然不疼.
-const FALL_DMG_VY_SAFE := 480.0     # 安全落地速度 (≈13 格内不疼; 普通跳/二段跳都够不着)
-const FALL_DMG_PER_VY := 0.09       # 超出部分每 1 px/s 扣多少血
-const FALL_DMG_MAX := 50            # 单次摔伤上限 (满血 100 摔不死, 对小朋友友好)
+const FALL_DMG_VY_SAFE := 380.0     # 安全落地速度 (用户: 加大坠落伤害 → 更短摔落就疼; 普通跳/二段跳仍够不着)
+const FALL_DMG_PER_VY := 0.13       # 超出部分每 1 px/s 扣多少血 (加大)
+const FALL_DMG_MAX := 75            # 单次摔伤上限 (加大; 满血 100 仍摔不死, 但更疼)
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 const TILE_SIZE := 12
 # 游泳物理: 水里重力 ~22%, 按 Space/W 持续上浮.

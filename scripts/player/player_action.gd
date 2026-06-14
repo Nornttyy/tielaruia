@@ -892,9 +892,10 @@ func try_place(force_tile: Variant = null) -> bool:
 	var is_water: bool = Tiles.is_water(target_src)
 	if target_src != -1 and not is_water:
 		return false
-	# 不与玩家碰撞框重叠（玩家占 2 tile 高：脚底 tile 和上方 tile）
+	# 不与玩家碰撞框重叠 (玩家 2.5 格高, 占 脚底 pt + pt-1 + 头戳进 pt-2): 这 3 格都不准放,
+	# 否则方块叠进玩家身体 → 物理把玩家挤开 → 偶尔误触发坠落伤害 (用户报"搭方块受伤")。
 	var pt: Vector2i = player_tile()
-	if tile == pt or tile == pt - Vector2i(0, 1):
+	if tile == pt or tile == pt - Vector2i(0, 1) or tile == pt - Vector2i(0, 2):
 		return false
 	# 支撑判定: 4 邻有结实方块/木平台, 或 背后有背景墙 → 能放 (防隔空放)。创造模式随处放。
 	var has_support: bool = GameSettings != null and GameSettings.creative_mode
