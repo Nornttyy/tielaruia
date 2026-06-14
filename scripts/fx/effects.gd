@@ -4,7 +4,6 @@ extends Node
 
 const BlockBreakParticleScene = preload("res://scenes/fx/block_break_particle.tscn")
 const SpellImpactFxScene = preload("res://scenes/fx/spell_impact_fx.tscn")  # 法杖招牌形状特效 (电弧/环/云...)
-const SlashTrailScene = preload("res://scenes/fx/slash_trail.tscn")          # 挥砍/突刺拖尾光弧
 const MuzzleFlashFxScene = preload("res://scenes/fx/muzzle_flash_fx.tscn")  # 枪口招牌形状特效 (星闪/扇楔/光束...)
 const DustParticleScene = preload("res://scenes/fx/dust_particle.tscn")
 const PlaceBounceScene = preload("res://scenes/fx/place_bounce.tscn")
@@ -129,31 +128,6 @@ func spawn_bullet_impact(pos: Vector2, dir: Vector2, color: Color, kind: String 
 	fx.global_position = pos
 	if fx.has_method("setup"):
 		fx.setup(kind, dir, color, 1.0)
-
-
-# 挥砍拖尾光弧: 在 center 沿 start_a→end_a 扫一道发光新月 (跟着剑弧). sweep=划出时长。
-func spawn_slash(center: Vector2, start_a: float, end_a: float, reach: float, color: Color, sweep: float) -> void:
-	var fx = SlashTrailScene.instantiate()
-	_root().add_child(fx)
-	fx.global_position = center
-	fx.setup_arc(start_a, end_a, reach, color, sweep)
-
-
-# 突刺光锥: 在 center 沿 angle 甩一道发光直线 streak。
-func spawn_thrust_streak(center: Vector2, angle: float, reach: float, color: Color) -> void:
-	var fx = SlashTrailScene.instantiate()
-	_root().add_child(fx)
-	fx.global_position = center
-	fx.setup_line(angle, reach, color)
-
-
-# 近战命中爆闪: 命中点白闪 + 几点火花 (打击感)。color 默认暖白。
-func spawn_melee_hit(pos: Vector2, color: Color = Color(1, 0.95, 0.8)) -> void:
-	# 招牌 spark 形状 (分叉小电火花) + 借 bullet_impact 出几点星火
-	spawn_bullet_impact(pos, Vector2.RIGHT, color, "hit")
-	for i in 4:
-		var ang: float = TAU * float(i) / 4.0 + 0.4
-		_emit_chip(pos, color, Vector2(cos(ang), sin(ang)) * 90.0)
 
 
 # 闪电电弧: from→to 锯齿折线, 双层 (宽辉光 + 亮芯), 0.18s 淡出自毁.

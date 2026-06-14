@@ -1825,9 +1825,6 @@ func _thrust_sword() -> void:
 		held.play_thrust(swing_dir.angle(), lunge_px)
 	elif held != null and held.has_method("play_swing"):
 		held.play_swing()
-	# 帅: 突刺像素光锥 (沿戳方向) + 向前猛冲一下
-	Effects.spawn_thrust_streak(player.global_position + swing_dir * 6.0, swing_dir.angle(), SWORD_RANGE_PX * 0.9 + _sword_attack_reach_bonus, _weapon_fx_color(mdef))
-	_melee_lunge(player, swing_dir, 95.0)
 	# 用户改: 删剑挥/戳音效 (只留命中怪的打击音, 见 effects.spawn_damage_number)
 	# 伤害 = sword_damage * damage_mult * 0.8
 	var base: int = _sword_damage()
@@ -1873,12 +1870,6 @@ func _sweep_sword() -> void:
 			held.play_swing_directional(swing_dir.angle(), swing_dur, fast_swing)
 		elif held.has_method("play_swing"):
 			held.play_swing()
-	# 帅: 挥砍像素光弧 (跟剑尖同向扫) + 出刀向前微冲
-	var ta: float = swing_dir.angle()
-	var half_fx: float = deg_to_rad(110.0) if cos(ta) >= 0.0 else -deg_to_rad(110.0)
-	var fx_reach: float = SWORD_RANGE_PX + _sword_attack_reach_bonus
-	Effects.spawn_slash(player.global_position, ta - half_fx, ta + half_fx, fx_reach, _weapon_fx_color(mdef), swing_dur)
-	_melee_lunge(player, swing_dir, 55.0)
 	# 用户改: 删剑挥/戳音效 (只留命中怪的打击音)
 	var damage: int = _effective_sword_damage()
 	if damage <= 0:
@@ -1944,7 +1935,6 @@ func _sword_on_hit(hit_pos: Vector2, target: Node2D) -> void:
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
-	Effects.spawn_melee_hit(hit_pos, _weapon_fx_color(_current_tool_def()))   # 命中爆闪 + 火花
 	# 噬魂: 按这次伤害的百分比给玩家回血 (至少 1 滴)
 	if _sword_attack_lifesteal > 0.0:
 		var hp: Node = player.get_node_or_null("PlayerHealth")
@@ -2119,19 +2109,6 @@ func flail_hit(target: Node2D, pos: Vector2, kb: float) -> void:
 		return
 	_deal_enemy_damage(target, _sword_attack_damage, pos, kb)
 	_sword_on_hit(pos, target)
-
-
-# 武器的特效色: 神兵按元素 (gun_visual), 普通剑用冷白。
-func _weapon_fx_color(mdef: Variant) -> Color:
-	if mdef != null and mdef.has("gun_visual"):
-		return _spell_fx_color(String(mdef.get("gun_visual", "")))
-	return Color(0.85, 0.92, 1.0)   # 冷白
-
-
-# 出刀向前微冲: 给玩家水平加一点速度 (move_toward 会自然衰减, 只是个利落的前冲感)。
-func _melee_lunge(player: Node2D, dir: Vector2, amount: float) -> void:
-	if player != null and "velocity" in player:
-		player.velocity.x += clampf(dir.x, -1.0, 1.0) * amount
 
 
 func _inventory_node() -> Node:
