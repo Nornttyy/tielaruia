@@ -2472,6 +2472,7 @@ func _spell_impact_fx(visual: String) -> String:
 		"poison":    return "gas"        # 毒: 慢散毒云
 		"magic":     return "sparkle"    # 多重: 飘散魔法星
 		"fire":      return "explosion"  # 爆裂: 大爆炸
+		"bomb":      return "explosion"  # 炸弹: 落地大爆炸 (弹丸是黑壳, 但炸出来是火)
 		"ice":       return "splash"     # 水之: 溅水花
 		"wind":      return "gust"       # 狂风: 横向风条
 		"laser":     return "spark"      # 激光/电磁炮: 星形快火花
@@ -2487,6 +2488,7 @@ func _spell_fx_color(visual: String) -> Color:
 		"lightning": return Color8(255, 235, 90)   # 黄电
 		"poison":    return Color8(120, 200, 60)    # 绿毒
 		"fire":      return Color8(255, 150, 40)    # 橙火
+		"bomb":      return Color8(255, 150, 40)    # 炸弹爆炸: 橙火色
 		"ice":       return Color8(90, 180, 240)    # 冰蓝
 		"wind":      return Color8(210, 240, 255)   # 白青
 		"laser":     return Color8(255, 90, 80)     # 激光红

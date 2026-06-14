@@ -71,6 +71,7 @@ var star_proj_frames: SpriteFrames
 var slime_blob_proj_frames: SpriteFrames
 var leaf_proj_frames: SpriteFrames
 var wind_proj_frames: SpriteFrames
+var bomb_proj_frames: SpriteFrames
 var mummy_frames: SpriteFrames
 var cloud_textures: Array = []  # Array of {shape, color, texture}
 var dust_puff_texture: ImageTexture
@@ -407,6 +408,9 @@ func _build_entities() -> void:
 	slime_blob_proj_frames = SlimeBlobProjArt.build_sprite_frames()
 	leaf_proj_frames = LeafProjArt.build_sprite_frames()
 	wind_proj_frames = WindProjArt.build_sprite_frames()
+	# 炸弹弹丸: 扔出去是个黑壳炸弹 (不是火球!), 单帧用炸弹贴图
+	bomb_proj_frames = SpriteFrames.new()
+	bomb_proj_frames.add_frame("default", ItemsArt.bomb_proj_texture())
 	# 木乃伊: 金字塔守卫
 	mummy_frames = MummyArt.build_sprite_frames()
 	# Jaguar 已删 (用户要求)

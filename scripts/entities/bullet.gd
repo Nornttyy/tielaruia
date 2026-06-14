@@ -90,8 +90,9 @@ func setup(start_pos: Vector2, target_pos: Vector2, dmg: int, shooter: Node, spe
 	velocity = dir * spd
 	rotation = velocity.angle()   # sprite 朝飞行方向 (子弹直线, 整程不变向)
 	_apply_visual()   # setup 在 add_child 后调 → sprite 已就绪, 换成对应贴图
-	# 法杖弹 (impact_fx 有值): 弹体放大 + 加发光光晕 + 拖尾, 让它"更像魔法弹" (枪弹不加)
-	if _impact_fx != "" and _impact_color.a > 0.0:
+	# 法杖弹 (impact_fx 有值): 弹体放大 + 加发光光晕 + 拖尾, 让它"更像魔法弹" (枪弹不加)。
+	# 炸弹除外: 它是实体黑壳, 不该糊一层橙光晕+火拖尾 (那正是"炸弹射火焰"的观感来源)。
+	if _impact_fx != "" and _impact_color.a > 0.0 and _visual != "bomb":
 		_make_staff_visuals(_impact_color)
 
 
@@ -111,6 +112,7 @@ func _apply_visual() -> void:
 		"slimeblob": frames = ArtCache.slime_blob_proj_frames # 史莱姆枪: 绿果冻团
 		"leaf":      frames = ArtCache.leaf_proj_frames       # 绿叶枪: 绿叶片
 		"wind":      frames = ArtCache.wind_proj_frames       # 狂风法杖: 白青气流
+		"bomb":      frames = ArtCache.bomb_proj_frames       # 炸弹: 黑壳炸弹 (落地才炸出火)
 	if frames == null:
 		return
 	sprite.sprite_frames = frames

@@ -2214,6 +2214,24 @@ const _BOMB := [
 	"................",
 ]
 
+# 炸弹投射物 (扔出去飞行中的样子): 居中的黑壳圆球 + 点燃的引线火花。
+# 跟 _BOMB 图标不同: 这个居中 (好对齐飞行位置) + 引线带火花 (看着是点着的, 要炸了)。
+const _BOMB_PROJ := [
+	".............",
+	"..........zz.",
+	"..........Pz.",
+	".........H...",
+	"........H....",
+	"....nnnn.....",
+	"...nkkkkn....",
+	"..nkkkkkkn...",
+	"..nkjkkkkn...",
+	"..nkkkkkkn...",
+	"...nkkkkn....",
+	"....nnnn.....",
+	".............",
+]
+
 # 回旋镖: 左右对称的 V 形木臂 (带黑描边)
 const _BOOMERANG := [
 	"..................",
@@ -3457,6 +3475,11 @@ static func get_icon(item_id: String) -> ImageTexture:
 	if item_id.ends_with("_staff"):
 		grid = _taller_staff(grid)
 	return PixelArt.grid_to_texture(grid, PALETTE)
+
+
+# 飞行中的炸弹弹丸贴图 (居中黑壳 + 点燃引线). bullet.gd 的 "bomb" visual 用。
+static func bomb_proj_texture() -> ImageTexture:
+	return PixelArt.grid_to_texture(_BOMB_PROJ, PALETTE)
 
 
 # 找法杖里最长的一段"完全相同且非空"连续行 (= 杖身那根杆), 复制 extra 行让法杖变长。
