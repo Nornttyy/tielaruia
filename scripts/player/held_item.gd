@@ -230,8 +230,9 @@ func play_pickaxe_attack(target_angle: float = -PI / 2.0) -> void:
 	)
 
 
-# 戳 (剑): 朝鼠标方向向前突再收回, 不旋转 (跟挥不同, 挥是转圈弧)
-func play_thrust(target_angle: float) -> void:
+# 戳 (剑/矛): 朝鼠标方向向前突再收回, 不旋转 (跟挥不同, 挥是转圈弧)。
+# lunge_px: 往前突多远 (短剑小, 长矛大 — 矛长就要刺得远才像个刺, 不然只是小抖 = 抽搐)。
+func play_thrust(target_angle: float, lunge_px: float = THRUST_OFFSET_PX) -> void:
 	if not _has_item:
 		return
 	_show_for(THRUST_DURATION)
@@ -243,10 +244,8 @@ func play_thrust(target_angle: float) -> void:
 	_attack_locked = true    # 锁住, 后续 player_controller set_facing 被忽略
 	var dir_vec := Vector2(cos(target_angle), sin(target_angle))
 	var base_pos := Vector2(HAND_OFFSET_X if _facing_right else -HAND_OFFSET_X, HAND_OFFSET_Y)
-	var thrust_pos := base_pos + dir_vec * THRUST_OFFSET_PX
-	# 剑尖朝鼠标. sword sprite 默认尖朝上 (-y), 要尖朝 target_angle 得旋转 target_angle + PI/2.
-	# 剑尖在 sprite 中心列 (x≈8), 水平翻转 (set_facing 的 scale.x=-1) 不改变剑尖方向, 所以这里
-	# 不需要按 facing 反向 — 之前用 s * 反向是 bug, 导致鼠标在左时剑尖指到镜像方向.
+	var thrust_pos := base_pos + dir_vec * lunge_px
+	# 剑尖朝鼠标. sword sprite 默认尖朝上 (-y), 尖朝 target_angle 得旋转 target_angle + PI/2.
 	rotation = wrapf(target_angle + PI / 2.0, -PI, PI)
 	position = base_pos
 	_tween = create_tween()
@@ -254,39 +253,44 @@ func play_thrust(target_angle: float) -> void:
 	_tween.tween_property(self, "position", thrust_pos, THRUST_DURATION * THRUST_EXTEND_RATIO).set_ease(Tween.EASE_OUT)
 	_tween.tween_interval(THRUST_DURATION * THRUST_HOLD_RATIO)
 	_tween.tween_property(self, "position", base_pos, THRUST_DURATION * THRUST_RETRACT_RATIO).set_ease(Tween.EASE_IN)
-	_tween.tween_callback(func():
-		rotation = 0.0
-		_attack_locked = false
-	)
+	# 收回后不再把 rotation 归 0 (之前每戳完弹回竖直 = 连戳时上下抽)。保持指向鼠标,
+	# 下一戳无缝接上; 武器收起 (visible=false) 时自然失效, 不影响别的姿势。
+	_tween.tween_callback(func(): _attack_locked = false)
 
 
-func play_swing_directional(target_angle: float) -> void:
-	# 定向挥击 (挥剑用): 沿 target_angle 方向划 180° 半圆 (用户改: Terraria 风).
-	# 攻击时把 sprite 朝向锁到鼠标方向, 避免移动中翻面让剑乱飞.
+var _dual_flip: bool = false   # 双刀: 每次挥交替左右, 看着像左一刀右一刀的连斩
+
+# 定向挥击 (挥剑用): 沿 target_angle 方向划 180° 半圆 (Terraria 风)。
+# swing_dur: 这一挥转多久 (双刀很快, 要跟它的攻击间隔对齐, 否则被打断从头转 = 抽搐)。
+# fast: 双刀连斩模式 — 不归位到 0 (省得弹回), 改成每刀从另一边起手, 自然来回扫。
+func play_swing_directional(target_angle: float, swing_dur: float = SWING_DURATION, fast: bool = false) -> void:
 	if not _has_item:
 		return
-	_show_for(SWING_DURATION * 1.7)   # 挥 + 归位全程都显示
+	_show_for(swing_dur * (1.3 if fast else 1.7))   # 挥 (+ 归位) 全程都显示
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	_attack_locked = false
 	var mouse_on_right: bool = cos(target_angle) >= 0.0
 	set_facing(mouse_on_right)  # 跟鼠标走, 不跟玩家走路方向
 	_attack_locked = true
-	# 不乘 facing 符号: 剑尖在中心列, 水平翻转不改变剑尖方向; 乘 s 会让"瞄左"和"瞄右"算出同一个
-	# base → 永远往同一边挥 (= 用户报的"瞄左却往右挥" bug, 跟 play_thrust 早先修过的同款 s 反向 bug).
+	# 不乘 facing 符号: 剑尖在中心列, 水平翻转不改变剑尖方向; 乘 s 会让"瞄左""瞄右"算出同一个 base.
 	var base: float = wrapf(target_angle + PI / 2.0, -PI, PI)
-	# 弧线方向随朝向镜像: 瞄右从上往右下劈, 瞄左从上往左下劈。剑尖在中心列, 翻转不影响剑尖方向,
-	# 所以瞄左若跟瞄右同向扫 → 剑尖会从下往上走 = "挑" (用户报的 bug)。瞄左把扫向反过来。
+	# 弧线方向随朝向镜像: 瞄右从上往右下劈, 瞄左从上往左下劈 (剑尖在中心列, 翻转不影响剑尖朝向)。
 	var half: float = deg_to_rad(110.0) if mouse_on_right else -deg_to_rad(110.0)
 	var start_a: float = base - half
 	var end_a:   float = base + half
+	if fast:
+		# 双刀: 这一刀从哪边起手交替着来 — 上一刀停在 end, 这一刀就从 end 往 start 扫, 不会瞬弹。
+		_dual_flip = not _dual_flip
+		if _dual_flip:
+			var tmp: float = start_a; start_a = end_a; end_a = tmp
 	rotation = start_a
 	_tween = create_tween()
 	# 挥 (打击窗口, 跟 player_action 命中判定的 180°/SWING_DURATION 同步)
-	_tween.tween_property(self, "rotation", end_a, SWING_DURATION)
-	# 挥完归位到 0 (休息位), 别卡在 end_a — 否则连挥时下一刀从 end_a 瞬弹回 start_a = 抽搐.
-	# 归位在打击窗口之后跑 (冷却间隙内), 不影响命中判定; facing 锁也顺延到归位完才松.
-	_tween.tween_property(self, "rotation", 0.0, SWING_DURATION * 0.7)
+	_tween.tween_property(self, "rotation", end_a, swing_dur)
+	if not fast:
+		# 普通剑: 挥完归位到 0 (休息位), 别卡在 end_a — 否则连挥下一刀从 end_a 瞬弹回 = 抽搐。
+		_tween.tween_property(self, "rotation", 0.0, swing_dur * 0.7)
 	_tween.tween_callback(func(): _attack_locked = false)
 
 

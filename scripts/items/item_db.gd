@@ -28,7 +28,7 @@ const _DEFS := {
 	"bone_sword":   {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 7, "max_stack": 1, "damage_mult": 1.3, "sword_style": "sweep"},  # 骷髅王掉落, 阔剑(横扫), 比普通阔剑(1.2)更强
 	# 新近战类型 (都 tool_kind sword, 靠 sword_style + melee_* 字段做出不同手感):
 	"spear":        {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 5, "max_stack": 1, "damage_mult": 1.3, "sword_style": "thrust", "melee_reach_bonus": 32.0, "melee_cooldown": 0.42, "melee_knockback": 120.0},  # 长矛: 戳得超远·单体
-	"dual_blade":   {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 5, "max_stack": 1, "damage_mult": 0.7, "sword_style": "sweep",  "melee_cooldown": 0.18, "melee_knockback": 40.0},  # 双刀: 攻速极快·单下伤害低·连斩
+	"dual_blade":   {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 5, "max_stack": 1, "damage_mult": 0.7, "sword_style": "sweep",  "melee_cooldown": 0.18, "melee_knockback": 40.0, "swing_fast": true},  # 双刀: 攻速极快·单下伤害低·左右交替连斩
 	"flail":        {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 5, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep",  "melee_reach_bonus": 22.0, "melee_cooldown": 0.6, "melee_knockback": 260.0},  # 流星锤: 抡大圈·范围大·强击退
 	"warhammer":    {"placeable_tile_id": -1,              "tool_kind": "sword",     "tool_tier": 6, "max_stack": 1, "damage_mult": 1.8, "sword_style": "sweep",  "melee_cooldown": 0.72, "melee_knockback": 280.0},  # 战锤: 慢·高伤·把怪砸飞
 	# 近战材质变种 (金/钻: 高 tier = 高伤; 手感字段照基础, 图标自动换金属色):

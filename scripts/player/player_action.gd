@@ -1813,10 +1813,11 @@ func _thrust_sword() -> void:
 	var swing_dir: Vector2 = to_mouse.normalized()
 	var max_len: float = SWORD_RANGE_PX * THRUST_LENGTH_MULT
 	last_swing_center = player.global_position + swing_dir * max_len * 0.5
-	# 动画: 工具沿 swing_dir 突刺再收回
+	# 动画: 工具沿 swing_dir 突刺再收回. 矛(reach 大)刺得更远才像个刺, 不然只是小抖.
 	var held: Node = player.get_node_or_null("HeldItem")
+	var lunge_px: float = SWORD_THRUST_OFFSET + _sword_attack_reach_bonus * 0.45   # 矛 reach32 → ~22px
 	if held != null and held.has_method("play_thrust"):
-		held.play_thrust(swing_dir.angle())
+		held.play_thrust(swing_dir.angle(), lunge_px)
 	elif held != null and held.has_method("play_swing"):
 		held.play_swing()
 	# 用户改: 删剑挥/戳音效 (只留命中怪的打击音, 见 effects.spawn_damage_number)
@@ -1855,11 +1856,13 @@ func _sweep_sword() -> void:
 	# 命中中心点 = 玩家中心 + 方向 × 半个射程
 	var center: Vector2 = player.global_position + swing_dir * SWORD_RANGE_PX * 0.5
 	last_swing_center = center
-	# 手持物品挥摆动画 (角度跟随鼠标; Task 2 实现)
+	# 手持物品挥摆动画 (角度跟随鼠标). 双刀(swing_fast): 挥快+左右交替, 跟它 0.18s 间隔对齐, 不抽搐.
 	var held: Node = player.get_node_or_null("HeldItem")
+	var fast_swing: bool = mdef != null and bool(mdef.get("swing_fast", false))
+	var swing_dur: float = float(mdef.get("melee_cooldown", 0.5)) if fast_swing else 0.5
 	if held != null:
 		if held.has_method("play_swing_directional"):
-			held.play_swing_directional(swing_dir.angle())
+			held.play_swing_directional(swing_dir.angle(), swing_dur, fast_swing)
 		elif held.has_method("play_swing"):
 			held.play_swing()
 	# 用户改: 删剑挥/戳音效 (只留命中怪的打击音)
