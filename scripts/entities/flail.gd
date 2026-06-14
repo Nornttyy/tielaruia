@@ -83,7 +83,9 @@ func _color_for(v: String) -> Color:
 		"leaf":      return Color8(120, 200, 80)
 		"lightning": return Color8(255, 235, 90)
 		"void":      return Color8(150, 90, 220)
-		_:           return Color8(180, 185, 195)   # 金属灰
+		"gold":      return Color8(240, 200, 80)    # 金流星锤: 暖金球
+		"diamond":   return Color8(190, 235, 240)   # 钻石流星锤: 亮青白球
+		_:           return Color8(180, 185, 195)   # 金属灰 (普通铁球)
 
 
 func is_orbiting() -> bool:

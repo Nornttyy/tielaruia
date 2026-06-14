@@ -4,10 +4,12 @@ extends GutTest
 
 
 func test_melee_weapons_registered() -> void:
+	# 流星锤现在是会转的链锤 (tool_kind flail), 双刀/战锤仍是 sword
+	var expected_kind := {"dual_blade": "sword", "flail": "flail", "warhammer": "sword"}
 	for id in ["dual_blade", "flail", "warhammer"]:
 		var def: Variant = ItemDB.get_def(id)
 		assert_true(def != null, "%s 在 ItemDB" % id)
-		assert_eq(String(def.get("tool_kind", "")), "sword", "%s 走近战(sword)系统" % id)
+		assert_eq(String(def.get("tool_kind", "")), expected_kind[id], "%s 走对的近战系统" % id)
 		assert_not_null(RecipeDB.get_recipe(id), "%s 有配方" % id)
 		assert_not_null(ArtCache.get_inventory_icon(id), "%s 有图标" % id)
 

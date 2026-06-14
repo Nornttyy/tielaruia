@@ -6,12 +6,14 @@ const ItemsArt = preload("res://scripts/art/items_art.gd")
 
 
 func test_tier_variants_registered() -> void:
+	# 流星锤系是会转的链锤 (flail), 双刀/战锤系是 sword
+	var kind_of := {"dual_blade": "sword", "flail": "flail", "warhammer": "sword"}
 	for base in ["dual_blade", "flail", "warhammer"]:
 		for pre in ["gold_", "diamond_"]:
 			var id: String = pre + base
 			var def: Variant = ItemDB.get_def(id)
 			assert_true(def != null, "%s 在 ItemDB" % id)
-			assert_eq(String(def.get("tool_kind", "")), "sword", "%s 是近战" % id)
+			assert_eq(String(def.get("tool_kind", "")), kind_of[base], "%s 是对的近战类型" % id)
 			assert_not_null(RecipeDB.get_recipe(id), "%s 有配方" % id)
 			assert_not_null(ArtCache.get_inventory_icon(id), "%s 有图标(自动换色)" % id)
 
