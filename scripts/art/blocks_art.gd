@@ -2601,41 +2601,74 @@ static func build_atlas(tile_id: int) -> ImageTexture:
 				var ch: String = prow.substr(sx, 1)
 				atlas_img.set_pixel(vox + x, voy + y, palette[ch] if palette.has(ch) else transparent)
 
-	# 粗糙地表变体: 平顶格 (OCCC.II.) 的顶边随机挖几个 1px 小缺口 → 地表线不再笔直 (能凹进去)。
-	# 碰撞仍是方的 (tileset 注册时全格), 只视觉起伏。
-	if family_tpl.has(FLAT_TOP_KEY):
-		var flat_edge: Array = family_tpl[FLAT_TOP_KEY]
-		for ri in ROUGH_TOP_VARIANT_COORDS.size():
-			var rc: Vector2i = ROUGH_TOP_VARIANT_COORDS[ri]
-			var notch: Array = ROUGH_TOP_NOTCH[ri]
-			var rox: int = rc.x * 16
-			var roy: int = rc.y * 16
-			for y in 16:
-				var base_row: String = base_pattern[y]
-				var edge_row: String = flat_edge[y]
-				for x in 16:
-					if y == 0 and notch.has(x):
-						atlas_img.set_pixel(rox + x, roy + y, transparent)  # 挖掉顶 1px
-						continue
-					var edge_ch: String = edge_row.substr(x, 1)
-					if y == 1 and notch.has(x):
-						edge_ch = "H"   # 凹陷处的新顶给高光, 不发暗
-					var color: Color
-					if edge_ch == ".":
-						var bch: String = base_row.substr(x, 1)
-						color = palette[bch] if palette.has(bch) else transparent
-					else:
-						var slot: String = "_" + edge_ch
-						color = palette[slot] if palette.has(slot) else transparent
-					atlas_img.set_pixel(rox + x, roy + y, color)
+	# 粗糙边缘变体: 暴露的边 (上/左/右/下) 随机挖几个 1px 小缺口 → 地表线/洞壁不再笔直。
+	# 碰撞仍是方的 (tileset 注册时全格), 只视觉起伏。每条边 3 个变体, autotile 按坐标错开挑。
+	for cfg in _ROUGH_EDGE_CONFIGS:
+		var flat_key: String = cfg[0]
+		var side: String = cfg[1]
+		var coords: Array = cfg[2]
+		if not family_tpl.has(flat_key):
+			continue
+		var flat_edge: Array = family_tpl[flat_key]
+		for ri in coords.size():
+			_render_rough_cell(atlas_img, base_pattern, palette, flat_edge,
+				coords[ri], ROUGH_TOP_NOTCH[ri], side, transparent)
 
 	return ImageTexture.create_from_image(atlas_img)
 
 
+# 把一个"暴露边挖缺口"的变体画进 atlas 的 coord cell。
+# side: top/left/right/bottom — 决定挖外缘哪一行/列, 凹陷处的新边给 H 高光。
+static func _render_rough_cell(atlas_img: Image, base_pattern: Array, palette: Dictionary,
+		edge: Array, coord: Vector2i, notch: Array, side: String, transparent: Color) -> void:
+	var ox: int = coord.x * 16
+	var oy: int = coord.y * 16
+	for y in 16:
+		var base_row: String = base_pattern[y]
+		var edge_row: String = edge[y]
+		for x in 16:
+			# 判断: 这个像素是被挖掉的外缘 (carve), 还是凹陷后露出的新边 (给高光)
+			var carve: bool = false
+			var newedge: bool = false
+			match side:
+				"top":    carve = (y == 0 and notch.has(x));  newedge = (y == 1 and notch.has(x))
+				"bottom": carve = (y == 15 and notch.has(x)); newedge = (y == 14 and notch.has(x))
+				"left":   carve = (x == 0 and notch.has(y));  newedge = (x == 1 and notch.has(y))
+				"right":  carve = (x == 15 and notch.has(y)); newedge = (x == 14 and notch.has(y))
+			if carve:
+				atlas_img.set_pixel(ox + x, oy + y, transparent)
+				continue
+			var edge_ch: String = edge_row.substr(x, 1)
+			if newedge:
+				edge_ch = "H"
+			var color: Color
+			if edge_ch == ".":
+				var bch: String = base_row.substr(x, 1)
+				color = palette[bch] if palette.has(bch) else transparent
+			else:
+				var slot: String = "_" + edge_ch
+				color = palette[slot] if palette.has(slot) else transparent
+			atlas_img.set_pixel(ox + x, oy + y, color)
+
+
 # 内部满格的 3 个随机翻转变体放这几个 cell (autotile + tileset_builder 共用). vi: 0=H 1=V 2=HV.
 const INTERIOR_VARIANT_COORDS: Array[Vector2i] = [Vector2i(7, 5), Vector2i(0, 6), Vector2i(1, 6)]
-# 平顶地表的 variant key (N 开/上方空气, E/S/W 闭, 下方两角实) — 地表最常见的"平地一格"。
-const FLAT_TOP_KEY := "OCCC.II."
-# 粗糙地表 3 个变体 cell + 各自在顶边挖哪些列 (1px 小缺口, 错开 → 地表起伏)。
+# 4 条暴露边各自的"平直一格" variant key (只那一边开/暴露空气, 另 3 边闭)。
+const FLAT_TOP_KEY := "OCCC.II."     # 上方空气 (地表)
+const FLAT_LEFT_KEY := "CCCOII.."    # 左方空气 (悬崖右壁/洞左壁)
+const FLAT_RIGHT_KEY := "COCC..II"   # 右方空气
+const FLAT_BOTTOM_KEY := "CCOCI..I"  # 下方空气 (天花板/悬垂)
+# 各边的 3 个"挖缺口"变体 cell。
 const ROUGH_TOP_VARIANT_COORDS: Array[Vector2i] = [Vector2i(2, 6), Vector2i(3, 6), Vector2i(4, 6)]
+const ROUGH_LEFT_VARIANT_COORDS: Array[Vector2i] = [Vector2i(5, 6), Vector2i(6, 6), Vector2i(7, 6)]
+const ROUGH_RIGHT_VARIANT_COORDS: Array[Vector2i] = [Vector2i(0, 7), Vector2i(1, 7), Vector2i(2, 7)]
+const ROUGH_BOTTOM_VARIANT_COORDS: Array[Vector2i] = [Vector2i(3, 7), Vector2i(4, 7), Vector2i(5, 7)]
+# 3 套挖缺口位置 (行或列下标, 错开). 上下用作列, 左右用作行。
 const ROUGH_TOP_NOTCH: Array = [[3, 4, 11], [7, 8, 14, 15], [1, 2, 9, 10]]
+# build_atlas 用: [flat_key, side, coords]。
+const _ROUGH_EDGE_CONFIGS: Array = [
+	[FLAT_TOP_KEY, "top", ROUGH_TOP_VARIANT_COORDS],
+	[FLAT_LEFT_KEY, "left", ROUGH_LEFT_VARIANT_COORDS],
+	[FLAT_RIGHT_KEY, "right", ROUGH_RIGHT_VARIANT_COORDS],
+	[FLAT_BOTTOM_KEY, "bottom", ROUGH_BOTTOM_VARIANT_COORDS],
+]

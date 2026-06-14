@@ -98,8 +98,10 @@ static func build() -> TileSet:
 				coords.append(Vector2i(i % 8, i / 8))
 			for vc in BlocksArt.INTERIOR_VARIANT_COORDS:
 				coords.append(vc)
-			for vc in BlocksArt.ROUGH_TOP_VARIANT_COORDS:
-				coords.append(vc)
+			for arr in [BlocksArt.ROUGH_TOP_VARIANT_COORDS, BlocksArt.ROUGH_LEFT_VARIANT_COORDS,
+					BlocksArt.ROUGH_RIGHT_VARIANT_COORDS, BlocksArt.ROUGH_BOTTOM_VARIANT_COORDS]:
+				for vc in arr:
+					coords.append(vc)
 			for coord in coords:
 				source.create_tile(coord)
 				if Tiles.is_solid(tile_id):
