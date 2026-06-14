@@ -3455,11 +3455,48 @@ static func _tier_variant(item_id: String) -> Array:
 	return []
 
 
+# 普通阔剑 (石/铁/金...): 共用一个加长金属剑形状, 只换刀身两色 [侧, 高光]。
+# 替代旧的一堆 16×16 独立 const → 统一加长到 16×21, 解决"阔剑太短"。
+const _BROADSWORD_MATS := {
+	"wood_sword":    ["y", "I"],   # 木: 沙黄 / 反光
+	"stone_sword":   ["V", "x"],   # 石: 冷灰 / 高光
+	"copper_sword":  ["C", "J"],   # 铜: 橙 / 亮橙
+	"iron_sword":    ["E", "f"],   # 铁: 钢蓝 / 亮
+	"silver_sword":  ["d", "d"],   # 银: 近白
+	"gold_sword":    ["Z", "z"],   # 金: 金 / 亮金
+	"diamond_sword": ["N", "X"],   # 钻: 蓝 / 淡蓝
+	"hell_sword":    ["@", "+"],   # 地狱: 深紫 / 亮紫
+	"bone_sword":    ["w", "j"],   # 骨: 羊毛 / 骨白
+}
+
+
+# 加长金属阔剑 16×21: 长刀身 (侧 s + 高光 c, n 描边) + 护手 + 缠柄 + 柄头。mats=[侧色, 高光]。
+static func _broadsword_grid(mats: Array) -> Array:
+	var s: String = mats[0]
+	var c: String = mats[1]
+	var blade: String = ".....n" + s + c + s + "n......"
+	return [
+		".......n........",
+		"......n" + c + "n.......",
+		blade, blade, blade, blade, blade, blade, blade,
+		blade, blade, blade, blade, blade, blade,
+		"...nggGGGggn....",
+		"......nhin......",
+		"......nhin......",
+		"......nhin......",
+		"......nKKn......",
+	]
+
+
 static func get_icon(item_id: String) -> ImageTexture:
 	if _HAMMER_MATS.has(item_id):
 		return PixelArt.grid_to_texture(_hammer_grid(_HAMMER_MATS[item_id]), PALETTE)
+	if _BROADSWORD_MATS.has(item_id):
+		return PixelArt.grid_to_texture(_broadsword_grid(_BROADSWORD_MATS[item_id]), PALETTE)
 	if _SPECIAL_SWORD_MATS.has(item_id):
 		return PixelArt.grid_to_texture(_energy_sword_grid(_SPECIAL_SWORD_MATS[item_id]), PALETTE)
+	if _SPECIAL_FLAIL_MATS.has(item_id):
+		return PixelArt.grid_to_texture(_energy_flail_grid(_SPECIAL_FLAIL_MATS[item_id]), PALETTE)
 	if _SPECIAL_FLAIL_MATS.has(item_id):
 		return PixelArt.grid_to_texture(_energy_flail_grid(_SPECIAL_FLAIL_MATS[item_id]), PALETTE)
 	var tv: Array = _tier_variant(item_id)
