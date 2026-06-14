@@ -326,7 +326,7 @@ static func _female_torso_swim(cs: int, bounce: int = 0) -> Array:
 	var up := clampi(1 + bounce, 1, 3)
 	var mid := clampi(2 + bounce, 1, 3)
 	var low := clampi(3 + bounce, 1, 3)
-	# 罩杯跟 T恤胸同款大小 (身材跨衣服一致): col7→8→9 顶满 3 行 = 大而圆。
+	# 罩杯跟 T恤胸同款大小 (身材跨衣服一致): col7-9 顶满 3 行 + 往上长高一行 = 又大又挺。
 	if cs >= 1:
 		rows[mid] = _set_char(rows[mid], 7, "w")   # 罩杯 col7 (峰 1px)
 		rows[mid] = _set_char(rows[mid], 8, "w")   # 罩杯 col8 (峰 2px)
@@ -338,14 +338,17 @@ static func _female_torso_swim(cs: int, bounce: int = 0) -> Array:
 	if cs >= 3:
 		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8
 		rows[low] = _set_char(rows[low], 8, "w")   # 下沿 col8
+		rows[up] = _set_char(rows[up], 9, "w")     # 上沿到 col9
+		rows[low] = _set_char(rows[low], 9, "w")   # 下沿到 col9 → 默认就整团满
 	if cs >= 4:
-		rows[up] = _set_char(rows[up], 9, "w")     # 上沿顶到 col9
-		rows[low] = _set_char(rows[low], 9, "w")   # 下沿顶到 col9 → 整团满 = 大
 		rows[mid] = _set_char(rows[mid], 9, "c")   # 峰顶高光 c
 		rows[low] = _set_char(rows[low], 8, "D")   # 下沿 col8 镶边阴影 D (圆垂)
+		rows[0] = _set_char(rows[0], 7, "w")       # 往上长高一行 (罩杯上沿起鼓) = 更大
+		rows[0] = _set_char(rows[0], 8, "w")
 	if cs >= 5:
-		rows[up] = _set_char(rows[up], 6, "w")     # 根部往后多连 = 更饱满
-		rows[up] = _set_char(rows[up], 9, "c")     # 上前高光 → 更挺
+		rows[0] = _set_char(rows[0], 9, "c")       # 顶行也顶到最前 + 高光 = 最大最挺
+		rows[up] = _set_char(rows[up], 6, "w")     # 根部往后连满 = 更饱满
+		rows[low] = _set_char(rows[low], 6, "w")
 	return rows
 
 
@@ -367,10 +370,10 @@ static func _female_torso(cs: int, bounce: int = 0) -> Array:
 	var up := clampi(1 + bounce, 1, 3)
 	var mid := clampi(2 + bounce, 1, 3)
 	var low := clampi(3 + bounce, 1, 3)
-	# 越大越鼓: 先往前顶 (col7→8→9) 再把上下沿也填满 = 大而圆 (用户要"再大点")。
+	# 越大越鼓: 先往前顶满 col7-9 三行, 再往上长高一行 (肩行) = 又大又挺 (用户两次要"再大点")。
 	if cs >= 1:
 		rows[mid] = _set_char(rows[mid], 7, "w")   # 中胸 col7 (峰 1px)
-		rows[mid] = _set_char(rows[mid], 8, "w")   # 中胸 col8 (峰 2px, 起步就鼓)
+		rows[mid] = _set_char(rows[mid], 8, "w")   # 中胸 col8 (峰 2px)
 	if cs >= 2:
 		rows[up] = _set_char(rows[up], 7, "w")     # 上沿 col7
 		rows[low] = _set_char(rows[low], 7, "w")   # 下沿 col7
@@ -378,15 +381,17 @@ static func _female_torso(cs: int, bounce: int = 0) -> Array:
 	if cs >= 3:
 		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8
 		rows[low] = _set_char(rows[low], 8, "w")   # 下沿 col8
+		rows[up] = _set_char(rows[up], 9, "w")     # 上沿到 col9
+		rows[low] = _set_char(rows[low], 9, "w")   # 下沿到 col9 → 默认就整团 3行×3px 满
 	if cs >= 4:
-		rows[up] = _set_char(rows[up], 9, "w")     # 上沿也顶到 col9
-		rows[low] = _set_char(rows[low], 9, "w")   # 下沿也顶到 col9 → 整团 3行×3px 满 = 大
 		rows[mid] = _set_char(rows[mid], 9, "c")   # 峰顶高光 c (球面: 顶亮)
-		rows[low] = _set_char(rows[low], 8, "D")   # 下沿 col8 阴影 D (球面: 底暗 = 圆垂)
+		rows[low] = _set_char(rows[low], 8, "D")   # 下沿 col8 阴影 D (圆垂)
+		rows[0] = _set_char(rows[0], 7, "w")       # 往上长高一行 (肩行起鼓) = 更大
+		rows[0] = _set_char(rows[0], 8, "w")
 	if cs >= 5:
-		rows[up] = _set_char(rows[up], 6, "w")     # 根部往后多连 1px = 更饱满更挺
+		rows[0] = _set_char(rows[0], 9, "c")       # 顶行也顶到最前 + 高光 = 最大最挺
+		rows[up] = _set_char(rows[up], 6, "w")     # 根部往后连满 = 更饱满
 		rows[low] = _set_char(rows[low], 6, "w")
-		rows[up] = _set_char(rows[up], 9, "c")     # 上前也高光 → 更鼓
 	return rows
 
 
