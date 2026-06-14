@@ -777,8 +777,17 @@ func _item_tooltip(item_id: String) -> String:
 		use = "右键穿上, 减少受到的伤害"
 	var ff: int = ItemDB.food_fill(item_id)
 	if ff > 0:
-		lines.append("食物 · 回饱食 %d" % ff)
-		use = "吃了恢复饱食度"
+		# 这游戏没饱食度, 食物直接回血 (player_action: hp.heal(food_fill))
+		if bool(def.get("is_potion", false)):
+			lines.append("药水 · 回血 %d" % ff)
+			use = "喝了恢复血量"
+		else:
+			lines.append("食物 · 回血 %d" % ff)
+			use = "吃了恢复血量"
+		var bk: String = String(def.get("buff_kind", ""))
+		if bk != "":
+			var bz: String = {"speed": "跑得快", "regen": "持续回血", "jump": "跳得高", "mining": "挖得快"}.get(bk, bk)
+			lines.append("吃后 %d 秒: %s" % [int(def.get("buff_secs", 0)), bz])
 	if int(def.get("placeable_tile_id", -1)) != -1:
 		lines.append("建筑方块 · 可放置")
 		if use == "":
