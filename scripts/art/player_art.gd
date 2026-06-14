@@ -59,26 +59,26 @@ const _FACE_F := [
 	"...sss...",
 ]
 
-# 大蓬松短发 (盖头顶 + 后脑 + 前额留眼): h 主色 / H 阴影 / 顶 gg 小高光。14 宽 × 11 高。
+# 大蓬松短发: 上亮下暗分层 (顶 g 高光 → G 柔亮 → h 主色 → H 底暗), 圆润光泽不画线。14 宽 × 11 高。
 const _HAIR_SHORT := [
-	"....hhhhhh....",
-	"..hhhgghhhhh..",
-	".hhhhgghhhhhh.",
-	"hhhhhgghhhhhh.",
+	"....gggggg....",
+	"..GGGGGGGGGG..",
+	".hhhhhhhhhhhh.",
+	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
-	"Hhhhhhhh...hh.",   # 后+顶留发, 中间空出眼睛, 前一缕刘海
-	"Hhhhhhh.......",
-	".HHhhh........",
-	"..HHh.........",
+	"hhhhhhhh...hh.",   # 中间空出眼睛, 前一缕刘海
+	"HHHHHHH.......",
+	".HHHHH........",
+	"..HHH.........",
 ]
-# 长发: 同顶, 后脑一大片垂到腰。14 宽 × 16 高。
+# 长发: 上亮下暗分层 (顶高光 → 柔亮 → 主色 → 发尾渐暗)。14 宽 × 16 高。
 const _HAIR_LONG := [
-	"....hhhhhh....",
-	"..hhhgghhhhh..",
-	".hhhhgghhhhhh.",
-	"hhhhhgghhhhhh.",
+	"....gggggg....",
+	"..GGGGGGGGGG..",
+	".GGGGGGGGGGGG.",
+	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
@@ -87,24 +87,24 @@ const _HAIR_LONG := [
 	"hhhhhhh.......",
 	"hhhhhh........",
 	"hhhhhh........",
-	"hhhhhH........",
-	"hhhhhH........",
-	"Hhhhh.........",
-	".HHhh.........",
+	"HHHHHH........",
+	"HHHHHH........",
+	"HHHHH.........",
+	".HHHH.........",
 ]
 # 马尾: 短发 + 后脑伸出一束 (尾巴另块拼)。
 const _HAIR_PONY := [
-	"....hhhhhh....",
-	"..hhhgghhhhh..",
-	".hhhhgghhhhhh.",
-	"hhhhhgghhhhhh.",
+	"....gggggg....",
+	"..GGGGGGGGGG..",
+	".hhhhhhhhhhhh.",
+	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
-	"HHhhhhhh...HH.",
-	"HHHhhhh.......",
-	".HHHhh........",
-	"..HHh.........",
+	"hhhhhhhh...hh.",
+	"HHHHHHH.......",
+	".HHHHH........",
+	"..HHH.........",
 ]
 const _PONY_TAIL := [   # 后脑扎起垂下的一束 (拼在后脑外侧)
 	"hh.",
@@ -117,17 +117,17 @@ const _PONY_TAIL := [   # 后脑扎起垂下的一束 (拼在后脑外侧)
 ]
 # 呆毛: 顶上炸开几撮 (尖刺顶)。
 const _HAIR_AHOGE := [
-	"...h.hh.h.h..",
-	"..hhhgghhhhh..",
-	".hhhhgghhhhhh.",
-	"hhhhhgghhhhhh.",
+	"...g.gg.g.g..",
+	"..GGGGGGGGGG..",
+	".hhhhhhhhhhhh.",
+	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhhhh",
 	"hhhhhhhhhhhhh.",
 	"hhhhhhhhhhhh..",
-	"HHhhhhhh...HH.",
-	"HHHhhhh.......",
-	".HHHhh........",
-	"..HHh.........",
+	"hhhhhhhh...hh.",
+	"HHHHHHH.......",
+	".HHHHH........",
+	"..HHH.........",
 ]
 
 # 女性专属: 短发/呆毛补的后发 (垂到肩下, 让短发也有女生长度)。3 宽 × 7 高, 拼在后脑外侧。
@@ -515,7 +515,7 @@ static func _palette_from(ap: Dictionary) -> Dictionary:
 	return {
 		".": Color(0, 0, 0, 0),
 		"s": skin, "k": skin.darkened(0.26), "p": skin.lightened(0.26),   # p=皮肤高光
-		"h": hair, "H": hair.darkened(0.42), "g": hair.lightened(0.48),   # g=头发高光
+		"h": hair, "H": hair.darkened(0.42), "g": hair.lightened(0.48), "G": hair.lightened(0.22),   # g=高光 G=柔亮 (上亮下暗分层)
 		"w": shirt, "D": shirt.darkened(0.32), "c": shirt.lightened(0.42), "E": shirt.darkened(0.56), # c高光 E深阴影
 		"b": pants, "B": pants.darkened(0.42), "P": pants.lightened(0.44), "A": pants.darkened(0.60), # P高光 A深阴影
 		"i": eye, "W": _WHITE, "e": skin.darkened(0.40),
