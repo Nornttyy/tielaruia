@@ -2,13 +2,15 @@
 # 出去/绕转/回来路上都打怪 (同怪 HIT_CD 内不重复)。命中走 player_action.flail_hit (扣血 + 特殊效果)。
 extends Area2D
 
-const ORBIT_RADIUS := 40.0    # 绕玩家转的半径
+const ORBIT_RADIUS := 26.0    # 绕玩家转的半径 (用户: 之前太大, 缩小)
 const ORBIT_SPEED := 13.0     # 转速 (rad/s, 越大转越快)
-const FLY_SPEED := 600.0      # 甩出去/飞回的速度
-const MAX_DIST := 180.0       # 甩出多远开始往回飞
-const BALL_R := 8.0           # 球的命中/视觉半径
+const FLY_SPEED := 560.0      # 甩出去/飞回的速度
+const MAX_DIST := 150.0       # 甩出多远开始往回飞
+const BALL_R := 6.0           # 球的命中半径 (跟像素贴图大小对齐)
 const HIT_CD := 0.3           # 同一只怪两次命中间隔
 const LIFE_MAX := 8.0         # 兜底寿命
+
+var _ball: Sprite2D = null    # 像素贴图球 (子节点, 跟着 Area2D, 自转)
 
 # 状态: 0=绕转(蓄力) 1=甩出 2=飞回
 const ST_ORBIT := 0
@@ -41,6 +43,37 @@ func setup(thrower: Node2D, action: Node, dmg: int, def: Dictionary) -> void:
 	_slow_dur = float(def.get("gun_slow_dur", 0.0))
 	if thrower != null:
 		global_position = thrower.global_position + Vector2(ORBIT_RADIUS, 0)
+	# 像素贴图球 (按元素色现画一张小尖刺球, 最近邻过滤 = 保持像素)
+	_ball = Sprite2D.new()
+	_ball.texture = _make_ball_texture(_ball_color)
+	_ball.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(_ball)
+
+
+# 现画一张 13×13 像素尖刺球贴图: 黑描边 + 元素色实心 + 高光 + 4 根短刺。
+func _make_ball_texture(col: Color) -> ImageTexture:
+	var S := 13
+	var img := Image.create(S, S, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var ctr := Vector2(6, 6)
+	var R := 4.0
+	var outline := Color8(28, 24, 30)
+	# 圆球本体 + 1px 描边
+	for y in S:
+		for x in S:
+			var d: float = Vector2(x, y).distance_to(ctr)
+			if d <= R:
+				img.set_pixel(x, y, col)
+			elif d <= R + 1.0:
+				img.set_pixel(x, y, outline)
+	# 4 根短刺 (上下左右各戳出 2px)
+	for s in [Vector2i(6, 0), Vector2i(6, 1), Vector2i(6, 11), Vector2i(6, 12),
+			Vector2i(0, 6), Vector2i(1, 6), Vector2i(11, 6), Vector2i(12, 6)]:
+		img.set_pixel(s.x, s.y, outline)
+	# 高光 (左上 2 点)
+	img.set_pixel(4, 4, Color(1, 1, 1, 0.9))
+	img.set_pixel(5, 4, col.lightened(0.45))
+	return ImageTexture.create_from_image(img)
 
 
 func _color_for(v: String) -> Color:
@@ -57,9 +90,11 @@ func is_orbiting() -> bool:
 	return _state == ST_ORBIT
 
 
-# 松手: 甩向 target 方向
+# 松手: 甩向 target. 方向从【玩家中心】算, 不是从球当前绕转位置 —
+# 否则球转到玩家另一侧时, "球→鼠标" 会指反 = 用户报的"有时不面向鼠标"。
 func release(target: Vector2) -> void:
-	var d: Vector2 = target - global_position
+	var origin: Vector2 = _thrower.global_position if _thrower != null and is_instance_valid(_thrower) else global_position
+	var d: Vector2 = target - origin
 	_dir = d.normalized() if d.length() > 0.01 else Vector2.RIGHT
 	_state = ST_OUT
 	_out = 0.0
@@ -88,8 +123,10 @@ func _physics_process(delta: float) -> void:
 				queue_free()   # 飞回手里, 收工
 				return
 			global_position += to.normalized() * FLY_SPEED * delta
+	if _ball != null:
+		_ball.rotation = _spin   # 球贴图自转 (尖刺转起来)
 	_check_hits()
-	queue_redraw()   # 每帧重画球 + 链子 (玩家在动, 链子要跟)
+	queue_redraw()   # 每帧重画链子 (玩家在动, 链子要跟)
 
 
 func _check_hits() -> void:
@@ -129,20 +166,12 @@ func _check_hits() -> void:
 func _draw() -> void:
 	if _thrower == null or not is_instance_valid(_thrower):
 		return
-	# 链子: 从玩家手 (local) 画到球 (原点). 几节短线段看着像铁链。
-	var hand: Vector2 = to_local(_thrower.global_position + Vector2(0, -6))
-	var chain_col := Color8(90, 92, 100)
-	draw_line(hand, Vector2.ZERO, chain_col, 3.0)
-	# 链节小点 (沿链子等距, 看着像一节节)
-	var links: int = 5
-	for i in range(1, links):
+	# 链子: 一节节 2×2 像素方块 (draw_rect 不抗锯齿 = 保持像素), 从玩家手画到球。
+	var hand: Vector2 = to_local(_thrower.global_position + Vector2(0, -5))
+	var links: int = 6
+	for i in range(0, links):
 		var p: Vector2 = hand.lerp(Vector2.ZERO, float(i) / float(links))
-		draw_circle(p, 1.8, Color8(140, 142, 150))
-	# 球: 深色描边 + 主体 + 4 根尖刺 + 高光
-	draw_circle(Vector2.ZERO, BALL_R + 1.5, Color8(35, 35, 42))   # 描边
-	for k in 4:
-		var a: float = _spin + float(k) * PI / 2.0
-		var tip: Vector2 = Vector2(BALL_R + 4.0, 0).rotated(a)
-		draw_line(tip * 0.5, tip, Color8(60, 62, 70), 3.0)        # 尖刺
-	draw_circle(Vector2.ZERO, BALL_R, _ball_color)               # 主体 (元素色)
-	draw_circle(Vector2(-2.5, -2.5), 2.2, Color(1, 1, 1, 0.7))   # 高光
+		var px: float = round(p.x)
+		var py: float = round(p.y)
+		var col: Color = Color8(150, 152, 160) if i % 2 == 0 else Color8(95, 97, 105)
+		draw_rect(Rect2(px - 1.0, py - 1.0, 2.0, 2.0), col, true)   # 实心像素链节

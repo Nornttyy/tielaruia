@@ -26,7 +26,7 @@ func test_orbits_around_player() -> void:
 	for i in 5:
 		f._physics_process(0.05)
 	var dist: float = f.global_position.distance_to(_player.global_position)
-	assert_almost_eq(dist, 40.0, 6.0, "绕转时球在 ~40px 半径上")
+	assert_almost_eq(dist, 26.0, 6.0, "绕转时球在 ~26px 半径上")
 
 
 func test_release_flies_out_then_returns() -> void:
