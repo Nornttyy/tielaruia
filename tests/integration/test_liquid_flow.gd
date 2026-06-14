@@ -57,7 +57,7 @@ func test_lava_falls_down() -> void:
 	fw.tiles[Vector2i(1,1)] = Tiles.STONE
 	var sim = _make_sim(fw)
 	sim.notify_tile_changed(0, 0)
-	for i in 5:
+	for i in 12:   # 岩浆每 LAVA_TICK_DIVISOR(8) 拍才流一步, 多跑几拍
 		sim._run_tick()
 	assert_eq(fw.tiles.get(Vector2i(0,1), Tiles.AIR), Tiles.LAVA, "岩浆该落到石头上方")
 	assert_eq(fw.tiles.get(Vector2i(0,0), Tiles.AIR), Tiles.AIR, "原位该空")
@@ -133,7 +133,7 @@ func test_lava_falls_when_woken_like_a_waterfall() -> void:
 	# 模拟 chunk 加载: 用唤醒判断决定标不标 dirty
 	if sim.tile_can_still_flow(Tiles.LAVA, [Tiles.AIR, Tiles.AIR, Tiles.STONE, Tiles.STONE]):
 		sim.mark_dirty(0, 0)
-	for i in 20:
+	for i in 40:   # 岩浆每 8 拍流一步, 落 3 格要 ~24+ 拍, 多留余量
 		sim._run_tick()
 	assert_eq(fw.tiles.get(Vector2i(0, 3), Tiles.AIR), Tiles.LAVA, "岩浆该流到竖井底")
 	assert_eq(fw.tiles.get(Vector2i(0, 0), Tiles.AIR), Tiles.AIR, "源处该流空")
