@@ -10,6 +10,7 @@ const HAND_OFFSET_X := 5.0     # 手相对玩家中心 x 偏移 (玩家 1.25x �
 const HAND_OFFSET_Y := -10.0   # y (玩家中部胸口位置, 1.25x)
 const TOOL_SIZE := 1.25        # 工具 (剑/镐/斧) 跟玩家 1.25x 一起放大
 const SWEEP_HELD_SCALE := 1.4  # 阔剑/双刀等 sweep 近战手持再放大 (用户嫌太小)
+const GUN_HELD_SCALE := 0.8    # 枪图标画宽到 20px 了, 手持缩回原比例 (用户嫌太大)
 const BLOCK_SIZE := 0.6875     # 方块/材料 = TOOL_SIZE × 0.55 (~11px)
 const SWING_ANGLE_DEG := 75.0
 const SWING_DURATION := 0.50   # 用户调: 剑挥转速降低 (挥得更慢更有分量, 现 0.5s)
@@ -433,6 +434,8 @@ func _refresh() -> void:
 	var def = ItemDB.get_def(slot.item_id)
 	if def != null and String(def.get("sword_style", "")) == "sweep":
 		_current_size *= SWEEP_HELD_SCALE
+	if def != null and String(def.get("tool_kind", "")) == "gun":
+		_current_size *= GUN_HELD_SCALE   # 枪画宽了, 缩回去不显大
 	offset = _grip_offset()   # 贴图大小可能变 (大画布武器), 支点跟着算
 	_apply_scale()
 
