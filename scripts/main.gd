@@ -27,9 +27,13 @@ const _ChunkClass = preload("res://scripts/world/chunk.gd")   # 读档后算玩�
 
 var _state: String = "menu"
 var _game_nodes: Array[Node] = []
-# 自动存档: 每 AUTO_SAVE_INTERVAL 秒保存一次. 玩游戏时启动 Timer.
-const AUTO_SAVE_INTERVAL := 1.0   # 每秒自动存档 (用户要求实时, 不再 30s)
+# 自动存档: 最多每 AUTO_SAVE_INTERVAL 秒, 且只在"有变化"时才真存 (走路啥都没变 → 不存 → 不卡)。
+# 之前每秒全量存 + 刷 IndexedDB → 走着走着周期性卡一下 (用户报)。
+const AUTO_SAVE_INTERVAL := 3.0   # 节流: 最多 3s 一次
+const SAVE_HEARTBEAT_SEC := 30.0  # 兜底: 即使没检测到变化, 最多 30s 也存一次 (catch 没钩到的改动)
 var _autosave_timer: Timer = null
+var _save_dirty: bool = true      # 有变化才存; 初始 true 保证进游戏先存一次
+var _since_save_sec: float = 0.0  # 距上次真存过了多久 (heartbeat 用)
 # Continue 路径: _continue_game 把 SaveData 暂存这, 等 _run_async_load 全部加载完才应用.
 # 老代码用 .call_deferred 在 _run_async_load 第一个 await 就触发,
 # 那时 world.chunk_manager 还是 null, 应用就崩了 (玩家/背包/方块全没还原).
@@ -307,10 +311,21 @@ func _start_autosave() -> void:
 	_autosave_timer.one_shot = false
 	_autosave_timer.autostart = true
 	_autosave_timer.timeout.connect(func():
-		if _state == "game":
+		if _state != "game":
+			return
+		_since_save_sec += AUTO_SAVE_INTERVAL
+		# 有变化才存 (走路不变 → 跳过 → 不卡); 没变化也最多 heartbeat 兜底存一次
+		if _save_dirty or _since_save_sec >= SAVE_HEARTBEAT_SEC:
 			_save_all()
+			_save_dirty = false
+			_since_save_sec = 0.0
 	)
 	add_child(_autosave_timer)
+
+
+# 标记"世界有变化, 该存了" — 挖/放/捡物/受伤等改了状态时调 (走路不调 → 不触发存档)。
+func mark_save_dirty() -> void:
+	_save_dirty = true
 
 
 func _stop_autosave() -> void:
@@ -574,6 +589,17 @@ func _wire_player() -> void:
 			child.bind_inventory(player.get_node("PlayerInventory"))
 		if child.has_method("set_player"):
 			child.set_player(player)
+	# 存档脏标记: 背包/血/蓝 变了 → 该存 (挖/放/捡物都改背包; 走路啥都不改 → 不存 → 不卡)。
+	# 玩家每局重建, 旧连接随旧节点释放, 这里每次接新玩家即可。
+	var pinv2: Node = player.get_node_or_null("PlayerInventory")
+	if pinv2 != null and pinv2.has_signal("inventory_changed") and not pinv2.inventory_changed.is_connected(mark_save_dirty):
+		pinv2.inventory_changed.connect(mark_save_dirty)
+	var hp2: Node = player.get_node_or_null("PlayerHealth")
+	if hp2 != null and hp2.has_signal("health_changed"):
+		hp2.health_changed.connect(func(_c, _m): mark_save_dirty())
+	var mana2: Node = player.get_node_or_null("PlayerMana")
+	if mana2 != null and mana2.has_signal("mana_changed"):
+		mana2.mana_changed.connect(func(_c, _m): mark_save_dirty())
 	# 死亡信号 → 死亡屏
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_signal("died"):
