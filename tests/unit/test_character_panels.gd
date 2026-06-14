@@ -77,6 +77,30 @@ func test_chest_row_only_visible_for_female():
 	panels._set_gender(1)
 	assert_true(panels._chest_row.visible, "女: 胸围行显示")
 
+# 回归 (用户报"创建不了女角色"): 选女多出"胸围"行, 不能把保存键挤走 —
+# 否则用户点原来的位置点空, 女角色存不进去。保存键现在钉在面板底部, 男女同位置。
+func _find_save_button(node: Node) -> Button:
+	if node is Button and (node as Button).text == "保存":
+		return node
+	for c in node.get_children():
+		var found := _find_save_button(c)
+		if found != null:
+			return found
+	return null
+
+func test_save_button_does_not_move_between_genders():
+	panels._on_new_character()
+	await wait_frames(1)
+	panels._set_gender(0)
+	await wait_frames(1)
+	var save_btn := _find_save_button(panels)
+	assert_not_null(save_btn, "找得到保存键")
+	var pos_male: Vector2 = save_btn.global_position
+	panels._set_gender(1)        # 切到女 → 多出胸围行
+	await wait_frames(1)
+	var pos_female: Vector2 = save_btn.global_position
+	assert_eq(pos_female, pos_male, "保存键男女同位置 (选女不该把它挤走)")
+
 func test_color_sliders_change_active_part_color():
 	panels._on_new_character()
 	await wait_frames(1)

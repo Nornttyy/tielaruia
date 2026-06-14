@@ -90,7 +90,7 @@ func _ready() -> void:
 
 # 屏幕左上角打一个版本号 — 排查"用户跑的是哪个版本": 念给我听就知道有没有拿到新版。
 # 放在独立高层 CanvasLayer (layer=100) 上, 保证盖在背景树/按钮之上, 不被挡。
-const BUILD_TAG := "build 0614-C"
+const BUILD_TAG := "build 0614-D 女角色修复"
 
 func _setup_build_tag() -> void:
 	var cl := CanvasLayer.new()

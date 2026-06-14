@@ -224,12 +224,15 @@ func _build_creator_panel() -> void:
 	_chest_row = _slider_row("胸围", "chest_size", 0, 5)
 	vbox.add_child(_chest_row)
 	_build_color_editor(vbox)
+	# 保存/取消固定钉在面板底部 (不放进 vbox): 否则选"女"多出"胸围"行会把整列往下推,
+	# 保存键跟着挪位 → 用户点原来的位置点空 = "存不进去/建不了女角色" (用户报)。
 	var btn_row := HBoxContainer.new()
+	btn_row.position = Vector2(190, 428)
 	var save_b := Button.new(); save_b.text = "保存"; save_b.pressed.connect(_save_creator)
 	var cancel_b := Button.new(); cancel_b.text = "取消"; cancel_b.pressed.connect(func():
 		_creator_panel.visible = false; _select_panel.visible = true; _refresh_list())
 	btn_row.add_child(save_b); btn_row.add_child(cancel_b)
-	vbox.add_child(btn_row)
+	_creator_panel.add_child(btn_row)
 	# 蓝色统一: 捏人面板 + 全部按钮/名字框/胸围滑条 (色块保留)
 	_creator_panel.add_theme_stylebox_override("panel", UIStyle.panel())
 	_style_controls(_creator_panel)
