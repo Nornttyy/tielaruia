@@ -329,8 +329,8 @@ func _build_items() -> void:
 			# 史莱姆王 Boss 掉落 + 合成材料
 			"slime_crown", "slime_ball",
 			"shuriken", "bomb", "boomerang",   # 投掷武器
-			"spear", "dual_blade", "flail", "warhammer",   # 新近战类型
-			"gold_spear", "diamond_spear", "gold_dual_blade", "diamond_dual_blade",   # 材质变种
+			"dual_blade", "flail", "warhammer",   # 新近战类型
+			"gold_dual_blade", "diamond_dual_blade",   # 材质变种
 			"gold_flail", "diamond_flail", "gold_warhammer", "diamond_warhammer",
 			"blue_moon", "fire_god", "leaf_blade", "frost_blade", "skyfall_blade",   # 代号神兵
 			"starfall_blade", "soul_eater",   # 星陨(陨星)/噬魂(吸血)

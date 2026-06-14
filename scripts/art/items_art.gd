@@ -2321,26 +2321,6 @@ const _BOOMERANG := [
 	"................",
 ]
 
-# 长矛: 斜杆 + 铁尖 (右上)
-const _SPEAR := [
-	"............n...",
-	"...........nxn..",
-	"..........nBxn..",
-	"..........nKBxn.",
-	".........nKBxn..",
-	"........nKBn....",
-	".......nkkn.....",
-	"......nhHhn.....",
-	".....nhHhn......",
-	"....nhHhn.......",
-	"...nhHhn........",
-	"..nhHhn.........",
-	".nhHhn..........",
-	".nkkn...........",
-	".nn.............",
-	"................",
-]
-
 # 双刀: 两把并排短刀
 const _DUAL_BLADE := [
 	"...nn......nn...",
@@ -3302,7 +3282,7 @@ const _ICONS := {
 	"slime_crown": _SLIME_CROWN,
 	"slime_ball": _SLIME_BALL,
 	"shuriken": _SHURIKEN, "bomb": _BOMB, "boomerang": _BOOMERANG,
-	"spear": _SPEAR, "dual_blade": _DUAL_BLADE, "flail": _FLAIL, "warhammer": _WARHAMMER,
+	"dual_blade": _DUAL_BLADE, "flail": _FLAIL, "warhammer": _WARHAMMER,
 }
 
 
@@ -3443,7 +3423,7 @@ static func _hammer_grid(mats: Array) -> Array:
 
 
 # 新武器材质变种: 哪些基础武器支持 gold_/diamond_ 升级 (图标 = 基础形状换金属色)
-const _TIER_WEAPONS := {"spear": true, "dual_blade": true, "flail": true, "warhammer": true,
+const _TIER_WEAPONS := {"dual_blade": true, "flail": true, "warhammer": true,
 	"shuriken": true, "boomerang": true}   # bomb 不换(它是黑壳, 换色没意义)
 const _GOLD_SWAP := {"K": "R", "G": "Z", "g": "Z", "j": "P"}      # 灰钢 → 金
 const _DIAMOND_SWAP := {"K": "T", "G": "N", "g": "N", "j": "Q"}   # 灰钢 → 钻石蓝

@@ -911,12 +911,6 @@ const _RECIPES := [
 		"output_id": "boomerang", "output_count": 1, "mirror_ok": true,
 	},
 	# === 新近战类型 ===
-	# 长矛: 铁锭(尖) + 2 木杆
-	{
-		"id": "spear", "grid_size": Vector2i(1, 3),
-		"pattern": [["iron_ingot"], ["planks"], ["planks"]],
-		"output_id": "spear", "output_count": 1, "mirror_ok": false,
-	},
 	# 双刀: 2 铁锭并排
 	{
 		"id": "dual_blade", "grid_size": Vector2i(2, 1),
@@ -936,8 +930,6 @@ const _RECIPES := [
 		"output_id": "warhammer", "output_count": 1, "mirror_ok": true,
 	},
 	# === 近战材质变种 (金/钻: 基础配方把铁换成金锭/钻石) ===
-	{"id": "gold_spear", "grid_size": Vector2i(1, 3), "pattern": [["gold_ingot"], ["planks"], ["planks"]], "output_id": "gold_spear", "output_count": 1, "mirror_ok": false},
-	{"id": "diamond_spear", "grid_size": Vector2i(1, 3), "pattern": [["diamond"], ["planks"], ["planks"]], "output_id": "diamond_spear", "output_count": 1, "mirror_ok": false},
 	{"id": "gold_dual_blade", "grid_size": Vector2i(2, 1), "pattern": [["gold_ingot", "gold_ingot"]], "output_id": "gold_dual_blade", "output_count": 1, "mirror_ok": false},
 	{"id": "diamond_dual_blade", "grid_size": Vector2i(2, 1), "pattern": [["diamond", "diamond"]], "output_id": "diamond_dual_blade", "output_count": 1, "mirror_ok": false},
 	{"id": "gold_flail", "grid_size": Vector2i(1, 3), "pattern": [["gold_ingot"], ["leather"], ["gold_ingot"]], "output_id": "gold_flail", "output_count": 1, "mirror_ok": false},
