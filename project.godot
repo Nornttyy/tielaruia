@@ -50,6 +50,7 @@ window/dpi/allow_hidpi=true
 [gui]
 
 theme/custom_font="res://assets/fonts/unifont.otf"
+timers/tooltip_delay_sec=0.12
 
 [input]
 

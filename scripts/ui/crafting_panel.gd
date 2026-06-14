@@ -223,7 +223,7 @@ func _build_creative_section() -> void:
 		var btn := Button.new()
 		btn.custom_minimum_size = Vector2(30, 30)
 		_style_item_button(btn)
-		btn.tooltip_text = _zh_name(item_id)
+		btn.tooltip_text = _item_tooltip(item_id)
 		var icon := TextureRect.new()
 		icon.texture = tex
 		icon.custom_minimum_size = Vector2(26, 26)
@@ -730,6 +730,69 @@ func _zh_name(item_id: String) -> String:
 	return _ZH_NAMES.get(item_id, item_id)
 
 
+# tier → 近战基础伤害 (跟 player_action._TIER_BASE_DAMAGE 同步, 改一处记得同步另一处)
+const _TIER_BASE_DAMAGE := [0, 3, 5, 7, 10, 13, 16, 20, 26, 33]
+
+# 物品悬浮提示: 名字 + 数值 + 用途 (用户要求: 碰到物品显示名字/数值/有什么用)。
+func _item_tooltip(item_id: String) -> String:
+	var def = ItemDB.get_def(item_id)
+	var nm: String = _zh_name(item_id)
+	if def == null:
+		return nm
+	var lines: Array = [nm]
+	var use: String = ""
+	var kind: String = String(def.get("tool_kind", ""))
+	match kind:
+		"sword":
+			var t: int = int(def.get("tool_tier", 0))
+			var base: int = _TIER_BASE_DAMAGE[t] if (t >= 1 and t < _TIER_BASE_DAMAGE.size()) else 0
+			lines.append("近战武器 · 伤害 ~%d" % int(round(base * float(def.get("damage_mult", 1.0)))))
+			use = "左键挥砍打怪"
+		"pickaxe":
+			lines.append("镐子 · 挖石头和矿石")
+			use = "左键挖方块"
+		"axe":
+			lines.append("斧头 · 砍树最快")
+			use = "左键砍树"
+		"gun":
+			lines.append("枪 · 单发伤害 %d" % int(def.get("gun_damage", 0)))
+			use = "瞄准鼠标开火"
+		"staff":
+			lines.append("法杖 · 魔法伤害 %d" % int(def.get("gun_damage", 0)))
+			use = "瞄准鼠标放魔法 (耗蓝)"
+		"bow":
+			lines.append("弓 · 射箭 (需要箭)")
+			use = "瞄准鼠标射箭"
+		"thrown":
+			lines.append("投掷武器 · 伤害 %d" % int(def.get("thrown_damage", 0)))
+			use = "朝鼠标方向扔出"
+		"summon":
+			lines.append("召唤物")
+			use = "使用召唤 Boss"
+	var aslot: String = ItemDB.armor_slot(item_id)
+	if aslot != "":
+		var slot_zh: String = {"helmet": "头部护甲", "chest": "胸甲", "pants": "腿甲"}.get(aslot, "护甲")
+		var df: int = ItemDB.defense(item_id)
+		lines.append("%s · 防御 +%d (减 %.1f 伤)" % [slot_zh, df, float(df) * 0.5])
+		use = "右键穿上, 减少受到的伤害"
+	var ff: int = ItemDB.food_fill(item_id)
+	if ff > 0:
+		lines.append("食物 · 回饱食 %d" % ff)
+		use = "吃了恢复饱食度"
+	if int(def.get("placeable_tile_id", -1)) != -1:
+		lines.append("建筑方块 · 可放置")
+		if use == "":
+			use = "右键放到世界里"
+	if lines.size() == 1:          # 没武器/护甲/食物/方块属性 = 纯材料
+		use = "合成材料"
+	var ms: int = ItemDB.max_stack(item_id)
+	if ms > 1:
+		lines.append("可堆叠 %d 个" % ms)
+	if use != "":
+		lines.append(use)
+	return "\n".join(lines)
+
+
 # ---- 公共 API ----
 
 func bind_inventory(player_inv: Node) -> void:
@@ -1162,14 +1225,8 @@ func _refresh_inv() -> void:
 		else:
 			icon.texture = ArtCache.get_inventory_icon(s.item_id)
 			count_lbl.text = "" if s.count <= 1 else str(s.count)
-			# tooltip: 盔甲显示防御, 其他显示名字
-			var item_name: String = _zh_name(s.item_id)
-			var aslot: String = ItemDB.armor_slot(s.item_id)
-			if aslot != "":
-				var defense: int = ItemDB.defense(s.item_id)
-				panel.tooltip_text = "%s\n防御 +%d (减 %.1f 伤)\n右键装备" % [item_name, defense, float(defense) * 0.5]
-			else:
-				panel.tooltip_text = item_name
+			# tooltip: 名字 + 数值 + 用途 (用户要求)
+			panel.tooltip_text = _item_tooltip(s.item_id)
 
 
 # ============= 旧测试 API (保留) =============
