@@ -179,7 +179,8 @@ func _physics_process(delta: float) -> void:
 		return
 	_life_t += delta
 	if _life_t >= _lifetime:
-		_destroy()
+		# 落地才炸的炸弹: 寿命到了还没落地 → 静默消失, 别放爆炸视觉 (否则像"在半空炸了", 用户报)
+		_destroy(not explode_on_land_only)
 		return
 	# 追踪: 每帧把速度方向朝最近的怪转 homing*delta 弧度 (保持速率不变)
 	if homing > 0.0:
@@ -351,12 +352,13 @@ func _explode(pos: Vector2) -> void:
 				e.take_damage(dmg, pos, knockback)   # src=爆心 → 击退朝外
 
 
-func _destroy() -> void:
+func _destroy(play_fx: bool = true) -> void:
 	if _is_dead:
 		return
 	_is_dead = true
 	# 法杖命中特效: 按 _impact_fx 形状放 (闪电星/毒云/魔法星/风条/火爆/水花). 枪没设 → 跳过 (防刷屏)。
-	if _impact_fx != "" and Effects != null:
+	# play_fx=false: 炸弹空中超时静默消失, 不放爆炸 (爆炸只在落地 _explode 那条路放)。
+	if play_fx and _impact_fx != "" and Effects != null:
 		Effects.spawn_spell_impact(_impact_fx, global_position, _impact_color)
 	_release_trail()   # 拖尾别跟着弹一起瞬间消失 → 脱离弹体, 原地渐隐 0.25s
 	queue_free()
