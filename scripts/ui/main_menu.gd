@@ -89,7 +89,7 @@ func _ready() -> void:
 
 
 # 屏幕左下角打一个版本号 — 排查"用户跑的是哪个版本": 念给我听就知道有没有拿到新版。
-const BUILD_TAG := "build 0614-A"
+const BUILD_TAG := "build 0614-B"
 
 func _setup_build_tag() -> void:
 	var lbl := Label.new()
@@ -98,8 +98,9 @@ func _setup_build_tag() -> void:
 	lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
 	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	lbl.add_theme_constant_override("outline_size", 3)
+	# 锚到左下角: 偏移用负值往上挪进画面 (正值会推到屏幕外, 之前就看不见)
 	lbl.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	lbl.position = Vector2(8, VIEWPORT_SIZE.y - 22)
+	lbl.position = Vector2(10, -24)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(lbl)
 
