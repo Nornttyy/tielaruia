@@ -22,9 +22,8 @@ const GLIDE_FALL_SPEED := 55.0     # 恶魔之翼滑翔时的最大下落速度 
 const COYOTE_TIME := 0.10
 const LAND_VY_THRESHOLD := 150.0    # 落地时 vy 超此值才扬大灰
 # 坠落伤害: 落地冲击速度 (px/s) 超安全值才扣血. 滑翔/落水 vy 被压低 → 自然不疼.
-const FALL_DMG_VY_SAFE := 380.0     # 安全落地速度 (用户: 加大坠落伤害 → 更短摔落就疼; 普通跳/二段跳仍够不着)
-const FALL_DMG_PER_VY := 0.13       # 超出部分每 1 px/s 扣多少血 (加大)
-const FALL_DMG_MAX := 75            # 单次摔伤上限 (加大; 满血 100 仍摔不死, 但更疼)
+const FALL_SAFE_TILES := 10         # 安全摔落高度 (格): 摔 10 格内不疼 (用户规则)
+const FALL_DMG_PER_TILE := 3        # 超过安全高度后, 每多摔 1 格 +3 点伤害 (用户规则)
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 const TILE_SIZE := 12
 # 游泳物理: 水里重力 ~22%, 按 Space/W 持续上浮.
@@ -66,6 +65,7 @@ var _drop_through_t: float = 0.0
 var _facing_right: bool = true
 var _was_on_floor: bool = true
 var _previous_vy: float = 0.0
+var _fall_peak_y: float = 0.0   # 本次腾空的最高点 (global y 最小值), 落地时算摔落高度
 var _walk_step_timer: float = 0.0
 var _hurt_timer: float = 0.0
 # 动作覆盖 (挥击/放置): 短暂盖住站/走的姿势, 不锁移动 (跟 hurt 的锁定不同)。受击优先, 不被打断。
@@ -356,6 +356,7 @@ func _physics_process(delta: float) -> void:
 			sprite.play("idle")
 		_was_on_floor = is_on_floor()
 		_previous_vy = velocity.y
+		_fall_peak_y = global_position.y   # 背包打开时的下落不算摔伤
 		return
 	# 创造模式优先于钩爪: 切创造时取消钩爪, 否则被钩拽着没法自由飞 / 甚至被拖进岩浆
 	if GameSettings != null and GameSettings.creative_mode and (_hook_active or _hook_flying):
@@ -363,10 +364,12 @@ func _physics_process(delta: float) -> void:
 	# 钩爪拉拽中: 跳过普通物理, 直接朝锚点匀速冲过去
 	if _hook_active:
 		_update_hook_pull(delta)
+		_fall_peak_y = global_position.y   # 被钩拽的位移不算摔伤
 		return
 	# 钩头飞行中: 玩家继续受重力, 钩头独立前进 + 撞墙检测
 	if _hook_flying:
 		_update_hook_flying(delta)
+		_fall_peak_y = global_position.y
 		return
 	# 受击 lockout: 保留击退速度, 玩家暂失输入控制
 	if _hurt_timer > 0.0:
@@ -380,11 +383,13 @@ func _physics_process(delta: float) -> void:
 			sprite.play("hurt")
 		_was_on_floor = is_on_floor()
 		_previous_vy = velocity.y
+		_fall_peak_y = global_position.y   # 被击退的上下飞不算摔伤 (防受击+落地双重扣血)
 		return
 
 	# 创造模式: 自由飞行 (无重力, 左右平移, jump/W 上升, S/下 下降, 否则悬停)
 	if GameSettings != null and GameSettings.creative_mode:
 		_creative_fly(delta)
+		_fall_peak_y = global_position.y   # 创造飞行不算摔伤
 		return
 
 	var dir := Input.get_axis("move_left", "move_right")
@@ -491,13 +496,20 @@ func _physics_process(delta: float) -> void:
 		Effects.spawn_land_dust(global_position)
 		SfxBank.play("land", 0.10, -3.0)
 
-	# 坠落伤害：本帧落地 + 冲击速度超安全值 + 不在水里 (水/滑翔会让 vy 很低 → 不疼)
+	# 坠落伤害：按摔落高度算 (用户规则: 摔超过 10 格, 每多 1 格 +3). 水/滑翔不疼。
+	# _fall_peak_y 是腾空时记下的最高点 (y 最小); 落地这一帧的 y 减去它 = 摔了多高。
 	if not _was_on_floor and on_floor_after and not in_water:
-		var fall_dmg: int = fall_damage_for(pre_move_vy)
+		var fall_tiles: float = max(0.0, global_position.y - _fall_peak_y) / float(TILE_SIZE)
+		var fall_dmg: int = fall_damage_for_height(fall_tiles)
 		if fall_dmg > 0:
 			var hp_fall: Node = get_node_or_null("PlayerHealth")
 			if hp_fall != null and hp_fall.has_method("take_damage"):
 				hp_fall.take_damage(fall_dmg)
+	# 更新最高点: 在地面就重置到当前 (没在摔); 腾空就记最高 (y 最小值)
+	if on_floor_after:
+		_fall_peak_y = global_position.y
+	else:
+		_fall_peak_y = min(_fall_peak_y, global_position.y)
 
 	# 走路 puff：在地 + 有移动
 	if on_floor_after and abs(dir) > 0.01:
@@ -763,11 +775,11 @@ func _has_glide_wings() -> bool:
 	return pinv != null and pinv.has_method("has_item") and pinv.has_item("demon_wings")
 
 
-# 落地冲击速度 → 摔伤值 (纯函数, 好测). 安全值内 0; 超出部分线性 + 封顶。
-static func fall_damage_for(impact_vy: float) -> int:
-	if impact_vy <= FALL_DMG_VY_SAFE:
+# 摔落高度 (格) → 摔伤值 (纯函数, 好测). 安全高度内 0; 超过后每格 +3 (用户规则)。
+static func fall_damage_for_height(fall_tiles: float) -> int:
+	if fall_tiles <= FALL_SAFE_TILES:
 		return 0
-	return mini(FALL_DMG_MAX, int((impact_vy - FALL_DMG_VY_SAFE) * FALL_DMG_PER_VY))
+	return int(round((fall_tiles - FALL_SAFE_TILES) * FALL_DMG_PER_TILE))
 
 
 # 下键是否按住: 键盘 S/↓ 或 手机左摇杆下推 (move_down). 创造下降/穿木平台/绳子下爬都用它,
