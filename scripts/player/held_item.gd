@@ -185,7 +185,9 @@ func _spawn_afterimage() -> void:
 	parent.add_child(g)
 	g.global_transform = global_transform   # 抄当前位置/旋转/翻转
 	g.z_index = z_index - 1
-	g.modulate = Color(0.7, 0.85, 1.0, 0.5)   # 淡蓝半透
+	# 残影显示武器【本来的颜色】半透 (纯白 modulate = 不染色). 之前用淡蓝, 铁球流星锤等
+	# 暖色/灰色武器甩出来是蓝影 = 颜色不对 (用户报). 改成本色拖影, 谁挥都跟自己同色。
+	g.modulate = Color(1, 1, 1, 0.5)
 	var tw := g.create_tween()
 	tw.tween_property(g, "modulate:a", 0.0, 0.18)
 	tw.tween_callback(g.queue_free)
