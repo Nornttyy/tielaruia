@@ -8,6 +8,19 @@ const SPEED := 560.0            # 比箭(260)快一倍多 → 几乎点哪打哪
 const LIFETIME_SEC := 1.2       # 飞得快, 不用活太久
 const BASE_DAMAGE := 9
 
+# 每帧共享的怪列表缓存: 所有子弹同一物理帧只查一次 get_nodes_in_group(group)。
+# 同一帧内怪不会变, 缓存命中结果一致; 多子弹 (加特林) 时省大量 group 查询。
+static var _ef_frame: int = -1
+static var _ef_cache: Dictionary = {}
+static func _enemies_in_group(tree: SceneTree, group: String) -> Array:
+	var f: int = Engine.get_physics_frames()
+	if f != _ef_frame:
+		_ef_frame = f
+		_ef_cache = {}
+	if not _ef_cache.has(group):
+		_ef_cache[group] = tree.get_nodes_in_group(group)
+	return _ef_cache[group]
+
 var velocity: Vector2 = Vector2.ZERO
 var damage: int = BASE_DAMAGE   # 由枪 tier 控制, 外部传入
 var _life_t: float = 0.0
@@ -227,8 +240,10 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 	if explode_on_land_only:
 		return
 	# 扫两组: slimes (敌对怪) + animals (牛羊猪 — 枪也该能打). 照 arrow.gd.
+	# 性能: 怪列表每帧每组只查一次, 所有子弹共享 (原来每颗子弹每帧 get_nodes_in_group ×2 →
+	# 加特林几十发时几十次/帧). 命中结果完全一样 (同一帧怪不变)。
 	for group in ["slimes", "animals"]:
-		for enemy in get_tree().get_nodes_in_group(group):
+		for enemy in _enemies_in_group(get_tree(), group):
 			if enemy == _shooter or not is_instance_valid(enemy):
 				continue
 			if not enemy is Node2D:
@@ -277,7 +292,7 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 			# pierce (激光): 不销毁, 继续飞, 可同帧/后续帧再命中别的怪
 	# PvP: 对战房里子弹也能打到远程玩家 (本地判命中 → 发伤害给对方, 对方扣自己血). 照 arrow.gd.
 	if NetworkManager != null and NetworkManager.combat_enabled():
-		for s in get_tree().get_nodes_in_group("remote_player"):
+		for s in _enemies_in_group(get_tree(), "remote_player"):
 			var rp := s as Node2D
 			if rp == null or not is_instance_valid(rp):
 				continue
