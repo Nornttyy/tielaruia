@@ -150,12 +150,44 @@ func stop_eat() -> void:
 	visible = false   # 吃完收起来
 
 
+var _after_t: float = 0.0       # 残影剩余时间 (>0 时挥砍中, 每隔几帧留个残影)
+var _after_accum: float = 0.0   # 距上次留残影过了多久
+
+
+# 留一个当前姿势的淡蓝半透残影 (Sprite2D 复制, 自己淡出消失)。
+func _spawn_afterimage() -> void:
+	if texture == null:
+		return
+	var g := Sprite2D.new()
+	g.texture = texture
+	g.texture_filter = texture_filter   # 保持像素 (NEAREST)
+	g.centered = centered
+	g.offset = offset
+	var parent: Node = get_parent()
+	if parent == null:
+		return
+	parent.add_child(g)
+	g.global_transform = global_transform   # 抄当前位置/旋转/翻转
+	g.z_index = z_index - 1
+	g.modulate = Color(0.7, 0.85, 1.0, 0.5)   # 淡蓝半透
+	var tw := g.create_tween()
+	tw.tween_property(g, "modulate:a", 0.0, 0.18)
+	tw.tween_callback(g.queue_free)
+
+
 func _process(delta: float) -> void:
 	# 不在吃东西时: 用完计时归零 → 收起来 (工具只在使用时显示)
 	if not _eating and _use_timer > 0.0:
 		_use_timer -= delta
 		if _use_timer <= 0.0:
 			visible = false
+	# 残影: 挥砍期间每 ~0.04s 复制一个淡蓝半透贴图 (留在原地淡出 = 拖影)
+	if _after_t > 0.0 and visible and _has_item:
+		_after_t -= delta
+		_after_accum += delta
+		if _after_accum >= 0.04:
+			_after_accum = 0.0
+			_spawn_afterimage()
 	if not _eating or not visible:
 		return
 	_eat_phase += delta
@@ -285,6 +317,8 @@ func play_swing_directional(target_angle: float, swing_dur: float = SWING_DURATI
 		if _dual_flip:
 			var tmp: float = start_a; start_a = end_a; end_a = tmp
 	rotation = start_a
+	_after_t = swing_dur        # 挥砍全程留残影
+	_after_accum = 0.04         # 立刻先留一个
 	_tween = create_tween()
 	# 挥 (打击窗口, 跟 player_action 命中判定的 180°/SWING_DURATION 同步)
 	_tween.tween_property(self, "rotation", end_a, swing_dur)
