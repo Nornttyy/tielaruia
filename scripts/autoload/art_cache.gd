@@ -246,25 +246,14 @@ static func _smart_resize_atlas_16_to_12(tex: ImageTexture) -> ImageTexture:
 		return tex
 	var dst := Image.create(w_cells * 12, h_cells * 12, false, Image.FORMAT_RGBA8)
 	dst.fill(Color(0, 0, 0, 0))
-	# 每个 16×16 cell 单独高质量缩到 12×12 (LANCZOS): 16px 原画的全部细节都参与, 不再像旧版
-	# 硬扔 4 列像素 (第 3/6/9/12 列) — 那会丢掉落在那些列上的图案细节, 看着乱/糊。
-	# 必须逐 cell 缩: autotile atlas 是 8×6 个 cell, 整图缩会跨 cell 边界糊到邻格。
+	# 每个 16×16 cell 单独缩到 12×12 用 NEAREST (最近邻): 像素画必须用最近邻, 不能用 LANCZOS —
+	# LANCZOS 平滑插值会把像素糊成一团 + 边缘混出半透明 (用户报"方块太糊")。
+	# 最近邻保持每个像素锐利 (非透即实, 不发虚)。逐 cell 缩防跨 cell 边界采样到邻格。
 	for cy in h_cells:
 		for cx in w_cells:
 			var cell := Image.create(16, 16, false, Image.FORMAT_RGBA8)
 			cell.blit_rect(src, Rect2i(cx * 16, cy * 16, 16, 16), Vector2i.ZERO)
-			cell.resize(12, 12, Image.INTERPOLATE_LANCZOS)
-			# LANCZOS 是平滑插值, 会把不透明像素和透明像素在边界上混成"半透明"
-			# → 草/树叶等带透明的方块看着半透明发虚。像素画每个点应非透即实:
-			# 把 alpha 卡硬 (≥0.5 → 不透明, 否则全透明), 去掉半透明边缘, 保留 LANCZOS 的颜色细节。
-			for py in 12:
-				for px in 12:
-					var c: Color = cell.get_pixel(px, py)
-					if c.a >= 0.5:
-						c.a = 1.0
-						cell.set_pixel(px, py, c)
-					else:
-						cell.set_pixel(px, py, Color(0, 0, 0, 0))
+			cell.resize(12, 12, Image.INTERPOLATE_NEAREST)
 			dst.blit_rect(cell, Rect2i(0, 0, 12, 12), Vector2i(cx * 12, cy * 12))
 	return ImageTexture.create_from_image(dst)
 
