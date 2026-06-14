@@ -2551,7 +2551,8 @@ static func build_atlas(tile_id: int) -> ImageTexture:
 	var palette: Dictionary = _PATTERN_MAP[tile_id][1]
 	var transparent := Color(0, 0, 0, 0)
 
-	var atlas_img := Image.create(128, 96, false, Image.FORMAT_RGBA8)
+	# 8×8 = 64 cell (47 标准变体 + 内部满格随机翻转变体), 128×128.
+	var atlas_img := Image.create(128, 128, false, Image.FORMAT_RGBA8)
 	atlas_img.fill(transparent)
 
 	for i in BlobLookup.VARIANT_KEYS.size():
@@ -2584,4 +2585,24 @@ static func build_atlas(tile_id: int) -> ImageTexture:
 						color = transparent
 				atlas_img.set_pixel(ox + x, oy + y, color)
 
+	# 内部满格随机变体: 把 base_pattern 翻转 (H / V / HV) 画到 3 个备用 cell。
+	# autotile 给"四周填满"的格子按坐标随机挑一个 → 大片内部不再一模一样 (泰拉瑞亚风)。
+	for vi in INTERIOR_VARIANT_COORDS.size():
+		var vc: Vector2i = INTERIOR_VARIANT_COORDS[vi]
+		var flip_h: bool = (vi == 0 or vi == 2)
+		var flip_v: bool = (vi == 1 or vi == 2)
+		var vox: int = vc.x * 16
+		var voy: int = vc.y * 16
+		for y in 16:
+			var sy: int = (15 - y) if flip_v else y
+			var prow: String = base_pattern[sy]
+			for x in 16:
+				var sx: int = (15 - x) if flip_h else x
+				var ch: String = prow.substr(sx, 1)
+				atlas_img.set_pixel(vox + x, voy + y, palette[ch] if palette.has(ch) else transparent)
+
 	return ImageTexture.create_from_image(atlas_img)
+
+
+# 内部满格的 3 个随机翻转变体放这几个 cell (autotile + tileset_builder 共用). vi: 0=H 1=V 2=HV.
+const INTERIOR_VARIANT_COORDS: Array[Vector2i] = [Vector2i(7, 5), Vector2i(0, 6), Vector2i(1, 6)]

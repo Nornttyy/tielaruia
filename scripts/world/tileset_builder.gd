@@ -10,6 +10,7 @@ extends RefCounted
 
 const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
+const BlocksArt = preload("res://scripts/art/blocks_art.gd")
 
 
 static func build() -> TileSet:
@@ -91,9 +92,13 @@ static func build() -> TileSet:
 				or tile_id == Tiles.DOOR_MID
 
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
-			# Autotile 方块: 47 cell
+			# Autotile 方块: 47 标准 cell + 3 内部满格随机翻转变体 cell
+			var coords: Array = []
 			for i in BlobLookup.VARIANT_KEYS.size():
-				var coord := Vector2i(i % 8, i / 8)
+				coords.append(Vector2i(i % 8, i / 8))
+			for vc in BlocksArt.INTERIOR_VARIANT_COORDS:
+				coords.append(vc)
+			for coord in coords:
 				source.create_tile(coord)
 				if Tiles.is_solid(tile_id):
 					var props = source.get_tile_data(coord, 0)

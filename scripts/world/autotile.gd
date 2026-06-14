@@ -3,6 +3,7 @@
 extends RefCounted
 
 const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
+const BlocksArt = preload("res://scripts/art/blocks_art.gd")
 
 
 # 计算 8-bit 邻居 mask. bits: 0=N 1=E 2=S 3=W 4=NE 5=SE 6=SW 7=NW.
@@ -24,6 +25,13 @@ static func compute_mask(world_x: int, world_y: int, query: Callable) -> int:
 static func refresh_tile(layer: TileMapLayer, world_pos: Vector2i, source_id: int, query: Callable) -> void:
 	var mask: int = compute_mask(world_pos.x, world_pos.y, query)
 	var atlas: Vector2i = BlobLookup.ATLAS_COORD[mask]
+	# 四周全填满的内部格 (mask 255): 按坐标随机挑一个翻转变体 → 大片内部不再一模一样。
+	# 用坐标 hash, 同一格永远同一个变体 (重载/破坏旁边都不变)。
+	if mask == 255:
+		var h: int = (world_pos.x * 73856093) ^ (world_pos.y * 19349663)
+		var idx: int = posmod(h, 4)   # 0=标准内部, 1~3=H/V/HV 翻转
+		if idx > 0:
+			atlas = BlocksArt.INTERIOR_VARIANT_COORDS[idx - 1]
 	layer.set_cell(world_pos, source_id, atlas)
 
 

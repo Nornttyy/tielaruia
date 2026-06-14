@@ -3,12 +3,31 @@ extends GutTest
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
 
 
-func test_build_atlas_returns_128x96_texture():
+func test_build_atlas_returns_128x128_texture():
+	# 128×128 = 8×8 cell: 47 标准变体 + 内部满格随机翻转变体 (变帅: 大片内部不重复)
 	var tex: ImageTexture = BlocksArt.build_atlas(BlocksArt.STONE)
 	assert_not_null(tex)
 	var img: Image = tex.get_image()
 	assert_eq(img.get_width(), 128)
-	assert_eq(img.get_height(), 96)
+	assert_eq(img.get_height(), 128)
+
+
+func test_interior_variants_present_and_differ():
+	# 3 个内部翻转变体 cell 应有像素, 且至少有一个跟标准内部不同 (= 真的变体)
+	const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
+	var img: Image = BlocksArt.build_atlas(BlocksArt.STONE).get_image()
+	var base: Vector2i = BlobLookup.ATLAS_COORD[255]
+	var differs: bool = false
+	for vc in BlocksArt.INTERIOR_VARIANT_COORDS:
+		var any_opaque: bool = false
+		for y in 16:
+			for x in 16:
+				if img.get_pixel(vc.x * 16 + x, vc.y * 16 + y).a > 0.0:
+					any_opaque = true
+				if img.get_pixel(vc.x * 16 + x, vc.y * 16 + y) != img.get_pixel(base.x * 16 + x, base.y * 16 + y):
+					differs = true
+		assert_true(any_opaque, "变体 cell %s 应有像素" % vc)
+	assert_true(differs, "翻转变体应跟标准内部不同")
 
 
 func test_atlas_isolated_cell_has_content():
