@@ -160,6 +160,10 @@ var _sword_attack_void: float = 0.0          # 虚空: 命中按概率秒杀小�
 var _sword_attack_magnet: float = 0.0        # 磁极: 命中把半径内掉落物吸向玩家 (0=不吸)
 var _sword_attack_echo: float = 0.0          # 回响: 命中后隔几秒原地再炸一次 (0=不炸)
 var _sword_attack_combo_haste: bool = false  # 赤霄: 连击越多挥得越快
+var _sword_attack_chain: int = 0             # 雷神锤: 命中后闪电在附近怪之间连跳几次 (0=不连)
+var _sword_attack_blast: float = 0.0         # 炼狱/巨力锤: 命中即在原地爆一圈, 这是半径 (0=不爆)
+var _sword_attack_blast_color: Color = Color(1, 1, 1, 1)  # 即爆特效颜色 (按元素)
+var _sword_attack_pull: bool = false         # 深渊锤: 命中把怪吸向玩家 (而不是击退)
 const COMBO_MAX := 5                          # 连击最多叠 5 层
 const COMBO_HASTE_PER := 0.08                 # 每层减 8% 攻击间隔
 const COMBO_RESET_SEC := 1.2                  # 超过 1.2 秒没命中, 连击清零
@@ -1904,6 +1908,7 @@ func _set_sword_special_fields(mdef: Variant) -> void:
 	if mdef == null:
 		_sword_attack_lifesteal = 0.0; _sword_attack_meteor = 0; _sword_attack_void = 0.0
 		_sword_attack_magnet = 0.0; _sword_attack_echo = 0.0; _sword_attack_combo_haste = false
+		_sword_attack_chain = 0; _sword_attack_blast = 0.0; _sword_attack_pull = false
 		return
 	_sword_attack_lifesteal = float(mdef.get("lifesteal", 0.0))
 	_sword_attack_meteor = int(mdef.get("meteor_on_hit", 0))
@@ -1911,6 +1916,10 @@ func _set_sword_special_fields(mdef: Variant) -> void:
 	_sword_attack_magnet = float(mdef.get("magnet_radius", 0.0))
 	_sword_attack_echo = float(mdef.get("echo_delay", 0.0))
 	_sword_attack_combo_haste = bool(mdef.get("combo_haste", false))
+	_sword_attack_chain = int(mdef.get("chain_lightning", 0))
+	_sword_attack_blast = float(mdef.get("blast_on_hit", 0.0))
+	_sword_attack_blast_color = _spell_fx_color(String(mdef.get("blast_visual", "fire")))
+	_sword_attack_pull = bool(mdef.get("pull_in", false))
 
 
 # 近战命中后的特殊触发。每命中一只怪调一次。target 是被打的怪 (虚空秒杀要用)。
@@ -1944,6 +1953,16 @@ func _sword_on_hit(hit_pos: Vector2, target: Node2D) -> void:
 	if _sword_attack_combo_haste:
 		_combo_idle = 0.0
 		_combo_stacks = min(COMBO_MAX, _combo_stacks + 1)
+	# 雷神锤: 闪电从被打的怪往附近怪连跳
+	if _sword_attack_chain > 0 and target != null and is_instance_valid(target):
+		_chain_lightning(target, _sword_attack_chain)
+	# 炼狱/巨力锤: 命中点立刻爆一圈 AoE
+	if _sword_attack_blast > 0.0:
+		var blast_dmg: int = max(1, int(round(float(_sword_attack_damage) * 0.5)))
+		_aoe_blast(hit_pos, blast_dmg, _sword_attack_blast, _sword_attack_blast_color)
+	# 深渊锤: 把怪往玩家这边拉 (代替击退)
+	if _sword_attack_pull and target != null and is_instance_valid(target):
+		target.global_position = target.global_position.move_toward(player.global_position, 60.0)
 
 
 # 磁极拉取: 半径内非远程掉落物每次往玩家挪一大步, 配合自动拾取吸进背包。
@@ -1956,18 +1975,54 @@ func _magnet_pull(player_pos: Vector2, radius: float) -> void:
 			drop.global_position = drop.global_position.move_toward(player_pos, 140.0)
 
 
-# 回响延时爆: 在 pos 做一圈 AoE 伤害 + 紫光特效。被 SceneTreeTimer 回调。
-func _echo_blast(pos: Vector2, dmg: int) -> void:
+# 一圈 AoE 爆: 在 pos 半径内的怪都吃 dmg + 一个爆炸特效 (颜色按调用方给)。
+func _aoe_blast(pos: Vector2, dmg: int, radius: float, color: Color) -> void:
 	if not is_inside_tree():
 		return
-	Effects.spawn_spell_impact("explosion", pos, Color8(180, 120, 255))
+	Effects.spawn_spell_impact("explosion", pos, color)
 	for group in ["slimes", "animals"]:
 		for s in get_tree().get_nodes_in_group(group):
 			var sn := s as Node2D
 			if sn == null or not is_instance_valid(sn):
 				continue
-			if sn.global_position.distance_to(pos) <= 30.0:
+			if sn.global_position.distance_to(pos) <= radius:
 				_deal_enemy_damage(sn, dmg, pos, 60.0)
+
+
+# 回响延时爆: 紫光一圈 AoE。被 SceneTreeTimer 回调。
+func _echo_blast(pos: Vector2, dmg: int) -> void:
+	_aoe_blast(pos, dmg, 30.0, Color8(180, 120, 255))
+
+
+# 雷神锤连锁闪电: 从 origin 怪开始, 一跳跳到最近的没打过的怪, 连 jumps 次。
+func _chain_lightning(origin: Node2D, jumps: int) -> void:
+	var dmg: int = max(1, int(round(float(_sword_attack_damage) * 0.6)))
+	var hit_ids: Dictionary = {origin.get_instance_id(): true}
+	var from: Node2D = origin
+	for j in jumps:
+		var nxt: Node2D = _nearest_enemy_not_in(from.global_position, hit_ids, 90.0)
+		if nxt == null:
+			break
+		hit_ids[nxt.get_instance_id()] = true
+		Effects.spawn_spell_impact("spark", nxt.global_position, Color8(150, 200, 255))   # 蓝白电火花
+		_deal_enemy_damage(nxt, dmg, from.global_position, 40.0)
+		from = nxt
+
+
+# 找离 pos 最近、还没被 hit_ids 记过、在 max_dist 内的怪. 没有返回 null。
+func _nearest_enemy_not_in(pos: Vector2, hit_ids: Dictionary, max_dist: float) -> Node2D:
+	var best: Node2D = null
+	var best_d: float = max_dist
+	for group in ["slimes", "animals"]:
+		for s in get_tree().get_nodes_in_group(group):
+			var sn := s as Node2D
+			if sn == null or not is_instance_valid(sn) or hit_ids.has(sn.get_instance_id()):
+				continue
+			var d: float = sn.global_position.distance_to(pos)
+			if d < best_d:
+				best_d = d
+				best = sn
+	return best
 
 
 # 星陨陨星: n 颗 bullet 从目标上方带重力砸下, 落地/碰怪爆炸 (橙黄火光)。

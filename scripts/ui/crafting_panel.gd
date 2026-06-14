@@ -694,6 +694,8 @@ const _ZH_NAMES := {
 	"frost_blade": "冰雪剑", "skyfall_blade": "天陨",
 	"starfall_blade": "星陨", "soul_eater": "噬魂",
 	"void_blade": "虚空", "magnet_blade": "磁极", "echo_blade": "回响", "crimson_blade": "赤霄",
+	"thunder_flail": "雷神锤", "inferno_flail": "炼狱锤", "abyss_flail": "深渊锤", "titan_flail": "巨力锤",
+	"frost_flail": "寒冰锤", "flame_flail": "烈焰锤", "leaf_flail": "绿叶锤",
 	"skull_summon": "骷髅头骨",
 	"skeleton_helmet": "骷髅头盔",
 	"skeleton_chest": "骷髅胸甲",

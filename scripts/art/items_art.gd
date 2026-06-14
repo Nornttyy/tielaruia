@@ -3377,6 +3377,41 @@ static func _energy_sword_grid(mats: Array) -> Array:
 	]
 
 
+# 链锤神兵 (发光球+链+木柄). mats=[中核色, 亮边色]. 球在右上发光, 链 b 串到左下木柄。
+const _SPECIAL_FLAIL_MATS := {
+	"thunder_flail": ["E", "f"],   # 雷神锤: 电蓝/亮白蓝
+	"inferno_flail": ["U", "C"],   # 炼狱锤: 暗橙红/橙 (熔岩)
+	"abyss_flail":   ["@", "T"],   # 深渊锤: 虚空黑紫/深蓝
+	"titan_flail":   ["v", "x"],   # 巨力锤: 石灰深/亮 (沉重)
+	"frost_flail":   ["T", "Q"],   # 寒冰锤: 冰蓝/白
+	"flame_flail":   ["C", "J"],   # 烈焰锤: 橙/亮橙
+	"leaf_flail":    ["o", "6"],   # 绿叶锤: 草绿/亮绿
+}
+
+
+static func _energy_flail_grid(mats: Array) -> Array:
+	var c: String = mats[0]   # 中核
+	var b: String = mats[1]   # 亮边 (球边 + 发光链)
+	return [
+		"..........nnn...",
+		".........n" + b + b + b + "n..",
+		".........n" + b + c + b + "n..",
+		".........n" + b + b + b + "n..",
+		"..........nnn...",
+		"........n" + b + "......",
+		"......." + b + "........",
+		"......" + b + ".........",
+		"....." + b + "..........",
+		"....nhn.........",
+		"...nhHn.........",
+		"..nhHn..........",
+		"..nHn...........",
+		"..nn............",
+		"................",
+		"................",
+	]
+
+
 # 锤子 16×16: 上方大方头 (n 描边 + 高光带 + 主体 + 暗底) + 垂直木柄.
 static func _hammer_grid(mats: Array) -> Array:
 	var d: String = mats[0]
@@ -3434,6 +3469,8 @@ static func get_icon(item_id: String) -> ImageTexture:
 		return PixelArt.grid_to_texture(_hammer_grid(_HAMMER_MATS[item_id]), PALETTE)
 	if _SPECIAL_SWORD_MATS.has(item_id):
 		return PixelArt.grid_to_texture(_energy_sword_grid(_SPECIAL_SWORD_MATS[item_id]), PALETTE)
+	if _SPECIAL_FLAIL_MATS.has(item_id):
+		return PixelArt.grid_to_texture(_energy_flail_grid(_SPECIAL_FLAIL_MATS[item_id]), PALETTE)
 	var tv: Array = _tier_variant(item_id)
 	if not tv.is_empty():
 		return PixelArt.grid_to_texture(_recolor_grid(_ICONS[tv[0]], tv[1]), PALETTE)
@@ -3442,7 +3479,7 @@ static func get_icon(item_id: String) -> ImageTexture:
 
 
 static func has_icon(item_id: String) -> bool:
-	return _ICONS.has(item_id) or _HAMMER_MATS.has(item_id) or _SPECIAL_SWORD_MATS.has(item_id) or not _tier_variant(item_id).is_empty()
+	return _ICONS.has(item_id) or _HAMMER_MATS.has(item_id) or _SPECIAL_SWORD_MATS.has(item_id) or _SPECIAL_FLAIL_MATS.has(item_id) or not _tier_variant(item_id).is_empty()
 
 
 # 钩爪飞行时显示的小钩头 (16x16, 默认朝右; sprite 用 rotation 跟方向).
