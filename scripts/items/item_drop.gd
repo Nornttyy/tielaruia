@@ -95,6 +95,10 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if not body.has_node("PlayerInventory"):
 		return
+	# 对战房: 资源本来就无限 → 凋落物不进背包, 碰到直接消失 (用户要求)。
+	if NetworkManager != null and NetworkManager.room_mode == "pvp":
+		queue_free()
+		return
 	var pi: Node = body.get_node("PlayerInventory")
 	if not pi.has_method("pickup"):
 		return
