@@ -252,9 +252,7 @@ static func build_sprite_frames(appearance: Dictionary = DEFAULT_APPEARANCE) -> 
 		"jump": {"frames": [_frame(appearance, "jump_a"), _frame(appearance, "jump_b")], "fps": 10.0, "loop": false},
 		"fall": {"frames": [_frame(appearance, "fall")], "fps": 1.0, "loop": false},
 		"hurt": {"frames": [_frame(appearance, "hurt")], "fps": 1.0, "loop": false},
-		# 动作: 挥击 (蓄力→挥下) / 放置 (抬手→伸手). 一次性, 由 player_controller 触发后短暂盖住站/走。
-		"swing": {"frames": [_frame(appearance, "swing_a"), _frame(appearance, "swing_b")], "fps": 13.0, "loop": false},
-		"place": {"frames": [_frame(appearance, "place_a"), _frame(appearance, "place_b")], "fps": 11.0, "loop": false},
+		# 挥击/放置的身体姿势已删 (用户要求): 攻击/放方块时身体保持站/走, 武器自己挥 (held_item)。
 	}
 	return PixelArt.build_sprite_frames(anims, pal)
 

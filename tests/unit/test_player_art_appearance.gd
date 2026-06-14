@@ -25,17 +25,18 @@ func _count_diff(a: Image, b: Image) -> int:
 func test_build_has_all_anims():
 	var sf = PlayerArt.build_sprite_frames(_default_appearance())
 	assert_true(sf is SpriteFrames, "返回 SpriteFrames")
-	# 新增: 放置(place) + 挥击(swing) 动作 (用户要求)
-	for anim in ["idle", "walk", "jump", "fall", "hurt", "place", "swing"]:
+	for anim in ["idle", "walk", "jump", "fall", "hurt"]:
 		assert_true(sf.has_animation(anim), "有动画 %s" % anim)
+	# 挥击/放置身体姿势已删 (用户要求): 不该再有这俩动画
+	assert_false(sf.has_animation("swing"), "swing 身体姿势已删")
+	assert_false(sf.has_animation("place"), "place 身体姿势已删")
 
 
-# 挥击/放置/跳跃 都是 2 帧, 一次性不循环 (挥: 蓄力→挥下; 放: 抬手→伸手; 跳: 蹬地→腾空)
-func test_action_anims_are_two_frames_no_loop():
+# 跳跃 2 帧, 一次性不循环 (蹬地→腾空)
+func test_jump_is_two_frames_no_loop():
 	var sf = PlayerArt.build_sprite_frames(_default_appearance())
-	for anim in ["swing", "place", "jump"]:
-		assert_eq(sf.get_frame_count(anim), 2, "%s 该 2 帧" % anim)
-		assert_false(sf.get_animation_loop(anim), "%s 不循环 (放一次)" % anim)
+	assert_eq(sf.get_frame_count("jump"), 2, "jump 该 2 帧")
+	assert_false(sf.get_animation_loop("jump"), "jump 不循环 (放一次)")
 
 # 女角色 胸/后发 走路抖动 (secondary motion): 落脚帧软部位下沉/甩, 回位帧归零。
 func test_soft_jiggle_phases():

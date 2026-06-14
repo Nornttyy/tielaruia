@@ -558,13 +558,10 @@ func _update_animation(dir: float, on_floor: bool) -> void:
 
 # 播一次动作姿势 (挥击 "swing" / 放置 "place"), 持续 dur 秒后自动回到站/走。
 # 受击优先: hurt 期间不被打断。由 player_action / held_item 在挥击/放置时调。
-func play_action_anim(anim: String, dur: float) -> void:
-	if _hurt_timer > 0.0:
-		return
-	_action_anim = anim
-	_action_timer = dur
-	if sprite != null:
-		sprite.play(anim)   # 立刻从第 0 帧重播 (每次挥击都重新起手)
+func play_action_anim(_anim: String, _dur: float) -> void:
+	# 挥击/放置的身体姿势已删 (用户要求): 不再切身体动画, 身体保持站/走/跳。
+	# 武器挥动仍由 held_item 单独播。保留本函数 (held_item / player_action 还在调) = 空操作。
+	return
 
 
 func _update_workbench_prompt() -> void:
