@@ -1065,15 +1065,19 @@ func _refresh_recipes() -> void:
 		if requires == "workbench" and _mode < 3:
 			btn.visible = false
 			continue
-		# 素材是否够 → 灰显
+		# 素材不够 → 直接隐藏 (用户要求: 合成面板只显示当前能合成的, 不能的藏起来)。
+		# 注: 每次刷新上面都把 visible 重置过, 所以集齐材料后会自动重新出现。
 		var req: Dictionary = _required_inputs(recipe)
 		var has_materials: bool = true
 		for item_id in req:
 			if _count_in_inv(inv, item_id) < req[item_id]:
 				has_materials = false
 				break
-		btn.disabled = not has_materials
-		btn.modulate = Color(1, 1, 1, 1) if has_materials else Color(0.5, 0.5, 0.5, 0.7)
+		if not has_materials:
+			btn.visible = false
+			continue
+		btn.disabled = false
+		btn.modulate = Color(1, 1, 1, 1)
 
 
 # 玩家附近 (≤ 2 格) 有 furnace tile 吗 (跟 workbench 同检测)
