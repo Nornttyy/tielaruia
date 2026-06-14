@@ -3341,6 +3341,36 @@ const _HAMMER_MATS := {
 	"hell_hammer":    ["#", "@", "Z"],
 }
 
+# 代号神兵 (发射元素弹的发光阔剑): 按元素 [中色, 亮色] 生成发光剑刃 (照锤子材质系统)。
+const _SPECIAL_SWORD_MATS := {
+	"blue_moon":     ["N", "X"],   # 蓝月: 青蓝/淡蓝
+	"fire_god":      ["C", "J"],   # 火神: 橙/亮橙
+	"leaf_blade":    ["L", "q"],   # 绿叶: 叶绿/亮绿
+	"frost_blade":   ["X", "Q"],   # 冰雪剑: 淡蓝/冰白
+	"skyfall_blade": ["+", "Q"],   # 天陨: 亮紫/白星
+}
+
+
+# 发光剑 16×16: 竖刃 (亮边 b + 中核 c, n 描边) + 灰护手 + 木柄 + 柄头. mats=[中色, 亮色]。
+static func _energy_sword_grid(mats: Array) -> Array:
+	var c: String = mats[0]
+	var b: String = mats[1]
+	var blade: String = "......." + "n" + b + c + "n" + "....."
+	return [
+		"................",
+		"........n.......",
+		".......n" + b + "n......",
+		blade, blade, blade, blade, blade, blade,
+		".....nnggnn.....",
+		".....nggggn.....",
+		"........h.......",
+		"........h.......",
+		"........i.......",
+		".......nkn......",
+		"................",
+	]
+
+
 # 锤子 16×16: 上方大方头 (n 描边 + 高光带 + 主体 + 暗底) + 垂直木柄.
 static func _hammer_grid(mats: Array) -> Array:
 	var d: String = mats[0]
@@ -3396,6 +3426,8 @@ static func _tier_variant(item_id: String) -> Array:
 static func get_icon(item_id: String) -> ImageTexture:
 	if _HAMMER_MATS.has(item_id):
 		return PixelArt.grid_to_texture(_hammer_grid(_HAMMER_MATS[item_id]), PALETTE)
+	if _SPECIAL_SWORD_MATS.has(item_id):
+		return PixelArt.grid_to_texture(_energy_sword_grid(_SPECIAL_SWORD_MATS[item_id]), PALETTE)
 	var tv: Array = _tier_variant(item_id)
 	if not tv.is_empty():
 		return PixelArt.grid_to_texture(_recolor_grid(_ICONS[tv[0]], tv[1]), PALETTE)
@@ -3404,7 +3436,7 @@ static func get_icon(item_id: String) -> ImageTexture:
 
 
 static func has_icon(item_id: String) -> bool:
-	return _ICONS.has(item_id) or _HAMMER_MATS.has(item_id) or not _tier_variant(item_id).is_empty()
+	return _ICONS.has(item_id) or _HAMMER_MATS.has(item_id) or _SPECIAL_SWORD_MATS.has(item_id) or not _tier_variant(item_id).is_empty()
 
 
 # 钩爪飞行时显示的小钩头 (16x16, 默认朝右; sprite 用 rotation 跟方向).

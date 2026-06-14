@@ -332,6 +332,7 @@ func _build_items() -> void:
 			"spear", "dual_blade", "flail", "warhammer",   # 新近战类型
 			"gold_spear", "diamond_spear", "gold_dual_blade", "diamond_dual_blade",   # 材质变种
 			"gold_flail", "diamond_flail", "gold_warhammer", "diamond_warhammer",
+			"blue_moon", "fire_god", "leaf_blade", "frost_blade", "skyfall_blade",   # 代号神兵
 			# 骷髅王 Boss: 召唤头骨 + 掉落骨剑(阔剑) + 骷髅盔甲(头/胸/腿) + 骷髅法杖
 			"skull_summon", "bone_sword",
 			"skeleton_helmet", "skeleton_chest", "skeleton_pants",

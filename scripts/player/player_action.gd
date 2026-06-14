@@ -1844,7 +1844,37 @@ func _sweep_sword() -> void:
 	# 挥半圆 180° rotation, 剑尖按 progress 扫弧 — 实际碰才扣血.
 	var skb: float = float(mdef.get("melee_knockback", -1.0)) if mdef != null else -1.0
 	_start_sword_blade_attack(true, swing_dir, damage, skb if skb >= 0.0 else _sweep_knockback())
+	# 代号神兵: 挥剑时额外射一发元素弹 (蓝月/火神/绿叶/冰雪剑/天陨)
+	if mdef != null and bool(mdef.get("swing_proj", false)):
+		_fire_swing_projectile(mdef, player, swing_dir)
 	# 用户改: 删剑攻击的屏幕抖动 (之前留着, 现在用户要求删)
+
+
+# 代号神兵挥剑射的元素弹: 复用 bullet (gun_* 字段决定穿透/追踪/减速/爆炸 + 命中招牌特效)。
+# swing_proj_random (天陨) → 每挥一次随机一种元素。
+func _fire_swing_projectile(def: Variant, player: Node2D, base_dir: Vector2) -> void:
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = player.get_parent()
+	var start: Vector2 = player.global_position + Vector2(0, -8)
+	var target: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
+	var dir: Vector2 = target - start
+	dir = dir.normalized() if dir.length() > 0.01 else base_dir
+	var opts: Dictionary = _proj_opts_from_def(def)
+	var vis: String = String(def.get("gun_visual", "magic"))
+	if bool(def.get("swing_proj_random", false)):
+		vis = ["fire", "ice", "leaf", "lightning", "poison"][randi() % 5]   # 天陨: 随机元素
+		opts["visual"] = vis
+	opts["impact_fx"] = _spell_impact_fx(vis)
+	opts["impact_color"] = _spell_fx_color(vis)
+	var dmg: int = int(round(float(def.get("swing_proj_damage", 8)) * _tool_damage_mult()))
+	var speed: float = float(def.get("bullet_speed", 460.0))
+	var aim: Vector2 = start + dir * 100.0
+	var b = BulletScene.instantiate()
+	entities.add_child(b)
+	b.setup(start, aim, dmg, player, speed, opts)
+	if NetworkManager != null and NetworkManager.connected():
+		NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
 
 
 func _inventory_node() -> Node:

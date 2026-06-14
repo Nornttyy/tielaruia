@@ -40,6 +40,12 @@ const _DEFS := {
 	"diamond_flail":    {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 7, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep", "melee_reach_bonus": 22.0, "melee_cooldown": 0.6, "melee_knockback": 260.0},
 	"gold_warhammer":   {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 7, "max_stack": 1, "damage_mult": 1.8, "sword_style": "sweep", "melee_cooldown": 0.72, "melee_knockback": 280.0},
 	"diamond_warhammer":{"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 7, "max_stack": 1, "damage_mult": 2.1, "sword_style": "sweep", "melee_cooldown": 0.72, "melee_knockback": 300.0},
+	# 代号神兵: 阔剑(横扫) + 挥剑时发射元素弹 (swing_proj). 近战远程一把抓。
+	"blue_moon":    {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 6, "max_stack": 1, "damage_mult": 1.4, "sword_style": "sweep", "swing_proj": true, "swing_proj_damage": 12, "gun_visual": "ice", "gun_pierce": true, "bullet_speed": 480},  # 蓝月: 蓝月牙剑气, 穿透
+	"fire_god":     {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 6, "max_stack": 1, "damage_mult": 1.5, "sword_style": "sweep", "swing_proj": true, "swing_proj_damage": 10, "gun_visual": "fire", "gun_explode_radius": 24.0, "gun_explode_dmg": 10, "bullet_speed": 420},  # 火神: 火焰弹, 命中炸
+	"leaf_blade":   {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep", "swing_proj": true, "swing_proj_damage": 8, "gun_visual": "leaf", "gun_homing": 6.0, "bullet_speed": 380},  # 绿叶: 追踪绿叶弹
+	"frost_blade":  {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 6, "max_stack": 1, "damage_mult": 1.3, "sword_style": "sweep", "swing_proj": true, "swing_proj_damage": 9, "gun_visual": "ice", "gun_slow_factor": 0.5, "gun_slow_dur": 2.0, "bullet_speed": 420},  # 冰雪剑: 冰雪弹, 减速
+	"skyfall_blade":{"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 7, "max_stack": 1, "damage_mult": 1.5, "sword_style": "sweep", "swing_proj": true, "swing_proj_random": true, "swing_proj_damage": 11, "bullet_speed": 440},  # 天陨: 每挥一次随机元素弹
 	"apple":        {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 25},
 	"stone_sword":   {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 2, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"stone_pickaxe": {"placeable_tile_id": -1,                     "tool_kind": "pickaxe", "tool_tier": 2, "max_stack": 1, "damage_mult": 0.5},

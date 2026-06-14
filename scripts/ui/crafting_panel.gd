@@ -690,6 +690,8 @@ const _ZH_NAMES := {
 	"gold_dual_blade": "金双刀", "diamond_dual_blade": "钻石双刀",
 	"gold_flail": "金流星锤", "diamond_flail": "钻石流星锤",
 	"gold_warhammer": "金战锤", "diamond_warhammer": "钻石战锤",
+	"blue_moon": "蓝月", "fire_god": "火神", "leaf_blade": "绿叶",
+	"frost_blade": "冰雪剑", "skyfall_blade": "天陨",
 	"skull_summon": "骷髅头骨",
 	"skeleton_helmet": "骷髅头盔",
 	"skeleton_chest": "骷髅胸甲",

@@ -944,6 +944,12 @@ const _RECIPES := [
 	{"id": "diamond_flail", "grid_size": Vector2i(1, 3), "pattern": [["diamond"], ["leather"], ["diamond"]], "output_id": "diamond_flail", "output_count": 1, "mirror_ok": false},
 	{"id": "gold_warhammer", "grid_size": Vector2i(3, 3), "pattern": [["stone", "gold_ingot", "stone"], ["", "planks", ""], ["", "planks", ""]], "output_id": "gold_warhammer", "output_count": 1, "mirror_ok": true},
 	{"id": "diamond_warhammer", "grid_size": Vector2i(3, 3), "pattern": [["stone", "diamond", "stone"], ["", "planks", ""], ["", "planks", ""]], "output_id": "diamond_warhammer", "output_count": 1, "mirror_ok": true},
+	# === 代号神兵 (稀有材料 1x3) ===
+	{"id": "blue_moon", "grid_size": Vector2i(1, 3), "pattern": [["diamond"], ["diamond"], ["silver_ingot"]], "output_id": "blue_moon", "output_count": 1, "mirror_ok": false},
+	{"id": "fire_god", "grid_size": Vector2i(1, 3), "pattern": [["hell_crystal"], ["hell_crystal"], ["gold_ingot"]], "output_id": "fire_god", "output_count": 1, "mirror_ok": false},
+	{"id": "leaf_blade", "grid_size": Vector2i(1, 3), "pattern": [["diamond"], ["diamond"], ["gold_ingot"]], "output_id": "leaf_blade", "output_count": 1, "mirror_ok": false},
+	{"id": "frost_blade", "grid_size": Vector2i(1, 3), "pattern": [["silver_ingot"], ["silver_ingot"], ["diamond"]], "output_id": "frost_blade", "output_count": 1, "mirror_ok": false},
+	{"id": "skyfall_blade", "grid_size": Vector2i(1, 3), "pattern": [["diamond"], ["diamond"], ["diamond"]], "output_id": "skyfall_blade", "output_count": 1, "mirror_ok": false},
 	# === 第二批法杖 (用户加): 都是 1x3 宝石+杖身 ===
 	{
 		"id": "homing_staff", "grid_size": Vector2i(1, 3),
