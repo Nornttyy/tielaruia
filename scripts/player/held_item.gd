@@ -9,6 +9,7 @@ extends Sprite2D
 const HAND_OFFSET_X := 5.0     # 手相对玩家中心 x 偏移 (玩家 1.25x 放大后跟着外移)
 const HAND_OFFSET_Y := -10.0   # y (玩家中部胸口位置, 1.25x)
 const TOOL_SIZE := 1.25        # 工具 (剑/镐/斧) 跟玩家 1.25x 一起放大
+const SWEEP_HELD_SCALE := 1.4  # 阔剑/双刀等 sweep 近战手持再放大 (用户嫌太小)
 const BLOCK_SIZE := 0.6875     # 方块/材料 = TOOL_SIZE × 0.55 (~11px)
 const SWING_ANGLE_DEG := 75.0
 const SWING_DURATION := 0.50   # 用户调: 剑挥转速降低 (挥得更慢更有分量, 现 0.5s)
@@ -412,6 +413,10 @@ func _refresh() -> void:
 	# 切 hotbar 不会让工具凭空冒出来 — 下次挥/挖/放/射/吃才显示.
 	# 工具用原大小, 其他物品缩小
 	_current_size = TOOL_SIZE if _is_tool(slot.item_id) else BLOCK_SIZE
+	# 阔剑/双刀 (sweep 类近战) 拿在手里放大一点 — 用户嫌太小
+	var def = ItemDB.get_def(slot.item_id)
+	if def != null and String(def.get("sword_style", "")) == "sweep":
+		_current_size *= SWEEP_HELD_SCALE
 	_apply_scale()
 
 
