@@ -440,9 +440,19 @@ func _apply_save_data(data: Resource) -> void:
 	var pos_ty: int = int(floor(saved_pos.y / 12.0))
 	var pos_tid: int = w.chunk_manager.get_tile(pos_tx, pos_ty) if w.chunk_manager != null else 0
 	if pos_tid != 0 and Tiles.is_solid(pos_tid):
-		push_warning("存档玩家位置在实心 tile 里, 用 spawn 救出")
-		player.global_position = w._spawn_world_pos()
-		# 也清个空气坑防再次卡
+		push_warning("存档玩家位置在实心 tile 里, 救出")
+		# 先就近往上找空气把玩家挪出方块 (保住原位置, 别一下拽回出生点离老远)。
+		var rescued: bool = false
+		for up in range(1, 40):
+			var t_above: int = w.chunk_manager.get_tile(pos_tx, pos_ty - up)
+			if t_above == 0 or not Tiles.is_solid(t_above):
+				player.global_position = Vector2((pos_tx + 0.5) * 12.0, (pos_ty - up + 0.5) * 12.0)
+				rescued = true
+				break
+		# 头顶 40 格都是实心 (深埋) → 实在没辙才回出生点。
+		if not rescued:
+			player.global_position = w._spawn_world_pos()
+		# 清个空气坑防再次卡
 		if w.has_method("_ensure_air_pocket"):
 			w._ensure_air_pocket(int(floor(player.global_position.x / 12.0)),
 					int(floor(player.global_position.y / 12.0)))
