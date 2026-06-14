@@ -18,9 +18,8 @@ func _ready() -> void:
 
 
 func _process(_d: float) -> void:
-	# "要选择"= 暂停菜单开着 / 合成背包开着 / 箱子开着 → 用箭头; 否则游戏中 → 准星.
-	var ui_open: bool = get_tree().paused or _panel_open("crafting_panel") or _panel_open("chest_panel")
-	_apply("arrow" if ui_open else "crosshair")
+	# 用户要求: 游戏里固定十字准星 — 开背包/合成/箱子/暂停都不再换回箭头。
+	_apply("crosshair")
 
 
 func _panel_open(group: String) -> bool:
