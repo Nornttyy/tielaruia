@@ -280,8 +280,9 @@ static func _frame(ap: Dictionary, pose: String) -> Array:
 # 身体上抬的帧 (walk_b 腾空 / jump_b) → 胸跟着往上弹一下; 其余回位。
 static func _soft_jiggle(pose: String) -> int:
 	match pose:
-		"walk_b", "jump_b": return -1   # 过渡/腾空: 胸上弹 1px (跟身体起伏)
-		_: return 0                     # 落脚 / 站立: 回位
+		"walk_b", "jump_b": return -1   # 身体上抬: 胸上挺 (stretch, 隆起上移 1px)
+		"walk_a", "walk_c", "fall": return 1   # 落脚/下落: 胸下沉外鼓 (squash, 更夸张)
+		_: return 0                     # 站立: 回位
 
 
 static func _body_layer(ap: Dictionary, dy: int) -> Array:
@@ -320,10 +321,11 @@ static func _female_torso_swim(cs: int, bounce: int = 0) -> Array:
 		".kss......",   # 腰 (皮肤; 细腰 cols1-3)
 		"ksssk.....",   # 胯 (皮肤; cols0-4)
 	]
-	# 圆润罩杯: 上沿/罩杯峰/下沿 三行。bounce>0 整体下移 1px (走/跳落脚帧胸下沉=抖), 夹 1~3 行。
-	var up := clampi(1 + bounce, 0, 3)
-	var mid := clampi(2 + bounce, 0, 3)
-	var low := clampi(3 + bounce, 0, 3)
+	# 罩杯弹动: bounce<0 (stretch) 上移 1px; bounce>0 (squash) 不下移 (防塌陷), 只靠下沿加宽。
+	var roff := -1 if bounce < 0 else 0
+	var up := clampi(1 + roff, 0, 3)
+	var mid := clampi(2 + roff, 0, 3)
+	var low := clampi(3 + roff, 0, 3)
 	# 圆弧罩杯跟 T恤胸同款 (身材跨衣服一致): 峰行顶最前, 上下沿收回 → 圆。大档峰到 col10 = 4px 更大。
 	if cs >= 1:
 		rows[mid] = _set_char(rows[mid], 7, "w")   # 罩杯 col7 (峰 1px)
@@ -363,11 +365,14 @@ static func _female_torso(cs: int, bounce: int = 0) -> Array:
 		".www......",   # 腰 (照泳衣细腰: cols1-3 = composite 6-8, 后背收1px+前收)
 		"wwwww.....",   # 胯 (照泳衣: cols0-4 = composite 5-9)
 	]
-	# 圆润胸: 上沿/中胸/下沿 三行画峰。bounce>0 把这三行整体下移 1px (走/跳落脚帧胸下沉=抖),
-	# 夹在 1~3 行内不侵腰。中胸最鼓, 上下渐收。
-	var up := clampi(1 + bounce, 0, 3)
-	var mid := clampi(2 + bounce, 0, 3)
-	var low := clampi(3 + bounce, 0, 3)
+	# 圆润胸 + 挤压拉伸弹动 (squash-stretch, 更夸张更自然):
+	#   bounce<0 (stretch, 身体上抬帧): 隆起整体上移 1px → 胸上挺;
+	#   bounce>0 (squash, 落脚帧): 行不下移 (防撞腰塌陷), 改在下面把下沿加宽 → 胸外鼓压扁;
+	#   下面 squash 段实现。这里只处理 stretch 的上移。
+	var roff := -1 if bounce < 0 else 0
+	var up := clampi(1 + roff, 0, 3)
+	var mid := clampi(2 + roff, 0, 3)
+	var low := clampi(3 + roff, 0, 3)
 	# 圆弧形 (不能填成方块!): 峰行顶最前, 上下沿收回 → 前缘是弧。大档峰顶到 col10 (出画布边,
 	# 前尖少 1px 黑描边, 可接受) = 4px 深, 更大。
 	if cs >= 1:
@@ -391,6 +396,13 @@ static func _female_torso(cs: int, bounce: int = 0) -> Array:
 		rows[up] = _set_char(rows[up], 10, "w")    # 上沿也到 col10 (峰区 2 行 → 最大)
 		rows[mid] = _set_char(rows[mid], 10, "c")  # 峰顶高光到最前
 		rows[up] = _set_char(rows[up], 9, "c")     # 上前高光 → 更挺
+	# squash (落脚帧 bounce>0): 下沿加宽到跟峰一样 → 胸往下外鼓压扁, 弹动更明显 (cs 越大越夸张)。
+	if bounce > 0 and cs >= 2:
+		rows[low] = _set_char(rows[low], 8, "w")
+		if cs >= 4:
+			rows[low] = _set_char(rows[low], 9, "w")
+		if cs >= 5:
+			rows[low] = _set_char(rows[low], 10, "w")
 	return rows
 
 
@@ -420,14 +432,15 @@ static func _arm_layer(ap: Dictionary, pose: String, dy: int) -> Array:
 # 后发/发尾随姿势左右甩 (女): 走/跳时发梢摆, 发根连头不动 (_sway_block 只动下半截)。
 static func _hair_sway(pose: String) -> int:
 	match pose:
-		"walk_a": return 1     # 迈左脚: 发梢甩向后
-		"walk_c": return -1    # 迈右脚: 发梢甩向前
-		"jump_a", "fall": return 1
-		"hurt": return -1
+		"walk_a": return 2     # 迈左脚: 发梢甩向后 (±2 更夸张)
+		"walk_c": return -2    # 迈右脚: 发梢甩向前
+		"jump_a", "fall": return 2
+		"hurt": return -2
 		_: return 0
 
 
-# 把块的"下半截"横向移 dir px (上半截不动 = 发根连着头, 不留缝)。dir>0 右移, <0 左移。
+# 发梢摆动: 从发根(顶, 不动)到发梢(底, 移 dir px)渐进偏移 → 真·摆动弧线 (自然, 不是硬跳)。
+# dir>0 右移, <0 左移。每行按它在块里的深度比例移, 顶 0 → 底 dir。
 static func _sway_block(block: Array, dir: int) -> Array:
 	if dir == 0:
 		return block
@@ -435,12 +448,15 @@ static func _sway_block(block: Array, dir: int) -> Array:
 	var n: int = block.size()
 	for i in n:
 		var row: String = block[i]
-		if i < n / 2:
-			out.append(row)                       # 上半: 发根, 不动
-		elif dir > 0:
-			out.append(".".repeat(dir) + row)     # 下半右移 (前补透明)
+		var sh: int = 0
+		if n > 1:
+			sh = int(round(float(i) / float(n - 1) * float(dir)))   # 顶=0, 底=dir, 中间渐进
+		if sh > 0:
+			out.append(".".repeat(sh) + row)      # 右移 (前补透明)
+		elif sh < 0:
+			out.append(row.substr(-sh))           # 左移 (砍掉左边)
 		else:
-			out.append(row.substr(-dir))          # 下半左移 (砍掉左边)
+			out.append(row)
 	return out
 
 
