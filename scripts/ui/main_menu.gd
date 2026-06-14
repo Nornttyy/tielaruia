@@ -85,6 +85,23 @@ func _ready() -> void:
 	add_child(_character_panels)
 	_character_panels.character_chosen.connect(_on_character_chosen)
 	_character_panels.closed.connect(_on_character_panels_closed)
+	_setup_build_tag()
+
+
+# 屏幕左下角打一个版本号 — 排查"用户跑的是哪个版本": 念给我听就知道有没有拿到新版。
+const BUILD_TAG := "build 0614-A"
+
+func _setup_build_tag() -> void:
+	var lbl := Label.new()
+	lbl.text = BUILD_TAG
+	lbl.add_theme_font_size_override("font_size", 12)
+	lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	lbl.add_theme_constant_override("outline_size", 3)
+	lbl.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	lbl.position = Vector2(8, VIEWPORT_SIZE.y - 22)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(lbl)
 
 
 # 接 Locale.language_changed: 切语言时刷新所有 UI 文字, 并重建 saves list (因为它是动态生成).

@@ -10,6 +10,7 @@ const PlayerArt = preload("res://scripts/art/player_art.gd")
 const UIStyle = preload("res://scripts/ui/ui_style.gd")
 
 var _select_panel: Panel
+var _select_title: Label
 var _list: VBoxContainer
 var _creator_panel: Panel
 var _preview: AnimatedSprite2D
@@ -60,10 +61,10 @@ func _build_select_panel() -> void:
 	vbox.position = Vector2(20, 18)
 	vbox.custom_minimum_size = Vector2(380, 0)
 	_select_panel.add_child(vbox)
-	var title := Label.new()
-	title.text = "选择角色"
-	title.add_theme_font_size_override("font_size", 22)
-	vbox.add_child(title)
+	_select_title = Label.new()
+	_select_title.text = "选择角色"
+	_select_title.add_theme_font_size_override("font_size", 22)
+	vbox.add_child(_select_title)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(380, 300)
 	vbox.add_child(scroll)
@@ -102,6 +103,10 @@ func _style_controls(node: Node) -> void:
 func _refresh_list() -> void:
 	for c in _list.get_children():
 		c.queue_free()
+	# 用文件名计数 (最可靠, 不受加载失败影响) — 标题直接显示"共 N 个", 排查用
+	var n: int = CharacterManager.list_character_names().size()
+	if _select_title != null:
+		_select_title.text = "选择角色（共 %d 个）" % n
 	for entry in CharacterManager.list_characters():
 		_make_row(String(entry["name"]))
 
