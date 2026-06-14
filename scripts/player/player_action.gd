@@ -1068,7 +1068,7 @@ func _pickaxe_knockback() -> float:
 # 用户改: 武器基础伤害按 tier 1-7 递进, 加速曲线 (钻剑 1 击僵尸 15HP).
 # 老公式是 tier 1 → 3, tier 2+ 全 5 (卡 tier 2). 新公式每代都长.
 # 史莱姆 10HP / 僵尸 15HP. 钻剑 20 → 1 击.
-const _TIER_BASE_DAMAGE := [0, 3, 5, 7, 10, 13, 16, 20, 26]  # index = tier (8 = 地狱)
+const _TIER_BASE_DAMAGE := [0, 3, 5, 7, 10, 13, 16, 20, 26, 33]  # index = tier (8=地狱剑, 9=恶魔三叉戟)
 
 
 # 共享 tier→base 伤害表 (剑 ×1.0, 镐 ×0.5, 斧 ×0.0). 通过 _tool_damage_mult 缩放.

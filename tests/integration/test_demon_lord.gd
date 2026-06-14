@@ -29,6 +29,13 @@ func test_demon_weapons_strong():
 	assert_eq(String(ItemDB.get_def("inferno_staff").get("tool_kind", "")), "staff")
 
 
+# 用户报: 三叉戟没伤害 (根因: tier9 越出伤害表 → 返回 0). 修后该有伤害且比地狱剑(tier8)高。
+func test_trident_has_damage():
+	var PA = load("res://scripts/player/player_action.gd")
+	assert_true(PA._TIER_BASE_DAMAGE.size() > 9, "伤害表该覆盖 tier 9")
+	assert_gt(PA._TIER_BASE_DAMAGE[9], PA._TIER_BASE_DAMAGE[8], "三叉戟(tier9)基础伤害 > 地狱剑(tier8)")
+
+
 func test_demon_armor_set():
 	# 恶魔盔甲略强于骷髅套 (14/22/14 vs 12/20/12)
 	assert_eq(String(ItemDB.get_def("demon_helmet").get("armor_slot", "")), "helmet")
