@@ -2622,7 +2622,8 @@ func _try_throw_weapon() -> void:
 	var entities: Node = get_tree().get_first_node_in_group("entities_root")
 	if entities == null:
 		entities = player.get_parent()
-	var dmg: int = int(round(float(def.get("thrown_damage", 6)) * _tool_damage_mult()))
+	# 投掷武器伤害 = thrown_damage (绝对值, 不再乘 damage_mult — 投掷武器没这字段, 乘出来是 0)
+	var dmg: int = int(def.get("thrown_damage", 6))
 	_attack_cooldown = float(def.get("throw_cooldown", 0.4))
 	var tkind: String = String(def.get("throw_kind", "bullet"))
 	if tkind == "boomerang":
