@@ -7,6 +7,7 @@
 extends CanvasLayer
 
 const TouchJoystick = preload("res://scripts/ui/touch_joystick.gd")
+const TouchCrosshair = preload("res://scripts/ui/touch_crosshair.gd")
 
 const BTN_RADIUS := 52.0           # 按钮可点半径
 const BTN_SPACING := 18.0          # 按钮之间间距
@@ -15,6 +16,7 @@ const VIEWPORT_SIZE := Vector2(1280, 720)
 const AIM_REACH_PX := 110.0        # 准星离玩家(屏幕)的距离 (瞄准摇杆控方向)
 
 var _aim_joy: Control = null        # 右下瞄准摇杆 (控制准星)
+var _crosshair: Control = null      # 屏幕上的准星 (画在瞄准点; 手游本来没有, 用户要)
 var _attack_btn: Button = null      # "击"钮: 显示手里物品图标, 点一下使用
 var _aim_dir: Vector2 = Vector2(1.0, 0.0)   # 当前瞄准方向 (默认朝右), 摇杆更新
 
@@ -69,6 +71,16 @@ func _build_ui() -> void:
 		_attack_btn.expand_icon = true   # 物品图标填满按钮 (像素图 NEAREST 不糊)
 		_attack_btn.button_down.connect(_on_use_down)
 		_attack_btn.button_up.connect(_on_use_up)
+		# 用户: 物品图标钮挪到左移动摇杆正上方 (左手拇指: 下推杆走 + 上抬点用)
+		_attack_btn.anchor_left = 0.0
+		_attack_btn.anchor_right = 0.0
+		var jr: float = TouchJoystick.RADIUS
+		var ax: float = EDGE_MARGIN + jr - BTN_RADIUS          # 水平居中对齐摇杆
+		_attack_btn.offset_left = ax
+		_attack_btn.offset_right = ax + BTN_RADIUS * 2.0
+		var ab: float = -(jr * 2.0 + EDGE_MARGIN + BTN_SPACING)  # 底沿 = 摇杆顶 - 间距
+		_attack_btn.offset_bottom = ab
+		_attack_btn.offset_top = ab - BTN_RADIUS * 2.0           # 在摇杆上方
 	# 背包 + 丢 (图标)
 	_add_action_button("BtnBag", "interact", "", 0, Color(0.95, 0.78, 0.4), 1)
 	_add_action_button("BtnDrop", "drop_item", "", 1, Color(0.7, 0.7, 0.75), 1)
@@ -76,6 +88,10 @@ func _build_ui() -> void:
 	_set_btn_icon("BtnDrop", _glyph_icon("drop"))
 	# 右上角: 暂停
 	_add_pause_button()
+	# 准星 (手游本来没有): 画在瞄准点, _update_aim 每帧定位
+	_crosshair = TouchCrosshair.new()
+	_crosshair.name = "Crosshair"
+	add_child(_crosshair)
 
 
 # index 0 = 最右 (主), 1 = 中, 2 = 最左. row 0 = 最下排, 1 = 上一排.
@@ -234,7 +250,13 @@ func _update_aim() -> void:
 		# 背包/箱子开着 或 暂停: 不抢鼠标 + 清掉瞄准覆盖 (让玩家正常拖物品/点菜单)
 		if pa != null:
 			pa.mouse_world_override = null
+		if _crosshair != null:
+			_crosshair.visible = false   # UI 开着时藏准星
 		return
+	if _crosshair != null:
+		_crosshair.visible = true
+		_crosshair.position = _player_screen_pos() + _aim_dir * AIM_REACH_PX
+		_crosshair.queue_redraw()
 	var av: Vector2 = _aim_joy.aim_vector()
 	if av.length() > 0.28:   # 超过死区才更新方向
 		_aim_dir = av.normalized()

@@ -34,6 +34,9 @@ func test_touch_has_bag_drop_pause_buttons():
 	# 新增右下瞄准摇杆; 跳钮删了 (左摇杆上推包办跳)
 	assert_not_null(tc.get_node_or_null("AimJoystick"), "有瞄准摇杆")
 	assert_null(tc.get_node_or_null("BtnJump"), "跳钮已删 (左摇杆上推 = 跳)")
+	# 用户: 加准星 + 物品钮挪到左移动摇杆上方
+	assert_not_null(tc.get_node_or_null("Crosshair"), "有准星")
+	assert_eq(tc.get_node("BtnAttack").anchor_left, 0.0, "物品钮锚到左边 (在左摇杆上方, 不在右下)")
 
 
 # 桩: 假 PlayerAction, 只要个 mouse_world_override 字段
