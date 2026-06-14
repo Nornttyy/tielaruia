@@ -2263,22 +2263,24 @@ const _SLIME_BALL := [
 
 # 手里剑: 银色四角飞镖 + 白芯
 const _SHURIKEN := [
-	"................",
-	".......nn.......",
-	"......nKKn......",
-	"......nBBn......",
-	"...n..nBBn..n...",
-	"..nKn.nBBn.nKn..",
-	".nKBKnnBBnnKBKn.",
-	".nBBBBBxxBBBBBn.",
-	".nBBBBBxxBBBBBn.",
-	".nKBKnnBBnnKBKn.",
-	"..nKn.nBBn.nKn..",
-	"...n..nBBn..n...",
-	"......nBBn......",
-	"......nKKn......",
-	".......nn.......",
-	"................",
+	"..................",
+	".......nnnn.......",
+	"......nKBBKn......",
+	"......nBxxBn......",
+	"...n..nBxxBn..n...",
+	"..nKn.nBxxBn.nKn..",
+	".nKBKnnBxxBnnKBKn.",
+	".nBxBBBBxxBBBBxBn.",
+	".nBxBBBBxxBBBBxBn.",
+	".nKBKnnBxxBnnKBKn.",
+	"..nKn.nBxxBn.nKn..",
+	"...n..nBxxBn..n...",
+	"......nBxxBn......",
+	"......nKBBKn......",
+	".......nnnn.......",
+	"..................",
+	"..................",
+	"..................",
 ]
 
 # 炸弹: 黑圆球 + 木引线
@@ -2303,22 +2305,22 @@ const _BOMB := [
 
 # 回旋镖: 左右对称的 V 形木臂 (带黑描边)
 const _BOOMERANG := [
-	"................",
-	"..nn........nn..",
-	"..nhHn....nHhn..",
-	"..nhHn....nHhn..",
-	"...nhHn..nHhn...",
-	"...nhHn..nHhn...",
-	"....nhHnnHhn....",
-	"....nhhnnhhn....",
-	".....nnnnnn.....",
-	"................",
-	"................",
-	"................",
-	"................",
-	"................",
-	"................",
-	"................",
+	"..................",
+	"...nn........nn...",
+	"..nhHn......nHhn..",
+	"..nhHn......nHhn..",
+	"..nhHn......nHhn..",
+	"...nhHn....nHhn...",
+	"...nhHn....nHhn...",
+	"....nhHn..nHhn....",
+	"....nhhn..nhhn....",
+	".....nnn..nnn.....",
+	"..................",
+	"..................",
+	"..................",
+	"..................",
+	"..................",
+	"..................",
 ]
 
 # 双刀: 两把并排短刀
@@ -2350,18 +2352,17 @@ const _FLAIL := [
 	"..........nKBn..",
 	".........nKBBn..",
 	".........nBBxn..",
+	".........nKBBn..",
 	"..........nBn...",
 	".........n......",
 	"........n.......",
 	".......n........",
-	"......nhn.......",
-	".....nhHn.......",
+	"......n.........",
+	".....nhn........",
 	"....nhHn........",
 	"...nhHn.........",
 	"..nhHn..........",
 	"..nkn...........",
-	"................",
-	"................",
 ]
 
 # 战锤: 大锤头 + 木柄
@@ -3473,6 +3474,38 @@ const _BROADSWORD_MATS := {
 }
 
 
+# 短剑 (dagger): 共用一个短窄刀身造型, 只换刀身两色 [亮, 暗]。短剑保持短 (跟阔剑区分)。
+const _DAGGER_MATS := {
+	"wood_dagger":    ["I", "Y"],
+	"stone_dagger":   ["x", "v"],
+	"copper_dagger":  ["J", "p"],
+	"iron_dagger":    ["f", "e"],
+	"silver_dagger":  ["d", "s"],
+	"gold_dagger":    ["z", "R"],
+	"diamond_dagger": ["X", "T"],
+	"hell_dagger":    ["+", "#"],
+}
+
+
+# 短剑 16×16: 窄刀身 (亮 br + 暗 dk, n 描边) + 小护手 + 绳柄 + 柄头。mats=[亮, 暗]。
+static func _dagger_grid(mats: Array) -> Array:
+	var br: String = mats[0]
+	var dk: String = mats[1]
+	var blade: String = "......n" + br + dk + "n......"
+	return [
+		"................",
+		".......n........",
+		"......n" + br + "n.......",
+		blade, blade, blade, blade, blade, blade, blade,
+		".....ngGGgn.....",
+		"......nkhn......",
+		"......nkhn......",
+		"......nhhn......",
+		"......nKKn......",
+		"................",
+	]
+
+
 # 加长金属阔剑 16×21: 长刀身 (侧 s + 高光 c, n 描边) + 护手 + 缠柄 + 柄头。mats=[侧色, 高光]。
 static func _broadsword_grid(mats: Array) -> Array:
 	var s: String = mats[0]
@@ -3496,6 +3529,8 @@ static func get_icon(item_id: String) -> ImageTexture:
 		return PixelArt.grid_to_texture(_hammer_grid(_HAMMER_MATS[item_id]), PALETTE)
 	if _BROADSWORD_MATS.has(item_id):
 		return PixelArt.grid_to_texture(_broadsword_grid(_BROADSWORD_MATS[item_id]), PALETTE)
+	if _DAGGER_MATS.has(item_id):
+		return PixelArt.grid_to_texture(_dagger_grid(_DAGGER_MATS[item_id]), PALETTE)
 	if _SPECIAL_SWORD_MATS.has(item_id):
 		return PixelArt.grid_to_texture(_energy_sword_grid(_SPECIAL_SWORD_MATS[item_id]), PALETTE)
 	if _SPECIAL_FLAIL_MATS.has(item_id):
