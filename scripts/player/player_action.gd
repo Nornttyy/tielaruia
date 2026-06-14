@@ -227,6 +227,11 @@ func _physics_process(delta: float) -> void:
 				_thrust_sword()
 			else:
 				_sweep_sword()
+	elif kind == "flail":
+		# 链锤神兵: 按住 → 球绕玩家转蓄力; 松开 → 甩向鼠标再飞回 (带链子)。
+		_reset_mining()
+		var primary_pressed_f: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
+		_update_flail(primary_pressed_f)
 	elif kind == "pickaxe":
 		# 优先级: 鼠标对方块 → 挖矿; 否则 鼠标附近有怪 → 攻击
 		if _mouse_on_mineable_tile():
@@ -2051,6 +2056,59 @@ func _spawn_meteors(pos: Vector2, n: int, player: Node2D) -> void:
 		var b = BulletScene.instantiate()
 		entities.add_child(b)
 		b.setup(start, aim, dmg, player, 150.0, opts)
+
+
+var _active_flail: Node = null   # 当前在场的链锤球 (一次只一个)
+const FlailScene = preload("res://scenes/entities/flail.tscn")
+
+
+# 链锤神兵控制: 按住生成绕转的球, 松开甩出去。
+func _update_flail(pressed: bool) -> void:
+	var alive: bool = _active_flail != null and is_instance_valid(_active_flail)
+	if pressed:
+		# 按住且场上没球且冷却好了 → 生成一个绕玩家转的球
+		if not alive and _attack_cooldown <= 0.0:
+			_spawn_flail()
+	else:
+		# 松手且球还在绕 → 甩向鼠标
+		if alive and _active_flail.is_orbiting():
+			_release_flail()
+
+
+func _spawn_flail() -> void:
+	var player: Node2D = get_parent() as Node2D
+	var mdef: Variant = _current_tool_def()
+	if player == null or mdef == null:
+		return
+	_set_sword_special_fields(mdef)   # 让 _sword_on_hit 能跑 chain/blast/pull/吸血 等
+	# 链锤伤害: 按 tier 基础 × damage_mult (flail 不是 sword, _sword_damage 取不到, 这里自己算)
+	var base: int = _base_damage_for_tier(int(mdef.get("tool_tier", 5)))
+	_sword_attack_damage = max(1, int(round(float(base) * float(mdef.get("damage_mult", 1.0)))))
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = player.get_parent()
+	var f = FlailScene.instantiate()
+	entities.add_child(f)
+	f.setup(player, self, _sword_attack_damage, mdef)
+	_active_flail = f
+
+
+func _release_flail() -> void:
+	if _active_flail == null or not is_instance_valid(_active_flail):
+		return
+	var player: Node2D = get_parent() as Node2D
+	var target: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
+	_active_flail.release(target)
+	_active_flail = null   # 球之后自己飞回 + 消失
+	_attack_cooldown = float((_current_tool_def() if _current_tool_def() != null else {}).get("melee_cooldown", 0.5))
+
+
+# 链锤球命中怪时回调: 扣血 + 跑这把锤的特殊效果 (雷链/爆炸/吸怪/吸血...)。
+func flail_hit(target: Node2D, pos: Vector2, kb: float) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	_deal_enemy_damage(target, _sword_attack_damage, pos, kb)
+	_sword_on_hit(pos, target)
 
 
 func _inventory_node() -> Node:

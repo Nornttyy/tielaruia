@@ -11,8 +11,7 @@ func test_all_flails_registered() -> void:
 	for id in ALL_FLAILS:
 		var def: Variant = ItemDB.get_def(id)
 		assert_true(def != null, "%s 在 ItemDB" % id)
-		assert_eq(String(def.get("tool_kind", "")), "sword", "%s 是近战" % id)
-		assert_true(float(def.get("melee_reach_bonus", 0.0)) > 0.0, "%s 是链锤(大射程)" % id)
+		assert_eq(String(def.get("tool_kind", "")), "flail", "%s 是链锤(绕转甩出)" % id)
 		assert_not_null(ArtCache.get_inventory_icon(id), "%s 有发光链锤图标" % id)
 
 
@@ -31,9 +30,10 @@ func test_flail_mechanics() -> void:
 	assert_true(bool(ItemDB.get_def("abyss_flail").get("pull_in", false)), "深渊锤吸怪")
 	# 巨力锤: 超强击退 (knockback 比普通链锤大)
 	assert_true(float(ItemDB.get_def("titan_flail").get("melee_knockback", 0.0)) > 300.0, "巨力锤超强击退")
-	# 元素锤甩元素弹 (swing_proj)
-	for id in ["frost_flail", "flame_flail", "leaf_flail"]:
-		assert_true(bool(ItemDB.get_def(id).get("swing_proj", false)), "%s 甩元素弹" % id)
+	# 寒冰锤: 命中减速 / 烈焰锤: 命中爆 / 绿叶锤: 命中吸血
+	assert_true(float(ItemDB.get_def("frost_flail").get("gun_slow_factor", 0.0)) > 0.0, "寒冰锤减速")
+	assert_true(float(ItemDB.get_def("flame_flail").get("blast_on_hit", 0.0)) > 0.0, "烈焰锤命中爆")
+	assert_true(float(ItemDB.get_def("leaf_flail").get("lifesteal", 0.0)) > 0.0, "绿叶锤吸血")
 
 
 func test_flail_icons_distinct() -> void:

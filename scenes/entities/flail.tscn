@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://b_flail_2026"]
+
+[ext_resource type="Script" path="res://scripts/entities/flail.gd" id="1_flail"]
+
+[node name="Flail" type="Area2D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_flail")
