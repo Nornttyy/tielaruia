@@ -33,10 +33,24 @@ var _aiming_gun: bool = false   # 枪瞄准态: 临时用居中支点绕枪中�
 func _ready() -> void:
 	# 支点放在贴图底部中心: 玩家手抓在物品底端 (剑柄 / 方块底沿)
 	centered = false
-	offset = Vector2(-8, -16)
+	offset = _grip_offset()
 	position = Vector2(HAND_OFFSET_X, HAND_OFFSET_Y)
 	visible = false
 	z_index = 1  # 画在玩家身体前面
+
+
+# 握把支点 = 贴图底部中心 (按当前贴图大小算, 支持任意画布大小, 不再写死 16×16)。
+func _grip_offset() -> Vector2:
+	if texture != null:
+		return Vector2(-texture.get_width() / 2.0, -float(texture.get_height()))
+	return Vector2(-8, -16)
+
+
+# 挥砍/戳/施法时武器本体亮一下 (用户要"挥动时闪光")。modulate 提亮再渐回。
+func _swing_flash() -> void:
+	modulate = Color(1.7, 1.7, 1.7, 1.0)
+	var tw := create_tween()
+	tw.tween_property(self, "modulate", Color(1, 1, 1, 1), 0.2)
 
 
 func bind_inventory(inv: Node) -> void:
@@ -64,7 +78,7 @@ func _reset_aim_transform() -> void:
 	_aiming_gun = false
 	_attack_locked = false
 	centered = false
-	offset = Vector2(-8, -16)
+	offset = _grip_offset()
 	rotation = 0.0
 	_apply_scale()
 
@@ -281,6 +295,7 @@ func play_thrust(target_angle: float, lunge_px: float = THRUST_OFFSET_PX) -> voi
 	# 剑尖朝鼠标. sword sprite 默认尖朝上 (-y), 尖朝 target_angle 得旋转 target_angle + PI/2.
 	rotation = wrapf(target_angle + PI / 2.0, -PI, PI)
 	position = base_pos
+	_swing_flash()   # 出刀闪一下
 	_tween = create_tween()
 	# 三段式: 突出 → dwell (保持 thrust_pos) → 收回. 主要 hit 窗口在 dwell.
 	_tween.tween_property(self, "position", thrust_pos, THRUST_DURATION * THRUST_EXTEND_RATIO).set_ease(Tween.EASE_OUT)
@@ -318,6 +333,7 @@ func play_swing_directional(target_angle: float, swing_dur: float = SWING_DURATI
 		if _dual_flip:
 			var tmp: float = start_a; start_a = end_a; end_a = tmp
 	rotation = start_a
+	_swing_flash()              # 出刀闪一下
 	_after_t = swing_dur        # 挥砍全程留残影
 	_after_accum = 0.04         # 立刻先留一个
 	_tween = create_tween()
@@ -417,6 +433,7 @@ func _refresh() -> void:
 	var def = ItemDB.get_def(slot.item_id)
 	if def != null and String(def.get("sword_style", "")) == "sweep":
 		_current_size *= SWEEP_HELD_SCALE
+	offset = _grip_offset()   # 贴图大小可能变 (大画布武器), 支点跟着算
 	_apply_scale()
 
 
