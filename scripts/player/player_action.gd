@@ -154,6 +154,8 @@ var _sword_attack_facing_right: bool = true
 var _sword_attack_damage: int = 0
 var _sword_attack_knockback: float = 0.0
 var _sword_attack_reach_bonus: float = 0.0   # 这把武器额外伸长多少剑身 (长矛/链锤够更远; 普通剑=0)
+var _sword_attack_lifesteal: float = 0.0     # 噬魂: 命中按伤害百分比回血 (0=不吸)
+var _sword_attack_meteor: int = 0            # 星陨: 命中召唤几颗陨星砸下 (0=不召)
 var _sword_hit_this_attack: Dictionary = {}  # instance_id → true
 
 # 测试用: 记录最近一次挥剑的命中中心点 (玩家中心 + 鼠标方向 * 半径)
@@ -1711,9 +1713,11 @@ func _check_sword_blade_hits() -> void:
 				# 挥: 扫到的全打
 				_sword_hit_this_attack[id] = true
 				_deal_enemy_damage(sn, _sword_attack_damage, tip_world, _sword_attack_knockback)
+				_sword_on_hit(sn.global_position)   # 噬魂吸血 / 星陨陨星
 	if is_thrust and thrust_target != null:
 		_sword_hit_this_attack[thrust_target.get_instance_id()] = true
 		_deal_enemy_damage(thrust_target, _sword_attack_damage, tip_world, _sword_attack_knockback)
+		_sword_on_hit(thrust_target.global_position)
 	# PvP: 对战房里剑也能扫到远程玩家
 	if NetworkManager != null and NetworkManager.combat_enabled():
 		var player2: Node2D = get_parent() as Node2D
@@ -1781,6 +1785,8 @@ func _thrust_sword() -> void:
 	var mdef: Variant = _current_tool_def()
 	_attack_cooldown = float(mdef.get("melee_cooldown", THRUST_COOLDOWN)) if mdef != null else THRUST_COOLDOWN
 	_sword_attack_reach_bonus = float(mdef.get("melee_reach_bonus", 0.0)) if mdef != null else 0.0   # 长矛戳更远
+	_sword_attack_lifesteal = float(mdef.get("lifesteal", 0.0)) if mdef != null else 0.0
+	_sword_attack_meteor = int(mdef.get("meteor_on_hit", 0)) if mdef != null else 0
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1817,6 +1823,8 @@ func _sweep_sword() -> void:
 	var mdef: Variant = _current_tool_def()
 	_attack_cooldown = float(mdef.get("melee_cooldown", SWORD_COOLDOWN)) if mdef != null else SWORD_COOLDOWN
 	_sword_attack_reach_bonus = float(mdef.get("melee_reach_bonus", 0.0)) if mdef != null else 0.0   # 链锤/战锤抡更大
+	_sword_attack_lifesteal = float(mdef.get("lifesteal", 0.0)) if mdef != null else 0.0   # 噬魂吸血
+	_sword_attack_meteor = int(mdef.get("meteor_on_hit", 0)) if mdef != null else 0          # 星陨陨星
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1875,6 +1883,46 @@ func _fire_swing_projectile(def: Variant, player: Node2D, base_dir: Vector2) -> 
 	b.setup(start, aim, dmg, player, speed, opts)
 	if NetworkManager != null and NetworkManager.connected():
 		NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
+
+
+# 近战命中后的特殊触发 (噬魂吸血 / 星陨陨星)。每命中一只怪调一次。
+func _sword_on_hit(hit_pos: Vector2) -> void:
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+	# 噬魂: 按这次伤害的百分比给玩家回血 (至少 1 滴)
+	if _sword_attack_lifesteal > 0.0:
+		var hp: Node = player.get_node_or_null("PlayerHealth")
+		if hp != null and hp.has_method("heal"):
+			hp.heal(max(1, int(round(float(_sword_attack_damage) * _sword_attack_lifesteal))))
+	# 星陨: 从命中点上方天降几颗会爆的陨星
+	if _sword_attack_meteor > 0:
+		_spawn_meteors(hit_pos, _sword_attack_meteor, player)
+
+
+# 星陨陨星: n 颗 bullet 从目标上方带重力砸下, 落地/碰怪爆炸 (橙黄火光)。
+func _spawn_meteors(pos: Vector2, n: int, player: Node2D) -> void:
+	var entities: Node = get_tree().get_first_node_in_group("entities_root")
+	if entities == null:
+		entities = player.get_parent()
+	var dmg: int = max(1, int(round(float(_sword_attack_damage) * 0.6 * _tool_damage_mult())))
+	for i in n:
+		# 每颗左右错开一点, 从上方不同高度落下 (用 i 散开, 不靠随机也能错位)
+		var off_x: float = float(i - n / 2) * 18.0 + randf_range(-8.0, 8.0)
+		var start: Vector2 = Vector2(pos.x + off_x, pos.y - 90.0 - float(i) * 14.0)
+		var aim: Vector2 = Vector2(pos.x + off_x, pos.y + 40.0)   # 朝下砸
+		var opts: Dictionary = {
+			"gravity": 520.0,            # 越落越快, 像真的陨石
+			"explode_radius": 26.0,
+			"explode_dmg": max(1, int(round(float(dmg) * 0.7))),
+			"impact_fx": "explosion",
+			"impact_color": Color8(255, 170, 80),
+			"fx_color": Color8(255, 210, 120),
+			"visual": "fire",
+		}
+		var b = BulletScene.instantiate()
+		entities.add_child(b)
+		b.setup(start, aim, dmg, player, 150.0, opts)
 
 
 func _inventory_node() -> Node:

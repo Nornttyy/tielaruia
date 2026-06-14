@@ -3348,6 +3348,8 @@ const _SPECIAL_SWORD_MATS := {
 	"leaf_blade":    ["L", "q"],   # 绿叶: 叶绿/亮绿
 	"frost_blade":   ["X", "Q"],   # 冰雪剑: 淡蓝/冰白
 	"skyfall_blade": ["+", "Q"],   # 天陨: 亮紫/白星
+	"starfall_blade":["Z", "P"],   # 星陨: 金/亮金 (流星)
+	"soul_eater":    ["#", "+"],   # 噬魂: 深紫/亮紫 (灵魂)
 }
 
 

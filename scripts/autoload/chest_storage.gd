@@ -5,6 +5,9 @@ extends Node
 
 const SLOTS_PER_CHEST := 24
 
+# 代号神兵: 不能合成的稀有武器, 只从钻石/阴影宝箱里掉. 加新神兵往这里加 id 即可.
+const SPECIAL_WEAPONS := ["blue_moon", "fire_god", "leaf_blade", "frost_blade", "skyfall_blade", "starfall_blade", "soul_eater"]
+
 # tile_coord (Vector2i) → Array[24] of slot dicts
 var _chests: Dictionary = {}
 
@@ -155,6 +158,14 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 		# 小麦种子 (50% 概率, 1-3 颗) — 菜园起步
 		if rng.randf() < 0.5:
 			loot[slot_idx] = {"item_id": "wheat_seed", "count": rng.randi_range(1, 3)}; slot_idx += 1
+	# 代号神兵: 不能合成, 只能这里开宝箱掉. 钻石箱 20% / 阴影箱 35% 掉 1 把 (随机一种).
+	if slot_idx < SLOTS_PER_CHEST:
+		var special_chance: float = 0.0
+		if tier == 3: special_chance = 0.35
+		elif tier == 2: special_chance = 0.20
+		if rng.randf() < special_chance:
+			var w: String = SPECIAL_WEAPONS[rng.randi() % SPECIAL_WEAPONS.size()]
+			loot[slot_idx] = {"item_id": w, "count": 1}; slot_idx += 1
 	_chests[tile] = loot
 
 
