@@ -32,6 +32,12 @@ static func refresh_tile(layer: TileMapLayer, world_pos: Vector2i, source_id: in
 		var idx: int = posmod(h, 4)   # 0=标准内部, 1~3=H/V/HV 翻转
 		if idx > 0:
 			atlas = BlocksArt.INTERIOR_VARIANT_COORDS[idx - 1]
+	elif BlobLookup.mask_to_key(mask) == BlocksArt.FLAT_TOP_KEY:
+		# 平地地表: 相邻格挑不同的"挖缺口"变体 → 地表线起伏不笔直。
+		var hx: int = (world_pos.x * 2654435761) ^ (world_pos.y * 40503)
+		var ti: int = posmod(hx, 4)   # 0=笔直, 1~3=三种缺口
+		if ti > 0:
+			atlas = BlocksArt.ROUGH_TOP_VARIANT_COORDS[ti - 1]
 	layer.set_cell(world_pos, source_id, atlas)
 
 

@@ -2601,8 +2601,41 @@ static func build_atlas(tile_id: int) -> ImageTexture:
 				var ch: String = prow.substr(sx, 1)
 				atlas_img.set_pixel(vox + x, voy + y, palette[ch] if palette.has(ch) else transparent)
 
+	# 粗糙地表变体: 平顶格 (OCCC.II.) 的顶边随机挖几个 1px 小缺口 → 地表线不再笔直 (能凹进去)。
+	# 碰撞仍是方的 (tileset 注册时全格), 只视觉起伏。
+	if family_tpl.has(FLAT_TOP_KEY):
+		var flat_edge: Array = family_tpl[FLAT_TOP_KEY]
+		for ri in ROUGH_TOP_VARIANT_COORDS.size():
+			var rc: Vector2i = ROUGH_TOP_VARIANT_COORDS[ri]
+			var notch: Array = ROUGH_TOP_NOTCH[ri]
+			var rox: int = rc.x * 16
+			var roy: int = rc.y * 16
+			for y in 16:
+				var base_row: String = base_pattern[y]
+				var edge_row: String = flat_edge[y]
+				for x in 16:
+					if y == 0 and notch.has(x):
+						atlas_img.set_pixel(rox + x, roy + y, transparent)  # 挖掉顶 1px
+						continue
+					var edge_ch: String = edge_row.substr(x, 1)
+					if y == 1 and notch.has(x):
+						edge_ch = "H"   # 凹陷处的新顶给高光, 不发暗
+					var color: Color
+					if edge_ch == ".":
+						var bch: String = base_row.substr(x, 1)
+						color = palette[bch] if palette.has(bch) else transparent
+					else:
+						var slot: String = "_" + edge_ch
+						color = palette[slot] if palette.has(slot) else transparent
+					atlas_img.set_pixel(rox + x, roy + y, color)
+
 	return ImageTexture.create_from_image(atlas_img)
 
 
 # 内部满格的 3 个随机翻转变体放这几个 cell (autotile + tileset_builder 共用). vi: 0=H 1=V 2=HV.
 const INTERIOR_VARIANT_COORDS: Array[Vector2i] = [Vector2i(7, 5), Vector2i(0, 6), Vector2i(1, 6)]
+# 平顶地表的 variant key (N 开/上方空气, E/S/W 闭, 下方两角实) — 地表最常见的"平地一格"。
+const FLAT_TOP_KEY := "OCCC.II."
+# 粗糙地表 3 个变体 cell + 各自在顶边挖哪些列 (1px 小缺口, 错开 → 地表起伏)。
+const ROUGH_TOP_VARIANT_COORDS: Array[Vector2i] = [Vector2i(2, 6), Vector2i(3, 6), Vector2i(4, 6)]
+const ROUGH_TOP_NOTCH: Array = [[3, 4, 11], [7, 8, 14, 15], [1, 2, 9, 10]]
