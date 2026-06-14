@@ -91,6 +91,22 @@ var water_sim_enabled: bool = true:
 		water_sim_enabled = v
 		_save_and_emit()
 
+# max_fps: 帧率上限. 0 = 不限. 默认 60. 设置里玩家可选 30/60/120/不限.
+var max_fps: int = 60:
+	set(v):
+		max_fps = max(0, v)
+		Engine.max_fps = max_fps
+		_save()
+
+# graphics_quality: 画质预设. 0=流畅(关视差+鸟群) / 1=标准(视差开,鸟群关) / 2=精细(都开).
+# 总开关: 控最吃性能的视觉层 (视差背景 + 鸟群). 越低越省, 像素本体画质不变。
+var graphics_quality: int = 1:
+	set(v):
+		graphics_quality = clampi(v, 0, 2)
+		show_parallax = graphics_quality >= 1   # 各自 setter 会 apply + 存
+		show_flocks = graphics_quality >= 2
+		_save()
+
 # camera_zoom: 摄像机大小 (越小看得越远, 越大看得越近). World 的 Camera2D 同步.
 # 默认 1.0. 范围 1.0 (最远/最缩) ~ 2.0 (近距离/最放大). 滚轮/滑块都走这个 clamp.
 # (下限从 0.8 抬到 1.0: 用户嫌滚轮拉太远. clamp 下限 1.0 会把旧存档的 0.8/0.5 自动夹回.)
@@ -202,6 +218,7 @@ func enemy_hp_multiplier() -> float:
 func _ready() -> void:
 	_load()
 	_apply_to_audio_server()
+	Engine.max_fps = max_fps   # 应用帧率上限 (没存档时也保证默认生效)
 
 
 func _apply_to_audio_server() -> void:
@@ -220,6 +237,8 @@ func _save() -> void:
 	cfg.set_value("graphics", "show_parallax", show_parallax)
 	cfg.set_value("graphics", "show_flocks", show_flocks)
 	cfg.set_value("graphics", "water_sim_enabled", water_sim_enabled)
+	cfg.set_value("graphics", "quality", graphics_quality)
+	cfg.set_value("video", "max_fps", max_fps)
 	cfg.set_value("camera", "zoom", camera_zoom)
 	cfg.set_value("locale", "language", current_language)
 	cfg.set_value("player", "name", player_name)
@@ -240,10 +259,11 @@ func _load() -> void:
 		return  # 文件不存在 → 用默认值
 	# 直接赋字段, 绕开 setter 避免 _ready 阶段多次重存盘
 	master_volume = clamp(float(cfg.get_value("audio", "master_volume", 1.0)), 0.0, 1.0)
-	# 图形开关: UI 已删, perf 优化默认: 远景/水开, 鸟蝠关
-	show_parallax = true   # 远山+矿洞背景, 不卡
-	show_flocks = false    # 鸟蝠 perf: 36 sprite × 2 每帧 sin 扑翼, 默认关
+	# 画质预设 (总管视差+鸟群): 默认 1 标准 (视差开/鸟群关, 跟旧默认一致). setter 会应用到 parallax/flocks。
 	water_sim_enabled = true
+	graphics_quality = clampi(int(cfg.get_value("graphics", "quality", 1)), 0, 2)
+	# 帧率上限 (0=不限). setter 会应用 Engine.max_fps。
+	max_fps = max(0, int(cfg.get_value("video", "max_fps", 60)))
 	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 1.0)), 1.0, 2.0)
 	# 语言: 只接受 4 个支持的代码, 其他值退回中文
 	var saved_lang: String = String(cfg.get_value("locale", "language", "zh"))

@@ -1104,6 +1104,24 @@ func _refresh_multiplayer_status() -> void:
 			lbl.text = Locale.t("mp_status_error_prefix") + NetworkManager.last_error
 
 
+# 往设置面板加一行"标签 + 下拉" (帧率/画质用). 放在"返回"键之前。
+func _add_settings_dropdown_row(label_text: String, options: Array, selected_idx: int, on_select: Callable) -> void:
+	var vbox: VBoxContainer = $SettingsPanel/VBox
+	var row := HBoxContainer.new()
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(lbl)
+	var opt := OptionButton.new()
+	for o in options:
+		opt.add_item(String(o))
+	opt.selected = clampi(selected_idx, 0, options.size() - 1)
+	opt.item_selected.connect(on_select)
+	row.add_child(opt)
+	vbox.add_child(row)
+	vbox.move_child(row, vbox.get_node("BackButton").get_index())   # 钉在返回键之前
+
+
 func _setup_settings_panel() -> void:
 	var slider: HSlider = $SettingsPanel/VBox/VolumeRow/Slider
 	var value_label: Label = $SettingsPanel/VBox/VolumeRow/ValueLabel
@@ -1151,6 +1169,13 @@ func _setup_settings_panel() -> void:
 	var place_cb: CheckBox = $SettingsPanel/VBox/ContinuousPlaceRow/CheckBox
 	place_cb.button_pressed = GameSettings.continuous_place
 	place_cb.toggled.connect(func(p: bool): GameSettings.continuous_place = p)
+	# 帧率 + 画质 (代码动态加行, 不改 .tscn; 放在"返回"键之前)
+	_add_settings_dropdown_row("帧率", ["30", "60", "120", "不限"],
+		max(0, [30, 60, 120, 0].find(GameSettings.max_fps)),
+		func(i: int): GameSettings.max_fps = [30, 60, 120, 0][i])
+	_add_settings_dropdown_row("画质", ["流畅", "标准", "精细"],
+		clampi(GameSettings.graphics_quality, 0, 2),
+		func(i: int): GameSettings.graphics_quality = i)
 	# 多人游戏: 显示名字 / 聊天 开关 + 房间人数滑条
 	var names_cb: CheckBox = $MultiplayerPanel/VBox/MpNamesRow/CheckBox
 	names_cb.button_pressed = GameSettings.mp_show_names
