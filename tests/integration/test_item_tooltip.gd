@@ -54,6 +54,22 @@ func test_armor_tooltip_shows_defense():
 	assert_true(t.contains("防御"), "护甲显示防御数值")
 
 
+func test_staff_tooltip_uses_spell_damage_not_zero():
+	var cp = await _panel()
+	var t: String = cp._item_tooltip("wood_staff")   # spell_damage 8, mana_cost 5
+	assert_true(t.contains("法杖"), "标成法杖")
+	assert_true(t.contains("魔法伤害 8"), "用 spell_damage 算伤害 (不是 0)")
+	assert_true(t.contains("耗蓝"), "显示耗蓝")
+	assert_false(t.contains("魔法伤害 0"), "不该是 0 (之前读错字段的 bug)")
+
+
+func test_summon_staff_says_summon():
+	var cp = await _panel()
+	var t: String = cp._item_tooltip("skull_staff")   # summons_minion, 没 spell_damage
+	assert_true(t.contains("召唤"), "召唤法杖说召唤")
+	assert_false(t.contains("魔法伤害 0"), "召唤杖不显示 0 伤害")
+
+
 func test_unknown_item_falls_back_to_name():
 	var cp = await _panel()
 	var t: String = cp._item_tooltip("___not_a_real_item___")

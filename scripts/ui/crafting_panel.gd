@@ -758,8 +758,14 @@ func _item_tooltip(item_id: String) -> String:
 			lines.append("枪 · 单发伤害 %d" % int(def.get("gun_damage", 0)))
 			use = "瞄准鼠标开火"
 		"staff":
-			lines.append("法杖 · 魔法伤害 %d" % int(def.get("gun_damage", 0)))
-			use = "瞄准鼠标放魔法 (耗蓝)"
+			# 法杖伤害字段是 spell_damage (不是 gun_damage!), 实际 = spell_damage × damage_mult; 还耗蓝
+			if bool(def.get("summons_minion", false)):
+				lines.append("法杖 · 召唤帮手 · 耗蓝 %d" % int(def.get("mana_cost", 0)))
+				use = "瞄准鼠标召唤小弟帮你打"
+			else:
+				var sd: int = int(round(float(def.get("spell_damage", 0)) * float(def.get("damage_mult", 1.0))))
+				lines.append("法杖 · 魔法伤害 %d · 耗蓝 %d" % [sd, int(def.get("mana_cost", 0))])
+				use = "瞄准鼠标放魔法"
 		"bow":
 			lines.append("弓 · 射箭 (需要箭)")
 			use = "瞄准鼠标射箭"
