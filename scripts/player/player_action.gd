@@ -2196,6 +2196,17 @@ func _try_fire_bow() -> void:
 
 # 枪射子弹: 找 inventory 里第 1 个 bullet → 消耗 1 → spawn Bullet 朝鼠标直飞.
 # 没子弹 → 不发, 也不进 cooldown (跟弓一样, 随便点没惩罚). 照 _try_fire_bow 结构.
+# 没子弹反馈: 响一声空枪"哔" + 头顶飘"没子弹了" + 节流 0.4s (防按住时每帧刷). 用户要求 (枪没子弹别静默)。
+func _no_ammo_feedback() -> void:
+	_attack_cooldown = 0.4
+	if SfxBank != null:
+		SfxBank.play("gun_empty", 0.05)
+	var parent: Node = get_parent()
+	var fp: Node = get_tree().get_first_node_in_group("floating_prompt")
+	if fp != null and fp.has_method("show_prompt") and parent is Node2D:
+		fp.show_prompt((parent as Node2D).global_position + Vector2(0, -30), "没子弹了! 合成台造子弹")
+
+
 func _try_fire_gun() -> void:
 	var inv: Node = _inventory_node()
 	if inv == null:
@@ -2218,6 +2229,7 @@ func _try_fire_gun() -> void:
 		elif inv.has_method("consume_first"):
 			consumed = inv.consume_first("bullet", 1)   # 一次扣 1 发 (霰弹也只 1 发, 出 N 弹丸, 划算)
 		if not consumed:
+			_no_ammo_feedback()   # 没子弹: 哔一声 + 飘提示 (别静默 → 不让玩家以为枪坏了)
 			return
 	# 每把枪自带参数 (从 item def 读); 没配的用手枪默认值. 加新枪只改 item_db, 不动这里.
 	var cd: float = float(def.get("gun_cooldown", GUN_COOLDOWN)) if def != null else GUN_COOLDOWN
