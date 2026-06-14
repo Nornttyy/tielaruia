@@ -85,26 +85,6 @@ func _ready() -> void:
 	add_child(_character_panels)
 	_character_panels.character_chosen.connect(_on_character_chosen)
 	_character_panels.closed.connect(_on_character_panels_closed)
-	_setup_build_tag()
-
-
-# 屏幕左上角打一个版本号 — 排查"用户跑的是哪个版本": 念给我听就知道有没有拿到新版。
-# 放在独立高层 CanvasLayer (layer=100) 上, 保证盖在背景树/按钮之上, 不被挡。
-const BUILD_TAG := "build 0614-D 女角色修复"
-
-func _setup_build_tag() -> void:
-	var cl := CanvasLayer.new()
-	cl.layer = 100
-	add_child(cl)
-	var lbl := Label.new()
-	lbl.text = BUILD_TAG
-	lbl.add_theme_font_size_override("font_size", 16)
-	lbl.add_theme_color_override("font_color", Color(1, 1, 0.4, 1))   # 亮黄, 显眼
-	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	lbl.add_theme_constant_override("outline_size", 4)
-	lbl.position = Vector2(10, 8)   # 左上角固定位置, 任何窗口尺寸都在画面内
-	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cl.add_child(lbl)
 
 
 # 接 Locale.language_changed: 切语言时刷新所有 UI 文字, 并重建 saves list (因为它是动态生成).

@@ -103,10 +103,6 @@ func _style_controls(node: Node) -> void:
 func _refresh_list() -> void:
 	for c in _list.get_children():
 		c.queue_free()
-	# 用文件名计数 (最可靠, 不受加载失败影响) — 标题直接显示"共 N 个", 排查用
-	var n: int = CharacterManager.list_character_names().size()
-	if _select_title != null:
-		_select_title.text = "选择角色（共 %d 个）" % n
 	for entry in CharacterManager.list_characters():
 		_make_row(String(entry["name"]))
 
