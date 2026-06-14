@@ -2693,8 +2693,8 @@ const ROUGH_TOP_VARIANT_COORDS: Array[Vector2i] = [Vector2i(2, 6), Vector2i(3, 6
 const ROUGH_LEFT_VARIANT_COORDS: Array[Vector2i] = [Vector2i(5, 6), Vector2i(6, 6), Vector2i(7, 6)]
 const ROUGH_RIGHT_VARIANT_COORDS: Array[Vector2i] = [Vector2i(0, 7), Vector2i(1, 7), Vector2i(2, 7)]
 const ROUGH_BOTTOM_VARIANT_COORDS: Array[Vector2i] = [Vector2i(3, 7), Vector2i(4, 7), Vector2i(5, 7)]
-# 缺口挖多深 (px, 16px atlas 空间). 用户要更深: 3 (缩到 12px 后约 2px 深, 明显起伏)。
-const ROUGH_DEPTH := 3
+# 缺口挖多深 (px, 16px atlas 空间). 用户定 2。
+const ROUGH_DEPTH := 2
 # 3 套挖缺口位置 (行或列下标, 错开 + 覆盖较多 → 起伏明显). 上下用作列, 左右用作行。
 const ROUGH_TOP_NOTCH: Array = [
 	[0, 1, 2, 3, 9, 10, 11],
