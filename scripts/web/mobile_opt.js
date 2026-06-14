@@ -19,27 +19,27 @@
 })();
 
 
-// 移动端内存优化: 把 canvas DPR 强制为 1, 省 iOS Safari WebGL 内存.
-// iPhone DPR=3 → canvas backing store 9x 纹理内存. 像素游戏 (本身就 1:N 放大) 无视觉损失.
+// 移动端: 把 canvas DPR 上限设为 2 (不是压到 1). 让手机画面恢复高清, 又给内存设上限。
+// iPhone DPR=3 → backing store 9x 纹理内存会崩; 但压到 1 又太糊 (用户: 不能降质量)。
+// 折中 cap 2: 4x 内存 (远低于 9x), 画面 2 倍清晰 (肉眼跟 3 倍几乎无差)。
 // 必须在 Godot wasm load 之前注入 (head 顶部) 才生效, 不然 Godot 已读 DPR.
 (function() {
-	// 仅 mobile / 小屏幕降 DPR. 桌面浏览器保留高 DPR (Retina).
-	function shouldCapDPR() {
-		// 1. UA 中含 Mobile 类标识
+	var MAX_DPR = 2.0;   // 手机最高 2 倍渲染 (高清 + 内存有上限)
+	// 仅 mobile / 小屏幕限 DPR. 桌面浏览器保留全 Retina (不限)。
+	function isMobile() {
 		if (/iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent)) return true;
-		// 2. 视口窄
 		if (window.innerWidth < 1000) return true;
 		return false;
 	}
-	if (!shouldCapDPR()) return;
-	// 覆写 devicePixelRatio. Godot 在 init canvas 时会读这个值算 backing store 大小.
+	if (!isMobile()) return;
+	var orig = window.devicePixelRatio || 1;
+	if (orig <= MAX_DPR) return;   // 本来就 ≤2, 不用动 (保持高清)
 	try {
 		Object.defineProperty(window, 'devicePixelRatio', {
-			get: function () { return 1; },
+			get: function () { return MAX_DPR; },
 			configurable: true
 		});
-		console.log('[mobile_opt] devicePixelRatio capped to 1 (orig ' +
-			(window.screen && window.screen.systemDPR || 'unknown') + ') — saves WebGL memory on iOS Safari');
+		console.log('[mobile_opt] devicePixelRatio ' + orig + ' → capped ' + MAX_DPR + ' (高清+内存上限)');
 	} catch (e) {
 		console.warn('[mobile_opt] failed to cap DPR:', e);
 	}
