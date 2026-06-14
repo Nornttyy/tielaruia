@@ -180,3 +180,6 @@ textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_s3tc_bptc=true
+# 像素对齐: 走路时镜头滚动按整像素走, 不再卡在半个像素上重采样 → 不糊不拖 (用户报"走路有残影")
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true
