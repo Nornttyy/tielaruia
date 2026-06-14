@@ -326,29 +326,25 @@ static func _female_torso_swim(cs: int, bounce: int = 0) -> Array:
 	var up := clampi(1 + bounce, 1, 3)
 	var mid := clampi(2 + bounce, 1, 3)
 	var low := clampi(3 + bounce, 1, 3)
-	# 罩杯跟 T恤胸同款大小 (身材跨衣服一致): col7-9 顶满 3 行 + 往上长高一行 = 又大又挺。
+	# 圆弧罩杯跟 T恤胸同款 (身材跨衣服一致): 只有峰行顶到 col9, 上下沿收回 → 圆不方。
 	if cs >= 1:
 		rows[mid] = _set_char(rows[mid], 7, "w")   # 罩杯 col7 (峰 1px)
-		rows[mid] = _set_char(rows[mid], 8, "w")   # 罩杯 col8 (峰 2px)
 	if cs >= 2:
-		rows[up] = _set_char(rows[up], 7, "w")     # 上沿 col7
+		rows[mid] = _set_char(rows[mid], 8, "w")   # 罩杯 col8 (峰 2px)
+		rows[up] = _set_char(rows[up], 7, "w")     # 上沿 col7 (收 1px)
 		rows[low] = _set_char(rows[low], 6, "w")   # 下沿 col6 (连住肚)
-		rows[low] = _set_char(rows[low], 7, "w")   # 下沿 col7
-		rows[mid] = _set_char(rows[mid], 9, "w")   # 罩杯顶到最前 col9 (3px)
+		rows[low] = _set_char(rows[low], 7, "w")   # 下沿 col7 (收 1px)
 	if cs >= 3:
-		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8
-		rows[low] = _set_char(rows[low], 8, "w")   # 下沿 col8
-		rows[up] = _set_char(rows[up], 9, "w")     # 上沿到 col9
-		rows[low] = _set_char(rows[low], 9, "w")   # 下沿到 col9 → 默认就整团满
+		rows[mid] = _set_char(rows[mid], 9, "w")   # 罩杯顶到最前 col9 (峰 3px)
+		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8 (仍收 → 圆)
+		rows[low] = _set_char(rows[low], 8, "w")   # 下沿 col8 (仍收 → 圆)
 	if cs >= 4:
+		rows[0] = _set_char(rows[0], 7, "w")       # 顶行起鼓收尖 = 上缘圆 + 更高更大
 		rows[mid] = _set_char(rows[mid], 9, "c")   # 峰顶高光 c
-		rows[low] = _set_char(rows[low], 8, "D")   # 下沿 col8 镶边阴影 D (圆垂)
-		rows[0] = _set_char(rows[0], 7, "w")       # 往上长高一行 (罩杯上沿起鼓) = 更大
-		rows[0] = _set_char(rows[0], 8, "w")
+		rows[low] = _set_char(rows[low], 8, "e")   # 下缘皮肤阴影 e (圆垂)
 	if cs >= 5:
-		rows[0] = _set_char(rows[0], 9, "c")       # 顶行也顶到最前 + 高光 = 最大最挺
-		rows[up] = _set_char(rows[up], 6, "w")     # 根部往后连满 = 更饱满
-		rows[low] = _set_char(rows[low], 6, "w")
+		rows[0] = _set_char(rows[0], 8, "w")       # 顶行 col8 (上缘更饱满, 仍收)
+		rows[up] = _set_char(rows[up], 9, "w")     # 上沿也到 col9 (峰区 2 行 → 大, 仍上下收 = 圆)
 	return rows
 
 
@@ -370,28 +366,24 @@ static func _female_torso(cs: int, bounce: int = 0) -> Array:
 	var up := clampi(1 + bounce, 1, 3)
 	var mid := clampi(2 + bounce, 1, 3)
 	var low := clampi(3 + bounce, 1, 3)
-	# 越大越鼓: 先往前顶满 col7-9 三行, 再往上长高一行 (肩行) = 又大又挺 (用户两次要"再大点")。
+	# 圆弧形 (不能填成方块!): 只有中胸顶到最前 col9 当峰, 上下沿往回收 (col8/col7) → 前缘是弧不是直墙。
 	if cs >= 1:
 		rows[mid] = _set_char(rows[mid], 7, "w")   # 中胸 col7 (峰 1px)
-		rows[mid] = _set_char(rows[mid], 8, "w")   # 中胸 col8 (峰 2px)
 	if cs >= 2:
-		rows[up] = _set_char(rows[up], 7, "w")     # 上沿 col7
-		rows[low] = _set_char(rows[low], 7, "w")   # 下沿 col7
-		rows[mid] = _set_char(rows[mid], 9, "w")   # 中胸顶到最前 col9 (3px)
+		rows[mid] = _set_char(rows[mid], 8, "w")   # 中胸 col8 (峰 2px)
+		rows[up] = _set_char(rows[up], 7, "w")     # 上沿 col7 (比峰收 1px)
+		rows[low] = _set_char(rows[low], 7, "w")   # 下沿 col7 (比峰收 1px)
 	if cs >= 3:
-		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8
-		rows[low] = _set_char(rows[low], 8, "w")   # 下沿 col8
-		rows[up] = _set_char(rows[up], 9, "w")     # 上沿到 col9
-		rows[low] = _set_char(rows[low], 9, "w")   # 下沿到 col9 → 默认就整团 3行×3px 满
+		rows[mid] = _set_char(rows[mid], 9, "w")   # 中胸顶到最前 col9 (峰 3px)
+		rows[up] = _set_char(rows[up], 8, "w")     # 上沿 col8 (仍比峰收 1px → 圆)
+		rows[low] = _set_char(rows[low], 8, "w")   # 下沿 col8 (仍比峰收 1px → 圆)
 	if cs >= 4:
+		rows[0] = _set_char(rows[0], 7, "w")       # 顶行起鼓收尖 col7 = 上缘圆 + 更高更大
 		rows[mid] = _set_char(rows[mid], 9, "c")   # 峰顶高光 c (球面: 顶亮)
-		rows[low] = _set_char(rows[low], 8, "D")   # 下沿 col8 阴影 D (圆垂)
-		rows[0] = _set_char(rows[0], 7, "w")       # 往上长高一行 (肩行起鼓) = 更大
-		rows[0] = _set_char(rows[0], 8, "w")
+		rows[low] = _set_char(rows[low], 8, "D")   # 下缘阴影 D (球面: 底暗 = 圆垂)
 	if cs >= 5:
-		rows[0] = _set_char(rows[0], 9, "c")       # 顶行也顶到最前 + 高光 = 最大最挺
-		rows[up] = _set_char(rows[up], 6, "w")     # 根部往后连满 = 更饱满
-		rows[low] = _set_char(rows[low], 6, "w")
+		rows[0] = _set_char(rows[0], 8, "w")       # 顶行 col8 (上缘更饱满, 仍收 1px)
+		rows[up] = _set_char(rows[up], 9, "w")     # 上沿也到 col9 (峰区 2 行 → 大, 顶/底仍收 = 圆)
 	return rows
 
 
