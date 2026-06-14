@@ -58,7 +58,7 @@
 	}
 	if (isMobile()) return;
 	var real = window.devicePixelRatio || 1;
-	var eff = Math.max(2.0, Math.min(real * 1.3, 2.5));   // 至少 2x, 最多 2.5x (高清又不过分吃显存)
+	var eff = Math.max(2.5, Math.min(real * 1.5, 3.0));   // 至少 2.5x, 最多 3x (更高清; 用户要"再高清些")
 	if (eff <= real) return;   // 本来就够高 → 不动
 	try {
 		Object.defineProperty(window, 'devicePixelRatio', {
