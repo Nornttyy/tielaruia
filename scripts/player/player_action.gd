@@ -156,6 +156,15 @@ var _sword_attack_knockback: float = 0.0
 var _sword_attack_reach_bonus: float = 0.0   # 这把武器额外伸长多少剑身 (长矛/链锤够更远; 普通剑=0)
 var _sword_attack_lifesteal: float = 0.0     # 噬魂: 命中按伤害百分比回血 (0=不吸)
 var _sword_attack_meteor: int = 0            # 星陨: 命中召唤几颗陨星砸下 (0=不召)
+var _sword_attack_void: float = 0.0          # 虚空: 命中按概率秒杀小怪 (0=不秒, Boss 免疫)
+var _sword_attack_magnet: float = 0.0        # 磁极: 命中把半径内掉落物吸向玩家 (0=不吸)
+var _sword_attack_echo: float = 0.0          # 回响: 命中后隔几秒原地再炸一次 (0=不炸)
+var _sword_attack_combo_haste: bool = false  # 赤霄: 连击越多挥得越快
+const COMBO_MAX := 5                          # 连击最多叠 5 层
+const COMBO_HASTE_PER := 0.08                 # 每层减 8% 攻击间隔
+const COMBO_RESET_SEC := 1.2                  # 超过 1.2 秒没命中, 连击清零
+var _combo_stacks: int = 0                    # 当前连击层数 (赤霄用)
+var _combo_idle: float = 0.0                  # 距上次命中过了多久 (用于清零)
 var _sword_hit_this_attack: Dictionary = {}  # instance_id → true
 
 # 测试用: 记录最近一次挥剑的命中中心点 (玩家中心 + 鼠标方向 * 半径)
@@ -200,6 +209,10 @@ func _physics_process(delta: float) -> void:
 	if _crafting_open():
 		return
 	_attack_cooldown = max(0.0, _attack_cooldown - delta)
+	# 赤霄连击: 太久没命中就清零 (这样停手后挥速回到正常)
+	_combo_idle += delta
+	if _combo_idle > COMBO_RESET_SEC:
+		_combo_stacks = 0
 	# 持剑 LMB: 按剑的种类选 — 短剑(dagger)永远戳, 阔剑(sword)永远半圆挥. 不再按 tier.
 	var kind: String = _current_tool_kind()
 	if kind == "sword":
@@ -1713,11 +1726,11 @@ func _check_sword_blade_hits() -> void:
 				# 挥: 扫到的全打
 				_sword_hit_this_attack[id] = true
 				_deal_enemy_damage(sn, _sword_attack_damage, tip_world, _sword_attack_knockback)
-				_sword_on_hit(sn.global_position)   # 噬魂吸血 / 星陨陨星
+				_sword_on_hit(sn.global_position, sn)   # 噬魂/星陨/虚空/磁极/回响/赤霄
 	if is_thrust and thrust_target != null:
 		_sword_hit_this_attack[thrust_target.get_instance_id()] = true
 		_deal_enemy_damage(thrust_target, _sword_attack_damage, tip_world, _sword_attack_knockback)
-		_sword_on_hit(thrust_target.global_position)
+		_sword_on_hit(thrust_target.global_position, thrust_target)
 	# PvP: 对战房里剑也能扫到远程玩家
 	if NetworkManager != null and NetworkManager.combat_enabled():
 		var player2: Node2D = get_parent() as Node2D
@@ -1785,8 +1798,7 @@ func _thrust_sword() -> void:
 	var mdef: Variant = _current_tool_def()
 	_attack_cooldown = float(mdef.get("melee_cooldown", THRUST_COOLDOWN)) if mdef != null else THRUST_COOLDOWN
 	_sword_attack_reach_bonus = float(mdef.get("melee_reach_bonus", 0.0)) if mdef != null else 0.0   # 长矛戳更远
-	_sword_attack_lifesteal = float(mdef.get("lifesteal", 0.0)) if mdef != null else 0.0
-	_sword_attack_meteor = int(mdef.get("meteor_on_hit", 0)) if mdef != null else 0
+	_set_sword_special_fields(mdef)
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1823,8 +1835,10 @@ func _sweep_sword() -> void:
 	var mdef: Variant = _current_tool_def()
 	_attack_cooldown = float(mdef.get("melee_cooldown", SWORD_COOLDOWN)) if mdef != null else SWORD_COOLDOWN
 	_sword_attack_reach_bonus = float(mdef.get("melee_reach_bonus", 0.0)) if mdef != null else 0.0   # 链锤/战锤抡更大
-	_sword_attack_lifesteal = float(mdef.get("lifesteal", 0.0)) if mdef != null else 0.0   # 噬魂吸血
-	_sword_attack_meteor = int(mdef.get("meteor_on_hit", 0)) if mdef != null else 0          # 星陨陨星
+	_set_sword_special_fields(mdef)
+	# 赤霄: 连击越高, 这次挥的攻击间隔越短 (越打越快, 上限减 40%)
+	if _sword_attack_combo_haste:
+		_attack_cooldown *= (1.0 - COMBO_HASTE_PER * float(_combo_stacks))
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1885,8 +1899,22 @@ func _fire_swing_projectile(def: Variant, player: Node2D, base_dir: Vector2) -> 
 		NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
 
 
-# 近战命中后的特殊触发 (噬魂吸血 / 星陨陨星)。每命中一只怪调一次。
-func _sword_on_hit(hit_pos: Vector2) -> void:
+# 一次性把这把剑的特殊字段读进成员变量 (挥/戳开始时调)。
+func _set_sword_special_fields(mdef: Variant) -> void:
+	if mdef == null:
+		_sword_attack_lifesteal = 0.0; _sword_attack_meteor = 0; _sword_attack_void = 0.0
+		_sword_attack_magnet = 0.0; _sword_attack_echo = 0.0; _sword_attack_combo_haste = false
+		return
+	_sword_attack_lifesteal = float(mdef.get("lifesteal", 0.0))
+	_sword_attack_meteor = int(mdef.get("meteor_on_hit", 0))
+	_sword_attack_void = float(mdef.get("void_chance", 0.0))
+	_sword_attack_magnet = float(mdef.get("magnet_radius", 0.0))
+	_sword_attack_echo = float(mdef.get("echo_delay", 0.0))
+	_sword_attack_combo_haste = bool(mdef.get("combo_haste", false))
+
+
+# 近战命中后的特殊触发。每命中一只怪调一次。target 是被打的怪 (虚空秒杀要用)。
+func _sword_on_hit(hit_pos: Vector2, target: Node2D) -> void:
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1898,6 +1926,48 @@ func _sword_on_hit(hit_pos: Vector2) -> void:
 	# 星陨: 从命中点上方天降几颗会爆的陨星
 	if _sword_attack_meteor > 0:
 		_spawn_meteors(hit_pos, _sword_attack_meteor, player)
+	# 虚空: 概率秒杀, 但 Boss 免疫 (不然太破坏平衡)
+	if _sword_attack_void > 0.0 and target != null and is_instance_valid(target) \
+			and not target.is_in_group("boss") and randf() < _sword_attack_void:
+		Effects.spawn_spell_impact("gas", target.global_position, Color8(120, 60, 200))   # 紫色虚空吞噬
+		_deal_enemy_damage(target, 99999, hit_pos, 0.0)   # 海量伤害 = 秒杀小怪
+	# 磁极: 把半径内的掉落物嗖地拉向玩家 (反复命中能把一地东西吸光)
+	if _sword_attack_magnet > 0.0:
+		_magnet_pull(player.global_position, _sword_attack_magnet)
+	# 回响: 命中点过 echo_delay 秒后原地再爆一次 (额外一波 AoE)
+	if _sword_attack_echo > 0.0:
+		var echo_dmg: int = max(1, int(round(float(_sword_attack_damage) * 0.5)))
+		# create_timer + connect (不 await): 到点回调 _echo_blast, 不卡当前帧
+		get_tree().create_timer(_sword_attack_echo).timeout.connect(
+			_echo_blast.bind(hit_pos, echo_dmg))
+	# 赤霄: 命中刷新连击 (越打越快); 别的剑也会重置 idle 但 stacks 只对赤霄涨
+	if _sword_attack_combo_haste:
+		_combo_idle = 0.0
+		_combo_stacks = min(COMBO_MAX, _combo_stacks + 1)
+
+
+# 磁极拉取: 半径内非远程掉落物每次往玩家挪一大步, 配合自动拾取吸进背包。
+func _magnet_pull(player_pos: Vector2, radius: float) -> void:
+	for d in get_tree().get_nodes_in_group("item_drops"):
+		var drop := d as Node2D
+		if drop == null or drop.has_meta("is_remote"):
+			continue
+		if drop.global_position.distance_to(player_pos) <= radius:
+			drop.global_position = drop.global_position.move_toward(player_pos, 140.0)
+
+
+# 回响延时爆: 在 pos 做一圈 AoE 伤害 + 紫光特效。被 SceneTreeTimer 回调。
+func _echo_blast(pos: Vector2, dmg: int) -> void:
+	if not is_inside_tree():
+		return
+	Effects.spawn_spell_impact("explosion", pos, Color8(180, 120, 255))
+	for group in ["slimes", "animals"]:
+		for s in get_tree().get_nodes_in_group(group):
+			var sn := s as Node2D
+			if sn == null or not is_instance_valid(sn):
+				continue
+			if sn.global_position.distance_to(pos) <= 30.0:
+				_deal_enemy_damage(sn, dmg, pos, 60.0)
 
 
 # 星陨陨星: n 颗 bullet 从目标上方带重力砸下, 落地/碰怪爆炸 (橙黄火光)。

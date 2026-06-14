@@ -3350,6 +3350,10 @@ const _SPECIAL_SWORD_MATS := {
 	"skyfall_blade": ["+", "Q"],   # 天陨: 亮紫/白星
 	"starfall_blade":["Z", "P"],   # 星陨: 金/亮金 (流星)
 	"soul_eater":    ["#", "+"],   # 噬魂: 深紫/亮紫 (灵魂)
+	"void_blade":    ["@", "x"],   # 虚空: 深紫黑/灰白 (虚无吞噬)
+	"magnet_blade":  ["E", "!"],   # 磁极: 钢蓝/红 (磁铁红蓝)
+	"echo_blade":    ["T", "F"],   # 回响: 深海蓝/亮蓝 (声波)
+	"crimson_blade": ["m", "C"],   # 赤霄: 红/橙 (赤红连斩)
 }
 
 

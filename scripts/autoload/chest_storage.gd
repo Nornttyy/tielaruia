@@ -6,7 +6,7 @@ extends Node
 const SLOTS_PER_CHEST := 24
 
 # 代号神兵: 不能合成的稀有武器, 只从钻石/阴影宝箱里掉. 加新神兵往这里加 id 即可.
-const SPECIAL_WEAPONS := ["blue_moon", "fire_god", "leaf_blade", "frost_blade", "skyfall_blade", "starfall_blade", "soul_eater"]
+const SPECIAL_WEAPONS := ["blue_moon", "fire_god", "leaf_blade", "frost_blade", "skyfall_blade", "starfall_blade", "soul_eater", "void_blade", "magnet_blade", "echo_blade", "crimson_blade"]
 
 # tile_coord (Vector2i) → Array[24] of slot dicts
 var _chests: Dictionary = {}

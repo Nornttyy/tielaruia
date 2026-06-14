@@ -48,6 +48,10 @@ const _DEFS := {
 	"skyfall_blade":{"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 7, "max_stack": 1, "damage_mult": 1.5, "sword_style": "sweep", "swing_proj": true, "swing_proj_random": true, "swing_proj_damage": 11, "bullet_speed": 440},  # 天陨: 每挥一次随机元素弹
 	"starfall_blade":{"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 7, "max_stack": 1, "damage_mult": 1.5, "sword_style": "sweep", "meteor_on_hit": 3},  # 星陨: 命中天降 3 颗陨星砸下
 	"soul_eater":   {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 6, "max_stack": 1, "damage_mult": 1.4, "sword_style": "sweep", "lifesteal": 0.25},  # 噬魂: 命中吸 25% 伤害回血
+	"void_blade":   {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 7, "max_stack": 1, "damage_mult": 1.3, "sword_style": "sweep", "void_chance": 0.15},  # 虚空: 15% 概率秒杀小怪 (Boss 免疫)
+	"magnet_blade": {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 6, "max_stack": 1, "damage_mult": 1.3, "sword_style": "sweep", "magnet_radius": 170.0},  # 磁极: 命中把掉落物吸过来
+	"echo_blade":   {"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 6, "max_stack": 1, "damage_mult": 1.4, "sword_style": "sweep", "echo_delay": 0.3},  # 回响: 命中 0.3 秒后原地再爆
+	"crimson_blade":{"placeable_tile_id": -1, "tool_kind": "sword", "tool_tier": 7, "max_stack": 1, "damage_mult": 1.5, "sword_style": "sweep", "combo_haste": true},  # 赤霄: 连击越多挥得越快
 	"apple":        {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 25},
 	"stone_sword":   {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 2, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"stone_pickaxe": {"placeable_tile_id": -1,                     "tool_kind": "pickaxe", "tool_tier": 2, "max_stack": 1, "damage_mult": 0.5},

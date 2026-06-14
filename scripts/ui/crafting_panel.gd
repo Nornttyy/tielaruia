@@ -693,6 +693,7 @@ const _ZH_NAMES := {
 	"blue_moon": "蓝月", "fire_god": "火神", "leaf_blade": "绿叶",
 	"frost_blade": "冰雪剑", "skyfall_blade": "天陨",
 	"starfall_blade": "星陨", "soul_eater": "噬魂",
+	"void_blade": "虚空", "magnet_blade": "磁极", "echo_blade": "回响", "crimson_blade": "赤霄",
 	"skull_summon": "骷髅头骨",
 	"skeleton_helmet": "骷髅头盔",
 	"skeleton_chest": "骷髅胸甲",

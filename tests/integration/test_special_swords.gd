@@ -6,8 +6,8 @@ const ItemsArt = preload("res://scripts/art/items_art.gd")
 
 # 挥剑射元素弹的 5 把
 const PROJ_SWORDS := ["blue_moon", "fire_god", "leaf_blade", "frost_blade", "skyfall_blade"]
-# 全部 7 把神兵
-const ALL_SWORDS := ["blue_moon", "fire_god", "leaf_blade", "frost_blade", "skyfall_blade", "starfall_blade", "soul_eater"]
+# 全部 11 把神兵
+const ALL_SWORDS := ["blue_moon", "fire_god", "leaf_blade", "frost_blade", "skyfall_blade", "starfall_blade", "soul_eater", "void_blade", "magnet_blade", "echo_blade", "crimson_blade"]
 
 
 func test_all_swords_registered() -> void:
@@ -30,11 +30,19 @@ func test_proj_swords_fire_element() -> void:
 		assert_true(bool(ItemDB.get_def(id).get("swing_proj", false)), "%s 挥剑发射元素弹" % id)
 
 
-func test_starfall_and_soul_mechanics() -> void:
+func test_onhit_mechanics() -> void:
 	# 星陨: 命中召唤陨星 (meteor_on_hit > 0)
 	assert_true(int(ItemDB.get_def("starfall_blade").get("meteor_on_hit", 0)) > 0, "星陨命中召陨星")
 	# 噬魂: 命中吸血 (lifesteal > 0)
 	assert_true(float(ItemDB.get_def("soul_eater").get("lifesteal", 0.0)) > 0.0, "噬魂命中吸血")
+	# 虚空: 概率秒杀 (void_chance > 0)
+	assert_true(float(ItemDB.get_def("void_blade").get("void_chance", 0.0)) > 0.0, "虚空概率秒杀")
+	# 磁极: 吸掉落物 (magnet_radius > 0)
+	assert_true(float(ItemDB.get_def("magnet_blade").get("magnet_radius", 0.0)) > 0.0, "磁极吸掉落物")
+	# 回响: 延时再爆 (echo_delay > 0)
+	assert_true(float(ItemDB.get_def("echo_blade").get("echo_delay", 0.0)) > 0.0, "回响延时再爆")
+	# 赤霄: 连击加速 (combo_haste)
+	assert_true(bool(ItemDB.get_def("crimson_blade").get("combo_haste", false)), "赤霄连击加速")
 
 
 func test_skyfall_is_random_element() -> void:
