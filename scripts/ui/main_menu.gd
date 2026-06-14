@@ -518,12 +518,8 @@ func _start_title_breathing() -> void:
 	var t2 := create_tween().set_loops()
 	t2.tween_property(shadow, "offset_top", sh_base - 4.0, 1.5).set_trans(Tween.TRANS_SINE)
 	t2.tween_property(shadow, "offset_top", sh_base, 1.5).set_trans(Tween.TRANS_SINE)
-	# 缩放呼吸 (1.0 ↔ 1.06), 配合 pivot 居中
-	logo.pivot_offset = logo.size / 2.0
-	shadow.pivot_offset = shadow.size / 2.0
-	var t3 := create_tween().set_loops()
-	t3.tween_property(logo, "scale", Vector2(1.06, 1.06), 1.8).set_trans(Tween.TRANS_SINE)
-	t3.tween_property(logo, "scale", Vector2(1.0, 1.0), 1.8).set_trans(Tween.TRANS_SINE)
+	# 注: 去掉了"缩放呼吸"(1.0↔1.06) — 像素字体连续缩放会亚像素闪烁 + 支点(size 在 _ready 还没算)
+	# 在角上导致整段字位移 → 看着在抖 (用户报)。改留上下漂浮 + 金光变色, 平滑不抖。
 	# 主标签颜色冷暖循环, 模拟金光呼吸
 	var c_warm := Color8(255, 230, 150)
 	var c_cool := Color8(220, 180, 80)
