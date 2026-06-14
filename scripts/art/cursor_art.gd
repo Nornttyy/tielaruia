@@ -63,29 +63,29 @@ const _PICK := [
 ]
 
 
-# --- 十字准星: 白线 + 黑描边 (任何背景都看得见), 中间留空好瞄. hotspot=(8,8) 正中 ---
+# --- 十字准星: 白线 + 黑描边 (任何背景都看得见), 中间实心不留空. hotspot=(8,8) 正中 ---
 const _P_CROSS := {
 	"o": Color8(20, 16, 8),       # 黑描边
 	"w": Color8(250, 250, 255),   # 白线
 }
 
 const _CROSS := [
-	".......oo.......",
+	"......oooo......",
 	"......owwo......",
 	"......owwo......",
 	"......owwo......",
 	"......owwo......",
-	"......o..o......",
-	".oooo......oooo.",
-	"owwwwo....owwwwo",
-	"owwwwo....owwwwo",
-	".oooo......oooo.",
-	"......o..o......",
+	"......owwo......",
+	"ooooooowwooooooo",
+	"owwwwwwwwwwwwwwo",
+	"owwwwwwwwwwwwwwo",
+	"ooooooowwooooooo",
 	"......owwo......",
 	"......owwo......",
 	"......owwo......",
 	"......owwo......",
-	".......oo.......",
+	"......owwo......",
+	"......oooo......",
 ]
 
 
