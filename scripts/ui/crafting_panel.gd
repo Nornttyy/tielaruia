@@ -775,6 +775,38 @@ func _item_tooltip(item_id: String) -> String:
 		"summon":
 			lines.append("召唤物")
 			use = "使用召唤 Boss"
+		"flail":
+			# 流星锤伤害跟剑同公式 (tier 基础 × mult); flail.gd 里也是这么算的
+			var ft: int = int(def.get("tool_tier", 0))
+			var fbase: int = _TIER_BASE_DAMAGE[ft] if (ft >= 1 and ft < _TIER_BASE_DAMAGE.size()) else 0
+			lines.append("流星锤 · 伤害 ~%d" % int(round(fbase * float(def.get("damage_mult", 1.0)))))
+			if int(def.get("chain_lightning", 0)) > 0:
+				lines.append("命中: 闪电连跳 %d 次" % int(def.get("chain_lightning")))
+			elif float(def.get("blast_on_hit", 0.0)) > 0.0:
+				lines.append("命中: 爆炸炸一片")
+			elif bool(def.get("pull_in", false)):
+				lines.append("命中: 把怪吸过来")
+			elif float(def.get("gun_slow_factor", 0.0)) > 0.0:
+				lines.append("命中: 让怪减速")
+			elif float(def.get("lifesteal", 0.0)) > 0.0:
+				lines.append("命中: 吸血回自己")
+			use = "按住左键绕转蓄力, 松开甩向鼠标 (带链飞回)"
+		"slimeball":
+			# 史莱姆球固定伤害 16 (player_action.SLIMEBALL_DAMAGE), 不走 tier 表; 改那常量记得同步
+			lines.append("史莱姆球 · 伤害 ~%d" % int(round(16 * float(def.get("damage_mult", 1.0)))))
+			use = "左键朝鼠标扔出"
+		"hammer":
+			lines.append("锤子 · 敲掉背景墙")
+			use = "左键敲掉身后的墙"
+		"hook":
+			lines.append("钩爪 · 飞出去钩住墙")
+			use = "右键发射, 把你拉过去 (荡来荡去)"
+		"fishing":
+			lines.append("鱼竿 · 钓鱼")
+			use = "对着水面甩钩, 等鱼上钩"
+		"seed":
+			lines.append("种子 · 种在草地长出作物")
+			use = "右键种到草地上"
 	var aslot: String = ItemDB.armor_slot(item_id)
 	if aslot != "":
 		var slot_zh: String = {"helmet": "头部护甲", "chest": "胸甲", "pants": "腿甲"}.get(aslot, "护甲")

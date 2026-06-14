@@ -70,6 +70,30 @@ func test_summon_staff_says_summon():
 	assert_false(t.contains("魔法伤害 0"), "召唤杖不显示 0 伤害")
 
 
+func test_flail_tooltip_is_weapon_not_material():
+	var cp = await _panel()
+	var t: String = cp._item_tooltip("flail")   # tool_kind "flail", tier 5, mult 1.2
+	assert_true(t.contains("流星锤"), "标成流星锤武器")
+	assert_true(t.contains("伤害"), "显示伤害数值")
+	assert_false(t.contains("合成材料"), "流星锤不该被当成合成材料 (之前的 bug)")
+	assert_true(t.contains("甩"), "说明怎么用 (绕转甩出)")
+
+
+func test_special_flail_shows_effect():
+	var cp = await _panel()
+	var t: String = cp._item_tooltip("thunder_flail")   # chain_lightning 3
+	assert_true(t.contains("闪电"), "雷神锤显示命中闪电效果")
+
+
+func test_other_tools_not_material():
+	var cp = await _panel()
+	# hammer/hook/fishing/seed/slimeball 之前都会漏成"合成材料", 现在该有各自说明
+	for pair in [["wood_hammer", "墙"], ["grappling_hook", "钩"], ["fishing_rod", "钓"], ["wheat_seed", "种"], ["slime_ball", "史莱姆球"]]:
+		var t: String = cp._item_tooltip(pair[0])
+		assert_false(t.contains("合成材料"), "%s 不该是合成材料" % pair[0])
+		assert_true(t.contains(pair[1]), "%s 提示含关键字 %s" % [pair[0], pair[1]])
+
+
 func test_unknown_item_falls_back_to_name():
 	var cp = await _panel()
 	var t: String = cp._item_tooltip("___not_a_real_item___")
