@@ -2627,14 +2627,15 @@ static func _render_rough_cell(atlas_img: Image, base_pattern: Array, palette: D
 		var base_row: String = base_pattern[y]
 		var edge_row: String = edge[y]
 		for x in 16:
-			# 判断: 这个像素是被挖掉的外缘 (carve), 还是凹陷后露出的新边 (给高光)
+			# 判断: 这个像素是被挖掉的外缘 (carve, ROUGH_DEPTH 深), 还是凹陷后露出的新边 (给高光)
+			var d: int = ROUGH_DEPTH
 			var carve: bool = false
 			var newedge: bool = false
 			match side:
-				"top":    carve = (y == 0 and notch.has(x));  newedge = (y == 1 and notch.has(x))
-				"bottom": carve = (y == 15 and notch.has(x)); newedge = (y == 14 and notch.has(x))
-				"left":   carve = (x == 0 and notch.has(y));  newedge = (x == 1 and notch.has(y))
-				"right":  carve = (x == 15 and notch.has(y)); newedge = (x == 14 and notch.has(y))
+				"top":    carve = (y < d and notch.has(x));        newedge = (y == d and notch.has(x))
+				"bottom": carve = (y >= 16 - d and notch.has(x));  newedge = (y == 15 - d and notch.has(x))
+				"left":   carve = (x < d and notch.has(y));        newedge = (x == d and notch.has(y))
+				"right":  carve = (x >= 16 - d and notch.has(y));  newedge = (x == 15 - d and notch.has(y))
 			if carve:
 				atlas_img.set_pixel(ox + x, oy + y, transparent)
 				continue
@@ -2663,8 +2664,14 @@ const ROUGH_TOP_VARIANT_COORDS: Array[Vector2i] = [Vector2i(2, 6), Vector2i(3, 6
 const ROUGH_LEFT_VARIANT_COORDS: Array[Vector2i] = [Vector2i(5, 6), Vector2i(6, 6), Vector2i(7, 6)]
 const ROUGH_RIGHT_VARIANT_COORDS: Array[Vector2i] = [Vector2i(0, 7), Vector2i(1, 7), Vector2i(2, 7)]
 const ROUGH_BOTTOM_VARIANT_COORDS: Array[Vector2i] = [Vector2i(3, 7), Vector2i(4, 7), Vector2i(5, 7)]
-# 3 套挖缺口位置 (行或列下标, 错开). 上下用作列, 左右用作行。
-const ROUGH_TOP_NOTCH: Array = [[3, 4, 11], [7, 8, 14, 15], [1, 2, 9, 10]]
+# 缺口挖多深 (px, 16px atlas 空间). 2 才看得清 (1 太微弱, 用户反馈"没变化")。
+const ROUGH_DEPTH := 2
+# 3 套挖缺口位置 (行或列下标, 错开 + 覆盖较多 → 起伏明显). 上下用作列, 左右用作行。
+const ROUGH_TOP_NOTCH: Array = [
+	[0, 1, 2, 3, 9, 10, 11],
+	[5, 6, 7, 12, 13, 14, 15],
+	[2, 3, 4, 8, 9, 13, 14],
+]
 # build_atlas 用: [flat_key, side, coords]。
 const _ROUGH_EDGE_CONFIGS: Array = [
 	[FLAT_TOP_KEY, "top", ROUGH_TOP_VARIANT_COORDS],
