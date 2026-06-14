@@ -2584,6 +2584,13 @@ static func build_atlas(tile_id: int) -> ImageTexture:
 						push_warning("tile %d 缺槽位 %s (variant %s)" % [tile_id, slot, variant_key])
 						color = transparent
 				atlas_img.set_pixel(ox + x, oy + y, color)
+		# 把这格暴露的边 (key 里 N/E/S/W = "O" 的那几边) 挖缺口 → 任何形状的暴露边都起伏,
+		# 不只完全平直格 (自然地形很少完全平 → 之前只碰平直格几乎看不出)。按变体编号选缺口。
+		var notch_i: Array = ROUGH_TOP_NOTCH[i % ROUGH_TOP_NOTCH.size()]
+		if variant_key[0] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "top", transparent)
+		if variant_key[1] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "right", transparent)
+		if variant_key[2] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "bottom", transparent)
+		if variant_key[3] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "left", transparent)
 
 	# 内部满格随机变体: 把 base_pattern 翻转 (H / V / HV) 画到 3 个备用 cell。
 	# autotile 给"四周填满"的格子按坐标随机挑一个 → 大片内部不再一模一样 (泰拉瑞亚风)。
@@ -2654,6 +2661,28 @@ static func _render_rough_cell(atlas_img: Image, base_pattern: Array, palette: D
 
 # 内部满格的 3 个随机翻转变体放这几个 cell (autotile + tileset_builder 共用). vi: 0=H 1=V 2=HV.
 const INTERIOR_VARIANT_COORDS: Array[Vector2i] = [Vector2i(7, 5), Vector2i(0, 6), Vector2i(1, 6)]
+
+
+# 在已渲染好的 cell 上, 把某条暴露边 (side) 按 notch 挖掉外缘 ROUGH_DEPTH px (透明) +
+# 凹陷处露出的新边给高光。notch 是沿该边的下标 (上下=列, 左右=行)。原地改 atlas_img。
+static func _carve_cell_edge(img: Image, ox: int, oy: int, palette: Dictionary,
+		notch: Array, side: String, transparent: Color) -> void:
+	var d: int = ROUGH_DEPTH
+	var hl: Color = palette.get("_H", Color(1, 1, 1, 1))
+	for p in notch:
+		match side:
+			"top":
+				for k in d: img.set_pixel(ox + p, oy + k, transparent)
+				if img.get_pixel(ox + p, oy + d).a > 0.0: img.set_pixel(ox + p, oy + d, hl)
+			"bottom":
+				for k in d: img.set_pixel(ox + p, oy + 15 - k, transparent)
+				if img.get_pixel(ox + p, oy + 15 - d).a > 0.0: img.set_pixel(ox + p, oy + 15 - d, hl)
+			"left":
+				for k in d: img.set_pixel(ox + k, oy + p, transparent)
+				if img.get_pixel(ox + d, oy + p).a > 0.0: img.set_pixel(ox + d, oy + p, hl)
+			"right":
+				for k in d: img.set_pixel(ox + 15 - k, oy + p, transparent)
+				if img.get_pixel(ox + 15 - d, oy + p).a > 0.0: img.set_pixel(ox + 15 - d, oy + p, hl)
 # 4 条暴露边各自的"平直一格" variant key (只那一边开/暴露空气, 另 3 边闭)。
 const FLAT_TOP_KEY := "OCCC.II."     # 上方空气 (地表)
 const FLAT_LEFT_KEY := "CCCOII.."    # 左方空气 (悬崖右壁/洞左壁)
