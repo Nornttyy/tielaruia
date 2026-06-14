@@ -3446,13 +3446,41 @@ static func get_icon(item_id: String) -> ImageTexture:
 		return PixelArt.grid_to_texture(_energy_sword_grid(_SPECIAL_SWORD_MATS[item_id]), PALETTE)
 	if _SPECIAL_FLAIL_MATS.has(item_id):
 		return PixelArt.grid_to_texture(_energy_flail_grid(_SPECIAL_FLAIL_MATS[item_id]), PALETTE)
-	if _SPECIAL_FLAIL_MATS.has(item_id):
-		return PixelArt.grid_to_texture(_energy_flail_grid(_SPECIAL_FLAIL_MATS[item_id]), PALETTE)
 	var tv: Array = _tier_variant(item_id)
 	if not tv.is_empty():
 		return PixelArt.grid_to_texture(_recolor_grid(_ICONS[tv[0]], tv[1]), PALETTE)
 	assert(_ICONS.has(item_id), "未知物品 icon: %s" % item_id)
-	return PixelArt.grid_to_texture(_ICONS[item_id], PALETTE)
+	var grid: Array = _ICONS[item_id]
+	# 法杖: 自动把杖身加长几行 → 整根更长更有气势 (顶部独特造型原样保留)
+	if item_id.ends_with("_staff"):
+		grid = _taller_staff(grid)
+	return PixelArt.grid_to_texture(grid, PALETTE)
+
+
+# 找法杖里最长的一段"完全相同且非空"连续行 (= 杖身那根杆), 复制 extra 行让法杖变长。
+# 这样不用逐个重画 20 把法杖, 顶部独特宝珠/造型完全不动, 只是杆变长。
+static func _taller_staff(grid: Array, extra: int = 5) -> Array:
+	var best_start: int = -1
+	var best_len: int = 0
+	var best_row: String = ""
+	var i: int = 0
+	while i < grid.size():
+		var row: String = grid[i]
+		var j: int = i
+		while j < grid.size() and grid[j] == row:
+			j += 1
+		var run: int = j - i
+		if run > best_len and row.contains("n"):
+			best_len = run
+			best_start = i
+			best_row = row
+		i = j
+	if best_len < 2 or best_start < 0:
+		return grid
+	var out: Array = grid.duplicate()
+	for k in extra:
+		out.insert(best_start, best_row)
+	return out
 
 
 static func has_icon(item_id: String) -> bool:
