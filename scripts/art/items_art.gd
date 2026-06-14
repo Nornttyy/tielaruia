@@ -3346,8 +3346,10 @@ static func _hammer_grid(mats: Array) -> Array:
 # 新武器材质变种: 哪些基础武器支持 gold_/diamond_ 升级 (图标 = 基础形状换金属色)
 const _TIER_WEAPONS := {"dual_blade": true, "flail": true, "warhammer": true,
 	"shuriken": true, "boomerang": true}   # bomb 不换(它是黑壳, 换色没意义)
-const _GOLD_SWAP := {"K": "R", "G": "Z", "g": "Z", "j": "P"}      # 灰钢 → 金
-const _DIAMOND_SWAP := {"K": "T", "G": "N", "g": "N", "j": "Q"}   # 灰钢 → 钻石蓝
+# 灰钢字母 → 金/钻石蓝。注意 B 是流星锤球/战锤头/手里剑的【主金属色】, 以前漏了它 →
+# 金/钻变种主体一直是灰的 (用户报"流星锤颜色不对")。K=暗钢→暗色, B=主钢→主色。
+const _GOLD_SWAP := {"K": "R", "B": "Z", "G": "Z", "g": "Z", "j": "P"}      # 灰钢 → 金
+const _DIAMOND_SWAP := {"K": "T", "B": "N", "G": "N", "g": "N", "j": "Q"}   # 灰钢 → 钻石蓝
 
 
 # 把图标 grid 里的金属色字母按 swap 换掉 (材质 tier 用)。木/其它色不动。
