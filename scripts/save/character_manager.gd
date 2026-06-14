@@ -40,11 +40,13 @@ func _sanitize(name: String) -> String:
 
 
 func has_any() -> bool:
-	return not list_characters().is_empty()
+	return not list_character_names().is_empty()
 
 
-# 列出所有角色: [{name, data, path}] (照 SaveManager.list_saves 结构)。
-func list_characters() -> Array:
+# 只读"角色文件名"(= 角色名), 不加载资源。给去重/有无判断用:
+# 网页版 ResourceLoader.load 偶尔失败, 靠它列表会漏掉角色 → 建新角色时去重看不见 →
+# 第二个角色用了同名文件覆盖第一个 (用户报"保存后列表还是一个")。文件名一定在盘上, 最稳。
+func list_character_names() -> Array:
 	var out: Array = []
 	var dir_path: String = chars_dir()
 	if not DirAccess.dir_exists_absolute(dir_path):
@@ -56,16 +58,26 @@ func list_characters() -> Array:
 	var file_name: String = dir.get_next()
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.ends_with(".tres") and not file_name.ends_with(".tmp.tres"):
-			var full_path: String = dir_path + file_name
-			var res = ResourceLoader.load(full_path)
-			if res is CharacterData:
-				out.append({
-					"name": file_name.replace(".tres", ""),
-					"data": res,
-					"path": full_path,
-				})
+			out.append(file_name.replace(".tres", ""))
 		file_name = dir.get_next()
 	dir.list_dir_end()
+	return out
+
+
+# 列出所有角色: [{name, data, path}] (照 SaveManager.list_saves 结构)。
+# 加载用 CACHE_MODE_REPLACE 强制读盘最新 (别拿到旧缓存); 即使资源加载失败也不丢这个角色 —
+# 给个默认 data 占位, 至少列表能显示+能选, 不会"凭空少一个"。
+func list_characters() -> Array:
+	var out: Array = []
+	var dir_path: String = chars_dir()
+	for nm in list_character_names():
+		var full_path: String = dir_path + nm + ".tres"
+		var res = ResourceLoader.load(full_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+		if not (res is CharacterData):
+			# 加载失败兜底: 用默认角色顶上, 名字保留 (别让网页加载失败把角色从列表抹掉)
+			res = CharacterData.new()
+			res.character_name = nm
+		out.append({"name": nm, "data": res, "path": full_path})
 	return out
 
 
@@ -107,7 +119,8 @@ func load_character_by_name(name: String) -> CharacterData:
 	var path: String = chars_dir() + name + ".tres"
 	if not FileAccess.file_exists(path):
 		return null
-	var res = ResourceLoader.load(path)
+	# CACHE_MODE_REPLACE: 读盘最新, 别拿到刚被覆盖前的旧缓存 (网页改造型后尤其重要)
+	var res = ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_REPLACE)
 	if not res is CharacterData:
 		return null
 	return res

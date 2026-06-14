@@ -477,8 +477,9 @@ func _save_creator() -> void:
 # 重名就在后面加 2/3/… (按存档文件名比对), 防第二个角色覆盖第一个。
 func _unique_character_name(base: String) -> String:
 	var taken := {}
-	for entry in CharacterManager.list_characters():
-		taken[String(entry["name"])] = true
+	# 只看文件名 (不加载资源): 网页加载失败也不会漏掉已有角色 → 第二个角色不会撞名覆盖第一个
+	for nm in CharacterManager.list_character_names():
+		taken[String(nm)] = true
 	if not taken.has(CharacterManager._sanitize(base)):
 		return base
 	var i: int = 2

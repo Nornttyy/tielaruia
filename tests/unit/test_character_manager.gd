@@ -91,3 +91,35 @@ func test_reject_path_injection_on_load_delete():
 	assert_null(cm.load_character_by_name("../secret"), "非法名读 = null")
 	cm.delete_character_by_name("../secret")  # 不应抛错/删别处文件
 	pass_test("非法名 delete 不崩")
+
+# --- 回归: 网页角色文件加载失败时, 不能把它从列表里抹掉 (否则建第二个会撞名覆盖第一个) ---
+# 写一个"坏"角色文件 (内容不是合法 CharacterData), 模拟网页 ResourceLoader.load 失败。
+func _write_corrupt_char(name: String):
+	if not DirAccess.dir_exists_absolute(cm.chars_dir()):
+		DirAccess.make_dir_absolute(cm.chars_dir())
+	var f = FileAccess.open(cm.chars_dir() + name + ".tres", FileAccess.WRITE)
+	f.store_string("这不是合法的 tres 内容")
+	f.close()
+
+func test_list_names_includes_unloadable():
+	_write_corrupt_char("坏档甲")
+	assert_true(cm.list_character_names().has("坏档甲"), "加载失败的角色名也要列出来 (去重靠它)")
+
+func test_list_characters_keeps_unloadable_with_placeholder():
+	_write_corrupt_char("坏档乙")
+	var names := []
+	for e in cm.list_characters():
+		names.append(String(e["name"]))
+	assert_true(names.has("坏档乙"), "加载失败的角色不该从列表消失 (用占位顶上)")
+
+func test_second_char_not_overwriting_when_first_unloadable():
+	# 第一个角色文件加载失败 (模拟网页), 再建同名第二个 → 必须改名共存, 不能覆盖
+	_write_corrupt_char("我的角色")
+	var taken := {}
+	for nm in cm.list_character_names():
+		taken[nm] = true
+	assert_true(taken.has("我的角色"), "去重表里要有坏掉的第一个角色")
+	# 第二个同名角色保存后, 盘上该有两个不同文件
+	var c2 = _make("我的角色 2")
+	cm.save_character(c2)
+	assert_eq(cm.list_character_names().size(), 2, "两个角色共存 (没互相覆盖)")
