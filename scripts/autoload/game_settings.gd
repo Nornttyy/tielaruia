@@ -108,11 +108,11 @@ var graphics_quality: int = 1:
 		_save()
 
 # camera_zoom: 摄像机大小 (越小看得越远, 越大看得越近). World 的 Camera2D 同步.
-# 默认 1.0. 范围 1.0 (最远/最缩) ~ 2.0 (近距离/最放大). 滚轮/滑块都走这个 clamp.
-# (下限从 0.8 抬到 1.0: 用户嫌滚轮拉太远. clamp 下限 1.0 会把旧存档的 0.8/0.5 自动夹回.)
-var camera_zoom: float = 1.0:
+# 默认 0.75 (方块比以前小 25% = 用户要"像泰拉瑞亚那样小"; 走镜头 → 安全, 不糊, 不碰物理).
+# 范围 0.6 (最远/方块最小) ~ 2.0 (最近/最大). 滚轮/滑块都走这个 clamp.
+var camera_zoom: float = 0.75:
 	set(v):
-		var clamped: float = clampf(v, 1.0, 2.0)
+		var clamped: float = clampf(v, 0.6, 2.0)
 		if camera_zoom == clamped: return
 		camera_zoom = clamped
 		_save_and_emit()
@@ -264,7 +264,11 @@ func _load() -> void:
 	graphics_quality = clampi(int(cfg.get_value("graphics", "quality", 1)), 0, 2)
 	# 帧率上限 (0=不限). setter 会应用 Engine.max_fps。
 	max_fps = max(0, int(cfg.get_value("video", "max_fps", 60)))
-	camera_zoom = clampf(float(cfg.get_value("camera", "zoom", 1.0)), 1.0, 2.0)
+	# 旧档锁在 1.0 (旧"最远") → 一次性迁到新默认 0.75 (方块缩 25%, 用户要求). 已自己调过别的值的不动.
+	var _saved_zoom: float = float(cfg.get_value("camera", "zoom", 0.75))
+	if is_equal_approx(_saved_zoom, 1.0):
+		_saved_zoom = 0.75
+	camera_zoom = clampf(_saved_zoom, 0.6, 2.0)
 	# 语言: 只接受 4 个支持的代码, 其他值退回中文
 	var saved_lang: String = String(cfg.get_value("locale", "language", "zh"))
 	current_language = saved_lang if ["zh", "en", "ja", "ko"].has(saved_lang) else "zh"
