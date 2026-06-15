@@ -355,8 +355,10 @@ func _mp_broadcast_initial_state() -> void:
 
 
 func _on_initial_state(deltas: Dictionary) -> void:
-	# 对战房: 不应用别人的地形 (各房独立, 自己本地已 build 竞技场)。
+	# 对战房: 不应用别人的地形 (各房独立). 但必须在本地把竞技场 build 出来 —
+	# 地基不广播 (各端自建), 加入公共房的 joiner 若漏 build → 没地面 → 出生/复活掉空摔死循环 (用户报)。
 	if NetworkManager != null and NetworkManager.room_mode == "pvp":
+		PvpArena.build(self)
 		return
 	_apply_initial_state(deltas)
 
@@ -1817,7 +1819,14 @@ func respawn_player() -> void:
 	_slime_spawn_timer = 5.0
 	# 传送回出生点 + 满血 + 满魔 (老 bug: mana 不回, 持法杖死了复活就发不出火球)
 	# 对战房: 随机出生点 (各次不同, 防蹲点 + 出生不重叠); 否则回世界出生点。
-	player.global_position = PvpArena.random_spawn() if pvp else _spawn_world_pos()
+	if pvp:
+		# 确保本地竞技场地面在再传送 — 公共房 joiner 可能漏 build (地基不广播, 各端自建),
+		# 否则传到随机点掉空摔死 + 复活又掉 = 死循环 (用户报). 只在地面缺失时重 build (省: 不每次重铺)。
+		if chunk_manager != null and chunk_manager.get_tile(PvpArena.CENTER_X, PvpArena.FLOOR_Y) != Tiles.STONE:
+			PvpArena.build(self)
+		player.global_position = PvpArena.random_spawn()
+	else:
+		player.global_position = _spawn_world_pos()
 	# 清零速度: 否则死亡那一刻的残留速度 (摔死=高速下坠 / 被炸飞=上抛) 会带进复活,
 	# 让玩家重生后乱飞 / 穿地 / 落不到地 (坠落伤害上线后高发, 用户报)。
 	if "velocity" in player:
