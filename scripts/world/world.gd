@@ -90,6 +90,9 @@ var chunk_manager: ChunkManager
 var water_sim: Node
 var minimap_data: Node
 var _remote_players: Dictionary = {}   # peer_id(String) → RemotePlayer 节点 (多人公共房)
+var _migrating: bool = false            # 正在 host 迁移中 (防 disconnected 重入)
+var _migration_overlay: CanvasLayer = null
+const _MIGRATION_TIMEOUT := 20.0        # 这么久还没连上 → 放弃, 转单机
 var _mp_time_sync_timer: float = 0.0   # host 广播时间+天气计时 (Phase F)
 const _MP_TIME_SYNC_INTERVAL := 5.0
 var _mp_entity_sync_timer: float = 0.0  # host 广播实体位置计时 (Phase E)
@@ -315,6 +318,9 @@ func _setup_multiplayer_callbacks() -> void:
 	# host: 立刻广播 chunk_deltas (新 join 的 client 拿到这份现状)
 	if NetworkManager.is_host:
 		_mp_broadcast_initial_state.call_deferred()
+		_mp_entity_sync_timer = 0.0       # 新房主接管: 立刻进入实体广播 (别等节流)
+		_mp_entity_full_timer = 0.0
+		NetworkManager.broadcast_succession()   # 新房主: 给现有连接发接班号
 	# client: hello/init_state 若在 _ready 前到, 应用 pending
 	elif not NetworkManager.pending_initial_deltas.is_empty():
 		_apply_initial_state(NetworkManager.pending_initial_deltas)
@@ -323,9 +329,17 @@ func _setup_multiplayer_callbacks() -> void:
 
 func _on_mp_status_changed(s: String) -> void:
 	if s == "connected":
+		# 迁移成功 (重连上新房主 / 自己当上新房主) → 撤遮罩, 收尾
+		if _migrating:
+			_finish_host_migration()
 		_setup_multiplayer_callbacks()
 	elif s == "disconnected" or s == "error":
 		_cleanup_remote_on_disconnect()
+		# 公共生存房客户端: 房主掉线 → 启动 host 迁移 (而不是干等/散场)
+		if _migrating and s == "error":
+			_finish_host_migration()              # 迁移中又出错 → 放弃, 转单机继续
+		elif _should_attempt_migration():
+			_begin_host_migration()
 
 
 # 对方掉线: 清掉对方角色 + 所有从对端同步来的怪/实体, 否则残留"幽灵"继续接触伤害本地玩家.
@@ -342,6 +356,84 @@ func _cleanup_remote_on_disconnect() -> void:
 	_remote_entities.clear()
 	# client 已捡 drop 的 id 记录也清掉, 否则重连后 host 重新广播这些 drop 会被当"已捡"拒绝创建 → 隐身
 	_picked_up_drop_ids.clear()
+
+
+# 该不该启动 host 迁移: 必须是"公共生存房 + 之前是客户端 + 没在迁移中".
+# 用 in_public_room + room_mode 判定 (不用 connected()/is_host: 断线那刻它们已不可信).
+func _should_attempt_migration() -> bool:
+	if NetworkManager == null:
+		return false
+	if _migrating:
+		return false                              # 已在迁移, 别重入
+	if not NetworkManager.in_public_room:
+		return false                              # 私人房本期不迁移
+	if NetworkManager.room_mode == "pvp":
+		return false                              # 对战房本期不迁移
+	if NetworkManager.is_host:
+		return false                              # 我本来就是房主, 不是"房主掉线"
+	return true
+
+
+# 房主掉线 → 启动迁移: 显示遮罩 + 按接班号错峰后重进原房号.
+func _begin_host_migration() -> void:
+	_migrating = true
+	_show_migration_overlay()
+	# 我的接班号决定错峰多久. -1 (没收到号) → 排最后兜底.
+	var rank: int = NetworkManager.my_succession_rank
+	var wait: float = (float(rank) if rank >= 0 else 99.0) * NetworkManager.MIGRATION_STAGGER
+	# 用 SceneTreeTimer 的 timeout 回调 (connect, 不是 await) 错峰 → 不把 signal handler async 化.
+	var t: SceneTreeTimer = get_tree().create_timer(maxf(wait, 0.05))
+	t.timeout.connect(_do_migration_reenter)
+	# 兜底超时: 这么久还没连上 → 放弃迁移, 转单机继续玩 (世界还在).
+	var giveup: SceneTreeTimer = get_tree().create_timer(_MIGRATION_TIMEOUT)
+	giveup.timeout.connect(_migration_timeout_check)
+
+
+func _do_migration_reenter() -> void:
+	if not _migrating:
+		return                                    # 期间已收尾/取消
+	NetworkManager.reenter_public_for_migration()
+
+
+func _migration_timeout_check() -> void:
+	if not _migrating:
+		return
+	if NetworkManager != null and NetworkManager.connected():
+		return                                    # 已连上, 收尾会处理
+	# 超时还没连上 → 当作只剩自己, 转单机继续 (不踢回菜单, 世界保留)
+	_finish_host_migration()
+
+
+func _finish_host_migration() -> void:
+	_migrating = false
+	_hide_migration_overlay()
+
+
+func _show_migration_overlay() -> void:
+	if _migration_overlay != null and is_instance_valid(_migration_overlay):
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 100                             # 盖在最上面
+	var bg := ColorRect.new()
+	bg.color = Color(0, 0, 0, 0.6)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP    # 迁移期间挡住点击 (别让玩家乱操作)
+	layer.add_child(bg)
+	var label := Label.new()
+	label.text = "正在换房主…"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.add_theme_font_size_override("font_size", 32)
+	layer.add_child(label)
+	add_child(layer)
+	_migration_overlay = layer
+
+
+func _hide_migration_overlay() -> void:
+	if _migration_overlay != null and is_instance_valid(_migration_overlay):
+		_migration_overlay.queue_free()
+	_migration_overlay = null
 
 
 func _mp_broadcast_initial_state() -> void:
