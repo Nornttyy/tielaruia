@@ -217,19 +217,20 @@ const _P_ROPE := {
 }
 
 const _P_LEAVES := {
-	"l": Color8(125, 173, 92),   # 暖中绿
-	"L": Color8(86, 129, 74),    # 暖阴影
-	"d": Color8(58, 89, 56),     # 最深
-	"h": Color8(164, 197, 122),  # 暖高光
-	"y": Color8(201, 197, 111),  # 金橄榄
-	"s": Color8(108, 142, 88),   # 中阴影
-	"a": Color8(180, 185, 120),  # 鼠尾草
-	"r": Color8(184, 100, 58),   # 秋红
-	# 新增 (T3): 边缘语义槽
-	"_o": Color8(18, 34, 16),    # 极暗轮廓 (d×0.55 → 近黑绿)
-	"_e": Color8(60, 96, 51),    # 边缘暗影 (l×0.55)
-	"_h": Color8(156, 216, 115), # 边缘高光 (l+25%)
-	"_H": Color8(178, 228, 115), # 顶强高光 (暖黄绿, R+8 B-8)
+	# 暖鲜绿树冠: 一簇簇圆叶团, 左上受光 (阳光黄绿高光), 右下+簇间深绿暗缝 → 蓬松立体.
+	"h": Color8(188, 220, 114),  # 阳光高光 (簇顶受光, 暖黄绿)
+	"y": Color8(152, 202, 94),   # 亮叶
+	"a": Color8(124, 184, 84),   # 浅叶
+	"l": Color8(98, 160, 72),    # 主绿
+	"s": Color8(74, 130, 60),    # 中阴影绿
+	"L": Color8(52, 102, 52),    # 暗绿阴影
+	"d": Color8(34, 74, 42),     # 最深绿 (簇间暗缝)
+	"r": Color8(98, 160, 72),    # 兼容旧 key (= 主绿)
+	# 边缘语义槽 (绿系)
+	"_o": Color8(24, 52, 30),    # 极暗轮廓 (近黑绿)
+	"_e": Color8(56, 108, 56),   # 边缘暗影
+	"_h": Color8(160, 210, 104), # 边缘高光
+	"_H": Color8(190, 222, 116), # 顶强高光
 }
 
 # 松针：深暖绿 + 灰绿暗色，无透角更密实
@@ -1018,24 +1019,25 @@ const _LOG := [
 	"BBbbrrllllrrbbBB",
 ]
 
-# 橡木叶：4 角透空 + 多个叶簇 (簇心 h 高光 + d 阴影框) + 秋红浆果 r + 金橄榄 y + 鼠尾草 a
+# 橡木叶 (泰拉瑞亚风重画): 一簇簇圆叶团, 每簇左上受光 h/y 高光、右下 s/L 阴影、簇间 d 深缝.
+# 环形无缝平铺 (程序生成于 /tmp/leafgen.py, 簇心取最大凸起 + 阳光左上梯度).
 const _LEAVES := [
-	".lhLh....hLhl.h.",
-	"lLhddhlllhddhLls",
-	"Lddyhddssddyhdds",
-	"lLyddhsssddyaLls",
-	"llLLLsLLLLsLLLll",
-	"lLLddhhhhhhddLLs",
-	"Lddhhddrrddhhddl",
-	"Lddysssssyydddal",
-	"lddysssssyyddddl",
-	"Lddhhddrrddhhddl",
-	"lLLddhhhhhhddLLs",
-	"llLLLsLLLLsLLLll",
-	"lLyddhsssddyaLls",
-	"Lddyhddssddyhdds",
-	"lLhddhlllhddhLls",
-	".lhLh....hLhl.h.",
+	"daaalsslsyaasddL",
+	"aayyalLayyyalLdd",
+	"ayyyylLaayhalLdd",
+	"ayyhylLlaaalsLdd",
+	"layyasLdsllsLaal",
+	"slllsLalsLLLayaa",
+	"lLLLayyalLdayyya",
+	"lLdayyyylLdaayha",
+	"sLdayyhylLaaaaaa",
+	"Lallayyasayyalls",
+	"yaaslllsLyyyalLa",
+	"yyalLLLLayyhylaa",
+	"yhalLdaaaaayasyy",
+	"aalsLaayyallsayh",
+	"llsLdlayhasLLaaa",
+	"LLLddlaaalLldsss",
 ]
 
 # 松针：密实无透角 + 矩形针簇 + 暗影包裹 + 偶发松果 y
@@ -2586,11 +2588,13 @@ static func build_atlas(tile_id: int) -> ImageTexture:
 				atlas_img.set_pixel(ox + x, oy + y, color)
 		# 把这格暴露的边 (key 里 N/E/S/W = "O" 的那几边) 挖缺口 → 任何形状的暴露边都起伏,
 		# 不只完全平直格 (自然地形很少完全平 → 之前只碰平直格几乎看不出)。按变体编号选缺口。
-		var notch_i: Array = ROUGH_TOP_NOTCH[i % ROUGH_TOP_NOTCH.size()]
-		if variant_key[0] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "top", transparent)
-		if variant_key[1] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "right", transparent)
-		if variant_key[2] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "bottom", transparent)
-		if variant_key[3] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "left", transparent)
+		# 树叶 (leaf 族) 跳过: 它本身就是柔和不规则边 (_LEAF_STYLE), 再挖会把树冠弄碎。
+		if family != "leaf":
+			var notch_i: Array = ROUGH_TOP_NOTCH[i % ROUGH_TOP_NOTCH.size()]
+			if variant_key[0] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "top", transparent)
+			if variant_key[1] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "right", transparent)
+			if variant_key[2] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "bottom", transparent)
+			if variant_key[3] == "O": _carve_cell_edge(atlas_img, ox, oy, palette, notch_i, "left", transparent)
 
 	# 内部满格随机变体: 把 base_pattern 翻转 (H / V / HV) 画到 3 个备用 cell。
 	# autotile 给"四周填满"的格子按坐标随机挑一个 → 大片内部不再一模一样 (泰拉瑞亚风)。

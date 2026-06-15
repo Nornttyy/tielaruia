@@ -105,19 +105,18 @@ const _SOIL_STYLE := {
 	"concave": [[0, 0, "e"]],
 }
 
-# 叶族 (T12): 簇状描边 + 啃咬圆角 + 大量透明缝隙 (叶子轮廓不规则感)
-# 设计意图: 顶部 h 高光 (温和), 不规则间隔有 "." 让内部叶纹路透出来.
-# 侧边/底边同样断断续续. 外凸角削 2px + 锯齿. 内凹角仅 1px 暗 (叶面薄).
+# 叶族 (T12, 泰拉瑞亚风重做): 柔和实心树冠 — 顶亮 h 描边 (太阳) + 底/侧暗 e 描边,
+# 大圆角 (4px) 让树冠圆润像云朵, 不再到处透明碎缝 (用户报"边缘太碎")。
 const _LEAF_STYLE := {
-	"top_row0":    "hh.hh.hh.hh.hhh.",
-	"top_row1":    "h.h..hh..h.hh.h.",
-	"bot_row14":   ".h.h.h.hh.h.hh..",
-	"bot_row15":   "h.hh..h.h.hh.h.h",
-	"left_col0":   "h.hh.h.hh.h.",
+	"top_row0":    "hhhhhhhhhhhhhhhh",   # 顶部柔和亮绿描边 (受光)
+	"top_row1":    "................",   # 第二行透出内部叶纹 (软过渡)
+	"bot_row14":   "................",
+	"bot_row15":   "eeeeeeeeeeeeeeee",   # 底部柔和暗绿描边
+	"left_col0":   "eeeeeeeeeeee",       # 侧面暗绿描边
 	"left_col1":   "............",
 	"right_col14": "............",
-	"right_col15": "hh.h.hh.h.h.",
-	"corner_round": 2,
+	"right_col15": "eeeeeeeeeeee",
+	"corner_round": 4,                    # 大圆角 → 树冠圆润 (云朵感)
 	"concave": [[0, 0, "e"]],
 }
 
