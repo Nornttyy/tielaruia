@@ -87,6 +87,14 @@ var _pos_send_timer: float = 0.0
 var _bridge = null   # JavaScriptObject ref, 仅 HTML5 有
 var _poll_timer: float = 0.0
 
+# host 迁移: 房主侧接班顺序 + 客户端侧自己的接班号
+const HostSuccession = preload("res://scripts/net/host_succession.gd")
+var _succession = HostSuccession.new()   # 房主侧: 客户端加入顺序
+var my_succession_rank: int = -1          # 客户端侧: 房主分给我的接班号 (-1=还没收到)
+var _succ_send_timer: float = 0.0
+const _SUCC_SEND_INTERVAL := 4.0          # 房主每 4s 给所有客户端重发紧凑 rank
+const MIGRATION_STAGGER := 3.0            # host 迁移错峰间隔 (秒)
+
 
 func _ready() -> void:
 	# 暂停菜单会 set_tree().paused = true. NetworkManager 是 autoload, 默认会被
@@ -108,10 +116,15 @@ func _process(delta: float) -> void:
 	if _bridge == null:
 		return
 	_poll_timer -= delta
-	if _poll_timer > 0.0:
-		return
-	_poll_timer = POLL_INTERVAL
-	_poll_bridge()
+	if _poll_timer <= 0.0:
+		_poll_timer = POLL_INTERVAL
+		_poll_bridge()
+	# 房主: 周期给所有客户端重发紧凑接班号 (host 迁移用)
+	if is_host and connected():
+		_succ_send_timer -= delta
+		if _succ_send_timer <= 0.0:
+			_succ_send_timer = _SUCC_SEND_INTERVAL
+			broadcast_succession()
 
 
 func _has_javascript_bridge() -> bool:
@@ -168,10 +181,15 @@ func _handle_envelope(env: Dictionary) -> void:
 	if data is Dictionary:
 		var t: String = String(data.get("type", ""))
 		if t == "__peer_join":
-			peer_joined.emit(String(data.get("id", from_peer)))
+			var jid: String = String(data.get("id", from_peer))
+			_succession.on_join(jid)        # 房主: 记加入顺序
+			peer_joined.emit(jid)
+			broadcast_succession()          # 新人进来 → 立刻给全员发最新紧凑接班号
 			return
 		if t == "__peer_leave":
-			peer_left.emit(String(data.get("id", from_peer)))
+			var lid: String = String(data.get("id", from_peer))
+			_succession.on_leave(lid)
+			peer_left.emit(lid)
 			return
 	_route_message(raw, from_peer)
 	# host 收到 client 的可转发消息 → 盖来源 pid 后转发给其它 client
@@ -296,6 +314,9 @@ func _route_message(raw: String, from_peer: String = "HOST") -> void:
 			var t: float = float(data.get("t", 0.0))
 			var w: String = String(data.get("w", "clear"))
 			remote_time_weather_received.emit(t, w)
+		"succ":
+			# 房主告诉我: 我是第几个进的 (接班号). 房主掉线时按它错峰重进.
+			my_succession_rank = int(data.get("r", -1))
 
 
 func host(p_seed: int = 0, p_size: int = 1, p_diff: int = 1) -> void:
@@ -339,6 +360,8 @@ func join(code: String) -> void:
 # 先设好固定世界参数 (万一本端成 host, 连上后要 send_hello 这些值给 client).
 func enter_public(tag: String, seed_val: int, size_val: int, diff_val: int) -> void:
 	in_public_room = true   # 公共房 (本来就是多人, 暂停菜单不显示"多人游戏/踢人")
+	my_succession_rank = -1
+	_succession.clear()
 	# 房间类型 → 模式: PVP* 对战房 (PVP/PVP-MAGIC/PVP-GUN 按对战装备分房) / BW 起床战争 / 其它生存
 	if tag.begins_with("PVP"):
 		room_mode = "pvp"
@@ -359,6 +382,17 @@ func enter_public(tag: String, seed_val: int, size_val: int, diff_val: int) -> v
 	if gs != null and "mp_max_players" in gs:
 		max_p = clampi(int(gs.mp_max_players), 2, MpRooms.MAX_PEERS)
 	_bridge.enter_public(tag, max_p, MpRooms.MAX_ROOMS)
+
+
+# host 迁移: 重进当前公共房号 (保留 index). 由 world 检测到房主掉线后错峰调用.
+# 角色 (host/client) 由桥的抢占逻辑决定: 先到的抢到房号当新房主, 晚到的加入它.
+func reenter_public_for_migration() -> void:
+	if _bridge == null:
+		return
+	status = "joining"
+	status_changed.emit(status)   # world 据此显示"正在换房主…"遮罩
+	if _bridge.has_method("reenter_public"):
+		_bridge.reenter_public()
 
 
 # 本端玩家的 peer id (host = 固定房号; client = bridge 分配的随机 id)
@@ -398,6 +432,16 @@ func _all_peer_ids() -> Array:
 	var ids_json: String = String(_bridge.get_peer_ids())
 	var v: Variant = JSON.parse_string(ids_json)
 	return v if v is Array else []
+
+
+# 房主: 给每个客户端单播它的接班号 (rank). 紧凑 (0..N-1, 按加入顺序). 只 host 调.
+# host 迁移: 房主掉线后各客户端按自己的 rank 错峰重进, rank 小的先抢到当新房主.
+func broadcast_succession() -> void:
+	if _bridge == null or not is_host:
+		return
+	var order: Array = _succession.ordered()
+	for i in range(order.size()):
+		_bridge.send_to(String(order[i]), JSON.stringify({"type": "succ", "r": i}))
 
 
 func send(data: String) -> bool:
@@ -617,6 +661,8 @@ func disconnect_room() -> void:
 	remote_player_names.clear()
 	room_mode = "survival"
 	shared_world_creative = false
+	my_succession_rank = -1
+	_succession.clear()
 
 
 func connected() -> bool:

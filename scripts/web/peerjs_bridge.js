@@ -292,6 +292,24 @@
         _tryJoinPublic(bridge._gen);
     };
 
+    // 迁移用: 重进"当前这号"公共房 (保留 _pubTag/_pubIndex, 不重置回 1 号房).
+    // 房主掉线后各幸存者调它 → 先试加入原房号, 没人就抢占当新房主 (复用 _tryJoinPublic 现成逻辑).
+    bridge.reenter_public = function() {
+        var tag = bridge._pubTag, idx = bridge._pubIndex || 1;
+        var mp = bridge._maxPeers, mr = bridge._maxRooms;
+        bridge.disconnect();            // 清掉旧的到房主的死连接 (会 _gen++)
+        bridge._gen++;
+        bridge._maxPeers = mp;
+        bridge._maxRooms = mr;
+        bridge._pubTag = tag;
+        bridge._pubIndex = idx;         // 关键: 回到原房号, 不是 1
+        bridge._pubFlips = 0;
+        bridge._isHost = false;
+        bridge._status = 'joining';
+        bridge._lastError = '';
+        _tryJoinPublic(bridge._gen);
+    };
+
     function _pubId(idx) { return 'teilaruia-PUB-' + bridge._pubTag + '-' + idx; }
 
     // 先以 client 身份连 idx 号房
