@@ -654,6 +654,9 @@ func _on_peer_joined(peer_id: String) -> void:
 		for known_pid in NetworkManager.remote_player_names.keys():
 			NetworkManager.send_player_name_as(String(known_pid), String(NetworkManager.remote_player_names[known_pid]))
 		_mp_broadcast_initial_state()
+		# 中途加入: init_state 只含地形不含实体 → 再补发一次当前所有怪/动物全量快照,
+		# 否则晚进者看不到已存在的怪 (得等下次周期广播, 慢 + 可能被距离裁剪)。force_full=true=全量。
+		_mp_broadcast_entities(true)
 
 
 func _on_peer_left(peer_id: String) -> void:
