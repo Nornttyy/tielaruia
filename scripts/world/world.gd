@@ -355,10 +355,10 @@ func _mp_broadcast_initial_state() -> void:
 
 
 func _on_initial_state(deltas: Dictionary) -> void:
-	# 对战房: 不应用别人的地形 (各房独立). 但必须在本地把竞技场 build 出来 —
-	# 地基不广播 (各端自建), 加入公共房的 joiner 若漏 build → 没地面 → 出生/复活掉空摔死循环 (用户报)。
+	# 对战房: 不应用别人的地形 (各房独立, 竞技场各端本地 build).
+	# 注: host 对战房本就不发 init_state (见 _mp_broadcast_initial_state pvp 早退), 这分支基本进不来;
+	# 真正建竞技场靠进房 (main.gd, 门控已从 is_pvp 改 room_mode=="pvp") + 复活 (respawn) 兜底重建。
 	if NetworkManager != null and NetworkManager.room_mode == "pvp":
-		PvpArena.build(self)
 		return
 	_apply_initial_state(deltas)
 

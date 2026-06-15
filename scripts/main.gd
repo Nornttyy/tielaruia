@@ -637,7 +637,7 @@ func _grant_starter_on_new_game() -> void:
 			if inv_node != null and inv_node.inventory != null:
 				_want_starter = false   # 先置, 防同帧重入
 				# 对战房: 盖专属竞技场 (固定布局, 各端本地生成同图) + 玩家挪到随机出生点 (各玩家不重叠)
-				if NetworkManager != null and NetworkManager.is_pvp():
+				if NetworkManager != null and NetworkManager.room_mode == "pvp":
 					PvpArena.build(w)
 					player.global_position = PvpArena.random_spawn()
 					# 对战房全亮 (用户: 战斗时光照遮挡视野) — 黑暗层整片透明, 不挡视野
@@ -652,7 +652,7 @@ func _grant_starter_on_new_game() -> void:
 				# 角色系统: 老角色 (已有背包) 进新世界 → 带着角色的东西, 不发起步包;
 				# 全新角色 (背包空) → 照常发起步包 (随后 autosave 把它存进角色卡)。
 				# GUT 测试跳过 → 永远走起步包分支, 不被 current 残留影响。
-				if NetworkManager != null and NetworkManager.is_pvp():
+				if NetworkManager != null and NetworkManager.room_mode == "pvp":
 					_grant_starter_inventory(player)   # 对战房: 永远固定战斗装备包, 不管角色带啥
 				elif not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL \
 						and CharacterManager.current != null \
@@ -682,7 +682,7 @@ func _grant_starter_inventory(player: Node) -> void:
 	# 双发由调用方 _want_starter 一次性标志保证; 这里直接发. 不再"任一槽非空就跳过" —
 	# 那个会被新游戏时抢先进背包的物品 / 联机消息误触发 → 玩家丢三件套.
 	# 对战房 (PvP): 改发战斗装备包, 不发生存起步包
-	if NetworkManager != null and NetworkManager.is_pvp():
+	if NetworkManager != null and NetworkManager.room_mode == "pvp":
 		_grant_pvp_loadout(inv_node)
 		return
 	inv_node.pickup("wood_pickaxe", 1)
