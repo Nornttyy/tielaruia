@@ -412,18 +412,16 @@ static func _protect_sand_caves(c: Chunk, chunk_heights: Dictionary,
 				c.tiles[lx][y] = Tiles.STONE
 
 
-# 给本 chunk 每列从地表 surf 往下全填背景墙 (含地表块背后). 天上无墙, 植物格不放墙.
+# 给本 chunk 每列从地表 surf 往下全填背景墙 (含地表块背后 + 地下植物). 只有天上无墙.
 static func _fill_walls_chunk(c: Chunk, chunk_heights: Dictionary, chunk_width: int, height: int) -> void:
 	var chunk_start_x: int = c.chunk_x * chunk_width
-	# 用户要求: 所有方块后面都有墙 (含地表块) — 从地表 surf 往下全铺. 例外:
-	#  - 天上 (y < surf): 无墙, 透天空.
-	#  - 前景是植物 (草/叶/仙人掌/蘑菇/庄稼...): 那格不放墙 (用户: 墙除了植物).
+	# 用户要求: 所有方块后面都有墙 (含地表块 + 地下植物如蘑菇/火把) — 从地表 surf 往下全铺.
+	# 唯一例外: 天上 (y < surf) 无墙, 透天空.
+	# (原"植物格不放墙"已删 — 用户要地下蘑菇等后面也有墙; 地表草/花在 y<surf 本就不铺墙.)
 	for local_x in chunk_width:
 		var world_x: int = chunk_start_x + local_x
 		var surf: int = chunk_heights[world_x]
 		for y in range(surf, height):
-			if Tiles.is_plant(c.tiles[local_x][y]):
-				continue
 			c.walls[local_x][y] = _wall_for_depth(y, surf)
 
 

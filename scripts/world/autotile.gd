@@ -77,6 +77,7 @@ static func make_terrain_query(tile_id: int, chunk_manager: Object) -> Callable:
 	return func(x: int, y: int): return Tiles.is_solid(chunk_manager.get_tile(x, y))
 
 
-# 创建背景墙邻居查询. 各种墙各自独立: 只认相同 wall id.
-static func make_wall_query(wall_id: int, chunk_manager: Object) -> Callable:
-	return func(x: int, y: int): return chunk_manager.get_wall(x, y) == wall_id
+# 创建背景墙邻居查询. 任何墙都互相连 (跟 terrain 用 is_solid 同理) →
+# 土墙/石墙交界不再画缝, 整片背景墙连成一体 (用户报"墙连不起来").
+static func make_wall_query(_wall_id: int, chunk_manager: Object) -> Callable:
+	return func(x: int, y: int): return Tiles.is_wall_tile(chunk_manager.get_wall(x, y))
