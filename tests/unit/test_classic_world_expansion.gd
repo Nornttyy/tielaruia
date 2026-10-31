@@ -39,7 +39,7 @@ func test_new_materials_have_collision_walls_icons_and_drops():
 		assert_not_null(ArtCache.get_inventory_icon(name), name)
 		assert_true(Materials.NAMES.has(name))
 		assert_true(ts.has_source(tid), name)
-		if tid < 148:
+		if not Tiles.is_wall_tile(tid):
 			assert_true(Tiles.is_solid(tid))
 			assert_eq(ts.get_source(tid).get_tile_data(Vector2i.ZERO, 0).get_collision_polygons_count(0), 1)
 		else:
@@ -50,28 +50,27 @@ func test_new_materials_have_collision_walls_icons_and_drops():
 func test_tree_has_walkthrough_doors_and_underground_treasure():
 	var p := Generator.classic_plan(42)
 	var a: Vector2i = p.living_tree
-	var chest := a + Vector2i(20, 33)
+	var chest := a + Vector2i(19, 52)
 	var c := _generated_at(chest)
 	assert_eq(_tile(c, chest), Tiles.CHEST)
 	assert_eq(_tile(c, chest + Vector2i.DOWN), Tiles.LIVING_WOOD)
 	assert_has(c.treasure_spots, chest)
 	c = _generated_at(a)
-	assert_eq(_tile(c, a + Vector2i(0, 12)), Tiles.ROPE)
-	assert_eq(_tile(c, a + Vector2i(-4, -1)), Tiles.DOOR)
-	assert_eq(_tile(c, a + Vector2i(4, -3)), Tiles.DOOR_TOP)
+	assert_eq(_tile(c, a + Vector2i(-1, 23)), Tiles.WOOD_PLATFORM)
+	assert_eq(_tile(c, a + Vector2i(2, 52)), Tiles.DOOR)
+	assert_eq(_tile(c, a + Vector2i(2, 50)), Tiles.DOOR_TOP)
 
 func test_structures_have_supported_treasure_and_correct_wall_materials():
 	var p := Generator.classic_plan(42)
 	var cases := [
-		[p.pyramid + Vector2i(-4, 25), Tiles.SANDSTONE_BRICK, Tiles.SANDSTONE_WALL],
-		[p.cabins[0] + Vector2i(5, -1), Tiles.PLANKS, Tiles.WOOD_WALL],
-		[p.dungeon + Vector2i(36, p.dungeon_depth + 12), Tiles.DUNGEON_BRICK, Tiles.DUNGEON_WALL],
-		[p.sky[0] + Vector2i(4, -1), Tiles.SUNPLATE, Tiles.SUNPLATE_WALL],
+		[p.pyramid + Vector2i(23, 51), Tiles.SANDSTONE_BRICK, Tiles.SANDSTONE_WALL],
+		[p.cabins[0] + Vector2i(0, -1), Tiles.PLANKS, Tiles.PLANKED_WALL],
+		[p.sky[0] + Vector2i(2, -3), Tiles.SUNPLATE, Tiles.SUNPLATE_WALL],
 	]
 	for entry in cases:
 		var pos: Vector2i = entry[0]
 		var c := _generated_at(pos)
-		assert_eq(_tile(c, pos), Tiles.GOLD_CHEST, str(pos))
+		assert_eq(_tile(c, pos), Tiles.CHEST, str(pos))
 		assert_eq(_tile(c, pos + Vector2i.DOWN), entry[1], "宝箱不能悬空")
 		assert_eq(c.get_wall(Chunk.local_x_of(pos.x), pos.y), entry[2])
 		assert_has(c.treasure_spots, pos)

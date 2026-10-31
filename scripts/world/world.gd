@@ -128,7 +128,14 @@ var _falling: Dictionary = {}
 
 const TreeFrames = preload("res://scripts/world/tree_frames.gd")
 
+func _original_display_id(pos: Vector2i, tid: int) -> int:
+	var c: Chunk = chunk_manager.get_chunk(Chunk.chunk_x_of(pos.x))
+	return preload("res://scripts/world/original_structure_samples.gd").display_id(c, pos, tid)
+
 func _decoration_frame(pos: Vector2i, tile_id: int) -> Vector2i:
+	if Tiles.is_water(tile_id) or Tiles.is_biome_water_visual(tile_id):
+		var above: int = chunk_manager.get_tile(pos.x, pos.y - 1)
+		return Vector2i(0, 1) if Tiles.is_water(above) or Tiles.is_solid(above) else Vector2i.ZERO
 	if tile_id in TreeFrames.PARTS:
 		return TreeFrames.frame(pos, tile_id, chunk_manager)
 	return Vector2i.ZERO
@@ -1183,7 +1190,7 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				Autotile.refresh_tile(terrain_layer, pos, tid, q, Autotile.make_solid_query(chunk_manager))
 			else:
 				# 水 (普通 + 群系满水) 按列染成所在群系色; 非水 _display_water_tile 原样返回
-				terrain_layer.set_cell(pos, _display_water_tile(world_x, tid), _decoration_frame(pos, tid))
+				terrain_layer.set_cell(pos, _original_display_id(pos, _display_water_tile(world_x, tid)), _decoration_frame(pos, tid))
 			var wid: int = wall_col[y]
 			var wpos := Vector2i(world_x, y)
 			if wid == Tiles.AIR:
@@ -1260,7 +1267,7 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				var q := Autotile.make_terrain_query(sid, chunk_manager)
 				Autotile.refresh_tile(terrain_layer, Vector2i(col_x, y), sid, q, Autotile.make_solid_query(chunk_manager))
 			elif sid in TreeFrames.PARTS:
-				terrain_layer.set_cell(Vector2i(col_x, y), sid, _decoration_frame(Vector2i(col_x, y), sid))
+				terrain_layer.set_cell(Vector2i(col_x, y), _original_display_id(Vector2i(col_x, y), sid), _decoration_frame(Vector2i(col_x, y), sid))
 			var wsid: int = wall_layer.get_cell_source_id(Vector2i(col_x, y))
 			if wsid != -1 and EdgeTemplates.FAMILY_OF.has(wsid):
 				var wq := Autotile.make_wall_query(wsid, chunk_manager)
@@ -2147,7 +2154,7 @@ func note_falling_water(x: int, y: int, tid: int) -> void:
 		return
 	var cell := Vector2i(x, y)
 	if not _falling.has(cell):
-		_falling_layer.set_cell(cell, _display_water_tile(x, tid), Vector2i.ZERO)
+		_falling_layer.set_cell(cell, _display_water_tile(x, tid), Vector2i(0, 1))
 	_falling[cell] = _FALLING_VIS_SEC
 
 
@@ -2197,7 +2204,12 @@ func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = fals
 	if tile_id == Tiles.AIR:
 		terrain_layer.set_cell(pos, -1)
 	else:
-		terrain_layer.set_cell(pos, _display_water_tile(x, tile_id), Vector2i.ZERO)
+		terrain_layer.set_cell(pos, _display_water_tile(x, tile_id), _decoration_frame(pos, tile_id))
+	# 水位改变后，下一格可能从水面变成水下，必须同步刷新。
+	var below: int = chunk_manager.get_tile(x, y + 1)
+	if Tiles.is_water(below):
+		var bp := Vector2i(x, y + 1)
+		terrain_layer.set_cell(bp, _display_water_tile(x, below), _decoration_frame(bp, below))
 	# host 广播给 client (但不接收方再回播, 避免回声). 批量模式累积到 buf
 	# 对战房也广播 (看得到彼此); 但竞技场地基期间 (_arena_building) 不广播 (防洪水)。
 	if not from_remote and NetworkManager != null and NetworkManager.connected() \

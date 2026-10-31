@@ -1,0 +1,7 @@
+{
+  "source": "https://github.com/TEdit/Terraria-Map-Editor/blob/main/src/TEdit.Tests/WorldFiles/v1.4.4.1.wld.zip",
+  "worldSHA256": "4bcd8e20c770c9a5cbcb6d00978abac42664249620cc42ce705378668b7ec45f",
+  "seed": "435218355",
+  "worldVersion": 270,
+  "scope": "Extracted structure regions, not the original world generator. Deep pyramid and dungeon networks outside sourceBounds are not included."
+}

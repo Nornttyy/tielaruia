@@ -7,32 +7,23 @@ extends ParallaxBackground
 const MountainsArt = preload("res://scripts/art/mountains_art.gd")
 const OriginalSprites = preload("res://scripts/art/terraria_sprite_pack.gd")
 
-const TEX_WIDTH := 1280
-const TEX_HEIGHT := 360
+const TEX_WIDTH := 768
+const TEX_HEIGHT := 720
 const HORIZON_Y := 420
 const VIEWPORT_HEIGHT := 720
 const CROSSFADE_SEC := 0.9
 
 # 每层: motion_scale (越小越远) + y_extra (远山高/近丘低) + alpha
 const _LAYERS := [
-	{"motion_scale": 0.0,  "y_extra": -40, "alpha": 0.95},   # 最远 (锁视口)
-	{"motion_scale": 0.12, "y_extra": 10,  "alpha": 0.96},   # 中
-	{"motion_scale": 0.20, "y_extra": 60,  "alpha": 1.0},    # 近
+	{"motion_scale": 0.04, "y_extra": 145, "alpha": 1.0},
+	{"motion_scale": 0.10, "y_extra": 215, "alpha": 1.0},
+	{"motion_scale": 0.18, "y_extra": 290, "alpha": 1.0},
 ]
-
-# biome → 景物风格 (剪影形状). 0森林 1沙漠 2雪原 3丛林 4沼泽
-const _BIOME_STYLE := {0: "mountain", 1: "dune", 2: "mountain", 3: "canopy", 4: "deadtree", 5: "deadtree", 6: "deadtree", 8: "dune"}
-const _BIOME_SNOW := {2: true}   # 雪原山顶盖雪
-# biome → 3 层颜色 (远/中/近, 大气透视: 远浅近深)
-const _BIOME_COLORS := {
-	5: [Color("77708d"), Color("625878"), Color("453953")],
-	6: [Color("b07573"), Color("894f51"), Color("5e333c")],
-	8: [Color("afc8cc"), Color("73afb8"), Color("438b9c")],
-	0: [Color(0.55, 0.62, 0.75), Color(0.40, 0.50, 0.55), Color(0.30, 0.40, 0.30)],  # 森林
-	1: [Color(0.80, 0.72, 0.56), Color(0.84, 0.70, 0.46), Color(0.70, 0.56, 0.34)],  # 沙漠沙黄
-	2: [Color(0.74, 0.80, 0.90), Color(0.66, 0.74, 0.85), Color(0.56, 0.66, 0.78)],  # 雪原冷蓝白
-	3: [Color(0.42, 0.55, 0.46), Color(0.28, 0.48, 0.32), Color(0.18, 0.40, 0.24)],  # 丛林深绿
-	4: [Color(0.46, 0.50, 0.46), Color(0.36, 0.42, 0.37), Color(0.26, 0.34, 0.29)],  # 沼泽灰绿
+# 每组保留原画的远山、丘陵和近树顺序。原图像素按世界方块 12/16 等比呈现。
+const BACKGROUNDS := {
+	0: [7, 8, 11], 1: [22, 20, 21], 2: [98, 99, 101],
+	3: [15, 16, 17], 4: [15, 16, 17], 5: [12, 13, 14],
+	6: [105, 106, 107], 8: [110, 110, 111],
 }
 
 var _layer_data: Array = []  # 每层 {sa, sb, fill, color_a, color_b, alpha}
@@ -53,9 +44,9 @@ func _ready() -> void:
 		# y 跟 x 同视差系数: 远山上下也跟摄像头动 (用户要求 — 只山跟, 云仍只左右动见 cloud_layer)。
 		# 远层(motion_scale 0)仍锁屏不动, 中/近层随镜头上下飘 (近层飘得多 = 视差深度)。
 		pl.motion_scale = Vector2(ld.motion_scale, ld.motion_scale)
-		pl.motion_mirroring = Vector2(TEX_WIDTH, 0)
+		pl.motion_mirroring = Vector2(TEX_WIDTH * 4, 0)
 		add_child(pl)
-		var sprite_top: int = HORIZON_Y - TEX_HEIGHT + ld.y_extra
+		var sprite_top: int = ld.y_extra
 		var col: Color = _biome_color(_biome_current, i)
 		var sa := _make_sprite(i, _biome_current, sprite_top)
 		pl.add_child(sa)
@@ -69,6 +60,7 @@ func _ready() -> void:
 		fill.color = col
 		fill.position = Vector2(0, sprite_bottom)
 		fill.size = Vector2(TEX_WIDTH, fill_h)
+		fill.visible = false
 		pl.add_child(fill)
 		_layer_data.append({
 			"sa": sa, "sb": sb, "fill": fill,
@@ -79,6 +71,10 @@ func _ready() -> void:
 func _make_sprite(layer_idx: int, biome: int, top: int) -> Sprite2D:
 	var sp := Sprite2D.new()
 	sp.centered = false
+	# 缩小镜头时仍覆盖整屏；只横向平铺，不能留下图层右端的直线断口。
+	sp.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	sp.region_enabled = true
+	sp.region_rect = Rect2(0, 0, TEX_WIDTH * 4, TEX_HEIGHT)
 	sp.position = Vector2(0, top)
 	sp.texture = _get_tex(biome, layer_idx)
 	return sp
@@ -86,59 +82,34 @@ func _make_sprite(layer_idx: int, biome: int, top: int) -> Sprite2D:
 
 # 取 (biome, layer) 的剪影纹理, 生成一次后缓存 (避免每次切群系都重画)
 func _get_tex(biome: int, layer_idx: int) -> ImageTexture:
-	var key: String = "%d_%d" % [biome, layer_idx]
-	if _tex_cache.has(key):
-		return _tex_cache[key]
-	if biome == 0:
-		# 原图等比例放进现有循环层，不横向拉宽山峰/树；一整幅重复周期仍为 1280。
-		var source := OriginalSprites.source_image("Background_%d.png" % [7, 9, 11][layer_idx])
-		if source != null:
-			var scaled := source.duplicate() as Image
-			var scale_factor := float(TEX_WIDTH) / source.get_width()
-			scaled.resize(TEX_WIDTH, roundi(source.get_height() * scale_factor), Image.INTERPOLATE_NEAREST)
-			var canvas := Image.create(TEX_WIDTH, TEX_HEIGHT, false, Image.FORMAT_RGBA8)
-			# 只裁去山脚/树线下方的实色区域，轮廓不压扁。
-			canvas.blit_rect(scaled, Rect2i(0, 0, TEX_WIDTH, TEX_HEIGHT), Vector2i.ZERO)
-			var original_tex := ImageTexture.create_from_image(canvas)
-			_tex_cache[key] = original_tex
-			return original_tex
-	if biome == 8:
-		# 海面用平缓水平线，不复用带仙人掌的沙漠剪影。
-		var water := Image.create(TEX_WIDTH, TEX_HEIGHT, false, Image.FORMAT_RGBA8)
-		var horizon := int(TEX_HEIGHT * 0.62) + layer_idx * 8
-		water.fill_rect(Rect2i(0, horizon, TEX_WIDTH, TEX_HEIGHT - horizon), _biome_color(biome, layer_idx))
-		for y in range(horizon + 10, TEX_HEIGHT, 22):
-			for x in range(posmod(y * 13, 81), TEX_WIDTH - 15, 81):
-				water.fill_rect(Rect2i(x, y, 15, 1), _biome_color(biome, layer_idx).lightened(0.10))
-		var tex := ImageTexture.create_from_image(water)
-		_tex_cache[key] = tex
-		return tex
-	var style: String = _BIOME_STYLE.get(biome, "mountain")
-	# 森林的最近一层画树线，不让三层全是同一种尖山。
-	if biome == 0 and layer_idx == 2:
-		style = "forest"
-	var snow: bool = _BIOME_SNOW.get(biome, false)
-	var tex: ImageTexture = MountainsArt.generate_biome_ridge(
-		TEX_WIDTH, TEX_HEIGHT, style, _biome_color(biome, layer_idx), snow,
-		1001 + biome * 101 + layer_idx * 17)
+	var key := "%d_%d" % [biome, layer_idx]
+	if _tex_cache.has(key): return _tex_cache[key]
+	if biome == 8 and layer_idx > 0:
+		var empty := ImageTexture.create_from_image(Image.create(TEX_WIDTH, TEX_HEIGHT, false, Image.FORMAT_RGBA8))
+		_tex_cache[key] = empty
+		return empty
+	var source := OriginalSprites.source_image("Background_%d.png" % BACKGROUNDS.get(biome, BACKGROUNDS[0])[layer_idx])
+	var scaled := source.duplicate() as Image
+	scaled.resize(roundi(source.get_width() * 0.75), roundi(source.get_height() * 0.75), Image.INTERPOLATE_NEAREST)
+	var canvas := Image.create(TEX_WIDTH, TEX_HEIGHT, false, Image.FORMAT_RGBA8)
+	var offset := 90 if biome == 8 else 0
+	canvas.blit_rect(scaled, Rect2i(Vector2i.ZERO, scaled.get_size()), Vector2i(0, offset))
+	# 延续每一列的底色，不能用一个色块盖掉原画的山脚纹理。
+	for x in TEX_WIDTH:
+		canvas.fill_rect(Rect2i(x, scaled.get_height() + offset, 1, TEX_HEIGHT - scaled.get_height() - offset), scaled.get_pixel(x, scaled.get_height() - 1))
+	var tex := ImageTexture.create_from_image(canvas)
 	_tex_cache[key] = tex
 	return tex
 
-
 func _biome_color(biome: int, layer_idx: int) -> Color:
-	if biome == 0:
-		var source := OriginalSprites.source_image("Background_%d.png" % [7, 9, 11][layer_idx])
-		if source != null:
-			return source.get_pixel(0, source.get_height() - 1)
-	var cols: Array = _BIOME_COLORS.get(biome, _BIOME_COLORS[0])
-	return cols[layer_idx]
-
+	var source := OriginalSprites.source_image("Background_%d.png" % BACKGROUNDS.get(biome, BACKGROUNDS[0])[layer_idx])
+	return source.get_pixel(0, source.get_height() - 1)
 
 # ScenicDirector 按玩家所在 biome 调: 切到该群系景物 (交叉淡入). 已是当前/在切的就跳过.
 func set_biome(biome_id: int) -> void:
 	if biome_id == _biome_current or biome_id == _biome_incoming:
 		return
-	if not _BIOME_COLORS.has(biome_id):
+	if not BACKGROUNDS.has(biome_id):
 		return
 	_biome_incoming = biome_id
 	_blend = 0.0

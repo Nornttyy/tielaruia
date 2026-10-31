@@ -5,6 +5,7 @@
 #   [autoload]
 #   ArtCache="*res://scripts/autoload/art_cache.gd"
 extends Node
+const WaterArt = preload("res://scripts/art/original_water_art.gd")
 
 # 用 preload 而非 class_name 引用，避免 autoload 启动时机早于 class_name 索引扫描的问题。
 const PixelArt = preload("res://scripts/art/pixel_art.gd")
@@ -169,34 +170,34 @@ func _build_blocks() -> void:
 			block_textures[tile_id] = _smart_resize_atlas_16_to_12(atlas_16)
 		elif tile_id == BlocksArt.WATER:
 			# 水: 64×16 → 48×12 智能缩放; UI icon 用原 16x16
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_animated_atlas())
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(WaterArt.atlas())
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L1:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(1))
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(WaterArt.atlas(1))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L2:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(2))
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(WaterArt.atlas(2))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L3:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(3))
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(WaterArt.atlas(3))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L4:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(4))
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(WaterArt.atlas(4))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L5:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(5))
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(WaterArt.atlas(5))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L6:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(6))
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(WaterArt.atlas(6))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_L7:
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas(7))
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(WaterArt.atlas(7))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.WATER_DESERT or tile_id == BlocksArt.WATER_JUNGLE \
 				or tile_id == BlocksArt.WATER_SWAMP:
 			# 群系满水: 同 WATER 的 4 帧动画 atlas, 只换调色板染色
-			var pal: Dictionary = BlocksArt.water_palette_for(tile_id)
-			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_water_animated_atlas_p(pal))
+			var style := 3 if tile_id == BlocksArt.WATER_JUNGLE else (2 if tile_id == BlocksArt.WATER_SWAMP else 0)
+			block_textures[tile_id] = _smart_resize_atlas_16_to_12(WaterArt.atlas(8, style))
 			block_icons[tile_id] = BlocksArt.get_texture(tile_id)
 		elif tile_id == BlocksArt.LAVA_L1:
 			# 岩浆深浅不是 item, icon 直接复用世界贴图 (避免缺 key 崩)
@@ -220,10 +221,10 @@ func _build_blocks() -> void:
 	# 群系薄水 (visual-only, 21 张): 3 族 × 7 档, 同薄水 atlas 换调色板染色。
 	# 不在上面 tile_ids 主循环里 (它们不进数据, 单独按族×档生成)。
 	for base_id in [BlocksArt.WATER_DESERT_L1, BlocksArt.WATER_JUNGLE_L1, BlocksArt.WATER_SWAMP_L1]:
-		var pal: Dictionary = BlocksArt.water_palette_for(base_id)
+		var style := 3 if base_id == BlocksArt.WATER_JUNGLE_L1 else (2 if base_id == BlocksArt.WATER_SWAMP_L1 else 0)
 		for lvl in range(1, 8):
 			var tid: int = base_id + (lvl - 1)
-			var tex: ImageTexture = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas_p(lvl, pal))
+			var tex: ImageTexture = _smart_resize_atlas_16_to_12(WaterArt.atlas(lvl, style))
 			block_textures[tid] = tex
 			block_icons[tid] = _extract_interior_icon(tex) if EdgeTemplates.FAMILY_OF.has(tid) else tex   # 不是 item, icon 复用世界贴图防缺 key 崩
 

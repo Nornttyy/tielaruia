@@ -7,6 +7,8 @@ const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 
 var chunk_x: int = 0
 var tiles: Array = []
+# 原始建筑的家具帧，仅显示用；玩家改动或重放存档时立即失效。
+var original_visuals: Dictionary = {}
 var walls: Array = []
 var surfaces: Array = []   # 每列原始地表 y_tile (生成时定, 不被玩家挖动)
 # 矿洞宝箱位置 (世界坐标 Vector2i), 给 ChestStorage 首次填战利品用. 不存档 (chunk 一致性生成保证).
@@ -54,6 +56,7 @@ func set_tile(local_x: int, y: int, tid: int) -> void:
 			or y < 0 or y >= ChunkConstants.WORLD_HEIGHT:
 		return
 	tiles[local_x][y] = tid
+	original_visuals.erase(Vector2i(local_x, y))
 
 
 func get_wall(local_x: int, y: int) -> int:

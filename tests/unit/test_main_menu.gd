@@ -30,10 +30,10 @@ func test_background_has_sky():
 
 
 # 背景只留树 (用户要求): 云/太阳/鸟/史莱姆/地面都不画了
-func test_background_only_trees_no_clouds():
+func test_original_landscape_includes_clouds_and_sun():
 	var mm = _make()
 	var clouds = mm.get_node_or_null("BackgroundLayer/Clouds")
-	assert_true(clouds == null or clouds.get_child_count() == 0, "背景不该有云了")
+	assert_eq(clouds.get_child_count(), 5, "四组原图云和太阳")
 	# 地面隐藏
 	var ground = mm.get_node_or_null("BackgroundLayer/Ground")
 	if ground != null:
@@ -43,7 +43,7 @@ func test_background_only_trees_no_clouds():
 func test_background_has_trees():
 	var mm = _make()
 	# 树现在画在前景层 TreesFront (站在草地前面); 老的 Trees 层保留但空着.
-	var front = mm.get_node_or_null("BackgroundLayer/TreesFront")
+	var front = mm.get_node_or_null("BackgroundLayer/Trees")
 	assert_not_null(front, "应有前景树层 TreesFront")
 	assert_gt(front.get_child_count(), 0, "前景树层里该有树")
 
@@ -59,7 +59,8 @@ func test_title_has_logo_label():
 	var mm = _make()
 	var logo = mm.get_node_or_null("TitleLayer/LogoLabel")
 	assert_not_null(logo)
-	assert_eq(logo.text, "teilaruia")
+	assert_false(logo.visible)
+	assert_not_null(mm.get_node("TitleLayer/OriginalLogo").texture)
 
 
 func test_title_has_shadow_label():
@@ -79,12 +80,12 @@ func test_has_button_layer():
 	assert_not_null(mm.get_node_or_null("ButtonLayer"))
 
 
-func test_has_three_buttons():
+func test_has_seven_classic_menu_entries():
 	var mm = _make()
 	var vb = mm.get_node_or_null("ButtonLayer/VBox")
 	assert_not_null(vb)
 	# NewGame, Multiplayer, Settings (Continue 早删, Quit 网页版没必要)
-	assert_eq(vb.get_child_count(), 3, "3 个按钮容器")
+	assert_eq(vb.get_child_count(), 7, "单人、多人、成就、创意工坊、设置、制作人员、退出")
 
 
 func test_multiplayer_button_shows_panel():
@@ -224,7 +225,7 @@ func test_default_language_buttons_are_chinese():
 	var mm = _make()
 	await get_tree().process_frame
 	var btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
-	assert_eq(btn.text, "开始游戏", "默认中文按钮显 \"开始游戏\"")
+	assert_eq(btn.text, "单人模式", "默认中文入口")
 
 
 # 切英文后按钮 + 标签应同步刷新 (而不是留中文)
@@ -236,7 +237,7 @@ func test_switching_to_english_refreshes_buttons():
 	# language_changed 信号同步触发, 不需等帧
 	var new_game_btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
 	var settings_label: Label = mm.get_node("SettingsPanel/VBox/LanguageRow/Label")
-	assert_eq(new_game_btn.text, "New Game", "英文按钮 = New Game")
+	assert_eq(new_game_btn.text, "Single Player", "英文按钮 = New Game")
 	assert_eq(settings_label.text, "Language", "英文 \"语言\" 标签 = Language")
 	Locale.set_language("zh")   # 恢复
 
@@ -248,7 +249,7 @@ func test_switching_to_japanese():
 	await get_tree().process_frame
 	Locale.set_language("ja")
 	var btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
-	assert_eq(btn.text, "ゲーム開始", "日文 = ゲーム開始")
+	assert_eq(btn.text, "シングルプレイヤー", "日文 = ゲーム開始")
 	Locale.set_language("zh")
 
 
@@ -259,7 +260,7 @@ func test_switching_to_korean():
 	await get_tree().process_frame
 	Locale.set_language("ko")
 	var btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
-	assert_eq(btn.text, "게임 시작", "韩文 = 게임 시작")
+	assert_eq(btn.text, "싱글 플레이", "韩文 = 게임 시작")
 	Locale.set_language("zh")
 
 
@@ -283,13 +284,11 @@ func test_dropdown_selection_changes_locale():
 
 # 回归: 按钮首次 hover 不该报 "没有 scale_tw meta" (旧 bug: get_meta(name, null) 把 null
 # 当成"没给默认" → meta 不存在时报错). 改用 has_meta 判断后, 首次 + 重复 hover 都正常.
-func test_button_hover_no_meta_error():
+func test_menu_uses_unboxed_text_with_yellow_hover():
 	var mm = _make()
-	await wait_frames(1)
 	var btn: Button = mm.get_node("ButtonLayer/VBox/NewGameRow/Button")
-	assert_false(btn.has_meta("scale_tw"), "首次 hover 前不该有 scale_tw meta")
-	btn.mouse_entered.emit()   # 第一次 hover: 旧代码会在 get_meta(null) 报错
-	assert_true(btn.has_meta("scale_tw"), "hover 后该设上 scale_tw tween (handler 跑通)")
-	btn.mouse_exited.emit()    # 读旧 meta kill 前一个 tween — 不该崩
-	btn.mouse_entered.emit()   # 二次 hover: 走 has_meta=true 分支
-	assert_true(btn.has_meta("scale_tw"), "重复 hover 仍正常")
+	assert_true(btn.get_theme_stylebox("normal") is StyleBoxEmpty)
+	assert_eq(btn.get_theme_color("font_hover_color"), Color8(255, 240, 90))
+	btn.mouse_entered.emit()
+	btn.mouse_exited.emit()
+	assert_eq(btn.scale, Vector2.ONE, "无缩放跳动")

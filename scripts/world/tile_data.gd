@@ -170,6 +170,9 @@ const MUSHROOM_WALL := 152
 const EBON_WALL := 153
 const CRIM_WALL := 154
 const DESERT_WALL := 155
+const GREEN_DUNGEON_BRICK := 156
+const GREEN_DUNGEON_WALL := 157
+const PLANKED_WALL := 158
 const GLOW_MUSHROOM := 143
 const MUSHROOM_STEM := 144
 const MUSHROOM_CAP_L := 145
@@ -197,6 +200,9 @@ const _PROPS := {
 	153: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["ebon_wall", 100, 1, 1]]},
 	154: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["crim_wall", 100, 1, 1]]},
 	155: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["desert_wall", 100, 1, 1]]},
+	156: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["green_dungeon_brick", 100, 1, 1]]},
+	157: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["green_dungeon_wall", 100, 1, 1]]},
+	158: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["planked_wall", 100, 1, 1]]},
 	143: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": 0, "sword": 0, "": 0}, "drops": [["mushroom", 100, 1, 1]]},
 	144: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": 0, "sword": 0, "": 0}, "drops": [["mushroom", 100, 1, 1]]},
 	145: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": 0, "sword": 0, "": 0}, "drops": [["mushroom", 100, 1, 1]]},
@@ -768,7 +774,7 @@ func is_submersible_plant(_tile_id: int) -> bool:
 # 是不是背景墙 tile (4 种). 加新墙改这里.
 func is_wall_tile(tile_id: int) -> bool:
 	return tile_id == GRASS_WALL or tile_id == DIRT_WALL \
-			or tile_id == STONE_WALL or tile_id == WOOD_WALL or tile_id in [GLASS_WALL, WOOD_BEAM_WALL] or (tile_id >= 148 and tile_id <= 155)
+			or tile_id == STONE_WALL or tile_id == WOOD_WALL or tile_id in [GLASS_WALL, WOOD_BEAM_WALL] or tile_id in [157, 158] or (tile_id >= 148 and tile_id <= 155)
 
 
 # 砸墙掉落的物品 id (锤子破墙用). 无对应返 "".
@@ -781,6 +787,8 @@ const _WALL_DROP := {
 	153: "ebon_wall",
 	154: "crim_wall",
 	155: "desert_wall",
+	157: "green_dungeon_wall",
+	158: "planked_wall",
 
 	GLASS_WALL: "glass_wall", WOOD_BEAM_WALL: "wood_beam_wall",
 	GRASS_WALL: "grass_wall", DIRT_WALL: "dirt_wall",

@@ -6,6 +6,7 @@ const B = preload("res://scripts/art/blocks_art.gd")
 const Blob = preload("res://scripts/world/blob_lookup.gd")
 const BASE := "res://assets/terraria_1449/"
 const TERRAIN := {
+	156: 44,
 	131: 25, 132: 203, 133: 23, 134: 199, 135: 70, 136: 191, 137: 192, 138: 41, 139: 202, 140: 151, 141: 397, 142: 396, B.CLOUD: 189,
 	127: 54, 128: 38, 129: 39, 130: 40,
 	B.TIN_ORE: 166,

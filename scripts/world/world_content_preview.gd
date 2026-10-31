@@ -75,7 +75,9 @@ func visit(index: int) -> void:
 		target.y = Generator._estimate_surf(target.x, world.world_seed, 256) - 5
 		feet.y = Generator._estimate_surf(feet.x, world.world_seed, 256) - 2
 	var center := Chunk.chunk_x_of(target.x)
-	for cx in range(center - 1, center + 2): world.chunk_manager.load_one(cx)
+	# 全景的镜头中心会偏离玩家，按真实视野预载，避免画面边缘突然黑掉。
+	var radius := maxi(1, ceili(1280.0 / (float(stop.zoom) * 12.0 * 128.0)))
+	for cx in range(center - radius, center + radius + 1): world.chunk_manager.load_one(cx)
 	var player = world.get_player()
 	player.position = Vector2(feet.x + 0.5, feet.y + 1) * 12
 	player.velocity = Vector2.ZERO

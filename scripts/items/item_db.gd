@@ -24,6 +24,9 @@ const _DEFS := {
 	"ebon_wall": {"placeable_tile_id": 153, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
 	"crim_wall": {"placeable_tile_id": 154, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
 	"desert_wall": {"placeable_tile_id": 155, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"green_dungeon_brick": {"placeable_tile_id": 156, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"green_dungeon_wall": {"placeable_tile_id": 157, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"planked_wall": {"placeable_tile_id": 158, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
 
 	"clay": {"placeable_tile_id": 130, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
 	"red_brick": {"placeable_tile_id": 129, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},

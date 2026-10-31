@@ -23,7 +23,7 @@ var _layer_alpha: float = 1.0   # 由 ScenicDirector 设 (0=矿洞 1=地表)
 
 
 func _ready() -> void:
-	layer = -8
+	layer = -9  # 同层按场景顺序先画天体，再画远山，太阳不会穿到山前。
 	# 太阳
 	_sun = Sprite2D.new()
 	_sun.texture = preload("res://scripts/art/terraria_sprite_pack.gd").texture("Sun.png")

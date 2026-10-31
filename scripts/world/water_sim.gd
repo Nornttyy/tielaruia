@@ -430,6 +430,9 @@ func _step_water_lateral(cm, x: int, y: int, L: int, maxlv: int) -> void:
 	var best_nx: int = -999999
 	var best_nl: int = 99
 	for nx in [x - 1, x + 1]:
+		# 未加载区块不是空气，否则海面会沿加载边界持续漏水、形成阶梯。
+		if cm.has_method("get_chunk") and cm.get_chunk(Chunk.chunk_x_of(nx)) == null:
+			continue
 		var nt: int = cm.get_tile(nx, y)
 		var nlev: int = -1
 		if _water_enterable(nt):   # 空气或草须 (横向流进草须 = 冲毁它)
@@ -465,6 +468,9 @@ func _step_lava_lateral(cm, x: int, y: int, L: int) -> void:
 	var best_nx: int = -999999
 	var best_nl: int = 99
 	for nx in [x - 1, x + 1]:
+		# 未加载区块不是空气，否则海面会沿加载边界持续漏水、形成阶梯。
+		if cm.has_method("get_chunk") and cm.get_chunk(Chunk.chunk_x_of(nx)) == null:
+			continue
 		var nt: int = cm.get_tile(nx, y)
 		var nlev: int = -1
 		if nt == Tiles.AIR:

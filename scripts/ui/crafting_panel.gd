@@ -445,6 +445,9 @@ const _ZH_NAMES := {
 	"ebon_wall": "黑檀石墙",
 	"crim_wall": "猩红石墙",
 	"desert_wall": "砂岩墙",
+	"green_dungeon_brick": "绿地牢砖",
+	"green_dungeon_wall": "绿地牢砖墙",
+	"planked_wall": "板条墙",
 
 	"clay": "黏土块",
 	"red_brick": "红砖",

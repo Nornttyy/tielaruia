@@ -57,6 +57,12 @@ func _compute_light_top(x: int) -> int:
 	var y: int = 0
 	while y < ChunkConstants.WORLD_HEIGHT:
 		var tid: int = cm.get_tile(x, y)
+		# 地上生命木枝条允许环境天光绕过，地下生命木房间仍按实心遮光。
+		if tid == Tiles.LIVING_WOOD and cm.has_method("get_chunk"):
+			var chunk: Chunk = cm.get_chunk(Chunk.chunk_x_of(x))
+			if chunk != null and y < int(chunk.surfaces[Chunk.local_x_of(x)]):
+				y += 1
+				continue
 		if tid != Tiles.AIR and tid != Tiles.LIVING_LEAF and Tiles.is_solid(tid):
 			# 只在高空才考虑"这会不会是飘着的空岛"; 低处的山/地表一律当真地面.
 			if y < FLOATING_MAX_TOP_Y:

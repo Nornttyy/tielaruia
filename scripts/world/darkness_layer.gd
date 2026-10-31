@@ -71,7 +71,9 @@ func _update_viewport() -> void:
 	# 注: 不加"玩家没动就跳过", 否则挖墙看不到光变化
 	# 按当前 viewport_size + camera_zoom 算需要多少 tile 才能盖满屏
 	var vp_size: Vector2 = get_viewport_rect().size
-	var zoom: float = max(0.1, GameSettings.camera_zoom)
+	var active_camera := get_viewport().get_camera_2d()
+	var zoom: float = maxf(0.1, active_camera.zoom.x if active_camera != null else GameSettings.camera_zoom)
+	var view_center := active_camera.get_screen_center_position() if active_camera != null else player.global_position
 	var need_w: int = int(ceil(vp_size.x / (zoom * float(TILE_SIZE)))) + BUFFER_TILES * 2
 	var need_h: int = int(ceil(vp_size.y / (zoom * float(TILE_SIZE)))) + BUFFER_TILES * 2
 	_cur_w = clampi(need_w, 32, MAX_W)
@@ -80,8 +82,8 @@ func _update_viewport() -> void:
 	var half_h: int = _cur_h / 2
 	var px: int = int(floor(player.global_position.x / TILE_SIZE))
 	var py: int = int(floor(player.global_position.y / TILE_SIZE))
-	var x0: int = px - half_w
-	var y0: int = py - half_h
+	var x0: int = floori(view_center.x / TILE_SIZE) - half_w
+	var y0: int = floori(view_center.y / TILE_SIZE) - half_h
 	var torches: Array = _collect_torches()
 	# compute_region 返 PackedByteArray (索引 (y-y0)*_cur_w + (x-x0)), 不再是 Vector2i dict.
 	var grid: PackedByteArray = TileLightGrid.compute_region(cm, x0, y0, x0 + _cur_w, y0 + _cur_h,

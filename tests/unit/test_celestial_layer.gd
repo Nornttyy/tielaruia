@@ -10,11 +10,11 @@ func test_ready_creates_stars():
 	assert_gt(cl.star_count(), 10, "应至少生成几十颗星")
 
 
-func test_canvas_layer_is_minus_8():
+func test_celestial_draws_before_mountains_on_same_canvas_layer():
 	var cl = CelestialLayer.new()
 	add_child_autofree(cl)
 	await wait_frames(1)
-	assert_eq(cl.layer, -8, "CanvasLayer.layer 应 = -8")
+	assert_eq(cl.layer, -9, "与后添加的山景同层，太阳可被山遮住")
 
 
 func test_noon_sun_visible_moon_hidden():

@@ -164,12 +164,18 @@ static func build() -> TileSet:
 					Vector2(-6, -1), Vector2(6, -1), Vector2(6, 1), Vector2(-6, 1),
 				]))
 				pprops.set_collision_polygon_one_way(2, 0, true)
-			# 水 (8 档水位 + 3 群系满水 + 21 群系薄水) 都启用 4 帧动画
+			# 两行使用同一动画时钟，水下绝不出现重复的横向亮边。
 			if Tiles.is_water(tile_id) or Tiles.is_biome_water_visual(tile_id):
-				source.set_tile_animation_frames_count(Vector2i.ZERO, 4)
-				for f in range(4):
-					source.set_tile_animation_frame_duration(Vector2i.ZERO, f, 0.4)
+				source.create_tile(Vector2i(0, 1))
+				for row in 2:
+					var water_coord := Vector2i(0, row)
+					source.set_tile_animation_columns(water_coord, 16)
+					source.set_tile_animation_frames_count(water_coord, 16)
+					for f in 16:
+						source.set_tile_animation_frame_duration(water_coord, f, 0.10)
 
+
+	preload("res://scripts/world/original_structure_samples.gd").register_tiles(ts)
 	return ts
 
 

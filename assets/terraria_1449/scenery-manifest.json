@@ -1,0 +1,279 @@
+{
+  "source": "https://github.com/sullerandras/terraria-hd-textures/tree/c835594415e31ed88734dc778661014b48ffb648/source-pngs",
+  "files": [
+    {
+      "file": "Logo.png",
+      "sha256": "c790c02a65315f7ffdb71a2e4a95f26143db559ddbb9652835dbbd6f0e69c60e"
+    },
+    {
+      "file": "Sun.png",
+      "sha256": "83dbba7220008ab286bcc1a4dfd692378d957a18761f7b7d1a403b4278684c73"
+    },
+    {
+      "file": "Liquid_0.png",
+      "sha256": "2cbdc45310b67ca2f3f6e299cd4ad08dc6f8f74d9d446bb76180d72e9dce9e8e"
+    },
+    {
+      "file": "Liquid_2.png",
+      "sha256": "9db3098cedc4813f567bcceb7bd0f8cd6d2a45ea2db8278637bbfa3740ff556a"
+    },
+    {
+      "file": "Liquid_3.png",
+      "sha256": "414d1d14cedb22e3ad595e4df0e3c09e4664187ce5a8f2ef5b30cfcaeb50053c"
+    },
+    {
+      "file": "Liquid_4.png",
+      "sha256": "5a222cf54483973f9e8cff5e00dc376f9f33bc23088e0e324f5b4da130f507ed"
+    },
+    {
+      "file": "Liquid_5.png",
+      "sha256": "13f352c1ec71d6f1898b630e799100e03b3de47a9b92ccf8dcb7993890f9a31f"
+    },
+    {
+      "file": "Liquid_6.png",
+      "sha256": "e63e4970ad3b39fe2c234f412751b4b22ba6138006bd8de908475d66c70bfaa3"
+    },
+    {
+      "file": "Liquid_7.png",
+      "sha256": "d8730ee21d1cfd8d92625a03e8a7db0f401793f9abe06f8c395dded9f128fb34"
+    },
+    {
+      "file": "Liquid_8.png",
+      "sha256": "98fe11708031377f8c13c0b8013185541d044d55888ab1a08418fd7235dbb53a"
+    },
+    {
+      "file": "Liquid_9.png",
+      "sha256": "d7011427e232e29f2aecf684ad21586e0e3e13690c5fc1288beaf14ae632df5c"
+    },
+    {
+      "file": "Liquid_10.png",
+      "sha256": "e476b0bb985bbd19f83ede42c462310bbf67cd7b9aa7ce6689c1353a248aca52"
+    },
+    {
+      "file": "Liquid_12.png",
+      "sha256": "bee2849a8c314d075b3c838edc863412a75ed5cbdac1e821aa91f4828d684675"
+    },
+    {
+      "file": "Liquid_13.png",
+      "sha256": "078fd8d066942bc14397a016b5803e751b50167e34ac96242ce23f32762ea01d"
+    },
+    {
+      "file": "Background_7.png",
+      "sha256": "9701b01022bcb00114ba86a42053620e16c5f51f92cb00dc7006014e41f164c7"
+    },
+    {
+      "file": "Background_8.png",
+      "sha256": "b4d6e3ebe694d0e355406ba58cec9690598b1e876ac7388f95b029bc077968dc"
+    },
+    {
+      "file": "Background_9.png",
+      "sha256": "c24b53de674e2f8766f0588656c7766cb359984a60a5c23cf148f7b1468bba09"
+    },
+    {
+      "file": "Background_10.png",
+      "sha256": "3135ddb17032222db2496317314b783737dbf46d9070035957f1735e5bb8783e"
+    },
+    {
+      "file": "Background_11.png",
+      "sha256": "3ae9a9ae8bc652af876b91d8d2af19d85ba42474f8636f704349ef53bb27da53"
+    },
+    {
+      "file": "Background_12.png",
+      "sha256": "3dc2347ee21f1d1d8407c7e8e89ec55047abf9c08c971bd20f84aa385a082eea"
+    },
+    {
+      "file": "Background_13.png",
+      "sha256": "77f346e2dbb1d776f5d5e9fe59c0d4d4236a6963b1fb72f6c4adc77436883003"
+    },
+    {
+      "file": "Background_14.png",
+      "sha256": "21b31588c5a3a3467ab549548fa600fa6f25ca4bf3596a516aeb92205d2f8715"
+    },
+    {
+      "file": "Background_15.png",
+      "sha256": "5f984503a3cfb2c9dcfed368e5308a2d4bc9ed167c2fbbfd694c382f6ce64e22"
+    },
+    {
+      "file": "Background_16.png",
+      "sha256": "85846e80eae8409bc418c67f68909bf67271b6c10038e939147defeaf4c28d7f"
+    },
+    {
+      "file": "Background_17.png",
+      "sha256": "633a28f586edaa83b9f157f8602a55b15ffd822145fa851821fcc394e760a58d"
+    },
+    {
+      "file": "Background_20.png",
+      "sha256": "eab1a1ed0304a8ed7c329c6c0d140525fe7854eceece4a1d4c74f43e0a797031"
+    },
+    {
+      "file": "Background_21.png",
+      "sha256": "271438aae5ea73f48fd07f9c784b4f66eeb667986ab7ac0df5a4bc81fc144a6a"
+    },
+    {
+      "file": "Background_22.png",
+      "sha256": "923be177e120ddd7c2a21bf097bb032ffe39122da80e11e8e99dceb3bb612f52"
+    },
+    {
+      "file": "Background_98.png",
+      "sha256": "634c1b9bc8908a225fad60da00fb3205858498a8183d85464fc502650e2037e8"
+    },
+    {
+      "file": "Background_99.png",
+      "sha256": "0aba8db77448254981b3a2451004f7dd6f46563ceb65d49d33e097c1b6bf0b72"
+    },
+    {
+      "file": "Background_101.png",
+      "sha256": "89a6bdaa11ba136e4662efa46f6528ca427e5987e11ed67920c070c6196b81f0"
+    },
+    {
+      "file": "Background_105.png",
+      "sha256": "3f8f122d32c4a5f9ca5984e7ff14f8efe2ba9f7710b04b67b95463023f982fb8"
+    },
+    {
+      "file": "Background_106.png",
+      "sha256": "5d3c5b65f320409931aee964b26d5d65a1a3ea218a8698671174c65b36b06567"
+    },
+    {
+      "file": "Background_107.png",
+      "sha256": "167c324552897c0716558eca09a3118bb90218e88000be0e22b5f19b9c0ca8eb"
+    },
+    {
+      "file": "Background_110.png",
+      "sha256": "4cbeaa04f464e879d8868377d714483b99469dc1cf44d31284d378f1b3ac6c6c"
+    },
+    {
+      "file": "Background_111.png",
+      "sha256": "89549a804c6eaad07469da543044d7f5153de69e18a5b7eded979f588dc53904"
+    },
+    {
+      "file": "Background_171.png",
+      "sha256": "206b7acd96c6d84e8085af47c44b1b3cc2106fb52ded972cf8763dc9614e8ed5"
+    },
+    {
+      "file": "Background_172.png",
+      "sha256": "0e62a56bf14cf83064271103a36bd4c7c46e955726f82fde5a30afd935b6ea96"
+    },
+    {
+      "file": "Background_173.png",
+      "sha256": "e8688dff3a33aa3a39f7be8378a3e3f8076451b7571f526b5ddf85c4fce07b5a"
+    },
+    {
+      "file": "Cloud_0.png",
+      "sha256": "abec1f56cb464ca353410401f60fcdb7d63affa892ac55347053db3abed4b193"
+    },
+    {
+      "file": "Cloud_1.png",
+      "sha256": "3f36ec2ae0e1fc853de671663b3bcd523020266690ae9f5e2595b7e3eb9ce1e8"
+    },
+    {
+      "file": "Cloud_2.png",
+      "sha256": "229b03eb482a0b61675303355c3946f0a92538e06d3c1d44c94ae6bfbc7eb554"
+    },
+    {
+      "file": "Cloud_3.png",
+      "sha256": "a74608b605dedf8641400979268b505da2dbf5c493aedc762554602af284d901"
+    }
+  ],
+  "structureFiles": [
+    {
+      "file": "Tiles_10.png",
+      "sha256": "4ef52ea1f66aeac93c351b17146046d20a4cb95cce432026f545c91045721548"
+    },
+    {
+      "file": "Tiles_124.png",
+      "sha256": "30c828976952a4efbc6b613e2105b9b52ef9e2be1a3929265af11cea8a6d1558"
+    },
+    {
+      "file": "Tiles_13.png",
+      "sha256": "005920a84a018fc5a2bf530efe9fd7f95d70d9055633bdd2697796223d6171b0"
+    },
+    {
+      "file": "Tiles_136.png",
+      "sha256": "0b0a608a638778c1feed5f96671b8b91adc323dd2b309ba891d4e7c75a6fe7ea"
+    },
+    {
+      "file": "Tiles_14.png",
+      "sha256": "2da65caf2827b5c81ee3c1a91c896bab7e5e8d2f62154ee100c01fc1d30c9a8b"
+    },
+    {
+      "file": "Tiles_15.png",
+      "sha256": "c930f62a92b12ce17ee9089a8e8287eaf6d6f2bcf23f8437e95b3a8ba7d38e3b"
+    },
+    {
+      "file": "Tiles_16.png",
+      "sha256": "bc50773e40bc3c4c72e7ed55c036efa92b7ef95f75fdc0e582a6a7c4a9e19068"
+    },
+    {
+      "file": "Tiles_165.png",
+      "sha256": "92569d87e20192e984edde7c1ef91722a9526f8cecd970dd4cc07866679a401e"
+    },
+    {
+      "file": "Tiles_185.png",
+      "sha256": "fd39f8ac7138f3140f64963b9e59eca0f12dea22c9f84ead75711be2b40fd230"
+    },
+    {
+      "file": "Tiles_186.png",
+      "sha256": "13e0bb27ee3ee525c3bb5fbddb3833211cc7a1704f80c9f7121eccd62b9e4d74"
+    },
+    {
+      "file": "Tiles_19.png",
+      "sha256": "a4b3a74c409fb49f28726909d826d92e67816e00de1ba45ea8015d66f1968203"
+    },
+    {
+      "file": "Tiles_21.png",
+      "sha256": "29447519c66d19ef916916a94660b574dcf2fa0eef4039dcad326a2ee3d94b35"
+    },
+    {
+      "file": "Tiles_240.png",
+      "sha256": "f5cdc5d9bd199bfb5a770326444e18e1083d76aead939c3c1cc486c5bb1814d6"
+    },
+    {
+      "file": "Tiles_28.png",
+      "sha256": "91ae3b60b99e896cba9b152cf2556e78cf6ef7340e190fccfa7271df0aaa72cb"
+    },
+    {
+      "file": "Tiles_304.png",
+      "sha256": "567f215905197a8d55b2d08d862a3aaec2d69ec5c9ca251e3087fdec8123ef75"
+    },
+    {
+      "file": "Tiles_34.png",
+      "sha256": "ceecc6deeaea6112daf42ea753768255137d9f0b5469083603b5de67d84369fe"
+    },
+    {
+      "file": "Tiles_373.png",
+      "sha256": "5f39df0eb053baf042856affb53c8da6ac5c051dd622bece27f8940be6d06216"
+    },
+    {
+      "file": "Tiles_42.png",
+      "sha256": "6f59fcea21813224ecd2d9e96904e08de78079fb9aa0db028275e24cc69a2563"
+    },
+    {
+      "file": "Tiles_44.png",
+      "sha256": "f9ebed8a9a25bf84c68ef9e734f334de98776f5ae03de7a449da4a197758a2b7"
+    },
+    {
+      "file": "Tiles_48.png",
+      "sha256": "8210210a81800713f3af42ba21d6cacc2fef8bfcb388c059dc2d18bb30ee0b08"
+    },
+    {
+      "file": "Tiles_50.png",
+      "sha256": "62d1bddbce6662abaa766e7469918d9a89014627b54998fdd287a9004a71f10c"
+    },
+    {
+      "file": "Tiles_87.png",
+      "sha256": "3cc4db8e3031b473daa4b188cbee36d62eb6702e416d437f3fee7d553fee1ce5"
+    },
+    {
+      "file": "Tiles_91.png",
+      "sha256": "665e137d87a6b8ae3315f5b6852f110d0df157acc8f7fe27caf13058b8956c57"
+    },
+    {
+      "file": "Wall_27.png",
+      "sha256": "3ef2428565bb7edb05209127896e04ee04edda2880a2f75482184a55984a0dd8"
+    },
+    {
+      "file": "Wall_9.png",
+      "sha256": "7dc04c0a0accd270bbfd50be0a1e6606c130ad941757cd4f5e5310b6d92950e5"
+    }
+  ]
+}

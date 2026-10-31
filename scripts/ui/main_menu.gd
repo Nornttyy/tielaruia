@@ -14,10 +14,17 @@ const DIFF_HARD := 2
 const UIStyle = preload("res://scripts/ui/ui_style.gd")
 const CharacterPanelsScene = preload("res://scripts/ui/character_panels.gd")
 const MenuSceneArt = preload("res://scripts/art/menu_scene_art.gd")
+const OriginalSprites = preload("res://scripts/art/terraria_sprite_pack.gd")
 const LogoArt = preload("res://scripts/art/logo_art.gd")
 const SlimeArt = preload("res://scripts/art/slime_art.gd")
 const ParticlesArt = preload("res://scripts/fx/particles_art.gd")
 
+const MAIN_MENU_LABELS := {
+	"zh": ["单人模式", "多人模式", "成就", "创意工坊", "设置", "制作人员", "退出"],
+	"en": ["Single Player", "Multiplayer", "Achievements", "Workshop", "Settings", "Credits", "Exit"],
+	"ja": ["シングルプレイヤー", "マルチプレイヤー", "実績", "ワークショップ", "設定", "クレジット", "終了"],
+	"ko": ["싱글 플레이", "멀티플레이", "도전 과제", "창작마당", "설정", "제작진", "종료"],
+}
 const VIEWPORT_SIZE := Vector2(1280, 720)
 const CLOUD_COUNT := 7          # 4→7: 云更多更丰富 (大小/透明度分层做远近)
 const TREE_COUNT := 5
@@ -66,14 +73,14 @@ func _ready() -> void:
 	# 背景只留树 (用户要求): 隐藏山+地面, 不画太阳/星星/云/鸟/火把/史莱姆
 	_hills.visible = false
 	$BackgroundLayer/Ground.visible = false
-	_setup_trees()
+	_setup_original_landscape()
 	# 背景树覆盖填充整屏 (stretch=expand 下窗口变形不"挤到中间"): 现在 + 每次窗口尺寸变都重算
 	_fit_background()
 	get_viewport().size_changed.connect(_fit_background)
 	_setup_title()
 	_start_title_breathing()
 	_setup_buttons()
-	_setup_building_preview_button()
+
 	_setup_settings_panel()
 	_setup_new_game_panel()
 	_setup_world_select_panel()
@@ -106,10 +113,11 @@ func _refresh_localized_text() -> void:
 	if has_node("TitleLayer/Subtitle"):
 		$TitleLayer/Subtitle.text = Locale.t("menu_subtitle")
 
-	# 主菜单 3 按钮
-	$ButtonLayer/VBox/NewGameRow/Button.text = Locale.t("menu_new_game")
-	$ButtonLayer/VBox/MultiplayerRow/Button.text = Locale.t("menu_multiplayer")
-	$ButtonLayer/VBox/SettingsRow/Button.text = Locale.t("menu_settings")
+	var entries: Array = MAIN_MENU_LABELS.get(Locale.current_language(), MAIN_MENU_LABELS.zh)
+	for i in $ButtonLayer/VBox.get_child_count():
+		var row := $ButtonLayer/VBox.get_child(i)
+		var button: Button = row if row is Button else row.get_node("Button")
+		button.text = entries[i]
 
 	# 设置面板
 	$SettingsPanel/VBox/TitleLabel.text = Locale.t("settings_title")
@@ -166,7 +174,7 @@ func _refresh_localized_text() -> void:
 func _process(delta: float) -> void:
 	if not visible:
 		return
-	_animate_trees(delta)
+	_animate_original_landscape(delta)
 
 
 # ---- background ----
@@ -502,75 +510,113 @@ func _slime_back_to_idle(slime: AnimatedSprite2D) -> void:
 # ---- title ----
 
 func _setup_title() -> void:
-	var logo: Label = $TitleLayer/LogoLabel
-	var shadow: Label = $TitleLayer/LogoShadow
-	LogoArt.style_main_label(logo)
-	LogoArt.style_shadow_label(shadow)
-
+	$TitleLayer/LogoLabel.hide()
+	$TitleLayer/LogoShadow.hide()
+	$TitleLayer/Subtitle.hide()
+	var logo := TextureRect.new()
+	logo.name = "OriginalLogo"
+	logo.texture = OriginalSprites.texture("Logo.png")
+	logo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	logo.anchor_left = 0.5
+	logo.anchor_right = 0.5
+	logo.position = Vector2(-243, 70)
+	logo.size = Vector2(486, 142)
+	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$TitleLayer.add_child(logo)
 
 func _start_title_breathing() -> void:
-	var logo: Label = $TitleLayer/LogoLabel
-	var shadow: Label = $TitleLayer/LogoShadow
-	var base_y := logo.offset_top
-	var sh_base := shadow.offset_top
-	# Y 漂浮 (上下 4 px)
-	var t := create_tween().set_loops()
-	t.tween_property(logo, "offset_top", base_y - 4.0, 1.5).set_trans(Tween.TRANS_SINE)
-	t.tween_property(logo, "offset_top", base_y, 1.5).set_trans(Tween.TRANS_SINE)
-	var t2 := create_tween().set_loops()
-	t2.tween_property(shadow, "offset_top", sh_base - 4.0, 1.5).set_trans(Tween.TRANS_SINE)
-	t2.tween_property(shadow, "offset_top", sh_base, 1.5).set_trans(Tween.TRANS_SINE)
-	# 注: 去掉了"缩放呼吸"(1.0↔1.06) — 像素字体连续缩放会亚像素闪烁 + 支点(size 在 _ready 还没算)
-	# 在角上导致整段字位移 → 看着在抖 (用户报)。改留上下漂浮 + 金光变色, 平滑不抖。
-	# 主标签颜色冷暖循环, 模拟金光呼吸
-	var c_warm := Color8(255, 230, 150)
-	var c_cool := Color8(220, 180, 80)
-	var t4 := create_tween().set_loops()
-	t4.tween_property(logo, "theme_override_colors/font_color", c_warm, 2.2).set_trans(Tween.TRANS_SINE)
-	t4.tween_property(logo, "theme_override_colors/font_color", c_cool, 2.2).set_trans(Tween.TRANS_SINE)
+	pass
 
-
-# ---- buttons ----
+func _menu_text_style(btn: Button) -> void:
+	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
+		btn.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+	btn.add_theme_font_size_override("font_size", 30)
+	btn.add_theme_constant_override("outline_size", 6)
+	btn.add_theme_color_override("font_outline_color", Color(0.06, 0.08, 0.12))
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.add_theme_color_override("font_hover_color", Color8(255, 240, 90))
+	btn.add_theme_color_override("font_focus_color", Color8(255, 240, 90))
+	btn.add_theme_color_override("font_pressed_color", Color8(255, 220, 70))
+	btn.custom_minimum_size = Vector2(320, 43)
 
 func _setup_buttons() -> void:
+	var box: VBoxContainer = $ButtonLayer/VBox
+	box.offset_left = -160
+	box.offset_right = 160
+	box.offset_top = -80
+	box.offset_bottom = 230
+	box.add_theme_constant_override("separation", 3)
 	var rows := [
-		{"row": "NewGameRow", "callback": _on_new_game_pressed},
-		{"row": "MultiplayerRow", "callback": _on_multiplayer_pressed},
-		{"row": "SettingsRow", "callback": _on_settings_pressed},
+		["NewGameRow", _on_new_game_pressed],
+		["MultiplayerRow", _on_multiplayer_pressed],
+		["SettingsRow", _on_settings_pressed],
 	]
 	for entry in rows:
-		var row_name: String = entry["row"]
-		var btn: Button = $ButtonLayer/VBox.get_node(row_name + "/Button")
-		var arrow: Label = $ButtonLayer/VBox.get_node(row_name + "/Arrow")
-		_apply_button_style(btn)
-		btn.pivot_offset = btn.size / 2.0
-		btn.mouse_entered.connect(func():
-			arrow.visible = true
-			# hover: 顺滑放大到 1.12 (CUBIC 缓出, 先杀旧 tween 防连续 hover 抖)
-			# 注意: get_meta(name, null) 不行 — Godot 把 null 默认值当"没给默认" → meta 不存在时报错.
-			# 必须先 has_meta 判断 (首次 hover 时还没设过这 meta).
-			if btn.has_meta("scale_tw"):
-				var prev = btn.get_meta("scale_tw")
-				if is_instance_valid(prev) and prev.is_valid(): prev.kill()
-			var tw := create_tween()
-			tw.tween_property(btn, "scale", Vector2(1.12, 1.12), 0.16).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-			btn.set_meta("scale_tw", tw)
+		var row: HBoxContainer = box.get_node(entry[0])
+		row.get_node("Arrow").hide()
+		var btn: Button = row.get_node("Button")
+		_menu_text_style(btn)
+		btn.pressed.connect(entry[1])
+	for entry in [["成就", "本工程尚未实现原版成就界面。"], ["创意工坊", "网页版本暂不支持 Steam 创意工坊。"], ["制作人员", "Terraria 原始美术：Re-Logic。
+本网页是独立实现的非官方练习项目。"]]:
+		var btn := Button.new()
+		btn.text = entry[0]
+		_menu_text_style(btn)
+		box.add_child(btn)
+		if entry[0] == "成就": box.move_child(btn, 2)
+		elif entry[0] == "创意工坊": box.move_child(btn, 3)
+		btn.pressed.connect(func():
+			var dialog := AcceptDialog.new()
+			dialog.title = entry[0]
+			dialog.dialog_text = entry[1]
+			add_child(dialog)
+			dialog.popup_centered(Vector2i(430, 150))
+			dialog.confirmed.connect(dialog.queue_free)
 		)
-		btn.mouse_exited.connect(func():
-			arrow.visible = false
-			# 注意: get_meta(name, null) 不行 — Godot 把 null 默认值当"没给默认" → meta 不存在时报错.
-			# 必须先 has_meta 判断 (首次 hover 时还没设过这 meta).
-			if btn.has_meta("scale_tw"):
-				var prev = btn.get_meta("scale_tw")
-				if is_instance_valid(prev) and prev.is_valid(): prev.kill()
-			var tw := create_tween()
-			tw.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-			btn.set_meta("scale_tw", tw)
-		)
-		var cb: Callable = entry["callback"]
-		if cb.is_valid():
-			btn.pressed.connect(cb)
+	var quit := Button.new()
+	quit.text = "退出"
+	_menu_text_style(quit)
+	box.add_child(quit)
+	quit.pressed.connect(func():
+		if OS.has_feature("web"):
+			var dialog := AcceptDialog.new()
+			dialog.dialog_text = "关闭浏览器标签页即可退出。"
+			add_child(dialog)
+			dialog.popup_centered()
+		else: get_tree().quit()
+	)
 
+func _setup_original_landscape() -> void:
+	# 背景按各自的像素宽度循环，不再把单棵前景树拉成长条。
+	for i in 3:
+		var tex := OriginalSprites.texture("Background_%d.png" % [7, 8, 11][i])
+		for repeat in 3:
+			var sprite := Sprite2D.new()
+			sprite.texture = tex
+			sprite.centered = false
+			sprite.position = Vector2(repeat * 1024, [255, 345, 440][i])
+			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			sprite.set_meta("speed", [4.0, 9.0, 16.0][i])
+			_trees_root.add_child(sprite)
+	var sun := Sprite2D.new()
+	sun.texture = OriginalSprites.texture("Sun.png")
+	sun.position = Vector2(1000, 115)
+	_clouds_root.add_child(sun)
+	for i in 4:
+		var cloud := Sprite2D.new()
+		cloud.texture = OriginalSprites.texture("Cloud_%d.png" % i)
+		cloud.position = Vector2(i * 370 + 120, 80 + i % 2 * 100)
+		cloud.set_meta("speed", 7.0 + i)
+		_clouds_root.add_child(cloud)
+
+func _animate_original_landscape(delta: float) -> void:
+	for root in [_trees_root, _clouds_root]:
+		for sprite in root.get_children():
+			if not sprite.has_meta("speed"): continue
+			sprite.position.x -= float(sprite.get_meta("speed")) * delta
+			if sprite.position.x < -1024: sprite.position.x += 3072
 
 # 把所有弹窗面板 (设置/新游戏/选世界/联机) + 里面的按钮统一刷成蓝色.
 # 开关按钮 (难度/模式/尺寸/勾选, toggle_mode=true) 用 style_toggle (选中=亮蓝高亮).
