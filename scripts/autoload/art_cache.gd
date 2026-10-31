@@ -151,8 +151,8 @@ func _build_blocks() -> void:
 		BlocksArt.WATER_DESERT, BlocksArt.WATER_JUNGLE, BlocksArt.WATER_SWAMP,
 	]
 	for tid in BuildingArt.EXTRA_IDS:
-		var tex := OriginalSprites.block_atlas(tid) if EdgeTemplates.FAMILY_OF.has(tid) else BuildingArt.single(tid)
-		block_icons[tid] = tex
+		var tex := OriginalSprites.block_atlas(tid) if OriginalSprites.TERRAIN.has(tid) else BuildingArt.single(tid)
+		block_icons[tid] = _extract_interior_icon(tex) if EdgeTemplates.FAMILY_OF.has(tid) else tex
 		block_textures[tid] = _smart_resize_atlas_16_to_12(tex)
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
@@ -225,7 +225,7 @@ func _build_blocks() -> void:
 			var tid: int = base_id + (lvl - 1)
 			var tex: ImageTexture = _smart_resize_atlas_16_to_12(BlocksArt.get_water_level_atlas_p(lvl, pal))
 			block_textures[tid] = tex
-			block_icons[tid] = tex   # 不是 item, icon 复用世界贴图防缺 key 崩
+			block_icons[tid] = _extract_interior_icon(tex) if EdgeTemplates.FAMILY_OF.has(tid) else tex   # 不是 item, icon 复用世界贴图防缺 key 崩
 
 
 # 群系 tile 复用现有 pattern, 用 tint 区分. 在 atlas / 单 cell 两种路径都用.
@@ -530,6 +530,8 @@ func _build_particles() -> void:
 
 
 func get_inventory_icon(item_id: String) -> ImageTexture:
+	var world_items: Dictionary = preload("res://scripts/world/classic_materials.gd").ITEMS
+	if world_items.has(item_id): return block_icons.get(world_items[item_id])
 	if preload("res://scripts/items/original_content.gd").ORIGINAL_ITEM_IDS.has(item_id):
 		return item_icons.get(item_id)
 	if BuildingArt.ITEMS.has(item_id):

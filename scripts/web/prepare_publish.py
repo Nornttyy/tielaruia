@@ -33,7 +33,7 @@ config.update(executable=prefix, mainPack=pack.name, fileSizes=files)
 html = html[:match.start()] + 'const GODOT_CONFIG = ' + json.dumps(config, separators=(',', ':')) + ';' + html[match.end():]
 html = html.replace('src="index.js"', 'src="' + prefix + '.js"')
 # 独立美术验收场景不创建或改写玩家存档。
-html = html.replace('const engine = new Engine(GODOT_CONFIG);', 'if (new URLSearchParams(location.search).get("preview") === "art") GODOT_CONFIG.args = ["--", "--art-preview"];\nconst engine = new Engine(GODOT_CONFIG);')
+html = html.replace('const engine = new Engine(GODOT_CONFIG);', 'if (new URLSearchParams(location.search).get("preview") === "art") GODOT_CONFIG.args = ["--", "--art-preview"];\nif (new URLSearchParams(location.search).get("preview") === "world") GODOT_CONFIG.args = ["--", "--world-preview"];\nconst engine = new Engine(GODOT_CONFIG);')
 if 'mobile_opt.js' not in html:
     html = html.replace('<head>', '<head>\n<script src="mobile_opt.js?v=' + version + '"></script>')
 if 'peerjs_bridge.js' not in html:

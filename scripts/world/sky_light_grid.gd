@@ -57,7 +57,7 @@ func _compute_light_top(x: int) -> int:
 	var y: int = 0
 	while y < ChunkConstants.WORLD_HEIGHT:
 		var tid: int = cm.get_tile(x, y)
-		if tid != Tiles.AIR and Tiles.is_solid(tid):
+		if tid != Tiles.AIR and tid != Tiles.LIVING_LEAF and Tiles.is_solid(tid):
 			# 只在高空才考虑"这会不会是飘着的空岛"; 低处的山/地表一律当真地面.
 			if y < FLOATING_MAX_TOP_Y:
 				var float_skip: int = _floating_island_skip(cm, x, y)

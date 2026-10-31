@@ -7,7 +7,7 @@ const GLASS_WALL := 117
 const BEAM_WALL := 118
 const CHAIR := 119
 const TABLE := 121
-const EXTRA_IDS := [117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130]
+const EXTRA_IDS := [117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155]
 const ITEMS := {"glass_wall": 117, "wood_beam_wall": 118, "wood_chair": 119, "wood_table": 121}
 const DARK := Color8(65, 40, 24)
 const SHADE := Color8(98, 61, 33)
@@ -48,6 +48,9 @@ static func door_image() -> Image:
 
 static func single(tid: int) -> ImageTexture:
 	var img: Image
+	if tid >= 148 and tid <= 155: return wall_atlas(tid)
+	if tid >= 143 and tid <= 147:
+		return mushroom_piece(tid)
 	if furniture_base(tid) != -1:
 		var base := furniture_base(tid)
 		var off := part_offset(tid)
@@ -75,7 +78,7 @@ static func wall_cell(source_id: int, variant := 0) -> Image:
 	return Pack.source_image("Wall_%d.png" % source_id).get_region(Rect2i(36 * (1 + variant % 3) + 8, 44, 16, 16))
 
 static func wall_atlas(tile_id: int) -> ImageTexture:
-	var source_id: int = {B.WOOD_WALL: 4, B.DIRT_WALL: 2, B.STONE_WALL: 1}.get(tile_id, 4)
+	var source_id: int = {148: 78, 149: 7, 150: 82, 151: 34, 152: 80, 153: 3, 154: 83, 155: 187, B.WOOD_WALL: 4, B.DIRT_WALL: 2, B.STONE_WALL: 1}.get(tile_id, 4)
 	var atlas := Image.create(128, 128, false, Image.FORMAT_RGBA8)
 	for y in 8:
 		for x in 8:
@@ -89,3 +92,15 @@ static func icon(id: String) -> ImageTexture:
 	if id == "wood_chair": return ImageTexture.create_from_image(furniture_image(CHAIR))
 	if id == "wood_table": return ImageTexture.create_from_image(furniture_image(TABLE))
 	return single(ITEMS[id])
+
+# 蘑菇柄取原始 18px 网格；伞盖由 TileSet 以整张精灵绘制，避免压成一个方块。
+static func mushroom_piece(tid: int) -> ImageTexture:
+	var source := Pack.source_image("Tiles_71.png" if tid == 143 else "Tiles_72.png")
+	var origin := Vector2i(0, 6) if tid == 143 else Vector2i(0, 18)
+	return ImageTexture.create_from_image(source.get_region(Rect2i(origin, Vector2i(16, 16))))
+
+static func mushroom_crown() -> ImageTexture:
+	var img := Image.create(64, 48, false, Image.FORMAT_RGBA8)
+	img.blit_rect(Pack.source_image("Shroom_Tops.png"), Rect2i(0, 0, 60, 42), Vector2i(2, 6))
+	img.resize(48, 36, Image.INTERPOLATE_NEAREST)
+	return ImageTexture.create_from_image(img)

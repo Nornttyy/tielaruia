@@ -69,7 +69,7 @@ static func refresh_with_neighbors(layer: TileMapLayer, world_pos: Vector2i, que
 
 
 # 自然土石仍连续接壤；木材、玻璃和两种砖各用自己的边框，不能吞掉异材质轮廓。
-const SEPARATE_MATERIALS := [Tiles.PLANKS, 127, 128, 129]
+const SEPARATE_MATERIALS := [Tiles.PLANKS, 127, 128, 129, Tiles.LIVING_WOOD, Tiles.LIVING_LEAF, Tiles.DUNGEON_BRICK, Tiles.SUNPLATE, Tiles.SANDSTONE_BRICK]
 static func connects(tile_id: int, neighbor: int) -> bool:
 	if tile_id in [Tiles.LEAVES, Tiles.LEAVES_PINE, Tiles.LEAVES_AUTUMN, Tiles.JUNGLE_LEAVES]:
 		return neighbor == tile_id

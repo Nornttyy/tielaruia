@@ -65,6 +65,7 @@ func _ready() -> void:
 		NetworkManager.kicked_by_host.connect(_on_kicked_by_host)
 	_show_menu_state()
 	if "--art-preview" in OS.get_cmdline_user_args(): _start_art_preview.call_deferred()
+	elif "--world-preview" in OS.get_cmdline_user_args(): _start_world_preview.call_deferred()
 
 
 func _show_menu_state() -> void:
@@ -87,6 +88,9 @@ func _show_menu_state() -> void:
 func _start_game(seed_or_opts = 0) -> void:
 	if seed_or_opts is Dictionary and seed_or_opts.get("art_preview", false):
 		_start_art_preview()
+		return
+	if seed_or_opts is Dictionary and seed_or_opts.get("world_preview", false):
+		_start_world_preview()
 		return
 	_art_preview = false
 	# 主菜单 "开始游戏" → 走 LoadingScreen 异步加载流程.
@@ -840,3 +844,20 @@ func _start_art_preview() -> void:
 	GameSettings.creative_mode = false
 	TimeOfDay.time_multiplier = 0.0
 	preload("res://scripts/world/building_preview.gd").apply(world)
+
+func _start_world_preview() -> void:
+	if _state == "game": return
+	_art_preview = true
+	_is_multiplayer = false
+	GameSettings.current_world_size = 0
+	GameSettings.current_world_name = "群系与建筑预览"
+	GameSettings.creative_mode = true
+	TimeOfDay.time = 0.35
+	_main_menu.visible = false
+	_state = "game"
+	_start_game_sync(42)
+	TimeOfDay.time_multiplier = 0.0
+	GameSettings.creative_mode = true
+	var tour := preload("res://scripts/world/world_content_preview.gd").new()
+	world.add_child(tour)
+	tour.setup(world)

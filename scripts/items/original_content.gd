@@ -125,7 +125,7 @@ const ORIGINAL_ITEM_IDS := {
 
 # 只开放已核对的条目；未登记的新 ID 不会自动混入原版流程。
 static func is_available(item_id: String) -> bool:
-	return ORIGINAL_ITEM_IDS.has(item_id)
+	return ORIGINAL_ITEM_IDS.has(item_id) or preload("res://scripts/world/classic_materials.gd").ITEMS.has(item_id)
 
 
 # 只转换程序生成的底图；ChunkManager 随后重放存档差量，保留玩家放置和挖掘。

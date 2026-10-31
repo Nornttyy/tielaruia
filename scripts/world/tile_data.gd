@@ -148,7 +148,61 @@ const _SWAMP_LV   := [0, WATER_SWAMP_L1, WATER_SWAMP_L2, WATER_SWAMP_L3, WATER_S
 # 每 tile 的属性。drops 为 [item_id, weight%, count_min, count_max] 数组。
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
 # tier: -1 = 该工具挖不动；0 = 徒手也行；1 = 需 1 级 (木质)
+
+# 群系扩展仅追加编号，保留旧存档的方块编号。
+const EBONSTONE := 131
+const CRIMSTONE := 132
+const CORRUPT_GRASS := 133
+const CRIMSON_GRASS := 134
+const MUSHROOM_GRASS := 135
+const LIVING_WOOD := 136
+const LIVING_LEAF := 137
+const DUNGEON_BRICK := 138
+const SUNPLATE := 139
+const SANDSTONE_BRICK := 140
+const HARDENED_SAND := 141
+const DESERT_SANDSTONE := 142
+const LIVING_WALL := 148
+const DUNGEON_WALL := 149
+const SUNPLATE_WALL := 150
+const SANDSTONE_WALL := 151
+const MUSHROOM_WALL := 152
+const EBON_WALL := 153
+const CRIM_WALL := 154
+const DESERT_WALL := 155
+const GLOW_MUSHROOM := 143
+const MUSHROOM_STEM := 144
+const MUSHROOM_CAP_L := 145
+const MUSHROOM_CAP := 146
+const MUSHROOM_CAP_R := 147
+
 const _PROPS := {
+	131: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 2, "axe": -1, "sword": -1, "": -1}, "drops": [["ebonstone", 100, 1, 1]]},
+	132: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 2, "axe": -1, "sword": -1, "": -1}, "drops": [["crimstone", 100, 1, 1]]},
+	133: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["corrupt_grass", 100, 1, 1]]},
+	134: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["crimson_grass", 100, 1, 1]]},
+	135: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["mushroom_grass", 100, 1, 1]]},
+	136: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["living_wood", 100, 1, 1]]},
+	137: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["living_leaf", 100, 1, 1]]},
+	138: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 2, "axe": -1, "sword": -1, "": -1}, "drops": [["dungeon_brick", 100, 1, 1]]},
+	139: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["sunplate", 100, 1, 1]]},
+	140: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["sandstone_brick", 100, 1, 1]]},
+	141: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["hardened_sand", 100, 1, 1]]},
+	142: {"solid": true, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["desert_sandstone", 100, 1, 1]]},
+	148: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["living_wall", 100, 1, 1]]},
+	149: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["dungeon_wall", 100, 1, 1]]},
+	150: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["sunplate_wall", 100, 1, 1]]},
+	151: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["sandstone_wall", 100, 1, 1]]},
+	152: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["mushroom_wall", 100, 1, 1]]},
+	153: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["ebon_wall", 100, 1, 1]]},
+	154: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["crim_wall", 100, 1, 1]]},
+	155: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": -1, "sword": -1, "": -1}, "drops": [["desert_wall", 100, 1, 1]]},
+	143: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": 0, "sword": 0, "": 0}, "drops": [["mushroom", 100, 1, 1]]},
+	144: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": 0, "sword": 0, "": 0}, "drops": [["mushroom", 100, 1, 1]]},
+	145: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": 0, "sword": 0, "": 0}, "drops": [["mushroom", 100, 1, 1]]},
+	146: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": 0, "sword": 0, "": 0}, "drops": [["mushroom", 100, 1, 1]]},
+	147: {"solid": false, "mineable": true, "tool_tiers": {"pickaxe": 0, "axe": 0, "sword": 0, "": 0}, "drops": [["mushroom", 100, 1, 1]]},
+
 	130: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": -1, "sword": -1}, "drops": [["clay", 100, 1, 1]]},
 	129: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": -1, "sword": -1}, "drops": [["red_brick", 100, 1, 1]]},
 	128: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": -1, "sword": -1}, "drops": [["gray_brick", 100, 1, 1]]},
@@ -692,6 +746,7 @@ func is_slope(tile_id: int) -> bool:
 
 # 植物 / 非实心装饰 (树·叶·草·仙人掌·蘑菇·火把·庄稼等). 生成背景墙时跳过这些格 (用户: 墙除了植物).
 const _PLANT_TILES := {
+	143: true, 144: true, 145: true, 146: true, 147: true,
 	LOG: true, LOG_TOP: true, LOG_ROOT_L: true, LOG_ROOT_R: true, BRANCH_L: true, BRANCH_R: true,
 	LEAVES: true, LEAVES_PINE: true, LEAVES_AUTUMN: true, JUNGLE_LEAVES: true,
 	CACTUS: true, CACTUS_BODY: true, MUSHROOM: true, HELL_FRUIT: true,
@@ -713,11 +768,20 @@ func is_submersible_plant(_tile_id: int) -> bool:
 # 是不是背景墙 tile (4 种). 加新墙改这里.
 func is_wall_tile(tile_id: int) -> bool:
 	return tile_id == GRASS_WALL or tile_id == DIRT_WALL \
-			or tile_id == STONE_WALL or tile_id == WOOD_WALL or tile_id in [GLASS_WALL, WOOD_BEAM_WALL]
+			or tile_id == STONE_WALL or tile_id == WOOD_WALL or tile_id in [GLASS_WALL, WOOD_BEAM_WALL] or (tile_id >= 148 and tile_id <= 155)
 
 
 # 砸墙掉落的物品 id (锤子破墙用). 无对应返 "".
 const _WALL_DROP := {
+	148: "living_wall",
+	149: "dungeon_wall",
+	150: "sunplate_wall",
+	151: "sandstone_wall",
+	152: "mushroom_wall",
+	153: "ebon_wall",
+	154: "crim_wall",
+	155: "desert_wall",
+
 	GLASS_WALL: "glass_wall", WOOD_BEAM_WALL: "wood_beam_wall",
 	GRASS_WALL: "grass_wall", DIRT_WALL: "dirt_wall",
 	STONE_WALL: "stone_wall", WOOD_WALL: "wood_wall",

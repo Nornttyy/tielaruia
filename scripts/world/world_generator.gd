@@ -24,6 +24,11 @@ const BIOME_DESERT := 1
 const BIOME_SNOW := 2
 const BIOME_JUNGLE := 3
 const BIOME_SWAMP := 4
+const BIOME_CORRUPTION := 5
+const BIOME_CRIMSON := 6
+const BIOME_MUSHROOM := 7
+const BIOME_OCEAN := 8
+const ClassicFeatures = preload("res://scripts/world/classic_world_features.gd")
 # 4 个固定 "槽位" (中心 X), 4 个 biome 用 seed shuffle 分到槽位.
 # 槽位都距 spawn>=300 列, 保证 spawn 周围是 forest. 槽位间距 600 防重叠.
 const _BIOME_SLOTS := [-1200, -600, 600, 1200]
@@ -351,7 +356,7 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	_place_volcano_crater_chunk(c, world_seed, chunk_x, chunk_width, height)
 
 	# 沙漠金字塔: 2-3 个/世界, 沙漠 chunk 上盖 25 宽 13 层台阶金字塔 + 内部走廊 + 2-3 宝箱
-	_place_pyramid_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height, biome_centers)
+	# 新金字塔在自然洞穴、墙生成完毕后统一盖入。
 
 	# 沙漠地下保护: 把 SAND 邻 AIR 的 tile 改 STONE (防沙崩塌填满矿洞)
 	_protect_sand_caves(c, chunk_heights, chunk_width, height)
@@ -368,7 +373,7 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 世纪树已删 (用户要求)
 
 	# 废弃矿井: 2-3 个/中世界, 地下深层 30 格水平木走廊 + 木支柱 + 1-2 宝箱 + 蜘蛛.
-	_place_mineshaft_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
+	# 地下小屋替代原先的横向废弃矿井。
 
 	# 草斜坡: 1 格台阶拐角铺斜砖 (在装饰草前, 装饰草检测 AIR 不会铺到斜砖上).
 	# 出生点附近 16 格保持平整 (玩家在地表最高 tile 出生, 不要踩斜坡).
@@ -396,6 +401,7 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	for column in c.tiles:
 		for y in column.size():
 			column[y] = preload("res://scripts/items/original_content.gd").generated_tile(column[y])
+	ClassicFeatures.apply(c, classic_plan(world_seed, height), _estimate_surf.bind(world_seed, height), world_seed)
 	return c
 
 
@@ -1746,6 +1752,7 @@ static func _biome_at(world_x: int, world_seed: int) -> int:
 	if _biome_centers_cache.is_empty() or _biome_centers_cache_seed != world_seed:
 		_biome_centers_cache = _build_biome_centers(world_seed)
 		_biome_centers_cache_seed = world_seed
+	if absi(world_x) >= int(1700 * GameSettings.world_size_scale()) + 30: return BIOME_OCEAN
 	return _biome_at_x(world_x, _biome_centers_cache)
 
 
@@ -1788,7 +1795,7 @@ static func _build_biome_centers(world_seed: int) -> Dictionary:
 		slots[i] = slots[j]
 		slots[j] = tmp
 	# 分给 4 个 biome (顺序固定, 槽位 shuffle 决定每个 biome 落哪)
-	var biomes: Array = [BIOME_SNOW, BIOME_DESERT, BIOME_JUNGLE, BIOME_SWAMP]
+	var biomes: Array = [BIOME_SNOW, BIOME_DESERT, BIOME_JUNGLE, BIOME_CORRUPTION if world_seed % 2 == 0 else BIOME_CRIMSON]
 	var centers: Dictionary = {}
 	for k in biomes.size():
 		var jitter: int = rng.randi_range(-_BIOME_CENTER_JITTER, _BIOME_CENTER_JITTER)
@@ -1803,6 +1810,8 @@ static func _biome_surface_tile(biome_id: int, is_sand_col: bool) -> int:
 	match biome_id:
 		BIOME_SNOW: return Tiles.SNOW
 		BIOME_JUNGLE: return Tiles.JUNGLE_GRASS
+		BIOME_CORRUPTION: return Tiles.CORRUPT_GRASS
+		BIOME_CRIMSON: return Tiles.CRIMSON_GRASS
 		BIOME_SWAMP: return Tiles.SWAMP_GRASS
 		_: return Tiles.GRASS  # FOREST 默认
 
@@ -2209,3 +2218,13 @@ static func _stamp_sky_tree(c: Chunk, lx: int, grass_y: int, chunk_width: int, h
 				continue
 			if c.tiles[nx][ny] == Tiles.AIR:
 				c.tiles[nx][ny] = Tiles.LEAVES
+
+# 选址与正常世界共用，预览只传送到这些地点，不另造展示地图。
+static func classic_plan(seed_value: int, height: int = 256) -> Dictionary:
+	var sky: Array = []
+	for cx in _sky_island_chunks(seed_value):
+		var rng := RandomNumberGenerator.new()
+		rng.seed = _hash3(seed_value, cx, 0x5217a1)
+		rng.randi_range(SKY_ISLAND_WIDTH_MIN, SKY_ISLAND_WIDTH_MAX)
+		sky.append(Vector2i(cx * 64 + 32, rng.randi_range(SKY_ISLAND_TOP_Y_MIN, SKY_ISLAND_TOP_Y_MAX)))
+	return ClassicFeatures.plan(seed_value, _build_biome_centers(seed_value), _estimate_surf.bind(seed_value, height), sky, GameSettings.world_size_scale())

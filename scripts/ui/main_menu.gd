@@ -1229,3 +1229,11 @@ func _setup_building_preview_button() -> void:
 	_apply_button_style(btn)
 	$ButtonLayer.add_child(btn)
 	btn.pressed.connect(func(): start_game.emit({"art_preview": true}))
+	var world_btn := Button.new()
+	world_btn.name = "WorldPreviewButton"
+	world_btn.text = "群系与建筑预览"
+	world_btn.position = Vector2(234, 652)
+	world_btn.size = Vector2(210, 42)
+	_apply_button_style(world_btn)
+	$ButtonLayer.add_child(world_btn)
+	world_btn.pressed.connect(func(): start_game.emit({"world_preview": true}))

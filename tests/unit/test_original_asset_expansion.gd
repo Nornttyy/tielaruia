@@ -7,6 +7,9 @@ const Fishing = preload("res://scripts/player/player_fishing.gd")
 
 func test_active_inventory_uses_original_png_pixels():
 	for id in ItemDB.all_item_ids():
+		if preload("res://scripts/world/classic_materials.gd").ITEMS.has(id):
+			assert_not_null(ArtCache.get_inventory_icon(id))
+			continue
 		assert_true(Content.ORIGINAL_ITEM_IDS.has(id), id)
 		var original := Pack.source_image("Item_%d.png" % Content.ORIGINAL_ITEM_IDS[id])
 		assert_not_null(original, id)

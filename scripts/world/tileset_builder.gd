@@ -85,6 +85,14 @@ static func build() -> TileSet:
 	]
 	tile_ids.append_array(preload("res://scripts/art/building_art.gd").EXTRA_IDS)
 	for tile_id in tile_ids:
+		if tile_id == Tiles.MUSHROOM_CAP:
+			var cap := TileSetAtlasSource.new()
+			cap.texture = preload("res://scripts/art/building_art.gd").mushroom_crown()
+			cap.texture_region_size = Vector2i(48, 36)
+			ts.add_source(cap, tile_id)
+			cap.create_tile(Vector2i.ZERO)
+			cap.get_tile_data(Vector2i.ZERO, 0).texture_origin = Vector2i(0, 12)
+			continue
 		if tile_id in preload("res://scripts/world/tree_frames.gd").PARTS:
 			_add_tree_sprite(ts, tile_id)
 			continue

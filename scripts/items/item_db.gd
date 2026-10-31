@@ -4,6 +4,27 @@ extends Node
 const OriginalContent = preload("res://scripts/items/original_content.gd")
 
 const _DEFS := {
+	"ebonstone": {"placeable_tile_id": 131, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"crimstone": {"placeable_tile_id": 132, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"corrupt_grass": {"placeable_tile_id": 133, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"crimson_grass": {"placeable_tile_id": 134, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"mushroom_grass": {"placeable_tile_id": 135, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"living_wood": {"placeable_tile_id": 136, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"living_leaf": {"placeable_tile_id": 137, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"dungeon_brick": {"placeable_tile_id": 138, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"sunplate": {"placeable_tile_id": 139, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"sandstone_brick": {"placeable_tile_id": 140, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"hardened_sand": {"placeable_tile_id": 141, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"desert_sandstone": {"placeable_tile_id": 142, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"living_wall": {"placeable_tile_id": 148, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"dungeon_wall": {"placeable_tile_id": 149, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"sunplate_wall": {"placeable_tile_id": 150, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"sandstone_wall": {"placeable_tile_id": 151, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"mushroom_wall": {"placeable_tile_id": 152, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"ebon_wall": {"placeable_tile_id": 153, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"crim_wall": {"placeable_tile_id": 154, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"desert_wall": {"placeable_tile_id": 155, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+
 	"clay": {"placeable_tile_id": 130, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
 	"red_brick": {"placeable_tile_id": 129, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
 	"gray_brick": {"placeable_tile_id": 128, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},

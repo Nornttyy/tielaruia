@@ -51,11 +51,21 @@ static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: i
 	var sky_queue: PackedInt32Array = PackedInt32Array()
 	var sky_light: int = TimeOfDay.sky_light_level()
 	for x in range(x0, x1):
+		var column = chunk_manager.get_chunk(Chunk.chunk_x_of(x)) if chunk_manager.has_method("get_chunk") else null
+		var natural_surface: int = column.surfaces[Chunk.local_x_of(x)] if column != null else -1
 		for y in range(y0, y1):
 			if SkyLightGrid.is_sky_exposed(x, y):
 				var idx: int = (y - y0) * w + (x - x0)
 				sky[idx] = sky_light
 				sky_queue.append(idx)
+			elif y < natural_surface:
+				# 生命树地上的天然木墙接受环境光；地下密室仍需要火把。
+				var tid: int = chunk_manager.get_tile(x, y)
+				var wid: int = chunk_manager.get_wall(x, y) if chunk_manager.has_method("get_wall") else Tiles.AIR
+				if tid == Tiles.LIVING_WOOD or wid == Tiles.LIVING_WALL:
+					var idx: int = (y - y0) * w + (x - x0)
+					sky[idx] = maxi(0, sky_light - 3)
+					sky_queue.append(idx)
 	# 天光: no_spread_from_solid=true → 实心块接到光但不往后传 (墙挡住, 不漏进墙后的密闭空间)
 	_bfs(chunk_manager, x0, y0, w, h, sky, sky_queue, SKY_ATTEN_AIR, SKY_ATTEN_SOLID, true)
 	_shade_solid_edges(chunk_manager, x0, y0, w, h, sky)
@@ -131,7 +141,7 @@ static func _bfs(chunk_manager: Node, x0: int, y0: int, w: int, h: int,
 		# 天光: 实心块接到光后不再往外传 (墙挡光). 它自己保留亮度渲染, 但不把光漏给后面的格.
 		if no_spread_from_solid:
 			var ctid: int = chunk_manager.get_tile(x0 + lx, y0 + ly)
-			if ctid != Tiles.AIR and Tiles.is_solid(ctid):
+			if ctid != Tiles.AIR and ctid != Tiles.LIVING_LEAF and Tiles.is_solid(ctid):
 				continue
 		# 4 个方向: 右 / 左 / 下 / 上 (lx+1, lx-1, ly+1, ly-1)
 		# 边界检查直接用 lx, ly (省去 - x0)
@@ -154,7 +164,7 @@ static func _try_spread(chunk_manager: Node, wx: int, wy: int, n_idx: int, cur: 
 		grid: PackedByteArray, queue: PackedInt32Array,
 		atten_air: int, atten_solid: int) -> void:
 	var tid: int = chunk_manager.get_tile(wx, wy)
-	var atten: int = atten_solid if (tid != Tiles.AIR and Tiles.is_solid(tid)) else atten_air
+	var atten: int = atten_solid if (tid != Tiles.AIR and tid != Tiles.LIVING_LEAF and Tiles.is_solid(tid)) else atten_air
 	var nv: int = cur - atten
 	if nv > 0 and grid[n_idx] < nv:
 		grid[n_idx] = nv

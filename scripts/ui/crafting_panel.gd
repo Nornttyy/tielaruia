@@ -425,6 +425,27 @@ func _recipe_tooltip(recipe: Dictionary) -> String:
 
 # 物品/方块中文名 (面板用)
 const _ZH_NAMES := {
+	"ebonstone": "黑檀石",
+	"crimstone": "猩红石",
+	"corrupt_grass": "腐化草",
+	"crimson_grass": "猩红草",
+	"mushroom_grass": "蘑菇草",
+	"living_wood": "生命木",
+	"living_leaf": "树叶块",
+	"dungeon_brick": "蓝地牢砖",
+	"sunplate": "日盘块",
+	"sandstone_brick": "砂岩砖",
+	"hardened_sand": "硬化沙",
+	"desert_sandstone": "砂岩",
+	"living_wall": "生命木墙",
+	"dungeon_wall": "蓝地牢砖墙",
+	"sunplate_wall": "日盘墙",
+	"sandstone_wall": "砂岩砖墙",
+	"mushroom_wall": "蘑菇墙",
+	"ebon_wall": "黑檀石墙",
+	"crim_wall": "猩红石墙",
+	"desert_wall": "砂岩墙",
+
 	"clay": "黏土块",
 	"red_brick": "红砖",
 	"gray_brick": "灰砖",

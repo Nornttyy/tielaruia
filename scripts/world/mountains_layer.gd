@@ -21,10 +21,13 @@ const _LAYERS := [
 ]
 
 # biome → 景物风格 (剪影形状). 0森林 1沙漠 2雪原 3丛林 4沼泽
-const _BIOME_STYLE := {0: "mountain", 1: "dune", 2: "mountain", 3: "canopy", 4: "deadtree"}
+const _BIOME_STYLE := {0: "mountain", 1: "dune", 2: "mountain", 3: "canopy", 4: "deadtree", 5: "deadtree", 6: "deadtree", 8: "dune"}
 const _BIOME_SNOW := {2: true}   # 雪原山顶盖雪
 # biome → 3 层颜色 (远/中/近, 大气透视: 远浅近深)
 const _BIOME_COLORS := {
+	5: [Color("77708d"), Color("625878"), Color("453953")],
+	6: [Color("b07573"), Color("894f51"), Color("5e333c")],
+	8: [Color("afc8cc"), Color("73afb8"), Color("438b9c")],
 	0: [Color(0.55, 0.62, 0.75), Color(0.40, 0.50, 0.55), Color(0.30, 0.40, 0.30)],  # 森林
 	1: [Color(0.80, 0.72, 0.56), Color(0.84, 0.70, 0.46), Color(0.70, 0.56, 0.34)],  # 沙漠沙黄
 	2: [Color(0.74, 0.80, 0.90), Color(0.66, 0.74, 0.85), Color(0.56, 0.66, 0.78)],  # 雪原冷蓝白
@@ -99,6 +102,17 @@ func _get_tex(biome: int, layer_idx: int) -> ImageTexture:
 			var original_tex := ImageTexture.create_from_image(canvas)
 			_tex_cache[key] = original_tex
 			return original_tex
+	if biome == 8:
+		# 海面用平缓水平线，不复用带仙人掌的沙漠剪影。
+		var water := Image.create(TEX_WIDTH, TEX_HEIGHT, false, Image.FORMAT_RGBA8)
+		var horizon := int(TEX_HEIGHT * 0.62) + layer_idx * 8
+		water.fill_rect(Rect2i(0, horizon, TEX_WIDTH, TEX_HEIGHT - horizon), _biome_color(biome, layer_idx))
+		for y in range(horizon + 10, TEX_HEIGHT, 22):
+			for x in range(posmod(y * 13, 81), TEX_WIDTH - 15, 81):
+				water.fill_rect(Rect2i(x, y, 15, 1), _biome_color(biome, layer_idx).lightened(0.10))
+		var tex := ImageTexture.create_from_image(water)
+		_tex_cache[key] = tex
+		return tex
 	var style: String = _BIOME_STYLE.get(biome, "mountain")
 	# 森林的最近一层画树线，不让三层全是同一种尖山。
 	if biome == 0 and layer_idx == 2:

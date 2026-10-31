@@ -6,6 +6,7 @@ const B = preload("res://scripts/art/blocks_art.gd")
 const Blob = preload("res://scripts/world/blob_lookup.gd")
 const BASE := "res://assets/terraria_1449/"
 const TERRAIN := {
+	131: 25, 132: 203, 133: 23, 134: 199, 135: 70, 136: 191, 137: 192, 138: 41, 139: 202, 140: 151, 141: 397, 142: 396, B.CLOUD: 189,
 	127: 54, 128: 38, 129: 39, 130: 40,
 	B.TIN_ORE: 166,
 	B.GRASS: 2, B.DIRT: 0, B.STONE: 1, B.SAND: 53,
@@ -15,7 +16,7 @@ const TERRAIN := {
 	B.PLANKS: 30, B.MUD: 59, B.JUNGLE_DIRT: 59,
 	B.JUNGLE_GRASS: 60, B.SWAMP_GRASS: 60,
 	B.ICE: 161, B.SNOW_DIRT: 0, B.HELL_STONE: 58,
-	B.OBSIDIAN: 56,
+	B.OBSIDIAN: 56, B.SANDSTONE: 151,
 }
 static var _images: Dictionary = {}
 static var _players: Dictionary = {}
