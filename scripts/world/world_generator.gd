@@ -2210,6 +2210,8 @@ static func _stamp_sky_tree(c: Chunk, lx: int, grass_y: int, chunk_width: int, h
 		return   # 太靠世界顶 → 放弃
 	for y in range(trunk_top, grass_y):
 		c.tiles[lx][y] = Tiles.LOG
+	# 与地表树共用整张树冠；旧叶块图层已隐藏，不能只留下光秃树干。
+	c.tiles[lx][trunk_top] = Tiles.LOG_TOP
 	for ddx in range(-1, 2):
 		for ddy in range(-1, 2):
 			var nx: int = lx + ddx
