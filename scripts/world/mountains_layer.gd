@@ -92,7 +92,7 @@ func _get_tex(biome: int, layer_idx: int) -> ImageTexture:
 	var scaled := source.duplicate() as Image
 	scaled.resize(roundi(source.get_width() * 0.75), roundi(source.get_height() * 0.75), Image.INTERPOLATE_NEAREST)
 	var canvas := Image.create(TEX_WIDTH, TEX_HEIGHT, false, Image.FORMAT_RGBA8)
-	var offset := 90 if biome == 8 else 0
+	var offset := 0  # 海平线保持原画高度；不能按之前漏水后的低水位下移。
 	canvas.blit_rect(scaled, Rect2i(Vector2i.ZERO, scaled.get_size()), Vector2i(0, offset))
 	# 延续每一列的底色，不能用一个色块盖掉原画的山脚纹理。
 	for x in TEX_WIDTH:
