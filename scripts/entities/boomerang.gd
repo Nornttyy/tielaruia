@@ -32,7 +32,13 @@ func _ready() -> void:
 		sprite.scale = Vector2(1.4, 1.4)
 
 
+var _sound_clock := 0.0
+
 func _physics_process(delta: float) -> void:
+	_sound_clock -= delta
+	if _sound_clock <= 0.0:
+		_sound_clock = 8.0 / 60.0
+		SfxBank.play_at("boomerang", global_position)
 	_life += delta
 	if _life >= LIFE_MAX:
 		queue_free()

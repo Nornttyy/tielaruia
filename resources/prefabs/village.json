@@ -1,80 +1,164 @@
 {
-  "name": "starter_village",
-  "comment": "锚点 = 玩家 spawn_y 行的 x. anchor_x/y 是相对锚点的 offset. grid 字符: P=planks W=stone D=door L=log C=chest B=workbench F=furnace T=torch _=wood_platform .=空气. 房子带尖顶/烟囱/塔楼.",
+  "name": "forest_building_study",
+  "comment": "美术预览用的自建木屋，不是泰拉瑞亚原版生成结构。锚点是地板高度。",
   "houses": [
     {
-      "comment": "尖顶农舍 (7x6) — 斜屋顶 + 室内火把 + 箱子. 木梁(L)框尖顶",
+      "comment": "林间小屋",
       "anchor_x": 4,
-      "anchor_y": -5,
+      "anchor_y": -11,
       "grid": [
-        "...L...",
-        "..LPL..",
-        ".LPPPL.",
-        "LPPPPPL",
-        "P.T.C.P",
-        "D.....P"
+        "......PPPPPPPPPPP......",
+        "....PP...........PP....",
+        "..PP...............PP..",
+        "PPPPPPPPPPPPPPPPPPPPPPP",
+        ".P...................P.",
+        ".P.T.......T.......T.P.",
+        ".P...................P.",
+        ".P...................P.",
+        ".......................",
+        ".......................",
+        ".D...................D.",
+        "PPPPPPPPPPPPPPPPPPPPPPP"
       ],
-      "villager_offset": [3, 5]
+      "walls": [
+        ".......................",
+        "......wwwwwwwwwww......",
+        "....wwwwwwwwwwwwwww....",
+        ".......................",
+        ".bwwwwwwwwwwwwwwwwwwwb.",
+        ".bwwwgggwwwwwwwgggwwwb.",
+        ".bwwwgggwwwwwwwgggwwwb.",
+        ".bwwwgggwwwwwwwgggwwwb.",
+        ".bwwwwwwwwwwwwwwwwwwwb.",
+        ".bwwwwwwwwwwwwwwwwwwwb.",
+        ".bwwwwwwwwwwwwwwwwwwwb.",
+        "......................."
+      ],
+      "furniture": [
+        {
+          "tile": 119,
+          "x": 9,
+          "y": 10
+        },
+        {
+          "tile": 121,
+          "x": 11,
+          "y": 10
+        }
+      ],
+      "villager_offset": [
+        4,
+        10
+      ]
     },
     {
-      "comment": "二层楼 + 烟囱 (8x7) — 上层带平台 + 烟囱伸出屋顶",
-      "anchor_x": 13,
-      "anchor_y": -6,
+      "comment": "双层木屋",
+      "anchor_x": 33,
+      "anchor_y": -17,
       "grid": [
-        ".....W..",
-        ".LLLLW..",
-        "LPPPPWPL",
-        "P.T..WLP",
-        "P_____PP",
-        "P.C..B.P",
-        "D......P"
+        "......PPPPPPPPPPPPPPP......",
+        "....PP...............PP....",
+        "..PP...................PP..",
+        "PPPPPPPPPPPPPPPPPPPPPPPPPPP",
+        ".P.......................P.",
+        ".P.T.........T.........T.P.",
+        ".P.......................P.",
+        ".P.......................P.",
+        ".P.......................P.",
+        ".PPPPPPPPP_____PPPPPPPPPPP.",
+        ".P.......................P.",
+        ".P.T.........T.........T.P.",
+        ".P.......................P.",
+        ".P.......................P.",
+        "...........................",
+        "...........................",
+        ".D.......................D.",
+        "PPPPPPPPPPPPPPPPPPPPPPPPPPP"
       ],
-      "villager_offset": [4, 6]
-    },
-    {
-      "comment": "铁匠铺带石烟囱 (7x6) — 熔炉接烟囱出顶",
-      "anchor_x": 23,
-      "anchor_y": -5,
-      "grid": [
-        "..W....",
-        "..W....",
-        "LLWLLLL",
-        "P.W.T.P",
-        "P.F.B.P",
-        "D.....P"
+      "walls": [
+        "...........................",
+        "......wwwwwwwwwwwwwww......",
+        "....wwwwwwwwwwwwwwwwwww....",
+        "...........................",
+        ".bwwwwwwwwwwwwwwwwwwwwwwwb.",
+        ".bwwwgggwwwwwwwwwwwgggwwwb.",
+        ".bwwwgggwwwwwwwwwwwgggwwwb.",
+        ".bwwwgggwwwwwwwwwwwgggwwwb.",
+        ".bwwwwwwwwwwwwwwwwwwwwwwwb.",
+        ".bwwwwwwwwwwwwwwwwwwwwwwwb.",
+        ".bwwwwwwwwwwwwwwwwwwwwwwwb.",
+        ".bwwwgggwwwwwwwwwwwgggwwwb.",
+        ".bwwwgggwwwwwwwwwwwgggwwwb.",
+        ".bwwwgggwwwwwwwwwwwgggwwwb.",
+        ".bwwwwwwwwwwwwwwwwwwwwwwwb.",
+        ".bwwwwwwwwwwwwwwwwwwwwwwwb.",
+        ".bwwwwwwwwwwwwwwwwwwwwwwwb.",
+        "..........................."
       ],
-      "villager_offset": [4, 5]
-    },
-    {
-      "comment": "瞭望塔 (5x9) — 高塔顶有火把指引玩家",
-      "anchor_x": 32,
-      "anchor_y": -8,
-      "grid": [
-        "..L..",
-        "..T..",
-        "WLLLW",
-        "W...W",
-        "W.T.W",
-        "W___W",
-        "W.C.W",
-        "W...W",
-        "D...W"
+      "furniture": [
+        {
+          "tile": 119,
+          "x": 9,
+          "y": 16
+        },
+        {
+          "tile": 121,
+          "x": 11,
+          "y": 16
+        },
+        {
+          "tile": 119,
+          "x": 6,
+          "y": 8
+        },
+        {
+          "tile": 121,
+          "x": 17,
+          "y": 8
+        }
       ],
       "villager_offset": null
     },
     {
-      "comment": "客栈/集会厅 (11x6) — 长条大屋 + 双门(前后) + 工作台 + 熔炉 + 双箱",
-      "anchor_x": 39,
-      "anchor_y": -5,
+      "comment": "石壁炉小屋",
+      "anchor_x": 66,
+      "anchor_y": -11,
       "grid": [
-        "...LLLLL...",
-        "..LPPPPPL..",
-        ".LPPPPPPPL.",
-        "PP.T...T.PP",
-        "P.C.B.F.C.P",
-        "D.........D"
+        "......PPPPPPP......",
+        "....PP.......PP....",
+        "..PP...........PP..",
+        "PPPPPPPPPPPPPPPPPPP",
+        ".P...............P.",
+        ".P.T.....T.....T.P.",
+        ".P...............P.",
+        ".P....WWWWW......P.",
+        "......W...W........",
+        "......W...W........",
+        ".D....W.T.W......D.",
+        "WWWWWWWWWWWWWWWWWWW"
       ],
-      "villager_offset": [5, 5]
+      "walls": [
+        "...................",
+        "......wwwwwww......",
+        "....wwwwwwwwwww....",
+        ".......sss.........",
+        ".bwwwwwssswwwwwwwb.",
+        ".bwwwggssswgggwwwb.",
+        ".bwwwggssswgggwwwb.",
+        ".bwwwggssswgggwwwb.",
+        ".bwwwwwssswwwwwwwb.",
+        ".bwwwwwssswwwwwwwb.",
+        ".bwwwwwssswwwwwwwb.",
+        "..................."
+      ],
+      "furniture": [
+        {
+          "tile": 119,
+          "x": 12,
+          "y": 10
+        }
+      ],
+      "villager_offset": null
     }
   ]
 }

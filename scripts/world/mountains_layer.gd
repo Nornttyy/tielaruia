@@ -5,6 +5,7 @@
 extends ParallaxBackground
 
 const MountainsArt = preload("res://scripts/art/mountains_art.gd")
+const OriginalSprites = preload("res://scripts/art/terraria_sprite_pack.gd")
 
 const TEX_WIDTH := 1280
 const TEX_HEIGHT := 360
@@ -37,6 +38,7 @@ var _biome_current: int = 0
 var _biome_incoming: int = -1
 var _blend: float = 0.0
 var _tex_cache: Dictionary = {}   # "biome_layeridx" → ImageTexture (生成一次缓存)
+var _surface_camera_y: float = NAN
 
 
 func _ready() -> void:
@@ -45,7 +47,9 @@ func _ready() -> void:
 	for i in _LAYERS.size():
 		var ld: Dictionary = _LAYERS[i]
 		var pl := ParallaxLayer.new()
-		pl.motion_scale = Vector2(ld.motion_scale, 0.0)
+		# y 跟 x 同视差系数: 远山上下也跟摄像头动 (用户要求 — 只山跟, 云仍只左右动见 cloud_layer)。
+		# 远层(motion_scale 0)仍锁屏不动, 中/近层随镜头上下飘 (近层飘得多 = 视差深度)。
+		pl.motion_scale = Vector2(ld.motion_scale, ld.motion_scale)
 		pl.motion_mirroring = Vector2(TEX_WIDTH, 0)
 		add_child(pl)
 		var sprite_top: int = HORIZON_Y - TEX_HEIGHT + ld.y_extra
@@ -82,7 +86,23 @@ func _get_tex(biome: int, layer_idx: int) -> ImageTexture:
 	var key: String = "%d_%d" % [biome, layer_idx]
 	if _tex_cache.has(key):
 		return _tex_cache[key]
+	if biome == 0:
+		# 原图等比例放进现有循环层，不横向拉宽山峰/树；一整幅重复周期仍为 1280。
+		var source := OriginalSprites.source_image("Background_%d.png" % [7, 9, 11][layer_idx])
+		if source != null:
+			var scaled := source.duplicate() as Image
+			var scale_factor := float(TEX_WIDTH) / source.get_width()
+			scaled.resize(TEX_WIDTH, roundi(source.get_height() * scale_factor), Image.INTERPOLATE_NEAREST)
+			var canvas := Image.create(TEX_WIDTH, TEX_HEIGHT, false, Image.FORMAT_RGBA8)
+			# 只裁去山脚/树线下方的实色区域，轮廓不压扁。
+			canvas.blit_rect(scaled, Rect2i(0, 0, TEX_WIDTH, TEX_HEIGHT), Vector2i.ZERO)
+			var original_tex := ImageTexture.create_from_image(canvas)
+			_tex_cache[key] = original_tex
+			return original_tex
 	var style: String = _BIOME_STYLE.get(biome, "mountain")
+	# 森林的最近一层画树线，不让三层全是同一种尖山。
+	if biome == 0 and layer_idx == 2:
+		style = "forest"
 	var snow: bool = _BIOME_SNOW.get(biome, false)
 	var tex: ImageTexture = MountainsArt.generate_biome_ridge(
 		TEX_WIDTH, TEX_HEIGHT, style, _biome_color(biome, layer_idx), snow,
@@ -92,6 +112,10 @@ func _get_tex(biome: int, layer_idx: int) -> ImageTexture:
 
 
 func _biome_color(biome: int, layer_idx: int) -> Color:
+	if biome == 0:
+		var source := OriginalSprites.source_image("Background_%d.png" % [7, 9, 11][layer_idx])
+		if source != null:
+			return source.get_pixel(0, source.get_height() - 1)
 	var cols: Array = _BIOME_COLORS.get(biome, _BIOME_COLORS[0])
 	return cols[layer_idx]
 
@@ -111,6 +135,7 @@ func set_biome(biome_id: int) -> void:
 
 
 func _process(delta: float) -> void:
+	_align_surface_horizon()
 	# 交叉淡入推进
 	if _biome_incoming >= 0:
 		_blend = min(1.0, _blend + delta / CROSSFADE_SEC)
@@ -126,20 +151,46 @@ func _process(delta: float) -> void:
 	var sky_tint: Color = TimeOfDay.sky_color()
 	var fading: bool = _biome_incoming >= 0
 	for ld in _layer_data:
-		var ta: Color = _atmos(ld.color_a, f, sky_tint)
+		var ta: Color = _texture_tint(ld.color_a, f, sky_tint)
 		ta.a = ld.alpha * _layer_alpha * (1.0 - (_blend if fading else 0.0))
 		ld.sa.modulate = ta
 		if fading:
-			var tb: Color = _atmos(ld.color_b, f, sky_tint)
+			var tb: Color = _texture_tint(ld.color_b, f, sky_tint)
 			tb.a = ld.alpha * _layer_alpha * _blend
 			ld.sb.modulate = tb
 		else:
 			ld.sb.modulate.a = 0.0
-		# fill 用主导色 (过半就换成 incoming), 跟 sprite 一致
-		var fc: Color = _atmos(ld.color_b if (fading and _blend >= 0.5) else ld.color_a, f, sky_tint)
+		# 山脚也连续混色，不能切换到一半突然跳色。
+		var fc: Color = _atmos(ld.color_a, f, sky_tint)
+		if fading:
+			fc = fc.lerp(_atmos(ld.color_b, f, sky_tint), _blend)
 		fc.a = 1.0
 		ld.fill.color = fc
 		ld.fill.modulate.a = ld.alpha * _layer_alpha
+
+
+func _align_surface_horizon() -> void:
+	if not is_nan(_surface_camera_y):
+		return
+	var world := get_parent()
+	if world == null or not world.has_method("get_player"):
+		return
+	var player = world.get_player()
+	if player == null:
+		return
+	# 世界坐标中的出生地可能在上千像素处，不能直接把这个高度减到屏幕远景上。
+	# 只抵消初始地表高度；此后仍保留已有的上下视差跟随。
+	_surface_camera_y = player.global_position.y
+	for child in get_children():
+		if child is ParallaxLayer:
+			child.motion_offset.y = _surface_camera_y * child.motion_scale.y
+
+
+func _texture_tint(base: Color, f: float, sky_tint: Color) -> Color:
+	# 纹理已经带有底色，再乘底色会变成底色的平方，导致远山过黑、与填充条断层。
+	var target := _atmos(base, f, sky_tint)
+	return Color(target.r / maxf(base.r, 0.001), target.g / maxf(base.g, 0.001),
+		target.b / maxf(base.b, 0.001), 1.0)
 
 
 func _atmos(base: Color, f: float, sky_tint: Color) -> Color:

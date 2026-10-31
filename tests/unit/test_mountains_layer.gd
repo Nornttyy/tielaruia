@@ -56,6 +56,21 @@ func test_set_biome_crossfades_to_new_biome():
 		ml._process(0.02)   # 推 ~1.4s 让 0.9s 交叉淡入收尾
 	assert_eq(ml.current_biome(), 1, "切到沙漠后 current_biome=1")
 
+# 远山上下跟随摄像头 (用户要求): 中/近层 motion_scale.y 应 > 0 且 = x (远层仍锁屏 0)。
+func test_layers_have_vertical_parallax():
+	var ml = MountainsLayer.new()
+	add_child_autofree(ml)
+	await wait_frames(1)
+	var moving_y: int = 0
+	for child in ml.get_children():
+		if child is ParallaxLayer:
+			# y 视差系数应等于 x (同步上下/左右)
+			assert_eq(child.motion_scale.y, child.motion_scale.x, "y 视差 = x 视差 (上下也跟)")
+			if child.motion_scale.y > 0.0:
+				moving_y += 1
+	assert_gte(moving_y, 2, "至少中/近 2 层会上下跟随 (motion_scale.y > 0)")
+
+
 func test_set_biome_same_is_noop():
 	var ml = MountainsLayer.new()
 	add_child_autofree(ml)

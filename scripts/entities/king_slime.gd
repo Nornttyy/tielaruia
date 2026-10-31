@@ -200,6 +200,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
 	Effects.spawn_damage_number(global_position + Vector2(0, -6), actual_loss)
+	if current_health > 0: SfxBank.play_creature("king_slime", global_position, false)
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var to_self: Vector2 = global_position - source_pos
 		var d: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
@@ -227,6 +228,8 @@ func _check_despawn(delta: float) -> void:
 
 # 在 boss 身上 spawn 一个掉落物 (沿用 slime.gd 的 item_id/count API)
 func _spawn_drop(item_id: String) -> void:
+	if not ItemDB.is_available(item_id):
+		return  # 只拦截新战利品，不影响旧背包/箱子里的物品。
 	var drop = ItemDropScene.instantiate()
 	drop.item_id = item_id
 	drop.count = 1
@@ -238,6 +241,8 @@ func _spawn_drop(item_id: String) -> void:
 
 
 func _die() -> void:
+	if _is_dying: return
+	SfxBank.play_creature("king_slime", global_position, true)
 	_is_dying = true
 	# 联机: 通知 client 删掉它那只远程王 (漏发会让客机看到死掉的王卡住/残留)
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
@@ -245,8 +250,7 @@ func _die() -> void:
 	# 成就: 打赢史莱姆王
 	if typeof(Achievements) != TYPE_NIL:
 		Achievements.fire("boss_king_slime")
-	# 掉 1 个 slime_ball + 一大堆 slime_jelly
-	_spawn_drop("slime_ball")
+	# 移除自创的史莱姆球武器；原版 Boss 专属掉落后续单独补齐。
 	var n := JELLY_DROP_MIN + (randi() % (JELLY_DROP_MAX - JELLY_DROP_MIN + 1))
 	for i in n:
 		_spawn_drop("slime_jelly")

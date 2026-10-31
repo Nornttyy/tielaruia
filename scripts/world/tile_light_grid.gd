@@ -13,6 +13,7 @@ extends RefCounted
 const MAX_LIGHT := 15
 const PLAYER_LIGHT := 5
 const TORCH_LIGHT := 14
+const _RIM_DIRECTIONS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 
 # 战斗房全亮 (用户: 战斗时光照遮挡视野). 置 true → compute_region 整片返回 MAX_LIGHT,
 # 黑暗层 alpha 全 0 = 没有黑. main.gd 进/出对战房竞技场时开关. static = 全局共享 (compute_region 是 static).
@@ -57,6 +58,7 @@ static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: i
 				sky_queue.append(idx)
 	# 天光: no_spread_from_solid=true → 实心块接到光但不往后传 (墙挡住, 不漏进墙后的密闭空间)
 	_bfs(chunk_manager, x0, y0, w, h, sky, sky_queue, SKY_ATTEN_AIR, SKY_ATTEN_SOLID, true)
+	_shade_solid_edges(chunk_manager, x0, y0, w, h, sky)
 
 	# Pass 2: 火把 + 玩家. 独立 BFS, 低衰减.
 	var pt: PackedByteArray = PackedByteArray()
@@ -82,6 +84,34 @@ static func compute_region(chunk_manager: Node, x0: int, y0: int, x1: int, y1: i
 		if pt[i] > sky[i]:
 			sky[i] = pt[i]
 	return sky
+
+
+static func _shade_solid_edges(chunk_manager: Node, x0: int, y0: int,
+		w: int, h: int, grid: PackedByteArray) -> void:
+	# 只给相邻土石表面延续几层明暗，避免地表下一格就全黑。
+	# 这束补光绝不进入空气，所以不会照穿墙壁、泄漏进密闭洞穴。
+	var queue := PackedInt32Array()
+	for i in grid.size():
+		if grid[i] > SKY_ATTEN_SOLID and Tiles.is_solid(chunk_manager.get_tile(x0 + i % w, y0 + i / w)):
+			queue.append(i)
+	while not queue.is_empty():
+		var i: int = queue[queue.size() - 1]
+		queue.remove_at(queue.size() - 1)
+		var value: int = grid[i] - SKY_ATTEN_SOLID
+		if value <= 0:
+			continue
+		var x: int = i % w
+		var y: int = i / w
+		for step in _RIM_DIRECTIONS:
+			var nx: int = x + step.x
+			var ny: int = y + step.y
+			if nx < 0 or ny < 0 or nx >= w or ny >= h:
+				continue
+			var ni: int = ny * w + nx
+			if grid[ni] >= value or not Tiles.is_solid(chunk_manager.get_tile(x0 + nx, y0 + ny)):
+				continue
+			grid[ni] = value
+			queue.append(ni)
 
 
 # BFS 内部. 把 queue 里的索引按衰减规则扩散到邻居.

@@ -141,7 +141,7 @@ func test_generate_chunk_different_x_different():
 
 func test_no_orphan_leaves_at_chunk_seams():
 	# 跨 chunk 边界不能有"漂浮叶"(无树干的叶子)。
-	# 检查每片叶子的小邻域内必须能找到 LOG。
+	# 检查每片叶子的小邻域内必须能找到 LOG；宽树冠最大半径现在为 4 格。
 	var w = WorldGenerator.generate(42, 256, 128)
 	var leaf_tiles := [Tiles.LEAVES, Tiles.LEAVES_PINE, Tiles.LEAVES_AUTUMN]
 	for x in 256:
@@ -149,7 +149,7 @@ func test_no_orphan_leaves_at_chunk_seams():
 			if not w.tiles[x][y] in leaf_tiles:
 				continue
 			var has_log := false
-			for dx in range(-3, 4):
+			for dx in range(-WorldGenerator.MAX_CANOPY_RADIUS, WorldGenerator.MAX_CANOPY_RADIUS + 1):
 				for dy in range(0, 10):
 					var nx: int = x + dx
 					var ny: int = y + dy
@@ -180,14 +180,14 @@ func test_underground_has_air_caves() -> void:
 	assert_gt(air_count, 20, "地下应至少有 20 个洞穴 AIR tile")
 
 
-func test_has_coal_ore() -> void:
+func test_original_world_does_not_generate_custom_coal_ore() -> void:
 	var c = WorldGenerator.generate_chunk(54321, 0)
 	var coal_count = 0
 	for x in c.tiles.size():
 		for y in c.tiles[x].size():
 			if c.tiles[x][y] == Tiles.COAL_ORE:
 				coal_count += 1
-	assert_gt(coal_count, 0, "应至少有 1 个煤矿")
+	assert_eq(coal_count, 0, "原版内容目录已将自创煤矿替换为石头")
 
 
 func test_has_iron_ore() -> void:

@@ -389,6 +389,8 @@ func _step_tile(cm, x: int, y: int) -> void:
 		# 源变空 → 还要叫醒源正上方的液体 (x,y-1): notify_tile_changed(x,y) 会标到它.
 		# 否则它下面刚空出来却没人重标 dirty → 悬空不流 (修 test_water_settles, 跟横向流分支对称).
 		notify_tile_changed(x, y)
+		if not _in_settle:
+			MusicBank.note_liquid_flow(kind, world, Vector2((x + 0.5) * TILE_SIZE, (y + 0.5) * TILE_SIZE))
 		# 下落水视觉: 标记刚空出来的格还在"流" → 短时残留连成连续水帘 (纯画面; 水不岩浆, settle 不画).
 		if kind == "water" and not _in_settle and world.has_method("note_falling_water"):
 			world.note_falling_water(x, y, tid)

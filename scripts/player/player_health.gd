@@ -30,6 +30,10 @@ var _regen_t: float = 0.0
 var _since_hit_t: float = 999.0      # 初始视为很久没被打 (一开始未满血就能回)
 
 
+func _ready() -> void:
+	died.connect(func(): SfxBank.play("player_die"))
+
+
 func _physics_process(delta: float) -> void:
 	_check_pvp_void_death()   # 对战房: 掉到死亡线以下 = 秒杀 (每帧查, 便宜的 Y 比较)
 	if _iframe_timer > 0.0:
@@ -105,6 +109,7 @@ func _check_lava_damage() -> void:
 		var lava_loss: int = min(LAVA_DAMAGE_PER_TICK, current_health)
 		current_health = max(0, current_health - LAVA_DAMAGE_PER_TICK)
 		health_changed.emit(current_health, MAX_HEALTH)
+		if current_health > 0: SfxBank.play("hurt")
 		damaged.emit(LAVA_DAMAGE_PER_TICK, player.global_position)
 		Effects.spawn_damage_number(player.global_position + Vector2(0, -8),
 				lava_loss, Color(1.0, 0.4, 0.2))
@@ -206,7 +211,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	if player_node is Node2D:
 		var pos: Vector2 = (player_node as Node2D).global_position + Vector2(0, -9)
 		Effects.spawn_damage_number(pos, displayed_loss, Color(1, 0.35, 0.35))
-	SfxBank.play("hurt", 0.08)
+	if current_health > 0: SfxBank.play("hurt")
 	health_changed.emit(current_health, MAX_HEALTH)
 	if current_health == 0:
 		died.emit()

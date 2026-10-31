@@ -3,6 +3,7 @@
 extends RefCounted
 
 const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
+const OriginalSprites = preload("res://scripts/art/terraria_sprite_pack.gd")
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
 
 
@@ -22,18 +23,18 @@ static func compute_mask(world_x: int, world_y: int, query: Callable) -> int:
 
 # 写入单格 TileMapLayer (按邻居 mask 自动算 atlas_coord).
 # source_id 通常 = tile_id (TileSet 注册时 ID == tile_id).
-static func refresh_tile(layer: TileMapLayer, world_pos: Vector2i, source_id: int, query: Callable) -> void:
+static func refresh_tile(layer: TileMapLayer, world_pos: Vector2i, source_id: int, query: Callable, solid_query := Callable()) -> void:
 	var mask: int = compute_mask(world_pos.x, world_pos.y, query)
 	var atlas: Vector2i = BlobLookup.ATLAS_COORD[mask]
-	# 四周全填满的内部格 (mask 255): 按坐标随机挑一个翻转变体 → 大片内部不再一模一样。
+	# 四周全填满的内部格按坐标选原图变体。
 	# 用坐标 hash, 同一格永远同一个变体 (重载/破坏旁边都不变)。
 	if mask == 255:
 		var h: int = (world_pos.x * 73856093) ^ (world_pos.y * 19349663)
-		var idx: int = posmod(h, 4)   # 0=标准内部, 1~3=H/V/HV 翻转
+		var idx: int = posmod(h, 4)   # 0=标准内部, 1~3=原图变体
 		if idx > 0:
 			atlas = BlocksArt.INTERIOR_VARIANT_COORDS[idx - 1]
 	else:
-		# 平直暴露边 (地表/洞壁/天花板): 相邻格挑不同的"挖缺口"变体 → 边线起伏不笔直。
+		# 平直暴露边按坐标选原图中的三个边缘变体。
 		var key: String = BlobLookup.mask_to_key(mask)
 		var rough_coords: Array = []
 		match key:
@@ -43,9 +44,12 @@ static func refresh_tile(layer: TileMapLayer, world_pos: Vector2i, source_id: in
 			BlocksArt.FLAT_BOTTOM_KEY: rough_coords = BlocksArt.ROUGH_BOTTOM_VARIANT_COORDS
 		if not rough_coords.is_empty():
 			var hx: int = (world_pos.x * 2654435761) ^ (world_pos.y * 40503)
-			var ti: int = posmod(hx, 4)   # 0=笔直, 1~3=三种缺口
+			var ti: int = posmod(hx, 4)   # 0=默认, 1~3=原图变体
 			if ti > 0:
 				atlas = rough_coords[ti - 1]
+	if solid_query.is_valid() and OriginalSprites.TERRAIN.has(source_id):
+		var contacts := compute_mask(world_pos.x, world_pos.y, solid_query) & 15 & ~mask
+		atlas = OriginalSprites.contact_atlas_coord(atlas, contacts)
 	layer.set_cell(world_pos, source_id, atlas)
 
 
@@ -64,16 +68,19 @@ static func refresh_with_neighbors(layer: TileMapLayer, world_pos: Vector2i, que
 			refresh_tile(layer, p, sid, query)
 
 
-# 创建前景层邻居查询. 按 tile_id 类型分:
-# - LEAVES/LEAVES_PINE/LEAVES_AUTUMN: 只认相同 species (同种叶子才算闭)
-# - 其它 (实心方块): 认任何实心方块为邻居 (Tiles.is_solid)
-# 注意: 此 query 用于前景 tiles, 不用于墙层 walls.
+# 自然土石仍连续接壤；木材、玻璃和两种砖各用自己的边框，不能吞掉异材质轮廓。
+const SEPARATE_MATERIALS := [Tiles.PLANKS, 127, 128, 129]
+static func connects(tile_id: int, neighbor: int) -> bool:
+	if tile_id in [Tiles.LEAVES, Tiles.LEAVES_PINE, Tiles.LEAVES_AUTUMN, Tiles.JUNGLE_LEAVES]:
+		return neighbor == tile_id
+	if tile_id in SEPARATE_MATERIALS or neighbor in SEPARATE_MATERIALS:
+		return neighbor == tile_id
+	return Tiles.is_solid(neighbor)
+
 static func make_terrain_query(tile_id: int, chunk_manager: Object) -> Callable:
-	const LEAVES = 6
-	const LEAVES_PINE = 11
-	const LEAVES_AUTUMN = 12
-	if tile_id == LEAVES or tile_id == LEAVES_PINE or tile_id == LEAVES_AUTUMN:
-		return func(x: int, y: int): return chunk_manager.get_tile(x, y) == tile_id
+	return func(x: int, y: int): return connects(tile_id, chunk_manager.get_tile(x, y))
+
+static func make_solid_query(chunk_manager: Object) -> Callable:
 	return func(x: int, y: int): return Tiles.is_solid(chunk_manager.get_tile(x, y))
 
 

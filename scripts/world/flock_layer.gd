@@ -66,6 +66,8 @@ func _process(delta: float) -> void:
 
 
 func _spawn_flock() -> void:
+	if kind == "bird" and modulate.a > 0.01 and not TimeOfDay.is_night():
+		SfxBank.play("bird")
 	var count: int = _rng.randi_range(_count_range.x, _count_range.y)
 	# 50% 概率从左飞向右 (dir=1), 50% 从右飞向左 (dir=-1)
 	var dir: int = 1 if _rng.randf() < 0.5 else -1

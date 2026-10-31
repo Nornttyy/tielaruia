@@ -146,6 +146,7 @@ static func _is_cliff(heights: Dictionary, x: int, span: int, min_drop: int) -> 
 
 # 树种枚举 (内部 idx) — 现在只剩 OAK (T-tree 重做)
 const _SPECIES_OAK := 0
+const MAX_CANOPY_RADIUS := 4
 
 # 每个 canopy_kind 向上伸的最大格数 (用于检查是否出界)
 # 全部改成"云朵分层"形状: 多个 3 宽 puff 上下错位叠加
@@ -379,8 +380,22 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 空岛: 天空层浮岛 (云底+草顶+小水池+树+钻石宝箱), 数量按世界大小. 在 walls 前 (天空层不填墙).
 	_place_sky_island_chunk(c, world_seed, chunk_x, chunk_width, height)
 
+	# 浅层黏土矿斑，用确定性噪声跨区块连接；只替换土，不覆盖矿石和玩家建筑。
+	var clay_noise := FastNoiseLite.new()
+	clay_noise.seed = world_seed + 4781
+	clay_noise.frequency = 0.13
+	for lx in chunk_width:
+		var wx := chunk_x * chunk_width + lx
+		var surface: int = chunk_heights.get(wx, 0)
+		for cy in range(maxi(0, surface + 3), mini(height, surface + 22)):
+			if c.tiles[lx][cy] in [Tiles.DIRT, Tiles.SNOW_DIRT] and clay_noise.get_noise_2d(wx, cy) > 0.36:
+				c.tiles[lx][cy] = 130
 	# 背景墙: 按深度填 草墙 / 土墙 / 石墙 (前景方块后面始终有墙, 挖空才看得到)
 	_fill_walls_chunk(c, chunk_heights, chunk_width, height)
+	# 清除生成底图中的错混内容；旧世界重载时天然矿物也会更新，玩家改动由差量覆盖。
+	for column in c.tiles:
+		for y in column.size():
+			column[y] = preload("res://scripts/items/original_content.gd").generated_tile(column[y])
 	return c
 
 
@@ -1833,8 +1848,8 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 	rng.seed = world_seed * 1000003 + chunk_x * 31 + 17
 	var chunk_start: int = chunk_x * chunk_width
 	var chunk_end: int = chunk_start + chunk_width
-	# canopy 横向最大 ±2 tile (oak_large / pine_huge), 留 3 格安全边距避免树冠被 chunk 边界裁掉
-	const CANOPY_EDGE_MARGIN := 3
+	# 新树冠横向最大 ±4 格；留出完整边距，避免在区块边缘被切成半棵树。
+	const CANOPY_EDGE_MARGIN := MAX_CANOPY_RADIUS + 1
 	var safe_start: int = chunk_start + CANOPY_EDGE_MARGIN
 	var safe_end: int = chunk_end - CANOPY_EDGE_MARGIN
 	var last_tree_x: int = -1000
@@ -1904,9 +1919,9 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 		# 树根: 左右侧紧贴树干底, 替换 AIR. 不出 chunk
 		var root_y: int = surf - 1
 		if root_y >= 0:
-			if lx - 1 >= 0 and c.tiles[lx - 1][root_y] == Tiles.AIR:
+			if lx - 1 >= 0 and c.tiles[lx - 1][root_y] == Tiles.AIR and Tiles.is_solid(c.tiles[lx - 1][surf]):
 				c.tiles[lx - 1][root_y] = Tiles.LOG_ROOT_L
-			if lx + 1 < c.tiles.size() and c.tiles[lx + 1][root_y] == Tiles.AIR:
+			if lx + 1 < c.tiles.size() and c.tiles[lx + 1][root_y] == Tiles.AIR and Tiles.is_solid(c.tiles[lx + 1][surf]):
 				c.tiles[lx + 1][root_y] = Tiles.LOG_ROOT_R
 		# 侧枝: 在树干中段随机放 1-3 个 (避开树底 1 格 + 树顶)
 		_place_branches(c, lx, trunk_top, surf, rng)
@@ -1972,9 +1987,9 @@ static func _place_canopy_chunk(c: Chunk, trunk_world_x: int, trunk_top: int,
 		# 防贴地叶
 		if cy + 1 < height:
 			var below: int = c.tiles[lx][cy + 1]
-			if below != Tiles.AIR and below != Tiles.LOG \
+			if below != Tiles.AIR and below != Tiles.LOG and below != Tiles.LOG_TOP \
 					and below != Tiles.LEAVES and below != Tiles.LEAVES_PINE \
-					and below != Tiles.LEAVES_AUTUMN:
+					and below != Tiles.LEAVES_AUTUMN and below != Tiles.JUNGLE_LEAVES:
 				continue
 		c.tiles[lx][cy] = leaves_tile
 
@@ -2034,50 +2049,23 @@ static func _find_spawn_x(tiles: Array, heights: PackedInt32Array, center_x: int
 
 
 static func _canopy_offsets(kind: String) -> Array:
-	# 云朵分层蘑菇头 (Terraria 风): 多个 puff 上下错位叠加. 横向 ±2 内, 纵向 -REACH 到 +1
+	# 宽树冠分成几簇，避免所有树都呈细长的箭头形。树干位置仍留给 LOG_TOP。
+	var crowns := {
+		"oak_cloud_small": ["..###..", ".######", "#######", ".##.##."],
+		"oak_cloud_med": ["...###...", ".#######.", "#########", ".#######.", "..##.##.."],
+		"oak_cloud_large": ["..###....", ".#######.", "#########", "#########", ".#######.", "..##.##.."],
+		"oak_cloud_huge": ["...###...", ".#######.", "#########", "#########", "#########", ".#######.", "..##.##.."],
+	}
 	var offs: Array = []
-	match kind:
-		"oak_cloud_small":
-			# 2 层小蘑菇 (≈11 tile): 上层 3 宽 puff, 下层 5 宽
-			# 上 puff (y=-2): 3 宽
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -2))
-			# 中肩 (y=-1): 5 宽
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))
-			# 底层 (y=0): 5 宽中间留出树干位
-			for dx in range(-2, 3):
-				if dx == 0: continue
-				offs.append(Vector2i(dx, 0))
-		"oak_cloud_med":
-			# 3 层中蘑菇头 (≈19 tile): puff 顶 + 肩 + 主云朵 + 底沿
-			offs.append(Vector2i(0, -3))                       # 顶 puff 中
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -2))   # 上 puff 3
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))   # 中云朵 5
-			for dx in range(-2, 3):
-				if dx == 0: continue
-				offs.append(Vector2i(dx, 0))                       # 底沿 4 (留树干位)
-			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))   # 底翼 2
-		"oak_cloud_large":
-			# 4 层大云朵 (≈27 tile): 顶尖 + 上肩 + 中宽 + 主云 + 底沿
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -4))     # 顶 puff 3
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -3))     # 上肩 5
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -2))     # 中宽 5
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))     # 主云 5
-			for dx in range(-2, 3):
-				if dx == 0: continue
-				offs.append(Vector2i(dx, 0))                            # 底沿 4
-			offs.append(Vector2i(-1, 1)); offs.append(Vector2i(1, 1))   # 底翼 2
-		"oak_cloud_huge":
-			# 5 层超大云朵 (≈38 tile): 三个 puff 在顶 + 主厚云 + 底沿
-			offs.append(Vector2i(0, -5))                                # 单顶尖
-			for dx in range(-1, 2): offs.append(Vector2i(dx, -4))       # 顶 puff 3
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -3))       # 上肩 5
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -2))       # 中宽 5
-			for dx in range(-2, 3): offs.append(Vector2i(dx, -1))       # 主云 5
-			for dx in range(-2, 3):
-				if dx == 0: continue
-				offs.append(Vector2i(dx, 0))                              # 底沿 4
-			offs.append(Vector2i(-2, 1)); offs.append(Vector2i(-1, 1))   # 底左翼
-			offs.append(Vector2i(1, 1)); offs.append(Vector2i(2, 1))     # 底右翼
+	if not crowns.has(kind):
+		return offs
+	var rows: Array = crowns[kind]
+	var center: int = rows[0].length() / 2
+	for y in rows.size():
+		for x in rows[y].length():
+			var dy: int = y - int(_CANOPY_REACH[kind])
+			if rows[y][x] == "#" and not (x == center and dy >= 0):
+				offs.append(Vector2i(x - center, dy))
 	return offs
 
 

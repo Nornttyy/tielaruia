@@ -81,7 +81,7 @@ func test_save_captures_inventory():
 	inv_node.inventory.add("log", 3)
 	SaveManager.save(main)
 	var data = SaveManager.load_save()
-	assert_eq(data.inventory_slots.size(), 36, "9+27 = 36 槽")
+	assert_eq(data.inventory_slots.size(), 50, "10+40 = 50 槽")
 	var ids: Array = []
 	for s in data.inventory_slots:
 		if s != null:

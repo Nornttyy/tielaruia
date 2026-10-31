@@ -1,7 +1,7 @@
 # 游戏 HUD: hotbar + 血条 + 小地图. 饱食度已删, 食物直接回血.
 extends CanvasLayer
 
-@onready var hotbar: HBoxContainer = $HotbarAnchor/Hotbar
+@onready var hotbar: Control = $HotbarAnchor/Hotbar
 @onready var health_hud: Control = $HealthHUD
 @onready var mana_hud: Control = $ManaHUD
 @onready var minimap: Control = $Minimap

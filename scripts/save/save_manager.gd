@@ -388,10 +388,6 @@ func _serialize_entities() -> Array:
 
 # 反序列化背包槽 — 给外部调用方用 (load 后把 SaveData.inventory_slots 还原).
 static func deserialize_inventory(stored: Array) -> Array:
-	var out: Array = []
-	for s in stored:
-		if s == null:
-			out.append(null)
-		else:
-			out.append({"item_id": s.item_id, "count": s.count})
-	return out
+	var inventory := Inventory.new()
+	inventory.restore(stored)
+	return inventory.slots

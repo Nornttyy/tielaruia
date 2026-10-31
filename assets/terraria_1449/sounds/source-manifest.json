@@ -1,0 +1,676 @@
+{
+  "source": "Official Terraria Wiki sound files",
+  "downloaded": "2026-10-31",
+  "files": [
+    {
+      "file": "Dig_0.wav",
+      "url": "https://terraria.wiki.gg/images/Dig_0.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Dig_0.wav",
+      "sha256": "1cd658ac0d8b882e6e35743171ce5f097fd25ee705c8cdd6c77b4af57d1f45f5",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.03177,
+      "wiki_sha1": "8f94fc4b8332f211fb444d7f6bc882ea8191711e"
+    },
+    {
+      "file": "Dig_1.wav",
+      "url": "https://terraria.wiki.gg/images/Dig_1.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Dig_1.wav",
+      "sha256": "8e00219c1e5591f1a826e858b38af93497eef0084d5a0d4322689098bbe67fef",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.04281,
+      "wiki_sha1": "1c410cffd34a40e3549049917344c0f2d37b41f0"
+    },
+    {
+      "file": "Dig_2.wav",
+      "url": "https://terraria.wiki.gg/images/Dig_2.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Dig_2.wav",
+      "sha256": "93c5aa637b60763698e16d02fcb61a2201659973aae238dda5f8540ef6319be3",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.06603,
+      "wiki_sha1": "639f6c588943588c48278d85d0078fe2bc93107c"
+    },
+    {
+      "file": "Door_Closed.wav",
+      "url": "https://terraria.wiki.gg/images/Door_Closed.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Door_Closed.wav",
+      "sha256": "3fa9d7f6092cf0d2122bedba93b565d2f49c4e93779f49b04f50e5e9fe713b1f",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.45497,
+      "wiki_sha1": "075227954e7edcebaa6e3cd3ece00e748b59eb52"
+    },
+    {
+      "file": "Door_Opened.wav",
+      "url": "https://terraria.wiki.gg/images/Door_Opened.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Door_Opened.wav",
+      "sha256": "132fc94d0b1e21fe2e7c0ac8c83d60fffe51fe49da8931ca270c936dcb798cb2",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.49009,
+      "wiki_sha1": "14360df525f3050e65a9382f12824283ec0b0765"
+    },
+    {
+      "file": "Grab.wav",
+      "url": "https://terraria.wiki.gg/images/Grab.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Grab.wav",
+      "sha256": "24dda390f1237569d698c208373b738b6d5b546854b06c0d6fb62bd5903c479d",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.26785,
+      "wiki_sha1": "834e6a578d4dafd41f6db689e9b558f6ac1d3e63"
+    },
+    {
+      "file": "Grass.wav",
+      "url": "https://terraria.wiki.gg/images/Grass.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Grass.wav",
+      "sha256": "fd4a9735c42990fb9f0f53f6661b81f418629a8963aef48803cb072ce2fabdd7",
+      "rate": 44100,
+      "channels": 1,
+      "duration": 0.43327,
+      "wiki_sha1": "0b6e3029ce69716574a31fc4d38e66ae5800ffbf"
+    },
+    {
+      "file": "Item_1.wav",
+      "url": "https://terraria.wiki.gg/images/Item_1.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_1.wav",
+      "sha256": "f2e48f8a0bd0615f0fb507fe0377a77fda471ff1300aecf0a375a78bedc8bd97",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.16508,
+      "wiki_sha1": "464acbc0b7f7ad1f0be980143b776fa876b3e233"
+    },
+    {
+      "file": "Item_18.wav",
+      "url": "https://terraria.wiki.gg/images/Item_18.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_18.wav",
+      "sha256": "a7dfcaa4edac290ddeb9049b3d631f339e59041a0cb57a7cd4d1ad434941888c",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.18977,
+      "wiki_sha1": "8924460df7465bcfaad5ae51f42a9fbbeaaadccf"
+    },
+    {
+      "file": "Item_19.wav",
+      "url": "https://terraria.wiki.gg/images/Item_19.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_19.wav",
+      "sha256": "c32da58fa74c88e594d92e35579112ebf5862f1d24da4eb16656b6b3992a8e5d",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.15118,
+      "wiki_sha1": "cc230c825a309d28335f7072908f6d1e9894fcec"
+    },
+    {
+      "file": "Item_2.wav",
+      "url": "https://terraria.wiki.gg/images/Item_2.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_2.wav",
+      "sha256": "cb86d0f38834c7e1756dc9d20c44e6e5ffadb1472a2df8c8547c54bb7c95c6d6",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.55726,
+      "wiki_sha1": "e7ad46d7ed13d07847ecce56570b1e52901b2dbd"
+    },
+    {
+      "file": "Item_3.wav",
+      "url": "https://terraria.wiki.gg/images/Item_3.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_3.wav",
+      "sha256": "2fc325715835edd496f79e09a9d45f6b5553380ee83b555312906306c85bf73c",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.23329,
+      "wiki_sha1": "44844625bee9c925d666ef753a23b303b0f3cbba"
+    },
+    {
+      "file": "Item_5.wav",
+      "url": "https://terraria.wiki.gg/images/Item_5.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_5.wav",
+      "sha256": "e0c296179ecbaa57b680e44258bd369996d97571f5a10af8841c980da13a9815",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.29025,
+      "wiki_sha1": "e7efa2547e8758456f2b0a8016672ecf4f7ebc56"
+    },
+    {
+      "file": "Menu_Close.wav",
+      "url": "https://terraria.wiki.gg/images/Menu_Close.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Menu_Close.wav",
+      "sha256": "95e21b50d3168608cb11dbfb4c1f22faba65dc02b25ed6852cd97a588724265e",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.13653,
+      "wiki_sha1": "7cba6888b5a7a03779d367316de486a020552597"
+    },
+    {
+      "file": "Menu_Open.wav",
+      "url": "https://terraria.wiki.gg/images/Menu_Open.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Menu_Open.wav",
+      "sha256": "5befafa048410d9902a10f701ba0dbd175b6cba16561360c15344eb366e7f33c",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.15603,
+      "wiki_sha1": "c10c40a17e168f962da09fd1fe36ca3e1d4c0d7c"
+    },
+    {
+      "file": "Menu_Tick.wav",
+      "url": "https://terraria.wiki.gg/images/Menu_Tick.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Menu_Tick.wav",
+      "sha256": "149d78b79edb244033190c2985a3ef8690cf189fb6dd529fcd7a76a39277fe4e",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.07138,
+      "wiki_sha1": "59011cf5b909050d0aa7063989f746219cd8d8cf"
+    },
+    {
+      "file": "NPC_Hit_1.wav",
+      "url": "https://terraria.wiki.gg/images/NPC_Hit_1.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:NPC_Hit_1.wav",
+      "sha256": "23cf8088c7768a80f82c8b401737c8a341d632c88e7efdaffce560fc5f9bdbc9",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.1459,
+      "wiki_sha1": "00115f587ea808958641347e16523aa05b32fe86"
+    },
+    {
+      "file": "Player_Hit_0.wav",
+      "url": "https://terraria.wiki.gg/images/Player_Hit_0.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Player_Hit_0.wav",
+      "sha256": "339c563db5af83d5af97e6654ae5e237a76228df7af4f2f30a2d75878aa6b228",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.25469,
+      "wiki_sha1": "42f057ee67f6ac559e9a0c37aaeb1e38d0a446a2"
+    },
+    {
+      "file": "Player_Hit_1.wav",
+      "url": "https://terraria.wiki.gg/images/Player_Hit_1.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Player_Hit_1.wav",
+      "sha256": "92548a849ba8ce94299860534ac51c1201f4de93db95ecda11c8fbcdac831973",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.25107,
+      "wiki_sha1": "95cd9e1dfa4b42ebd1912491069a349cc5179d33"
+    },
+    {
+      "file": "Player_Hit_2.wav",
+      "url": "https://terraria.wiki.gg/images/Player_Hit_2.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Player_Hit_2.wav",
+      "sha256": "4c7ab7ed8f6caf7af4f41c73c5cda3e86d7048211f43c9f9be3b7269cf808f54",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.18977,
+      "wiki_sha1": "24991407d0f61cc41f396eddd2ab54758e08416a"
+    },
+    {
+      "file": "Splash_0.wav",
+      "url": "https://terraria.wiki.gg/images/Splash_0.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Splash_0.wav",
+      "sha256": "40bff6bd4c366eecf24046a0d60c1be5c4ed8f9c2568df240c6dc894ea5ca28f",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.68136,
+      "wiki_sha1": "110c63ea93540753065680810e92a3686383cae5"
+    },
+    {
+      "file": "Splash_1.wav",
+      "url": "https://terraria.wiki.gg/images/Splash_1.wav?22cdb4",
+      "page": "https://terraria.wiki.gg/wiki/File:Splash_1.wav",
+      "sha256": "94a5cd329e5eab40ab8cf9027df95b8958b4541f59633e6f6da41c40ea02357d",
+      "wiki_sha1": "22cdb4ce46410f0c4e6947933f9629cea61dd2e2",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.15726
+    },
+    {
+      "file": "Tink_0.wav",
+      "url": "https://terraria.wiki.gg/images/Tink_0.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Tink_0.wav",
+      "sha256": "dc902a809c6dff9661ee2ceeaa011880cc14aefa1534c45a4e8be4a80fff5ce3",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.07002,
+      "wiki_sha1": "0b9c3056ccd4d407c7b806f7e2bf672a5d97de59"
+    },
+    {
+      "file": "Tink_1.wav",
+      "url": "https://terraria.wiki.gg/images/Tink_1.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Tink_1.wav",
+      "sha256": "b9f06a83dffeda4932ed2b5d316c6d2b655c70f2803ee96895137363ae600bf2",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.04594,
+      "wiki_sha1": "7c811d5b6511b9718d0eedabfc735efc8f7f153a"
+    },
+    {
+      "file": "Tink_2.wav",
+      "url": "https://terraria.wiki.gg/images/Tink_2.wav",
+      "page": "https://terraria.wiki.gg/wiki/File:Tink_2.wav",
+      "sha256": "547cca7a97c302421a9550f2a6dcc452e646ab2a65b6296b18f72aa14df4a1f9",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.04272,
+      "wiki_sha1": "8dd144811c9747ca6aa560dfd4408aedd179a77f"
+    },
+    {
+      "file": "Double_Jump.wav",
+      "url": "https://terraria.wiki.gg/images/Double_Jump.wav?51ac5f",
+      "page": "https://terraria.wiki.gg/wiki/File:Double_Jump.wav",
+      "sha256": "88d50a8b1b633991cfde250e2812666aeb8f87b10b0598787737f9c0eed4fe4b",
+      "wiki_sha1": "51ac5f8246dfc34c38b4a43ba4d3b9e4c04c5d6a",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.41215
+    },
+    {
+      "file": "Drip_0.wav",
+      "url": "https://terraria.wiki.gg/images/Drip_0.wav?108c56",
+      "page": "https://terraria.wiki.gg/wiki/File:Drip_0.wav",
+      "sha256": "9e438ee869bd0eafef302375f4934257bba176f0cf4510b6dfcd0361fd48b692",
+      "wiki_sha1": "108c5688e6d853af6fb2ca1ff881981dd2725810",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.21739
+    },
+    {
+      "file": "Drip_1.wav",
+      "url": "https://terraria.wiki.gg/images/Drip_1.wav?2e0792",
+      "page": "https://terraria.wiki.gg/wiki/File:Drip_1.wav",
+      "sha256": "c65415c1d1ffe7fe99e77935de3503cceeeb620bdc8c2f158e9f1ac543548f3d",
+      "wiki_sha1": "2e07929135f41d8e7ea8ee14418f4adebd07235d",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.07041
+    },
+    {
+      "file": "Drip_2.wav",
+      "url": "https://terraria.wiki.gg/images/Drip_2.wav?aec8b4",
+      "page": "https://terraria.wiki.gg/wiki/File:Drip_2.wav",
+      "sha256": "66f0f1eea479eeda79073ffcfb650b536dfa769be0dccfec9ccee8b18fd90667",
+      "wiki_sha1": "aec8b4f87784012555305610b368e61bcb39484a",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.22254
+    },
+    {
+      "file": "Fish_splash.wav",
+      "url": "https://terraria.wiki.gg/images/Fish_splash.wav?615a8e",
+      "page": "https://terraria.wiki.gg/wiki/File:Fish_splash.wav",
+      "sha256": "efdb1872e9722444c2027ab78a32d716ec1bd5b2b65d20909ad5806f14edcef9",
+      "wiki_sha1": "615a8e5b00780450666c0c75abecc6e821a75416",
+      "rate": 44100,
+      "channels": 1,
+      "duration": 0.55397
+    },
+    {
+      "file": "Item_11.wav",
+      "url": "https://terraria.wiki.gg/images/Item_11.wav?479f70",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_11.wav",
+      "sha256": "a60be7c3ff684d692c838a42d0179c3ef11e90a932951338d064531e0a96631d",
+      "wiki_sha1": "479f707b7bd20fc7da26b0241acbc3c6eb0970f2",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.24961
+    },
+    {
+      "file": "Item_12.wav",
+      "url": "https://terraria.wiki.gg/images/Item_12.wav?809b99",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_12.wav",
+      "sha256": "92286ae0a6d367601d3bb0c8d0d7a9f16110077f631b17502d1a93f6e8a5035c",
+      "wiki_sha1": "809b99ad33abb7aeb4d11606044dfaf89c0dc473",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.21261
+    },
+    {
+      "file": "Item_14.wav",
+      "url": "https://terraria.wiki.gg/images/Item_14.wav?ef2c77",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_14.wav",
+      "sha256": "db0386694f03ce1ae04ed1c350c85a5b308a273f449c5c121fc3f803e1233b12",
+      "wiki_sha1": "ef2c77154b6f8127e37dce5d0f79a79f20621a30",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.95202
+    },
+    {
+      "file": "Item_20.wav",
+      "url": "https://terraria.wiki.gg/images/Item_20.wav?598683",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_20.wav",
+      "sha256": "78ed9ad10be4c6381f4fc927034774aa67daa7d1e35338a9f80bcf6df565fa52",
+      "wiki_sha1": "598683b01c3ff7fa4234eab00278ce1cee1009dc",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 1.02286
+    },
+    {
+      "file": "Item_21.wav",
+      "url": "https://terraria.wiki.gg/images/Item_21.wav?137010",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_21.wav",
+      "sha256": "fcb40d1f8d7e2c4aaac07e06e57d1e7fdf157ac9e819223b883478aebcb87fe0",
+      "wiki_sha1": "137010eb9d8679f8595658aff6f265bdbda24278",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.58052
+    },
+    {
+      "file": "Item_34.wav",
+      "url": "https://terraria.wiki.gg/images/Item_34.wav?b12eef",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_34.wav",
+      "sha256": "fe1b0284c055d318a0ab8480e19aefc51002ca5adad0acf2d6406d746b380f36",
+      "wiki_sha1": "0b12eefe48ca480a4680db243b654a40304f77e6",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.64435
+    },
+    {
+      "file": "Item_36.wav",
+      "url": "https://terraria.wiki.gg/images/Item_36.wav?179fd2",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_36.wav",
+      "sha256": "26547398c9ce5dadcfab494488744c2a7645f69bb06f0bd6cde31d561e2b784f",
+      "wiki_sha1": "179fd2cb3ab699ffc9beaf5c282571cc01e26fae",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.94041
+    },
+    {
+      "file": "Item_4.wav",
+      "url": "https://terraria.wiki.gg/images/Item_4.wav?ea391f",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_4.wav",
+      "sha256": "178e74e556e3e576cccdfff12db7c5cd4b4da43c2512701f4e5d4d3b001b83b4",
+      "wiki_sha1": "ea391f328c2a736a9f3ca15884b50dad2d190e9f",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.61823
+    },
+    {
+      "file": "Item_41.wav",
+      "url": "https://terraria.wiki.gg/images/Item_41.wav?2541c1",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_41.wav",
+      "sha256": "b10c6124e21a832229be678e681ced210e93121719e5b1acfa72775c7df193db",
+      "wiki_sha1": "2541c1f884d7a4977d307041c49303fc9942739c",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.36739
+    },
+    {
+      "file": "Item_43.wav",
+      "url": "https://terraria.wiki.gg/images/Item_43.wav?dbdcf0",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_43.wav",
+      "sha256": "a8cb0a96d9eb0ce4e5692bd79b462fbf129dc793b2eb9ae41145603468ebb7f9",
+      "wiki_sha1": "dbdcf0ddc3eba10c9df15adf3a87be781f2e13e7",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.7666
+    },
+    {
+      "file": "Item_7.wav",
+      "url": "https://terraria.wiki.gg/images/Item_7.wav?427b16",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_7.wav",
+      "sha256": "ece0ff86a6dd4eeefccdf727822a47fbebffc5707edc5f7dd185117e6014f198",
+      "wiki_sha1": "427b16705141eb0c1b8a56da18b5a2754d776ce6",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.35302
+    },
+    {
+      "file": "Item_8.wav",
+      "url": "https://terraria.wiki.gg/images/Item_8.wav?641995",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_8.wav",
+      "sha256": "3e71ec457b932ec8f0cb42286efedd5c34564e562f521aaa428c3d2b39c75002",
+      "wiki_sha1": "6419958caf20173c1a7ae8dc218c91166c262ee0",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.52245
+    },
+    {
+      "file": "Item_9.wav",
+      "url": "https://terraria.wiki.gg/images/Item_9.wav?2ae2f3",
+      "page": "https://terraria.wiki.gg/wiki/File:Item_9.wav",
+      "sha256": "bfc8108db6ec4298b4240b75482e288536fd6c987dc2bc4e9620240c9ae9c92a",
+      "wiki_sha1": "2ae2f35a2d18cca94eb0240153fa145e6e065206",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.36281
+    },
+    {
+      "file": "Liquid_0.wav",
+      "url": "https://terraria.wiki.gg/images/Liquid_0.wav?cf1cb3",
+      "page": "https://terraria.wiki.gg/wiki/File:Liquid_0.wav",
+      "sha256": "8710653b9c0531d6de7c0b66fbe0853b53c28ca81c82ac5b647076762b564414",
+      "wiki_sha1": "cf1cb323915f831f1775a192ae68ab95152c731e",
+      "rate": 44100,
+      "channels": 1,
+      "duration": 46.85356
+    },
+    {
+      "file": "Liquid_1.wav",
+      "url": "https://terraria.wiki.gg/images/Liquid_1.wav?667b1b",
+      "page": "https://terraria.wiki.gg/wiki/File:Liquid_1.wav",
+      "sha256": "458c7f6861d96f0e3189e7fafb02c9b94469944dc1a4daf0a973b2ec3eac2464",
+      "wiki_sha1": "667b1b35af9bd803620695b1c8483684d0396541",
+      "rate": 44100,
+      "channels": 1,
+      "duration": 49.55388
+    },
+    {
+      "file": "NPC_Hit_2.wav",
+      "url": "https://terraria.wiki.gg/images/NPC_Hit_2.wav?7ab62b",
+      "page": "https://terraria.wiki.gg/wiki/File:NPC_Hit_2.wav",
+      "sha256": "a1dd63115f3c7f31d966f8cdefc8b62036b3f7f783caf69fa5a08317b610e123",
+      "wiki_sha1": "7ab62b56a78c39deed76c6489d497bb118968ed1",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.16653
+    },
+    {
+      "file": "NPC_Hit_4.wav",
+      "url": "https://terraria.wiki.gg/images/NPC_Hit_4.wav?abf9ad",
+      "page": "https://terraria.wiki.gg/wiki/File:NPC_Hit_4.wav",
+      "sha256": "ef516b8d90ad0ba8dcca1e72cd913b9ade535e3882d1281dada29b2961810deb",
+      "wiki_sha1": "abf9ad3197cdec87a7a6b746a93d2ef0eef70803",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.11726
+    },
+    {
+      "file": "NPC_Killed_1.wav",
+      "url": "https://terraria.wiki.gg/images/NPC_Killed_1.wav?4089d5",
+      "page": "https://terraria.wiki.gg/wiki/File:NPC_Killed_1.wav",
+      "sha256": "141b2fe459301599a422cd03f6c57caa755bccc19b74da6c607948be4682a993",
+      "wiki_sha1": "4089d556c8c70f42b5d076ce905c4a2bf34c6f6b",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.34249
+    },
+    {
+      "file": "NPC_Killed_2.wav",
+      "url": "https://terraria.wiki.gg/images/NPC_Killed_2.wav?a58557",
+      "page": "https://terraria.wiki.gg/wiki/File:NPC_Killed_2.wav",
+      "sha256": "a5ffd625a37c5fdf67bcbdd22b6f175866fb57f731aa472bb5df6352e0c51471",
+      "wiki_sha1": "a585572287cdbec8ea41ec274fde00dbe5462248",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.76045
+    },
+    {
+      "file": "NPC_Killed_6.wav",
+      "url": "https://terraria.wiki.gg/images/NPC_Killed_6.wav?4a10ee",
+      "page": "https://terraria.wiki.gg/wiki/File:NPC_Killed_6.wav",
+      "sha256": "f6440c0979ab5088af9797c1a557a1cab498ce701e0dfc6e4c0fa336a5503b3d",
+      "wiki_sha1": "4a10ee82772e3a47d15141efae2a494772f037d9",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.86676
+    },
+    {
+      "file": "Player_Killed.wav",
+      "url": "https://terraria.wiki.gg/images/Player_Killed.wav?7a02ed",
+      "page": "https://terraria.wiki.gg/wiki/File:Player_Killed.wav",
+      "sha256": "bf15a49220732eb0f15418d195f72cf9f6e8cc3ecf585d583c7abac9f3249cd0",
+      "wiki_sha1": "7a02ed793c3b577f1f068a8588fb3381868fe3c3",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.84753
+    },
+    {
+      "file": "Thunder_0.wav",
+      "url": "https://terraria.wiki.gg/images/Thunder_0.wav?1ad3cb",
+      "page": "https://terraria.wiki.gg/wiki/File:Thunder_0.wav",
+      "sha256": "cd6fee55f98706b2264c3b40294475183dba1033e4a82d2d257e630b68bcb0eb",
+      "wiki_sha1": "1ad3cbefec54e823cb990bc55623c0fd585faacb",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 3.35653
+    },
+    {
+      "file": "Thunder_1.wav",
+      "url": "https://terraria.wiki.gg/images/Thunder_1.wav?4f5283",
+      "page": "https://terraria.wiki.gg/wiki/File:Thunder_1.wav",
+      "sha256": "f534e7e4a174746dcc3279057a334b0e60dae09d67d29320677b81603527ca13",
+      "wiki_sha1": "4f5283e7e84afd5117b5e9003843ae769d7823f1",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 3.49102
+    },
+    {
+      "file": "Thunder_2.wav",
+      "url": "https://terraria.wiki.gg/images/Thunder_2.wav?2ff84d",
+      "page": "https://terraria.wiki.gg/wiki/File:Thunder_2.wav",
+      "sha256": "36dbbeefa6aff07237fd8b62dc831dc9321365ca11507752fe88e004389ca164",
+      "wiki_sha1": "02ff84dc2d78b727eeefbecf7b2c493f0aea0dcd",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 2.94669
+    },
+    {
+      "file": "Thunder_3.wav",
+      "url": "https://terraria.wiki.gg/images/Thunder_3.wav?c3c88b",
+      "page": "https://terraria.wiki.gg/wiki/File:Thunder_3.wav",
+      "sha256": "a2a732956bd96b12a428ee64d09466e68be7c6fae9566728a862036c520f4098",
+      "wiki_sha1": "0c3c88bedb5ef3c0cc549b1febf06ac1eb43438f",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 6.13066
+    },
+    {
+      "file": "Thunder_4.wav",
+      "url": "https://terraria.wiki.gg/images/Thunder_4.wav?be4f0d",
+      "page": "https://terraria.wiki.gg/wiki/File:Thunder_4.wav",
+      "sha256": "076b6ebd39453102c9f941216c0b93f22c2ee0c4bd60861e1f7950fbf6bfd070",
+      "wiki_sha1": "00be4f0d440970bfc932b4a7d0fd3a8d59dbeefa",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 5.25635
+    },
+    {
+      "file": "Thunder_5.wav",
+      "url": "https://terraria.wiki.gg/images/Thunder_5.wav?a1740c",
+      "page": "https://terraria.wiki.gg/wiki/File:Thunder_5.wav",
+      "sha256": "e9cd60e9d48710233da1430c9756fa72db4d7422c9ed6dda7faf3f99ee3edb62",
+      "wiki_sha1": "a1740c0f8ba79d7bdf14480c9ebbb1ef1f7d10a3",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 2.30279
+    },
+    {
+      "file": "Thunder_6.wav",
+      "url": "https://terraria.wiki.gg/images/Thunder_6.wav?55a964",
+      "page": "https://terraria.wiki.gg/wiki/File:Thunder_6.wav",
+      "sha256": "7ce21657dfbfe4c75d069ff907cec0f40ad6b27a674ef57e611ddd77d5032ca0",
+      "wiki_sha1": "55a96418e54406371cebd75c9dbb85b8220e91ab",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 2.69467
+    },
+    {
+      "file": "Zombie_0.wav",
+      "url": "https://terraria.wiki.gg/images/Zombie_0.wav?38b08b",
+      "page": "https://terraria.wiki.gg/wiki/File:Zombie_0.wav",
+      "sha256": "371ce332e699a4e9fe8235cd267c2864103345e1615c5d047804018fce8f0c0b",
+      "wiki_sha1": "38b08ba761ef54801acf4191517ab49e2d4f325d",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 1.2829
+    },
+    {
+      "file": "Zombie_1.wav",
+      "url": "https://terraria.wiki.gg/images/Zombie_1.wav?aed086",
+      "page": "https://terraria.wiki.gg/wiki/File:Zombie_1.wav",
+      "sha256": "6c4d1751834db35b7a93e238471c1a583178c7e1b01585cd2938787e36c79e2d",
+      "wiki_sha1": "aed086cd52c1b62af7fc29dc1f498819ea4b43ea",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.90268
+    },
+    {
+      "file": "Zombie_14.wav",
+      "url": "https://terraria.wiki.gg/images/Zombie_14.wav?632097",
+      "page": "https://terraria.wiki.gg/wiki/File:Zombie_14.wav",
+      "sha256": "63c488f027840bd9f8421f74b22136abe8cf1ddda6b45cf09303dde88c9ad033",
+      "wiki_sha1": "632097059ac7dfcdc90bfe9ae9f247a0589f053e",
+      "rate": 48000,
+      "channels": 2,
+      "duration": 0.6811
+    },
+    {
+      "file": "Zombie_16.wav",
+      "url": "https://terraria.wiki.gg/images/Zombie_16.wav?8abf90",
+      "page": "https://terraria.wiki.gg/wiki/File:Zombie_16.wav",
+      "sha256": "e92e8f541bb8c5be312822b545afef99421a840dd61d9400db1b9083c04f5266",
+      "wiki_sha1": "8abf90236ebb7366cca49baffdca6dc99e77a4c6",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 1.15755
+    },
+    {
+      "file": "Zombie_17.wav",
+      "url": "https://terraria.wiki.gg/images/Zombie_17.wav?af6651",
+      "page": "https://terraria.wiki.gg/wiki/File:Zombie_17.wav",
+      "sha256": "c2d645b9bdf3a9238bc2f8c11ae77fb5173b3a02a01c6f60f2f747ee2b924ad3",
+      "wiki_sha1": "af6651d427198b707ac95b369c87a76604054390",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 2.65535
+    },
+    {
+      "file": "Zombie_18.wav",
+      "url": "https://terraria.wiki.gg/images/Zombie_18.wav?939958",
+      "page": "https://terraria.wiki.gg/wiki/File:Zombie_18.wav",
+      "sha256": "a925a2ec39a701bf87b48f2ec94d1940060f52c2a7d60874d1f3b3d5619744b9",
+      "wiki_sha1": "9399581cfef570669813a34e7f99304a90f5d162",
+      "rate": 48000,
+      "channels": 2,
+      "duration": 1.88596
+    },
+    {
+      "file": "Zombie_19.wav",
+      "url": "https://terraria.wiki.gg/images/Zombie_19.wav?7ec5b3",
+      "page": "https://terraria.wiki.gg/wiki/File:Zombie_19.wav",
+      "sha256": "04da30735262be509e06274494ed434d18126d430ea1ea4d750438416d1f5fa0",
+      "wiki_sha1": "7ec5b35dead2659d7d7c40a076a1a71b421c5a5f",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 1.17333
+    },
+    {
+      "file": "Zombie_2.wav",
+      "url": "https://terraria.wiki.gg/images/Zombie_2.wav?bc94bc",
+      "page": "https://terraria.wiki.gg/wiki/File:Zombie_2.wav",
+      "sha256": "2db6aa5692b6f173771b1e5d6c83a7f50b6c1f9fba274ee8e94e57f4a6dc190d",
+      "wiki_sha1": "bc94bcb36ffabda7ddd730a15a6525cf48f61784",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 0.87655
+    },
+    {
+      "file": "Roar_0.wav",
+      "url": "https://terraria.wiki.gg/images/Roar_0.wav?44e044",
+      "page": "https://terraria.wiki.gg/wiki/File:Roar_0.wav",
+      "sha256": "f38941d08a433b8b83f243cfbcd3d77d84c316226ec1ac3826e252d92d2c1fd8",
+      "wiki_sha1": "44e04400fc3bd33ded3981f82b4e0ea9fb99411f",
+      "rate": 44100,
+      "channels": 2,
+      "duration": 1.9795
+    }
+  ]
+}

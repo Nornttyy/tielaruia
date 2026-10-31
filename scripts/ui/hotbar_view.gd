@@ -1,141 +1,96 @@
-# 9 格热键栏视图。从 PlayerInventory 读 slots[0..8]，监听信号刷新。
-extends HBoxContainer
-
-const SLOT_SIZE := 36
-
-var _player_inv: Node = null
+# 经典快捷栏：选中格 52px，其余 39px；点击跟随每格真实位置。
+extends Control
+const UI = preload("res://scripts/ui/classic_ui.gd")
+const CraftingNames = preload("res://scripts/ui/crafting_panel.gd")
+const SLOT_SIZE := 44
+var _player_inv: Node
 var _slot_nodes: Array = []
-# perf: 缓存 panel ref 防每帧 2 次 group 查找
-var _cached_crafting_panel: Node = null
-var _cached_chest_panel: Node = null
-
+var _selected_name: Label
+var _cached_crafting_panel: Node
+var _cached_chest_panel: Node
 
 func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_STOP   # 整条 hotbar 收点击/触摸 → 选格子 (手机切快捷栏)
-	for i in 9:
-		var slot := _make_slot()
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_selected_name = Label.new()
+	UI.label(_selected_name, 18)
+	_selected_name.position = Vector2(0, -22)
+	_selected_name.size = Vector2(440, 22)
+	_selected_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(_selected_name)
+	for i in Inventory.HOTBAR_SIZE:
+		var slot := _make_slot(i)
 		add_child(slot)
 		_slot_nodes.append(slot)
-	add_theme_constant_override("separation", 4)
+	_layout_slots()
 
-
-# 点/触屏点 hotbar → 按横坐标算出点了第几格并选中 (手机没数字键; 桌面点也能选)。
-# 在容器层统一收, 比每个小格子单独收更稳 (嵌套容器的触摸拾取有时会漏)。
-func _gui_input(event: InputEvent) -> void:
-	var pressed: bool = (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) \
-			or (event is InputEventScreenTouch and event.pressed)
-	if not pressed or _player_inv == null or not _player_inv.has_method("set_hotbar_selection"):
-		return
-	var step: float = float(SLOT_SIZE) + 4.0   # 槽宽 + separation
-	var idx: int = clampi(int(event.position.x / step), 0, 8)
-	_player_inv.set_hotbar_selection(idx)
-	accept_event()
-
-
-# UI (背包/合成/箱子) 打开时隐藏 hotbar — 用户要求
-func _process(_delta: float) -> void:
-	# panel 一旦 queue_free 引用就 invalid; 失效就重查
-	if _cached_crafting_panel == null or not is_instance_valid(_cached_crafting_panel):
-		_cached_crafting_panel = get_tree().get_first_node_in_group("crafting_panel")
-	if _cached_chest_panel == null or not is_instance_valid(_cached_chest_panel):
-		_cached_chest_panel = get_tree().get_first_node_in_group("chest_panel")
-	var c: Node = _cached_crafting_panel
-	var ch: Node = _cached_chest_panel
-	var ui_open: bool = (c != null and c.has_method("is_open") and c.is_open()) \
-			or (ch != null and ch.has_method("is_open") and ch.is_open())
-	visible = not ui_open
-
-
-func _make_slot() -> PanelContainer:
+func _make_slot(index: int) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE   # 格子不抢输入, 交给整条 hotbar 的 _gui_input
-	panel.clip_contents = true   # 防溢出影响相邻槽
-	# 蓝色圆角槽 (用户要求): 深蓝半透底 + 中蓝边 + 圆角
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color8(18, 32, 58, 205)
-	style.border_color = Color8(70, 120, 180)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.corner_radius_top_left = 9
-	style.corner_radius_top_right = 9
-	style.corner_radius_bottom_left = 9
-	style.corner_radius_bottom_right = 9
-	panel.add_theme_stylebox_override("panel", style)
-	# 用一个 Control 作为绝对定位容器，所有 child 用 anchors
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.gui_input.connect(func(event):
+		var clicked: bool = event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
+		var touched: bool = event is InputEventScreenTouch and event.pressed
+		if (clicked or touched) and _player_inv != null:
+			_player_inv.set_hotbar_selection(index)
+			panel.accept_event())
 	var layout := Control.new()
 	layout.name = "Layout"
 	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layout.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	panel.add_child(layout)
-	# Icon 居中
 	var icon := TextureRect.new()
 	icon.name = "Icon"
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layout.add_child(icon)
-	# 计数右下
 	var count := Label.new()
 	count.name = "Count"
-	count.add_theme_font_size_override("font_size", 10)
-	count.add_theme_color_override("font_color", Color.WHITE)
-	count.add_theme_color_override("font_outline_color", Color.BLACK)
-	count.add_theme_constant_override("outline_size", 2)
-	count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UI.label(count, 13)
 	count.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	count.position = Vector2(-18, -16)
-	count.size = Vector2(16, 14)
+	count.offset_left = -34
+	count.offset_top = -19
+	count.offset_right = -3
+	count.offset_bottom = -2
 	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	count.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	layout.add_child(count)
-	# 编号左上
-	var idx_label := Label.new()
-	idx_label.name = "IndexLabel"
-	idx_label.add_theme_font_size_override("font_size", 9)
-	idx_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
-	idx_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	idx_label.add_theme_constant_override("outline_size", 2)
-	idx_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	idx_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	idx_label.position = Vector2(2, 0)
-	idx_label.size = Vector2(12, 12)
-	layout.add_child(idx_label)
+	var number := Label.new()
+	number.name = "IndexLabel"
+	number.text = str((index + 1) % 10)
+	UI.label(number, 13)
+	number.position = Vector2(4, 0)
+	layout.add_child(number)
 	return panel
 
+func _layout_slots() -> void:
+	var x := 0.0
+	for i in _slot_nodes.size():
+		var selected: bool = i == (_player_inv.hotbar_selected if _player_inv != null else 0)
+		var extent := 52.0 if selected else 39.0
+		var panel: PanelContainer = _slot_nodes[i]
+		panel.position = Vector2(x, (52.0 - extent) * 0.5)
+		panel.custom_minimum_size = Vector2(extent, extent)
+		panel.size = Vector2(extent, extent)
+		panel.add_theme_stylebox_override("panel", UI.slot("selected" if selected else "hotbar"))
+		x += extent + 4.0
 
-func bind(player_inv: Node) -> void:
-	_player_inv = player_inv
-	player_inv.inventory_changed.connect(refresh)
-	player_inv.hotbar_selection_changed.connect(func(_i): refresh())
+func bind(inv: Node) -> void:
+	_player_inv = inv
+	inv.inventory_changed.connect(refresh)
+	inv.hotbar_selection_changed.connect(func(_i): refresh())
 	refresh()
 
-
 func refresh() -> void:
-	if _player_inv == null:
-		return
-	for i in 9:
-		var slot_data = _player_inv.inventory.slots[i]
-		var panel: PanelContainer = _slot_nodes[i]
-		var icon: TextureRect = panel.get_node("Layout/Icon")
-		var count_label: Label = panel.get_node("Layout/Count")
-		var idx_label: Label = panel.get_node("Layout/IndexLabel")
-		idx_label.text = str(i + 1)  # 显示 1..9 编号
-		if slot_data == null:
-			icon.texture = null
-			count_label.text = ""
-		else:
-			icon.texture = ArtCache.get_inventory_icon(slot_data.item_id)
-			count_label.text = "" if slot_data.count <= 1 else str(slot_data.count)
-		var style: StyleBoxFlat = panel.get_theme_stylebox("panel") as StyleBoxFlat
-		var is_selected: bool = (i == _player_inv.hotbar_selected)
-		# 选中: 亮青蓝边 + 更亮的蓝底 (一眼看出拿的哪个); 没选: 中蓝边
-		style.border_color = Color8(110, 205, 255) if is_selected else Color8(70, 120, 180)
-		style.bg_color = Color8(34, 64, 108, 225) if is_selected else Color8(18, 32, 58, 205)
-		style.border_width_left = 3 if is_selected else 2
-		style.border_width_top = 3 if is_selected else 2
-		style.border_width_right = 3 if is_selected else 2
-		style.border_width_bottom = 3 if is_selected else 2
+	if _player_inv == null: return
+	var current = _player_inv.current_hotbar_slot()
+	_selected_name.text = "" if current == null else CraftingNames._ZH_NAMES.get(current.item_id, current.item_id)
+	for i in _slot_nodes.size():
+		var item = _player_inv.inventory.slots[i]
+		_slot_nodes[i].get_node("Layout/Icon").texture = null if item == null else ArtCache.get_inventory_icon(item.item_id)
+		_slot_nodes[i].get_node("Layout/Count").text = "" if item == null or item.count <= 1 else str(item.count)
+	_layout_slots()
+
+func _process(_delta: float) -> void:
+	if not is_instance_valid(_cached_crafting_panel): _cached_crafting_panel = get_tree().get_first_node_in_group("crafting_panel")
+	if not is_instance_valid(_cached_chest_panel): _cached_chest_panel = get_tree().get_first_node_in_group("chest_panel")
+	visible = not ((_cached_crafting_panel != null and _cached_crafting_panel.is_open()) or (_cached_chest_panel != null and _cached_chest_panel.is_open()))

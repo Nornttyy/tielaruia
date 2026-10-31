@@ -1,0 +1,662 @@
+[
+  {
+    "file": "Tiles_10.png",
+    "sha256": "4ef52ea1f66aeac93c351b17146046d20a4cb95cce432026f545c91045721548",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_10.png"
+  },
+  {
+    "file": "Tiles_11.png",
+    "sha256": "d6fe2d04b794d65c5259574bf538f5e1c2c57a95774dcfda1f41486338747942",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_11.png"
+  },
+  {
+    "file": "Tiles_14.png",
+    "sha256": "2da65caf2827b5c81ee3c1a91c896bab7e5e8d2f62154ee100c01fc1d30c9a8b",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_14.png"
+  },
+  {
+    "file": "Tiles_15.png",
+    "sha256": "c930f62a92b12ce17ee9089a8e8287eaf6d6f2bcf23f8437e95b3a8ba7d38e3b",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_15.png"
+  },
+  {
+    "file": "Tiles_16.png",
+    "sha256": "bc50773e40bc3c4c72e7ed55c036efa92b7ef95f75fdc0e582a6a7c4a9e19068",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_16.png"
+  },
+  {
+    "file": "Tiles_17.png",
+    "sha256": "1f68c4c4b119226ded04522196cd0461b96ec7f734bb81690abbfd309d1116e1",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_17.png"
+  },
+  {
+    "file": "Tiles_18.png",
+    "sha256": "ef95ca4220527207a89ca7182ef657f7c76b9b31e9112637a04d5dd82d83c0f8",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_18.png"
+  },
+  {
+    "file": "Tiles_19.png",
+    "sha256": "a4b3a74c409fb49f28726909d826d92e67816e00de1ba45ea8015d66f1968203",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_19.png"
+  },
+  {
+    "file": "Tiles_21.png",
+    "sha256": "29447519c66d19ef916916a94660b574dcf2fa0eef4039dcad326a2ee3d94b35",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_21.png"
+  },
+  {
+    "file": "Tiles_54.png",
+    "sha256": "493897ff8eab8ab81e0ec88865af00cdca76df5b641e8aaf2130ca9fa2f01893",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_54.png"
+  },
+  {
+    "file": "Tiles_158.png",
+    "sha256": "128146f8b4c026f80a6f17e034524a443131b8d5163d4f55d83a745e98b913ef",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_158.png"
+  },
+  {
+    "file": "Tiles_166.png",
+    "sha256": "dc6a03b4ee0805d4250f2f10282fbb99a7c58520e1d109c89bb1b7e04ce30d34",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_166.png"
+  },
+  {
+    "file": "Tiles_168.png",
+    "sha256": "c81f32ed052f6333fc7d5093298b05b79b51e06a002825eaa36e82424cdeabdc",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_168.png"
+  },
+  {
+    "file": "Wall_1.png",
+    "sha256": "555be70a112024409120f7ee64ecbc993763ee37435c3f0f0b282756af04d675",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Wall_1.png"
+  },
+  {
+    "file": "Wall_2.png",
+    "sha256": "698b2130698ac5a6049c47b7a51e2fbe3f2b08d57185a02c6efdf15b5eeaad3a",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Wall_2.png"
+  },
+  {
+    "file": "Wall_4.png",
+    "sha256": "168282aaf6606c9bc162ac483a3963df70c8d116859d4d8df9b2b35fe7142c6d",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Wall_4.png"
+  },
+  {
+    "file": "Wall_21.png",
+    "sha256": "d8a7d7300a2b8a466a978caa49832fdf2b8988873f53c7888d019b4bfec43b58",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Wall_21.png"
+  },
+  {
+    "file": "Item_3.png",
+    "sha256": "9d2edbb71f6079764cf756babcddd005df68e9faf5b2c903e3430f83d129b915",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3.png"
+  },
+  {
+    "file": "Item_4.png",
+    "sha256": "1839c193ebf84bce889b13c0f81a5a66fe462ecc0d6dfe3e983d0b76c8e9e27b",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_4.png"
+  },
+  {
+    "file": "Item_5.png",
+    "sha256": "53da9ab2298f8e472f44ed4a28915ee5e9bca08eb2e4cd134eba0aeb41c9dee0",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_5.png"
+  },
+  {
+    "file": "Item_6.png",
+    "sha256": "0f6c61357fae7c69126a6b0ea4bc295040d791370004b47f6404069f16296c7e",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_6.png"
+  },
+  {
+    "file": "Item_7.png",
+    "sha256": "3df5903cc95742b32dcc54d1c2128041290ec0f60ce573e5c0ddc7e211f6d31d",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_7.png"
+  },
+  {
+    "file": "Item_10.png",
+    "sha256": "9ffc1cc3d49f3d7ee036bfb22567ce543fe5fd01fbc6757d3fb3249cfece145d",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_10.png"
+  },
+  {
+    "file": "Item_11.png",
+    "sha256": "acd945a6adfba4b5c920c9356e14bdad2779c2f3d4cbfe6daee161ee3a69cdb9",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_11.png"
+  },
+  {
+    "file": "Item_12.png",
+    "sha256": "6514b48596df4168e84a57ec6754b8e361b6e5bfa9a2385b5f437d69d5799072",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_12.png"
+  },
+  {
+    "file": "Item_13.png",
+    "sha256": "c669c1f5aa0f7496b1f9efd6199a9d9ad8cba58bdaf28677d6927b1c2bac08db",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_13.png"
+  },
+  {
+    "file": "Item_14.png",
+    "sha256": "041b1a31225c514dee82755e1909012bb99a6c45f6e061ade241411f97a1c2c4",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_14.png"
+  },
+  {
+    "file": "Item_15.png",
+    "sha256": "44a0ef3103366d848ec282fdd85ce3576e7a3191a6ddcfb5e0286bc0d060f75b",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_15.png"
+  },
+  {
+    "file": "Item_16.png",
+    "sha256": "cf6a481ce9793547783400eb4348006cd1af31ad1c37fe3baba0797fa248bc2f",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_16.png"
+  },
+  {
+    "file": "Item_17.png",
+    "sha256": "5cae5b74a1348828432c1420643255b5ca577c423d937611b772dbbfea4bf670",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_17.png"
+  },
+  {
+    "file": "Item_18.png",
+    "sha256": "9f48dda52ebefbc4e7d596bf3c0eb02be43e5a727aa2ee6a560861680bc90074",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_18.png"
+  },
+  {
+    "file": "Item_19.png",
+    "sha256": "174a21459553eb514aa22ccfb6ee9c1a2b4ed4b49b2672814b3f24d699a71434",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_19.png"
+  },
+  {
+    "file": "Item_21.png",
+    "sha256": "3c5fb9a14d9b7d0aae5e53ae732b01f9119e7821b0d0af89fea73d18ce61352d",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_21.png"
+  },
+  {
+    "file": "Item_24.png",
+    "sha256": "b32059328de121b443973b42713b7a2f0d1a80b8e258ae65b2d292ac4f8a0501",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_24.png"
+  },
+  {
+    "file": "Item_25.png",
+    "sha256": "282908cb95095be82cf9459fa6ffe873a7bf435a3c0394c59020e066527a287a",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_25.png"
+  },
+  {
+    "file": "Item_26.png",
+    "sha256": "a683ec0c4bed6e8c89116be16404d0705788f4ecf7d09cc3f5923dacba1649e3",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_26.png"
+  },
+  {
+    "file": "Item_27.png",
+    "sha256": "ec81aae87107401dad7c6ca54133acbf88382cbe67a30e35417960ea09118cc2",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_27.png"
+  },
+  {
+    "file": "Item_28.png",
+    "sha256": "5212ff4910f122364e9c634a0eece8708db5228166a8b7d057005a6b3a6244e0",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_28.png"
+  },
+  {
+    "file": "Item_29.png",
+    "sha256": "3bbd858a6c310d82325b5792edeb60722e3e6f1c8659e6ab861c83c01dba642e",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_29.png"
+  },
+  {
+    "file": "Item_30.png",
+    "sha256": "809e09baab56dce6085b2fc2431cf5f50eda74e7765da490edd4bdd940b9925b",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_30.png"
+  },
+  {
+    "file": "Item_31.png",
+    "sha256": "510e43985044b7653a3e77885f16139e5578af3201dfa6f02a3beaff58cd2dff",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_31.png"
+  },
+  {
+    "file": "Item_32.png",
+    "sha256": "28b454d2ec211a6228f97e09665c28f7984b208be8d50e4c98682372762bd8ca",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_32.png"
+  },
+  {
+    "file": "Item_33.png",
+    "sha256": "c11e12433f7f6e566b7b72fe87ebbf7e22359f73a3efc88e268f94ebc35095d6",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_33.png"
+  },
+  {
+    "file": "Item_34.png",
+    "sha256": "8db4982f090514fb49848d825b611be0d3fe7e8e15fcb6cc930b21d8d62effa8",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_34.png"
+  },
+  {
+    "file": "Item_35.png",
+    "sha256": "6fe1c5497ba14c334b54f1a8f13090fbae902c4934c2485b40ba74b3e3ba2ef2",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_35.png"
+  },
+  {
+    "file": "Item_39.png",
+    "sha256": "8b610a99971976cd24566001da62d8f7c162e6ffc5e73031dce441649b6ebf1f",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_39.png"
+  },
+  {
+    "file": "Item_40.png",
+    "sha256": "ba0c3929e52b972a177c927fb84bbd1cbf827cbc5419c98e84d8e5d9506019cd",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_40.png"
+  },
+  {
+    "file": "Item_71.png",
+    "sha256": "e7bf30e7f4b2d968c0ad99668eee4252d25052e2969331d3c3cf3f937497b231",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_71.png"
+  },
+  {
+    "file": "Item_87.png",
+    "sha256": "af939d37797c1ee77b4294fa211de1a768e7445db278d2314839284e303b0f38",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_87.png"
+  },
+  {
+    "file": "Item_94.png",
+    "sha256": "afff7ea3bf0f6bf4e7b6cf93ea86d889c76a94d02be27dc2a47da11d12a67113",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_94.png"
+  },
+  {
+    "file": "Item_103.png",
+    "sha256": "6796fa696446cf9b7fa80c0810f7a4bb4db564def7986eb93811b4fa841f3287",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_103.png"
+  },
+  {
+    "file": "Item_104.png",
+    "sha256": "c56a35c3b6d190dd82c1ac801362cd48f7990c791b54c4b1d0e3d400c1c38be0",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_104.png"
+  },
+  {
+    "file": "Item_105.png",
+    "sha256": "2cc2c3b9caa787fe6d76a39dfb6b585414a506471df5c9ac4dc741b22fd37f71",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_105.png"
+  },
+  {
+    "file": "Item_106.png",
+    "sha256": "50d430edad61faf0ec8cad0014fef0e844def54adc37f5dc50488d49b7928594",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_106.png"
+  },
+  {
+    "file": "Item_107.png",
+    "sha256": "d8b74d430a26c347ec329aebd704d06974b40bf7452371fc514fa157afc3a13e",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_107.png"
+  },
+  {
+    "file": "Item_108.png",
+    "sha256": "6af7e1e0ad1f002857f440bd2c01a986a16a8850a56c261323a159fb906128c8",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_108.png"
+  },
+  {
+    "file": "Item_109.png",
+    "sha256": "a6e1a7b88a39cd0795caa5be2cfbcb4bd5de949805b4a45c12571ef1aa8b7929",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_109.png"
+  },
+  {
+    "file": "Item_143.png",
+    "sha256": "92bbfd1454993015bd2f1dc26587c82fb9561397a73ba7e73710ef85e00bf67b",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_143.png"
+  },
+  {
+    "file": "Item_144.png",
+    "sha256": "316d880ad23f38242917a217ca8cc5cf242a7c47e84148485605988082c0da5f",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_144.png"
+  },
+  {
+    "file": "Item_145.png",
+    "sha256": "8e0a837cc285773f52283b3b9b63f51acdd6cb5a1a5832579c2a3769f96e6811",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_145.png"
+  },
+  {
+    "file": "Item_146.png",
+    "sha256": "b57386ece61a600d9e4f22466bfbed33495121c20997f3c86b248d63557f9639",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_146.png"
+  },
+  {
+    "file": "Item_147.png",
+    "sha256": "4dee58dd7724e2d248a0cfa4289e0621bbb5060e1c699d521c81c36d1cc09df8",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_147.png"
+  },
+  {
+    "file": "Item_148.png",
+    "sha256": "3d79e8210aea2f6497d8c27c49355b9cad087aee15d752d373c8a31b9ccd3784",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_148.png"
+  },
+  {
+    "file": "Item_149.png",
+    "sha256": "f203948c5569afedbc8b86208d9b78e7bf2b731fc72c80c57dbeeaf8cfa39aca",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_149.png"
+  },
+  {
+    "file": "Item_3508.png",
+    "sha256": "7575c053f23254b2b7f3f1248710424f848b13ce8fb05881b7f759f2ee1e3a85",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3508.png"
+  },
+  {
+    "file": "Item_169.png",
+    "sha256": "cbbd409eaba6b39576cbdcfd7f27f16472934317393eab3adccc9a3ad03c6ecb",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_169.png"
+  },
+  {
+    "file": "Item_276.png",
+    "sha256": "8878d2e581be597f1eddf816d509ee86368670b6d3b00ee3a09f4f1f63a7c490",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_276.png"
+  },
+  {
+    "file": "Item_170.png",
+    "sha256": "49c93e58895e597275c6e86f2d8253cc3dead485469c0cc9da3bdb5c6eeefaad",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_170.png"
+  },
+  {
+    "file": "Item_392.png",
+    "sha256": "a05459816c232f78a1474810e6344ba2951023d918aa3bd4ccfff68fd3aca149",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_392.png"
+  },
+  {
+    "file": "Item_129.png",
+    "sha256": "d9cba9a8ecfe1a446b1e9b09b7db152d093699ef21061596507a0fba9b032455",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_129.png"
+  },
+  {
+    "file": "Item_131.png",
+    "sha256": "cb07ca9fa9406e41aef8f7c035ced98cd97ebc741a81b305da396872d8437b48",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_131.png"
+  },
+  {
+    "file": "Item_196.png",
+    "sha256": "e95a7157eff90941337de256697063de1b5b34942191954784e02b581f0e7347",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_196.png"
+  },
+  {
+    "file": "Item_284.png",
+    "sha256": "d5b633f28ecd3de032370bb3cbdaadc0ac689f06900e2fc6c596fb413c7c35f9",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_284.png"
+  },
+  {
+    "file": "Item_560.png",
+    "sha256": "d7add69058ed59f26ff54c1886c128e358db5fee13c5300ab78e5c109e2d5b55",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_560.png"
+  },
+  {
+    "file": "Item_42.png",
+    "sha256": "eed068ef7ed1569a35a0f23ff0dedf2ed247d4d181d7c551c689235f1e2df726",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_42.png"
+  },
+  {
+    "file": "Item_166.png",
+    "sha256": "98cbe2ba1110e3eff0718d3cd9ffa66594a4243ea9f68790b33970f6b029e881",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_166.png"
+  },
+  {
+    "file": "Item_1166.png",
+    "sha256": "e9418f1b2094b1be5a28432c304bc7985e9d2b38a8b5c61a7fcfb7695f79b279",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_1166.png"
+  },
+  {
+    "file": "Item_154.png",
+    "sha256": "f0c38c29c727fccabebdb495be812cd68b146394395475125fccc439881a7a29",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_154.png"
+  },
+  {
+    "file": "Item_38.png",
+    "sha256": "f7225b8f0559243f587fc2331c2cb1b747d1fd0c0be17ef06f76c0815f9538a5",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_38.png"
+  },
+  {
+    "file": "Item_320.png",
+    "sha256": "8712fa5d8b6eba50070d7fb435500b393a9dee780e008fa2ae81ee106a8f8b2c",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_320.png"
+  },
+  {
+    "file": "Item_182.png",
+    "sha256": "9ead3475866715e84b2ef279d95db69151a6df53a40a46977b53fec3111cec15",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_182.png"
+  },
+  {
+    "file": "Item_118.png",
+    "sha256": "b519cf503d0e895ec1d72b71461fdf8396b0f1cae24d25585b8a7f25782a6a88",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_118.png"
+  },
+  {
+    "file": "Item_85.png",
+    "sha256": "1333c81f68d8c3ed75402ab7a8d2203136886504d42df2ce3f7e413b37acc598",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_85.png"
+  },
+  {
+    "file": "Item_84.png",
+    "sha256": "fc600276047bd752e7651f683d6938b6ae9bfed3595c10523f880b8af8bb55d3",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_84.png"
+  },
+  {
+    "file": "Item_2289.png",
+    "sha256": "44a52d2bffa58ca8700f879121593d33e0152112030a57bde83b942d9501390c",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_2289.png"
+  },
+  {
+    "file": "Item_345.png",
+    "sha256": "8838fcf1d81b7ac38bddfe2b158df307494230fec0c4d945eae657a651f46a07",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_345.png"
+  },
+  {
+    "file": "Item_48.png",
+    "sha256": "f5f96cd68f848225fc0b782d8af86771cab44fbdf0024b3d19ffb44c776a4c39",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_48.png"
+  },
+  {
+    "file": "Item_224.png",
+    "sha256": "829a716388dcc47eeb71346f5105f67e6ef5f11e1e596f6939b6843b98b07286",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_224.png"
+  },
+  {
+    "file": "Item_93.png",
+    "sha256": "fe1b098d1716ddd6f1311254c61a879a0bb3c3de0f40ee25a0619d81062bc5b1",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_93.png"
+  },
+  {
+    "file": "Item_965.png",
+    "sha256": "4c6544fc003dbd9ecf3ffc0972656d3c1bb215b36f0d8e1e3c1ecd680c4df90b",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_965.png"
+  },
+  {
+    "file": "Item_593.png",
+    "sha256": "8ecdea1a49b9786419eaa6b29a32d6d4c88d485adf045640eecf8c3c8e7194d5",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_593.png"
+  },
+  {
+    "file": "Item_664.png",
+    "sha256": "77f3447229a31716ceb2eaf202aa8f27376dcf1cb14ba8301ac0fb59d45e1a1e",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_664.png"
+  },
+  {
+    "file": "Item_176.png",
+    "sha256": "a35ed16fbd8ee758b3b52be3eacc8de4f38efa3772af108100684ef0a88c5a6b",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_176.png"
+  },
+  {
+    "file": "Item_174.png",
+    "sha256": "77c375ef3abb1da40aeaf9affdb20014fdddf114d4fdde205ed337f2f49ff3e8",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_174.png"
+  },
+  {
+    "file": "Item_173.png",
+    "sha256": "c3bbff7000e7e3f139be507e6a41cc41a101a5dc12b01ede5c457f71eab839ee",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_173.png"
+  },
+  {
+    "file": "Item_607.png",
+    "sha256": "1062cd55d87295db51ce3b673064a587fc50d93d6f5e8766482a28de59837f96",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_607.png"
+  },
+  {
+    "file": "Item_751.png",
+    "sha256": "4e9eb5fded980f38bf2c7acc7766c002a2de6280157e0143a9d99d4c823fd3c5",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_751.png"
+  },
+  {
+    "file": "Item_4009.png",
+    "sha256": "48a87aafa955feea468fbc62451d2f55db6fe06314db6e1da7e03ad5a1340d73",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_4009.png"
+  },
+  {
+    "file": "Item_4011.png",
+    "sha256": "bd70c7103fd08e91e454604d987f69906b552f1e0174edaf9ff4244b4fa40daa",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_4011.png"
+  },
+  {
+    "file": "Item_2298.png",
+    "sha256": "f19e1bf4c0cfeaf35d51c9ef3973b6b4a21f47c92e7c0fed72915623ceeff419",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_2298.png"
+  },
+  {
+    "file": "Item_2300.png",
+    "sha256": "77d1d78e80c3b4dc551641b438a2edadebe0203689624c74e05212c1938267ca",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_2300.png"
+  },
+  {
+    "file": "Item_2427.png",
+    "sha256": "f2df7332e8aa252a681f3be9a60a4c316f5a54a214867d8eb6b9146f036faba8",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_2427.png"
+  },
+  {
+    "file": "Item_2425.png",
+    "sha256": "2898163a380c58740780eb0d48eff7145baa70cf09253c9d48d92b1fc6e8d110",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_2425.png"
+  },
+  {
+    "file": "Item_110.png",
+    "sha256": "b2b308dcd901a430d78607cc7f3a4879ad2c99e9dcfecf1e7730d55b971b9ab0",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_110.png"
+  },
+  {
+    "file": "Item_699.png",
+    "sha256": "d4ffe26b3a2086afac1f41704de664dc6d106046d7d61624f1c54f2b9726d3a6",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_699.png"
+  },
+  {
+    "file": "Item_703.png",
+    "sha256": "4823b96e9a92c282bfcfe7f1d6ea0a9abec70787166631b8e33306e9efdb01a6",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_703.png"
+  },
+  {
+    "file": "Item_3505.png",
+    "sha256": "ae5000f6ec7b8f5517273d209614ab060a2fc351ac0222f137602126aaee7153",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3505.png"
+  },
+  {
+    "file": "Item_89.png",
+    "sha256": "ac898808bf11d640e85c96dab2637e8191f833708d42b088d5d06bcd60e77a1f",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_89.png"
+  },
+  {
+    "file": "Item_80.png",
+    "sha256": "038a1f15e6b81696753f71a1105e67c3b76442350121a9df0e518811d030f2ce",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_80.png"
+  },
+  {
+    "file": "Item_76.png",
+    "sha256": "27b4cadaec739d144350547c09a7e2eb135025823919d92726528b87c1874ffd",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_76.png"
+  },
+  {
+    "file": "Item_90.png",
+    "sha256": "ae701dff0a8531f25bda28cc9bb96530e2b325e004918cfb3a235ee455211263",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_90.png"
+  },
+  {
+    "file": "Item_81.png",
+    "sha256": "cd30ea79bbd1095a34b49f9ef78e9027775bce324ae9927129ac72ba30a4deb9",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_81.png"
+  },
+  {
+    "file": "Item_77.png",
+    "sha256": "9036f831d89ddaf20b1e02908d0d1c85cc374abd1a1a3a18ba4dccfd5ef99ddd",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_77.png"
+  },
+  {
+    "file": "Item_3514.png",
+    "sha256": "b75b8970da93db6076ac6657e98fa66fcc5c48b11a28303b60692bbfb879c83c",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3514.png"
+  },
+  {
+    "file": "Item_3513.png",
+    "sha256": "ccdd8e8bcc74a9986e76597d1094a8c5a9d4aa9c895f008897c90261b2c4ce26",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3513.png"
+  },
+  {
+    "file": "Item_3515.png",
+    "sha256": "b5f862ee55dda716506890285d69dd181872c360047c0535e7cbd01090183200",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3515.png"
+  },
+  {
+    "file": "Item_3512.png",
+    "sha256": "883daea536bf84d3821c6e0759028d9542912922d8cfa10e218c8ecaa8ef2ec6",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3512.png"
+  },
+  {
+    "file": "Item_3511.png",
+    "sha256": "dd98c4143756b49483e49c0c754f0aec70f0eeccea939e47cba73489dad099ad",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3511.png"
+  },
+  {
+    "file": "Item_91.png",
+    "sha256": "2cb5bf2ac930a0b02d35e079eb2901d5e2e8763e32832bd07c339b4d53692637",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_91.png"
+  },
+  {
+    "file": "Item_82.png",
+    "sha256": "64834bac48f190a62eef318491e5e351a6edb7a85f52cdae4cfbcc3ea81ae956",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_82.png"
+  },
+  {
+    "file": "Item_78.png",
+    "sha256": "0b9fd8eb3419f3086e4d4ebedce03c957b869a49fd38afa438d58639366def37",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_78.png"
+  },
+  {
+    "file": "Item_3520.png",
+    "sha256": "89593abb707be0394d982ed96fb027162a13e77e2001538b05796a61a2c36cc6",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3520.png"
+  },
+  {
+    "file": "Item_3519.png",
+    "sha256": "bf01cbc62852f8e7178ced16a598f4a14f411d2305d1a54033690be06bbca351",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3519.png"
+  },
+  {
+    "file": "Item_3521.png",
+    "sha256": "745ca8d1afd461a4de346836cee1484b7847759e79b972323d45e92ca2b2fdfc",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3521.png"
+  },
+  {
+    "file": "Item_3518.png",
+    "sha256": "c6cda7c4eb720eb964705ce4caf69f1cc9b5afb2b3bb04a10bf06803c420df9f",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3518.png"
+  },
+  {
+    "file": "Item_3517.png",
+    "sha256": "54e0f53a40740907ce0844b892a65609208f29f0edc2732d0d0db4cd384194f0",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_3517.png"
+  },
+  {
+    "file": "Item_92.png",
+    "sha256": "22398ddc24b2d228a090d39372837fc72d8a504beaf8b303b9955f62e416f083",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_92.png"
+  },
+  {
+    "file": "Item_83.png",
+    "sha256": "f212f102e1f548ae0b1f52e1409e8524f8403691fff3f0ec457d02807a796729",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_83.png"
+  },
+  {
+    "file": "Item_79.png",
+    "sha256": "7e858812d96e49089bc23c2f1126835a159370a5c98d1d453a32bdeedf6cc840",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_79.png"
+  },
+  {
+    "file": "Item_133.png",
+    "sha256": "2cb3cec04864990c65f092a96eb6db7b820819e6c66d16728e6a3404ebb19c78",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Item_133.png"
+  },
+  {
+    "file": "Tiles_38.png",
+    "sha256": "2956d46b5fadc5f884355a4e08646fdb2dc5a8efaf5f1f4c80d0405e3fd63171",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_38.png"
+  },
+  {
+    "file": "Tiles_39.png",
+    "sha256": "484a9411a96c10b5c2d7c71327e6ef222dc735e074d7121a88acf22d411350f7",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_39.png"
+  }
+]

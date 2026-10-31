@@ -97,7 +97,17 @@ static func generate_biome_ridge(
 		var hr: float = heights[x]
 		var y_top: int = height - int(hr * height)
 		for y in range(y_top, height):
-			img.set_pixel(x, y, color)
+			# 有方向的大片岩面，而不是均匀噪点；底部回到底色，接填充条时不会露横线。
+			var shade: Color = color
+			if style == "mountain" and y < height - 20:
+				var edge_x: int = posmod(x - 4, width)
+				var rising: bool = heights[edge_x] < hr
+				var depth: int = y - y_top
+				if depth < 12:
+					shade = color.lightened(0.10) if rising else color.darkened(0.08)
+				elif depth < 38 and rising:
+					shade = color.lightened(0.04)
+			img.set_pixel(x, y, shade)
 		if snow_cap and hr >= snow_threshold:
 			for y in range(y_top, min(y_top + 6, height)):
 				img.set_pixel(x, y, SNOW_COLOR)
@@ -108,12 +118,12 @@ static func generate_biome_ridge(
 		_overlay_cacti(img, width, height, heights, seed_val)
 	elif style == "deadtree":
 		_overlay_deadtrees(img, width, height, heights, seed_val)
+	elif style == "forest":
+		_overlay_forest(img, width, height, heights, color, seed_val)
 	return ImageTexture.create_from_image(img)
 
 
 static func _profile_for_style(style: String, width: int, seed_val: int) -> Array:
-	if style == "mountain":
-		return _height_profile(width, 7, 0.7, seed_val)
 	var noise := FastNoiseLite.new()
 	noise.seed = seed_val
 	noise.noise_type = FastNoiseLite.TYPE_PERLIN
@@ -122,7 +132,15 @@ static func _profile_for_style(style: String, width: int, seed_val: int) -> Arra
 	heights.resize(width)
 	for x in width:
 		var v: float
-		if style == "dune":
+		# 在噪声平面上绕一圈取样：首尾连续，滚动到纹理接缝时不会突然出现悬崖。
+		var phase := TAU * float(x) / maxf(1.0, width - 1.0)
+		var periodic := noise.get_noise_2d(cos(phase) * 280.0, sin(phase) * 280.0)
+		if style == "mountain":
+			var folds := sin(phase * 5.0 + seed_val * 0.01) * 0.045
+			v = clampf(0.40 + periodic * 0.24 + folds, 0.20, 0.70)
+		elif style == "forest":
+			v = clampf(0.20 + periodic * 0.07, 0.10, 0.32)
+		elif style == "dune":
 			# 平滑圆润的沙丘 (低频正弦, 不锯齿, 矮)
 			var s: float = 0.5 + 0.22 * sin(x * 0.010 + seed_val) + 0.12 * sin(x * 0.004 + seed_val * 0.7)
 			s += noise.get_noise_1d(float(x)) * 0.10
@@ -138,6 +156,32 @@ static func _profile_for_style(style: String, width: int, seed_val: int) -> Arra
 			v = clamp(0.12 + n * 0.06, 0.08, 0.20)
 		heights[x] = v
 	return heights
+
+
+static func _overlay_forest(img: Image, w: int, h: int, heights: Array,
+		color: Color, seed_val: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_val
+	var count: int = maxi(4, w / 42)
+	for i in count:
+		var cx: int = int((i + 0.5) * w / count) + rng.randi_range(-8, 8)
+		var gy: int = h - int(heights[posmod(cx, w)] * h)
+		var th: int = rng.randi_range(34, 76)
+		var radius: int = rng.randi_range(14, 25)
+		var trunk := color.darkened(0.10)
+		for y in range(gy - th, gy):
+			for dx in range(-2, 3):
+				_px(img, posmod(cx + dx, w), y, trunk)
+		# 三簇错开的树冠；所有边缘都落在整数像素上。
+		for puff in 3:
+			var px: int = cx + (puff - 1) * radius / 2
+			var py: int = gy - th + absi(puff - 1) * 7
+			for dy in range(-radius, radius + 1):
+				for dx in range(-radius, radius + 1):
+					if dx * dx + dy * dy * 2 > radius * radius:
+						continue
+					var shade := color.lightened(0.09) if dy < -radius / 3 else color
+					_px(img, posmod(px + dx, w), py + dy, shade)
 
 
 # 沙漠: 沙丘上几株仙人掌 (经典 saguaro: 柱身 + 两臂)

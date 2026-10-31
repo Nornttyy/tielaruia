@@ -74,3 +74,20 @@ static func return_cursor_to_inv(holder, inv_slots: Array) -> void:
 		if holder.cursor_slot.count <= 0:
 			holder.cursor_slot = null
 			return
+
+
+# 右键从目标堆叠拿一个到鼠标。不同物品或鼠标已满时不改变任何一边。
+static func take_one(holder, arr: Array, idx: int) -> void:
+	if idx < 0 or idx >= arr.size() or arr[idx] == null:
+		return
+	var source: Dictionary = arr[idx]
+	var cursor = holder.cursor_slot
+	if cursor != null and (cursor.item_id != source.item_id or cursor.count >= ItemDB.max_stack(cursor.item_id)):
+		return
+	if cursor == null:
+		holder.cursor_slot = make_slot(source.item_id, 1)
+	else:
+		cursor.count += 1
+	source.count -= 1
+	if source.count <= 0:
+		arr[idx] = null

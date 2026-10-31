@@ -1,70 +1,55 @@
-# 把 VillagePrefab 盖章到 ChunkManager (+可选 TileMapLayer)。
-# 写法: 通过 chunk_manager.set_tile 保存到 chunk delta (跨卸载持久),
-# 同时直接写 TileMapLayer 让视觉立刻更新。
+# 房屋前景、背景墙、家具分开落盘；仅清理每栋建筑占地，保留屋间树木。
 class_name VillagePlacer extends RefCounted
-
 const VillagePrefab = preload("res://scripts/world/village_prefab.gd")
+const BuildingArt = preload("res://scripts/art/building_art.gd")
+const Autotile = preload("res://scripts/world/autotile.gd")
+const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 
-
-# 在 anchor 处盖章 (只盖房子结构; 村民 NPC 已移除)。
-# 流程: (1) 清出 spawn → 所有屋顶上方一行的整片矩形 (擦树/草, 留出走路 + 头顶空间)
-#       (2) 按每间屋的 grid 盖墙/门。
-static func place(
-		chunk_manager: ChunkManager,
-		terrain_layer: TileMapLayer,
-		prefab: Dictionary,
-		anchor: Vector2i
-) -> void:
-	# Pass 0: 清整片矩形 - 从 spawn 往右一直到最远屋, 高度从屋顶上方 1 行到 spawn 行
-	_clear_bounding_rect(chunk_manager, terrain_layer, prefab, anchor)
+static func place(cm: ChunkManager, terrain: TileMapLayer, prefab: Dictionary, anchor: Vector2i, walls: TileMapLayer = null) -> void:
+	var lighting: Node = terrain.get_parent().get_node_or_null("WorldLighting") if terrain != null else null
 	for house in prefab.houses:
-		var house_anchor: Vector2i = anchor + Vector2i(house.anchor_x, house.anchor_y)
+		var start := anchor + Vector2i(house.anchor_x, house.anchor_y)
 		var rows: int = house.grid.size()
-		if rows == 0:
-			continue
-		var cols: int = (house.grid[0] as String).length()
-		# Pass 1: 房子 footprint 再清一次 (其实 bounding 已覆盖, 但保险)
-		for ry in range(rows):
-			for cx in range(cols):
-				var pos: Vector2i = house_anchor + Vector2i(cx, ry)
-				chunk_manager.set_tile(pos.x, pos.y, Tiles.AIR)
-		# Pass 2: 按 grid 字符 stamp 墙/门
-		for ry in range(rows):
-			var row: String = house.grid[ry]
-			for cx in range(cols):
-				var ch: String = row[cx]
-				var tid: int = VillagePrefab.char_to_tile(ch)
-				if tid == -1:
-					continue
-				var pos: Vector2i = house_anchor + Vector2i(cx, ry)
-				chunk_manager.set_tile(pos.x, pos.y, tid)
-				# 门: 'D' 占 3 格 (底 DOOR + 中 DOOR_MID + 顶 DOOR_TOP).
-				# 玩家 2.5 格高, 门洞必须 3 格才进得去; 上 2 格盖掉原墙形成门洞.
-				if tid == Tiles.DOOR:
-					chunk_manager.set_tile(pos.x, pos.y - 1, Tiles.DOOR_MID)
-					chunk_manager.set_tile(pos.x, pos.y - 2, Tiles.DOOR_TOP)
+		if rows == 0: continue
+		var cols: int = String(house.grid[0]).length()
+		# 门分段和家具稍后盖，防止后续空气格把上半部分擦掉。
+		for y in rows:
+			for x in cols:
+				if lighting != null: lighting.on_tile_removed(start.x + x, start.y + y, cm.get_tile(start.x + x, start.y + y))
+				cm.set_tile(start.x + x, start.y + y, Tiles.AIR)
+				cm.set_wall(start.x + x, start.y + y, Tiles.AIR)
+		for y in rows:
+			for x in cols:
+				var pos := start + Vector2i(x, y)
+				var tid: int = VillagePrefab.char_to_tile(String(house.grid[y])[x])
+				if tid >= 0:
+					cm.set_tile(pos.x, pos.y, tid)
+					if lighting != null: lighting.on_tile_placed(pos.x, pos.y, tid)
+					if tid == Tiles.DOOR:
+						cm.set_tile(pos.x, pos.y - 1, Tiles.DOOR_MID)
+						cm.set_tile(pos.x, pos.y - 2, Tiles.DOOR_TOP)
+				if house.has("walls"):
+					var wid: int = {"w": Tiles.WOOD_WALL, "g": Tiles.GLASS_WALL, "b": Tiles.WOOD_WALL, "s": Tiles.STONE_WALL}.get(String(house.walls[y])[x], Tiles.AIR)
+					cm.set_wall(pos.x, pos.y, wid)
+		for entry in house.get("furniture", []):
+			var base: int = entry.tile
+			var dims := BuildingArt.footprint(base)
+			for i in dims.x * dims.y:
+				var pos := start + Vector2i(entry.x, entry.y) + BuildingArt.part_offset(base + i)
+				cm.set_tile(pos.x, pos.y, base + i)
+		if terrain != null:
+			for y in range(-1, rows + 1):
+				for x in range(-1, cols + 1):
+					var pos := start + Vector2i(x, y)
+					_render_cell(terrain, pos, cm.get_tile(pos.x, pos.y), cm, false)
+					if walls != null: _render_cell(walls, pos, cm.get_wall(pos.x, pos.y), cm, true)
+					SkyLightGrid.invalidate_column(pos.x)
 
-
-# 算出所有屋子的 bounding box, 从 anchor (spawn 列) 起算, 清空内部 (扣掉树/草)。
-# 让玩家从 spawn 能直接走到村子。
-static func _clear_bounding_rect(
-		chunk_manager: ChunkManager,
-		terrain_layer: TileMapLayer,
-		prefab: Dictionary,
-		anchor: Vector2i
-) -> void:
-	var min_x: int = 0   # 从 anchor (spawn) 起算, 包含 spawn 列
-	var max_x: int = 0
-	var min_y: int = 0
-	for house in prefab.houses:
-		var rows: int = house.grid.size()
-		if rows == 0:
-			continue
-		var cols: int = (house.grid[0] as String).length()
-		max_x = max(max_x, house.anchor_x + cols - 1)
-		min_y = min(min_y, house.anchor_y)
-	# y 范围: min_y - 4 (向上多 4 行清树顶/叶) 到 0 (= anchor.y = spawn 行)
-	for dy in range(min_y - 4, 1):
-		for dx in range(min_x, max_x + 1):
-			var pos: Vector2i = anchor + Vector2i(dx, dy)
-			chunk_manager.set_tile(pos.x, pos.y, Tiles.AIR)
+static func _render_cell(layer: TileMapLayer, pos: Vector2i, tid: int, cm: ChunkManager, is_wall: bool) -> void:
+	if tid == Tiles.AIR:
+		layer.erase_cell(pos)
+	elif EdgeTemplates.FAMILY_OF.has(tid):
+		var query := Autotile.make_wall_query(tid, cm) if is_wall else Autotile.make_terrain_query(tid, cm)
+		Autotile.refresh_tile(layer, pos, tid, query, Callable() if is_wall else Autotile.make_solid_query(cm))
+	else:
+		layer.set_cell(pos, tid, Vector2i.ZERO)

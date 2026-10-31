@@ -24,10 +24,10 @@ script = ExtResource("1_craft")
 [node name="InvAnchor" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 12.0
-offset_top = 60.0
-offset_right = 380.0
-offset_bottom = 240.0
+offset_left = 20.0
+offset_top = 12.0
+offset_right = 496.0
+offset_bottom = 273.0
 
 [node name="InvPanel" type="PanelContainer" parent="InvAnchor"]
 layout_mode = 1
@@ -43,14 +43,11 @@ layout_mode = 2
 
 [node name="RecipeAnchor" type="Control" parent="."]
 layout_mode = 3
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = -400.0
-offset_right = 240.0
-offset_bottom = -12.0
-grow_vertical = 0
+anchors_preset = 0
+offset_left = 20.0
+offset_top = 334.0
+offset_right = 76.0
+offset_bottom = 690.0
 
 [node name="RecipePanel" type="PanelContainer" parent="RecipeAnchor"]
 layout_mode = 1

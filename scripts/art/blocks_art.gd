@@ -26,6 +26,8 @@ const JUNGLE_LEAVES := 48
 const SILVER_ORE := 49
 const WOOD_WALL := 50
 const FURNACE := 51
+const IRON_ANVIL := 115
+const IRON_ANVIL_RIGHT := 116
 const COOKING_POT := 74     # 铁锅 (架在炉子上的做饭台, 锅底带火)
 const CLOUD := 75           # 云块 (白软, 顶亮底带浅灰蓝阴影, 空岛岛体)
 const CUTTING_BOARD := 76   # 菜板 (木板 + 上面一片鱼)
@@ -799,22 +801,22 @@ const _SNOW := [
 
 # 泥土：暖土团块 (LL+边缘 o 暖橙) + 红棕 (r) 砂粒 + 冷棕 (p) + 深石子 (k) 细节
 const _DIRT := [
-	"dDdpdDdDdpdDdpdD",
-	"dlddddrddpkddpdd",
-	"ddoLLddddDLLdrdd",
-	"dDoLLrdddDLLdkdd",
-	"dpddDdoLLdrkdLLd",
-	"ddpdrddLLddDddLd",
-	"ddDdrkddrdkdrkdd",
-	"dpdddDdpdldDdldD",
-	"dllLdpddrdkdldDd",
-	"dpdLLrddpdddrDdd",
-	"DdddorddddLLkdpd",
-	"ddpdDodddpdLLrdd",
-	"dDdrdLLddpdddoDd",
-	"dpddrdDdkddpdkdD",
-	"drDdpdrddoddDddo",
-	"DdpdrdDpdrdpDdrd",
+	"ddddddpddddddddd",
+	"ddllddpdddddllld",
+	"dllllpddddddlldd",
+	"dddDDpdddddDDddd",
+	"ddddpddddddddddd",
+	"dddddddddrrddddd",
+	"ddddddllldrrdddd",
+	"ddppddlllldrdddd",
+	"ddpddddDDDdddddd",
+	"dddddddddddddppd",
+	"dddllddddddddpdd",
+	"ddllllDDdddddddd",
+	"dddddDDddllddddd",
+	"ddddddddllllDDdd",
+	"ddrrddddddDDdddd",
+	"dddddddddddddddd",
 ]
 
 # 石头：暖灰岩石块 (LL 凸块带 o 暖砂岩高光) + 横向裂纹 (kkkk) + 中灰 m / 深灰 b
@@ -1001,43 +1003,43 @@ const _ROPE := [
 # 圆柱树干 (用户要"显瘦"): 满宽 (枝/叶/根靠边连得上), 但画成中间亮(l)、两肩中调(r)、
 # 两边渐暗到深沟(B) 的圆柱光影 → 看着更细更立体 (不是平板一块)。竖向一致 = 树皮纹; 2 个木结 RR。
 const _LOG := [
-	"BBbbrrllllrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrrlRRlrrbbBB",
-	"BBbbrrlRRlrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrRRlllrrbbBB",
-	"BBbbrRRlllrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrrllllrrbbBB",
-	"BBbbrrllllrrbbBB",
+	"BBblbllrrbrbbbBB",
+	"BBblbllrrbrbbbBB",
+	"BBblbllrbbrbbbBB",
+	"BBblbllrbbrbbbBB",
+	"BBblblllrrrbbbBB",
+	"BBblblllRRrbbbBB",
+	"BBblbllRRBrbbbBB",
+	"BBblblllRRrbbbBB",
+	"BBbllbllrrrbbbBB",
+	"BBbllbllrbrbbbBB",
+	"BBbllbllrbrbbbBB",
+	"BBblbbllrbrbbbBB",
+	"BBblbbllrbrbbbBB",
+	"BBblblllrrrbbbBB",
+	"BBblbllrrbrbbbBB",
+	"BBblbllrrbrbbbBB",
 ]
 
 # 橡木叶 (泰拉瑞亚风重画): 一簇簇圆叶团, 每簇左上受光 h/y 高光、右下 s/L 阴影、簇间 d 深缝.
 # 环形无缝平铺 (程序生成于 /tmp/leafgen.py, 簇心取最大凸起 + 阳光左上梯度).
 const _LEAVES := [
-	"daaalsslsyaasddL",
-	"aayyalLayyyalLdd",
-	"ayyyylLaayhalLdd",
-	"ayyhylLlaaalsLdd",
-	"layyasLdsllsLaal",
-	"slllsLalsLLLayaa",
-	"lLLLayyalLdayyya",
-	"lLdayyyylLdaayha",
-	"sLdayyhylLaaaaaa",
-	"Lallayyasayyalls",
-	"yaaslllsLyyyalLa",
-	"yyalLLLLayyhylaa",
-	"yhalLdaaaaayasyy",
-	"aalsLaayyallsayh",
-	"llsLdlayhasLLaaa",
-	"LLLddlaaalLldsss",
+	"lllsssLlllaaaall",
+	"laaaasLLlaayyyal",
+	"layyyalLlayyyyal",
+	"layyaallllaaalls",
+	"llaaallssllllssL",
+	"sllllssLLsssLLLl",
+	"LsssLLLlllaaalll",
+	"LLLlllaaayyyalll",
+	"llaaayyyayyyalls",
+	"layyyyyaaaallssL",
+	"llaaaalllllssLLL",
+	"ssllllsssssLLLll",
+	"LLssssLLlllaaall",
+	"lLLLlllllayyyall",
+	"lllalllllaaaalls",
+	"llaaallsllllssLl",
 ]
 
 # 松针：密实无透角 + 矩形针簇 + 暗影包裹 + 偶发松果 y
@@ -2313,7 +2315,23 @@ const _GRASS_SLOPE_L := [
 	"ddddddddddddddmg",
 ]
 
+const _P_ANVIL := {".": Color.TRANSPARENT, "k": Color8(46, 43, 49), "s": Color8(81, 80, 88), "m": Color8(134, 139, 147), "h": Color8(202, 211, 211)}
+const _ANVIL_LEFT := [
+	"................", "................", "................", "................",
+	"................", "....kkkkkkkkkkkk", ".kkkhhhhhhhhhhhh", "kmmmmmhhhhhhhhhh",
+	".ksmmmmmmmmmmmmm", "..kkssssssssssss", "....kkkkkkkksssm", "............kssm",
+	"...........kssmm", ".........kkssmmm", "........ksssssss", "........kkkkkkkk",
+]
+const _ANVIL_RIGHT := [
+	"................", "................", "................", "................",
+	"................", "kkkkkkkkkk......", "hhhhhhhhhhk.....", "hhhhhhhhhhk.....",
+	"mmmmmmmmmmk.....", "ssssssssssk.....", "msssskkkkk......", "msssk...........",
+	"mmsssk..........", "mmmssskk........", "sssssssssk......", "kkkkkkkkkk......",
+]
+
 const _PATTERN_MAP := {
+	IRON_ANVIL: [_ANVIL_LEFT, _P_ANVIL],
+	IRON_ANVIL_RIGHT: [_ANVIL_RIGHT, _P_ANVIL],
 	GRASS: [_GRASS, _P_GRASS],
 	GRASS_SLOPE_R: [_GRASS_SLOPE_R, _P_GRASS],
 	GRASS_SLOPE_L: [_GRASS_SLOPE_L, _P_GRASS],

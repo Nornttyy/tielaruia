@@ -126,6 +126,14 @@ var _falling_layer: TileMapLayer
 var _falling: Dictionary = {}
 
 
+const TreeFrames = preload("res://scripts/world/tree_frames.gd")
+
+func _decoration_frame(pos: Vector2i, tile_id: int) -> Vector2i:
+	if tile_id in TreeFrames.PARTS:
+		return TreeFrames.frame(pos, tile_id, chunk_manager)
+	return Vector2i.ZERO
+
+
 func _ready() -> void:
 	# 这些 group 注册 + EffectsRoot 早期就要好 (被其他系统在 _ready 阶段 find).
 	add_to_group("world")
@@ -500,6 +508,7 @@ func _get_valid_remote(ent_id: int) -> Node:
 
 func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: int, facing: int, anim: String) -> void:
 	var ent: Node = _get_valid_remote(ent_id)
+	var already_visible: bool = ent != null
 	if ent == null:
 		# 第一次见这个实体 (或旧的已被释放): 生成视觉版本
 		ent = _spawn_remote_entity(kind)
@@ -510,6 +519,8 @@ func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: in
 		ent.global_position = Vector2(x, y)
 		# 同步血量 → health_bar 每帧从 current_health 读, 自动显示对端真实血量 (之前写死 0)
 		if hp > 0 and "current_health" in ent:
+			if already_visible and hp < ent.current_health:
+				SfxBank.play_creature(kind, ent.global_position, false)
 			ent.current_health = hp
 		# 同步朝向 + 动画 (之前只挪位置, 导致对方看到动物方向/动作不变在滑动)
 		var spr: AnimatedSprite2D = ent.get_node_or_null("AnimatedSprite2D")
@@ -522,6 +533,8 @@ func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: in
 func _on_remote_entity_die(ent_id: int) -> void:
 	var ent: Node = _get_valid_remote(ent_id)
 	if ent != null:
+		var script_path: String = ent.get_script().resource_path
+		SfxBank.play_creature(script_path.get_file().get_basename(), ent.global_position, true)
 		ent.queue_free()
 	_remote_entities.erase(ent_id)
 
@@ -803,7 +816,7 @@ func _place_village() -> void:
 	if prefab.is_empty():
 		return
 	# 只盖房子结构 (村民 NPC 已移除)
-	VillagePlacer.place(chunk_manager, terrain_layer, prefab, spawn_point)
+	VillagePlacer.place(chunk_manager, terrain_layer, prefab, spawn_point, wall_layer)
 
 
 func _process(delta: float) -> void:
@@ -1126,7 +1139,8 @@ func _apply_graphics_settings() -> void:
 	# 用 camera 成员引用, 不能用 get_node("Camera2D") — spawn 时 camera 已 reparent 到玩家下,
 	# 路径查不到 → 缩放设置(滑块/滚轮)全失效. (修"滚轮不缩放"的真根因.)
 	if camera != null:
-		camera.zoom = Vector2(GameSettings.camera_zoom, GameSettings.camera_zoom)
+		var zoom_value: float = float(camera.get_meta("art_preview_zoom", GameSettings.camera_zoom))
+		camera.zoom = Vector2(zoom_value, zoom_value)
 
 
 # _on_lightning_flash 已删 (跟雨一起)
@@ -1166,10 +1180,10 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				terrain_layer.erase_cell(pos)
 			elif EdgeTemplates.FAMILY_OF.has(tid):
 				var q := Autotile.make_terrain_query(tid, chunk_manager)
-				Autotile.refresh_tile(terrain_layer, pos, tid, q)
+				Autotile.refresh_tile(terrain_layer, pos, tid, q, Autotile.make_solid_query(chunk_manager))
 			else:
 				# 水 (普通 + 群系满水) 按列染成所在群系色; 非水 _display_water_tile 原样返回
-				terrain_layer.set_cell(pos, _display_water_tile(world_x, tid), Vector2i.ZERO)
+				terrain_layer.set_cell(pos, _display_water_tile(world_x, tid), _decoration_frame(pos, tid))
 			var wid: int = wall_col[y]
 			var wpos := Vector2i(world_x, y)
 			if wid == Tiles.AIR:
@@ -1244,7 +1258,9 @@ func _on_chunk_loaded(c: Chunk) -> void:
 			var sid: int = terrain_layer.get_cell_source_id(Vector2i(col_x, y))
 			if sid != -1 and EdgeTemplates.FAMILY_OF.has(sid):
 				var q := Autotile.make_terrain_query(sid, chunk_manager)
-				Autotile.refresh_tile(terrain_layer, Vector2i(col_x, y), sid, q)
+				Autotile.refresh_tile(terrain_layer, Vector2i(col_x, y), sid, q, Autotile.make_solid_query(chunk_manager))
+			elif sid in TreeFrames.PARTS:
+				terrain_layer.set_cell(Vector2i(col_x, y), sid, _decoration_frame(Vector2i(col_x, y), sid))
 			var wsid: int = wall_layer.get_cell_source_id(Vector2i(col_x, y))
 			if wsid != -1 and EdgeTemplates.FAMILY_OF.has(wsid):
 				var wq := Autotile.make_wall_query(wsid, chunk_manager)
@@ -1422,21 +1438,21 @@ func _try_spawn_zombie() -> void:
 		elif r < 0.75:
 			scene = ImpScene
 		else:
-			scene = HellWaspScene
+			scene = ImpScene
 		_spawn_hell_creature(scene)
 		return
 	elif py_tile >= 30:
 		if r < 0.2:
 			scene = ZombieScene
 		elif r < 0.7:
-			scene = SpiderScene
+			scene = SkeletonScene
 		else:
 			scene = DemonEyeScene
 	else:
 		if r < 0.4:
 			scene = ZombieScene
 		elif r < 0.8:
-			scene = SpiderScene
+			scene = ZombieScene
 		else:
 			scene = DemonEyeScene
 	_spawn_surface_creature(scene)
@@ -1475,12 +1491,7 @@ func _spawn_hell_creature(scene: PackedScene) -> void:
 
 
 func _try_spawn_animal() -> void:
-	# 按 spawn 列的 biome 选怪.
-	# forest(GRASS): 牛/羊/猪
-	# snow(SNOW): 企鹅 + 牛 (混)
-	# jungle(JUNGLE_GRASS): 美洲豹 (敌对快) + 猪
-	# swamp(SWAMP_GRASS): 青蛙 (跳)
-	# desert(SAND): 不刷动物 (现在还没沙漠动物)
+	# 新刷新池不再混入 Minecraft 家畜；旧存档实体仍可读取。
 	var animals := get_tree().get_nodes_in_group("animals")
 	if animals.size() >= MAX_ANIMALS:
 		return
@@ -1496,28 +1507,17 @@ func _try_spawn_animal() -> void:
 	var surf_tile: int = Tiles.AIR
 	for y in ChunkConstants.WORLD_HEIGHT:
 		var t: int = chunk_manager.get_tile(cand_x, y)
-		if t != Tiles.AIR:
+		if Tiles.is_solid(t):
 			surf_tile = t
 			break
 	var scene: PackedScene
-	var r: float = randf()
 	match surf_tile:
 		Tiles.SNOW:
-			scene = PenguinScene if r < 0.7 else CowScene
+			scene = PenguinScene
 		Tiles.JUNGLE_GRASS:
-			# 丛林只刷猪 (豹子已删)
-			scene = PigScene
-		Tiles.SWAMP_GRASS, Tiles.MUD:
 			scene = FrogScene
-		Tiles.SAND:
-			return  # 沙漠不刷
-		_:  # GRASS or fallback
-			if r < 0.33:
-				scene = CowScene
-			elif r < 0.66:
-				scene = SheepScene
-			else:
-				scene = PigScene
+		_:
+			return
 	_spawn_at_column(scene, cand_x)
 
 
@@ -1578,13 +1578,9 @@ func spawn_skeleton_king(pos: Vector2) -> bool:
 
 # Boss 召唤总入口: 召唤道具的 summon_boss 字段 → 派发到具体 spawn. 新 Boss 加 case 即可。
 func spawn_boss(boss_id: String, pos: Vector2) -> bool:
-	match boss_id:
-		"skeleton_king":
-			return spawn_skeleton_king(pos)
-		"demon_lord":
-			return spawn_demon_lord(pos)
-		_:
-			return spawn_king_slime(pos)
+	if boss_id == "king_slime":
+		return spawn_king_slime(pos)
+	return false
 
 
 # 召唤地狱恶魔领主到 pos. 已有存活 → 拒绝 (一次只准一个)。生在 pos 上方一点 (飞行怪).
@@ -1710,6 +1706,7 @@ func _open_door_at(bottom: Vector2i) -> void:
 	_set_tile(bottom.x, bottom.y - 1, Tiles.DOOR_OPEN)
 	_set_tile(bottom.x, bottom.y - 2, Tiles.DOOR_OPEN)
 	_open_doors[bottom] = true
+	SfxBank.play_at("door_open", Vector2(bottom) * TILE_SIZE)
 
 
 # 关门: 换回 底DOOR/中MID/顶TOP. 只在 3 格还都是 DOOR_OPEN 时关 (被挖了就只清记录).
@@ -1720,6 +1717,7 @@ func _close_door_at(bottom: Vector2i) -> void:
 	_set_tile(bottom.x, bottom.y, Tiles.DOOR)
 	_set_tile(bottom.x, bottom.y - 1, Tiles.DOOR_MID)
 	_set_tile(bottom.x, bottom.y - 2, Tiles.DOOR_TOP)
+	SfxBank.play_at("door_close", Vector2(bottom) * TILE_SIZE)
 
 
 # 废弃矿井守卫蜘蛛: 同款机制
@@ -1850,7 +1848,7 @@ func respawn_player() -> void:
 	#   1 普通: 每堆掉 50% (向下取整), 盔甲每件 50% 几率掉
 	#   2 困难: 全掉, 只留木剑/木镐/木斧 (重新做工具的成本省了)
 	var difficulty: int = GameSettings.current_difficulty if GameSettings != null else 1
-	var wood_kit := {"wood_sword": true, "wood_pickaxe": true, "wood_axe": true}
+	var wood_kit := {"copper_dagger": true, "copper_pickaxe": true, "copper_axe": true}
 	# 对战房复活不掉东西 (装备留着继续打)
 	var pvp: bool = NetworkManager != null and NetworkManager.combat_enabled()
 	if inv_node != null and inv_node.inventory != null and difficulty > 0 and not pvp:
@@ -2024,9 +2022,9 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 		terrain_layer.set_cell(pos, -1)
 	elif EdgeTemplates.FAMILY_OF.has(tile_id):
 		var q := Autotile.make_terrain_query(tile_id, chunk_manager)
-		Autotile.refresh_tile(terrain_layer, pos, tile_id, q)
+		Autotile.refresh_tile(terrain_layer, pos, tile_id, q, Autotile.make_solid_query(chunk_manager))
 	else:
-		terrain_layer.set_cell(pos, tile_id, Vector2i.ZERO)
+		terrain_layer.set_cell(pos, tile_id, _decoration_frame(pos, tile_id))
 	# 重算 8 邻居 (它们 mask 变了)
 	for dy in [-1, 0, 1]:
 		for dx in [-1, 0, 1]:
@@ -2038,7 +2036,9 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 				continue
 			if EdgeTemplates.FAMILY_OF.has(nsid):
 				var nq := Autotile.make_terrain_query(nsid, chunk_manager)
-				Autotile.refresh_tile(terrain_layer, npos, nsid, nq)
+				Autotile.refresh_tile(terrain_layer, npos, nsid, nq, Autotile.make_solid_query(chunk_manager))
+			elif nsid in TreeFrames.PARTS:
+				terrain_layer.set_cell(npos, nsid, _decoration_frame(npos, nsid))
 	# 仙人掌连接: 调用方一律传 CACTUS, 但如果当前格上方已有仙人掌, 应是 BODY
 	# 反之如果当前格被挖掉 (变 AIR), 下面那个 BODY 应升级为 TOP
 	_fix_cactus_at(x, y)

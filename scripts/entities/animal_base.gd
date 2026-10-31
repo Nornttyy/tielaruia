@@ -194,6 +194,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
 	Effects.spawn_damage_number(global_position + Vector2(0, -6), actual_loss)
+	if current_health > 0: SfxBank.play_creature("animal_base", global_position, false)
 	_flee_timer = FLEE_DURATION
 	if source_pos != Vector2.ZERO:
 		_flee_from = source_pos
@@ -213,6 +214,8 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 
 
 func _die() -> void:
+	if _is_dying: return
+	SfxBank.play_creature("animal_base", global_position, true)
 	_is_dying = true
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
@@ -227,6 +230,8 @@ func _die() -> void:
 
 
 func _spawn_drop(item_id: String) -> void:
+	if not ItemDB.is_available(item_id):
+		return  # 只拦截新战利品，不影响旧背包/箱子里的物品。
 	var drop = ItemDropScene.instantiate()
 	drop.item_id = item_id
 	drop.count = 1

@@ -38,6 +38,8 @@ const SlimeBlobProjArt = preload("res://scripts/art/slime_blob_proj_art.gd")
 const LeafProjArt = preload("res://scripts/art/leaf_proj_art.gd")
 const WindProjArt = preload("res://scripts/art/wind_proj_art.gd")
 const MummyArt = preload("res://scripts/art/mummy_art.gd")
+const BuildingArt = preload("res://scripts/art/building_art.gd")
+const OriginalSprites = preload("res://scripts/art/terraria_sprite_pack.gd")
 
 var block_textures: Dictionary = {}        # int (tile_id) -> ImageTexture (atlas for autotile, single for others)
 var block_icons: Dictionary = {}           # int (tile_id) -> 16x16 ImageTexture (UI / inventory)
@@ -91,6 +93,11 @@ func _ready() -> void:
 	_build_hearts()
 
 
+func _exit_tree() -> void:
+	# 在渲染服务器退出前释放静态 SpriteFrames，避免退出时遗留纹理句柄。
+	OriginalSprites.clear_cache()
+
+
 func _build_hearts() -> void:
 	heart_full = HeartsArt.build_full()
 	heart_half = HeartsArt.build_half()
@@ -121,6 +128,7 @@ func _build_blocks() -> void:
 		BlocksArt.JUNGLE_DIRT, BlocksArt.SNOW_DIRT, BlocksArt.JUNGLE_LEAVES,
 		BlocksArt.SILVER_ORE,
 		BlocksArt.FURNACE,
+		BlocksArt.IRON_ANVIL, BlocksArt.IRON_ANVIL_RIGHT,
 		BlocksArt.COOKING_POT,
 		BlocksArt.CUTTING_BOARD,
 		BlocksArt.RICE_0, BlocksArt.RICE_1, BlocksArt.RICE_2, BlocksArt.RICE_3,
@@ -142,10 +150,19 @@ func _build_blocks() -> void:
 		BlocksArt.CLOUD,
 		BlocksArt.WATER_DESERT, BlocksArt.WATER_JUNGLE, BlocksArt.WATER_SWAMP,
 	]
+	for tid in BuildingArt.EXTRA_IDS:
+		var tex := OriginalSprites.block_atlas(tid) if EdgeTemplates.FAMILY_OF.has(tid) else BuildingArt.single(tid)
+		block_icons[tid] = tex
+		block_textures[tid] = _smart_resize_atlas_16_to_12(tex)
 	for tile_id in tile_ids:
 		if EdgeTemplates.FAMILY_OF.has(tile_id):
-			var atlas_16: ImageTexture = BlocksArt.build_atlas(tile_id)
-			atlas_16 = _apply_biome_tint(tile_id, atlas_16)
+			var atlas_16: ImageTexture = OriginalSprites.block_atlas(tile_id)
+			if tile_id in [BlocksArt.WOOD_WALL, BlocksArt.STONE_WALL, BlocksArt.DIRT_WALL]: atlas_16 = BuildingArt.wall_atlas(tile_id)
+			if atlas_16 == null:
+				atlas_16 = _apply_biome_tint(tile_id, BlocksArt.build_atlas(tile_id))
+			if tile_id in [BlocksArt.LEAVES, BlocksArt.LEAVES_PINE, BlocksArt.LEAVES_AUTUMN, BlocksArt.JUNGLE_LEAVES]:
+				# 叶子逻辑保留，画面交给完整树冠层，避免重复铺叶块。
+				atlas_16 = ImageTexture.create_from_image(Image.create(128, 128, false, Image.FORMAT_RGBA8))
 			# UI icon 用原 16x16 (不缩, 库存里能看清);
 			# 世界内 tile 用 smart-resize 后 12x12 (匹配 TileSet tile_size=12, 边线齐整)
 			block_icons[tile_id] = _extract_interior_icon(atlas_16)
@@ -192,8 +209,10 @@ func _build_blocks() -> void:
 			block_textures[tile_id] = _smart_resize_atlas_16_to_12(BlocksArt.get_lava_level_atlas(3))
 			block_icons[tile_id] = block_textures[tile_id]
 		else:
-			var single_16: ImageTexture = BlocksArt.get_texture(tile_id)
-			single_16 = _apply_biome_tint(tile_id, single_16)
+			var single_16: ImageTexture = BuildingArt.single(tile_id)
+			if single_16 == null: single_16 = OriginalSprites.block_single(tile_id)
+			if single_16 == null:
+				single_16 = _apply_biome_tint(tile_id, BlocksArt.get_texture(tile_id))
 			# UI icon 用原 16x16; world tile 用 12x12 (匹配 TileSet)
 			block_icons[tile_id] = single_16
 			block_textures[tile_id] = _smart_resize_atlas_16_to_12(single_16)
@@ -355,31 +374,40 @@ func _build_items() -> void:
 		item_icons["%s_pickaxe" % tier] = ItemsArt.get_icon("%s_pickaxe" % tier)
 		item_icons["%s_axe" % tier] = ItemsArt.get_icon("%s_axe" % tier)
 		item_icons["%s_hammer" % tier] = ItemsArt.get_icon("%s_hammer" % tier)
+	var original_icons := preload("res://scripts/items/original_content.gd").ORIGINAL_ITEM_IDS
+	for item_id in original_icons:
+		var icon := OriginalSprites.texture("Item_%d.png" % original_icons[item_id])
+		if item_id in ["apple", "apple_pie"]:
+			var sheet := icon.get_image()
+			icon = ImageTexture.create_from_image(sheet.get_region(Rect2i(0, 0, sheet.get_width(), sheet.get_height() / 3)))
+		if icon != null:
+			item_icons[item_id] = icon
+			if _ITEM_TO_TILE.has(item_id): block_icons[_ITEM_TO_TILE[item_id]] = icon
 
 
 func _build_doors() -> void:
 	door_closed_texture = DoorArt.get_closed_texture()
 	door_open_texture = DoorArt.get_open_texture()
-	door_item_icon = BlocksArt.get_door_icon_texture()
+	door_item_icon = OriginalSprites.texture("Item_25.png")
 
 
 # 按角色外观出玩家 SpriteFrames (捏人/换装用)。player_frames (默认) 仍由 _build_entities 缓存。
 func player_frames_for(appearance: Dictionary) -> SpriteFrames:
-	return PlayerArt.build_sprite_frames(appearance)
+	return OriginalSprites.player_frames(appearance)
 
 
 func _build_entities() -> void:
-	player_frames = PlayerArt.build_sprite_frames()
-	slime_frames = SlimeArt.build_sprite_frames()
+	player_frames = OriginalSprites.player_frames(PlayerArt.DEFAULT_APPEARANCE)
+	slime_frames = OriginalSprites.enemy_frames("NPC_1.png", Vector2i(32, 26), Vector2i(16, 12), {"idle": [0, 1], "hop": [1, 0, 1]})
 	slime_crown_tex = SlimeArt.build_crown_texture()   # 史莱姆王头顶王冠 (单独贴图)
-	zombie_frames = ZombieArt.build_sprite_frames()
+	zombie_frames = OriginalSprites.enemy_frames("NPC_3.png", Vector2i(38, 48), Vector2i(16, 24), {"idle": [0], "walk": [0, 1, 2]})
 	cow_frames = CowArt.build_sprite_frames()
 	sheep_frames = SheepArt.build_sprite_frames()
 	pig_frames = PigArt.build_sprite_frames()
 	# 蜘蛛: OpenGameArt PNG sprite sheet (Heather Lee Harvey, CC-BY 3.0)
 	spider_frames = preload("res://scripts/art/spider_loader.gd").build_sprite_frames()
 	# 恶魔眼: OpenGameArt head.png 缩 32x18 (JacPete, CC0)
-	demon_eye_frames = preload("res://scripts/art/demon_eye_loader.gd").build_sprite_frames()
+	demon_eye_frames = OriginalSprites.enemy_frames("NPC_2.png", Vector2i(38, 24), Vector2i(24, 16), {"idle": [0, 1], "fly": [0, 1]})
 	# Mimic: 自画 ASCII (chest + 红嘴牙)
 	mimic_frames = MimicArt.build_sprite_frames()
 	# 骨架战士: 地狱近战怪
@@ -442,6 +470,7 @@ const _ITEM_TO_TILE := {
 	"planks": BlocksArt.PLANKS,
 	"workbench": BlocksArt.WORKBENCH,
 	"furnace": BlocksArt.FURNACE,
+	"iron_anvil": BlocksArt.IRON_ANVIL,
 	"cooking_pot": BlocksArt.COOKING_POT,
 	"cutting_board": BlocksArt.CUTTING_BOARD,
 	"door": BlocksArt.DOOR,
@@ -501,6 +530,15 @@ func _build_particles() -> void:
 
 
 func get_inventory_icon(item_id: String) -> ImageTexture:
+	if preload("res://scripts/items/original_content.gd").ORIGINAL_ITEM_IDS.has(item_id):
+		return item_icons.get(item_id)
+	if BuildingArt.ITEMS.has(item_id):
+		if not item_icons.has(item_id): item_icons[item_id] = BuildingArt.icon(item_id)
+		return item_icons[item_id]
+	if item_id in ["iron_anvil", "chain", "hook"]:
+		if not item_icons.has(item_id):
+			item_icons[item_id] = preload("res://scripts/art/original_items_art.gd").get_texture(item_id)
+		return item_icons[item_id]
 	if item_id == "door":
 		return door_item_icon   # 整扇 3 格门图标 (不用 block_icons 的单格 DOOR)
 	if _ITEM_TO_TILE.has(item_id):

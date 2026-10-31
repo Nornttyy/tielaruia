@@ -3,8 +3,8 @@
 # 200ms 刷新一次. 鼠标滚轮在 minimap 上 → 缩放档位 1/2/3/4 px/tile.
 extends Control
 
-const MAP_PIXEL_WIDTH := 192   # minimap UI 总宽 (像素)
-const MAP_PIXEL_HEIGHT := 128  # minimap UI 总高
+const MAP_PIXEL_WIDTH := 240   # minimap UI 总宽 (像素)
+const MAP_PIXEL_HEIGHT := 240  # minimap UI 总高
 const ZOOM_MIN := 1            # 1 px/tile = 远视野 (看更多 tile, 字最小)
 const ZOOM_MAX := 8            # 8 px/tile = 近视野 (全屏地图也能放更大)
 const ZOOM_DEFAULT := 2
@@ -110,6 +110,8 @@ const _PLAYER_COLOR := Color8(255, 80, 80)
 
 @onready var texture_rect: TextureRect = $TextureRect
 
+var _frame: TextureRect
+var _map_buttons: Array[TextureButton] = []
 var _player: Node2D = null
 var _chunk_manager: Node = null
 var _minimap_data: Node = null
@@ -131,7 +133,7 @@ func _ready() -> void:
 	_image.fill(_UNEXPLORED_COLOR)
 	_texture = ImageTexture.create_from_image(_image)
 	texture_rect.texture = _texture
-	texture_rect.size = Vector2(MAP_PIXEL_WIDTH, MAP_PIXEL_HEIGHT)
+	_build_classic_frame()
 	# scene 加载时已经把 hud.tscn 的锚点/偏移套到本节点上, 这里趁还没动它先记下来
 	_capture_home_layout()
 
@@ -226,6 +228,8 @@ func _toggle_fullscreen() -> void:
 
 
 func _enter_fullscreen() -> void:
+	_frame.visible = false
+	for button in _map_buttons: button.visible = false
 	# 打开大地图前, 小地图一定还在"老家"(右上角), 此刻记下它的锚点/偏移最稳,
 	# 不依赖 _ready 时机 (那时 layout 可能还没套上 hud 的位置).
 	_capture_home_layout()
@@ -250,6 +254,8 @@ func _enter_fullscreen() -> void:
 
 
 func _exit_fullscreen() -> void:
+	_frame.visible = true
+	for button in _map_buttons: button.visible = true
 	# 还原到进游戏时记下的"老家"位置.
 	# (以前这里写死成右下角, 但 hud.tscn 其实把小地图放右上角 → 开大地图再关掉就从右上跳到右下,
 	#  也就是"点开小地图再退出, 位置会变"的 bug. 现在原样还回老家就不跑偏了.)
@@ -357,3 +363,24 @@ func _redraw() -> void:
 					_image.set_pixel(px, py, _PLAYER_COLOR)
 
 	_texture.update(_image)
+
+
+# 框和三个按钮使用相同版本的原图。按钮确实控制缩放/复位，不只是装饰。
+func _build_classic_frame() -> void:
+	var ui = preload("res://scripts/ui/classic_ui.gd")
+	$Bg.visible = false
+	_frame = TextureRect.new()
+	_frame.texture = ui.texture("MinimapFrame")
+	_frame.position = Vector2(-8, -8)
+	_frame.size = Vector2(256, 264)
+	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_frame)
+	for entry in [["ZoomIn", 196], ["ZoomOut", 170], ["Reset", 144]]:
+		var button := TextureButton.new()
+		button.texture_normal = ui.texture("MinimapButton_" + entry[0])
+		button.position = Vector2(entry[1], 235)
+		button.tooltip_text = {"ZoomIn": "放大", "ZoomOut": "缩小", "Reset": "重置"}[entry[0]]
+		if entry[0] == "Reset": button.pressed.connect(func(): _set_zoom(ZOOM_DEFAULT))
+		else: button.pressed.connect(_zoom_step.bind(1 if entry[0] == "ZoomIn" else -1))
+		add_child(button)
+		_map_buttons.append(button)

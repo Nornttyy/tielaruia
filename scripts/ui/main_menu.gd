@@ -73,6 +73,7 @@ func _ready() -> void:
 	_setup_title()
 	_start_title_breathing()
 	_setup_buttons()
+	_setup_building_preview_button()
 	_setup_settings_panel()
 	_setup_new_game_panel()
 	_setup_world_select_panel()
@@ -239,20 +240,21 @@ static func _cover_transform(view: Vector2, base: Vector2) -> Dictionary:
 
 
 func _setup_trees() -> void:
-	# 用户要"只一排高大的树": 不要背景森林, 只在草地前面摆一排又高又大的树, 横向滚动。
-	var t0 = MenuSceneArt.make_forest_tree(0)   # 圆胖
-	var t1 = MenuSceneArt.make_forest_tree(1)   # 高瘦
-	# 树层放到 Ground 之后绘制 → 树站在草地前面 (树干完整露出, 不被草盖住)
-	_trees_front = Node2D.new()
-	_trees_front.name = "TreesFront"
-	$BackgroundLayer.add_child(_trees_front)
-	$BackgroundLayer.move_child(_trees_front, $BackgroundLayer/Ground.get_index() + 1)
-	# 一排: 均匀分槽 + 槽内小抖动, 棵棵高大
-	for i in TREE_ROW_COUNT:
-		var x: float = (float(i) + randf() * 0.5 + 0.25) / float(TREE_ROW_COUNT) * (VIEWPORT_SIZE.x + 200.0) - 100.0
-		# 速度统一 (用户要求): 所有树同一滚动速度, 不再每棵随机 → 整排一起平移不散
-		_add_tree(_trees_front, t0 if i % 2 == 0 else t1, x,
-			randf_range(9.0, 11.0), TREE_SCROLL_SPEED, 1.0, 1.02)
+	const Pack = preload("res://scripts/art/terraria_sprite_pack.gd")
+	for layer_i in 3:
+		var tex := Pack.texture("Background_%d.png" % [7, 9, 11][layer_i])
+		var factor := 2.0
+		var width := tex.get_width() * factor
+		for repeat in 4:
+			var sp := Sprite2D.new()
+			sp.texture = tex
+			sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			sp.centered = false
+			sp.scale = Vector2.ONE * factor
+			sp.position = Vector2((repeat - 1) * width, [330.0, 420.0, 510.0][layer_i])
+			sp.set_meta("speed", [2.0, 5.0, 9.0][layer_i])
+			sp.set_meta("wrap_width", width * 4)
+			_trees_root.add_child(sp)
 
 
 # 加一棵树. ground_ratio: 树底 y 比例 (远树略高=更远); alpha: 远树淡显雾感.
@@ -281,8 +283,8 @@ func _scroll_tree_layer(layer: Node2D, delta: float) -> void:
 		if sp == null:
 			continue
 		sp.position.x -= float(sp.get_meta("speed", 0.0)) * delta
-		if sp.position.x < -TREE_W * sp.scale.x:
-			sp.position.x = VIEWPORT_SIZE.x + randf_range(20.0, 180.0)
+		if sp.position.x < -sp.texture.get_width() * sp.scale.x:
+			sp.position.x += float(sp.get_meta("wrap_width", VIEWPORT_SIZE.x + sp.texture.get_width() * sp.scale.x))
 
 
 func _setup_stars() -> void:
@@ -1216,3 +1218,14 @@ func _setup_language_dropdown() -> void:
 		var code: String = Locale.SUPPORTED[idx]
 		Locale.set_language(code)
 	)
+
+
+func _setup_building_preview_button() -> void:
+	var btn := Button.new()
+	btn.name = "BuildingPreviewButton"
+	btn.text = "建筑美术预览"
+	btn.position = Vector2(30, 652)
+	btn.size = Vector2(190, 42)
+	_apply_button_style(btn)
+	$ButtonLayer.add_child(btn)
+	btn.pressed.connect(func(): start_game.emit({"art_preview": true}))

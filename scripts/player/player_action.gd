@@ -1,6 +1,11 @@
 # 玩家交互：鼠标瞄准、距离检查、挖放进度。
 extends Node2D
 
+const UseTiming = preload("res://scripts/items/original_use_timing.gd")
+var _mining_sound_cooldown := 0.0
+
+const CLOCK_EPSILON := 0.000001
+
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const TILE_SIZE := 12
 const REACH_TILES := 4
@@ -99,7 +104,6 @@ var secondary_held_override: Variant = null  # null = 真实输入；bool = 强�
 # Mining 状态
 var _mining_target: Vector2i = INVALID_TILE
 var _mining_progress: float = 0.0
-var _mining_swing_t: float = 0.0  # 挖矿挥镐动画节流
 # 每个方块保留挖掘进度: Vector2i → [tid, progress]. 松手/切目标不清零, 回来接着挖.
 # tid 一起存 → 那格方块换了 (挖掉重放/变了) 就不续旧进度.
 var _mine_saved: Dictionary = {}
@@ -113,8 +117,8 @@ var _attack_combo_step: int = 0
 
 # 镐旋转: 用户改 — 怪要碰到镐才扣血 (不是 AoE 圆心扣血).
 # spin 期间每帧算 pickaxe tip 世界位置, 距离 ≤ HIT_RADIUS 的怪扣 1 次.
-# 用户改: PICKAXE_SPIN_DURATION 0.7→1.0 慢一点; spin 起始朝鼠标 (不再总从上).
-const PICKAXE_SPIN_DURATION := 1.0
+# 这一挥的时长在起手时确定，视觉、重复使用与命中窗口共用。
+var _pickaxe_spin_duration := 23.0 / 60.0
 const PICKAXE_TIP_LOCAL_Y := -20.0   # tip 相对 held.position 的 y 偏移 (sprite 16h × scale 1.25)
 const PICKAXE_HIT_RADIUS := 12.5     # tip 到怪中心 ≤ 12.5px 算碰到 (玩家 1.25x)
 var _pickaxe_spin_active: bool = false
@@ -134,8 +138,8 @@ const SWORD_TIP_LOCAL_Y := -20.0       # tip 相对 held.position 的 y (sprite 
 const SWORD_SWEEP_REACH_BONUS := 20.0  # 阔剑挥剑身比基础长这么多 → 够得更远 (用户嫌阔剑太短, 12→20)
 const SWORD_HIT_RADIUS := 17.5         # 怪中心到 grip→tip 线段 ≤ 17.5px (玩家 1.25x). 视觉碰到了 算法也命中
 const SWORD_POINT_BLANK_DIST := 22.5   # 怪离玩家中心 ≤ 22.5px 视为贴脸 (玩家 1.25x), 任何剑攻击一律命中
-const SWORD_HAND_OFFSET_X := 5.0       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
-const SWORD_HAND_OFFSET_Y := -10.0     # 跟 held_item.HAND_OFFSET_Y 一致
+const SWORD_HAND_OFFSET_X := 3.75       # 跟 held_item.HAND_OFFSET_X 一致 (剑柄手位)
+const SWORD_HAND_OFFSET_Y := -15.0     # 跟 held_item.HAND_OFFSET_Y 一致
 const SWORD_THRUST_OFFSET := 8.0       # 跟 held_item.THRUST_OFFSET_PX 一致 (用户: 短剑戳太远 → 12.5→8)
 const DAGGER_BLADE_SHORTEN := 6.0      # 短剑(戳)命中剑身比阔剑短这么多 → 戳得更近 (剑短)
 const DAGGER_HIT_RADIUS := 13.0        # 短剑命中半径比阔剑(17.5)小, 更"贴"不糊到远处怪
@@ -203,16 +207,22 @@ func _connect_hotbar_signal() -> void:
 # signal handler 同步: 不要加 await (CLAUDE.md feedback_no_async_signal)
 func _on_hotbar_changed(_idx: int) -> void:
 	_attack_combo_step = 0
+	_attack_cooldown = 0.0
+	_pickaxe_spin_active = false
+	_sword_attack_active = false
+	_pickaxe_hit_this_spin.clear()
+	_sword_hit_this_attack.clear()
+	_reset_mining()
 
 
 func _physics_process(delta: float) -> void:
+	_advance_attack_clock(delta)
 	# E 一键合成: 工作台旁开 3x3, 否则 2x2; 已开则关
 	if Input.is_action_just_pressed("interact"):
 		_try_open_workbench_or_close()
 	# 其余动作面板开则跳过
 	if _crafting_open():
 		return
-	_attack_cooldown = max(0.0, _attack_cooldown - delta)
 	# 赤霄连击: 太久没命中就清零 (这样停手后挥速回到正常)
 	_combo_idle += delta
 	if _combo_idle > COMBO_RESET_SEC:
@@ -239,7 +249,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			_reset_mining()
 			var primary_pressed_p: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
-			if primary_pressed_p and _attack_cooldown <= 0.0 and _mouse_has_enemy_nearby():
+			if primary_pressed_p and _attack_cooldown <= 0.0:
 				_pickaxe_attack()
 	elif kind == "axe":
 		# 用户改: 斧动作跟镐同款. 鼠标对 LOG → 砍 + spin; 否则 附近怪 → spin (0 伤害, 视觉)
@@ -248,12 +258,11 @@ func _physics_process(delta: float) -> void:
 		else:
 			_reset_mining()
 			var primary_pressed_a: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
-			if primary_pressed_a and _attack_cooldown <= 0.0 and _mouse_has_enemy_nearby():
+			if primary_pressed_a and _attack_cooldown <= 0.0:
 				_axe_swing()
 	elif kind == "bow":
-		# 弓: LMB 按下 → 朝鼠标发箭, 消耗 1 wood_arrow. cooldown 0.4s.
+		# 弓: 消耗一支箭；发射间隔与持弓姿势共用物品动画时长。
 		_reset_mining()
-		_aim_bow_at_mouse()   # 持弓时弓一直朝鼠标方向 (用户: 别只朝玩家朝向)
 		var primary_pressed_b: bool = (primary_override == true) if primary_override != null else Input.is_action_pressed("primary")
 		if primary_pressed_b and _attack_cooldown <= 0.0:
 			_try_fire_bow()
@@ -296,10 +305,24 @@ func _physics_process(delta: float) -> void:
 	else:
 		_update_mining(delta)
 	_update_eat_or_place(delta)
+
+
+# 先推进上一击，再接收新输入；新动作不能在起手帧就被多扣一帧时间。
+func _advance_attack_clock(delta: float) -> void:
+	_mining_sound_cooldown = maxf(0.0, _mining_sound_cooldown - delta)
+	var player := get_parent()
+	if player != null and player.has_method("advance_action_anim"):
+		player.advance_action_anim(delta)
+	var held := _held_item_node()
+	if held != null and held.has_method("advance_use_anim"):
+		held.advance_use_anim(delta)
+	_attack_cooldown = maxf(0.0, _attack_cooldown - delta)
+	if _attack_cooldown < CLOCK_EPSILON:
+		_attack_cooldown = 0.0
 	# 工具 spin 中: 每帧检查 tip 跟怪的距离, 碰到就扣血 (镐 + 斧共用; 斧 damage_mult=0 自动跳过)
 	if _pickaxe_spin_active:
 		_pickaxe_spin_t += delta
-		if _pickaxe_spin_t >= PICKAXE_SPIN_DURATION:
+		if _pickaxe_spin_t + CLOCK_EPSILON >= _pickaxe_spin_duration:
 			_pickaxe_spin_active = false
 			_pickaxe_hit_this_spin.clear()
 		else:
@@ -307,7 +330,7 @@ func _physics_process(delta: float) -> void:
 	# 剑攻击中 (戳/挥): 同样每帧扫 grip→tip 线段, 跟怪贴近就扣血. 1 攻击 1 只怪 1 击.
 	if _sword_attack_active:
 		_sword_attack_t += delta
-		if _sword_attack_t >= _sword_attack_duration:
+		if _sword_attack_t + CLOCK_EPSILON >= _sword_attack_duration:
 			_sword_attack_active = false
 			_sword_hit_this_attack.clear()
 		else:
@@ -426,15 +449,7 @@ func _update_mining(delta: float) -> void:
 		if ctid == -1 or not Tiles.is_mineable(ctid):
 			_reset_mining()
 			return
-		_mining_swing_t -= delta
-		if _mining_swing_t <= 0.0:   # 挥一下手 (秒挖也给点动作反馈)
-			_mining_swing_t = 0.25
-			var held: Node = _held_item_node()
-			if held != null:
-				if held.has_method("play_pickaxe_attack"):
-					_start_pickaxe_spin()
-				elif held.has_method("play_swing"):
-					held.play_swing()
+		_ensure_mining_swing()
 		_finish_mine(ct, ctid, _current_tool_kind(), cterrain)
 		_clear_crack(ct)
 		_mining_target = INVALID_TILE
@@ -506,7 +521,7 @@ func _update_mining(delta: float) -> void:
 			if saved.size() == 2:
 				_clear_crack(tile)        # 清掉过期裂纹
 				_mine_saved.erase(tile)
-		_mining_swing_t = 0.0
+	_play_mining_contact(tid)
 	_mining_progress += _tool_speed(tool_kind, tid) * delta * _buff_mining_mul()
 	_mine_saved[tile] = [tid, _mining_progress]   # 存进度: 松手/切目标后还在
 	# 防字典无限涨: 半挖后走开不回来的格子会一直留着. 超 64 条丢最早一条 (不丢当前这格).
@@ -514,20 +529,8 @@ func _update_mining(delta: float) -> void:
 		var oldest: Vector2i = _mine_saved.keys()[0]
 		if oldest != tile:
 			_mine_saved.erase(oldest)
-	# 镐 + 斧 (用户改: 斧跟镐同款): 360° 旋转动画 — 每 0.7s 重启一次
-	# 其他 (徒手等): ±75° 来回挥 — 每 0.35s 挥一次
-	_mining_swing_t -= delta
-	if _mining_swing_t <= 0.0:
-		var player_node: Node = get_parent()
-		var held: Node = null if player_node == null else player_node.get_node_or_null("HeldItem")
-		if tool_kind == "pickaxe" or tool_kind == "axe":
-			_mining_swing_t = 0.7
-			if held != null and held.has_method("play_pickaxe_attack"):
-				_start_pickaxe_spin()
-		else:
-			_mining_swing_t = 0.35
-			if held != null and held.has_method("play_swing"):
-				held.play_swing()
+	# 改变瞄准方块只改变挖掘进度，不重启正在进行的挥动。
+	_ensure_mining_swing()
 	# 通知 CrackOverlay 当前进度
 	var ratio: float = clamp(_mining_progress / _hardness(tid), 0.0, 1.0)
 	_set_crack(tile, ratio)
@@ -537,6 +540,29 @@ func _update_mining(delta: float) -> void:
 		_mine_saved.erase(tile)   # 挖完了, 清这格存档
 		_mining_target = INVALID_TILE
 		_mining_progress = 0.0
+
+
+# 挖掘声按接触节拍播放，切换目标不会在同一帧连响。数值和破坏进度不变。
+func _play_mining_contact(tile_id: int) -> void:
+	if _mining_sound_cooldown > CLOCK_EPSILON: return
+	var inv := _inventory_node()
+	var slot: Variant = inv.current_hotbar_slot() if inv != null else null
+	var item_id: String = slot.item_id if slot != null else ""
+	var ticks := {"copper_pickaxe": 15, "iron_pickaxe": 13, "silver_pickaxe": 11, "gold_pickaxe": 17}
+	_mining_sound_cooldown = float(ticks.get(item_id, 20)) / 60.0
+	SfxBank.play_tile_hit(tile_id)
+
+func _play_break_contact(tile_id: int) -> void:
+	# 最后一击刚响过时不要再叠一次破坏声；瞬间拆除仍有反馈。
+	if _mining_sound_cooldown <= CLOCK_EPSILON:
+		SfxBank.play_tile_hit(tile_id)
+		_mining_sound_cooldown = 0.08
+
+
+# 挖矿、砍树、砸墙和空挥共用冷却，跨目标/空气切换时不能抢先重播。
+func _ensure_mining_swing() -> void:
+	if _attack_cooldown <= 0.0:
+		_start_pickaxe_spin()
 
 
 func _reset_mining() -> void:
@@ -571,6 +597,7 @@ func _update_wall_mining(delta: float) -> void:
 		return
 	# 创造模式: 秒砸
 	if GameSettings != null and GameSettings.creative_mode:
+		_ensure_mining_swing()
 		_break_wall(world, tile, wid)
 		_mining_target = INVALID_TILE
 		_mining_progress = 0.0
@@ -578,15 +605,9 @@ func _update_wall_mining(delta: float) -> void:
 	if tile != _mining_target:
 		_mining_target = tile
 		_mining_progress = 0.0
-		_mining_swing_t = 0.0
+	_play_mining_contact(wid)
 	_mining_progress += _hammer_speed(_current_tool_tier()) * delta * _buff_mining_mul()
-	# 摆动: 复用镐子 360° 旋转
-	_mining_swing_t -= delta
-	if _mining_swing_t <= 0.0:
-		_mining_swing_t = 0.7
-		var held: Node = _held_item_node()
-		if held != null and held.has_method("play_pickaxe_attack"):
-			_start_pickaxe_spin()
+	_ensure_mining_swing()
 	var ratio: float = clamp(_mining_progress / WALL_HARDNESS, 0.0, 1.0)
 	_set_crack(tile, ratio)
 	if _mining_progress >= WALL_HARDNESS:
@@ -600,7 +621,7 @@ func _update_wall_mining(delta: float) -> void:
 func _break_wall(world: Node, tile: Vector2i, wid: int) -> void:
 	world._set_wall(tile.x, tile.y, Tiles.AIR)
 	Effects.spawn_block_break(tile, wid)
-	SfxBank.play("break", 0.15)
+	_play_break_contact(wid)
 	var drop_id: String = Tiles.wall_drop_item(wid)
 	if drop_id != "":
 		_spawn_drop(drop_id, tile)
@@ -641,6 +662,8 @@ func _crack_overlay() -> Node:
 	return world.get_node_or_null("CrackOverlay")
 
 
+const BuildingArt = preload("res://scripts/art/building_art.gd")
+
 func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapLayer) -> void:
 	var world: Node = terrain.get_parent()
 	# 对战房: 天然/竞技场地形挖不动, 只有玩家放下的格能挖 (挖掉后取消标记).
@@ -650,6 +673,17 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 			if not cm_pvp.is_pvp_placed(tile):
 				return
 			cm_pvp.unmark_pvp_placed(tile)
+	var furniture_base := BuildingArt.furniture_base(tid)
+	if furniture_base != -1:
+		var anchor := tile - BuildingArt.part_offset(tid)
+		var dims := BuildingArt.footprint(furniture_base)
+		for i in dims.x * dims.y:
+			var cell := anchor + BuildingArt.part_offset(furniture_base + i)
+			if terrain.get_cell_source_id(cell) == furniture_base + i:
+				world._set_tile(cell.x, cell.y, Tiles.AIR)
+		_spawn_drop("wood_chair" if furniture_base == BuildingArt.CHAIR else "wood_table", anchor)
+		SfxBank.play("break", 0.15)
+		return
 	# 砍 LOG 时若是树底 (下方是地面而不是树) → 整棵爆掉
 	if tid == Tiles.LOG and _is_tree_base(world, tile.x, tile.y):
 		_cascade_chop_tree(world, tile, tool_kind)
@@ -698,12 +732,19 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 		if "bed_spawn_point" in world:
 			world.bed_spawn_point = Vector2i(-99999, -99999)
 		tid = Tiles.BED   # 改 tid → 掉落流程出 1 个 bed (点击那格由通用流程消)
+	# 铁砧为 2×1：挖任意半边只回收一件，另一半不留残块。
+	if tid == Tiles.IRON_ANVIL or tid == Tiles.IRON_ANVIL_RIGHT:
+		var other: Vector2i = tile + Vector2i(1 if tid == Tiles.IRON_ANVIL else -1, 0)
+		var expected: int = Tiles.IRON_ANVIL_RIGHT if tid == Tiles.IRON_ANVIL else Tiles.IRON_ANVIL
+		if terrain.get_cell_source_id(other) == expected and world.has_method("_set_tile"):
+			world._set_tile(other.x, other.y, Tiles.AIR)
+		tid = Tiles.IRON_ANVIL
 	# 普通破: 单格
 	if world.has_method("_set_tile"):
 		world._set_tile(tile.x, tile.y, Tiles.AIR)
 	SkyLightGrid.invalidate_column(tile.x)
 	Effects.spawn_block_break(tile, tid)
-	SfxBank.play("break", 0.15)
+	_play_break_contact(tid)
 	var drops: Dictionary = Tiles.drops_for(tid, tool_kind)
 	for item_id in drops:
 		for _i in drops[item_id]:
@@ -728,6 +769,10 @@ func _drop_unsupported_plants_above(world: Node, tile: Vector2i, tool_kind: Stri
 	if cm == null or not world.has_method("_set_tile"):
 		return
 	var y: int = tile.y - 1
+	var above_tid: int = cm.get_tile(tile.x, y)
+	if BuildingArt.furniture_base(above_tid) != -1 or above_tid in [Tiles.IRON_ANVIL, Tiles.IRON_ANVIL_RIGHT]:
+		_finish_mine(Vector2i(tile.x, y), above_tid, "pickaxe", _terrain())
+		return
 	while _PLANT_NEEDS_GROUND.has(cm.get_tile(tile.x, y)):
 		var ptid: int = cm.get_tile(tile.x, y)
 		world._set_tile(tile.x, y, Tiles.AIR)
@@ -835,7 +880,7 @@ func _do_cascade_chop(world: Node, cm, base: Vector2i, tool_kind: String) -> voi
 			for _i in drops[item_id]:
 				_spawn_drop(item_id, p)
 	SkyLightGrid.invalidate_column(base.x)
-	SfxBank.play("break", 0.25)
+	_play_break_contact(Tiles.LOG)
 
 
 func _spawn_drop(item_id: String, tile: Vector2i) -> void:
@@ -916,6 +961,41 @@ func try_place(force_tile: Variant = null) -> bool:
 		return false
 	var def = ItemDB.get_def(slot.item_id)
 	var world: Node = terrain.get_parent()
+	if BuildingArt.furniture_base(def.placeable_tile_id) != -1:
+		var base: int = def.placeable_tile_id
+		var dims := BuildingArt.footprint(base)
+		for i in dims.x * dims.y:
+			var cell := tile + BuildingArt.part_offset(base + i)
+			if terrain.get_cell_source_id(cell) != -1 or not in_reach(cell): return false
+		for x in dims.x:
+			var ground: int = terrain.get_cell_source_id(tile + Vector2i(x, 1))
+			if not Tiles.is_solid(ground) and ground != Tiles.WOOD_PLATFORM: return false
+		for i in dims.x * dims.y:
+			var cell := tile + BuildingArt.part_offset(base + i)
+			world._set_tile(cell.x, cell.y, base + i)
+			_pvp_mark_placed(world, cell)
+		_consume_one(inv)
+		SfxBank.play("place", 0.10)
+		return true
+	if def.placeable_tile_id == Tiles.IRON_ANVIL:
+		var right: Vector2i = tile + Vector2i.RIGHT
+		if terrain.get_cell_source_id(right) != -1 or not in_reach(right):
+			return false
+		for cell in [tile, right]:
+			var floor_id: int = terrain.get_cell_source_id(cell + Vector2i.DOWN)
+			if not Tiles.is_solid(floor_id) and floor_id != Tiles.WOOD_PLATFORM:
+				return false
+			if cell.x == pt.x and cell.y >= pt.y - 2 and cell.y <= pt.y:
+				return false
+		if not world.has_method("_set_tile"):
+			return false
+		world._set_tile(tile.x, tile.y, Tiles.IRON_ANVIL)
+		world._set_tile(right.x, right.y, Tiles.IRON_ANVIL_RIGHT)
+		_pvp_mark_placed(world, tile)
+		_pvp_mark_placed(world, right)
+		_consume_one(inv)
+		SfxBank.play("place", 0.10)
+		return true
 	# 门: 3 格高, 占当前 tile + 上面 2 格. 上面 2 格必须空, 否则放不了.
 	if def.placeable_tile_id == Tiles.DOOR:
 		var mid: Vector2i = tile + Vector2i(0, -1)
@@ -954,11 +1034,11 @@ func try_place(force_tile: Variant = null) -> bool:
 		Effects.spawn_place_bounce(tile, Tiles.BED)
 		SfxBank.play("place", 0.10)
 		return true
-	# 铁锅只能叠在炉子正上方 (用户设计: "锅放在炉子上才能煮")
+	# 烹饪锅是独立工作站，不再限定必须架在熔炉上。
 	if slot.item_id == "cooking_pot":
 		var below_pot: Vector2i = tile + Vector2i(0, 1)
-		if terrain.get_cell_source_id(below_pot) != Tiles.FURNACE:
-			SfxBank.play("place", 0.05)   # 轻提示: 放不上去
+		var below_id: int = terrain.get_cell_source_id(below_pot)
+		if not Tiles.is_solid(below_id) and below_id != Tiles.WOOD_PLATFORM:
 			return false
 	# (移除 terrain.set_cell; world._set_tile 内部刷视觉 + 邻居)
 	if world.has_method("_set_tile"):
@@ -1025,6 +1105,13 @@ func _terrain() -> TileMapLayer:
 func _current_tool_kind() -> String:
 	var inv: Node = _inventory_node()
 	return "" if inv == null else inv.current_tool_kind()
+
+
+# 所有可见使用动作从同一张表读取时长，禁止按工具种类写死另一个速度。
+func _current_use_duration(fallback: float = 0.5) -> float:
+	var inv := _inventory_node()
+	var slot = inv.current_hotbar_slot() if inv != null else null
+	return UseTiming.seconds(slot.item_id if slot != null else "", fallback)
 
 
 func _current_tool_def() -> Variant:
@@ -1309,7 +1396,7 @@ func _update_eat_or_place(delta: float) -> void:
 			mana_node.current_mana = min(mana_node.MAX_MANA, mana_node.current_mana + refill)
 			if mana_node.has_signal("mana_changed"):
 				mana_node.mana_changed.emit(mana_node.current_mana, mana_node.MAX_MANA)
-			SfxBank.play("eat", 0.10)
+			SfxBank.play("drink")
 			if NetworkManager == null or not NetworkManager.combat_enabled():
 				inv.consume_current(1)   # 对战房: 药水无限
 			_stop_eat_anim()
@@ -1339,7 +1426,7 @@ func _update_eat_or_place(delta: float) -> void:
 				var buffs: Node = get_parent().get_node_or_null("PlayerBuffs")
 				if buffs != null:
 					buffs.apply(ItemDB.food_buff_kind(slot.item_id), ItemDB.food_buff_secs(slot.item_id))
-			SfxBank.play("eat", 0.10)
+			SfxBank.play("drink" if slot.item_id == "health_potion" else "eat")
 			if NetworkManager == null or not NetworkManager.combat_enabled():
 				inv.consume_current(1)   # 对战房: 食物/生命药水无限
 			_stop_eat_anim()  # 吃完一口, 下次按住会重新开始
@@ -1448,7 +1535,6 @@ func _body_action(anim: String, dur: float) -> void:
 
 
 func _play_place_anim() -> void:
-	_body_action("place", 0.22)   # 身体放置姿势 (伸手放方块)
 	var held: Node = _held_item_node()
 	if held == null or not held.has_method("play_place"):
 		return
@@ -1477,8 +1563,6 @@ func _facing_right_guess() -> bool:
 # 挥的弧度: 前方 ±45° = 总 90° 弧
 const SWEEP_ARC_HALF_DEG := 90.0  # 用户改: 半圆挥 180° (Terraria 风), 老 90° 弧
 # 镐攻击的常量
-# cooldown = spin 时长 — 一次完整旋转后才能再攻击 (用户改 0.7→1.0 同步慢)
-const PICKAXE_ATTACK_COOLDOWN := 1.0
 const PICKAXE_MOUSE_NEAR_RADIUS_MULT := 1.5  # 触发判定圆心 = 鼠标位置
 
 
@@ -1533,16 +1617,14 @@ func _pickaxe_base_damage() -> int:
 	return _base_damage_for_tier(def.tool_tier)
 
 
-# 镐攻击: 触发 360° spin. 伤害判定不再 AoE — 走 _check_pickaxe_spin_hits
+# 镐攻击: 播放完整工具挥动，走 _check_pickaxe_spin_hits 判定。
 # 每帧检查 pickaxe tip 是否碰到怪 (用户改: "怪要碰到镐子才扣血").
 func _pickaxe_attack() -> void:
-	_attack_cooldown = PICKAXE_ATTACK_COOLDOWN
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
 	_start_pickaxe_spin()
 	_pickaxe_spin_damages = true   # 这是"攻击"(鼠标对着怪不是方块), spin 才扣血
-	SfxBank.play("swing", 0.10)
 	if player.has_method("shake"):
 		player.shake(2.0)
 
@@ -1550,18 +1632,19 @@ func _pickaxe_attack() -> void:
 # 斧挥: 跟镐 _pickaxe_attack 同套路, 走 spin + collision. 但 damage_mult=0 自动
 # 让 _check_pickaxe_spin_hits 跳过扣血 (return early). 纯视觉动作.
 func _axe_swing() -> void:
-	_attack_cooldown = PICKAXE_ATTACK_COOLDOWN
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
 	_start_pickaxe_spin()
-	SfxBank.play("swing", 0.10)
 
 
-# 开始一次 360° 旋转 (动画 + 标记 spin 期 + 清空已击中表).
+# 开始一次工具挥动 (动画 + 标记命中期 + 清空已击中表)。
 # 挖矿循环和单次攻击都调这个. 期间 _physics_process 每帧检查 tip 跟怪的距离.
 # 用户改: spin 起始朝鼠标 (不再总从上). 算 mouse_angle 传给 held + 存起来给 hit 检测.
 func _start_pickaxe_spin() -> void:
+	SfxBank.play("swing")
+	_pickaxe_spin_duration = _current_use_duration(23.0 / 60.0)
+	_attack_cooldown = _pickaxe_spin_duration
 	_pickaxe_spin_damages = false   # 默认纯视觉 (挖矿石头/斧砍树时不误伤怪); _pickaxe_attack 才设 true
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
@@ -1573,10 +1656,10 @@ func _start_pickaxe_spin() -> void:
 	# 跟 held_item.play_pickaxe_attack 同公式算 start_rot
 	_pickaxe_spin_facing_right = cos(mouse_angle) >= 0.0
 	var s: float = 1.0 if _pickaxe_spin_facing_right else -1.0
-	_pickaxe_spin_start_rot = wrapf(s * (mouse_angle + PI / 2.0), -PI, PI)
+	_pickaxe_spin_start_rot = -0.65 * s
 	var held: Node = player.get_node_or_null("HeldItem")
 	if held != null and held.has_method("play_pickaxe_attack"):
-		held.play_pickaxe_attack(mouse_angle)
+		held.play_pickaxe_attack(mouse_angle, _pickaxe_spin_duration)
 	elif held != null and held.has_method("play_swing"):
 		held.play_swing()
 	_pickaxe_spin_active = true
@@ -1595,13 +1678,13 @@ func _check_pickaxe_spin_hits() -> void:
 		return
 	if not _pickaxe_spin_damages:
 		return   # 挖矿/斧 的旋转: 纯视觉, 不扣血 (修"挖石头误伤旁边怪")
-	# tip 旋转角度自己算 (跟 held_item Tween 同步 — start_rot + 360° over duration),
+	# tip 旋转角度按本次挥动时长计算，与 held_item 的 2.8 弧度轨迹一致。
 	# 不读 held.rotation — tween 在 _process 更新, _physics_process 这里读可能滞后.
-	var rot_delta: float = (_pickaxe_spin_t / PICKAXE_SPIN_DURATION) * TAU
+	var rot_delta: float = clampf(_pickaxe_spin_t / _pickaxe_spin_duration, 0.0, 1.0) * 2.8
 	var dir: float = 1.0 if _pickaxe_spin_facing_right else -1.0
 	var held_rot: float = _pickaxe_spin_start_rot + rot_delta * dir
 	# facing left 时 sprite scale.x=-1 镜像 X, tip 在世界坐标用 -held_rot 算 (等价 X 翻转)
-	var rot_for_tip: float = held_rot if _pickaxe_spin_facing_right else -held_rot
+	var rot_for_tip: float = held_rot
 	var tip_world: Vector2 = held.global_position + Vector2(0, PICKAXE_TIP_LOCAL_Y).rotated(rot_for_tip)
 	var base: int = _pickaxe_base_damage()
 	if base <= 0:
@@ -1644,11 +1727,10 @@ func _deal_enemy_damage(target: Node2D, amount: int, src: Vector2, knockback: fl
 
 
 # 攻击开始时调一次. 接下来 duration 秒内每帧 _check_sword_blade_hits 扫击中.
-func _start_sword_blade_attack(is_sweep: bool, swing_dir: Vector2, damage: int, knockback: float) -> void:
-	_body_action("swing", 0.3)   # 短剑/阔剑 挥/戳: 身体也挥一下
+func _start_sword_blade_attack(is_sweep: bool, swing_dir: Vector2, damage: int, knockback: float, duration: float = -1.0) -> void:
 	_sword_attack_active = true
 	_sword_attack_t = 0.0
-	_sword_attack_duration = SWORD_SWING_DURATION if is_sweep else SWORD_THRUST_DURATION
+	_sword_attack_duration = duration if duration > 0.0 else _current_use_duration(SWORD_SWING_DURATION if is_sweep else SWORD_THRUST_DURATION)
 	_sword_attack_is_sweep = is_sweep
 	_sword_attack_swing_dir = swing_dir
 	_sword_attack_target_angle = swing_dir.angle()
@@ -1657,8 +1739,7 @@ func _start_sword_blade_attack(is_sweep: bool, swing_dir: Vector2, damage: int, 
 	# 瞄右 half=+110°: start=base-110, 扫 +220°; 瞄左 half=-110°: start=base+110, 扫 -220° (镜像)。
 	if is_sweep:
 		var base: float = wrapf(_sword_attack_target_angle + PI / 2.0, -PI, PI)
-		var half: float = deg_to_rad(110.0) if _sword_attack_facing_right else -deg_to_rad(110.0)
-		_sword_attack_start_rot = base - half
+		_sword_attack_start_rot = -0.65 if _sword_attack_facing_right else 0.65
 	_sword_attack_damage = max(1, damage)
 	_sword_attack_knockback = knockback
 	_sword_hit_this_attack.clear()
@@ -1675,15 +1756,15 @@ func _check_sword_blade_hits() -> void:
 	var hand_x: float = SWORD_HAND_OFFSET_X if _sword_attack_facing_right else -SWORD_HAND_OFFSET_X
 	var grip_local: Vector2 = Vector2(hand_x, SWORD_HAND_OFFSET_Y)
 	if _sword_attack_is_sweep:
-		# 半圆挥: rotation 从 start_a 线性插值过 ±220° over SWORD_SWING_DURATION.
+		# 挥动角度按本次动作的实际时长插值。
 		# 瞄左扫向反过来 (-220°), 跟视觉/起手 half 一致 → 命中弧线跟看到的一致, 不是"挑"。
-		var progress: float = clamp(t / SWORD_SWING_DURATION, 0.0, 1.0)
-		var total: float = deg_to_rad(220.0) if _sword_attack_facing_right else -deg_to_rad(220.0)
+		var progress: float = clamp(t / _sword_attack_duration, 0.0, 1.0)
+		var total: float = 2.8 if _sword_attack_facing_right else -2.8
 		blade_rot = _sword_attack_start_rot + total * progress
 	else:
 		# 戳: rotation 静止指向鼠标 (target_angle + PI/2). position 三段式动.
 		blade_rot = wrapf(_sword_attack_target_angle + PI / 2.0, -PI, PI)
-		var progress: float = clamp(t / SWORD_THRUST_DURATION, 0.0, 1.0)
+		var progress: float = clamp(t / _sword_attack_duration, 0.0, 1.0)
 		var thrust_amount: float = 0.0
 		if progress <= SWORD_THRUST_EXTEND_END:
 			# 0..0.20 突出: linear (近似 EASE_OUT)
@@ -1806,7 +1887,7 @@ const THRUST_HALF_WIDTH := 4.5       # 戳带半宽 6px (总宽 12), 鼠标偏�
 # 戳: 直线突刺, 范围远 / 伤害 0.8x / 只命中最近 1 个目标
 func _thrust_sword() -> void:
 	var mdef: Variant = _current_tool_def()
-	_attack_cooldown = float(mdef.get("melee_cooldown", THRUST_COOLDOWN)) if mdef != null else THRUST_COOLDOWN
+	_attack_cooldown = _current_use_duration(float(mdef.get("melee_cooldown", THRUST_COOLDOWN)) if mdef != null else THRUST_COOLDOWN)
 	_sword_attack_reach_bonus = float(mdef.get("melee_reach_bonus", 0.0)) if mdef != null else 0.0   # 长矛戳更远
 	_set_sword_special_fields(mdef)
 	var player: Node2D = get_parent() as Node2D
@@ -1823,10 +1904,10 @@ func _thrust_sword() -> void:
 	var held: Node = player.get_node_or_null("HeldItem")
 	var lunge_px: float = SWORD_THRUST_OFFSET + _sword_attack_reach_bonus * 0.45   # 矛 reach32 → ~22px
 	if held != null and held.has_method("play_thrust"):
-		held.play_thrust(swing_dir.angle(), lunge_px)
+		held.play_thrust(swing_dir.angle(), lunge_px, _attack_cooldown)
 	elif held != null and held.has_method("play_swing"):
 		held.play_swing()
-	# 用户改: 删剑挥/戳音效 (只留命中怪的打击音, 见 effects.spawn_damage_number)
+	SfxBank.play("swing")
 	# 伤害 = sword_damage * damage_mult * 0.8
 	var base: int = _sword_damage()
 	if base <= 0:
@@ -1838,13 +1919,13 @@ func _thrust_sword() -> void:
 	# 用户改: 不再瞬时矩形 AoE, 改成 SWORD_THRUST_DURATION 内每帧扫剑身线段命中.
 	# 戳动画 held.position 三段式 (extend + dwell + retract), 我们 sync 算位置打怪.
 	var tkb: float = float(mdef.get("melee_knockback", -1.0)) if mdef != null else -1.0
-	_start_sword_blade_attack(false, swing_dir, damage, tkb if tkb >= 0.0 else _thrust_knockback())
+	_start_sword_blade_attack(false, swing_dir, damage, tkb if tkb >= 0.0 else _thrust_knockback(), _attack_cooldown)
 	# 用户改: 删剑攻击的屏幕抖动
 
 
 func _sweep_sword() -> void:
 	var mdef: Variant = _current_tool_def()
-	_attack_cooldown = float(mdef.get("melee_cooldown", SWORD_COOLDOWN)) if mdef != null else SWORD_COOLDOWN
+	_attack_cooldown = _current_use_duration(float(mdef.get("melee_cooldown", SWORD_COOLDOWN)) if mdef != null else SWORD_COOLDOWN)
 	_sword_attack_reach_bonus = float(mdef.get("melee_reach_bonus", 0.0)) if mdef != null else 0.0   # 链锤/战锤抡更大
 	_set_sword_special_fields(mdef)
 	# 赤霄: 连击越高, 这次挥的攻击间隔越短 (越打越快, 上限减 40%)
@@ -1865,20 +1946,20 @@ func _sweep_sword() -> void:
 	# 手持物品挥摆动画 (角度跟随鼠标). 双刀(swing_fast): 挥快+左右交替, 跟它 0.18s 间隔对齐, 不抽搐.
 	var held: Node = player.get_node_or_null("HeldItem")
 	var fast_swing: bool = mdef != null and bool(mdef.get("swing_fast", false))
-	var swing_dur: float = float(mdef.get("melee_cooldown", 0.5)) if fast_swing else 0.5
+	var swing_dur: float = _attack_cooldown
 	if held != null:
 		if held.has_method("play_swing_directional"):
 			held.play_swing_directional(swing_dir.angle(), swing_dur, fast_swing)
 		elif held.has_method("play_swing"):
 			held.play_swing()
-	# 用户改: 删剑挥/戳音效 (只留命中怪的打击音)
+	SfxBank.play("swing")
 	var damage: int = _effective_sword_damage()
 	if damage <= 0:
 		return
 	# 用户改: 不再瞬时弧 AoE, 改成 SWORD_SWING_DURATION 内每帧扫剑身线段命中.
 	# 挥半圆 180° rotation, 剑尖按 progress 扫弧 — 实际碰才扣血.
 	var skb: float = float(mdef.get("melee_knockback", -1.0)) if mdef != null else -1.0
-	_start_sword_blade_attack(true, swing_dir, damage, skb if skb >= 0.0 else _sweep_knockback())
+	_start_sword_blade_attack(true, swing_dir, damage, skb if skb >= 0.0 else _sweep_knockback(), _attack_cooldown)
 	# 代号神兵: 挥剑时额外射一发元素弹 (蓝月/火神/绿叶/冰雪剑/天陨)
 	if mdef != null and bool(mdef.get("swing_proj", false)):
 		_fire_swing_projectile(mdef, player, swing_dir)
@@ -2170,7 +2251,7 @@ func _try_fire_bow() -> void:
 	if not consumed:
 		# TODO: 加"没箭"音效
 		return
-	_attack_cooldown = BOW_COOLDOWN
+	_attack_cooldown = _current_use_duration(BOW_COOLDOWN)
 	# spawn 箭
 	var parent: Node2D = get_parent() as Node2D
 	if parent == null:
@@ -2189,10 +2270,10 @@ func _try_fire_bow() -> void:
 	# 让手里的弓转向鼠标 (修 bug: 之前箭朝鼠标飞, 但弓一直竖着不转 = 看着没瞄准)
 	var held: Node = _held_item_node()
 	if held != null and held.has_method("play_bow_shoot"):
-		held.play_bow_shoot((target - parent.global_position).angle())
+		held.play_bow_shoot((target - parent.global_position).angle(), _attack_cooldown)
 	if NetworkManager != null and NetworkManager.connected():
 		NetworkManager.send_projectile("arrow", start.x, start.y, target.x, target.y)
-	SfxBank.play("break", 0.10)  # 暂用破方块声当弓弦声; 以后加专属
+	SfxBank.play("bow")
 
 
 # 枪射子弹: 找 inventory 里第 1 个 bullet → 消耗 1 → spawn Bullet 朝鼠标直飞.
@@ -2200,8 +2281,6 @@ func _try_fire_bow() -> void:
 # 没子弹反馈: 响一声空枪"哔" + 头顶飘"没子弹了" + 节流 0.4s (防按住时每帧刷). 用户要求 (枪没子弹别静默)。
 func _no_ammo_feedback() -> void:
 	_attack_cooldown = 0.4
-	if SfxBank != null:
-		SfxBank.play("gun_empty", 0.05)
 	var parent: Node = get_parent()
 	var fp: Node = get_tree().get_first_node_in_group("floating_prompt")
 	if fp != null and fp.has_method("show_prompt") and parent is Node2D:
@@ -2325,7 +2404,7 @@ func _try_cast_staff() -> void:
 				Effects.spawn_spell_impact("sparkle", player.global_position + Vector2(0, -8), Color8(120, 230, 110))
 			if Effects.has_method("spawn_damage_number"):
 				Effects.spawn_damage_number(player.global_position + Vector2(0, -18), int(def.get("heal_amount")), Color8(120, 230, 110))
-		SfxBank.play("pickup", 0.1)
+		SfxBank.play("crystal_use")
 		return
 	# 护盾法杖: 不发弹, 给自己几秒无敌护盾 (mana 已扣).
 	if def.has("shield_sec"):
@@ -2334,7 +2413,7 @@ func _try_cast_staff() -> void:
 			hp2.grant_shield(float(def.get("shield_sec")))
 		if Effects != null and Effects.has_method("spawn_spell_impact"):
 			Effects.spawn_spell_impact("sparkle", player.global_position + Vector2(0, -8), Color8(120, 180, 255))
-		SfxBank.play("pickup", 0.12)
+		SfxBank.play("cast_shadow")
 		return
 	var start: Vector2 = player.global_position + Vector2(0, -8)
 	var target: Vector2 = mouse_world_override if mouse_world_override != null else player.get_global_mouse_position()
@@ -2369,7 +2448,7 @@ func _try_cast_staff() -> void:
 	if NetworkManager != null and NetworkManager.connected():
 		# kind 带上元素 (fireball_nature/ice/fire), 对端按后缀还原弹色
 		NetworkManager.send_projectile("fireball_" + element, start.x, start.y, target.x, target.y)
-	SfxBank.play("cast", 0.12)
+	SfxBank.play("cast_fire" if element in ["fire", "ice"] else "cast")
 
 
 # 从 def 的 gun_*/bullet_* 字段构建 bullet opts (枪 + 新法杖共用; 字段名沿用 gun_*,
@@ -2444,7 +2523,7 @@ func _cast_bullet_spell(def: Variant, start: Vector2, target: Vector2, parent: N
 	# 施法时法杖头闪一下招牌形状 (跟枪口火光同套路; 用户: 法杖头没闪光)
 	if Effects != null and Effects.has_method("spawn_muzzle_flash"):
 		Effects.spawn_muzzle_flash(start + base_dir * 8.0, base_dir, _spell_fx_color(vis), _muzzle_fx_kind(def), 1.0)
-	SfxBank.play("cast", 0.12)
+	SfxBank.play("cast_water" if vis == "water" else ("cast_fire" if vis in ["fire", "frost"] else "cast"))
 
 
 # 枪系 → 枪口招牌形状 (照法杖招牌特效思路, 每个枪系开火形状不同, 不再全是粒子)
@@ -2530,7 +2609,7 @@ func _summon_friendly() -> void:
 	if Effects != null and Effects.has_method("spawn_spell_impact"):
 		var summon_col: Color = Color8(255, 230, 120) if summon_kind == "bird" else Color8(190, 160, 235)
 		Effects.spawn_spell_impact("sparkle", minion.global_position, summon_col)
-	SfxBank.play("place", 0.15)
+	SfxBank.play("cast_shadow")
 
 
 # 地裂法杖: 从瞄准点向下找地面, 在地表生成一道裂缝 (earth_crack). 已扣 mana.
@@ -2557,7 +2636,7 @@ func _cast_ground_crack(def: Variant, _start: Vector2, target: Vector2, player: 
 	crack.global_position = crack_pos
 	if crack.has_method("setup"):
 		crack.setup(int(round(float(def.get("spell_damage", 6)) * _tool_damage_mult())), player)
-	SfxBank.play("break", 0.18)
+	SfxBank.play("cast")
 	return true
 
 
@@ -2582,7 +2661,7 @@ func try_use_summon_item() -> bool:
 	if not world.spawn_boss(boss_id, spawn_pos):
 		return false
 	inv.consume_current(1)
-	SfxBank.play("break", 0.2)
+	SfxBank.play("boss_roar")
 	return true
 
 
@@ -2606,7 +2685,7 @@ func _try_throw_slimeball() -> void:
 	entities.add_child(ball)
 	var dmg: int = int(round(float(SLIMEBALL_DAMAGE) * _tool_damage_mult()))
 	ball.setup(start, target, dmg, parent)
-	SfxBank.play("break", 0.10)
+	SfxBank.play("swing")
 
 
 # 投掷武器: 手里剑/炸弹走 bullet (复用枪/法杖那套机制+特效); 回旋镖走自定义 boomerang。
@@ -2630,14 +2709,14 @@ func _try_throw_weapon() -> void:
 		var bm = BoomerangScene.instantiate()
 		entities.add_child(bm)
 		bm.setup(start, target, dmg, player)
-		SfxBank.play("break", 0.10)
+		SfxBank.play("swing")
 		return
 	if tkind == "shuriken":
 		# 手里剑: 物理金属飞镖 (旋转图标 + 穿透 + 小火星), 不走魔法弹 → 没星星贴图/没魔法拖尾 (用户报)
 		var shk = ShurikenScene.instantiate()
 		entities.add_child(shk)
 		shk.setup(start, target, dmg, player)
-		SfxBank.play("break", 0.10)
+		SfxBank.play("swing")
 		return
 	# 手里剑/炸弹: 复用 bullet (炸弹靠 gun_gravity+gun_explode_*, 手里剑靠 gun_pierce) + 命中招牌特效
 	var opts: Dictionary = _proj_opts_from_def(def)
@@ -2653,7 +2732,7 @@ func _try_throw_weapon() -> void:
 	b.setup(start, aim, dmg, player, speed, opts)
 	if NetworkManager != null and NetworkManager.connected():
 		NetworkManager.send_projectile("bullet", start.x, start.y, aim.x, aim.y)
-	SfxBank.play("break", 0.10)
+	SfxBank.play("swing")
 
 
 func _consume_arrow_fallback(inv: Node) -> bool:
@@ -2678,7 +2757,7 @@ func _trigger_mimic_trap(tile: Vector2i, world: Node) -> void:
 	# 2) 爆炸 FX + 音效
 	var center := Vector2(tile.x * TILE_SIZE + TILE_SIZE / 2.0, tile.y * TILE_SIZE + TILE_SIZE / 2.0)
 	Effects.spawn_explosion(center)
-	SfxBank.play("break", 0.35)  # 暂用破方块声 (响一点); 以后可加专属爆炸 SFX
+	SfxBank.play("explosion")
 	# 3) 玩家在范围内扣血 (玩家既然右键了, 肯定在 reach 内)
 	var player: Node = get_parent()
 	if player != null:
@@ -2701,7 +2780,7 @@ func _consume_crystal_tile(tile: Vector2i, terrain: TileMapLayer, color: Color =
 	# "+20 MAX" 飘字 + 爆炸粒子
 	Effects.spawn_damage_number(center + Vector2(0, -10), 20, color)
 	Effects.spawn_explosion(center)
-	SfxBank.play("pickup", 0.25)  # 暂用拾取 SFX 表示"获得"
+	SfxBank.play("crystal_use")
 
 
 # buff 倍数: 没 PlayerBuffs 时返回 1.0 (挖矿速度不受影响).

@@ -205,14 +205,14 @@ func apply_to_player(player: Node) -> void:
 			card_has_items = true
 			break
 	if inv_node != null and inv_node.inventory != null and card_has_items:
-		inv_node.inventory.slots = current.inventory_slots.duplicate(true)
+		inv_node.inventory.restore(current.inventory_slots)
 		ItemDB.canon_slots(inv_node.inventory.slots)   # 改名物品兼容 (弹跳枪→史莱姆冲锋枪)
 		if "hotbar_selected" in inv_node:
-			inv_node.hotbar_selected = current.hotbar_selection
+			inv_node.hotbar_selected = clampi(current.hotbar_selection, 0, Inventory.HOTBAR_SIZE - 1)
 		if inv_node.has_signal("inventory_changed"):
 			inv_node.inventory_changed.emit()
 		if inv_node.has_signal("hotbar_selection_changed"):
-			inv_node.hotbar_selection_changed.emit(current.hotbar_selection)
+			inv_node.hotbar_selection_changed.emit(inv_node.hotbar_selected)
 		if inv_node.has_method("set_armor"):
 			for pair in [["helmet", current.armor_helmet_id], ["chest", current.armor_chest_id], ["pants", current.armor_pants_id]]:
 				if pair[1] != "":

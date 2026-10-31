@@ -132,6 +132,12 @@ const WATER_SWAMP_L4 := 111
 const WATER_SWAMP_L5 := 112
 const WATER_SWAMP_L6 := 113
 const WATER_SWAMP_L7 := 114
+const IRON_ANVIL := 115
+const IRON_ANVIL_RIGHT := 116
+const GLASS_WALL := 117
+const WOOD_BEAM_WALL := 118
+const WOOD_CHAIR := 119
+const WOOD_TABLE := 121
 
 # display_water_tile 用: 档位(1-8) → tile id. 索引 0 占位. 普通水 id 不连续故显式列。
 const _GENERIC_LV := [0, WATER_L1, WATER_L2, WATER_L3, WATER_L4, WATER_L5, WATER_L6, WATER_L7, WATER]
@@ -143,6 +149,21 @@ const _SWAMP_LV   := [0, WATER_SWAMP_L1, WATER_SWAMP_L2, WATER_SWAMP_L3, WATER_S
 # tool: "pickaxe"/"axe"/"sword"/"" (空 = 徒手)
 # tier: -1 = 该工具挖不动；0 = 徒手也行；1 = 需 1 级 (木质)
 const _PROPS := {
+	130: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": -1, "sword": -1}, "drops": [["clay", 100, 1, 1]]},
+	129: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": -1, "sword": -1}, "drops": [["red_brick", 100, 1, 1]]},
+	128: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": -1, "sword": -1}, "drops": [["gray_brick", 100, 1, 1]]},
+	127: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": -1, "sword": -1}, "drops": [["glass", 100, 1, 1]]},
+	117: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": [["glass_wall", 100, 1, 1]]},
+	118: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": [["wood_beam_wall", 100, 1, 1]]},
+	119: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": [["wood_chair", 100, 1, 1]]},
+	120: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": []},
+	121: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": [["wood_table", 100, 1, 1]]},
+	122: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": []},
+	123: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": []},
+	124: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": []},
+	125: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": []},
+	126: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": -1}, "drops": []},
+
 	AIR: {
 		"solid": false, "mineable": false,
 		"tool_tiers": {},
@@ -196,6 +217,16 @@ const _PROPS := {
 		"solid": true, "mineable": true,
 		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
 		"drops": [["furnace", 100, 1, 1]],
+	},
+	IRON_ANVIL: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"drops": [["iron_anvil", 100, 1, 1]],
+	},
+	IRON_ANVIL_RIGHT: {
+		"solid": false, "mineable": true,
+		"tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1},
+		"drops": [],
 	},
 	COOKING_POT: {
 		"solid": true, "mineable": true,
@@ -643,7 +674,7 @@ const _PROPS := {
 	PLANT_GRASS: {
 		"solid": false, "mineable": true,
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
-		"drops": [["wheat_seed", 20, 1, 1], ["rice_seed", 15, 1, 1]],
+		"drops": [],  # 普通草不再掉自创农作物种子。
 	},
 }
 
@@ -682,11 +713,12 @@ func is_submersible_plant(_tile_id: int) -> bool:
 # 是不是背景墙 tile (4 种). 加新墙改这里.
 func is_wall_tile(tile_id: int) -> bool:
 	return tile_id == GRASS_WALL or tile_id == DIRT_WALL \
-			or tile_id == STONE_WALL or tile_id == WOOD_WALL
+			or tile_id == STONE_WALL or tile_id == WOOD_WALL or tile_id in [GLASS_WALL, WOOD_BEAM_WALL]
 
 
 # 砸墙掉落的物品 id (锤子破墙用). 无对应返 "".
 const _WALL_DROP := {
+	GLASS_WALL: "glass_wall", WOOD_BEAM_WALL: "wood_beam_wall",
 	GRASS_WALL: "grass_wall", DIRT_WALL: "dirt_wall",
 	STONE_WALL: "stone_wall", WOOD_WALL: "wood_wall",
 }
@@ -770,6 +802,11 @@ func drops_for(tile_id: int, _tool: String) -> Dictionary:
 	var result := {}
 	for entry in _PROPS[tile_id].drops:
 		var item_id: String = entry[0]
+		# 树直接给可建造的木材；不再要求原木转四块木板。
+		if item_id == "log":
+			item_id = "planks"
+		if not preload("res://scripts/items/original_content.gd").is_available(item_id):
+			continue
 		var weight: int = entry[1]
 		var roll := randi() % 100
 		if roll < weight:

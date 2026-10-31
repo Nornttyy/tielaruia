@@ -25,6 +25,7 @@ const _ChunkClass = preload("res://scripts/world/chunk.gd")   # 读档后算玩�
 @onready var _pause_menu: CanvasLayer = $PauseMenu
 @onready var _death_screen: CanvasLayer = $DeathScreen
 
+var _art_preview := false
 var _state: String = "menu"
 var _game_nodes: Array[Node] = []
 # 自动存档: 最多每 AUTO_SAVE_INTERVAL 秒, 且只在"有变化"时才真存 (走路啥都没变 → 不存 → 不卡)。
@@ -63,6 +64,7 @@ func _ready() -> void:
 	if NetworkManager != null and NetworkManager.has_signal("kicked_by_host"):
 		NetworkManager.kicked_by_host.connect(_on_kicked_by_host)
 	_show_menu_state()
+	if "--art-preview" in OS.get_cmdline_user_args(): _start_art_preview.call_deferred()
 
 
 func _show_menu_state() -> void:
@@ -72,7 +74,7 @@ func _show_menu_state() -> void:
 	Input.set_custom_mouse_cursor(CursorArt.arrow(), Input.CURSOR_ARROW, Vector2.ZERO)
 	# 主菜单永远放自己的音乐(day), 不被刚才游戏里的夜/洞穴音乐带跑.
 	# (游戏里 player_controller 会按昼夜/洞穴切 context; 回菜单要复位, 否则菜单还放着洞穴 drone)
-	MusicBank.set_context("day")
+	MusicBank.set_context("title")
 	if _main_menu != null and is_instance_valid(_main_menu):
 		_main_menu.visible = true
 		# 复位"新游戏"按钮的淡出 tween (不然回主菜单是黑屏 + 看不见按钮)
@@ -83,6 +85,10 @@ func _show_menu_state() -> void:
 
 
 func _start_game(seed_or_opts = 0) -> void:
+	if seed_or_opts is Dictionary and seed_or_opts.get("art_preview", false):
+		_start_art_preview()
+		return
+	_art_preview = false
 	# 主菜单 "开始游戏" → 走 LoadingScreen 异步加载流程.
 	# - opts (Dictionary): 主菜单新游戏面板传 {world_seed, world_name, difficulty}
 	# - seed (int): 仅老 API 兼容 (boot_to_game 不走这里; 走 _start_game_sync)
@@ -248,7 +254,7 @@ func _run_async_load(world_seed: int) -> void:
 func _start_game_sync(world_seed: int) -> void:
 	GameSettings.creative_mode = false   # boot/测试默认生存 (测试要创造自己设)
 	# 角色系统: 同 _start_game, 兜底选中角色。GUT 测试跳过 (防 current 跨测试污染)。
-	if not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL:
+	if not _art_preview and not _running_under_gut() and typeof(CharacterManager) != TYPE_NIL:
 		CharacterManager.ensure_current()
 	var w = WorldScene.instantiate()
 	w.name = "World"
@@ -300,6 +306,7 @@ func _start_game_sync(world_seed: int) -> void:
 
 # 实时存档: 每 AUTO_SAVE_INTERVAL 秒自动保存. 进游戏时启动 Timer.
 func _start_autosave() -> void:
+	if _art_preview: return
 	# GUT 测试环境不开自动存档: 全量回归里十几个 booting-game 测试各带一个 1s 定时存档,
 	# 会跟 test_save_* 抢存档文件 → 偶发 chunk0 丢 / 存档计数对不上. 真实游戏+网页版照常.
 	if _running_under_gut():
@@ -337,6 +344,7 @@ func _stop_autosave() -> void:
 # 存世界 + 存当前角色卡 (玩家状态)。autosave / 退出 / F5 都走这。
 # 复用 CharacterManager.save_current_from_player 的就绪护栏 (inventory 未就绪不写, 防丢三件套)。
 func _save_all() -> void:
+	if _art_preview: return
 	# 联机局绝不存档: 生存房/对战房/加入的世界 + 物品都不写回单机存档 (不污染你的角色/世界)。
 	if _is_multiplayer:
 		return
@@ -500,14 +508,14 @@ func _apply_save_data(data: Resource) -> void:
 			mn.mana_changed.emit(mn.current_mana, mn.MAX_MANA)
 	var inv_node: Node = player.get_node_or_null("PlayerInventory")
 	if inv_node != null and inv_node.inventory != null:
-		inv_node.inventory.slots = data.inventory_slots.duplicate()
+		inv_node.inventory.restore(data.inventory_slots)
 		ItemDB.canon_slots(inv_node.inventory.slots)   # 改名物品兼容 (弹跳枪→史莱姆冲锋枪)
 		if "hotbar_selected" in inv_node:
-			inv_node.hotbar_selected = data.hotbar_selection
+			inv_node.hotbar_selected = clampi(data.hotbar_selection, 0, Inventory.HOTBAR_SIZE - 1)
 		if inv_node.has_signal("inventory_changed"):
 			inv_node.inventory_changed.emit()
 		if inv_node.has_signal("hotbar_selection_changed"):
-			inv_node.hotbar_selection_changed.emit(data.hotbar_selection)
+			inv_node.hotbar_selection_changed.emit(inv_node.hotbar_selected)
 		# 盔甲槽 (v3): 还原 3 件装备. 老存档没该字段 → 默认 "" 跳过.
 		if data.version >= 3 and inv_node.has_method("set_armor"):
 			for pair in [["helmet", data.armor_helmet_id], ["chest", data.armor_chest_id], ["pants", data.armor_pants_id]]:
@@ -524,9 +532,8 @@ func _apply_save_data(data: Resource) -> void:
 				break
 		if all_empty:
 			push_warning("加载后背包全空 → 重新发起步包")
-			inv_node.pickup("wood_pickaxe", 1)
-			inv_node.pickup("wood_axe", 1)
-			inv_node.pickup("wood_sword", 1)
+			for starter_id in preload("res://scripts/items/original_content.gd").STARTER_ITEMS:
+				inv_node.pickup(starter_id, 1)
 			if inv_node.has_signal("inventory_changed"):
 				inv_node.inventory_changed.emit()
 	# 角色系统: 玩家状态 (血量/魔力/背包/盔甲) 权威来源 = 当前角色卡, 覆盖上面从世界存档
@@ -685,9 +692,8 @@ func _grant_starter_inventory(player: Node) -> void:
 	if NetworkManager != null and NetworkManager.room_mode == "pvp":
 		_grant_pvp_loadout(inv_node)
 		return
-	inv_node.pickup("wood_pickaxe", 1)
-	inv_node.pickup("wood_axe", 1)
-	inv_node.pickup("wood_sword", 1)
+	for starter_id in preload("res://scripts/items/original_content.gd").STARTER_ITEMS:
+		inv_node.pickup(starter_id, 1)
 
 
 # 对战房开局包: 剑 + 弓 + 一叠箭 + 方块 + 穿上一套铁甲
@@ -797,6 +803,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		_save_all()
 		get_viewport().set_input_as_handled()
 		return
+	if event.is_action_pressed("ui_cancel_crafting") and _state == "game" and not _death_screen.visible:
+		var dialogue := get_tree().get_first_node_in_group("dialogue_box")
+		if dialogue != null and dialogue.visible:
+			return
+		var crafting := get_tree().get_first_node_in_group("crafting_panel")
+		if crafting != null:
+			if crafting.is_open():
+				crafting.close()
+			else:
+				crafting.open(3 if crafting._station_available("workbench") else 2)
+			get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_pause") and _state == "game":
 		if _death_screen.visible:
 			return
@@ -806,3 +824,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		_pause_menu.toggle()
 		get_viewport().set_input_as_handled()
+
+
+func _start_art_preview() -> void:
+	if _state == "game": return
+	_art_preview = true
+	_is_multiplayer = false
+	GameSettings.current_world_size = 0
+	GameSettings.current_world_name = "建筑美术预览"
+	GameSettings.creative_mode = true
+	TimeOfDay.time = 0.35
+	_main_menu.visible = false
+	_state = "game"
+	_start_game_sync(42)
+	GameSettings.creative_mode = false
+	TimeOfDay.time_multiplier = 0.0
+	preload("res://scripts/world/building_preview.gd").apply(world)

@@ -31,6 +31,7 @@ var _nav = MobNav.new()   # 寻路跟随器
 
 
 func _ready() -> void:
+	add_child(preload("res://scripts/audio/creature_voice.gd").new())
 	# 难度缩放放在最前面: 测试用 .new() 直造时没 sprite 子节点, 但 max_health 仍要正确.
 	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
@@ -136,6 +137,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
 	Effects.spawn_damage_number(global_position + Vector2(0, -8), actual_loss)
+	if current_health > 0: SfxBank.play_creature("skeleton", global_position, false)
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var to_self: Vector2 = global_position - source_pos
 		var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
@@ -148,18 +150,22 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 
 
 func _die() -> void:
+	if _is_dying: return
+	SfxBank.play_creature("skeleton", global_position, true)
 	_is_dying = true
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
 		NetworkManager.send_entity_die(NetworkManager.entity_id_for(self))
-	# 必掉 1-2 bone + 30% raw_meat
-	for _i in randi_range(1, 2):
-		_spawn_drop("bone")
-	if randf() < 0.30:
-		_spawn_drop("raw_meat")
+	# 普通骷髅提供钩子（4%）与骨剑（0.5%），不再掉生肉。
+	if randf() < 0.04:
+		_spawn_drop("hook")
+	if randf() < 0.005:
+		_spawn_drop("bone_sword")
 	queue_free()
 
 
 func _spawn_drop(item_id: String) -> void:
+	if not ItemDB.is_available(item_id):
+		return  # 只拦截新战利品，不影响旧背包/箱子里的物品。
 	var drop = ItemDropScene.instantiate()
 	drop.item_id = item_id
 	drop.count = 1

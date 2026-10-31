@@ -1,4 +1,4 @@
-# 用户报: 没子弹的枪开火"完全没反应" (以为枪坏). 修: 没子弹时哔一声 + 飘提示 + 进短冷却 (不静默)。
+# 用户报: 没子弹的枪开火"完全没反应" (以为枪坏). 修: 没子弹时飘提示 + 进短冷却 (不静默)。
 extends GutTest
 const MainScene = preload("res://scenes/main.tscn")
 
@@ -40,5 +40,5 @@ func test_with_ammo_still_fires():
 	await wait_frames(1)
 	assert_gt(c.world.entities_root.get_child_count(), before, "有子弹: 正常开火出弹")
 
-func test_gun_empty_sound_exists():
-	assert_true(SfxBank.has_sound("gun_empty"), "空枪哔音效该存在")
+func test_empty_gun_does_not_invent_a_beep():
+	assert_false(SfxBank.has_sound("gun_empty"), "原版空弹药不叠加自创哔声，保留文字提示")

@@ -9,6 +9,8 @@ extends RefCounted
 # (或没 requires 的). 让"三文鱼"在锅边出烤鱼、在菜板边出鱼片, 不再永远第一个赢.
 static func find_match(grid: Array, available_stations = null) -> Variant:
 	for r in RecipeDB.all_recipes():
+		if r.has("ingredients"):
+			continue  # 数量配方只能从背包合成列表制作，旧格子不参与。
 		# 工作站过滤: 配方要求某工作站, 但玩家身边没有 → 跳过
 		if available_stations != null:
 			var req: String = r.get("requires", "")

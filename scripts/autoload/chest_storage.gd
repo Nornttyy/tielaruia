@@ -1,14 +1,14 @@
-# 全局箱子存储 (autoload). tile 坐标 (Vector2i) → 24 格物品槽数组.
+# 全局箱子存储 (autoload). tile 坐标 (Vector2i) → 40 格物品槽数组.
 # 槽格式: null (空) 或 {"item_id": String, "count": int}, 跟 player_inventory 一致.
 # 存档时 SaveManager 调 dump() / restore() 持久化.
 extends Node
 
-const SLOTS_PER_CHEST := 24
+const SLOTS_PER_CHEST := 40
 
-# 代号神兵: 不能合成的稀有武器, 只从钻石/阴影宝箱里掉. 加新神兵往这里加 id 即可.
+# 旧战利品表，仅保留作迁移参考；不再用于新宝箱。
 const SPECIAL_WEAPONS := ["blue_moon", "fire_god", "leaf_blade", "frost_blade", "skyfall_blade", "starfall_blade", "soul_eater", "void_blade", "magnet_blade", "echo_blade", "crimson_blade", "thunder_flail", "inferno_flail", "abyss_flail", "titan_flail", "frost_flail", "flame_flail", "leaf_flail"]
 
-# tile_coord (Vector2i) → Array[24] of slot dicts
+# tile_coord (Vector2i) → Array[40] of slot dicts
 var _chests: Dictionary = {}
 
 # 矿洞宝箱: 哪些位置已经被填过战利品 (防 chunk 重载再填一次, 让玩家拿光后还能复活).
@@ -24,6 +24,8 @@ func get_slots(tile_coord: Vector2i) -> Array:
 		for i in SLOTS_PER_CHEST:
 			arr[i] = null
 		_chests[tile_coord] = arr
+	if _chests[tile_coord].size() < SLOTS_PER_CHEST:
+		_chests[tile_coord].resize(SLOTS_PER_CHEST)
 	return _chests[tile_coord]
 
 
@@ -51,11 +53,8 @@ func clear(tile_coord: Vector2i) -> Array:
 
 # 矿洞宝箱首次填战利品. 同位置只填一次 (用 _treasure_marked 标记),
 # 玩家拿光后或砸了空箱子, 即便 chunk 重载也不会再填.
-# 战利品 4 层 (按 tile_id 选, 与 world_generator 选 tile tier 一致):
-#   木宝箱 (CHEST): 火把+食物+铜锡+木板 → 早期入门
-#   金宝箱 (GOLD_CHEST): 火把+食物+铁/煤+铜锡锭 → 中期升级
-#   钻石宝箱 (DIAMOND_CHEST): 火把+食物+金/钻/银+金锭 → 深矿豪华
-#   阴影宝箱 (SHADOW_CHEST): 地狱专属, 黑曜石+地狱石+火果+银金锭+大量火把
+# 第一批使用原版中存在的探索补给，尚未补全各箱子的原版独占奖励。
+# 钻石箱 ID 仅用于旧档兼容，新生成的底图已改为金箱。
 # tile_id 没传时, 兼容回退到按 tile.y 判 (老 caller).
 func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -> void:
 	if _treasure_marked.has(tile):
@@ -81,93 +80,17 @@ func try_populate_treasure(tile: Vector2i, world_seed: int, tile_id: int = -1) -
 		# 老 caller 兼容: 按 y 判
 		if tile.y >= 100: tier = 2
 		elif tile.y >= 75: tier = 1
-	# 三层都有: 火把 + 熟肉. 数量按层翻倍.
-	var torch_min: int = 5
-	var torch_max: int = 12
-	var meat_min: int = 1
-	var meat_max: int = 3
-	if tier == 3:
-		torch_min = 15; torch_max = 30; meat_min = 3; meat_max = 6
-	elif tier == 2:
-		torch_min = 10; torch_max = 20; meat_min = 2; meat_max = 5
-	elif tier == 1:
-		torch_min = 8; torch_max = 16; meat_min = 2; meat_max = 4
-	loot[0] = {"item_id": "torch", "count": rng.randi_range(torch_min, torch_max)}
-	loot[1] = {"item_id": "cooked_meat", "count": rng.randi_range(meat_min, meat_max)}
-	var slot_idx: int = 2
-	if tier == 3:
-		# 阴影层 (地狱): 黑曜石 + 地狱石 + 火果 + 钻石 + 银金锭. 最豪华.
-		loot[slot_idx] = {"item_id": "obsidian", "count": rng.randi_range(5, 12)}; slot_idx += 1
-		loot[slot_idx] = {"item_id": "hell_stone", "count": rng.randi_range(8, 18)}; slot_idx += 1
-		loot[slot_idx] = {"item_id": "hell_fruit", "count": rng.randi_range(2, 5)}; slot_idx += 1
-		if rng.randf() < 0.8:
-			loot[slot_idx] = {"item_id": "diamond", "count": rng.randi_range(2, 4)}; slot_idx += 1
-		if rng.randf() < 0.6:
-			loot[slot_idx] = {"item_id": "gold_ingot", "count": rng.randi_range(2, 4)}; slot_idx += 1
-		if rng.randf() < 0.4:
-			loot[slot_idx] = {"item_id": "silver_ingot", "count": rng.randi_range(2, 4)}; slot_idx += 1
-		# 钻石盔甲 (60%) 或 金 (30%): 最豪华装备
-		var shadow_armor: String = _pick_armor_piece(rng, "diamond" if rng.randf() < 0.6 else "gold")
-		if shadow_armor != "":
-			loot[slot_idx] = {"item_id": shadow_armor, "count": 1}; slot_idx += 1
-	elif tier == 2:
-		# 钻石层: 金矿 + 银矿 + 钻石 + 金锭
-		loot[slot_idx] = {"item_id": "gold_ore", "count": rng.randi_range(3, 7)}; slot_idx += 1
-		loot[slot_idx] = {"item_id": "silver_ore", "count": rng.randi_range(3, 7)}; slot_idx += 1
-		if rng.randf() < 0.6:
-			loot[slot_idx] = {"item_id": "diamond", "count": rng.randi_range(1, 3)}; slot_idx += 1
-		if rng.randf() < 0.5:
-			loot[slot_idx] = {"item_id": "gold_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
-		if rng.randf() < 0.3:
-			loot[slot_idx] = {"item_id": "iron_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
-		# 银/金盔甲 (50/30/10 → silver/gold/diamond)
-		var r2: float = rng.randf()
-		var t2: String = "silver" if r2 < 0.5 else ("gold" if r2 < 0.8 else "diamond")
-		var dia_armor: String = _pick_armor_piece(rng, t2)
-		if dia_armor != "":
-			loot[slot_idx] = {"item_id": dia_armor, "count": 1}; slot_idx += 1
-	elif tier == 1:
-		# 金层: 铁/煤 + 偶发铜锡锭 + 偶发银锭
-		loot[slot_idx] = {"item_id": "iron_ore", "count": rng.randi_range(4, 9)}; slot_idx += 1
-		loot[slot_idx] = {"item_id": "coal", "count": rng.randi_range(6, 12)}; slot_idx += 1
-		if rng.randf() < 0.5:
-			loot[slot_idx] = {"item_id": "copper_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
-		if rng.randf() < 0.5:
-			loot[slot_idx] = {"item_id": "tin_ingot", "count": rng.randi_range(1, 3)}; slot_idx += 1
-		if rng.randf() < 0.3:
-			loot[slot_idx] = {"item_id": "silver_ingot", "count": rng.randi_range(1, 2)}; slot_idx += 1
-		# 铁/银盔甲 (50% 铁, 15% 银)
-		if rng.randf() < 0.50:
-			var t1: String = "silver" if rng.randf() < 0.30 else "iron"
-			var gold_armor: String = _pick_armor_piece(rng, t1)
-			if gold_armor != "":
-				loot[slot_idx] = {"item_id": gold_armor, "count": 1}; slot_idx += 1
-	else:
-		# 木层 (浅): 铜锡矿 + 木板 + 偶发苹果
-		loot[slot_idx] = {"item_id": "copper_ore", "count": rng.randi_range(5, 10)}; slot_idx += 1
-		if rng.randf() < 0.6:
-			loot[slot_idx] = {"item_id": "tin_ore", "count": rng.randi_range(5, 10)}; slot_idx += 1
-		loot[slot_idx] = {"item_id": "planks", "count": rng.randi_range(8, 15)}; slot_idx += 1
-		if rng.randf() < 0.4:
-			loot[slot_idx] = {"item_id": "apple", "count": rng.randi_range(2, 5)}; slot_idx += 1
-		# 铜盔甲 (25% 概率) — 新手鼓励
-		if rng.randf() < 0.25:
-			var wood_armor: String = _pick_armor_piece(rng, "copper")
-			if wood_armor != "":
-				loot[slot_idx] = {"item_id": wood_armor, "count": 1}; slot_idx += 1
-		# 小麦种子 (50% 概率, 1-3 颗) — 菜园起步
-		if rng.randf() < 0.5:
-			loot[slot_idx] = {"item_id": "wheat_seed", "count": rng.randi_range(1, 3)}; slot_idx += 1
-	# 代号神兵: 不能合成, 只能这里开宝箱掉. 钻石箱 20% / 阴影箱 35% 掉 1 把 (随机一种).
-	if slot_idx < SLOTS_PER_CHEST:
-		var special_chance: float = 0.0
-		if tier == 3: special_chance = 0.35
-		elif tier == 2: special_chance = 0.20
-		if rng.randf() < special_chance:
-			var w: String = SPECIAL_WEAPONS[rng.randi() % SPECIAL_WEAPONS.size()]
-			loot[slot_idx] = {"item_id": w, "count": 1}; slot_idx += 1
+	# 基础探索战利品：去掉煤燃料、农作物种子、钻石盔甲和自创神兵。
+	# 深层仍给更多补给；完整原版宝箱独占物品尚未全部实现。
+	loot[0] = {"item_id": "torch", "count": rng.randi_range(5, 15)}
+	loot[1] = {"item_id": "health_potion", "count": rng.randi_range(2, 4)}
+	loot[2] = {"item_id": "rope", "count": rng.randi_range(20, 50)}
+	loot[3] = {"item_id": "wood_arrow", "count": rng.randi_range(25, 50)}
+	var bars: Array = ["copper_ingot", "tin_ingot"] if tier == 0 else ["iron_ingot", "silver_ingot", "gold_ingot"]
+	loot[4] = {"item_id": bars[rng.randi() % bars.size()], "count": rng.randi_range(3, 8)}
+	if tier == 0:
+		loot[5] = {"item_id": "boomerang", "count": 1}
 	_chests[tile] = loot
-
 
 # 随机挑 3 件盔甲之一 (helmet / chest / pants) 返回 item_id. tier 是 "copper" / "iron" 等.
 func _pick_armor_piece(rng: RandomNumberGenerator, tier: String) -> String:
@@ -178,7 +101,7 @@ func _pick_armor_piece(rng: RandomNumberGenerator, tier: String) -> String:
 
 # === 存档 ===
 
-# 序列化所有箱子内容 → Dictionary<"x,y", Array[24] dict slots>
+# 序列化所有箱子内容 → Dictionary<"x,y", Array[40] dict slots>
 # JSON / Resource 不支持 Vector2i key, 转 String "x,y".
 # 顺带 dump _treasure_marked 防 chunk 重载后还原矿洞宝箱.
 func dump() -> Dictionary:
@@ -217,4 +140,5 @@ func restore(data: Dictionary) -> void:
 		var arr = chests_dict[k]
 		if arr is Array:
 			ItemDB.canon_slots(arr)   # 改名物品兼容 (弹跳枪→史莱姆冲锋枪)
+			if arr.size() < SLOTS_PER_CHEST: arr.resize(SLOTS_PER_CHEST)
 		_chests[tile] = arr

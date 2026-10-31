@@ -26,7 +26,7 @@ func _ready() -> void:
 	layer = -8
 	# 太阳
 	_sun = Sprite2D.new()
-	_sun.texture = CelestialArt.sun(30)
+	_sun.texture = preload("res://scripts/art/terraria_sprite_pack.gd").texture("Sun.png")
 	_sun.centered = true
 	_sun.visible = false
 	add_child(_sun)

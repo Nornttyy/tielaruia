@@ -1,21 +1,22 @@
-# 箱子面板: open(tile_coord) 时显示, 24 格 chest + 27 格玩家主背包 (非 hotbar).
+# 箱子面板: open(tile_coord) 时显示, 40 格箱子 + 50 格玩家背包 (包含快捷栏).
 # 点击任意格 → 把整堆移到另一边的第一个空槽 (shift-click 风).
 # 玩家走远 / ESC / 关闭按钮 / 再次右键 → 关.
 # UI 全在代码里建, 没有专门 tscn.
 extends CanvasLayer
 
 const InventoryCursor = preload("res://scripts/items/inventory_cursor.gd")
+const ClassicUI = preload("res://scripts/ui/classic_ui.gd")
 const UIStyle = preload("res://scripts/ui/ui_style.gd")
 
-const SLOT_SIZE := 40
-const COLS_CHEST := 8
-const ROWS_CHEST := 3
-const COLS_PLAYER := 9
-const ROWS_PLAYER := 3
+const SLOT_SIZE := 44
+const COLS_CHEST := 10
+const ROWS_CHEST := 4
+const COLS_PLAYER := Inventory.HOTBAR_SIZE
+const ROWS_PLAYER := Inventory.TOTAL / COLS_PLAYER
 
 @onready var _root: Control = null
-var _chest_slots_ui: Array = []          # 24 个 PanelContainer (用 update_slot 刷)
-var _player_slots_ui: Array = []         # 27 个 PanelContainer
+var _chest_slots_ui: Array = []          # 50 个 PanelContainer (用 update_slot 刷)
+var _player_slots_ui: Array = []         # 50 个 PanelContainer
 
 var _chest_tile: Vector2i = Vector2i.ZERO
 var _is_open: bool = false
@@ -55,19 +56,11 @@ func _refresh_i18n(_new_lang: String) -> void:
 
 
 func _build_ui() -> void:
-	# 半透明黑遮罩
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.5)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_PASS
-	add_child(dim)
-
+	# 背包与箱子直接排在左侧，不盖住整个世界。
 	_root = PanelContainer.new()
-	_root.add_theme_stylebox_override("panel", UIStyle.panel())   # 蓝色圆角面板
-	_root.set_anchors_preset(Control.PRESET_CENTER)
-	_root.custom_minimum_size = Vector2(SLOT_SIZE * COLS_PLAYER + 32, SLOT_SIZE * (ROWS_CHEST + ROWS_PLAYER) + 96)
-	# 居中
-	_root.position = Vector2(-_root.custom_minimum_size.x / 2, -_root.custom_minimum_size.y / 2)
+	_root.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	_root.position = Vector2(20, 12)
+	_root.custom_minimum_size = Vector2(476, 600)
 	add_child(_root)
 
 	var vbox := VBoxContainer.new()
@@ -77,16 +70,16 @@ func _build_ui() -> void:
 	# 标题: 箱子 (i18n: 切语言时刷新)
 	_title_label = Label.new()
 	_title_label.text = Locale.t("chest_title")
-	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_title_label.add_theme_font_size_override("font_size", 18)
-	_title_label.add_theme_color_override("font_color", Color(0.949, 0.761, 0.396))
+	ClassicUI.label(_title_label, 18)
 	vbox.add_child(_title_label)
 
-	# 箱子 3x8 grid
+	# 箱子 4×10 格
 	var chest_grid := GridContainer.new()
 	chest_grid.columns = COLS_CHEST
-	chest_grid.add_theme_constant_override("h_separation", 2)
-	chest_grid.add_theme_constant_override("v_separation", 2)
+	chest_grid.add_theme_constant_override("h_separation", 4)
+	chest_grid.add_theme_constant_override("v_separation", 4)
 	vbox.add_child(chest_grid)
 	for i in COLS_CHEST * ROWS_CHEST:
 		var slot := _make_slot(i, true)
@@ -97,38 +90,39 @@ func _build_ui() -> void:
 	_take_all_btn = Button.new()
 	_take_all_btn.text = Locale.t("chest_take_all")
 	_take_all_btn.custom_minimum_size = Vector2(0, 26)
-	UIStyle.style_button(_take_all_btn)
+	_style_text_action(_take_all_btn)
 	_take_all_btn.pressed.connect(take_all_from_chest)
 	vbox.add_child(_take_all_btn)
 
 	# 分隔
-	var sep := HSeparator.new()
-	vbox.add_child(sep)
+
 
 	# 标题: 你的背包
 	_inv_hint_label = Label.new()
 	_inv_hint_label.text = Locale.t("chest_inv_hint")
-	_inv_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_inv_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_inv_hint_label.add_theme_font_size_override("font_size", 14)
-	_inv_hint_label.add_theme_color_override("font_color", Color(0.831, 0.71, 0.541))
+	ClassicUI.label(_inv_hint_label, 18)
 	vbox.add_child(_inv_hint_label)
 
-	# 玩家主背包 3x9 grid (不含 hotbar, hotbar 是 inv.slots[0..8])
+	# 完整背包 5×10 格，让快捷栏物品也能放入箱子。
 	var p_grid := GridContainer.new()
 	p_grid.columns = COLS_PLAYER
-	p_grid.add_theme_constant_override("h_separation", 2)
-	p_grid.add_theme_constant_override("v_separation", 2)
+	p_grid.add_theme_constant_override("h_separation", 4)
+	p_grid.add_theme_constant_override("v_separation", 4)
 	vbox.add_child(p_grid)
 	for i in COLS_PLAYER * ROWS_PLAYER:
 		var slot := _make_slot(i, false)
 		p_grid.add_child(slot)
 		_player_slots_ui.append(slot)
 
+	vbox.move_child(_inv_hint_label, 0)
+	vbox.move_child(p_grid, 1)
 	# 关按钮
 	_close_btn = Button.new()
 	_close_btn.text = Locale.t("chest_close")
 	_close_btn.custom_minimum_size = Vector2(0, 32)
-	UIStyle.style_button(_close_btn)
+	_style_text_action(_close_btn)
 	_close_btn.pressed.connect(close)
 	vbox.add_child(_close_btn)
 	# Cursor icon: 跟鼠标飘的物品
@@ -153,7 +147,7 @@ func _make_slot(idx: int, is_chest: bool) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	# 蓝色圆角槽 (跟热键栏/合成统一)
-	p.add_theme_stylebox_override("panel", UIStyle.slot())
+	p.add_theme_stylebox_override("panel", ClassicUI.slot("chest" if is_chest else "inventory"))
 	# icon
 	var icon := TextureRect.new()
 	icon.name = "Icon"
@@ -198,16 +192,16 @@ func _refresh_all() -> void:
 	var chest_arr: Array = ChestStorage.get_slots(_chest_tile)
 	for i in _chest_slots_ui.size():
 		_refresh_slot(_chest_slots_ui[i], chest_arr[i])
-	# 玩家主背包: slots[9..35] (前 9 是 hotbar)
+	# 玩家背包: slots[0..49]
 	if _player_inv != null and _player_inv.inventory != null:
 		var p_slots: Array = _player_inv.inventory.slots
 		for i in _player_slots_ui.size():
-			var idx: int = 9 + i
+			var idx: int = i
 			var data = p_slots[idx] if idx < p_slots.size() else null
 			_refresh_slot(_player_slots_ui[i], data)
 
 
-# 联机: 改完箱子广播整箱内容给对方 (24 槽全发, 箱子操作不频繁, 简单稳)
+# 联机: 改完箱子广播整箱内容给对方 (40 槽全发, 箱子操作不频繁, 简单稳)
 func _broadcast_chest() -> void:
 	if NetworkManager != null and NetworkManager.connected():
 		NetworkManager.send_chest(_chest_tile, ChestStorage.get_slots(_chest_tile))
@@ -288,7 +282,7 @@ func _apply_click(idx: int, is_chest: bool) -> void:
 	if is_chest:
 		InventoryCursor.click_slot(_player_inv, ChestStorage.get_slots(_chest_tile), idx)
 	else:
-		InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, 9 + idx)
+		InventoryCursor.click_slot(_player_inv, _player_inv.inventory.slots, idx)
 	if _player_inv.has_signal("inventory_changed"):
 		_player_inv.inventory_changed.emit()
 	_refresh_all()
@@ -305,7 +299,7 @@ func _shift_transfer(idx: int, is_chest: bool) -> void:
 		src_array = ChestStorage.get_slots(_chest_tile)
 	else:
 		src_array = _player_inv.inventory.slots
-	var src_idx: int = idx if is_chest else 9 + idx
+	var src_idx: int = idx
 	if src_idx < 0 or src_idx >= src_array.size():
 		return
 	var s = src_array[src_idx]
@@ -327,7 +321,7 @@ func _shift_transfer(idx: int, is_chest: bool) -> void:
 
 
 # 把 item 加到另一边 inventory. 返回还塞不下的数量 (>=0).
-# is_from_chest=true: 加到玩家 main inv (9..35); false: 加到 chest.
+# is_from_chest=true: 加到玩家 main inv (10..49); false: 加到 chest.
 func _try_add_to_other_side(item_id: String, count: int, is_from_chest: bool) -> int:
 	if is_from_chest:
 		# Chest → 玩家 inv: 用现有 inventory.add (它会智能 stack + 找空槽)
@@ -454,3 +448,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE:
 			close()
 			get_viewport().set_input_as_handled()
+
+
+func _style_text_action(button: Button) -> void:
+	button.flat = true
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	button.add_theme_font_size_override("font_size", 16)
+	button.add_theme_color_override("font_color", Color.WHITE)
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.9, 0.3))
+	button.add_theme_color_override("font_outline_color", Color.BLACK)
+	button.add_theme_constant_override("outline_size", 2)
+	for state in ["normal", "hover", "pressed", "focus"]:
+		button.add_theme_stylebox_override(state, StyleBoxEmpty.new())

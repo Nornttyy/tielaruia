@@ -325,6 +325,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	if sprite != null:
 		sprite.modulate = Color(1.8, 1.0, 1.0)
 	Effects.spawn_damage_number(global_position + Vector2(0, -20), actual_loss)
+	if current_health > 0: SfxBank.play_creature("skeleton_king", global_position, false)
 	# Boss 抗击退 (体重): 只受很小位移
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var to_self: Vector2 = global_position - source_pos
@@ -352,6 +353,8 @@ func _check_despawn(delta: float) -> void:
 
 
 func _spawn_drop(item_id: String) -> void:
+	if not ItemDB.is_available(item_id):
+		return  # 只拦截新战利品，不影响旧背包/箱子里的物品。
 	var drop = ItemDropScene.instantiate()
 	drop.item_id = item_id
 	drop.count = 1
@@ -363,6 +366,8 @@ func _spawn_drop(item_id: String) -> void:
 
 
 func _die() -> void:
+	if _is_dying: return
+	SfxBank.play_creature("skeleton_king", global_position, true)
 	_is_dying = true
 	# 成就: 打赢骷髅王
 	if typeof(Achievements) != TYPE_NIL:

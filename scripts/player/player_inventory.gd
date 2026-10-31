@@ -6,7 +6,7 @@ signal hotbar_selection_changed(index: int)
 signal armor_changed   # 盔甲槽变化, HUD 跟着重渲
 
 var inventory: Inventory
-var hotbar_selected: int = 0  # 0..8
+var hotbar_selected: int = 0  # 0..9
 # 鼠标手持物品 (Terraria 风背包拖动用). null = 空; { item_id, count } = 持有
 var cursor_slot: Variant = null
 # 盔甲: 3 个槽位 (helmet/chest/pants). null 或 {"item_id": String, "count": 1}
@@ -20,9 +20,13 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# 数字键 1-9 选热键 (直接读 keycode 比 Input.is_action_just_pressed 稳)
+	# 数字键 1-9、0 选热键 (直接读 keycode 比 Input.is_action_just_pressed 稳)
 	if event is InputEventKey and event.pressed and not event.echo:
 		var key: int = event.keycode
+		if key == KEY_0:
+			set_hotbar_selection(Inventory.HOTBAR_SIZE - 1)
+			get_viewport().set_input_as_handled()
+			return
 		if key >= KEY_1 and key <= KEY_9:
 			set_hotbar_selection(key - KEY_1)
 			get_viewport().set_input_as_handled()
@@ -37,12 +41,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			if zoom_mode:
 				GameSettings.camera_zoom = GameSettings.camera_zoom + 0.1   # 上滚 = 拉近 (放大)
 			else:
-				set_hotbar_selection((hotbar_selected - 1 + 9) % 9)
+				set_hotbar_selection(posmod(hotbar_selected - 1, Inventory.HOTBAR_SIZE))
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			if zoom_mode:
 				GameSettings.camera_zoom = GameSettings.camera_zoom - 0.1   # 下滚 = 拉远 (缩小)
 			else:
-				set_hotbar_selection((hotbar_selected + 1) % 9)
+				set_hotbar_selection((hotbar_selected + 1) % Inventory.HOTBAR_SIZE)
 
 
 # 合成/箱子/对战房切武器 面板任一打开 → 滚轮归面板列表滚动 (不缩放摄像机, 不切快捷栏)
@@ -61,10 +65,11 @@ func _is_inventory_ui_open() -> bool:
 
 
 func set_hotbar_selection(idx: int) -> void:
-	idx = clampi(idx, 0, 8)
+	idx = clampi(idx, 0, Inventory.HOTBAR_SIZE - 1)
 	if idx == hotbar_selected:
 		return
 	hotbar_selected = idx
+	SfxBank.play("menu_tick")
 	hotbar_selection_changed.emit(idx)
 
 
@@ -175,7 +180,7 @@ func unequip_armor(slot: String) -> bool:
 	return false   # 背包满
 
 
-# 在 36 槽里找第一个 item_id 槽, 消耗 n 个. 返回 true = 全部消耗成功.
+# 在 50 槽里找第一个 item_id 槽, 消耗 n 个. 返回 true = 全部消耗成功.
 # 弓发箭等场景用 (玩家持弓时, 箭可能不在 hotbar 当前槽).
 func consume_first(item_id: String, n: int = 1) -> bool:
 	# 用 slots.size() 而非 Inventory.TOTAL — 避免 const-via-instance 访问问题

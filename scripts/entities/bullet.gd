@@ -340,6 +340,7 @@ func _nearest_enemy() -> Node2D:
 
 # 爆炸: 爆心 pos 半径 explode_radius 内的怪都受伤 (爆裂火球/水之法杖); 只伤怪, 不破方块.
 func _explode(pos: Vector2) -> void:
+	SfxBank.play_at("explosion" if _visual in ["bomb", "rocket", "bullet"] else "cast_fire", pos, 360.0)
 	# 注: 视觉特效由 _destroy 的 _impact_fx 分发统一放 (爆裂=explosion/水之=splash), 这里只算 AoE 伤害。
 	var dmg: int = explode_dmg if explode_dmg > 0 else damage
 	for group in ["slimes", "animals"]:

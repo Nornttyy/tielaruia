@@ -1,7 +1,18 @@
 # 物品定义表 (autoload)。所有 item_id → 属性查询的单一入口。
 extends Node
 
+const OriginalContent = preload("res://scripts/items/original_content.gd")
+
 const _DEFS := {
+	"clay": {"placeable_tile_id": 130, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"red_brick": {"placeable_tile_id": 129, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"gray_brick": {"placeable_tile_id": 128, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"glass": {"placeable_tile_id": 127, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"glass_wall": {"placeable_tile_id": 117, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"wood_beam_wall": {"placeable_tile_id": 118, "is_wall": true, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"wood_chair": {"placeable_tile_id": 119, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"wood_table": {"placeable_tile_id": 121, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+
 	"dirt":         {"placeable_tile_id": Tiles.DIRT,      "tool_kind": "", "tool_tier": 0, "max_stack": 64},
 	"grass":        {"placeable_tile_id": Tiles.GRASS,     "tool_kind": "", "tool_tier": 0, "max_stack": 64},
 	"stone":        {"placeable_tile_id": Tiles.STONE,     "tool_kind": "", "tool_tier": 0, "max_stack": 64},
@@ -17,7 +28,7 @@ const _DEFS := {
 	"wood_sword":   {"placeable_tile_id": -1,              "tool_kind": "sword",   "tool_tier": 1, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"wood_pickaxe": {"placeable_tile_id": -1,              "tool_kind": "pickaxe", "tool_tier": 1, "max_stack": 1, "damage_mult": 0.5},
 	"wood_axe":     {"placeable_tile_id": -1,              "tool_kind": "axe",     "tool_tier": 1, "max_stack": 1, "damage_mult": 0.0},
-	"slime_jelly":  {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 40},
+	"slime_jelly":  {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64},
 	"slime_crown":  {"placeable_tile_id": -1,              "tool_kind": "summon",    "tool_tier": 0, "max_stack": 1, "summon_boss": "king_slime"},
 	"skull_summon": {"placeable_tile_id": -1,              "tool_kind": "summon",    "tool_tier": 0, "max_stack": 1, "summon_boss": "skeleton_king"},  # 骷髅头骨: 召唤骷髅王
 	"slime_ball":   {"placeable_tile_id": -1,              "tool_kind": "slimeball", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.0},  # Boss 掉落武器, tier 5 让伤害高于铁剑 (tier 4)
@@ -92,6 +103,9 @@ const _DEFS := {
 	"cloud_boots":   {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 1},
 	"lens":          {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	"furnace":       {"placeable_tile_id": Tiles.FURNACE,          "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
+	"iron_anvil":    {"placeable_tile_id": Tiles.IRON_ANVIL, "tool_kind": "", "tool_tier": 0, "max_stack": 99},
+	"chain":         {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 99},
+	"hook":          {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 99},
 	"cooking_pot":   {"placeable_tile_id": Tiles.COOKING_POT,      "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"iron_ingot":    {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
 	"copper_ingot":  {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 99},
@@ -312,7 +326,11 @@ func canon_slots(slots: Array) -> void:
 
 # 全部物品 id (创造模式"物品大全"用)
 func all_item_ids() -> Array:
-	return _DEFS.keys()
+	return _DEFS.keys().filter(func(id): return OriginalContent.is_available(id))
+
+
+func is_available(item_id: String) -> bool:
+	return _DEFS.has(item_id) and OriginalContent.is_available(item_id)
 
 
 func is_placeable(item_id: String) -> bool:

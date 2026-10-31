@@ -286,7 +286,6 @@ func _attempt_hop() -> void:
 	velocity.x = _current_hop_vx
 	velocity.y = -vy_mag * _slow_mult
 	sprite.play("hop")
-	SfxBank.play_at("slime_hop", global_position, 128.0, 0.25)  # 远于 8 tile 静音
 
 
 func _on_anim_done() -> void:
@@ -341,6 +340,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	sprite.modulate = Color(1.6, 1.0, 1.0)
 	# 飘字 -N (暖黄, 打怪反馈) — 显示真实扣血量, 不是 raw amount
 	Effects.spawn_damage_number(global_position + Vector2(0, -6), actual_loss)
+	if current_health > 0: SfxBank.play_creature("slime", global_position, false)
 	# 击退: 2D 方向 (target - source) + 向上 0.4 分量; 强度按 knockback 参数 (0 → 不推)
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var to_self: Vector2 = global_position - source_pos
@@ -360,6 +360,8 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 
 
 func _die() -> void:
+	if _is_dying: return
+	SfxBank.play_creature("slime", global_position, true)
 	_is_dying = true
 	# 联机: host 通知 client 这个实体死了 (client 端那个 slime 也会消失)
 	if NetworkManager != null and NetworkManager.connected() and NetworkManager.is_host:
@@ -390,6 +392,8 @@ func _split() -> void:
 
 
 func _spawn_drop(item_id: String) -> void:
+	if not ItemDB.is_available(item_id):
+		return  # 只拦截新战利品，不影响旧背包/箱子里的物品。
 	var drop = ItemDropScene.instantiate()
 	drop.item_id = item_id
 	drop.count = 1

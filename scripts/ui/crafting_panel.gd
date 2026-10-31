@@ -1,17 +1,18 @@
-# 合成面板: 显示背包 (36 槽只读) + 配方列表 (一键合成)。
+# 合成面板: 显示背包 (50 槽) + 配方列表 (一键合成)。
 # 旧的 _cells/_cursor_item 内部网格保留, 仅供集成测试调用 (place_in_cell / simulate_take_output)。
 extends CanvasLayer
 
+const ClassicUI = preload("res://scripts/ui/classic_ui.gd")
 const RecipeMatcher = preload("res://scripts/crafting/recipe_matcher.gd")
 const InventoryCursor = preload("res://scripts/items/inventory_cursor.gd")
 
 const CELL_SIZE := 40
-const SLOT_SIZE := 36
+const SLOT_SIZE := 44
 const RECIPE_SIZE := 48
 # 蓝色圆角槽 (跟热键栏/菜单统一)
-const BLUE_SLOT_BG := Color(0.07, 0.125, 0.227, 0.8)
-const BLUE_SLOT_BORDER := Color(0.275, 0.47, 0.706, 1.0)
-const CELL_NORMAL_COLOR := Color(0.07, 0.125, 0.227, 0.8)
+const BLUE_SLOT_BG := Color(0.20, 0.27, 0.59, 0.88)
+const BLUE_SLOT_BORDER := Color(0.12, 0.16, 0.39, 1.0)
+const CELL_NORMAL_COLOR := Color(0.20, 0.27, 0.59, 0.88)
 
 
 # 给按钮 (配方卡/创造格) 套蓝色圆角 (normal/hover/pressed/disabled)
@@ -24,19 +25,9 @@ func _style_item_button(btn: Button) -> void:
 
 
 # 蓝色圆角槽样式 (统一: 背包槽/盔甲槽/创造格都用)
-func _blue_slot_style(bg: Color = BLUE_SLOT_BG, border: Color = BLUE_SLOT_BORDER) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.border_color = border
-	s.border_width_left = 2
-	s.border_width_top = 2
-	s.border_width_right = 2
-	s.border_width_bottom = 2
-	s.corner_radius_top_left = 7
-	s.corner_radius_top_right = 7
-	s.corner_radius_bottom_left = 7
-	s.corner_radius_bottom_right = 7
-	return s
+func _blue_slot_style(_bg: Color = BLUE_SLOT_BG, _border: Color = BLUE_SLOT_BORDER) -> StyleBoxTexture:
+	return ClassicUI.slot()
+
 
 signal opened
 signal closed
@@ -57,12 +48,13 @@ var _cursor_item: Variant = null
 
 # 新 UI 节点 (由 _ready 程序化构建)
 var _wb_label: Label
+var _recipe_details: Label
 var _recipe_title: Label              # "合成" 标题 (创造模式隐藏)
 var _recipe_scroll: ScrollContainer   # 配方列表滚动容器 (创造模式隐藏)
 var _recipe_container: VBoxContainer
 var _recipe_buttons: Array = []  # [{recipe_dict, button, cost_label}]
 var _inv_grid: GridContainer
-var _inv_slot_nodes: Array = []  # 36 个 PanelContainer
+var _inv_slot_nodes: Array = []  # 50 个 PanelContainer
 var _armor_slot_nodes: Array = []  # 3 个盔甲槽 PanelContainer (helmet/chest/pants 顺序)
 var _trash_slot: PanelContainer = null  # 垃圾桶: 拖物品来松手 = 永久删除
 var _creative_section: VBoxContainer = null  # 创造模式"物品大全"区 (只创造模式显示)
@@ -91,59 +83,42 @@ func _build_ui() -> void:
 		inv_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	var inv_title := Label.new()
 	inv_title.text = "背包"
-	inv_title.add_theme_font_size_override("font_size", 16)
+	ClassicUI.label(inv_title, 18)
 	inv_title.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
 	inv_vbox.add_child(inv_title)
 
-	# 盔甲槽 (3 个): 头盔 / 胸甲 / 裤子. 右键背包物品 → 装备到匹配槽.
-	# 用户要求: 放到屏幕右下角 (独立容器锚右下), 不跟背包格挤左上.
+	# 装备独立靠右；垃圾桶位于背包右下角，跟背包网格一起定位。
 	var armor_box := VBoxContainer.new()
-	armor_box.anchor_left = 1.0
-	armor_box.anchor_top = 1.0
-	armor_box.anchor_right = 1.0
-	armor_box.anchor_bottom = 1.0
-	armor_box.offset_left = -150.0   # 离右边 ~150px
-	armor_box.offset_top = -176.0    # 离底边 ~176px (加高: 盔甲 3 槽 + 下面的垃圾桶)
-	armor_box.offset_right = -12.0
-	armor_box.offset_bottom = -12.0
-	armor_box.alignment = BoxContainer.ALIGNMENT_END
+	armor_box.name = "EquipmentColumn"
+	armor_box.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	armor_box.offset_left = -64
+	armor_box.offset_right = -20
+	armor_box.offset_top = 285
+	armor_box.offset_bottom = 425
+	armor_box.add_theme_constant_override("separation", 4)
 	add_child(armor_box)
-	var armor_label := Label.new()
-	armor_label.text = "盔甲 (右键背包装备)"
-	armor_label.add_theme_font_size_override("font_size", 11)
-	armor_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
-	armor_box.add_child(armor_label)
-	var armor_row := HBoxContainer.new()
-	armor_row.add_theme_constant_override("separation", 4)
-	armor_row.alignment = BoxContainer.ALIGNMENT_END   # 槽靠右对齐
-	armor_box.add_child(armor_row)
-	_armor_slot_nodes = [
-		_make_armor_slot("helmet", "头"),
-		_make_armor_slot("chest",  "胸"),
-		_make_armor_slot("pants",  "腿"),
-	]
-	for n in _armor_slot_nodes:
-		armor_row.add_child(n)
-	# 垃圾桶: 拿起物品 (光标拿着) 拖到这个槽松手 = 永久删除. 放盔甲下面, 红框区分 (危险).
-	var trash_label := Label.new()
-	trash_label.text = "垃圾桶 (拖物品来丢)"
-	trash_label.add_theme_font_size_override("font_size", 11)
-	trash_label.add_theme_color_override("font_color", Color(0.85, 0.5, 0.45))
-	armor_box.add_child(trash_label)
-	var trash_row := HBoxContainer.new()
-	trash_row.alignment = BoxContainer.ALIGNMENT_END   # 跟盔甲槽一样靠右对齐
-	armor_box.add_child(trash_row)
+	_armor_slot_nodes = [_make_armor_slot("helmet", "头盔"), _make_armor_slot("chest", "上衣"), _make_armor_slot("pants", "裤装")]
+	for slot in _armor_slot_nodes: armor_box.add_child(slot)
 	_trash_slot = _make_trash_slot()
-	trash_row.add_child(_trash_slot)
+	$InvAnchor.add_child(_trash_slot)
+	_trash_slot.position = Vector2(9 * 48, 266)
+	_trash_slot.size = Vector2(44, 44)
 
 	_inv_grid = GridContainer.new()
-	_inv_grid.columns = 9
-	_inv_grid.add_theme_constant_override("h_separation", 3)
-	_inv_grid.add_theme_constant_override("v_separation", 3)
+	_inv_grid.columns = Inventory.HOTBAR_SIZE
+	_inv_grid.add_theme_constant_override("h_separation", 4)
+	_inv_grid.add_theme_constant_override("v_separation", 4)
+	inv_vbox.add_theme_constant_override("separation", 4)
 	inv_vbox.add_child(_inv_grid)
 	_build_inv_slots()
 
 	# ===== 配方面板 (左下) =====
+	$RecipeAnchor/RecipePanel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	_recipe_details = Label.new()
+	ClassicUI.label(_recipe_details, 16)
+	_recipe_details.position = Vector2(62, 32)
+	_recipe_details.size = Vector2(280, 100)
+	$RecipeAnchor.add_child(_recipe_details)
 	_recipe_title = Label.new()
 	_recipe_title.text = "合成"
 	_recipe_title.add_theme_font_size_override("font_size", 16)
@@ -153,12 +128,13 @@ func _build_ui() -> void:
 
 	_wb_label = Label.new()
 	_wb_label.add_theme_font_size_override("font_size", 12)
+	_wb_label.visible = false
 	recipe_vbox.add_child(_wb_label)
 	recipe_vbox.move_child(_wb_label, 1)
 
 	# 配方列表用 ScrollContainer 包起来 (现在配方数 > 6 时会溢出, 加滚动条解决)
 	_recipe_scroll = ScrollContainer.new()
-	_recipe_scroll.custom_minimum_size = Vector2(200, 320)  # 窄宽不撑面板, 高 320 自动垂直滚
+	_recipe_scroll.custom_minimum_size = Vector2(52, 240)  # 合成区留在五行背包下方
 	_recipe_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_recipe_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	recipe_vbox.add_child(_recipe_scroll)
@@ -166,7 +142,7 @@ func _build_ui() -> void:
 
 	_recipe_container = VBoxContainer.new()
 	_recipe_container.add_theme_constant_override("separation", 4)
-	_recipe_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_recipe_container.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_recipe_scroll.add_child(_recipe_container)
 	_build_recipe_buttons()
 
@@ -177,7 +153,7 @@ func _build_ui() -> void:
 	row_old.visible = false
 
 	var hint := Label.new()
-	hint.text = "按 E 关闭"
+	hint.text = "按 Esc / E 关闭"
 	hint.add_theme_font_size_override("font_size", 10)
 	hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -237,6 +213,8 @@ func _build_creative_section() -> void:
 
 # 点了"物品大全"里的物品: 免费拿一整组进背包
 func _on_creative_grab(item_id: String) -> void:
+	if not ItemDB.is_available(item_id):
+		return
 	# 兜底: 面板若没绑定背包 (玩家加载时序 / 旧 bug 致 bind 没跑) 就现找一个, 否则点了没反应。
 	if _player_inv == null:
 		var p = get_tree().get_first_node_in_group("player")
@@ -261,93 +239,34 @@ func _refresh_creative_section() -> void:
 	if _recipe_title != null:
 		_recipe_title.visible = not creative
 	if _wb_label != null:
-		_wb_label.visible = not creative
+		_wb_label.visible = false
 	if _recipe_scroll != null:
 		_recipe_scroll.visible = not creative
 
 
 func _make_recipe_row(recipe: Dictionary) -> Dictionary:
-	# 2 行高布局 (窄, 不撑面板宽度):
-	#   上行: [输出图标 24×24] [输出名字 expand]
-	#   下行: [配料图标 14×14 ×N] [配料图标 ×M] ...  (左缩进 ~28px 与输出图标对齐)
-	# 细节 (工作台需求) 仍在 hover tooltip.
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(180, 54)  # 高度 54 = 上 24 + 下 16 + padding
-	_style_item_button(btn)
-	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	btn.custom_minimum_size = Vector2(44, 44)
+	btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	btn.add_theme_stylebox_override("normal", ClassicUI.slot())
+	btn.add_theme_stylebox_override("hover", ClassicUI.slot("selected"))
+	btn.add_theme_stylebox_override("pressed", ClassicUI.slot("selected"))
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	btn.tooltip_text = _recipe_tooltip(recipe)
-
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 2)
-	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vb.offset_left = 6.0
-	vb.offset_right = -6.0
-	vb.offset_top = 4.0
-	vb.offset_bottom = -4.0
-	btn.add_child(vb)
-
-	# 上行: 输出图标 + 名
-	var top_hb := HBoxContainer.new()
-	top_hb.add_theme_constant_override("separation", 6)
-	top_hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.add_child(top_hb)
-
-	var icon := TextureRect.new()
-	icon.texture = ArtCache.get_inventory_icon(recipe.output_id)
-	icon.custom_minimum_size = Vector2(24, 24)
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top_hb.add_child(icon)
-
-	var name_lbl := Label.new()
-	name_lbl.text = _zh_name(recipe.output_id)
-	name_lbl.add_theme_font_size_override("font_size", 13)
-	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	top_hb.add_child(name_lbl)
-
-	# 下行: 配料图标 (左缩进与上行图标对齐)
-	var bot_hb := HBoxContainer.new()
-	bot_hb.add_theme_constant_override("separation", 4)
-	bot_hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.add_child(bot_hb)
-
-	var indent := Control.new()
-	indent.custom_minimum_size = Vector2(2, 0)
-	indent.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bot_hb.add_child(indent)
-
-	var req: Dictionary = _required_inputs(recipe)
-	for item_id in req:
-		var ing_hb := HBoxContainer.new()
-		ing_hb.add_theme_constant_override("separation", 1)
-		ing_hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-		var ing_icon := TextureRect.new()
-		ing_icon.texture = ArtCache.get_inventory_icon(item_id)
-		ing_icon.custom_minimum_size = Vector2(14, 14)
-		ing_icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-		ing_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ing_hb.add_child(ing_icon)
-
-		var cnt_lbl := Label.new()
-		cnt_lbl.text = "×%d" % req[item_id]
-		cnt_lbl.add_theme_font_size_override("font_size", 10)
-		cnt_lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
-		cnt_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		cnt_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		ing_hb.add_child(cnt_lbl)
-
-		bot_hb.add_child(ing_hb)
-
+	btn.icon = ArtCache.get_inventory_icon(recipe.output_id)
+	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	btn.pressed.connect(_on_recipe_pressed.bind(recipe.id))
+	btn.mouse_entered.connect(func():
+		var text := _zh_name(recipe.output_id)
+		for item_id in _required_inputs(recipe):
+			text += "\n" + _zh_name(item_id) + " ×" + str(_required_inputs(recipe)[item_id])
+		_recipe_details.text = text)
+	btn.mouse_exited.connect(func(): _recipe_details.text = "")
 	return {"recipe": recipe, "button": btn}
 
 
 func _build_inv_slots() -> void:
-	for i in 36:
+	for i in Inventory.TOTAL:
 		var slot := _make_inv_slot(i)
 		_inv_grid.add_child(slot)
 		_inv_slot_nodes.append(slot)
@@ -361,7 +280,7 @@ func _make_armor_slot(slot_kind: String, label_text: String) -> PanelContainer:
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	panel.gui_input.connect(_on_armor_slot_input.bind(slot_kind))
 	# 盔甲槽: 更深的蓝 (跟普通背包槽区分)
-	var style := _blue_slot_style(Color(0.05, 0.08, 0.15, 0.85), Color(0.32, 0.52, 0.74, 1.0))
+	var style := ClassicUI.slot("armor")
 	panel.add_theme_stylebox_override("panel", style)
 	var layout := Control.new()
 	layout.name = "Layout"
@@ -371,7 +290,8 @@ func _make_armor_slot(slot_kind: String, label_text: String) -> PanelContainer:
 	# 空槽时显示中文字 (头/胸/腿)
 	var hint := Label.new()
 	hint.name = "Hint"
-	hint.text = label_text
+	hint.text = ""
+	panel.tooltip_text = label_text
 	hint.add_theme_font_size_override("font_size", 14)
 	hint.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55))
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -451,7 +371,7 @@ func _make_inv_slot(idx: int) -> PanelContainer:
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP   # 接受点击
 	panel.clip_contents = true
 	panel.gui_input.connect(_on_inv_slot_input.bind(idx))
-	var style := _blue_slot_style()
+	var style := ClassicUI.slot("hotbar" if idx < Inventory.HOTBAR_SIZE else "inventory")
 	panel.add_theme_stylebox_override("panel", style)
 	var layout := Control.new()
 	layout.name = "Layout"
@@ -466,7 +386,7 @@ func _make_inv_slot(idx: int) -> PanelContainer:
 	layout.add_child(icon)
 	var count_lbl := Label.new()
 	count_lbl.name = "Count"
-	count_lbl.add_theme_font_size_override("font_size", 10)
+	count_lbl.add_theme_font_size_override("font_size", 13)
 	count_lbl.add_theme_color_override("font_color", Color.WHITE)
 	count_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
 	count_lbl.add_theme_constant_override("outline_size", 2)
@@ -477,11 +397,11 @@ func _make_inv_slot(idx: int) -> PanelContainer:
 	count_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	count_lbl.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	layout.add_child(count_lbl)
-	# 0..8 是热键栏, 加小标号
-	if idx < 9:
+	# 0..9 是快捷栏, 加小标号
+	if idx < Inventory.HOTBAR_SIZE:
 		var idx_lbl := Label.new()
-		idx_lbl.text = str(idx + 1)
-		idx_lbl.add_theme_font_size_override("font_size", 8)
+		idx_lbl.text = str((idx + 1) % Inventory.HOTBAR_SIZE)
+		idx_lbl.add_theme_font_size_override("font_size", 13)
 		idx_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 		idx_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
 		idx_lbl.add_theme_constant_override("outline_size", 2)
@@ -497,15 +417,21 @@ func _recipe_tooltip(recipe: Dictionary) -> String:
 	var lines: Array = ["产出: %s × %d" % [_zh_name(recipe.output_id), recipe.output_count]]
 	for item_id in req:
 		lines.append("  · %s × %d" % [_zh_name(item_id), req[item_id]])
-	if max(recipe.grid_size.x, recipe.grid_size.y) > 2:
-		lines.append("(需要工作台)")
+	var station: String = recipe.get("requires", "")
+	if station != "":
+		lines.append("需要：" + {"workbench": "工作台", "furnace": "熔炉", "anvil": "铁砧", "pot": "烹饪锅"}.get(station, station))
 	return "\n".join(lines)
 
 
 # 物品/方块中文名 (面板用)
 const _ZH_NAMES := {
+	"clay": "黏土块",
+	"red_brick": "红砖",
+	"gray_brick": "灰砖",
+	"glass": "玻璃",
+	"glass_wall": "玻璃墙", "wood_beam_wall": "木梁背景墙", "wood_chair": "木椅", "wood_table": "木桌",
 	"log": "原木",
-	"planks": "木板",
+	"planks": "木材",
 	"dirt": "泥土",
 	"grass": "草",
 	"stone": "石头",
@@ -515,7 +441,7 @@ const _ZH_NAMES := {
 	"autumn_leaves": "秋叶",
 	"workbench": "工作台",
 	"door": "门",
-	"slime_jelly": "史莱姆果冻",
+	"slime_jelly": "凝胶",
 	"apple": "苹果",
 	"slime_torch": "史莱姆灯",
 	"torch": "火把",
@@ -573,6 +499,9 @@ const _ZH_NAMES := {
 	"cloud_boots": "云靴",
 	"lens": "镜片",
 	"furnace": "熔炉",
+	"iron_anvil": "铁砧",
+	"chain": "链条",
+	"hook": "钩子",
 	"cooking_pot": "铁锅",
 	"cutting_board": "菜板",
 	"rice": "米",
@@ -852,6 +781,7 @@ func bind_inventory(player_inv: Node) -> void:
 
 
 func open(grid_n: int) -> void:
+	if not visible: SfxBank.play("menu_open")
 	# 互斥: 开合成前先关箱子面板 (防两个面板同时开 → 点击穿透 + 双光标)
 	var chest_p: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
 	if chest_p != null and chest_p.has_method("is_open") and chest_p.is_open() and chest_p.has_method("close"):
@@ -883,6 +813,7 @@ func open(grid_n: int) -> void:
 
 
 func close() -> void:
+	if visible: SfxBank.play("menu_close")
 	if _player_inv != null:
 		for r in 3:
 			for c in 3:
@@ -911,7 +842,7 @@ var _drag_picked_up_this_press: bool = false
 var _drag_press_idx: int = -1
 
 
-# 36 个背包格子: press 只拿起 (cursor 空时), 不放下. 放下走 _input release.
+# 50 格背包：单击拿起/放下，按住拖动也能用；右键取单个。
 func _on_inv_slot_input(event: InputEvent, idx: int) -> void:
 	if not (event is InputEventMouseButton):
 		return
@@ -920,8 +851,11 @@ func _on_inv_slot_input(event: InputEvent, idx: int) -> void:
 	# 右键: 如果该 slot 是盔甲 → 装备到对应盔甲槽 (优先于 LMB 拖拽)
 	if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		var s = _player_inv.inventory.slots[idx]
-		if s != null and ItemDB.armor_slot(s.item_id) != "":
+		if s != null and ItemDB.armor_slot(s.item_id) != "" and _player_inv.cursor_slot == null:
 			_player_inv.equip_armor_from_slot(idx)
+		else:
+			InventoryCursor.take_one(_player_inv, _player_inv.inventory.slots, idx)
+			_player_inv.inventory_changed.emit()
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT:
 		return
@@ -952,16 +886,15 @@ func _make_trash_slot() -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	panel.add_theme_stylebox_override("panel", _blue_slot_style(Color(0.18, 0.06, 0.06, 0.85), Color(0.78, 0.32, 0.30, 1.0)))
-	var hint := Label.new()
-	hint.text = "丢"
-	hint.add_theme_font_size_override("font_size", 16)
-	hint.add_theme_color_override("font_color", Color(0.85, 0.5, 0.45))
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hint.set_anchors_preset(Control.PRESET_FULL_RECT)
-	panel.add_child(hint)
+	panel.tooltip_text = "垃圾桶"
+	panel.add_theme_stylebox_override("panel", ClassicUI.slot("trash"))
+	var icon := TextureRect.new()
+	icon.texture = ClassicUI.texture("Trash")
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.modulate = Color(1, 1, 1, 0.65)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(icon)
 	return panel
 
 
@@ -977,7 +910,7 @@ func _trash_cursor_item() -> bool:
 		return false
 	_player_inv.cursor_slot = null
 	_drag_active = false
-	SfxBank.play("break", 0.15)   # 给点"丢掉了"的反馈声
+	SfxBank.play("swing")   # 丢出物品
 	if _player_inv.has_signal("inventory_changed"):
 		_player_inv.inventory_changed.emit()
 	return true
@@ -999,30 +932,13 @@ func _input(event: InputEvent) -> void:
 		return
 	var found_idx := _find_inv_slot_under_mouse()
 	if found_idx < 0:
-		# 松手在 slot 外: 本次拿起的就放回, 否则 cursor 保留
-		if _drag_picked_up_this_press:
-			_apply_inv_click(_drag_press_idx)
+		# 鼠标拿着的物品继续保留，允许点一下拿起后再点目标格。
 		_drag_active = false
 		return
-	if found_idx == _drag_press_idx:
-		# 同 slot 松手 (没拖动): 取消本次拿起
-		if _drag_picked_up_this_press:
-			_apply_inv_click(_drag_press_idx)
-		_drag_active = false
-		return
-	# 拖到不同 slot → 放下/合并/交换
-	_apply_inv_click(found_idx)
-	# 拖动交换 (drag-swap): 本次按下才拿起的 + 交换后 cursor 还有东西
-	# = "拖 A 到 B 上, B 应该回到 A 原位置, 不是留在鼠标"
-	if _drag_picked_up_this_press and _player_inv.cursor_slot != null:
-		var src_idx: int = _drag_press_idx
-		if src_idx >= 0 and src_idx < _player_inv.inventory.slots.size():
-			if _player_inv.inventory.slots[src_idx] == null:
-				_player_inv.inventory.slots[src_idx] = _player_inv.cursor_slot
-				_player_inv.cursor_slot = null
-				if _player_inv.has_signal("inventory_changed"):
-					_player_inv.inventory_changed.emit()
+	if found_idx != _drag_press_idx or not _drag_picked_up_this_press:
+		_apply_inv_click(found_idx)
 	_drag_active = false
+
 
 
 func _find_inv_slot_under_mouse() -> int:
@@ -1047,8 +963,8 @@ func _on_recipe_pressed(recipe_id: String) -> void:
 	# 检查模式: 3x3 配方需要工作台 (_mode == 3)
 	if max(recipe.grid_size.x, recipe.grid_size.y) > _mode:
 		return
-	# 要求工作台的配方 (如云靴): 必须在工作台模式, 防徒手合
-	if recipe.get("requires", "") == "workbench" and _mode < 3:
+	# 点击时也重新检查工作站，防止走远/拆掉工作站后用旧按钮制造。
+	if not _station_available(recipe.get("requires", "")):
 		return
 	if _player_inv == null:
 		return
@@ -1082,6 +998,8 @@ func _restore_slots(inv, snapshot: Array) -> void:
 
 
 func _required_inputs(recipe: Dictionary) -> Dictionary:
+	if recipe.has("ingredients"):
+		return recipe.ingredients
 	var req := {}
 	for row in recipe.pattern:
 		for cell in row:
@@ -1128,12 +1046,12 @@ func _refresh_all() -> void:
 func _refresh_wb_label() -> void:
 	if _wb_label == null:
 		return
-	if _mode == 3:
-		_wb_label.text = "[ 工作台 3×3 ]"
-		_wb_label.add_theme_color_override("font_color", Color(0.6, 1.0, 0.6))
-	else:
-		_wb_label.text = "[ 徒手 2×2 ]"
-		_wb_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.5))
+	var names: Array[String] = []
+	for station in ["workbench", "furnace", "anvil"]:
+		if _station_available(station):
+			names.append({"workbench": "工作台", "furnace": "熔炉", "anvil": "铁砧"}[station])
+	_wb_label.text = "[ 徒手制作 ]" if names.is_empty() else "[ " + " / ".join(names) + " ]"
+	_wb_label.add_theme_color_override("font_color", Color(0.6, 1.0, 0.6))
 
 
 func _refresh_recipes() -> void:
@@ -1146,10 +1064,9 @@ func _refresh_recipes() -> void:
 			(entry.button as Button).disabled = true
 			(entry.button as Button).modulate = Color(0.5, 0.5, 0.5, 0.7)
 		return
-	# 查附近是否有 furnace (跟 workbench 同模式)
-	var has_furnace: bool = _has_furnace_nearby()
-	var has_cooking_pot: bool = _has_cooking_pot_nearby()
-	var has_cutting_board: bool = _has_cutting_board_nearby()
+	var available: Dictionary = {}
+	for station in ["", "workbench", "furnace", "anvil", "pot", "board"]:
+		available[station] = _station_available(station)
 	for entry in _recipe_buttons:
 		var recipe: Dictionary = entry.recipe
 		var btn: Button = entry.button
@@ -1158,21 +1075,8 @@ func _refresh_recipes() -> void:
 		btn.visible = (recipe_size <= _mode)
 		if not btn.visible:
 			continue
-		# 冶炼配方过滤: 要求 "furnace" 的, 玩家身边必须有 furnace
 		var requires: String = recipe.get("requires", "")
-		if requires == "furnace" and not has_furnace:
-			btn.visible = false
-			continue
-		# 料理配方过滤: 要求 "pot" 的, 玩家身边必须有铁锅
-		if requires == "pot" and not has_cooking_pot:
-			btn.visible = false
-			continue
-		# 寿司配方过滤: 要求 "board" 的, 玩家身边必须有菜板
-		if requires == "board" and not has_cutting_board:
-			btn.visible = false
-			continue
-		# 工作台配方过滤: 要求 "workbench" 的必须在工作台模式 (_mode==3); 否则徒手能合云靴等
-		if requires == "workbench" and _mode < 3:
+		if not available.get(requires, false):
 			btn.visible = false
 			continue
 		# 素材不够 → 直接隐藏 (用户要求: 合成面板只显示当前能合成的, 不能的藏起来)。
@@ -1190,8 +1094,23 @@ func _refresh_recipes() -> void:
 		btn.modulate = Color(1, 1, 1, 1)
 
 
-# 玩家附近 (≤ 2 格) 有 furnace tile 吗 (跟 workbench 同检测)
+func _station_available(station: String) -> bool:
+	match station:
+		"": return true
+		"workbench": return _has_station_tile(Tiles.WORKBENCH)
+		"furnace": return _has_furnace_nearby()
+		"anvil": return _has_station_tile(Tiles.IRON_ANVIL) or _has_station_tile(Tiles.IRON_ANVIL_RIGHT)
+		"pot": return _has_cooking_pot_nearby()
+		"board": return _has_cutting_board_nearby()
+	return false
+
+
 func _has_furnace_nearby() -> bool:
+	return _has_station_tile(Tiles.FURNACE)
+
+
+# 工作站按玩家当前位置检测，不依赖打开背包时选择了哪个模式。
+func _has_station_tile(station_tile: int) -> bool:
 	if _player_inv == null:
 		return false
 	var player: Node = _player_inv.get_parent()
@@ -1207,7 +1126,7 @@ func _has_furnace_nearby() -> bool:
 	for dx in range(-2, 3):
 		for dy in range(-2, 3):
 			var tid: int = terrain.get_cell_source_id(pt + Vector2i(dx, dy))
-			if tid == Tiles.FURNACE:
+			if tid == station_tile:
 				return true
 	return false
 
@@ -1260,9 +1179,10 @@ func _refresh_inv() -> void:
 	if _player_inv == null:
 		return
 	var inv = _player_inv.inventory
-	for i in 36:
+	for i in Inventory.TOTAL:
 		var s = inv.slots[i]
 		var panel: PanelContainer = _inv_slot_nodes[i]
+		panel.add_theme_stylebox_override("panel", ClassicUI.slot("selected" if i == _player_inv.hotbar_selected else ("hotbar" if i < 10 else "inventory")))
 		var icon: TextureRect = panel.get_node("Layout/Icon")
 		var count_lbl: Label = panel.get_node("Layout/Count")
 		if s == null:

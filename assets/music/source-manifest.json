@@ -1,0 +1,52 @@
+[
+  {
+    "context": "day",
+    "title": "Chiptune: Exploration",
+    "author": "ansimuz",
+    "source": "https://opengameart.org/content/chiptune-exploration",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "file": "day.ogg",
+    "sha256": "d3730ceef6613d6f4cfa65c9c6c77c1a8c4a0ebf6904182c8f2b2d84f8355549"
+  },
+  {
+    "context": "night",
+    "title": "Lonely Night",
+    "author": "Centurion_of_war",
+    "source": "https://opengameart.org/content/lonely-night",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "file": "night.ogg",
+    "sha256": "ef0f3c69e41ee1aad842fdd98735c0b544c2ae68e554bf86aa9f032a27a71464"
+  },
+  {
+    "context": "cave",
+    "title": "Chiptune Adventures — Stage 2",
+    "author": "Juhani Junkala / SubspaceAudio",
+    "source": "https://opengameart.org/content/4-chiptunes-adventure",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "file": "cave.ogg",
+    "sha256": "68ec252839e1f227275fe46fca5e38ffab5086b39a6ab2650a752e4f2ef2a5a7"
+  },
+  {
+    "context": "title",
+    "title": "Chiptune Adventures — Stage Select",
+    "author": "Juhani Junkala / SubspaceAudio",
+    "source": "https://opengameart.org/content/4-chiptunes-adventure",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "file": "title.ogg",
+    "sha256": "8d5c0456107049b0d846b72eba722bea5f897e3b2c96a68512edb8f898170e7c"
+  },
+  {
+    "context": "boss",
+    "title": "Rin’s Theme (loop)",
+    "author": "request",
+    "source": "https://opengameart.org/content/rins-theme-loopable-chiptune-adventurebattle-bgm",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "file": "boss.ogg",
+    "sha256": "7614cdb914d1bc896769bca02374b1892c94d821f0f729a0d39f870e206717b9"
+  }
+]

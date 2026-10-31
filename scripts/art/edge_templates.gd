@@ -18,6 +18,10 @@ const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
 
 # tile_id → 边缘族名
 const FAMILY_OF: Dictionary = {
+	130: "soil",
+	129: "rock",
+	128: "rock",
+	127: "rock",
 	BlocksArt.GRASS: "soil",
 	BlocksArt.DIRT: "soil",
 	BlocksArt.SAND: "soil",

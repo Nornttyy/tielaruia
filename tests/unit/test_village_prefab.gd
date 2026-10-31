@@ -34,7 +34,7 @@ func test_house_has_door():
 func test_first_house_has_villager_offset():
 	var prefab = VillagePrefab.load_default()
 	var h0 = prefab.houses[0]
-	assert_ne(h0.villager_offset, null, "房 1 应有 villager_offset")
+	assert_not_null(h0.villager_offset, "房 1 应有 villager_offset")
 	assert_eq(h0.villager_offset.size(), 2, "offset 是 [col, row]")
 
 

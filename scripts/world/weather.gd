@@ -22,6 +22,7 @@ var _lightning_t: float = 0.0
 
 
 func _ready() -> void:
+	lightning_flash.connect(func(): SfxBank.play("thunder"))
 	# 用户要求删雨, 永远晴天 (天气切换关掉)
 	_enter_state("clear")
 

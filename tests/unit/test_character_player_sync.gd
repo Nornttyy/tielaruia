@@ -27,8 +27,8 @@ class StubInventoryHolder extends Node:
 	func pickup(_id: String, _n: int) -> void:
 		pass
 
-class StubInv:
-	var slots: Array = []
+class StubInv extends Inventory:
+	pass
 
 class StubHealth extends Node:
 	var current_health: int = 100
@@ -103,7 +103,7 @@ func test_apply_to_player_restores_state():
 	var p = _make_player()
 	cm.apply_to_player(p)
 	var inv = p.get_node("PlayerInventory")
-	assert_eq(inv.inventory.slots.size(), 1)
+	assert_eq(inv.inventory.slots.size(), Inventory.TOTAL)
 	assert_eq(inv.inventory.slots[0]["item_id"], "wood")
 	assert_eq(inv.hotbar_selected, 2)
 	assert_eq(inv.armor_helmet["item_id"], "iron_helmet")

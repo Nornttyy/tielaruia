@@ -46,6 +46,7 @@ func _process(delta: float) -> void:
 
 # 落地溅花: 顺坡偏 + 溅 1 颗向上的小水珠 (splashes=false 防套娃)。
 func _splash_on_land(tx: int, ty: int) -> void:
+	SfxBank.play_at("drip", global_position, 240.0)
 	var bias := 0.0   # 顺坡: 落点左右哪边是空的(低) → 溅花往那边偏
 	var left_open: bool = not Tiles.is_solid(_cm.get_tile(tx - 1, ty))
 	var right_open: bool = not Tiles.is_solid(_cm.get_tile(tx + 1, ty))

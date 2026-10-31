@@ -10,16 +10,20 @@ const DROP_TOSS_SPEED := 140.0       # 丢弃时朝鼠标方向飞出去的初�
 var _drop_timer: float = 0.0         # 距下次可丢的倒计时
 const CAVE_DEPTH_THRESHOLD := 10   # 玩家离原始地表 >10 格才算"地下" (即使顶上方块挖掉了)
 
-const SPEED := 105.0
-# 惯性 (px/s²): 不再瞬间到顶速/瞬停, 起步加速、松手滑一小段。地面更跟手, 空中更保留动量。
-const MOVE_ACCEL := 460.0          # 地面加速 (~0.23s 到顶速, 起步有明显冲刺感)
-const MOVE_FRICTION := 340.0       # 地面松手减速 (停下会滑约 1.3 格, 有点冰面感)
-const MOVE_ACCEL_AIR := 380.0      # 空中加速更弱 (跳起后转向钝一点)
-const MOVE_FRICTION_AIR := 130.0   # 空中几乎不减速 (保留跳跃惯性)
-const JUMP_VELOCITY := -240.0
-const GRAVITY := 675.0
+# 参考 tModLoader 公布的基础移动参数；原版 16px 格转换为本工程 12px 格。
+# https://github.com/tModLoader/tModLoader/wiki/Terraria.Player.Update()-Execution-Order
+const REFERENCE_SCALE := 12.0 / 16.0
+const SPEED := 3.0 * 60.0 * REFERENCE_SCALE
+const MOVE_ACCEL := 0.08 * 3600.0 * REFERENCE_SCALE
+const MOVE_FRICTION := 0.2 * 3600.0 * REFERENCE_SCALE
+const MOVE_ACCEL_AIR := MOVE_ACCEL
+const MOVE_FRICTION_AIR := MOVE_FRICTION
+const JUMP_VELOCITY := -5.01 * 60.0 * REFERENCE_SCALE
+const GRAVITY := 0.4 * 3600.0 * REFERENCE_SCALE
+const MAX_FALL_SPEED := 10.0 * 60.0 * REFERENCE_SCALE
+const JUMP_HOLD_DURATION := 15.0 / 60.0
 const GLIDE_FALL_SPEED := 55.0     # 恶魔之翼滑翔时的最大下落速度 (缓降, 远低于自由落体)
-const COYOTE_TIME := 0.10
+const COYOTE_TIME := 0.0
 const LAND_VY_THRESHOLD := 150.0    # 落地时 vy 超此值才扬大灰
 # 坠落伤害: 落地冲击速度 (px/s) 超安全值才扣血. 滑翔/落水 vy 被压低 → 自然不疼.
 const FALL_SAFE_TILES := 10         # 安全摔落高度 (格): 摔 10 格内不疼 (用户规则)
@@ -56,6 +60,7 @@ const SUN_ENERGY_OFF := 0.0
 const SUN_FADE_TIME := 0.3
 
 var _coyote_timer: float = 0.0
+var _jump_hold_remaining: float = 0.0
 var _double_jump_used: bool = false   # 离地后是否已用过二段跳 (云靴), 落地重置
 var _was_in_water: bool = false       # 上一帧是否在水里 (检测"入水那一刻"放水花+音效)
 var _bubble_timer: float = 0.0        # 水下定期冒气泡 (强化"在水里"的感觉)
@@ -71,6 +76,11 @@ var _hurt_timer: float = 0.0
 # 动作覆盖 (挥击/放置): 短暂盖住站/走的姿势, 不锁移动 (跟 hurt 的锁定不同)。受击优先, 不被打断。
 var _action_anim: String = ""
 var _action_timer: float = 0.0
+var _action_duration: float = 0.0
+var _action_angle: float = 0.0
+var action_hand_position := Vector2(3.75, -15)
+var _action_sprite: Sprite2D
+var _appearance: Dictionary = {}
 var _shake_amount: float = 0.0
 # 节流: 音乐场景每 0.5s 检测一次, 日光每 0.1s 检测一次 (节省 chunk_manager 查询)
 const _MUSIC_INTERVAL := 0.5
@@ -98,12 +108,23 @@ var _hook_head: Sprite2D = null
 
 
 func _ready() -> void:
+	# 不能把 y=0 当作刚才跳起的位置，否则深处的出生点会在首次落地时被误算摔死。
+	_fall_peak_y = global_position.y
 	# 用当前角色外观出图; 没选角色 (测试/老流程) fallback 默认 player_frames。
 	if typeof(CharacterManager) != TYPE_NIL and CharacterManager.current != null:
-		sprite.sprite_frames = ArtCache.player_frames_for(CharacterManager.current.appearance_dict())
+		_appearance = CharacterManager.current.appearance_dict()
+		sprite.sprite_frames = ArtCache.player_frames_for(_appearance)
 	else:
 		sprite.sprite_frames = ArtCache.player_frames
 	sprite.play("idle")
+	_action_sprite = Sprite2D.new()
+	_action_sprite.name = "UsePose"
+	_action_sprite.position = sprite.position
+	_action_sprite.scale = sprite.scale
+	_action_sprite.centered = sprite.centered
+	_action_sprite.offset = sprite.offset
+	_action_sprite.visible = false
+	add_child(_action_sprite)
 	add_to_group("player")
 	# 角色永远明亮 (用户要求): 画在光照层(DarknessLayer z=10)之上, 黑暗盖不到玩家 →
 	# 眼白等永远清楚, 山洞/夜里也看得清自己 (其它实体仍随光变暗).
@@ -124,8 +145,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if _action_timer > 0.0:
-		_action_timer -= delta
+	_update_action_visual()
 	_sun_timer -= delta
 	if _sun_timer <= 0.0:
 		_sun_timer = _SUN_INTERVAL
@@ -150,6 +170,7 @@ func _handle_drop_input(delta: float) -> void:
 	if not Input.is_action_pressed("drop_item"):
 		return
 	if _is_inventory_ui_open():
+		_jump_hold_remaining = 0.0
 		return
 	if _drop_timer > 0.0:
 		return
@@ -211,9 +232,14 @@ func _update_sun_aura(delta: float) -> void:
 #      用 chunk.surfaces[lx] 取原始地表, 跟玩家挖没挖无关 — "顶上方块挖掉也算"
 # 否则按白天/夜晚分.
 func _update_music_context() -> void:
-	# 用户要求: 删掉矿洞音乐, 地下也用地面 (白天/夜晚) 音乐 → 不再切 "cave".
-	var ctx: String = "night" if TimeOfDay.is_night() else "day"
-	MusicBank.set_context(ctx)
+	# 战斗优先；Boss 消失后由下一次检查回到当前环境音乐。
+	for boss in get_tree().get_nodes_in_group("boss"):
+		if boss is Node2D and not boss.is_queued_for_deletion() and boss.get("_is_dying") != true and global_position.distance_to(boss.global_position) < 1800:
+			MusicBank.set_context("boss")
+			return
+	var tile := Vector2i(floori(global_position.x / 12), floori(global_position.y / 12))
+	var context := "cave" if _is_player_underground(tile.x, tile.y) else ("night" if TimeOfDay.is_night() else "day")
+	MusicBank.set_context(context)
 
 
 # 缓存 chunk_manager 引用 (从 World 找一次, 避免每帧 get_tree 群组查询)
@@ -272,10 +298,7 @@ func _is_player_underground(tile_x: int, tile_y: int) -> bool:
 	var cm = _get_chunk_manager()
 	if cm == null:
 		return false
-	# 条件 1: 自然矿洞 (有墙背景)
-	if cm.get_wall(tile_x, tile_y) != Tiles.AIR:
-		return true
-	# 条件 2: 深度 > 10 (用原始 surf, 不被玩家挖掉影响)
+	# 只看原始地表深度：地面房屋的背景墙不能误触发地下配乐。
 	var chunk_x: int = Chunk.chunk_x_of(tile_x)
 	var local_x: int = Chunk.local_x_of(tile_x)
 	var ch = cm.get_chunk(chunk_x)
@@ -373,6 +396,7 @@ func _physics_process(delta: float) -> void:
 		return
 	# 受击 lockout: 保留击退速度, 玩家暂失输入控制
 	if _hurt_timer > 0.0:
+		_jump_hold_remaining = 0.0
 		_hurt_timer = max(0.0, _hurt_timer - delta)
 		if not is_on_floor():
 			velocity.y += GRAVITY * delta
@@ -417,6 +441,8 @@ func _physics_process(delta: float) -> void:
 	var inertia_rate: float
 	if absf(dir) > 0.05:
 		inertia_rate = MOVE_ACCEL if is_on_floor() else MOVE_ACCEL_AIR
+		if velocity.x * dir < 0.0:
+			inertia_rate += MOVE_FRICTION
 	else:
 		inertia_rate = MOVE_FRICTION if is_on_floor() else MOVE_FRICTION_AIR
 	velocity.x = move_toward(velocity.x, target_vx, inertia_rate * delta)
@@ -427,6 +453,7 @@ func _physics_process(delta: float) -> void:
 	# 重力 + 游泳 + 绳子. 绳子优先于普通重力.
 	var did_jump := false
 	if on_rope:
+		_jump_hold_remaining = 0.0
 		# 抓绳子: 无重力, jump(W/space) 上爬, S 下爬, 否则悬停
 		var up: bool = Input.is_action_pressed("jump")
 		var down: bool = _down_held()
@@ -437,6 +464,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			velocity.y = 0.0
 	elif in_water:
+		_jump_hold_remaining = 0.0
 		# 水里物理: 慢慢沉, 按 jump 上浮 (持续按住能游上去)
 		velocity.y += SWIM_GRAVITY * delta
 		if velocity.y > SWIM_MAX_SINK:
@@ -445,31 +473,37 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed("jump") and _is_head_above_water():
 			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
 			did_jump = true
-			SfxBank.play("jump", 0.08)
 		elif Input.is_action_pressed("jump"):
 			velocity.y = SWIM_UP_SPEED
 	else:
 		if not on_floor_now:
-			velocity.y += GRAVITY * delta
-			# 恶魔之翼滑翔: 下落时按住跳 → 缓降 (限速). 不影响二段跳/上升。
-			if velocity.y > GLIDE_FALL_SPEED and is_gliding():
-				velocity.y = GLIDE_FALL_SPEED
-			_coyote_timer = max(0.0, _coyote_timer - delta)
+			_coyote_timer = maxf(0.0, _coyote_timer - delta)
 		else:
 			_coyote_timer = COYOTE_TIME
-			_double_jump_used = false   # 落地 → 二段跳重置
-		#跳跃 (仅在陆地, 水里用上浮代替)
-		if Input.is_action_just_pressed("jump") and _coyote_timer > 0.0:
+			_double_jump_used = false
+		var jump_pressed := Input.is_action_just_pressed("jump")
+		var jump_held := Input.is_action_pressed("jump")
+		if jump_pressed and (on_floor_now or _coyote_timer > 0.0):
 			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
+			_jump_hold_remaining = JUMP_HOLD_DURATION
 			_coyote_timer = 0.0
 			did_jump = true
-			SfxBank.play("jump", 0.08)
-		elif Input.is_action_just_pressed("jump") and not _double_jump_used and _has_cloud_boots():
-			# 二段跳: 空中再跳一次 (穿云靴才行)
+		elif jump_pressed and not _double_jump_used and _has_cloud_boots():
 			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
+			_jump_hold_remaining = JUMP_HOLD_DURATION
 			_double_jump_used = true
+			SfxBank.play("double_jump")
 			did_jump = true
-			SfxBank.play("jump", 0.08)
+		elif jump_held and _jump_hold_remaining > 0.0001 and velocity.y < 0.0 and not is_on_ceiling():
+			# 起跳帧 + 最多 15 帧维持上升；松开立即进入重力阶段。
+			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
+			_jump_hold_remaining = maxf(0.0, _jump_hold_remaining - delta)
+		else:
+			_jump_hold_remaining = 0.0
+		if not on_floor_now or did_jump:
+			velocity.y = minf(MAX_FALL_SPEED, velocity.y + GRAVITY * delta)
+			if velocity.y > GLIDE_FALL_SPEED and is_gliding():
+				velocity.y = GLIDE_FALL_SPEED
 		# 下平台: 按 S/Down 时关掉 bit 2 (木平台) 0.3s, 玩家从平台落下
 		if on_floor_now and _down_held():
 			_drop_through_t = DROP_THROUGH_DURATION
@@ -494,7 +528,6 @@ func _physics_process(delta: float) -> void:
 	# 落地瞬间扬灰：本帧由空中变地面 + 之前的 vy 够大
 	if not _was_on_floor and on_floor_after and _previous_vy > LAND_VY_THRESHOLD:
 		Effects.spawn_land_dust(global_position)
-		SfxBank.play("land", 0.10, -3.0)
 
 	# 坠落伤害：按摔落高度算 (用户规则: 摔超过 10 格, 每多 1 格 +3). 水/滑翔不疼。
 	# _fall_peak_y 是腾空时记下的最高点 (y 最小); 落地这一帧的 y 减去它 = 摔了多高。
@@ -533,12 +566,14 @@ func _physics_process(delta: float) -> void:
 		else:
 			camera.offset = Vector2.ZERO
 		# 应用摄像机缩放 (滚轮/设置面板改的 camera_zoom). 之前漏了 → 滚轮只动光照不动镜头.
-		var cz: float = GameSettings.camera_zoom if GameSettings != null else 1.0
+		var cz: float = float(camera.get_meta("art_preview_zoom", GameSettings.camera_zoom if GameSettings != null else 1.0))
 		if not is_equal_approx(camera.zoom.x, cz):
 			camera.zoom = Vector2(cz, cz)
 
 	# 朝向
-	if dir > 0.01:
+	if _action_timer > 0.0:
+		_facing_right = cos(_action_angle) >= 0.0
+	elif dir > 0.01:
 		_facing_right = true
 	elif dir < -0.01:
 		_facing_right = false
@@ -551,29 +586,57 @@ func _physics_process(delta: float) -> void:
 	_update_workbench_prompt()
 
 
-func _update_animation(dir: float, on_floor: bool) -> void:
-	# 挥击/放置动作进行中: 盖住站/走 (空中也盖, 短暂). 由 play_action_anim 触发, _process 倒计时。
-	if _action_timer > 0.0 and _action_anim != "":
-		if sprite.animation != _action_anim:
-			sprite.play(_action_anim)
-		return
+func _update_animation(_dir: float, on_floor: bool) -> void:
 	var next_anim: String
 	if not on_floor:
 		next_anim = "jump" if velocity.y < 0.0 else "fall"
-	elif abs(dir) > 0.01:
+	elif absf(velocity.x) > 2.0:
 		next_anim = "walk"
 	else:
 		next_anim = "idle"
+	sprite.speed_scale = clampf(absf(velocity.x) / SPEED, 0.1, 2.0) if next_anim == "walk" else 1.0
 	if sprite.animation != next_anim:
 		sprite.play(next_anim)
 
 
-# 播一次动作姿势 (挥击 "swing" / 放置 "place"), 持续 dur 秒后自动回到站/走。
-# 受击优先: hurt 期间不被打断。由 player_action / held_item 在挥击/放置时调。
-func play_action_anim(_anim: String, _dur: float) -> void:
-	# 挥击/放置的身体姿势已删 (用户要求): 不再切身体动画, 身体保持站/走/跳。
-	# 武器挥动仍由 held_item 单独播。保留本函数 (held_item / player_action 还在调) = 空操作。
-	return
+# 上身动作独立于腿部动画，因此边走边挥、空中放置不会把腿锁在站姿。
+func play_action_anim(anim: String, dur: float, angle: float = INF) -> void:
+	if _hurt_timer > 0.0 or dur <= 0.0: return
+	_action_anim = anim
+	_action_duration = dur
+	_action_timer = dur
+	_action_angle = angle if not is_inf(angle) else (get_global_mouse_position() - global_position - Vector2(0, -15)).angle()
+	_facing_right = cos(_action_angle) >= 0.0
+	sprite.flip_h = not _facing_right
+	_update_action_visual()
+
+# 由 PlayerAction 在物理帧起点推进；手臂、武器补间和命中不再各跑一个渲染时钟。
+func advance_action_anim(delta: float) -> void:
+	_action_timer = maxf(0.0, _action_timer - delta)
+	if _action_timer < 0.000001:
+		_action_timer = 0.0
+	_update_action_visual()
+
+func cancel_action_anim() -> void:
+	_action_timer = 0.0
+	_action_anim = ""
+	_update_action_visual()
+
+func _update_action_visual() -> void:
+	if _action_sprite == null: return
+	var active := _action_timer > 0.0 and _hurt_timer <= 0.0
+	_action_sprite.visible = active
+	sprite.self_modulate.a = 0.0 if active else 1.0
+	if not active: return
+	var leg := sprite.frame + 6 if sprite.animation == "walk" else (5 if sprite.animation in ["jump", "fall"] else 0)
+	var local_angle := _action_angle if _facing_right else PI - _action_angle
+	var aim_step := roundi(wrapf(local_angle, -PI, PI) / (PI / 8.0))
+	var phase := mini(2, int((1.0 - _action_timer / maxf(_action_duration, 0.001)) * 3.0))
+	_action_sprite.texture = preload("res://scripts/art/terraria_sprite_pack.gd").action_frame(_appearance, leg, _action_anim, phase, aim_step)
+	action_hand_position = preload("res://scripts/art/terraria_sprite_pack.gd").action_hand_position(_action_anim, phase, aim_step)
+	if not _facing_right: action_hand_position.x *= -1.0
+	_action_sprite.flip_h = not _facing_right
+	_action_sprite.modulate = sprite.modulate
 
 
 func _update_workbench_prompt() -> void:
@@ -671,7 +734,6 @@ func _update_hook_pull(delta: float) -> void:
 		# 到了 → 脱钩, 停一下让玩家能继续跳
 		_release_hook()
 		velocity = Vector2.ZERO
-		SfxBank.play("land", 0.10)   # 拉到了的"咚"
 		return
 	# 朝锚点匀速冲, move_and_slide 仍处理碰撞 (撞墙不穿)
 	velocity = to_anchor.normalized() * HOOK_PULL_SPEED
@@ -719,7 +781,7 @@ func _update_hook_flying(delta: float) -> void:
 			# 绳子尾端也跟到锚点
 			if _hook_line != null and is_instance_valid(_hook_line):
 				_hook_line.set_point_position(1, _hook_anchor)
-			SfxBank.play("place", 0.15)   # 钩中: 短金属敲击感
+			SfxBank.play("dig")   # 普通钩爪接触方块
 			return
 	# 没撞 → 更新视觉
 	if _hook_head != null and is_instance_valid(_hook_head):

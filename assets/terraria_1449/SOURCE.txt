@@ -1,0 +1,26 @@
+Terraria 1.4.4.9 — General Sprites
+Source: https://www.spriters-resource.com/pc_computer/terraria/asset/228020/
+Retrieved: 2026-10-23, individual PNG images from the archive preview.
+Sprites are from Terraria by Re-Logic. Archive contributor: stormytuna.
+These are third-party game assets, not our original art and not established as
+open-source or licensed for redistribution. Keep this local reference build
+separate from any public/commercial export pending appropriate permissions.
+
+Original PNGs are preserved. The Godot adapter only crops/assembles at runtime.
+Player layer layout reference (independent GDScript implementation):
+https://github.com/BLindVeil/terraria-character-maker
+No external gameplay/source-code implementation was imported.
+
+2026-10-31 建筑参考补充：building_reference/wood-wall.png、wood-platform.png
+来自 https://github.com/GreatGameDota/Terraria-Tile-Images/tree/master/images
+原文件名 wood-wall-xxxx.png / wood-plat-xx.png。原图保持不变。
+门、玻璃、木梁、桌椅为 building_art.gd 程序重绘，建筑布局为自建参考样屋，并非原版地图导出。
+
+2026-10-31 补充来源：
+https://github.com/sullerandras/terraria-hd-textures/commit/c835594415e31ed88734dc778661014b48ffb648
+该提交说明为“Textures from Terraria 1.4.4.9”。只读取 source-pngs/ 的原始 PNG，
+不使用项目的 HD 放大结果，不运行其工具或脚本。
+新增 132 份文件的完整来源 URL 和 SHA-256 见 source-expansion-manifest.json。
+图标 ID 对照资料：https://github.com/TEdit/Terraria-Map-Editor/blob/main/src/TEdit.Terraria/Data/items.json
+本次启用的 101 个物品均有对应原 PNG。食物的三行原图只切第一帧作图标。
+源文件不修改；图集切帧、服装染色和现有 16→12 世界格网适配在运行时进行。

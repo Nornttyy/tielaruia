@@ -50,9 +50,7 @@ const TILE_SIZE := 12
 
 # 收获表: [item_id, weight]. 权重相对, 不必凑 100 (调稀有度改数字即可)。
 const CATCH_TABLE := [
-	["salmon", 20], ["tuna", 20], ["octopus", 20], ["sea_urchin", 20],
-	["lobster", 20], ["eel", 20], ["sweet_shrimp", 18], ["scallop", 18],
-	["seaweed", 15],
+	["salmon", 20], ["tuna", 20],
 ]
 
 var _state: String = "idle"        # idle / waiting / biting
@@ -218,7 +216,7 @@ func _on_bite() -> void:
 		_exclaim.global_position = Vector2(_bobber.global_position.x, _bobber_base_y - 18.0)
 		_effects_root().add_child(_exclaim)
 	if SfxBank != null:
-		SfxBank.play("place", 0.7)    # 明显的"咚" (之前 0.08 太轻, 调到 0.7)
+		SfxBank.play("fish_bite")
 
 
 func _update_line() -> void:

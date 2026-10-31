@@ -11,6 +11,7 @@ extends RefCounted
 const EdgeTemplates = preload("res://scripts/art/edge_templates.gd")
 const BlobLookup = preload("res://scripts/world/blob_lookup.gd")
 const BlocksArt = preload("res://scripts/art/blocks_art.gd")
+const OriginalSprites = preload("res://scripts/art/terraria_sprite_pack.gd")
 
 
 static func build() -> TileSet:
@@ -60,6 +61,7 @@ static func build() -> TileSet:
 		Tiles.JUNGLE_DIRT, Tiles.SNOW_DIRT, Tiles.JUNGLE_LEAVES,
 		Tiles.SILVER_ORE,
 		Tiles.FURNACE,
+		Tiles.IRON_ANVIL, Tiles.IRON_ANVIL_RIGHT,
 		Tiles.COOKING_POT,
 		Tiles.CUTTING_BOARD,
 		Tiles.RICE_0, Tiles.RICE_1, Tiles.RICE_2, Tiles.RICE_3,
@@ -81,7 +83,11 @@ static func build() -> TileSet:
 		Tiles.PLANT_GRASS,
 		Tiles.CLOUD,
 	]
+	tile_ids.append_array(preload("res://scripts/art/building_art.gd").EXTRA_IDS)
 	for tile_id in tile_ids:
+		if tile_id in preload("res://scripts/world/tree_frames.gd").PARTS:
+			_add_tree_sprite(ts, tile_id)
+			continue
 		var source := TileSetAtlasSource.new()
 		source.texture = ArtCache.block_textures[tile_id]
 		source.texture_region_size = Vector2i(12, 12)
@@ -102,6 +108,11 @@ static func build() -> TileSet:
 					BlocksArt.ROUGH_RIGHT_VARIANT_COORDS, BlocksArt.ROUGH_BOTTOM_VARIANT_COORDS]:
 				for vc in arr:
 					coords.append(vc)
+			if OriginalSprites.TERRAIN.has(tile_id):
+				var base_coords := coords.duplicate()
+				for contact in range(1, OriginalSprites.CONTACT_PAGES):
+					for base in base_coords:
+						coords.append(OriginalSprites.contact_atlas_coord(base, contact))
 			for coord in coords:
 				source.create_tile(coord)
 				if Tiles.is_solid(tile_id):
@@ -152,3 +163,30 @@ static func build() -> TileSet:
 					source.set_tile_animation_frame_duration(Vector2i.ZERO, f, 0.4)
 
 	return ts
+
+
+static func _add_tree_sprite(ts: TileSet, tile_id: int) -> void:
+	var is_crown := tile_id == Tiles.LOG_TOP
+	var is_branch := tile_id in [Tiles.BRANCH_L, Tiles.BRANCH_R]
+	var size := 60 if is_crown else (30 if is_branch else 15)
+	var rows := 8 if tile_id == Tiles.LOG else 1
+	var img := Image.create(size * 3, size * rows, false, Image.FORMAT_RGBA8)
+	for row in rows:
+		for i in 3:
+			var tex: ImageTexture
+			if is_crown: tex = OriginalSprites.crown(i)
+			elif is_branch: tex = OriginalSprites.branch(tile_id == Tiles.BRANCH_L, i)
+			else: tex = OriginalSprites.tree_piece(tile_id, row, i)
+			img.blit_rect(tex.get_image(), Rect2i(0, 0, size, size), Vector2i(i, row) * size)
+	var source := TileSetAtlasSource.new()
+	source.texture = ImageTexture.create_from_image(img)
+	source.texture_region_size = Vector2i(size, size)
+	ts.add_source(source, tile_id)
+	for row in rows:
+		for i in 3:
+			var coord := Vector2i(i, row)
+			source.create_tile(coord)
+			var data = source.get_tile_data(coord, 0)
+			# 树冠贴底；左枝贴格右边，右枝贴格左边，枝叶垂直居中。
+			if is_crown: data.texture_origin = Vector2i(0, 24)
+			elif is_branch: data.texture_origin = Vector2i(9 if tile_id == Tiles.BRANCH_L else -9, 0)

@@ -1,0 +1,50 @@
+使用动作速度校正，2026-10-31
+对照：Terraria PC 1.4.4.9，无前缀、无攻速增益的基础动画。
+
+本次修正
+铜镐旧动画固定 1 秒，挖矿每 0.7 秒重启；切换方块还会再次从头播放。
+现在 24 件已开放的镐、斧、锤、剑、短剑与木弓逐件读取基础动画时长。
+武器补间、手臂动作、连用间隔和攻击窗口在同一个物理时钟里推进。
+同一次挥动不会因切换目标方块、转到空气或捡到材料而提前重播。
+换快捷栏物品会取消旧武器的命中窗口。
+
+基础动画（游戏刻，60 刻/秒）
+铜/铁/银/金镐：23 / 20 / 19 / 20
+铜/铁/银/金斧：30 / 27 / 26 / 26
+木/铜/铁/银/金锤：37 / 33 / 30 / 29 / 28
+木剑：20；铜/铁/银/金阔剑：21 / 20 / 20 / 18；骨剑：22
+铜/铁/银/金短剑：13 / 12 / 12 / 11
+木弓：30
+
+口径与限制
+Wiki 的 Use time 是动画 useAnimation，不是镐的挖掘间隔 useTime。
+例如铜镐动画是 23 刻，工具敲击间隔是 15 刻；不能把挥动直接改成 15 刻。
+本次只校正上述基础使用节奏，未替换旧的方块硬度、伤害、装备加成与挖掘算法。
+原版自动挥动的一刻边界规则、前缀攻速、全部手位轨迹和特殊武器尚未逐项迁移；
+因此这不是“完整原版战斗/挖矿系统已一比一完成”。放置、进食、投掷另待核对。
+
+公开参考（2026-10-31 核对）
+https://terraria.wiki.gg/wiki/Tool_speed
+https://terraria.wiki.gg/wiki/Use_time
+https://docs.tmodloader.net/docs/stable/class_item.html
+https://terraria.wiki.gg/wiki/Pickaxes
+https://terraria.wiki.gg/wiki/Axes
+https://terraria.wiki.gg/wiki/Hammers
+https://terraria.wiki.gg/wiki/Copper_Pickaxe
+https://terraria.wiki.gg/wiki/Copper_Shortsword
+https://terraria.wiki.gg/wiki/Iron_Shortsword
+https://terraria.wiki.gg/wiki/Silver_Shortsword
+https://terraria.wiki.gg/wiki/Gold_Shortsword
+https://terraria.wiki.gg/wiki/Wooden_Sword
+https://terraria.wiki.gg/wiki/Copper_Broadsword
+https://terraria.wiki.gg/wiki/Iron_Broadsword
+https://terraria.wiki.gg/wiki/Silver_Broadsword
+https://terraria.wiki.gg/wiki/Gold_Broadsword
+https://terraria.wiki.gg/wiki/Bone_Sword
+https://terraria.wiki.gg/wiki/Wooden_Bow
+https://terraria.wiki.gg/wiki/1.4.4
+
+版本注意：木剑、铜/铁/银/金阔剑在 1.4.4 已调整，不能套旧主机版数值。
+骨剑在 1.4.5 加了骨头弹体，但此处只沿用 1.4.4.9 的基础动画时长。
+编辑前备份：/private/tmp/teilaruia-before-timing-20261031/
+验证使用隔离的 teilaruia-qa-20261031 用户目录，不使用正式存档。

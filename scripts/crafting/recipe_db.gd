@@ -1309,12 +1309,14 @@ const _RECIPES := [
 ]
 
 
+var _original_recipes: Array = preload("res://scripts/crafting/original_recipes.gd").build()
+
 func all_recipes() -> Array:
-	return _RECIPES
+	return _original_recipes
 
 
 func get_recipe(recipe_id: String) -> Variant:
-	for r in _RECIPES:
+	for r in _original_recipes:
 		if r.id == recipe_id:
 			return r
 	return null

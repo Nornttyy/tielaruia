@@ -1,11 +1,11 @@
-# 36 槽物品容器。0..8 = hotbar；9..35 = main。
+# 50 槽物品容器。0..9 = 快捷栏；10..49 = 主背包。
 # 槽位 = null 或 {"item_id": String, "count": int}。
 # 合成 grid 不在这里，由 CraftingPanel 自持。
 class_name Inventory extends RefCounted
 
-const HOTBAR_SIZE := 9
-const MAIN_SIZE := 27
-const TOTAL := HOTBAR_SIZE + MAIN_SIZE  # 36
+const HOTBAR_SIZE := 10
+const MAIN_SIZE := 40
+const TOTAL := HOTBAR_SIZE + MAIN_SIZE  # 50
 
 var slots: Array = []
 
@@ -13,6 +13,21 @@ var slots: Array = []
 func _init() -> void:
 	slots.resize(TOTAL)
 	slots.fill(null)
+
+
+# 旧 9+27 存档扩容。保留快捷栏和主背包的归属，不把旧背包第一格变成快捷栏 0。
+# 深拷贝避免游戏中增减物品反过来修改已加载的 Resource。
+func restore(saved: Array) -> void:
+	slots.resize(TOTAL)
+	slots.fill(null)
+	var legacy := saved.size() == 36
+	for i in mini(saved.size(), TOTAL):
+		var target := i + 1 if legacy and i >= 9 else i
+		if target >= TOTAL:
+			break
+		var entry = saved[i]
+		if entry is Dictionary and entry.has("item_id") and entry.has("count") and int(entry.count) > 0:
+			slots[target] = entry.duplicate(true)
 
 
 # 把 count 个 item_id 塞入 inventory。返回还没塞下的数量 (>= 0)。
