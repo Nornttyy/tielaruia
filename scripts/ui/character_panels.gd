@@ -6,6 +6,7 @@ signal character_chosen   # 选了角色 (current 已设), main_menu 去开世�
 signal closed             # 返回主菜单
 
 const CharacterData = preload("res://scripts/save/character_data.gd")
+const Pack = preload("res://scripts/art/terraria_sprite_pack.gd")
 const PlayerArt = preload("res://scripts/art/player_art.gd")
 const UIStyle = preload("res://scripts/ui/ui_style.gd")
 
@@ -15,8 +16,9 @@ var _list: VBoxContainer
 var _creator_panel: Panel
 var _preview: AnimatedSprite2D
 var _name_edit: LineEdit
-var _chest_row: HBoxContainer
-var _chest_slider: HSlider
+var _hair_panel: Panel
+var _hair_grid: GridContainer
+var _hair_buttons: Array[Button] = []
 var _step_vals: Dictionary = {}
 var _named_refresh: Dictionary = {}   # key → Callable, 给"显中文名"的款式选择器刷新用
 var _appearance: Dictionary = {}
@@ -213,15 +215,15 @@ func _build_creator_panel() -> void:
 	var female_b := Button.new(); female_b.text = "女"; female_b.pressed.connect(func(): _set_gender(1))
 	gender_row.add_child(male_b); gender_row.add_child(female_b)
 	vbox.add_child(gender_row)
-	vbox.add_child(_stepper("发型", "hair_style", 0, 3))
-	# 服装款式 (中文名; 只列已实现的款 —— 后续按 spec 补充目录)
-	vbox.add_child(_stepper_choices("上装", "shirt_style", [[0, "T恤"], [1, "背心"], [6, "泳衣"]]))
-	vbox.add_child(_stepper_choices("下装", "pants_style", [[0, "长裤"], [2, "裙子"], [7, "泳裤"]]))
-	_chest_row = _slider_row("胸围", "chest_size", 0, 5)
-	vbox.add_child(_chest_row)
+	var hair_row := _stepper("发型", "hair_style", 0, Pack.hair_count() - 1)
+	var choose := Button.new()
+	choose.text = "查看全部"
+	choose.pressed.connect(_open_hair_picker)
+	hair_row.add_child(choose)
+	vbox.add_child(hair_row)
+	vbox.add_child(_stepper_choices("衣款", "shirt_style", [[0, "经典"], [1, "运动"], [2, "正装"], [3, "长外套"], [8, "礼服"]]))
 	_build_color_editor(vbox)
-	# 保存/取消固定钉在面板底部 (不放进 vbox): 否则选"女"多出"胸围"行会把整列往下推,
-	# 保存键跟着挪位 → 用户点原来的位置点空 = "存不进去/建不了女角色" (用户报)。
+	# 保存/取消固定在面板底部，换发型和颜色时都不会挪位。
 	var btn_row := HBoxContainer.new()
 	btn_row.position = Vector2(190, 428)
 	var save_b := Button.new(); save_b.text = "保存"; save_b.pressed.connect(_save_creator)
@@ -229,7 +231,7 @@ func _build_creator_panel() -> void:
 		_creator_panel.visible = false; _select_panel.visible = true; _refresh_list())
 	btn_row.add_child(save_b); btn_row.add_child(cancel_b)
 	_creator_panel.add_child(btn_row)
-	# 蓝色统一: 捏人面板 + 全部按钮/名字框/胸围滑条 (色块保留)
+	# 蓝色统一: 捏人面板 + 全部按钮/名字框 (色块保留)
 	_creator_panel.add_theme_stylebox_override("panel", UIStyle.panel())
 	_style_controls(_creator_panel)
 
@@ -274,18 +276,6 @@ func _stepper_choices(label: String, key: String, choices: Array) -> HBoxContain
 		_appearance[key] = int(choices[wrapi(idx_of.call() - 1, 0, choices.size())][0]); refresh.call(); _rebuild_preview())
 	right.pressed.connect(func():
 		_appearance[key] = int(choices[wrapi(idx_of.call() + 1, 0, choices.size())][0]); refresh.call(); _rebuild_preview())
-	return row
-
-
-func _slider_row(label: String, key: String, lo: int, hi: int) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	var l := Label.new(); l.text = label; l.custom_minimum_size = Vector2(60, 0); row.add_child(l)
-	var s := HSlider.new(); s.min_value = lo; s.max_value = hi; s.step = 1
-	s.value = int(_appearance[key]); s.custom_minimum_size = Vector2(180, 0)
-	s.value_changed.connect(func(v): _appearance[key] = int(v); _rebuild_preview())
-	if key == "chest_size":
-		_chest_slider = s
-	row.add_child(s)
 	return row
 
 
@@ -411,13 +401,72 @@ func _on_color_slider_changed() -> void:
 
 
 func _set_gender(g: int) -> void:
+	var previous := int(_appearance.get("gender", 0))
 	_appearance["gender"] = g
-	# 切性别给个对应的默认发型 (男短发0 / 女长发1), 让性别一眼看出区别; 之后还能自己改。
-	_appearance["hair_style"] = 1 if g == 1 else 0
-	if _chest_row != null:
-		_chest_row.visible = (g == 1)   # 胸围只女显示
+	# 仅初次从默认男短发切换时给出长发；编辑旧角色绝不覆盖已选发型。
+	if g != previous and g == 1 and int(_appearance.get("hair_style", 0)) == 0:
+		_appearance["hair_style"] = 4
 	_sync_controls()
 	_rebuild_preview()
+
+
+func _open_hair_picker() -> void:
+	if _hair_panel == null:
+		_hair_panel = Panel.new()
+		_hair_panel.position = Vector2(270, 95)
+		_hair_panel.size = Vector2(740, 535)
+		_hair_panel.add_theme_stylebox_override("panel", UIStyle.panel())
+		add_child(_hair_panel)
+		var title := Label.new()
+		title.text = "选择发型 · 长发、短发、马尾与编发"
+		title.position = Vector2(20, 14)
+		_hair_panel.add_child(title)
+		var scroll := ScrollContainer.new()
+		scroll.position = Vector2(18, 50)
+		scroll.size = Vector2(704, 418)
+		_hair_panel.add_child(scroll)
+		_hair_grid = GridContainer.new()
+		_hair_grid.columns = 11
+		_hair_grid.add_theme_constant_override("h_separation", 4)
+		_hair_grid.add_theme_constant_override("v_separation", 4)
+		scroll.add_child(_hair_grid)
+		var seen := {}
+		for i in Pack.hair_count():
+			var id := Pack.hair_id(i)
+			if seen.has(id): continue
+			seen[id] = true
+			var button := Button.new()
+			button.custom_minimum_size = Vector2(58, 72)
+			button.toggle_mode = true
+			button.tooltip_text = "发型 %d" % id
+			button.set_meta("hair_style", i)
+			var portrait := TextureRect.new()
+			portrait.position = Vector2(5, 3)
+			portrait.size = Vector2(48, 66)
+			portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			button.add_child(portrait)
+			button.pressed.connect(func():
+				_appearance["hair_style"] = i
+				_sync_controls()
+				_rebuild_preview()
+				_hair_panel.hide())
+			_hair_buttons.append(button)
+			_hair_grid.add_child(button)
+		var done := Button.new()
+		done.text = "返回"
+		done.position = Vector2(320, 485)
+		done.pressed.connect(func(): _hair_panel.hide())
+		_hair_panel.add_child(done)
+		_style_controls(_hair_panel)
+	for button in _hair_buttons:
+		var ap := _appearance.duplicate()
+		ap["hair_style"] = int(button.get_meta("hair_style"))
+		(button.get_child(0) as TextureRect).texture = Pack.player_frame(ap, 0)
+		button.set_pressed_no_signal(Pack.hair_id(ap.hair_style) == Pack.hair_id(int(_appearance.hair_style)))
+	_hair_panel.show()
 
 
 # 把控件的显示值同步到 _appearance (重开捏人 / 切性别后控件不再显旧值)。
@@ -426,8 +475,6 @@ func _sync_controls() -> void:
 		_step_vals[key].text = str(int(_appearance.get(key, 0)))
 	for cb in _named_refresh.values():
 		cb.call()
-	if _chest_slider != null:
-		_chest_slider.set_value_no_signal(int(_appearance.get("chest_size", 1)))
 
 
 func _set_creator_name(n: String) -> void:
@@ -443,7 +490,8 @@ func _rebuild_preview() -> void:
 
 
 func _save_creator() -> void:
-	var c := CharacterData.new()
+	var c: CharacterData = CharacterManager.load_character_by_name(_editing_name) if _editing_name != "" else CharacterData.new()
+	if c == null: c = CharacterData.new()
 	var nm: String = _name_edit.text.strip_edges()
 	if nm == "":
 		nm = "我的角色"

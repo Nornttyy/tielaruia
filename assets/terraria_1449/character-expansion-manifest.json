@@ -1,0 +1,1126 @@
+{
+  "source": "Terraria 1.4.4.9 sprite images, Re-Logic; not an open-source asset license",
+  "reference": "https://docs.tmodloader.net/docs/1.4-stable/class_terraria_1_1_i_d_1_1_player_variant_i_d.html",
+  "files": [
+    {
+      "file": "Player_1_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_1_11.png",
+      "sha256": "5b7bb230888c039ad8c11034b9a382b76a5299c884cc555c0e96e50fb01db4f0"
+    },
+    {
+      "file": "Player_1_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_1_12.png",
+      "sha256": "54d7d5cbf5806e3b016581034ea3565ad517548eee671a297bc7136664e53510"
+    },
+    {
+      "file": "Player_1_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_1_13.png",
+      "sha256": "57be9ca376f51f408a87a592bbbae1827e15d166d40a27cb29f5cb76cc950b95"
+    },
+    {
+      "file": "Player_1_4.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_1_4.png",
+      "sha256": "0a27a198a608fac8f09d1cd6e606ff18ed74634149860b50d59d6909022b0808"
+    },
+    {
+      "file": "Player_1_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_1_6.png",
+      "sha256": "26dd0c8facb7fd8f54844e7dd24801b9bf68697d680538d7bcdaf487af89184d"
+    },
+    {
+      "file": "Player_1_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_1_8.png",
+      "sha256": "762c0f0be447a264e54f9de16ef88d648ee2f6d8925f538938f8efd8cae5b148"
+    },
+    {
+      "file": "Player_2_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_2_11.png",
+      "sha256": "ca661617cd6d9951fc33282ca1ae4a2da733e94e7c2765f85c300e9253fc065b"
+    },
+    {
+      "file": "Player_2_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_2_12.png",
+      "sha256": "a0c3d74122fa51b9f51d241695995a51bc3966e201ee69615e8786287223c4d5"
+    },
+    {
+      "file": "Player_2_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_2_13.png",
+      "sha256": "ced8aa92ad10840b6f97e4e178b092780089a4608319496715132f47b4f15b36"
+    },
+    {
+      "file": "Player_2_4.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_2_4.png",
+      "sha256": "2c51aae1b9fe91a74df19bb4d204a7fbbdddd697f6e61f1d90a35fa4077b429d"
+    },
+    {
+      "file": "Player_2_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_2_6.png",
+      "sha256": "ced8aa92ad10840b6f97e4e178b092780089a4608319496715132f47b4f15b36"
+    },
+    {
+      "file": "Player_2_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_2_8.png",
+      "sha256": "57be9ca376f51f408a87a592bbbae1827e15d166d40a27cb29f5cb76cc950b95"
+    },
+    {
+      "file": "Player_3_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_3_11.png",
+      "sha256": "3a023c7555126c39f4a37e0d7389faf95e929bd1d6e2f8c34a0145428542736f"
+    },
+    {
+      "file": "Player_3_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_3_12.png",
+      "sha256": "74225b68b8f98cae534e148c99603316d509f4c56858c52f13b3ce053864eb22"
+    },
+    {
+      "file": "Player_3_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_3_13.png",
+      "sha256": "ef79f01eb6af4ed646a57c2f93290fa29b120a9e078ad0e75349bf16682abcd8"
+    },
+    {
+      "file": "Player_3_14.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_3_14.png",
+      "sha256": "69c6de65eafbce238e44d538c2e786f4118c3c5ff3ff09c154102ab41260e768"
+    },
+    {
+      "file": "Player_3_4.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_3_4.png",
+      "sha256": "b8960608339a3b4ccbfa1037554c4ad9494a9363defb7ad77e4fc61ce2e442ee"
+    },
+    {
+      "file": "Player_3_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_3_6.png",
+      "sha256": "f68cfee28d6edd6f04801a697b8311dcf8f53ce1fb113e2b58c82a15463e6bff"
+    },
+    {
+      "file": "Player_3_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_3_8.png",
+      "sha256": "57be9ca376f51f408a87a592bbbae1827e15d166d40a27cb29f5cb76cc950b95"
+    },
+    {
+      "file": "Player_4_10.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_10.png",
+      "sha256": "551c25bde1a166936dc09deacba8d3e4c8f7a14af9f0508d155e9e3c4589359e"
+    },
+    {
+      "file": "Player_4_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_11.png",
+      "sha256": "60ae8b6914e1088cf9e98072c713259b1ff16c924c93c5c9c6519721c7ce5d57"
+    },
+    {
+      "file": "Player_4_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_12.png",
+      "sha256": "62d4f8bce0c795a39d196ec0b0015b304b0aaab0c281cb66e0f34047008ea9b2"
+    },
+    {
+      "file": "Player_4_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_13.png",
+      "sha256": "cca7b801f50d93ad6636c5c1d01cc84c7f7aab7d5bc177a8741325c947554ff4"
+    },
+    {
+      "file": "Player_4_3.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_3.png",
+      "sha256": "d71194b2ec904bb3bd87bd958f82fcbe43570bcc1acc609af35e3f8a2eb6969a"
+    },
+    {
+      "file": "Player_4_4.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_4.png",
+      "sha256": "207f5407cd59ab7b9cc60e6c3a2f0ae9f23a08347b617f5d48462d199a6f7875"
+    },
+    {
+      "file": "Player_4_5.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_5.png",
+      "sha256": "8c68df4734833ba5f75eae1ad70b1473442653c0b07b5d5971f9eefcd8bf9f0f"
+    },
+    {
+      "file": "Player_4_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_6.png",
+      "sha256": "5ebcf7ab4526646bac1620f2f8934857646f73ea8a3bd39ed739997c75d95b5d"
+    },
+    {
+      "file": "Player_4_7.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_7.png",
+      "sha256": "17496923584543527cc1f6300f787850f2e1b32a8fb0d322181b5fbab7d8e276"
+    },
+    {
+      "file": "Player_4_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_8.png",
+      "sha256": "97ebd1843d6d6a171dca10b164965d788bf3f94103613e80889c0c0e7c582578"
+    },
+    {
+      "file": "Player_4_9.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_4_9.png",
+      "sha256": "e0bdb064959e16e7f6b483ec08414ca2da64c3aaf3e954686ea4dfc79c745996"
+    },
+    {
+      "file": "Player_5_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_5_11.png",
+      "sha256": "62ffe164f46c18d53b873b9ee20d676daccd9a0b9410bd597b47d13ea791996c"
+    },
+    {
+      "file": "Player_5_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_5_12.png",
+      "sha256": "c910dda7489bbaa89fbdaefad75a148497204e5e4aa026fd85d2e3b82867ea4c"
+    },
+    {
+      "file": "Player_5_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_5_13.png",
+      "sha256": "57be9ca376f51f408a87a592bbbae1827e15d166d40a27cb29f5cb76cc950b95"
+    },
+    {
+      "file": "Player_5_4.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_5_4.png",
+      "sha256": "c40b084bc1a07099752927973f38e343fd53ba9633176f56203998752c190635"
+    },
+    {
+      "file": "Player_5_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_5_6.png",
+      "sha256": "751bf1c0dd3b1f4672cf3ad41109573df8a3c5aefa548f05b4f7d9d6cda90380"
+    },
+    {
+      "file": "Player_5_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_5_8.png",
+      "sha256": "226e40d0d0da6dd446f484e18edb2d5d1e8e4d1ecc565def30ab3a4cc3fb0573"
+    },
+    {
+      "file": "Player_6_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_6_11.png",
+      "sha256": "d374ef909df0c9fba92c86c076d10b58572d518e04dca7b0d6992e271515d43b"
+    },
+    {
+      "file": "Player_6_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_6_12.png",
+      "sha256": "ebe6c971ef73a1bb1020b0624e003e7add080968f31a011bf92c9a5df093edfd"
+    },
+    {
+      "file": "Player_6_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_6_13.png",
+      "sha256": "3bbe89be5dd4d68f8be768f3e3ba5b6310ccfc3b11c5cb70139c5b8c7c8e1f25"
+    },
+    {
+      "file": "Player_6_4.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_6_4.png",
+      "sha256": "4e18e5c349b841192aa790f38a4c6990fd86a02989e38d1cc79003188b9f9ae9"
+    },
+    {
+      "file": "Player_6_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_6_6.png",
+      "sha256": "f29338e41cb6c76db6ecb321fc3302157f10dcf3fd79dbafbbac1101d606b082"
+    },
+    {
+      "file": "Player_6_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_6_8.png",
+      "sha256": "6226c716c22b8cbadc254d8454945607d7a559ce40c9e897e8dbdce2af07073f"
+    },
+    {
+      "file": "Player_7_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_7_11.png",
+      "sha256": "1411bc4f513b8743fa80a5f8fae09a298deec20a9ec2e717ed1bea46a2567658"
+    },
+    {
+      "file": "Player_7_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_7_12.png",
+      "sha256": "5e7d8f83164965ca99da5a7678a433fe42a46bf3cb88e9f4cb5ab0984d3b3e48"
+    },
+    {
+      "file": "Player_7_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_7_13.png",
+      "sha256": "1028ee6c30aa03b6d04917b767ec8e0c8eca1f81d03ebceba0797e918b9edad1"
+    },
+    {
+      "file": "Player_7_14.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_7_14.png",
+      "sha256": "bff903da880918b5a6212a01549392fc32361e4d8a0a42e5c6ff6bd985c7600f"
+    },
+    {
+      "file": "Player_7_4.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_7_4.png",
+      "sha256": "82213c7c13f0a1e6f3d217f98ef6c991c2df981f140a4ba09f4d21a95a5b52eb"
+    },
+    {
+      "file": "Player_7_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_7_6.png",
+      "sha256": "855c02e37724e5b97677302313e549b0618b36f439ebc2cee1f6f664d3db8e2b"
+    },
+    {
+      "file": "Player_7_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_7_8.png",
+      "sha256": "008a9a58b2a33ab67c36962a966afd2d51053c2e38697750dd014a61ccd19862"
+    },
+    {
+      "file": "Player_8_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_8_11.png",
+      "sha256": "c523298df3894be2f7fd2d3c0b21f3cc824d232c736406e6e0d70ecd16412df4"
+    },
+    {
+      "file": "Player_8_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_8_12.png",
+      "sha256": "bb4167b3cde54fef722e88e917d146c9768a61f97b89cccb4efc2f63d37996a6"
+    },
+    {
+      "file": "Player_8_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_8_13.png",
+      "sha256": "2f7146ef00667d42f5db245cea8e48d51608a9ba6a2d0150b5e6dee46a4a2ab0"
+    },
+    {
+      "file": "Player_8_14.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_8_14.png",
+      "sha256": "eb9bd5f9d0c08a0667f3035ad95cce122ec00f0b489a5055ce9685cf9e530d94"
+    },
+    {
+      "file": "Player_8_4.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_8_4.png",
+      "sha256": "a28bf39cc87b2966880d6250665f4395347f00691836592a8070138bd16754c5"
+    },
+    {
+      "file": "Player_8_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_8_6.png",
+      "sha256": "e6f5e96580cfde68032ade9cbaf55a74f7d4d1b37e8b4cba073dd811fad4ad94"
+    },
+    {
+      "file": "Player_8_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_8_8.png",
+      "sha256": "57be9ca376f51f408a87a592bbbae1827e15d166d40a27cb29f5cb76cc950b95"
+    },
+    {
+      "file": "Player_9_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_9_11.png",
+      "sha256": "48b8aeeef3b74e073000b871762d4f423a51f094379c6a322ccb3e0b69b802a9"
+    },
+    {
+      "file": "Player_9_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_9_12.png",
+      "sha256": "2976028c7d7f36298f3e22a98c1e860c01ccad90bfff10c7d5bf80a379455d98"
+    },
+    {
+      "file": "Player_9_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_9_13.png",
+      "sha256": "2ead32127a5366d1b93c5f3b1442165ef7c6ffba21b7562466fda82ddc0d1823"
+    },
+    {
+      "file": "Player_9_4.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_9_4.png",
+      "sha256": "6a6c2ccc8267de72e41f930bf3486552c45c5243690381af91eb8cc8633bcec7"
+    },
+    {
+      "file": "Player_9_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_9_6.png",
+      "sha256": "d4e7307a1214ae8df9b71dcc5cb12d25b303b6b9a0fd1b90f9d182d2d2206488"
+    },
+    {
+      "file": "Player_9_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_9_8.png",
+      "sha256": "dbcf852ed52640dccba0100de23393fdde9071c5d3704114f678f1ea0c2a5cc5"
+    },
+    {
+      "file": "Player_Hair_10.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_10.png",
+      "sha256": "43c0718098cbeb3adf1e1b3e2baf14423184ac1b1c3664a4589b5296c63f580a"
+    },
+    {
+      "file": "Player_Hair_100.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_100.png",
+      "sha256": "54efd48faf80d61b8d88aa999f007d119591b82a51f4db192bc4c8e2b1c87d49"
+    },
+    {
+      "file": "Player_Hair_101.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_101.png",
+      "sha256": "07aa2d06e359753a5b8d1df58adac2e1f934c1ac1287cfbccad4c25aafc4e6bc"
+    },
+    {
+      "file": "Player_Hair_102.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_102.png",
+      "sha256": "ec57e43078d0e3e588ade8cce3b2fbe6f8d8b23ad9d893d567dca04a3ea1287c"
+    },
+    {
+      "file": "Player_Hair_103.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_103.png",
+      "sha256": "3405ebd10395f786dceb23e4773118c36e046b39693368a519790e4107c58b93"
+    },
+    {
+      "file": "Player_Hair_104.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_104.png",
+      "sha256": "453757cc531062c54ecac8084595c16f3dc792a99de2ee33b1022a77bb89198b"
+    },
+    {
+      "file": "Player_Hair_105.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_105.png",
+      "sha256": "ef545dfe0c024846fed0890523eb0d9e2552b96c3161156e8b969b96f3914e25"
+    },
+    {
+      "file": "Player_Hair_106.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_106.png",
+      "sha256": "a400adf72292bd0e5c019562f2744dde065ff6bce24f4f57c439861a50b8f95f"
+    },
+    {
+      "file": "Player_Hair_107.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_107.png",
+      "sha256": "acc9d97e271f0fec4c3f024758abe050144a6808482ed9914d3c76c90a2bcb33"
+    },
+    {
+      "file": "Player_Hair_108.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_108.png",
+      "sha256": "75ab809271e9faebcaf07c3953af327990e8b86c3f61111715d531d4a790d841"
+    },
+    {
+      "file": "Player_Hair_109.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_109.png",
+      "sha256": "11479991b36fc1c35997de5a0a601c914ca6e14c8848bd341c483c623417fe53"
+    },
+    {
+      "file": "Player_Hair_11.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_11.png",
+      "sha256": "3406e1f6c1db95a2c8181954b25c172c694ba8efc6d211ae10e93bc8cbaf9ff2"
+    },
+    {
+      "file": "Player_Hair_110.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_110.png",
+      "sha256": "7fbaefbd5185d43cd404ce1d536fcbf7bd4e31f1518f15e892f462870802e33a"
+    },
+    {
+      "file": "Player_Hair_111.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_111.png",
+      "sha256": "84bdf8403057255a7c539061112408e9bd42965bb31960eebb404322bb65ac99"
+    },
+    {
+      "file": "Player_Hair_112.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_112.png",
+      "sha256": "50762110639afbe659e0814456693ab13bb684a46f5eab5c3d574914dd051cb6"
+    },
+    {
+      "file": "Player_Hair_113.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_113.png",
+      "sha256": "020524c767cb781117f17d31ad07db25414d57f4856b7e5b4363b23961029b5b"
+    },
+    {
+      "file": "Player_Hair_114.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_114.png",
+      "sha256": "48c47811a31e1ac123d1ce9ae56fd3bb0774eb4137003fdebebaf127af0cf8a5"
+    },
+    {
+      "file": "Player_Hair_115.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_115.png",
+      "sha256": "a8ab6adfe713b0667095566d4df9e8c2669d4c53b762272438c7374fd77ab70f"
+    },
+    {
+      "file": "Player_Hair_116.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_116.png",
+      "sha256": "c385be4317048b076302356bc87bbb2b045047578ed2ffc1863d5578f49d88d9"
+    },
+    {
+      "file": "Player_Hair_117.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_117.png",
+      "sha256": "9c14549f48bbf5531eaf45cb28e2fa9b61c2d3c89940617d7c338e85b8cea9fd"
+    },
+    {
+      "file": "Player_Hair_118.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_118.png",
+      "sha256": "875023aae75692c8dbb467a1c577c396a365739b38734e17c95559a0e57a1ad0"
+    },
+    {
+      "file": "Player_Hair_119.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_119.png",
+      "sha256": "0ce8933d61c173c6a0557da238627b0dde85f5d55c3a3b22fedb7fb5f91f6ae6"
+    },
+    {
+      "file": "Player_Hair_12.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_12.png",
+      "sha256": "145d81aaa5461c6ffeda98588cbccca92149ea83bb8346efd1f90721f874b3dd"
+    },
+    {
+      "file": "Player_Hair_120.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_120.png",
+      "sha256": "f1253a0809bcc2341660d40fb45eac8a239491a93a7af19a7b88e1c235cba5ca"
+    },
+    {
+      "file": "Player_Hair_121.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_121.png",
+      "sha256": "b2b42b0678ff56175fd2657c847c6763ae2fd7033b5ef860061109910840e2bd"
+    },
+    {
+      "file": "Player_Hair_122.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_122.png",
+      "sha256": "37f0103e31ae30b2d0d120c89f57cdc157cbd79d3b35f74a8039d2ede7c565df"
+    },
+    {
+      "file": "Player_Hair_123.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_123.png",
+      "sha256": "a858393e6c3c54f9924f2c634a9bf0b5bbccbc883518afcc2bf74fa374a268cc"
+    },
+    {
+      "file": "Player_Hair_124.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_124.png",
+      "sha256": "5631803f958e982b7526162012563bfac6cf8e4f9c604d196cefc207e74080c6"
+    },
+    {
+      "file": "Player_Hair_125.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_125.png",
+      "sha256": "0b766986d8facfc0dbaab274be6024d0a70ddeb4bf2c240e98034037f7ccc7eb"
+    },
+    {
+      "file": "Player_Hair_126.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_126.png",
+      "sha256": "e95ebaad80cda269de5a5cfebe0693d01b505f5de7ad6b6147c2e59e4c725d64"
+    },
+    {
+      "file": "Player_Hair_127.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_127.png",
+      "sha256": "1c46383bc9aaf34574d1a6c261046ad42667c8123eb36ea33e5acc48fb7fd753"
+    },
+    {
+      "file": "Player_Hair_128.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_128.png",
+      "sha256": "8794f6b00dcfe2f57c10d643f7d5c81817589bb99ad16c76027e7207363aa9b3"
+    },
+    {
+      "file": "Player_Hair_129.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_129.png",
+      "sha256": "47d4d4a5318801b9b095e7e8e0563e21f15a98c039bea09b9da586cf2e108d76"
+    },
+    {
+      "file": "Player_Hair_13.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_13.png",
+      "sha256": "ead9182777ad90c4528df7efef41a776b6e75f7bd2c58662db9193126dc7fc37"
+    },
+    {
+      "file": "Player_Hair_130.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_130.png",
+      "sha256": "aa02fd22530ad5dfd29d583c52773ff9cef7ff5e20fc489ee0ff874a1c5039f5"
+    },
+    {
+      "file": "Player_Hair_131.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_131.png",
+      "sha256": "3aa459c31b11088479bfa641d20b786ee08e304c88d8154d69c4ee55c6d80d3e"
+    },
+    {
+      "file": "Player_Hair_132.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_132.png",
+      "sha256": "9102dd5eb464162ca35067550443736e2d41668a272092b9f02f8430f71e37ff"
+    },
+    {
+      "file": "Player_Hair_133.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_133.png",
+      "sha256": "3c3d82b35dc21a89b8adb24ef67f15877444140a11bfc638cb167560056cc0dd"
+    },
+    {
+      "file": "Player_Hair_134.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_134.png",
+      "sha256": "7e7c5ed2a64c6b12754ffc189ae16e3a19535935df9c969e9c2fd02f6adf3244"
+    },
+    {
+      "file": "Player_Hair_135.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_135.png",
+      "sha256": "898afaad4ef7161559d5db4c2e7d1b8424efe1c8746275da55ce74e4eaf8afc0"
+    },
+    {
+      "file": "Player_Hair_136.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_136.png",
+      "sha256": "fa6017c02acc7245d7ff1905ac4d56338da6360bbbbd13aa20566dd6dded4df2"
+    },
+    {
+      "file": "Player_Hair_137.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_137.png",
+      "sha256": "92ba848f2049eeecb1a23a2dffbce2b294ccf4226fe4551980730c4bd1b3efa2"
+    },
+    {
+      "file": "Player_Hair_138.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_138.png",
+      "sha256": "636c4ba19033c32407819e07767adf1eddb52de500bed26ed1523e6cb4906f8b"
+    },
+    {
+      "file": "Player_Hair_139.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_139.png",
+      "sha256": "4a1e3a240a674737a365427936d22d9f51627193951d5ebc0fd30f9396b63a5f"
+    },
+    {
+      "file": "Player_Hair_14.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_14.png",
+      "sha256": "b1a527f909f0bdd5b6c665b867412abdf24153e774cefb34860cdef3291b2773"
+    },
+    {
+      "file": "Player_Hair_140.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_140.png",
+      "sha256": "7cf91bb73bba1935a1512dbb88007c818e53895309bf7f6054973a00f396edc9"
+    },
+    {
+      "file": "Player_Hair_141.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_141.png",
+      "sha256": "c1f465830c9075674ffcda7693e431ff51fa63094248f7b5afdc526cee36020b"
+    },
+    {
+      "file": "Player_Hair_142.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_142.png",
+      "sha256": "989fa0fe1fa08efed36a8f371d0f3143d2674efc21b161651545a255cb08c9e8"
+    },
+    {
+      "file": "Player_Hair_143.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_143.png",
+      "sha256": "e6fea383d16838509b83a7bc3602ebf303a4db585146384f11e285f1a8e3d65e"
+    },
+    {
+      "file": "Player_Hair_144.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_144.png",
+      "sha256": "bee3ea836dfcdc80fc7fd7a1e094834dd650274586d30a90430fbcf1afd84adf"
+    },
+    {
+      "file": "Player_Hair_145.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_145.png",
+      "sha256": "b9521562836c9d1f0cd8c757efa42b88b0d5f1003050b29c2033f38e7e9c3b7d"
+    },
+    {
+      "file": "Player_Hair_146.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_146.png",
+      "sha256": "b4bb6fe016c29179a203b6db84dac272a34d1a47f8c9bf2d36b819e2488a27a6"
+    },
+    {
+      "file": "Player_Hair_147.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_147.png",
+      "sha256": "bfd9f9cb2ae21437083ad3328765301d59ea4de34a843349441f1683492516d8"
+    },
+    {
+      "file": "Player_Hair_148.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_148.png",
+      "sha256": "94e36a4d89ef55de544e0d1d77ae270a8e9eb1a9c032d6952fa3a5b765eac90a"
+    },
+    {
+      "file": "Player_Hair_149.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_149.png",
+      "sha256": "39bd94e4b5fd8ba67470e5ae9c9aadd92b64e834479ea4f48c9f0a25270cf509"
+    },
+    {
+      "file": "Player_Hair_15.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_15.png",
+      "sha256": "109aa49609ce0571a03f1b62f620e9610c40e02de9222099964dc2c197afdaad"
+    },
+    {
+      "file": "Player_Hair_150.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_150.png",
+      "sha256": "6dad80091d780893f39ccfa5589c593a7e4085872f240632525e3a465af31355"
+    },
+    {
+      "file": "Player_Hair_151.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_151.png",
+      "sha256": "cb48935d56c6acda5d526bac6190f4ccd4f3dd5dc672c5c95f562ee1f4e7fac9"
+    },
+    {
+      "file": "Player_Hair_152.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_152.png",
+      "sha256": "73a7e59b67c907c853daae302c8c5159031a60e6dbb1c013bea2509b9d2bacdc"
+    },
+    {
+      "file": "Player_Hair_153.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_153.png",
+      "sha256": "49ea9ac7e059360ddc6dc854cdf941272d7ed0791fc3c86c666f5c1ab594d3c4"
+    },
+    {
+      "file": "Player_Hair_154.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_154.png",
+      "sha256": "f23612a1ce5dc122dc986946471968e9ffb3ccd13d69c46b5aaabff8634ef564"
+    },
+    {
+      "file": "Player_Hair_155.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_155.png",
+      "sha256": "3371673d277f7147d89b3d687424ca7c91f24ee80337ca0e34cd5a2b19ba624b"
+    },
+    {
+      "file": "Player_Hair_156.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_156.png",
+      "sha256": "8e29ce9a1921a6f6871fda445ac997a4b7e967ea165b2e63cc533567a688955f"
+    },
+    {
+      "file": "Player_Hair_157.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_157.png",
+      "sha256": "47a570f0c173798d614b54309120b18b35157b2495c65d4735edb53ee1b4c252"
+    },
+    {
+      "file": "Player_Hair_158.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_158.png",
+      "sha256": "0e8992e783a034d05358a14873b848ee160908a3f898913ee1fd6b2f0780d020"
+    },
+    {
+      "file": "Player_Hair_159.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_159.png",
+      "sha256": "ce5420030dc17b5fb8bf2a54ccabd9169a81e4d3a0112a3de0e7abc1c3134b65"
+    },
+    {
+      "file": "Player_Hair_16.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_16.png",
+      "sha256": "26aae66aff54cc7450b9add15931e7a4e85993d50d47c0c7a1e1b923286d89f6"
+    },
+    {
+      "file": "Player_Hair_160.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_160.png",
+      "sha256": "00bad58a30492498e6f3883ad82d57b746b86a0e33672a934526e3ce2fdb6c3c"
+    },
+    {
+      "file": "Player_Hair_161.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_161.png",
+      "sha256": "049b1f328f238777d5ef529fa7227ef80c80ff7f6e95557c518711cd239545af"
+    },
+    {
+      "file": "Player_Hair_162.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_162.png",
+      "sha256": "c86cba8e76c939f15815cf422f434afaa45f28a844de14f0b9ec713a71b3581b"
+    },
+    {
+      "file": "Player_Hair_163.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_163.png",
+      "sha256": "d0aa30038d3cb988e01c63a8bc4b4fc7dfe42a1bf0311d405b4e93bf446abdbd"
+    },
+    {
+      "file": "Player_Hair_164.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_164.png",
+      "sha256": "f9919150b49e826e2a5feb7c331eba27f9d263df39bf1f19e395fc6fd3a569c8"
+    },
+    {
+      "file": "Player_Hair_165.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_165.png",
+      "sha256": "64c120f457a661ec9bdfcf9614f470cb78fa1b6ae5d1697e6ad4c8b3c70d2055"
+    },
+    {
+      "file": "Player_Hair_17.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_17.png",
+      "sha256": "7cd91a84f07fcac5571efa26b0c67c3b9f4a47f352df3c36779ac2d326d9a5ab"
+    },
+    {
+      "file": "Player_Hair_18.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_18.png",
+      "sha256": "a54aa9783b83ab646c09a2aa6bc5ff9307f55dc031ed980b55f7d68c8ce33e49"
+    },
+    {
+      "file": "Player_Hair_19.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_19.png",
+      "sha256": "bd99647f23d662756382f308bf719fbfecf2f19cdfdd4386df72723ce40a2fce"
+    },
+    {
+      "file": "Player_Hair_20.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_20.png",
+      "sha256": "774e910879d6022c2914b740719e302e268d8c4f24bb5dcb223ca3af9fd2c00a"
+    },
+    {
+      "file": "Player_Hair_21.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_21.png",
+      "sha256": "f95ab6e46080a63bf3c1c5572432f42c1f8034e266e761fac45fcf6cf594249c"
+    },
+    {
+      "file": "Player_Hair_22.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_22.png",
+      "sha256": "60b55bb80eca03f6d354d67329beafa1808684f76e18326c76619d0b71fd51a8"
+    },
+    {
+      "file": "Player_Hair_23.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_23.png",
+      "sha256": "e7930929d4e1a6ac0e86ff3214633c3c735a72d7961d050d5b00adf4e3c3f6a8"
+    },
+    {
+      "file": "Player_Hair_24.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_24.png",
+      "sha256": "0a3f58f585081941fb3c9c9d98c683adadfe82edb719f012a73e5193d6d34f5a"
+    },
+    {
+      "file": "Player_Hair_25.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_25.png",
+      "sha256": "0b559ab5a76259707e0076b82c99e013846b4b657b0a0d6d13252f28ba7fe08b"
+    },
+    {
+      "file": "Player_Hair_26.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_26.png",
+      "sha256": "a89fd437f2d0368ed5a7f19f361e4e7a0492f62e11337261e2418489e72d8803"
+    },
+    {
+      "file": "Player_Hair_27.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_27.png",
+      "sha256": "c91c75772258d0ed85e5857064d7e57a3455188911dece4e760b0ed48e9d00a7"
+    },
+    {
+      "file": "Player_Hair_28.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_28.png",
+      "sha256": "dcf4c8b445867c68715960f3d5065b13b5b0ed317343502fb615718c8ee09751"
+    },
+    {
+      "file": "Player_Hair_29.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_29.png",
+      "sha256": "8b442d2a268d7daa7bae86d6ee094e4ba092fd3129b82d554a17ac0bc9372c15"
+    },
+    {
+      "file": "Player_Hair_3.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_3.png",
+      "sha256": "916be2bbeaf1bfc247bdfd95a524e7c0fcd5e31790975e8a17e8b97ac6c2f40b"
+    },
+    {
+      "file": "Player_Hair_30.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_30.png",
+      "sha256": "451f6381f180dc83dda0a2c505ab5ea61d80a398fe52a47e94ea09f6e0b63c81"
+    },
+    {
+      "file": "Player_Hair_31.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_31.png",
+      "sha256": "6b4feb4d59291ba363e04619a8f21b498ddd9eda3c1f966759a9cb53f40f31d2"
+    },
+    {
+      "file": "Player_Hair_32.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_32.png",
+      "sha256": "b45c092213a31102dbfd7c87cd4d3a796e9b349f3c3d0d1d5a8b800c0aea4d6c"
+    },
+    {
+      "file": "Player_Hair_33.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_33.png",
+      "sha256": "03995a00e9e517387ebb78874d17f1e29bdfc26a9ddafceb9d7bc9a60caf40ac"
+    },
+    {
+      "file": "Player_Hair_34.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_34.png",
+      "sha256": "34e95e19f1d92f650f93657be0825156c99b1b53b1f541d1999bf3ebe63d2f37"
+    },
+    {
+      "file": "Player_Hair_35.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_35.png",
+      "sha256": "d4cb5918a37850b1256abd308a1b7222813d9c56b9363d0734661ac83ee1ac58"
+    },
+    {
+      "file": "Player_Hair_36.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_36.png",
+      "sha256": "eaa3af45fffba4e8ad004c651c4f69af443002725932f71e5660299d28136057"
+    },
+    {
+      "file": "Player_Hair_37.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_37.png",
+      "sha256": "34c5b35ffc457699b009f996c3ef3ba984a41a60c8520f206bce5a7ee7498f52"
+    },
+    {
+      "file": "Player_Hair_38.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_38.png",
+      "sha256": "5de718dd080f38c1059c1e66af2e23aac7ec2c94c8f4160255a24a77ca876783"
+    },
+    {
+      "file": "Player_Hair_39.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_39.png",
+      "sha256": "7b625205a699290d593574edea2dae505201e7ba085422de17702b8a8aede3f8"
+    },
+    {
+      "file": "Player_Hair_40.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_40.png",
+      "sha256": "c5a58b2558f55a7ce6d899db6cf0453a0219825e5886496c31f3a3c7b1c59ee5"
+    },
+    {
+      "file": "Player_Hair_41.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_41.png",
+      "sha256": "0bb4279b7708b277513f8bc9bfd0d5e7929153547687f15946187dcf14fbf0ef"
+    },
+    {
+      "file": "Player_Hair_42.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_42.png",
+      "sha256": "e553110102dd5a2f26a0cdd2bb92563b95b44795f3367528aa9e0914c049b055"
+    },
+    {
+      "file": "Player_Hair_43.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_43.png",
+      "sha256": "a2958b15edd023bfd5f2a69a041fa159ddd0a7b964272a2cbd0699aa6e4b66e7"
+    },
+    {
+      "file": "Player_Hair_44.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_44.png",
+      "sha256": "31a7567ab21db880ff9655b8c90868f86c2775a9ac8d20db29480339863dbc9e"
+    },
+    {
+      "file": "Player_Hair_45.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_45.png",
+      "sha256": "3bcf18119ec8a6fcdb6af48585cad23f7e1b3060b78db5708a35eba1b5b2530d"
+    },
+    {
+      "file": "Player_Hair_46.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_46.png",
+      "sha256": "2805d1167d06e5913975d16f402446f1d1d8f0cf9b0be93e89ad4dc7e22e8a2e"
+    },
+    {
+      "file": "Player_Hair_47.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_47.png",
+      "sha256": "a874da8293b99d594512c6e561d3a2bea1533262e6da71866a295c952a438ae5"
+    },
+    {
+      "file": "Player_Hair_48.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_48.png",
+      "sha256": "503d154091ead92ab5a4973700d13c6cce93dd5654aa5e7c2bba007a0becdc7a"
+    },
+    {
+      "file": "Player_Hair_49.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_49.png",
+      "sha256": "9e455e81254f13c812cffc897cc715849a5313894cd56657341ac15be81ebccf"
+    },
+    {
+      "file": "Player_Hair_5.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_5.png",
+      "sha256": "bd613a4634db75025e5538f3737db67f45830c7ed8bfec62e3a73854373cc7b0"
+    },
+    {
+      "file": "Player_Hair_50.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_50.png",
+      "sha256": "f1c5cfd446e1c384096f46bb0974005e4f8a0f1a47850a438cf4a0821b32f4c4"
+    },
+    {
+      "file": "Player_Hair_51.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_51.png",
+      "sha256": "a9a5c006024ccfdad3485dd2655b12f633567d10c496e8aa0c35e7c971a86cc7"
+    },
+    {
+      "file": "Player_Hair_52.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_52.png",
+      "sha256": "b46ad3d1ce3d8796679866b396555122be7a0c2bbc6cc0e0ba5d407a41cb7f88"
+    },
+    {
+      "file": "Player_Hair_53.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_53.png",
+      "sha256": "a8a7161e386d7dbf717e0e558d3292fe19d01dbd9aece6c023c4f064a29c008a"
+    },
+    {
+      "file": "Player_Hair_54.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_54.png",
+      "sha256": "4f07999aaedb67378845f494db0500f303849fbf81070a3100ff8619537fb85c"
+    },
+    {
+      "file": "Player_Hair_55.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_55.png",
+      "sha256": "06173ef095d7956319f56e9dc268397350f739ed57e7aca64c20003f9fc43d15"
+    },
+    {
+      "file": "Player_Hair_56.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_56.png",
+      "sha256": "3f1961a6f505638894a1e8d51902f1172ce10bd2597e5ba394656d216253051a"
+    },
+    {
+      "file": "Player_Hair_57.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_57.png",
+      "sha256": "621bdeca6f41b63e7209929f9ea2e38dd671de8dea0105a5781b87a827eb5749"
+    },
+    {
+      "file": "Player_Hair_58.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_58.png",
+      "sha256": "f1763a6210319f1845e1c04e9bbcfb5f4e97f37a4e70209b1cffc4d6c55c7bf6"
+    },
+    {
+      "file": "Player_Hair_59.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_59.png",
+      "sha256": "ef65b1986ef1ae07ccf565c43941ab0a7457458930b4bcae8929be78afa8ac61"
+    },
+    {
+      "file": "Player_Hair_6.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_6.png",
+      "sha256": "2d58e0176582cf8050f422f8ed1c39e17ba3d0a767cac4f75776dc9dbc901a01"
+    },
+    {
+      "file": "Player_Hair_60.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_60.png",
+      "sha256": "d7256ab3d7c6ad870820159e2f526d0fe6a6b4c2bf34f8d0031ae54330c031d3"
+    },
+    {
+      "file": "Player_Hair_61.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_61.png",
+      "sha256": "8098e8d3d00f7ba83d8e51546e49babc6484db9badcfd83abbeddff47c49c31a"
+    },
+    {
+      "file": "Player_Hair_62.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_62.png",
+      "sha256": "b7b9ab74ead9b71313d38292629f6d774fba6041a73cdf0691e1da7a45c08a3b"
+    },
+    {
+      "file": "Player_Hair_63.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_63.png",
+      "sha256": "6c1cded0cb580d942f74164f594574f8ec7acc8a87228b6bd5e2ad8e2e582435"
+    },
+    {
+      "file": "Player_Hair_64.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_64.png",
+      "sha256": "8dc25da2744f38039417ab294dc3bd53dfeec1a7abe42049c5be01fe9f46be87"
+    },
+    {
+      "file": "Player_Hair_65.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_65.png",
+      "sha256": "8bb9148aee8647faa965b02ebd262f5e7731e8a1f6b3b55ba6f76bbe680fbb10"
+    },
+    {
+      "file": "Player_Hair_66.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_66.png",
+      "sha256": "2165865d18a357fd46d96e00b2eda12761b198384f7d1960441ad418e851f4c6"
+    },
+    {
+      "file": "Player_Hair_67.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_67.png",
+      "sha256": "f0eedf40c3087afa4feb5a228d1d5120f55b4b39989bb12003b6e8a0d3dfe3d3"
+    },
+    {
+      "file": "Player_Hair_68.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_68.png",
+      "sha256": "e2311836abc5c0691615b31ddc527a6fef507f3b1707032a21a3ade5cd627891"
+    },
+    {
+      "file": "Player_Hair_69.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_69.png",
+      "sha256": "540c8dadf145ce8610cf8e861cb6e0575718a697bb348d2c13f8625b5c53c486"
+    },
+    {
+      "file": "Player_Hair_7.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_7.png",
+      "sha256": "80e4ae53099b24c44878e0557865e2e13be0a00e172e5f62ab69558c644d49c3"
+    },
+    {
+      "file": "Player_Hair_70.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_70.png",
+      "sha256": "7d111c0e5038c3d2825a97b2e2f6e24b1b21540d3d022f92d006671069395404"
+    },
+    {
+      "file": "Player_Hair_71.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_71.png",
+      "sha256": "f1a79d8aa46c5b98364cb4e4d12a2d264631aa5fc24498f34db056d842edb95e"
+    },
+    {
+      "file": "Player_Hair_72.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_72.png",
+      "sha256": "fcf68b89b0d84266351eb0cc8ef1bcc9223197d5dca8f957d50d086284297319"
+    },
+    {
+      "file": "Player_Hair_73.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_73.png",
+      "sha256": "5425f337298e35edd2a965a3d85c2410098d336a93611d3acae41ab508500e62"
+    },
+    {
+      "file": "Player_Hair_74.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_74.png",
+      "sha256": "a2670acbc1a0c2dfc5fb03071562dc2f9b87a9fc869a7cd9708f7fa6c928d010"
+    },
+    {
+      "file": "Player_Hair_75.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_75.png",
+      "sha256": "c3c4ce61a91d688383f963db880bcdd91cdd5d6eb6d1fd3f025a641ea5256ca3"
+    },
+    {
+      "file": "Player_Hair_76.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_76.png",
+      "sha256": "7f8b3059663808543d618a47616a0d1bfa0c813c9d5a5286b311a9f86a9f060a"
+    },
+    {
+      "file": "Player_Hair_77.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_77.png",
+      "sha256": "7e3cbf1eb8e48782d41f2a1e3743f03ccb8c545ccce4d6d05ffd4861cd91ff72"
+    },
+    {
+      "file": "Player_Hair_78.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_78.png",
+      "sha256": "eb57f0c6bc9eec2cba3ef83a015bf2e726a6110c570db19408c7ff2676606446"
+    },
+    {
+      "file": "Player_Hair_79.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_79.png",
+      "sha256": "8f4d7948fcc9f847aa4b7657b4fccd2694a3379d69cd96beaf63caa1fd8a9dd6"
+    },
+    {
+      "file": "Player_Hair_8.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_8.png",
+      "sha256": "e4e6803edb34190847d9bf54291816a6253cc41a51c94e780fea92030607cf50"
+    },
+    {
+      "file": "Player_Hair_80.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_80.png",
+      "sha256": "0964f4984243cae7095a8d5b2c769d7c8ecca9a283635c63d7f9f2eb5bfd4599"
+    },
+    {
+      "file": "Player_Hair_81.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_81.png",
+      "sha256": "70e6da146a18a9184174eda2efd26524e0c72a89c622c1da228a5061aa2ccec3"
+    },
+    {
+      "file": "Player_Hair_82.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_82.png",
+      "sha256": "b0397a443c649a16dae9f7686a4db7bdf0e28e88a50f274995903e037573b870"
+    },
+    {
+      "file": "Player_Hair_83.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_83.png",
+      "sha256": "49017d2523df2aac611b6a5ffeae6cfa16e2b08ad6977cf95621f00af887a163"
+    },
+    {
+      "file": "Player_Hair_84.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_84.png",
+      "sha256": "c039e561750373c047561743199b29345f76cb1dc2b97d9d6574ffa8da1c45a6"
+    },
+    {
+      "file": "Player_Hair_85.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_85.png",
+      "sha256": "90486562e3cefc8372a2089965cad64f4a47915816c25006bd09d239df70ea51"
+    },
+    {
+      "file": "Player_Hair_86.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_86.png",
+      "sha256": "6213f2c6ed1da321b4e914fec441d17bfe15edc6c481f63f3526efd732ed37f1"
+    },
+    {
+      "file": "Player_Hair_87.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_87.png",
+      "sha256": "36bf97a277d5a7ac144ed51cf725d7f1ef6494532e86b0c2586ad40619b95fa2"
+    },
+    {
+      "file": "Player_Hair_88.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_88.png",
+      "sha256": "f35057af507e85df8fad790b9ddeeee1eb0127e9c6b90230dc7e486d0db89b93"
+    },
+    {
+      "file": "Player_Hair_89.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_89.png",
+      "sha256": "b8f7e7575dcf6c9bec5bbbaa6153ac0cf4788b0889d92a2502d4ae0a2339d5da"
+    },
+    {
+      "file": "Player_Hair_9.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_9.png",
+      "sha256": "ba8d935c92ad8f36b24a06a859863a16811074600149f17fe4138f45a0995ca0"
+    },
+    {
+      "file": "Player_Hair_90.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_90.png",
+      "sha256": "b83ca4fb1fe852cfd626317ab4f391d416c0a642eb2d1477a130bab449204f68"
+    },
+    {
+      "file": "Player_Hair_91.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_91.png",
+      "sha256": "31547f8e9e6746b436a106d4f8ba0015434f591f2e256463eb6ca393ad35fbff"
+    },
+    {
+      "file": "Player_Hair_92.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_92.png",
+      "sha256": "20f3ea25099351faf67727f2bd44719f8d6a0ff847f6c25fec4002c28618d467"
+    },
+    {
+      "file": "Player_Hair_93.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_93.png",
+      "sha256": "fab67d0187e2c6cc87e9c1699714ebf3546c0827b977c9af48bffa27921f8f01"
+    },
+    {
+      "file": "Player_Hair_94.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_94.png",
+      "sha256": "1bbb90b764c4d144bcee40e15d9bc3d4d7d0f2c0e87385c444e96f381309f0b2"
+    },
+    {
+      "file": "Player_Hair_95.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_95.png",
+      "sha256": "0439278dfc279639ed3aec3e9cc0c009b81eaeb9f692407460d76c37c9eb1921"
+    },
+    {
+      "file": "Player_Hair_96.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_96.png",
+      "sha256": "68ac56e312eb43eb40b711b5928a21b5e3055f7413942c4b5a4486002c7162c9"
+    },
+    {
+      "file": "Player_Hair_97.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_97.png",
+      "sha256": "188215e5c6531456b4c6e6858d081df13954920061835d8cbdb6f171b35558a6"
+    },
+    {
+      "file": "Player_Hair_98.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_98.png",
+      "sha256": "550e1f4d6c42db22e361d328b429b1823e6c5b343d1d73b0bc3413a989d0a984"
+    },
+    {
+      "file": "Player_Hair_99.png",
+      "url": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Player_Hair_99.png",
+      "sha256": "d12e3b17a64cbbef28100c1215a1b9c7859db474b615cda26e53a1cae1bb1a9d"
+    }
+  ]
+}

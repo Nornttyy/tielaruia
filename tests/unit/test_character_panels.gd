@@ -69,13 +69,35 @@ func test_creator_save_writes_character():
 	assert_eq(loaded.gender, 1)
 	assert_eq(loaded.hair_style, 2)
 
-func test_chest_row_only_visible_for_female():
+func test_original_female_silhouette_has_no_custom_size_slider():
 	panels._on_new_character()
-	await wait_frames(1)
-	panels._set_gender(0)
-	assert_false(panels._chest_row.visible, "男: 胸围行隐藏")
 	panels._set_gender(1)
-	assert_true(panels._chest_row.visible, "女: 胸围行显示")
+	assert_eq(panels._appearance.gender, 1)
+	assert_eq(panels._appearance.hair_style, 4, "首次选择女角色使用原长发")
+	for label in _all_labels(panels): assert_ne(label.text, "胸围", "原片的体型不增加虚构滑杆")
+
+func test_editing_keeps_hair_and_existing_progress():
+	var c = CharacterData.new()
+	c.character_name = "保留造型"
+	c.gender = 1
+	c.hair_style = 51
+	c.player_max_hp = 180
+	c.inventory_slots = [{"item_id": "torch", "count": 44}]
+	CharacterManager.save_character(c)
+	panels._on_edit_character(c.character_name)
+	assert_eq(panels._appearance.hair_style, 51, "打开编辑不能重置长发")
+	panels._save_creator()
+	var saved = CharacterManager.load_character_by_name(c.character_name)
+	assert_eq(saved.hair_style, 51)
+	assert_eq(saved.player_max_hp, 180)
+	assert_eq(saved.inventory_slots[0].count, 44)
+
+func test_hair_picker_has_all_unique_original_options():
+	panels._on_new_character()
+	panels._open_hair_picker()
+	assert_eq(panels._hair_buttons.size(), 165)
+	panels._hair_buttons[15].pressed.emit()
+	assert_false(panels._hair_panel.visible)
 
 # 回归 (用户报"创建不了女角色"): 选女多出"胸围"行, 不能把保存键挤走 —
 # 否则用户点原来的位置点空, 女角色存不进去。保存键现在钉在面板底部, 男女同位置。

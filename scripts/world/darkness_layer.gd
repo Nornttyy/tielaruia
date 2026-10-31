@@ -1,4 +1,4 @@
-# 平滑黑暗覆盖 (Terraria 风).
+# 平滑彩色光照覆盖：乘色保留火把、月光与水下的颜色。
 # 实现: 1 像素/tile 的 ImageTexture, Sprite2D 上以 LINEAR 滤镜放大 16x.
 # 像素插值天然产生 sub-tile 平滑过渡, 不再有"阶梯感".
 #
@@ -6,7 +6,7 @@
 # 不用 set_pixel (GDScript 单像素写慢).
 extends Sprite2D
 
-const TileLightGrid = preload("res://scripts/world/tile_light_grid.gd")
+const ColorLightGrid = preload("res://scripts/world/color_light_grid.gd")
 
 const TILE_SIZE := 12
 # 纹理大小动态算: viewport_size / (camera_zoom * TILE_SIZE) + buffer.
@@ -17,11 +17,16 @@ const TILE_SIZE := 12
 # (旧值 180×116 是按 TILE=16 误算的, 比实际视野小 → 边缘漏盖.)
 # 重算是 4Hz 节流 (UPDATE_INTERVAL), 且默认 zoom 0.8 只需 ~149×91 远小于上限,
 # 故调大上限不影响正常游玩开销, 只在真拉到最远时才用满。
-const MAX_W := 240
-const MAX_H := 144
-const BUFFER_TILES := 8
+const MAX_W := 304
+const MAX_H := 208
+const BUFFER_TILES := 32
 const UPDATE_INTERVAL := 0.25   # 原值 (用户要求调回 4Hz)
 
+var _dirty := true
+var _lit_rect := Rect2()
+var _last_sky := Vector3(-1, -1, -1)
+var _last_sources: Array = []
+var update_count := 0
 var _img: Image
 var _last_update: float = 0.0
 var _cur_w: int = MAX_W        # 当前实际用的纹理宽 (按 zoom 算)
@@ -40,6 +45,10 @@ func _ready() -> void:
 	texture = ImageTexture.create_from_image(_img)
 	scale = Vector2(TILE_SIZE, TILE_SIZE)
 	z_index = 10
+	var multiply := CanvasItemMaterial.new()
+	multiply.blend_mode = CanvasItemMaterial.BLEND_MODE_MUL
+	multiply.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	material = multiply
 	add_to_group("darkness_layer")
 	# 模板: 全黑 alpha=255. 每帧 _update_viewport duplicate 它再覆盖 viewport.
 	_full_dark_template = PackedByteArray()
@@ -68,7 +77,7 @@ func _update_viewport() -> void:
 			return
 	var player: Node2D = _cached_player
 	var cm: Node = _cached_cm
-	# 注: 不加"玩家没动就跳过", 否则挖墙看不到光变化
+	# 修改方块/液体会显式标脏；静止画面复用含缓冲区的光场。
 	# 按当前 viewport_size + camera_zoom 算需要多少 tile 才能盖满屏
 	var vp_size: Vector2 = get_viewport_rect().size
 	var active_camera := get_viewport().get_camera_2d()
@@ -84,51 +93,45 @@ func _update_viewport() -> void:
 	var py: int = int(floor(player.global_position.y / TILE_SIZE))
 	var x0: int = floori(view_center.x / TILE_SIZE) - half_w
 	var y0: int = floori(view_center.y / TILE_SIZE) - half_h
-	var torches: Array = _collect_torches()
-	# compute_region 返 PackedByteArray (索引 (y-y0)*_cur_w + (x-x0)), 不再是 Vector2i dict.
-	var grid: PackedByteArray = TileLightGrid.compute_region(cm, x0, y0, x0 + _cur_w, y0 + _cur_h,
-			Vector2i(px, py), torches)
+	var sources: Array = []
+	# 玩家本身不发光；实际拿着火把时才添加跟随手部的暖色光。
+	var inventory := player.get_node_or_null("PlayerInventory")
+	if inventory != null and inventory.has_method("current_hotbar_slot"):
+		var slot: Variant = inventory.current_hotbar_slot()
+		if slot != null and String(slot.item_id) in ["torch", "slime_torch"]:
+			var head := Vector2i(px, py - 2)
+			if not Tiles.is_water(cm.get_tile(head.x, head.y)):
+				sources.append({"position": head, "color": ColorLightGrid.TORCH_COLOR})
+	var view_rect := Rect2(view_center - vp_size / zoom / 2.0, vp_size / zoom)
+	var current_sky := ColorLightGrid.sky_color()
+	if not _dirty and _lit_rect.grow(-8 * TILE_SIZE).encloses(view_rect) and current_sky.distance_to(_last_sky) < 0.015 and sources == _last_sources:
+		return
+	_dirty = false
+	_last_sky = current_sky
+	_last_sources = sources.duplicate(true)
+	_lit_rect = Rect2(Vector2(x0, y0) * TILE_SIZE, Vector2(_cur_w, _cur_h) * TILE_SIZE)
+	update_count += 1
+	var grid := ColorLightGrid.compute_region(cm, x0, y0, x0 + _cur_w, y0 + _cur_h, sources)
 	global_position = Vector2(x0 * TILE_SIZE, y0 * TILE_SIZE)
-	# 批量构造像素字节 — 用 MAX_W × MAX_H buffer, 只填 _cur_w × _cur_h 区域.
-	# 优化: 不再 GDScript 循环填 alpha=255 (21k iter), 直接 duplicate 预算好的模板 (C-level memcpy).
 	var bytes: PackedByteArray = _full_dark_template.duplicate()
-	var max_l: float = float(TileLightGrid.MAX_LIGHT)
-	for y in range(_cur_h):
-		var row_grid: int = y * _cur_w
-		var row_bytes: int = y * MAX_W
-		for x in range(_cur_w):
-			var light: int = grid[row_grid + x]
-			var a: int = clampi(int((1.0 - float(light) / max_l) * 255.0), 0, 255)
-			var bi: int = (row_bytes + x) * 4
-			bytes[bi] = 0
-			bytes[bi + 1] = 0
-			bytes[bi + 2] = 0
-			bytes[bi + 3] = a
+	for y in _cur_h:
+		for x in _cur_w:
+			var source := (y * _cur_w + x) * 4
+			var target := (y * MAX_W + x) * 4
+			bytes[target] = grid[source]
+			bytes[target + 1] = grid[source + 1]
+			bytes[target + 2] = grid[source + 2]
 	_img.set_data(MAX_W, MAX_H, false, Image.FORMAT_RGBA8, bytes)
 	texture.update(_img)
 
 
-# 收集 WorldLighting 管理的发光 tile 坐标 (TORCH + SLIME_TORCH)
-func _collect_torches() -> Array:
-	var wl: Node = get_tree().get_first_node_in_group("world_lighting")
-	if wl == null:
-		return []
-	if wl.has_method("get_light_tiles"):
-		return wl.get_light_tiles()
-	# 兼容旧接口
-	if "_torches" in wl:
-		return wl._torches.keys()
-	return []
-
-
-# 兼容 stub: 现在 _process 视野更新接管, 不需要专门触发
+# 地形变化和流动水显式失效；日夜和镜头移动由上面的条件检查。
 func recompute_chunk(_chunk_x: int, _chunk_width: int, _world_height: int) -> void:
-	pass
-
+	_dirty = true
 
 func clear_chunk(_chunk_x: int, _chunk_width: int, _world_height: int) -> void:
-	pass
+	_dirty = true
 
-
-func recompute_around(_tile_x: int, _tile_y: int, _radius: int) -> void:
-	pass
+func recompute_around(tile_x: int, tile_y: int, radius: int) -> void:
+	if _lit_rect.has_point(Vector2(tile_x, tile_y) * TILE_SIZE) or _lit_rect.size == Vector2.ZERO:
+		_dirty = true

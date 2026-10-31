@@ -39,6 +39,11 @@ kind = "bat"
 
 [node name="TerrainLayer" type="TileMapLayer" parent="."]
 
+[node name="WaterLayer" type="TileMapLayer" parent="."]
+z_index = 8
+collision_enabled = false
+navigation_enabled = false
+
 [node name="DarknessLayer" parent="." instance=ExtResource("5_dark")]
 z_index = 10
 

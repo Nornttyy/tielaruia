@@ -126,9 +126,8 @@ func _ready() -> void:
 	_action_sprite.visible = false
 	add_child(_action_sprite)
 	add_to_group("player")
-	# 角色永远明亮 (用户要求): 画在光照层(DarknessLayer z=10)之上, 黑暗盖不到玩家 →
-	# 眼白等永远清楚, 山洞/夜里也看得清自己 (其它实体仍随光变暗).
-	z_index = 11
+	# 人物、手持武器与环境使用同一光场；水只遮住实际浸入的像素。
+	z_index = 3
 	# 斜坡: 默认 floor_max_angle=45° 正好卡边界, 45° 斜砖会被当墙. 调到 ~51° 让斜面算地面能走上去.
 	floor_max_angle = 0.90
 	# 连受击信号
@@ -268,6 +267,16 @@ func _is_in_water() -> bool:
 	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
 	var ty: int = int(floor((global_position.y + float(PLAYER_WAIST_OFFSET)) / float(TILE_SIZE)))
 	return _is_water_tile(cm.get_tile(tx, ty))
+
+
+# 按实际液位判断头部，浅水不会让人物在水面上吐泡泡。
+func is_head_submerged() -> bool:
+	var cm = _get_chunk_manager()
+	if cm == null: return false
+	var head := global_position + Vector2(0, PLAYER_HEAD_OFFSET)
+	var cell := Vector2i(floori(head.x / TILE_SIZE), floori(head.y / TILE_SIZE))
+	var level: int = Tiles.water_level(cm.get_tile(cell.x, cell.y))
+	return level > 0 and head.y >= (cell.y + 1) * TILE_SIZE - level * TILE_SIZE / 8.0
 
 
 # 玩家身体 (腰或胸) 是否在绳子 tile 内
@@ -417,7 +426,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var dir := Input.get_axis("move_left", "move_right")
-	# 泡水里走得慢一半 + sprite 偏蓝
+	# 泡水移动减速；视觉由前景液体和光场负责。
 	var in_water: bool = _is_in_water()
 	# 入水那一刻: 溅水花 + 上扬水珠 + "噗通"音效 (要往下扎进去才算, 防水面浮沉刷屏)
 	if in_water and not _was_in_water and velocity.y > 20.0:
@@ -426,7 +435,7 @@ func _physics_process(delta: float) -> void:
 		Effects.spawn_water_grains(sp, Vector2(0, -55), Tiles.WATER, 5)
 		SfxBank.play("splash", 0.1)
 	# 水下定期冒气泡 (头在水里时): 一串小水珠往上飘 = "在水里"
-	if in_water:
+	if is_head_submerged():
 		_bubble_timer -= delta
 		if _bubble_timer <= 0.0:
 			_bubble_timer = 0.6
@@ -446,7 +455,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		inertia_rate = MOVE_FRICTION if is_on_floor() else MOVE_FRICTION_AIR
 	velocity.x = move_toward(velocity.x, target_vx, inertia_rate * delta)
-	sprite.modulate = Color(0.7, 0.85, 1.15) if in_water else Color.WHITE
+	sprite.modulate = Color.WHITE
 
 	var on_floor_now := is_on_floor()
 

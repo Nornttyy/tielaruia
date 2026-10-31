@@ -72,6 +72,7 @@ const STEP_LABELS := [
 ]
 
 @onready var terrain_layer: TileMapLayer = $TerrainLayer
+@onready var water_layer: TileMapLayer = $WaterLayer
 @onready var wall_layer: TileMapLayer = $WallLayer  # 背景墙 (在 TerrainLayer 之后, 渲染在前景方块后面)
 @onready var entities_root: Node2D = $Entities
 @onready var camera: Camera2D = $Camera2D
@@ -131,6 +132,17 @@ const TreeFrames = preload("res://scripts/world/tree_frames.gd")
 func _original_display_id(pos: Vector2i, tid: int) -> int:
 	var c: Chunk = chunk_manager.get_chunk(Chunk.chunk_x_of(pos.x))
 	return preload("res://scripts/world/original_structure_samples.gd").display_id(c, pos, tid)
+
+# 水独立画在人物和掉落物前方，暗度由同一光场决定；不要再把全身强行染蓝。
+func _render_decoration(pos: Vector2i, tile_id: int) -> void:
+	if Tiles.is_water(tile_id):
+		terrain_layer.erase_cell(pos)
+		water_layer.set_cell(pos, _display_water_tile(pos.x, tile_id), _decoration_frame(pos, tile_id))
+	else:
+		water_layer.erase_cell(pos)
+		if tile_id == Tiles.AIR: terrain_layer.erase_cell(pos)
+		else: terrain_layer.set_cell(pos, _original_display_id(pos, tile_id), _decoration_frame(pos, tile_id))
+
 
 func _decoration_frame(pos: Vector2i, tile_id: int) -> Vector2i:
 	if Tiles.is_water(tile_id) or Tiles.is_biome_water_visual(tile_id):
@@ -223,11 +235,16 @@ func run_init_step(idx: int) -> void:
 func _step_build_tileset() -> void:
 	var ts := TileSetBuilder.build()
 	terrain_layer.tile_set = ts
+	water_layer.tile_set = ts
+	water_layer.collision_enabled = false
+	water_layer.navigation_enabled = false
 	wall_layer.tile_set = ts  # 跟前景共享同一个 TileSet
 	# 下落水视觉层: 纯画面, 在空气格里画"正在下落的水"连成连续水流 (瀑布不再一段段).
 	# 复用同一 TileSet (有水 tile + 动画), 排在 TerrainLayer 之后同 z → 盖在地形水同层.
 	_falling_layer = TileMapLayer.new()
 	_falling_layer.name = "FallingWaterLayer"
+	_falling_layer.z_index = 8
+	_falling_layer.collision_enabled = false
 	_falling_layer.tile_set = ts
 	_falling_layer.modulate = Color(1, 1, 1, 0.85)   # 略透, 像流动的水帘
 	add_child(_falling_layer)
@@ -1177,6 +1194,7 @@ func _on_chunk_loaded(c: Chunk) -> void:
 		for y in col.size():
 			var tid: int = col[y]
 			var pos := Vector2i(world_x, y)
+			water_layer.erase_cell(pos)
 			if tid == Tiles.AIR:
 				# 修存档 bug: 挖空 tile 必须 erase_cell, 不能 skip — 不然 reload 时
 				# terrain_layer 还留着老地形, 玩家卡块.
@@ -1190,7 +1208,7 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				Autotile.refresh_tile(terrain_layer, pos, tid, q, Autotile.make_solid_query(chunk_manager))
 			else:
 				# 水 (普通 + 群系满水) 按列染成所在群系色; 非水 _display_water_tile 原样返回
-				terrain_layer.set_cell(pos, _original_display_id(pos, _display_water_tile(world_x, tid)), _decoration_frame(pos, tid))
+				_render_decoration(pos, tid)
 			var wid: int = wall_col[y]
 			var wpos := Vector2i(world_x, y)
 			if wid == Tiles.AIR:
@@ -1283,6 +1301,7 @@ func _on_chunk_unloaded(cx: int) -> void:
 		var world_x: int = chunk_start + lx
 		for y in ChunkConstants.WORLD_HEIGHT:
 			terrain_layer.set_cell(Vector2i(world_x, y), -1)
+			water_layer.erase_cell(Vector2i(world_x, y))
 			wall_layer.set_cell(Vector2i(world_x, y), -1)
 		SkyLightGrid.invalidate_column(world_x)
 	# 清该 chunk 像素范围内所有"短命"实体: 怪物 (slime/zombie) + 动物 (cow/sheep/pig) + 掉落物
@@ -2021,6 +2040,7 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 	var old_tid: int = chunk_manager.get_tile(x, y)
 	chunk_manager.set_tile(x, y, tile_id)
 	var pos := Vector2i(x, y)
+	water_layer.erase_cell(pos)
 	# 同步 TileMapLayer (chunk_manager 数据已写, 但视觉需另外刷)
 	if tile_id == Tiles.AIR:
 		terrain_layer.set_cell(pos, -1)
@@ -2031,7 +2051,9 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 		var q := Autotile.make_terrain_query(tile_id, chunk_manager)
 		Autotile.refresh_tile(terrain_layer, pos, tile_id, q, Autotile.make_solid_query(chunk_manager))
 	else:
-		terrain_layer.set_cell(pos, tile_id, _decoration_frame(pos, tile_id))
+		_render_decoration(pos, tile_id)
+	if Tiles.is_water(chunk_manager.get_tile(x, y + 1)):
+		_render_decoration(Vector2i(x, y + 1), chunk_manager.get_tile(x, y + 1))
 	# 重算 8 邻居 (它们 mask 变了)
 	for dy in [-1, 0, 1]:
 		for dx in [-1, 0, 1]:
@@ -2200,16 +2222,14 @@ func _set_water_tile_fast(x: int, y: int, tile_id: int, from_remote: bool = fals
 			tile_id = plant
 			chunk_manager.clear_submerged(x, y)
 	chunk_manager.set_tile(x, y, tile_id)
+	darkness_layer.recompute_around(x, y, 1)
 	var pos := Vector2i(x, y)
-	if tile_id == Tiles.AIR:
-		terrain_layer.set_cell(pos, -1)
-	else:
-		terrain_layer.set_cell(pos, _display_water_tile(x, tile_id), _decoration_frame(pos, tile_id))
+	_render_decoration(pos, tile_id)
 	# 水位改变后，下一格可能从水面变成水下，必须同步刷新。
 	var below: int = chunk_manager.get_tile(x, y + 1)
 	if Tiles.is_water(below):
 		var bp := Vector2i(x, y + 1)
-		terrain_layer.set_cell(bp, _display_water_tile(x, below), _decoration_frame(bp, below))
+		_render_decoration(bp, below)
 	# host 广播给 client (但不接收方再回播, 避免回声). 批量模式累积到 buf
 	# 对战房也广播 (看得到彼此); 但竞技场地基期间 (_arena_building) 不广播 (防洪水)。
 	if not from_remote and NetworkManager != null and NetworkManager.connected() \

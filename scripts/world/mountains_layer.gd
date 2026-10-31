@@ -121,6 +121,7 @@ func set_biome(biome_id: int) -> void:
 
 func _process(delta: float) -> void:
 	_align_surface_horizon()
+	_align_ocean_horizon()
 	# 交叉淡入推进
 	if _biome_incoming >= 0:
 		_blend = min(1.0, _blend + delta / CROSSFADE_SEC)
@@ -152,6 +153,35 @@ func _process(delta: float) -> void:
 		fc.a = 1.0
 		ld.fill.color = fc
 		ld.fill.modulate.a = ld.alpha * _layer_alpha
+
+
+# 海岛地平线必须留在真实水面之上；潜水时不能让海岛跟着镜头沉进水里。
+func _align_ocean_horizon() -> void:
+	var world := get_parent()
+	if world == null or not world.has_method("get_player"): return
+	var player = world.get_player()
+	if player == null: return
+	var surface_y := 116.0 * 12.0
+	if _biome_current == 8 or _biome_incoming == 8:
+		var cm = world.get("chunk_manager")
+		if cm != null:
+			var x := floori(player.global_position.x / 12.0)
+			for y in 200:
+				var level: int = Tiles.water_level(cm.get_tile(x, y))
+				if level > 0:
+					surface_y = (y + 1) * 12.0 - level * 1.5
+					break
+	var water_screen_y: float = (world.get_canvas_transform() * Vector2(0, surface_y)).y
+	for i in _layer_data.size():
+		var ld: Dictionary = _layer_data[i]
+		for pair in [[ld.sa, _biome_current], [ld.sb, _biome_incoming]]:
+			var sprite: Sprite2D = pair[0]
+			if int(pair[1]) == 8:
+				# 原图水线约在 y=104，世界显示比例 0.75；远水线比前水面高 24px。
+				var target: float = water_screen_y - 104.0 * 0.75 - 24.0
+				sprite.position.y += target - sprite.get_global_transform_with_canvas().origin.y
+			else:
+				sprite.position.y = _LAYERS[i].y_extra
 
 
 func _align_surface_horizon() -> void:

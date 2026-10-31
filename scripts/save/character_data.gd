@@ -9,11 +9,11 @@ const CURRENT_VERSION := 1
 
 # ---- 外观 (捏人结果; 渲染在计划 2, 这里只存) ----
 @export var gender: int = 0            # 0=男 1=女
-@export var hair_style: int = 0        # 0..3
+@export var hair_style: int = 0        # 原始发型目录索引 (含旧存档兼容映射)
 @export var shirt_style: int = 0       # 0..18 (见 spec 完整目录)
 @export var pants_style: int = 0       # 0..19
 @export var cape_style: int = 0        # 0=无 1=短披风 2=长披风 3=蝴蝶翅膀 4=恐龙尾 5=狗尾 6=兔尾
-@export var chest_size: int = 1        # 仅 gender=1(女): 0..5
+@export var chest_size: int = 1        # 旧存档兼容字段；原片身体使用固定比例
 @export var skin_color: Color = Color8(255, 218, 185)
 @export var hair_color: Color = Color8(121, 85, 72)
 @export var shirt_color: Color = Color8(229, 57, 53)

@@ -19,6 +19,23 @@ const TERRAIN := {
 	B.ICE: 161, B.SNOW_DIRT: 0, B.HELL_STONE: 58,
 	B.OBSIDIAN: 56, B.SANDSTONE: 151,
 }
+# 旧存档前四项保留原映射；后续追加所有原发型，不改变玩家已选的编号。
+const HAIR_IDS := [1, 2, 4, 1, 18, 7, 19, 23, 30, 37, 51, 3, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
+
+static func hair_count() -> int:
+	return HAIR_IDS.size() + 114 # ID 52..165
+
+static func hair_id(style: int) -> int:
+	var index := posmod(style, hair_count())
+	return HAIR_IDS[index] if index < HAIR_IDS.size() else index - HAIR_IDS.size() + 52
+
+static func clothing_variant(ap: Dictionary) -> int:
+	var style := int(ap.get("shirt_style", 0))
+	if style not in [0, 1, 2, 3, 8]: style = 0
+	if int(ap.get("gender", 0)) == 1:
+		return 9 if style == 8 else style + 4
+	return style
+
 static var _images: Dictionary = {}
 static var _players: Dictionary = {}
 static var _actions: Dictionary = {}
@@ -180,17 +197,20 @@ static func _tint(img: Image, color: Color) -> Image:
 			if pixel.a > 0: result.set_pixel(x, y, pixel * color)
 	return result
 
-static func _part(dst: Image, layer: int, col: int, row: int, color: Color, offset := Vector2i.ZERO) -> void:
-	var sheet := source_image("Player_0_%d.png" % layer)
+static func _part(dst: Image, layer: int, col: int, row: int, color: Color, offset := Vector2i.ZERO, variant := 0) -> void:
+	var sheet := source_image("Player_%d_%d.png" % [variant, layer])
+	# 各衣款只存差异层；女性共享 4 号身体，头眼共用 0 号。
+	if sheet == null and variant in [4, 5, 6, 7, 9]: sheet = source_image("Player_4_%d.png" % layer)
+	if sheet == null: sheet = source_image("Player_0_%d.png" % layer)
 	var frame := _tint(sheet.get_region(Rect2i(col * 40, row * 56, 40, 56)), color)
 	dst.blend_rect(frame, Rect2i(0, 0, 40, 56), offset)
 
-static func _arm(dst: Image, skin: Color, shirt: Color, sleeve: Color, back: bool, angle: float, column := 2) -> void:
+static func _arm(dst: Image, skin: Color, shirt: Color, sleeve: Color, back: bool, angle: float, column := 2, variant := 0) -> void:
 	var arm := Image.create(40, 56, false, Image.FORMAT_RGBA8)
 	var row := 2 if back else 0
 	var parts := [[7, skin], [5 if back else 9, skin], [8, sleeve], [13, shirt]]
 	if not back: parts.append([6, shirt])
-	for entry in parts: _part(arm, entry[0], column, row, entry[1])
+	for entry in parts: _part(arm, entry[0], column, row, entry[1], Vector2i.ZERO, variant)
 	# 图集的列不是摆臂时间线。围绕肩膀摆动同一只手，避免切到抬手/伸手姿势。
 	var pivot := Vector2(25, 31) if back else Vector2(15, 31)
 	var rotated := Image.create(40, 56, false, Image.FORMAT_RGBA8)
@@ -209,27 +229,30 @@ static func player_frame(ap: Dictionary, frame: int, front_column := 2, front_an
 	var shirt: Color = ap.get("shirt_color", Color8(175, 165, 140))
 	var sleeve: Color = ap.get("undershirt_color", shirt.darkened(0.12))
 	var leg_frame := clampi(frame, 0, 19)
+	var variant := clothing_variant(ap)
+	var female_row := 2 if int(ap.get("gender", 0)) == 1 else 0
 	# 腿使用整段行走序列；手臂是独立 9×4 图集，不按腿的行号切，避免断手/串帧。
 	var swing := sin(float(frame - 6) / 14.0 * TAU) * 0.38 if frame >= 6 else 0.0
 	if frame == 5: swing = -0.48
-	_part(img, 3, 0, 0, skin)
-	_arm(img, skin, shirt, sleeve, true, -swing if is_inf(back_angle) else back_angle, back_column)
+	_part(img, 3, 0, female_row, skin, Vector2i.ZERO, variant)
+	_arm(img, skin, shirt, sleeve, true, -swing if is_inf(back_angle) else back_angle, back_column, variant)
 	for entry in [[10, skin], [11, ap.get("pants_color", Color8(70, 90, 150))], [12, ap.get("shoe_color", Color8(160, 105, 60))]]:
-		_part(img, entry[0], 0, leg_frame, entry[1])
+		_part(img, entry[0], 0, leg_frame, entry[1], Vector2i.ZERO, variant)
 	for entry in [[4, sleeve], [6, shirt]]:
-		_part(img, entry[0], 1, 1, entry[1])
-		_part(img, entry[0], 0, 0, entry[1])
+		_part(img, entry[0], 1, 1 + female_row, entry[1], Vector2i.ZERO, variant)
+		_part(img, entry[0], 0, female_row, entry[1], Vector2i.ZERO, variant)
 	# 头部沿用原片格；头发仅 14 帧，走路按自己的帧数循环。
 	for entry in [[0, skin], [1, Color.WHITE], [2, ap.get("eye_color", Color8(70, 110, 170))]]:
 		_part(img, entry[0], 0, 0, entry[1])
-	var hair_id: int = [1, 2, 4, 1][posmod(int(ap.get("hair_style", 0)), 4)]
-	var hair_sheet := source_image("Player_Hair_%d.png" % hair_id)
+	var selected_hair := hair_id(int(ap.get("hair_style", 0)))
+	var hair_sheet := source_image("Player_Hair_%d.png" % selected_hair)
 	if hair_sheet == null: hair_sheet = source_image("Player_Hair_1.png")
-	var hair := hair_sheet.get_region(Rect2i(0, 0, 40, 56))
+	var hair_frame := posmod(frame - 6, 14) if frame >= 6 else mini(frame, 5)
+	var hair := hair_sheet.get_region(Rect2i(0, hair_frame * 56, 40, 56))
 	img.blend_rect(_tint(hair, ap.get("hair_color", Color8(190, 110, 60))), Rect2i(0, 0, 40, 56), Vector2i.ZERO)
-	_arm(img, skin, shirt, sleeve, false, swing if is_inf(front_angle) else front_angle, front_column)
+	_arm(img, skin, shirt, sleeve, false, swing if is_inf(front_angle) else front_angle, front_column, variant)
 	for entry in [[7, skin], [8, sleeve], [13, shirt], [6, shirt]]:
-		_part(img, entry[0], 0, 1, entry[1])
+		_part(img, entry[0], 0, 1 + female_row, entry[1], Vector2i.ZERO, variant)
 	# 固定裁剪框，所有动作同尺寸/脚底基准，不逐帧裁透明导致角色跳动。
 	return ImageTexture.create_from_image(img.get_region(Rect2i(4, 6, 32, 44)))
 
