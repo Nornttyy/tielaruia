@@ -95,3 +95,41 @@ func test_skeleton_is_removed_from_spawns_and_remote_messages():
 	assert_null(world._spawn_remote_entity("skeleton"))
 	assert_null(world._spawn_remote_entity("spider"))
 	world.free()
+
+func test_demon_eye_at_outer_spawn_range_flies_towards_player():
+	_floor(-20, 40, 10)
+	player.position = Vector2(30,120)
+	var eye := _spawn("demon_eye", Vector2(294,119.9))
+	for i in 45: await get_tree().physics_frame
+	assert_lt(eye.position.x, 270.0, "22 格外生成的恶魔眼也会主动靠近")
+	assert_lt(eye.velocity.x, 0.0)
+	assert_gt(eye.position.y, 90.0, "不会把脚点当中心而钻进地面")
+
+func test_demon_eye_moves_around_a_real_wall():
+	_floor(-10, 30, 10)
+	for y in range(4, 10): _floor(7, 7, y)
+	player.position = Vector2(150,120)
+	var eye := _spawn("demon_eye", Vector2(42,119.9))
+	for i in 240: await get_tree().physics_frame
+	assert_gt(eye.position.x, 100.0, "恶魔眼应绕过墙顶继续飞向玩家")
+
+func test_air_search_returns_safe_partial_path_when_goal_is_far():
+	var path := Fly.find_path(map, Vector2i(0,0), Vector2i(40,0), Vector2(11,8))
+	assert_false(path.is_empty(), "目标超出搜索窗口时仍能接近，不能直接停止")
+	for cell in path: assert_true(Fly.clear_at(map, cell, Vector2(11,8)))
+
+func test_demon_eye_rotates_in_all_directions_without_flipping():
+	var eye := _spawn("demon_eye", Vector2(42,80))
+	eye.set_physics_process(false)
+	for angle in [0.4, -PI / 2, PI - 0.1, -PI + 0.1, PI / 2]:
+		for i in 45: eye._turn_to(angle, 1.0 / 60.0)
+		assert_almost_eq(angle_difference(eye.sprite.rotation, angle), 0.0, 0.001)
+		assert_false(eye.sprite.flip_h)
+		assert_false(eye.sprite.flip_v)
+	eye.sprite.rotation = PI - 0.05
+	eye._turn_to(-PI + 0.05, 1.0 / 60.0)
+	assert_lt(absf(angle_difference(PI - 0.05, eye.sprite.rotation)), 0.15, "跨 ±PI 走短弧")
+	eye.sprite.rotation = -PI / 2
+	var facing: int = eye.network_facing()
+	eye.apply_network_facing(facing)
+	assert_almost_eq(angle_difference(eye._remote_heading, -PI / 2), 0.0, 0.02, "联机保留完整角度")

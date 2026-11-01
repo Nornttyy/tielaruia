@@ -1,6 +1,9 @@
 # 玩家交互：鼠标瞄准、距离检查、挖放进度。
 extends Node2D
 
+const Mining = preload("res://scripts/items/original_mining.gd")
+var _mining_hit_cooldown := 0.0
+
 const UseTiming = preload("res://scripts/items/original_use_timing.gd")
 var _mining_sound_cooldown := 0.0
 
@@ -315,6 +318,7 @@ func _physics_process(delta: float) -> void:
 
 # 先推进上一击，再接收新输入；新动作不能在起手帧就被多扣一帧时间。
 func _advance_attack_clock(delta: float) -> void:
+	_mining_hit_cooldown = maxf(0.0, _mining_hit_cooldown - delta)
 	_mining_sound_cooldown = maxf(0.0, _mining_sound_cooldown - delta)
 	var player := get_parent()
 	if player != null and player.has_method("advance_action_anim"):
@@ -507,6 +511,8 @@ func _update_mining(delta: float) -> void:
 			return
 	var inv: Node = _inventory_node()
 	var tool_kind: String = "" if inv == null else inv.current_tool_kind()
+	var item_id := _mining_item_id()
+	var original: bool = Mining.TOOLS.has(item_id)
 	var required: int = Tiles.required_tool_tier(tid, tool_kind)
 	if required == -1:
 		# 工具不对 → 永远挖不完，进度归零
@@ -514,10 +520,18 @@ func _update_mining(delta: float) -> void:
 		_mining_target = tile
 		return
 	# 工具 tier 不够 → 也不行 (例如木镐挖铁矿)
-	if _current_tool_tier() < required:
+	if not original and _current_tool_tier() < required:
 		_reset_mining()
 		_mining_target = tile
 		return
+	if original and tool_kind == "pickaxe":
+		var below_surface := true
+		var world := terrain.get_parent()
+		if world.has_method("_surf_at_x"):
+			below_surface = tile.y > world._surf_at_x(tile.x)
+		if Mining.power(item_id) < Mining.required_power(tid, below_surface):
+			_reset_mining()
+			return
 	if tile != _mining_target:
 		# 切到新目标: 不清旧裂纹 (旧方块半挖状态保留显示), 读出新目标存档进度.
 		_mining_target = tile
@@ -529,8 +543,23 @@ func _update_mining(delta: float) -> void:
 			if saved.size() == 2:
 				_clear_crack(tile)        # 清掉过期裂纹
 				_mine_saved.erase(tile)
-	_play_mining_contact(tid)
-	_mining_progress += _tool_speed(tool_kind, tid) * delta * _buff_mining_mul()
+	_ensure_mining_swing()
+	if original:
+		if _mining_hit_cooldown > CLOCK_EPSILON: return
+		_mining_hit_cooldown = Mining.interval(item_id, _buff_mining_bonus())
+		_play_mining_contact(tid)
+		var bare: int = Mining.grass_base(tid)
+		if bare >= 0 and tool_kind == "pickaxe":
+			terrain.get_parent()._set_tile(tile.x, tile.y, bare)
+			_mine_saved.erase(tile)
+			_clear_crack(tile)
+			_reset_mining()
+			return
+		# 保存为同一比例单位，兼容旧档工具留下的半挖裂纹。
+		_mining_progress += float(Mining.power(item_id)) / Mining.hit_points(tid, tool_kind) * _hardness(tid)
+	else:
+		_play_mining_contact(tid)
+		_mining_progress += _tool_speed(tool_kind, tid) * delta * _buff_mining_mul()
 	_mine_saved[tile] = [tid, _mining_progress]   # 存进度: 松手/切目标后还在
 	# 防字典无限涨: 半挖后走开不回来的格子会一直留着. 超 64 条丢最早一条 (不丢当前这格).
 	if _mine_saved.size() > 64:
@@ -542,7 +571,7 @@ func _update_mining(delta: float) -> void:
 	# 通知 CrackOverlay 当前进度
 	var ratio: float = clamp(_mining_progress / _hardness(tid), 0.0, 1.0)
 	_set_crack(tile, ratio)
-	if _mining_progress >= _hardness(tid):
+	if _mining_progress + CLOCK_EPSILON >= _hardness(tid):
 		_finish_mine(tile, tid, tool_kind, terrain)
 		_clear_crack(tile)
 		_mine_saved.erase(tile)   # 挖完了, 清这格存档
@@ -556,8 +585,7 @@ func _play_mining_contact(tile_id: int) -> void:
 	var inv := _inventory_node()
 	var slot: Variant = inv.current_hotbar_slot() if inv != null else null
 	var item_id: String = slot.item_id if slot != null else ""
-	var ticks := {"copper_pickaxe": 15, "iron_pickaxe": 13, "silver_pickaxe": 11, "gold_pickaxe": 17}
-	_mining_sound_cooldown = float(ticks.get(item_id, 20)) / 60.0
+	_mining_sound_cooldown = Mining.interval(item_id, _buff_mining_bonus()) if Mining.TOOLS.has(item_id) else 20.0 / 60.0
 	SfxBank.play_tile_hit(tile_id)
 
 func _play_break_contact(tile_id: int) -> void:
@@ -613,12 +641,18 @@ func _update_wall_mining(delta: float) -> void:
 	if tile != _mining_target:
 		_mining_target = tile
 		_mining_progress = 0.0
-	_play_mining_contact(wid)
-	_mining_progress += _hammer_speed(_current_tool_tier()) * delta * _buff_mining_mul()
 	_ensure_mining_swing()
+	var item_id := _mining_item_id()
+	if Mining.TOOLS.has(item_id):
+		if _mining_hit_cooldown > CLOCK_EPSILON: return
+		_mining_hit_cooldown = Mining.interval(item_id)
+		_mining_progress += float(Mining.power(item_id)) / 100.0 * WALL_HARDNESS
+	else:
+		_mining_progress += _hammer_speed(_current_tool_tier()) * delta * _buff_mining_mul()
+	_play_mining_contact(wid)
 	var ratio: float = clamp(_mining_progress / WALL_HARDNESS, 0.0, 1.0)
 	_set_crack(tile, ratio)
-	if _mining_progress >= WALL_HARDNESS:
+	if _mining_progress + CLOCK_EPSILON >= WALL_HARDNESS:
 		_break_wall(world, tile, wid)
 		_clear_crack(tile)
 		_mining_target = INVALID_TILE
@@ -2855,6 +2889,16 @@ func _consume_crystal_tile(tile: Vector2i, terrain: TileMapLayer, color: Color =
 
 
 # buff 倍数: 没 PlayerBuffs 时返回 1.0 (挖矿速度不受影响).
+func _mining_item_id() -> String:
+	var inv := _inventory_node()
+	var slot = inv.current_hotbar_slot() if inv != null else null
+	return slot.item_id if slot != null else ""
+
+func _buff_mining_bonus() -> float:
+	var b: Node = get_parent().get_node_or_null("PlayerBuffs")
+	return b.mining_bonus() if b != null and b.has_method("mining_bonus") else 0.0
+
+
 func _buff_mining_mul() -> float:
 	var b: Node = get_parent().get_node_or_null("PlayerBuffs")
 	return 1.0 if b == null else b.mining_mul()

@@ -97,3 +97,7 @@ func melee_speed_mul() -> float:
 
 func defense_bonus() -> int:
 	return [0, 2, 3, 4][_food_tier()]
+
+# 原版挖掘速度加成为工具间隔的减免比例；不影响斧/锤，不混用近战攻速。
+func mining_bonus() -> float:
+	return (0.25 if _active.has("mining") else 0.0) + [0.0, 0.05, 0.1, 0.15][_food_tier()]

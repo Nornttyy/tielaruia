@@ -261,7 +261,7 @@ static func player_frame(ap: Dictionary, frame: int, front_column := 2, front_an
 	for entry in [[7, skin], [8, sleeve], [13, shirt], [6, shirt]]:
 		_part(img, entry[0], 0, 1 + female_row, entry[1], Vector2i.ZERO, variant)
 	# 固定裁剪框，所有动作同尺寸/脚底基准，不逐帧裁透明导致角色跳动。
-	return ImageTexture.create_from_image(img.get_region(Rect2i(4, 6, 32, 44)))
+	return ImageTexture.create_from_image(img.get_region(Rect2i(4, 6, 32, 48)))
 
 # 上身使用原始复合手臂帧，腿继续沿用走路/跳跃帧；角度量化让纹理缓存有界。
 static func action_frame(ap: Dictionary, leg_frame: int, pose: String, phase: int, aim_step: int) -> ImageTexture:
@@ -285,7 +285,7 @@ static func action_frame(ap: Dictionary, leg_frame: int, pose: String, phase: in
 	_actions[key] = result
 	return result
 
-# 握柄跟随当前原片手掌，坐标转换与 32×44 裁框/0.75 世界比例相同。
+# 握柄跟随当前原片手掌，坐标转换与 32×48 裁框/0.75 世界比例相同。
 static func action_hand_position(pose: String, phase: int, aim_step: int) -> Vector2:
 	var hand := Vector2(12.5, 39.1667)
 	if pose == "swing":
@@ -294,7 +294,7 @@ static func action_hand_position(pose: String, phase: int, aim_step: int) -> Vec
 		hand = Vector2(25, 20.2)
 	else:
 		hand = (hand - Vector2(15, 31)).rotated(float(aim_step) * PI / 8.0 - PI / 2.0) + Vector2(15, 31)
-	return (hand - Vector2(20, 50)) * 0.75
+	return (hand - Vector2(20, 54)) * 0.75
 
 static func player_frames(ap: Dictionary = {}) -> SpriteFrames:
 	var cache_key := str(ap)

@@ -9,7 +9,7 @@ extends Sprite2D
 const UseTiming = preload("res://scripts/items/original_use_timing.gd")
 
 const HAND_OFFSET_X := 3.75     # 无动作姿势时的手位；使用时跟随原片手掌
-const HAND_OFFSET_Y := -15.0
+const HAND_OFFSET_Y := -18.0
 const TOOL_SIZE := preload("res://scripts/art/world_metrics.gd").PIXEL_SCALE        # 与玩家原图相同的世界比例
 const SWEEP_HELD_SCALE := 1.0  # 原片阔剑不再二次放大
 const GUN_HELD_SCALE := 1.0    # 原图与其他武器使用相同世界比例

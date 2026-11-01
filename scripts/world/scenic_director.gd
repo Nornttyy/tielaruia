@@ -123,6 +123,8 @@ func _update_biome_scenery() -> void:
 	# 由 MountainsLayer.set_biome 交叉淡入切换 (不是染色). set_biome 内部对重复调用幂等.
 	if _mountains != null and _mountains.has_method("set_biome"):
 		_mountains.set_biome(biome_id)
+	if _cave_bg != null and _cave_bg.has_method("set_biome"):
+		_cave_bg.set_biome(biome_id)
 
 
 # === 公开 compute (静态, 容易测) ===

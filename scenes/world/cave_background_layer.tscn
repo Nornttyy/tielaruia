@@ -2,5 +2,5 @@
 
 [ext_resource type="Script" path="res://scripts/world/cave_background_layer.gd" id="1_cave_bg"]
 
-[node name="CaveBackgroundLayer" type="ParallaxBackground"]
+[node name="CaveBackgroundLayer" type="CanvasLayer"]
 script = ExtResource("1_cave_bg")

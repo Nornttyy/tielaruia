@@ -3,11 +3,26 @@ extends GutTest
 const CaveBackgroundLayer = preload("res://scripts/world/cave_background_layer.gd")
 
 
-func test_ready_creates_three_parallax_layers():
+func test_original_backgrounds_keep_tile_size_instead_of_screen_stretch():
 	var cl = CaveBackgroundLayer.new()
 	add_child_autofree(cl)
 	await wait_frames(1)
-	assert_eq(cl.layer_count(), 3, "应有 3 个 ParallaxLayer (远岩壁/钟乳石/水晶)")
+	assert_eq(cl._texture(2).get_size(), Vector2(128, 96))
+	assert_eq(cl._texture(33).get_size(), Vector2(128, 96), "160px 原图的重复尾部不应产生接缝")
+	assert_ne(cl._texture(2).get_image().get_data(), cl._texture(33).get_image().get_data(), "雪地使用自己的地下原片")
+
+func test_biome_fade_reaches_new_texture_without_restarting_on_every_update():
+	var cl = CaveBackgroundLayer.new()
+	add_child_autofree(cl)
+	cl.set_biome(2)
+	for i in 20:
+		cl.set_biome(2)
+		cl._process(0.05)
+	assert_eq(cl._weights, {2: 1.0})
+	for style in cl.STYLES.values():
+		for i in style.size():
+			assert_not_null(cl._texture(style[i]))
+			assert_eq(cl._texture(style[i]).get_height(), 16 if i % 2 == 0 else 96, "过渡边与平铺正文不能混用")
 
 
 func test_initial_alpha_is_zero():

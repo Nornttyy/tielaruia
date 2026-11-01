@@ -6,7 +6,7 @@
 script = ExtResource("1_rp")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -33)
+position = Vector2(0, -36)
 centered = false
 offset = Vector2(-16, 0)
 scale = Vector2(0.75, 0.75)

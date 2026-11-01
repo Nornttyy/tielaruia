@@ -556,7 +556,10 @@ func _on_remote_entity_pos(ent_id: int, kind: String, x: float, y: float, hp: in
 		# 同步朝向 + 动画 (之前只挪位置, 导致对方看到动物方向/动作不变在滑动)
 		var spr: AnimatedSprite2D = ent.get_node_or_null("AnimatedSprite2D")
 		if spr != null:
-			spr.flip_h = facing < 0
+			if ent.has_method("apply_network_facing"):
+				ent.apply_network_facing(facing)
+			else:
+				spr.flip_h = facing < 0
 			if anim != "" and spr.animation != anim:
 				spr.play(anim)
 
@@ -962,7 +965,7 @@ func _mp_broadcast_entities(force_full: bool = true) -> void:
 			var efacing: int = 1
 			var eanim: String = ""
 			if espr != null:
-				efacing = -1 if espr.flip_h else 1
+				efacing = n2d.network_facing() if n2d.has_method("network_facing") else (-1 if espr.flip_h else 1)
 				eanim = String(espr.animation)
 			var ehp: int = int(n2d.get("current_health")) if "current_health" in n2d else 0
 			var eid: int = NetworkManager.entity_id_for(n2d)

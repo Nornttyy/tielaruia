@@ -20,6 +20,9 @@ func test_wall_fills_behind_underground_mushroom() -> void:
 	WG._fill_walls_chunk(c, heights, cw, height)
 	assert_ne(c.walls[5][20], Tiles.AIR, "地下蘑菇格后面该有墙, 不该留洞")
 	assert_eq(c.walls[5][5], Tiles.AIR, "天上 (y<surf) 仍不该有墙")
+	assert_eq(c.walls[5][30], Tiles.AIR, "深洞不能全铺石墙挡住地下背景")
+	c.apply_wall_delta({Vector2i(5,30): Tiles.STONE_WALL})
+	assert_eq(c.walls[5][30], Tiles.STONE_WALL, "玩家放的墙仍由存档增量恢复")
 
 
 # 假 chunk_manager: (x,1)=石墙 (x,2)=空气 其余=土墙. 测墙的跨type连接.

@@ -2,7 +2,7 @@
 # 作者、许可与文件校验值见 assets/music/source-manifest.json。
 extends Node
 const BGM_FADE_SEC := 1.0
-const BGM_VOLUME_DB := -30.0
+const BGM_VOLUME_DB := -14.0
 const AMBIENT_VOLUME_DB := -30.0
 const DB_SILENT := -80.0
 const TRACK_NAMES := ["title", "day", "night", "cave", "boss"]
@@ -58,8 +58,9 @@ func _process(delta: float) -> void:
 	if not _fading: return
 	_fade_t = minf(1.0, _fade_t + delta / BGM_FADE_SEC)
 	var outgoing := _bgm_b if _active_bgm == _bgm_a else _bgm_a
-	_active_bgm.volume_db = lerpf(DB_SILENT, _bgm_target_db, _fade_t)
-	outgoing.volume_db = lerpf(_outgoing_start_db, DB_SILENT, _fade_t)
+	# 在线性振幅上交叉淡入，避免 dB 线性插值让切歌中段突然近乎无声。
+	_active_bgm.volume_db = linear_to_db(maxf(0.0001, db_to_linear(_bgm_target_db) * _fade_t))
+	outgoing.volume_db = linear_to_db(maxf(0.0001, db_to_linear(_outgoing_start_db) * (1.0 - _fade_t)))
 	if _fade_t >= 1.0:
 		_fading = false
 		outgoing.stop()

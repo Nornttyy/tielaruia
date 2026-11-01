@@ -47,7 +47,7 @@ func test_player_frames_have_fixed_bounds_and_real_walk_cycle():
 	for animation in frames.get_animation_names():
 		for i in frames.get_frame_count(animation):
 			var img := frames.get_frame_texture(animation, i).get_image()
-			assert_eq(img.get_size(), Vector2i(32, 44))
+			assert_eq(img.get_size(), Vector2i(32, 48))
 			assert_false(img.is_invisible())
 			if animation == "walk": unique[hash(img.get_data())] = true
 	assert_gte(unique.size(), 8, "行走不能只重复两张图")
@@ -65,3 +65,16 @@ func test_enemy_animations_match_callers():
 	assert_true(ArtCache.slime_frames.has_animation("hop"))
 	assert_true(ArtCache.zombie_frames.has_animation("walk"))
 	assert_true(ArtCache.demon_eye_frames.has_animation("idle"))
+
+func test_shoe_color_survives_all_walk_frames_and_action_frames():
+	for gender in [0,1]:
+		for frame in [0,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]:
+			var red := Pack.player_frame({"gender":gender,"shoe_color":Color.RED}, frame).get_image()
+			var blue := Pack.player_frame({"gender":gender,"shoe_color":Color.BLUE}, frame).get_image()
+			var changed := 0
+			for y in range(40,48):
+				for x in 32:
+					if red.get_pixel(x,y) != blue.get_pixel(x,y): changed += 1
+			assert_gte(changed,8,"脚部鞋色必须可见，不再裁掉末尾像素：%d/%d" % [gender,frame])
+	var image := Pack.player_frame({"shoe_color": Color8(170,85,40)},0).get_image()
+	image.save_png("/tmp/tielaruia-player-shoes.png")

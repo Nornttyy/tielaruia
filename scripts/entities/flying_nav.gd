@@ -34,7 +34,12 @@ func steer(mob: CharacterBody2D, target: Vector2, desired: Vector2, delta: float
 	while not _path.is_empty() and center.distance_to((Vector2(_path[0]) + Vector2.ONE * 0.5) * TILE) < 5.0:
 		_path.pop_front()
 	if _path.is_empty():
-		# 没有可通行的路就停在障碍前；不穿墙，也不反复左右翻面。
+		# 搜索预算耗尽或目标被封闭也要沿空闲方向飞；真实碰撞仍由物理体阻挡。
+		# 先检查直线短步，再尝试上绕/下绕，避免站在障碍前永久停机。
+		var forward := (goal - center).normalized()
+		for direction in [forward, Vector2.UP, Vector2(forward.x, -1).normalized(), Vector2.DOWN, Vector2(-forward.x, 0)]:
+			if direction.length_squared() > 0.01 and not mob.test_move(mob.global_transform, direction * 18.0):
+				return direction * desired.length()
 		return Vector2.ZERO
 	var waypoint := (Vector2(_path[0]) + Vector2.ONE * 0.5) * TILE
 	return (waypoint - center).normalized() * desired.length()
@@ -65,9 +70,14 @@ static func find_path(cm: Object, start: Vector2i, goal: Vector2i, half: Vector2
 	var open := {start: start.distance_to(goal)}
 	var costs := {start: 0.0}
 	var parents: Dictionary = {}
+	var closest := start
+	var closest_distance := start.distance_squared_to(goal)
 	for _step in MAX_NODES:
 		if open.is_empty(): break
 		var cur: Vector2i = Grid._pop_min(open)
+		if cur.distance_squared_to(goal) < closest_distance:
+			closest = cur
+			closest_distance = cur.distance_squared_to(goal)
 		if cur == goal:
 			var result: Array[Vector2i] = []
 			while parents.has(cur):
@@ -83,4 +93,9 @@ static func find_path(cm: Object, start: Vector2i, goal: Vector2i, half: Vector2
 			costs[next] = cost
 			parents[next] = cur
 			open[next] = cost + next.distance_to(goal)
-	return []
+	# 给远处/封闭目标一条已验证安全的接近路线；下一次从新位置继续寻路。
+	var partial: Array[Vector2i] = []
+	while parents.has(closest):
+		partial.push_front(closest)
+		closest = parents[closest]
+	return partial

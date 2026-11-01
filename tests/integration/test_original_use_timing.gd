@@ -106,7 +106,7 @@ func test_switching_mining_targets_and_air_does_not_restart_swing():
 	action._physics_process(0.0)
 	for i in range(1, 19):
 		# 在两块石头及空气间切换，旧代码在换目标时会反复重播起手。
-		action.aim_override = Vector2i(2 + i % 3, 0)
+		action.aim_override = Vector2i(2 + (i + 1) % 3, 0)
 		action._physics_process(1.0 / 60.0)
 		assert_almost_eq(action._pickaxe_spin_t, float(i) / 60.0, 0.000001)
 		assert_almost_eq(p._action_timer, (23.0 - i) / 60.0, 0.000001)

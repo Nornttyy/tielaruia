@@ -3,7 +3,6 @@
 extends CharacterBody2D
 const Metrics = preload("res://scripts/art/world_metrics.gd")
 const FlyingNav = preload("res://scripts/entities/flying_nav.gd")
-const MobNav = preload("res://scripts/entities/mob_nav.gd")
 var _flight_nav = FlyingNav.new()
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
@@ -15,11 +14,14 @@ const TILE_SIZE := 12
 const BASE_MAX_HEALTH := 20    # 钻剑 20 一击, 木剑 3 × 7 击. 难度缩放见 _ready.
 const CONTACT_DAMAGE := 8
 const FLY_SPEED := 60.0       # 飞行速度 (慢但稳)
-const AGGRO_RANGE_PX := 240.0  # 看见 20 tile 内追
+const AGGRO_RANGE_PX := 560.0  # 覆盖夜间出生范围；不能刚生成就停在警戒范围外。
 const ENEMY_IFRAME_SEC := 0.2
 # 飞行不受重力, 但漂动给一点缓动让它"活的"感觉
 const BOB_AMPLITUDE := 4.0      # 上下漂动幅度 (px)
 const BOB_PERIOD := 1.5         # 周期 (秒)
+const TURN_SPEED := 9.0       # 弧度/秒；绕最短弧转向，跨 ±PI 不突然翻面。
+var _remote_heading := 0.0
+var _knockback_velocity := Vector2.ZERO
 
 var max_health: int = BASE_MAX_HEALTH
 var current_health: int = BASE_MAX_HEALTH
@@ -40,6 +42,8 @@ func _ready() -> void:
 	current_health = max_health
 	sprite.sprite_frames = ArtCache.demon_eye_frames
 	Metrics.align_feet(sprite)
+	sprite.position = $CollisionShape2D.position
+	sprite.offset = Vector2(-4, 0) # 旋转支点在眼球中央，不在拖尾的矩形中央。
 	sprite.play("idle")
 	add_to_group("demon_eyes")
 	add_to_group("slimes")  # 共享剑挥范围 + 出生点死亡清除
@@ -56,6 +60,7 @@ func _add_player_exception() -> void:
 
 func _physics_process(delta: float) -> void:
 	if has_meta("is_remote"):
+		_turn_to(_remote_heading, delta)
 		_check_player_contact()  # 远程怪仍能打伤本地(client)玩家; 不跑 AI/移动 (host 权威位置)
 		return
 	if _is_dying:
@@ -78,13 +83,16 @@ func _physics_process(delta: float) -> void:
 	var player := _find_player()
 	var in_aggro: bool = player != null and (global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX or _force_aggro_t > 0.0)
 	if in_aggro:
-		var to_player: Vector2 = player.global_position - global_position
+		var to_player: Vector2 = Metrics.body_rect(player).get_center() - Metrics.body_rect(self).get_center()
 		var dir: Vector2 = to_player.normalized() if to_player.length() > 1.0 else Vector2.ZERO
 		velocity = dir * FLY_SPEED
 		velocity = _flight_nav.steer(self, player.global_position, velocity, delta)
-		MobNav.face(sprite, velocity.x)
 	else:
 		velocity = Vector2.ZERO
+	velocity += _knockback_velocity
+	_knockback_velocity = _knockback_velocity.move_toward(Vector2.ZERO, 240.0 * delta)
+	if velocity.length_squared() > 1.0:
+		_turn_to(velocity.angle(), delta)
 	move_and_slide()
 	if in_aggro:
 		# 追玩家时 Y 也跟着动 (velocity.y 已经被 move_and_slide 应用)
@@ -95,6 +103,18 @@ func _physics_process(delta: float) -> void:
 		var bob: float = sin(_bob_t / BOB_PERIOD * TAU) * BOB_AMPLITUDE
 		global_position.y = _base_y + bob
 	_check_player_contact()
+
+func _turn_to(angle: float, delta: float) -> void:
+	sprite.flip_h = false
+	sprite.flip_v = false
+	sprite.rotation = rotate_toward(sprite.rotation, angle, TURN_SPEED * delta)
+
+# 复用实体同步中的 facing 整数字段，恶魔眼专用 1000..1359 表示角度。
+func network_facing() -> int:
+	return 1000 + posmod(roundi(rad_to_deg(sprite.rotation)), 360)
+
+func apply_network_facing(value: int) -> void:
+	_remote_heading = deg_to_rad(float(value - 1000)) if value >= 1000 else (PI if value < 0 else 0.0)
 
 
 func _find_player() -> Node2D:
@@ -139,7 +159,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	if knockback > 0.0 and source_pos != Vector2.ZERO:
 		var to_self: Vector2 = global_position - source_pos
 		var dir: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
-		velocity = dir * knockback
+		_knockback_velocity = dir * knockback
 		_force_aggro_t = 2.0
 	if current_health == 0:
 		_die()
