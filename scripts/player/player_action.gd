@@ -87,7 +87,6 @@ const _PICKAXE_BLACKLIST := {
 	Tiles.CACTUS_BODY: true,
 	Tiles.MUSHROOM: true,
 	Tiles.HELL_FRUIT: true,
-	Tiles.TORCH: true,
 	Tiles.SLIME_TORCH: true,
 }
 
@@ -1017,13 +1016,23 @@ func try_place(force_tile: Variant = null) -> bool:
 	var is_water: bool = Tiles.is_water(target_src)
 	if target_src != -1 and not is_water:
 		return false
+	var def = ItemDB.get_def(slot.item_id)
+	var world: Node = terrain.get_parent()
+	var is_torch: bool = def.placeable_tile_id == Tiles.TORCH
+	# Ordinary torches need a dry floor, side support, or a background wall.
+	# A ceiling alone does not support one, including in creative mode.
+	if is_torch:
+		var grid = world.get("chunk_manager")
+		if grid == null or is_water or Tiles.is_water(grid.get_tile(tile.x, tile.y)) \
+				or preload("res://scripts/world/torch_frames.gd").attachment(tile, grid) < 0:
+			return false
 	# 不与玩家碰撞框重叠 (玩家 2.5 格高, 占 脚底 pt + pt-1 + 头戳进 pt-2): 这 3 格都不准放,
 	# 否则方块叠进玩家身体 → 物理把玩家挤开 → 偶尔误触发坠落伤害 (用户报"搭方块受伤")。
 	var pt: Vector2i = player_tile()
-	if tile == pt or tile == pt - Vector2i(0, 1) or tile == pt - Vector2i(0, 2):
+	if not is_torch and (tile == pt or tile == pt - Vector2i(0, 1) or tile == pt - Vector2i(0, 2)):
 		return false
 	# 支撑判定: 4 邻有结实方块/木平台, 或 背后有背景墙 → 能放 (防隔空放)。创造模式随处放。
-	var has_support: bool = GameSettings != null and GameSettings.creative_mode
+	var has_support: bool = is_torch or (GameSettings != null and GameSettings.creative_mode)
 	for offset in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		var ntid: int = terrain.get_cell_source_id(tile + offset)
 		# 结实方块 OR 木平台 都能当支撑 (站得住的都行); 水/草/火把不算。
@@ -1039,8 +1048,6 @@ func try_place(force_tile: Variant = null) -> bool:
 			has_support = true
 	if not has_support:
 		return false
-	var def = ItemDB.get_def(slot.item_id)
-	var world: Node = terrain.get_parent()
 	var multi_base: int = BuildingArt.multi_base(def.placeable_tile_id)
 	if multi_base != -1:
 		var dims: Vector2i = BuildingArt.multi_footprint(multi_base)
@@ -1153,7 +1160,7 @@ func try_place(force_tile: Variant = null) -> bool:
 	_consume_one(inv)
 	SkyLightGrid.invalidate_column(tile.x)
 	# P1.5 hook: 放下弹动
-	Effects.spawn_place_bounce(tile, def.placeable_tile_id)
+	if not is_torch: Effects.spawn_place_bounce(tile, def.placeable_tile_id)
 	SfxBank.play("place", 0.10)
 	return true
 

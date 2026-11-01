@@ -1,0 +1,17 @@
+World entry / generation screen (2026-11-01)
+
+Visual references:
+https://www.mobygames.com/game/51623/terraria/screenshots/windows/1031960/
+https://www.taptap.cn/moment/15216606208590370
+https://docs.tmodloader.net/docs/stable/class_u_i_world_load.html
+
+New-world generation: original corrupt/forest and lower-frame art, gold total
+progress and blue current-pass progress. Existing-world entry: centered white
+outlined status and percentage. Both retain the active menu's original title,
+forest and moving clouds. Removed the extra runner, stars and modern blue panel.
+
+Percentages describe this implementation's actual completed stages, not a fake
+copy of Terraria's internal generation passes. Overall progress is finite,
+clamped, monotonic. New passes may reset their own lower bar. No fake delay.
+The world stays inactive until ready. Saved blocks, inventory and player position
+are restored before 100%, fade and autosave. Existing save format is unchanged.

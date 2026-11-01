@@ -85,6 +85,13 @@ static func build() -> TileSet:
 	]
 	tile_ids.append_array(preload("res://scripts/art/building_art.gd").EXTRA_IDS)
 	for tile_id in tile_ids:
+		if tile_id == Tiles.TORCH:
+			var torch := TileSetAtlasSource.new()
+			torch.texture = OriginalSprites.torch_atlas()
+			torch.texture_region_size = Vector2i(18, 18)
+			ts.add_source(torch, tile_id)
+			for orientation in 3: torch.create_tile(Vector2i(orientation, 0))
+			continue
 		if tile_id == Tiles.MUSHROOM_CAP:
 			var cap := TileSetAtlasSource.new()
 			cap.texture = preload("res://scripts/art/building_art.gd").mushroom_crown()

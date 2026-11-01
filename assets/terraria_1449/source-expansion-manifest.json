@@ -658,5 +658,30 @@
     "file": "Tiles_39.png",
     "sha256": "484a9411a96c10b5c2d7c71327e6ef222dc735e074d7121a88acf22d411350f7",
     "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Tiles_39.png"
+  },
+  {
+    "file": "Flame_0.png",
+    "sha256": "c38e5af258e396cbe9dc22e105caf8905d5ccab7ee1958a1051bb48a6b665d81",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/Flame_0.png"
+  },
+  {
+    "file": "ui/WorldGen/Outer_Corrupt.png",
+    "sha256": "92251bc1c86d637452937bba579a142e3e9ed2a4b8d10dc96155507cebbde916",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/UI/WorldGen/Outer_Corrupt.png"
+  },
+  {
+    "file": "ui/WorldGen/Outer_Crimson.png",
+    "sha256": "c19531ce87cb3d5ea3413c03ee93034d10c4d84017f31533fb576b78544b2fed",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/UI/WorldGen/Outer_Crimson.png"
+  },
+  {
+    "file": "ui/WorldGen/Outer_Dirt.png",
+    "sha256": "e4cc08be38eda9d3b303a593f7d109a16b28f56c2c6a046ce524835ef712258a",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/UI/WorldGen/Outer_Dirt.png"
+  },
+  {
+    "file": "ui/WorldGen/Outer_Lower.png",
+    "sha256": "eefcddfbf900a7ccbb0163b0e8321019155d7efc084e14d7de240f6d333fd5e7",
+    "source": "https://raw.githubusercontent.com/sullerandras/terraria-hd-textures/c835594415e31ed88734dc778661014b48ffb648/source-pngs/UI/WorldGen/Outer_Lower.png"
   }
 ]

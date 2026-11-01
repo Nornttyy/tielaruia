@@ -1,0 +1,16 @@
+火把修正（2026-11-01）
+
+完整读取 Tiles_4 / Flame_0 的 20×20 原帧（步长 22），统一按世界 0.75 比例显示。
+三种朝向共用底座与火焰对齐；不再把 16×16 截断图配上拉伸粒子。
+火焰使用原遮罩微移/明暗变化，木柄大小、位置保持不动。
+
+地面、平台、左右实心侧面、树干和背景墙可以支撑普通火把。
+只靠天花板、无支撑、水中不能放；非实心火把可以放在玩家身边占位内。
+移除支撑时重新选择剩余支撑；全部失效时返还一根掉落火把。
+镐可一击收回。加载/跨区块时由同一规则重算朝向，无新存档字段。
+烹饪锅保留现有发光，但不再额外顶着一团火把粒子。
+
+规则参考：https://terraria.wiki.gg/wiki/Torches
+原图来源与校验和：assets/terraria_1449/source-expansion-manifest.json
+测试：test_torch_frames、test_torch_lifecycle、test_original_mining、
+      test_cooking_pot_light、test_lighting_wiring 的 test_support_change。

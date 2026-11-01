@@ -26,7 +26,7 @@ func before_each():
 	world.terrain = TileMapLayer.new()
 	world.terrain.tile_set = TileSet.new()
 	world.terrain.tile_set.tile_size = Vector2i(12,12)
-	for id in [Tiles.STONE, Tiles.DIRT, Tiles.GRASS, Tiles.GOLD_ORE, Tiles.OBSIDIAN, Tiles.EBONSTONE, Tiles.CLAY, Tiles.LOG, Tiles.LOG_ROOT_L, Tiles.CACTUS]:
+	for id in [Tiles.STONE, Tiles.DIRT, Tiles.GRASS, Tiles.GOLD_ORE, Tiles.OBSIDIAN, Tiles.EBONSTONE, Tiles.CLAY, Tiles.LOG, Tiles.LOG_ROOT_L, Tiles.CACTUS, Tiles.TORCH, Tiles.WATER, Tiles.WOOD_PLATFORM]:
 		var source := TileSetAtlasSource.new()
 		source.texture = ImageTexture.create_from_image(Image.create(12,12,false,Image.FORMAT_RGBA8))
 		source.texture_region_size = Vector2i(12,12)
@@ -150,3 +150,37 @@ func test_cactus_uses_five_copper_axe_hits():
 	assert_eq(world.get_tile(2,0), Tiles.CACTUS)
 	_ticks(1)
 	assert_eq(world.get_tile(2,0), Tiles.AIR)
+
+func test_pickaxe_can_recover_torch_in_one_hit():
+	world._set_tile(2,0,Tiles.TORCH)
+	action._physics_process(0.0)
+	assert_eq(world.get_tile(2,0), Tiles.AIR)
+
+func test_torch_placement_accepts_ground_sides_tree_and_background_wall():
+	for support in [Vector2i(2,1), Vector2i(1,0), Vector2i(3,0)]:
+		world.terrain.clear()
+		world._set_tile(support.x,support.y,Tiles.STONE)
+		_equip("torch")
+		assert_true(action.try_place(TARGET))
+		assert_eq(world.get_tile(2,0), Tiles.TORCH)
+	world.terrain.clear()
+	world._set_tile(1,0,Tiles.LOG)
+	_equip("torch")
+	assert_true(action.try_place(TARGET), "Tree trunk accepts a side torch")
+	world.terrain.clear()
+	world.walls[TARGET] = Tiles.WOOD_WALL
+	_equip("torch")
+	assert_true(action.try_place(TARGET))
+
+func test_torch_rejects_water_ceiling_only_and_unsupported_creative_placement():
+	_equip("torch")
+	world._set_tile(2,-1,Tiles.STONE)
+	assert_false(action.try_place(TARGET), "Do not hang from a ceiling")
+	world.terrain.clear()
+	world._set_tile(2,1,Tiles.STONE)
+	world._set_tile(2,0,Tiles.WATER)
+	assert_false(action.try_place(TARGET), "Ordinary torch is not waterproof")
+	world.terrain.clear()
+	GameSettings.creative_mode = true
+	assert_false(action.try_place(TARGET), "No floating torches")
+	assert_eq(inv.inventory.slots[0].count, 1, "Failed placement consumes nothing")

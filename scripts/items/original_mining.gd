@@ -40,6 +40,7 @@ static func grass_base(tid: int) -> int:
 	return -1
 
 static func hit_points(tid: int, kind: String) -> float:
+	if tid == Tiles.TORCH and kind == "pickaxe": return 1.0
 	if kind == "axe":
 		if tid in [Tiles.LOG, Tiles.LOG_TOP, Tiles.LOG_ROOT_L, Tiles.LOG_ROOT_R, Tiles.BRANCH_L, Tiles.BRANCH_R]: return 500.0
 		if tid in [Tiles.CACTUS, Tiles.CACTUS_BODY]: return 170.0

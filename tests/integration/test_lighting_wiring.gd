@@ -99,29 +99,23 @@ func test_torch_removal_frees_torch_fx() -> void:
 	assert_lt(torch_lights.get_child_count(), after_place, "拆掉 TORCH 后 TorchFx 应被 free")
 
 
-func test_torch_fx_emits_sparks_over_time() -> void:
+func test_support_change_reorients_and_then_drops_torch_once() -> void:
 	var main = await _boot()
-	var world: Node2D = main.get_node("World")
-	var effects_root: Node = world.get_node("EffectsRoot")
-	var initial_fx_count: int = effects_root.get_child_count()
-	# 放火把, 等 1 秒, 应至少出过 1 个火花粒子 (timer 0.12-0.20s)
-	world._set_tile(15, 0, Tiles.TORCH)
-	await wait_frames(60)  # 1 秒 ~ 60 帧
-	# 之后 effects_root 累计应增加 (粒子 0.8s 寿命, 1s 后老的可能已经 free 但新的还在)
-	# 用累积观察: 至少进过 effects_root
-	var max_seen := 0
-	for c in effects_root.get_children():
-		max_seen = max(max_seen, 1)
-	# 弱断言: effects_root 在过程中存在过 spark, 用 child_count 抓
-	# 严谨做法: 监控 add_child 信号, 但简化用当前 + 之前差值
-	# 由于粒子可能已经过期, 看 SparkTimer 至少触发过 (timer.time_left < wait_time 说明在跑)
-	var torch_lights: Node2D = world.get_node("TorchLights")
-	# 找最近放的火把 (位置匹配)
-	var torch_fx: Node = null
-	for c in torch_lights.get_children():
-		if int(c.position.x / TILE_SIZE) == 15:
-			torch_fx = c
-			break
-	assert_not_null(torch_fx, "火把已创建")
-	var spark_timer: Timer = torch_fx.get_node("SparkTimer")
-	assert_true(spark_timer.is_stopped() == false, "SparkTimer 应在跑")
+	var world = main.get_node("World")
+	world._set_tile(15, 4, Tiles.STONE)
+	world._set_tile(14, 3, Tiles.STONE)
+	world._set_tile(15, 3, Tiles.TORCH)
+	var pos := Vector2i(15, 3)
+	assert_eq(world.terrain_layer.get_cell_atlas_coords(pos), Vector2i.ZERO)
+	world._set_tile(15, 4, Tiles.AIR)
+	assert_eq(world.chunk_manager.get_tile(15,3), Tiles.TORCH)
+	assert_eq(world.terrain_layer.get_cell_atlas_coords(pos), Vector2i(1,0))
+	var fx = world.world_lighting._torches[pos]
+	assert_eq(fx.flame.frame, 1, "Flame stays on the reattached handle")
+	var before: int = world.entities_root.get_child_count()
+	world._set_tile(14, 3, Tiles.AIR)
+	assert_eq(world.chunk_manager.get_tile(15,3), Tiles.AIR)
+	assert_false(world.world_lighting._torches.has(pos))
+	assert_eq(world.entities_root.get_child_count(), before + 1)
+	world._refresh_torch_attachment(pos, true)
+	assert_eq(world.entities_root.get_child_count(), before + 1, "Only one item is returned")

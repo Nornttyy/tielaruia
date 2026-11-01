@@ -27,6 +27,7 @@ const _ChunkClass = preload("res://scripts/world/chunk.gd")   # 读档后算玩�
 
 var _art_preview := false
 var _state: String = "menu"
+var _loading: bool = false
 var _game_nodes: Array[Node] = []
 # 自动存档: 最多每 AUTO_SAVE_INTERVAL 秒, 且只在"有变化"时才真存 (走路啥都没变 → 不存 → 不卡)。
 # 之前每秒全量存 + 刷 IndexedDB → 走着走着周期性卡一下 (用户报)。
@@ -86,6 +87,7 @@ func _show_menu_state() -> void:
 
 
 func _start_game(seed_or_opts = 0) -> void:
+	if _loading: return
 	if seed_or_opts is Dictionary and seed_or_opts.get("art_preview", false):
 		_start_art_preview()
 		return
@@ -147,35 +149,44 @@ func _start_game(seed_or_opts = 0) -> void:
 	_run_async_load(world_seed)
 
 
-# 异步加载: instantiate LoadingScreen → 一步步推进 7 个阶段 → 淡出.
-# 每步之间 await process_frame 让 UI 渲染 + 进度条 tween + 小人跑动 + 贴士切换
+# 加载界面展示已完成的阶段。存档恢复、背包和镜头就绪后才揭开画面。
 func _run_async_load(world_seed: int) -> void:
+	_loading = true
+	var load_process_modes: Dictionary = {}
 	var loading: CanvasLayer = LoadingScreenScene.instantiate()
 	loading.name = "LoadingScreen"
+	loading.generating = _pending_save_data == null
+	loading.background_source = _main_menu
 	add_child(loading)
 	await get_tree().process_frame  # 让 LoadingScreen 渲染一帧
 
 	# Step A (5%): World instantiate (defer_init=true, _ready 不跑初始化)
-	loading.set_progress(0.05, "正在准备世界...")
+	loading.set_progress(0.0, "正在准备世界", 0.0)
 	var w = WorldScene.instantiate()
 	w.name = "World"
 	w.defer_init = true
+	load_process_modes[w] = w.process_mode
+	w.process_mode = Node.PROCESS_MODE_DISABLED
 	if world_seed != 0:
 		w.world_seed = world_seed
 	add_child(w)
 	_game_nodes.append(w)
 	await get_tree().process_frame
 
-	# Step B-E (20% / 40% / 60% / 75%): world.run_init_step(0..3)
-	var step_count: int = w.get_init_step_count()
-	var step_pcts: PackedFloat32Array = [0.20, 0.40, 0.60, 0.75]
-	for i in step_count:
-		loading.set_progress(step_pcts[i], w.get_init_step_label(i))
+	loading.set_progress(0.05, "正在准备世界", 1.0)
+	var stage_names := ["正在准备方块", "正在生成地形" if loading.generating else "正在读取地图", "正在准备背景", "正在载入角色"]
+	var step_pcts: PackedFloat32Array = [0.20, 0.55, 0.65, 0.75]
+	var completed := 0.05
+	for i in w.get_init_step_count():
+		loading.set_progress(completed, stage_names[i], 0.0)
+		await get_tree().process_frame
 		w.run_init_step(i)
+		completed = step_pcts[i]
+		loading.set_progress(completed, stage_names[i], 1.0)
 		await get_tree().process_frame
 
-	# Step F (90%): HUD + 其他 UI 面板
-	loading.set_progress(0.90, "正在准备界面...")
+	loading.set_progress(0.75, "正在准备界面", 0.0)
+	await get_tree().process_frame
 	var hud = HudScene.instantiate()
 	hud.name = "HUD"
 	add_child(hud)
@@ -212,45 +223,56 @@ func _run_async_load(world_seed: int) -> void:
 	var dialogue = DialogueBoxScene.instantiate()
 	add_child(dialogue)
 	_game_nodes.append(dialogue)
+	for node in _game_nodes:
+		if not load_process_modes.has(node): load_process_modes[node] = node.process_mode
+		node.process_mode = Node.PROCESS_MODE_DISABLED
 	_wire_player.call_deferred()
 	_grant_starter_on_new_game.call_deferred()
 	await get_tree().process_frame
+	loading.set_progress(0.85, "正在准备界面", 1.0)
 
-	# 自适应预载 (仅新游戏): 测设备速度 → 按速度/平台/核数定半径 → 分帧把出生点一大片先生成好.
-	# continue (读档) 不动: 保持默认半径, 不碰延迟敏感的读档路径 (玩家稍后瞬移到存档位置).
 	if _pending_save_data == null:
 		var cm = w.chunk_manager
-		loading.set_progress(0.90, "正在测速...")
-		var t0: int = Time.get_ticks_msec()
-		# 基准: 生成出生点两侧 8 个新 chunk (这些也是真要预载的, 不浪费)
+		loading.set_progress(0.85, "正在生成地形", 0.0)
+		await get_tree().process_frame
+		# Benchmark real chunks, excluding UI frame time, then generate the rest.
+		var work_msec := 0
+		var samples := 0
 		for bcx in [3, 4, 5, 6, -3, -4, -5, -6]:
+			var t0: int = Time.get_ticks_msec()
 			cm.load_one(bcx)
-		var per: float = float(Time.get_ticks_msec() - t0) / 8.0
-		cm.view_radius = LoadPlanner.plan_view_radius(per, OS.has_feature("web"), OS.get_processor_count())
-		# 分帧预载 ±view_radius (跳过已载的), 进度 0.90 → 0.98
-		var r: int = cm.view_radius
-		var total: int = 2 * r + 1
-		var done: int = 0
-		for cx in range(-r, r + 1):
+			work_msec += Time.get_ticks_msec() - t0
+			samples += 1
+			loading.set_progress(0.85 + 0.03 * samples / 8.0, "正在生成地形", samples / 8.0)
+			await get_tree().process_frame
+		cm.view_radius = LoadPlanner.plan_view_radius(work_msec / 8.0, OS.has_feature("web"), OS.get_processor_count())
+		var radius: int = cm.view_radius
+		var total: int = 2 * radius + 1
+		var done := 0
+		for cx in range(-radius, radius + 1):
 			cm.load_one(cx)
 			done += 1
-			if done % 3 == 0:
-				loading.set_progress(0.90 + 0.08 * float(done) / float(total), "正在预生成世界 (%d/%d)..." % [done, total])
-				await get_tree().process_frame
+			loading.set_progress(0.88 + 0.10 * float(done) / total, "正在生成地形", float(done) / total)
+			await get_tree().process_frame
+	else:
+		loading.set_progress(0.85, "正在读取世界数据", 0.0)
+		await get_tree().process_frame
+		_apply_save_data(_pending_save_data)
+		_pending_save_data = null
+		loading.set_progress(0.98, "正在读取世界数据", 1.0)
+		await get_tree().process_frame
 
-	# 100%: 完成 + 0.5s 淡出 → queue_free LoadingScreen
-	loading.set_progress(1.0, "进入世界!")
+	# Prime camera, scenery and lighting while simulation is still frozen.
+	w.prepare_entry_view()
+	loading.set_progress(1.0, "正在进入世界", 1.0)
+	await get_tree().process_frame
 	loading.finish_and_fade()
 	await loading.finished
 	loading.queue_free()
-	# Continue 路径: 世界全部初始化完才应用存档 (chunk_manager / player 都就绪).
-	# 必须在这, 不能在 _continue_game 里 call_deferred — 那会在第一个 await 就触发.
-	if _pending_save_data != null:
-		_apply_save_data(_pending_save_data)
-		_pending_save_data = null
-	# autosave 推迟到这里才启动 (不在前面 Step F): 否则 continue 路径 autosave 可能赶在
-	# _apply_save_data 恢复背包之前 fire, 把"空背包"写盘覆盖好档 → 下次读档丢三件套.
-	# 现在玩家 + 背包都就绪了再开自动存档.
+	for node in _game_nodes:
+		node.process_mode = load_process_modes.get(node, Node.PROCESS_MODE_INHERIT)
+	_loading = false
+	# Never autosave the fresh, empty inventory before save restoration completes.
 	_start_autosave()
 
 
@@ -372,7 +394,7 @@ func _running_under_gut() -> bool:
 
 # 走"继续" 路径: 用存档 seed 启 world + 还原玩家/背包/方块改动
 func _continue_game(data: Resource) -> void:
-	if data == null:
+	if _loading or data == null:
 		return
 	# 暂存存档 — _run_async_load 把世界全部初始化完才应用 (不能 call_deferred,
 	# 那会在第一个 await 触发, 那时 chunk_manager 还没建).
@@ -626,7 +648,7 @@ func _wire_player() -> void:
 
 # 真实新游戏 + continue 路径 (_run_async_load) 会调用这个;
 # 测试 helper boot_to_game / _start_game_sync 跳过, 让测试用空背包独立 setup.
-# continue 路径靠 _apply_save_data.call_deferred 在更后一帧覆盖背包, 不会留下重复.
+# 读档不发起步包；恢复存档完成后才关闭加载页。
 func _grant_starter_on_new_game() -> void:
 	# 只在真实新游戏发起步包. 继续游戏 _want_starter=false (存档背包由 _apply_save_data 还原).
 	# _want_starter 一次性, 防 deferred 跑两次重复发.
@@ -787,6 +809,9 @@ func _on_respawn() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _loading:
+		get_viewport().set_input_as_handled()
+		return
 	# DEBUG: 按 V 在鼠标光标处放水 (测试流水用)
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_V \
 			and _state == "game":

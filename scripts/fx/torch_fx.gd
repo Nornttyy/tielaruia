@@ -1,71 +1,44 @@
-# 火把整体特效。挂在 TorchLights 下, 跟 tile 坐标对齐。
-# 三个组件:
-#   - Flame: 2 帧 sprite 切换 (scale.y 微跳)
-#   - Light: PointLight2D, energy 呼吸 (sin + 随机抖)
-#   - SparkTimer: 0.12-0.20s 触发一次, spawn 火花到 effects_root
+# The handle is drawn by the tile map. This is only its original flame mask;
+# no scaling animation or separate oversized particle sprite over the torch.
 extends Node2D
-
-const TILE_SIZE := 12
-const LIGHT_RADIUS := 96        # 半径 px
-const BASE_ENERGY := 1.2
-const ENERGY_OSC := 0.10        # sin 幅度
-const ENERGY_NOISE := 0.05      # 每帧随机抖幅度
-const FLAME_FRAME_TIME := 0.15
-const LIGHT_COLOR := Color(1.0, 0.7, 0.3)
-
-const TorchSparkScene = preload("res://scenes/fx/torch_spark_particle.tscn")
-
-var _time: float = 0.0
-var _flame_t: float = 0.0
-var _flame_frame: int = 0
-
+const Sprites = preload("res://scripts/art/terraria_sprite_pack.gd")
+const FLICKER_STEP := 0.09
+var tile_id: int = Tiles.TORCH
+var orientation := 0
+var _elapsed := 0.0
+var _phase := 0
+static var _atlas: ImageTexture
 @onready var flame: Sprite2D = $Flame
 @onready var light: PointLight2D = $Light
 @onready var spark_timer: Timer = $SparkTimer
 
-
 func _ready() -> void:
-	# 老 Light2D 光照已禁用 (改用 DarknessLayer 瓦片光照)。
-	# Light 节点保留场景结构兼容性, 但不发光 — 真实照明由 TileLightGrid 计算。
-	light.enabled = false
-	_setup_flame_texture()
-	spark_timer.wait_time = randf_range(0.12, 0.20)
-	spark_timer.start()
-	spark_timer.timeout.connect(_on_spark)
+	light.enabled = false # DarknessLayer supplies the actual tile lighting.
+	spark_timer.stop()
+	flame.visible = tile_id == Tiles.TORCH
+	if not flame.visible:
+		set_process(false)
+		return
+	if _atlas == null: _atlas = Sprites.torch_atlas(true)
+	flame.texture = _atlas
+	flame.hframes = 3
+	flame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	flame.scale = Vector2.ONE
+	_phase = posmod(roundi(position.x * 7 + position.y * 11), 8)
+	set_orientation(orientation)
 
-
-# 火苗 sprite: 用 ParticlesArt 暖色像素拉伸成竖向 4x6 小火苗, 放在 tile 顶上方
-func _setup_flame_texture() -> void:
-	var ParticlesArt = preload("res://scripts/fx/particles_art.gd")
-	flame.texture = ParticlesArt.get_torch_spark(Color(1.0, 0.6, 0.2))
-	flame.scale = Vector2(2, 3)
-	flame.position = Vector2(0, -6)
-
+func set_orientation(value: int) -> void:
+	orientation = clampi(value, 0, 2)
+	if flame != null: flame.frame = orientation
 
 func _process(delta: float) -> void:
-	_time += delta
-	# Light 已禁用, 仅做火焰 2 帧切换
-	_flame_t += delta
-	if _flame_t >= FLAME_FRAME_TIME:
-		_flame_t = 0.0
-		_flame_frame = 1 - _flame_frame
-		flame.scale.y = 3.0 if _flame_frame == 0 else 2.6
-
-
-func _on_spark() -> void:
-	var spawn_pos: Vector2 = global_position + Vector2(randf_range(-1, 1), -7)
-	# 优先用 SparkPool (effects_root 下), 池满或没池 fallback 老 instantiate
-	var pool: Node = get_tree().get_first_node_in_group("spark_pool")
-	if pool != null and pool.has_method("request_spark"):
-		pool.request_spark(spawn_pos)
-	else:
-		var s = TorchSparkScene.instantiate()
-		var root: Node = get_tree().get_first_node_in_group("effects_root")
-		if root == null:
-			root = get_tree().current_scene
-		if root != null:
-			root.add_child(s)
-			s.setup(spawn_pos)
-	# 下一次 timer 随机
-	spark_timer.wait_time = randf_range(0.12, 0.20)
-	spark_timer.start()
+	_elapsed += delta
+	if _elapsed < FLICKER_STEP: return
+	_elapsed = fmod(_elapsed, FLICKER_STEP)
+	_phase = (_phase + 1) % 8
+	# A single source-pixel of flame motion; the full handle never moves.
+	var offsets := [Vector2.ZERO, Vector2(-0.75, 0), Vector2.ZERO,
+		Vector2(0, -0.75), Vector2(0.75, 0), Vector2.ZERO,
+		Vector2(0, -0.75), Vector2.ZERO]
+	flame.position = offsets[_phase]
+	flame.modulate.a = [0.65, 0.5, 0.8, 0.6, 0.7, 0.5, 0.75, 0.6][_phase]

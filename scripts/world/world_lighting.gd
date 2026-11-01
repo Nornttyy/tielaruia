@@ -21,7 +21,7 @@ func _ready() -> void:
 
 func on_tile_placed(x: int, y: int, tile_id: int) -> void:
 	if tile_id == Tiles.TORCH or tile_id == Tiles.COOKING_POT:
-		_spawn_torch(x, y)
+		_spawn_torch(x, y, tile_id)
 	elif tile_id == Tiles.SLIME_TORCH or tile_id in preload("res://scripts/world/classic_materials.gd").EMISSIVE:
 		_slime_torch_tiles[Vector2i(x, y)] = true
 
@@ -60,7 +60,7 @@ func on_chunk_loaded(chunk_x: int, chunk_width: int, tiles_2d: Array) -> void:
 		var col: Array = tiles_2d[lx]
 		for y in col.size():
 			if col[y] == Tiles.TORCH or col[y] == Tiles.COOKING_POT:
-				_spawn_torch(world_x, y)
+				_spawn_torch(world_x, y, col[y])
 			elif col[y] == Tiles.SLIME_TORCH or col[y] in preload("res://scripts/world/classic_materials.gd").EMISSIVE:
 				_slime_torch_tiles[Vector2i(world_x, y)] = true
 
@@ -72,11 +72,12 @@ func get_light_tiles() -> Array:
 	return result
 
 
-func _spawn_torch(x: int, y: int) -> void:
+func _spawn_torch(x: int, y: int, tile_id: int) -> void:
 	var key := Vector2i(x, y)
 	if _torches.has(key):
 		return  # 幂等
 	var fx = TorchFxScene.instantiate()
+	fx.tile_id = tile_id
 	fx.position = Vector2(x * TILE_SIZE + TILE_SIZE / 2.0, y * TILE_SIZE + TILE_SIZE / 2.0)
 	var container: Node = get_node_or_null("../TorchLights")
 	if container == null:
@@ -84,6 +85,7 @@ func _spawn_torch(x: int, y: int) -> void:
 		return
 	container.add_child(fx)
 	_torches[key] = fx
+	refresh_torch(x, y)
 
 
 func _despawn_torch(x: int, y: int) -> void:
@@ -94,3 +96,11 @@ func _despawn_torch(x: int, y: int) -> void:
 	if is_instance_valid(n):
 		n.queue_free()
 	_torches.erase(key)
+
+
+func refresh_torch(x: int, y: int) -> void:
+	var fx: Node = _torches.get(Vector2i(x, y))
+	if fx == null or fx.tile_id != Tiles.TORCH: return
+	var grid = get_parent().get("chunk_manager")
+	if grid != null:
+		fx.set_orientation(preload("res://scripts/world/torch_frames.gd").frame(Vector2i(x,y), grid).x)

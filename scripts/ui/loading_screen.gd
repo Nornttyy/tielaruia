@@ -1,261 +1,161 @@
-# 加载层: 暮色背景 + 玩家像素小人跑步 + 真实进度条 + 可点击切换小贴士.
-# 由 main.gd 在 _start_game 中 instantiate, 加载过程一步一步调 set_progress 推进.
+# World entry retains the menu landscape. Generation has the original ornate
+# two-pass bar; loading a save has only the centered status and percentage.
 extends CanvasLayer
 
-signal finished     # 淡出动画结束 → main.gd queue_free 它
+signal finished
 
-const PlayerArt = preload("res://scripts/art/player_art.gd")
-const VIEWPORT_SIZE := Vector2(1280, 720)
-const BAR_SIZE := Vector2(480, 28)
-const BAR_BG_COLOR := Color8(18, 32, 58)     # 深蓝底 (统一蓝色 UI)
-const BAR_BORDER := Color8(72, 122, 184)     # 蓝边
-const BAR_FILL_COLOR := Color8(90, 170, 240) # 蓝色进度
-const TEXT_WARM := Color8(242, 194, 101)
-const TIP_AUTO_INTERVAL := 4.0
-const TIP_HINT_SUFFIX := "    (点击换一条)"
-const FADE_DURATION := 0.5
-const TIPS: PackedStringArray = [
-	"小贴士: 按 A / D 左右移动",
-	"小贴士: 按 空格 跳跃",
-	"小贴士: 按住 鼠标左键 挖方块",
-	"小贴士: 鼠标右键 (或 F) 放方块 / 吃食物",
-	"小贴士: 走近箱子按 E 打开",
-	"小贴士: 按 数字 1-9 切换热键栏",
-	"小贴士: 走到工作台前点一下打开合成",
-	"小贴士: 砍树就能拿到木头",
-	"小贴士: 挖矿要用更好的镐子",
-	"小贴士: 火把可以照亮山洞",
-	"小贴士: 晚上小心僵尸出没!",
-	"小贴士: slime 弱, 适合新手练习",
-	"小贴士: 牛 / 羊 / 猪 可以打掉拿肉",
-	"小贴士: 肚子饿了记得吃东西",
-	"小贴士: 按 Esc 暂停游戏",
-	"小贴士: 下雨天会让水变多",
-	"小贴士: 闪电过后空气会更清新",
-	"小贴士: 萤火虫只在晚上出来",
-	"小贴士: 死了会在出生点复活, 掉的东西在原地",
-	"小贴士: 看到流星记得许愿",
-]
+const Sprites = preload("res://scripts/art/terraria_sprite_pack.gd")
+const WorldgenProgress = preload("res://scripts/ui/worldgen_progress.gd")
+const BASE_SIZE := Vector2(1280, 720)
+const FADE_DURATION := 0.16
+const TIPS := ["火把可以照亮地下。", "更好的镐可以挖掘更坚硬的矿石。", "木材可以制作工作台。"]
 
-var _progress_bg: Panel
-var _progress_fill: ColorRect
+var generating: bool = true
+var background_source: Node
+var _root: Control
+var _background: Control
+var _title: Control
+var _bar: Control
 var _stage_label: Label
-var _percent_label: Label
-var _progress_tween: Tween
-var _tip_button: Button
-var _tip_label: Label
-var _tips_shuffled: Array[String] = []
-var _tip_idx: int = 0
-var _tip_timer: Timer
-var _fade_overlay: ColorRect
-
+var _tip: Label
+var _progress: float = 0.0
+var _shown_progress: float = 0.0
+var _stage: String = "正在准备世界"
+var _finishing: bool = false
 
 func _ready() -> void:
-	_setup_sky()
-	_setup_stars()
-	_setup_player_runner()
-	_setup_progress_bar()
-	_setup_labels()
-	_setup_tip()
-	_setup_fade_overlay()
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	_root = Control.new()
+	_root.name = "Content"
+	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_root)
+	_setup_landscape()
+	_bar = WorldgenProgress.new()
+	_bar.name = "GenerationProgress"
+	_bar.visible = generating
+	_root.add_child(_bar)
+	_stage_label = _label("StageLabel", 24)
+	_tip = _label("TipLabel", 20)
+	_tip.text = TIPS[randi() % TIPS.size()]
+	_tip.visible = generating
+	get_viewport().size_changed.connect(_layout)
+	_layout()
+	_refresh_status()
 
+func _label(node_name: String, font_size: int) -> Label:
+	var label := Label.new()
+	label.name = node_name
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color8(15, 23, 31))
+	label.add_theme_constant_override("outline_size", 4)
+	_root.add_child(label)
+	return label
 
-# 暮色渐变, 复用 main_menu 的色板 (顶深紫 → 暮色橙红 → 金橙 → 暖肉粉)
-func _setup_sky() -> void:
+func _setup_landscape() -> void:
+	# Duplicate only the scenery, never menu buttons, dialogs or the black fade.
+	if is_instance_valid(background_source):
+		var source_bg := background_source.get_node_or_null("BackgroundLayer")
+		var source_title := background_source.get_node_or_null("TitleLayer")
+		if source_bg != null and source_title != null:
+			_background = source_bg.duplicate(0)
+			_title = source_title.duplicate(0)
+			_root.add_child(_background)
+			_root.add_child(_title)
+			return
+	# Also usable in a standalone scene (tests and previews).
+	_background = Control.new()
+	_background.name = "BackgroundLayer"
+	_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_root.add_child(_background)
 	var sky := ColorRect.new()
-	sky.name = "Sky"
-	sky.anchor_right = 1.0
-	sky.anchor_bottom = 1.0
-	sky.color = Color8(95, 150, 220)   # 白天底色
-	sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(sky)
-	# 白天渐变 (跟主菜单一致)
-	var gradient := Gradient.new()
-	gradient.set_color(0, Color8(95, 150, 220))         # 顶: 深天蓝
-	gradient.add_point(0.5, Color8(140, 195, 240))      # 中: 中天蓝
-	gradient.set_color(gradient.get_point_count() - 1, Color8(200, 225, 245))  # 底: 浅蓝
-	var grad_tex := GradientTexture2D.new()
-	grad_tex.gradient = gradient
-	grad_tex.fill_from = Vector2(0, 0)
-	grad_tex.fill_to = Vector2(0, 1)
-	grad_tex.width = 64
-	grad_tex.height = 256
-	var tex_rect := TextureRect.new()
-	tex_rect.name = "SkyGradient"
-	tex_rect.texture = grad_tex
-	tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	tex_rect.stretch_mode = TextureRect.STRETCH_SCALE
-	tex_rect.anchor_right = 1.0
-	tex_rect.anchor_bottom = 1.0
-	tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	sky.add_child(tex_rect)
+	sky.color = Color8(120, 183, 233)
+	sky.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_background.add_child(sky)
+	var trees := Node2D.new()
+	trees.name = "Trees"
+	_background.add_child(trees)
+	for i in 3:
+		for copy in 3:
+			var sprite := Sprite2D.new()
+			sprite.texture = Sprites.texture("Background_%d.png" % [7, 8, 11][i])
+			sprite.centered = false
+			sprite.position = Vector2(copy * 1024, [255, 345, 440][i])
+			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			sprite.set_meta("speed", [4.0, 9.0, 16.0][i])
+			trees.add_child(sprite)
+	_title = Control.new()
+	_title.name = "TitleLayer"
+	_title.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_root.add_child(_title)
+	var logo := TextureRect.new()
+	logo.name = "OriginalLogo"
+	logo.texture = Sprites.texture("Logo.png")
+	logo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_title.add_child(logo)
 
+func _layout() -> void:
+	var view := get_viewport().get_visible_rect().size
+	var cover: float = maxf(view.x / BASE_SIZE.x, view.y / BASE_SIZE.y)
+	for root_name in ["Trees", "TreesFront"]:
+		var trees := _background.get_node_or_null(root_name) as Node2D
+		if trees != null:
+			trees.scale = Vector2.ONE * cover
+			trees.position = (view - BASE_SIZE * cover) * 0.5
+	var ui_scale: float = minf(1.0, minf(view.x / 680.0, view.y / 540.0))
+	var logo := _title.get_node_or_null("OriginalLogo") as TextureRect
+	if logo != null:
+		logo.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		logo.size = Vector2(486, 142) * ui_scale
+		logo.position = Vector2((view.x - logo.size.x) * 0.5, 70.0 * ui_scale)
+	_bar.scale = Vector2.ONE * (0.75 * ui_scale)
+	_bar.position = Vector2((view.x - WorldgenProgress.FRAME_SIZE.x * _bar.scale.x) * 0.5, view.y * 0.43)
+	_stage_label.position = Vector2(16, view.y * (0.35 if generating else 0.47))
+	_stage_label.size = Vector2(view.x - 32, 44)
+	_tip.position = Vector2(16, view.y * 0.82)
+	_tip.size = Vector2(view.x - 32, 40)
 
-# 14 颗暖白小星, 顶部 28% 区域随机位置 + 闪烁
-func _setup_stars() -> void:
-	var stars := Control.new()
-	stars.name = "Stars"
-	stars.anchor_right = 1.0
-	stars.anchor_bottom = 1.0
-	stars.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(stars)
-	for i in 14:
-		var s := ColorRect.new()
-		s.color = Color(1, 1, 0.88, 0.7)
-		s.size = Vector2(2, 2)
-		var x: float = randf() * VIEWPORT_SIZE.x
-		var y: float = randf_range(20.0, VIEWPORT_SIZE.y * 0.28)
-		s.position = Vector2(x, y)
-		s.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		stars.add_child(s)
-		var period: float = randf_range(1.2, 2.6)
-		var min_a: float = randf_range(0.15, 0.45)
-		var t := create_tween().set_loops()
-		t.tween_property(s, "modulate:a", min_a, period).set_trans(Tween.TRANS_SINE)
-		t.tween_property(s, "modulate:a", 1.0, period).set_trans(Tween.TRANS_SINE)
+# Only actual completed work advances the overall percentage. A new pass may
+# restart its own lower bar; overall progress must never go backwards or NaN.
+func set_progress(percent: float, stage_text: String, pass_fraction: float = -1.0) -> void:
+	if not is_finite(percent):
+		return
+	_progress = maxf(_progress, clampf(percent, 0.0, 1.0))
+	_stage = stage_text.trim_suffix("...").trim_suffix("……")
+	if _bar != null:
+		_bar.current_pass = clampf(pass_fraction, 0.0, 1.0) if is_finite(pass_fraction) and pass_fraction >= 0.0 else _progress
+		_bar.queue_redraw()
+	_refresh_status()
 
+func _refresh_status() -> void:
+	if _stage_label != null:
+		_stage_label.text = "%s……%d%%" % [_stage, int(floorf(_progress * 100.0 + 0.001))]
 
-# 像素玩家小人, 跑 walk 动画
-func _setup_player_runner() -> void:
-	var runner := AnimatedSprite2D.new()
-	runner.name = "PlayerRunner"
-	runner.sprite_frames = PlayerArt.build_sprite_frames()
-	runner.animation = "walk"
-	runner.scale = Vector2(4.0, 4.0)
-	runner.position = Vector2(VIEWPORT_SIZE.x / 2.0, VIEWPORT_SIZE.y * 0.45)
-	runner.play()
-	add_child(runner)
+func _process(delta: float) -> void:
+	_shown_progress = move_toward(_shown_progress, _progress, delta * 2.5)
+	_bar.overall = _shown_progress
+	_bar.queue_redraw()
+	for root_name in ["Trees", "Clouds"]:
+		var scenery := _background.get_node_or_null(root_name)
+		if scenery == null: continue
+		for sprite in scenery.get_children():
+			if not sprite.has_meta("speed"): continue
+			sprite.position.x -= float(sprite.get_meta("speed")) * delta
+			if sprite.position.x < -1024: sprite.position.x += 3072
 
-
-# 进度条: 外框 (BAR_BG_COLOR + BAR_BORDER) + 内填 (BAR_FILL_COLOR)
-func _setup_progress_bar() -> void:
-	_progress_bg = Panel.new()
-	_progress_bg.name = "ProgressBg"
-	_progress_bg.custom_minimum_size = BAR_SIZE
-	_progress_bg.size = BAR_SIZE
-	_progress_bg.position = Vector2(
-		(VIEWPORT_SIZE.x - BAR_SIZE.x) / 2.0,
-		VIEWPORT_SIZE.y * 0.65,
-	)
-	var bg_style := StyleBoxFlat.new()
-	bg_style.bg_color = BAR_BG_COLOR
-	bg_style.border_color = BAR_BORDER
-	bg_style.border_width_left = 2
-	bg_style.border_width_right = 2
-	bg_style.border_width_top = 2
-	bg_style.border_width_bottom = 2
-	_progress_bg.add_theme_stylebox_override("panel", bg_style)
-	add_child(_progress_bg)
-
-	_progress_fill = ColorRect.new()
-	_progress_fill.name = "ProgressFill"
-	_progress_fill.color = BAR_FILL_COLOR
-	_progress_fill.position = Vector2(2, 2)
-	_progress_fill.size = Vector2(0, BAR_SIZE.y - 4)
-	_progress_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_progress_bg.add_child(_progress_fill)
-
-
-# 阶段文字 (居中 + 暖色) + 百分比 (进度条右边)
-func _setup_labels() -> void:
-	_stage_label = Label.new()
-	_stage_label.name = "StageLabel"
-	_stage_label.text = ""
-	_stage_label.add_theme_color_override("font_color", TEXT_WARM)
-	_stage_label.add_theme_font_size_override("font_size", 22)
-	_stage_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_stage_label.size = Vector2(VIEWPORT_SIZE.x, 28)
-	_stage_label.position = Vector2(0, VIEWPORT_SIZE.y * 0.58)
-	add_child(_stage_label)
-
-	_percent_label = Label.new()
-	_percent_label.name = "PercentLabel"
-	_percent_label.text = "0%"
-	_percent_label.add_theme_color_override("font_color", TEXT_WARM)
-	_percent_label.add_theme_font_size_override("font_size", 18)
-	_percent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_percent_label.size = Vector2(80, 22)
-	_percent_label.position = Vector2(
-		_progress_bg.position.x + BAR_SIZE.x + 12,
-		_progress_bg.position.y + 3,
-	)
-	add_child(_percent_label)
-
-
-# 加载流程逐步调: percent 0..1, stage_text 阶段文字. 进度条用 tween 平滑过渡 0.2s
-func set_progress(percent: float, stage_text: String) -> void:
-	percent = clamp(percent, 0.0, 1.0)
-	_stage_label.text = stage_text
-	_percent_label.text = "%d%%" % int(round(percent * 100.0))
-	var target_w: float = (BAR_SIZE.x - 4.0) * percent
-	if _progress_tween != null and _progress_tween.is_running():
-		_progress_tween.kill()
-	_progress_tween = create_tween()
-	_progress_tween.tween_property(
-		_progress_fill, "size:x", target_w, 0.2
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-
-
-# 小贴士: 启动 shuffle 一次顺序, 每 4s 自动切下一条, 点击也切 (+ 重置 timer)
-func _setup_tip() -> void:
-	_tips_shuffled.clear()
-	for t in TIPS:
-		_tips_shuffled.append(t)
-	_tips_shuffled.shuffle()
-
-	_tip_button = Button.new()
-	_tip_button.name = "TipButton"
-	_tip_button.flat = true
-	_tip_button.focus_mode = Control.FOCUS_NONE
-	_tip_button.size = Vector2(VIEWPORT_SIZE.x, 40)
-	_tip_button.position = Vector2(0, VIEWPORT_SIZE.y * 0.85)
-	add_child(_tip_button)
-
-	_tip_label = Label.new()
-	_tip_label.name = "TipLabel"
-	_tip_label.add_theme_color_override("font_color", TEXT_WARM)
-	_tip_label.add_theme_font_size_override("font_size", 18)
-	_tip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_tip_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_tip_label.size = _tip_button.size
-	_tip_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tip_button.add_child(_tip_label)
-	_show_current_tip()
-
-	_tip_button.pressed.connect(_on_tip_pressed)
-
-	_tip_timer = Timer.new()
-	_tip_timer.wait_time = TIP_AUTO_INTERVAL
-	_tip_timer.one_shot = false
-	_tip_timer.autostart = true
-	add_child(_tip_timer)
-	_tip_timer.timeout.connect(_on_tip_pressed)
-
-
-func _show_current_tip() -> void:
-	_tip_label.text = _tips_shuffled[_tip_idx] + TIP_HINT_SUFFIX
-
-
-func _on_tip_pressed() -> void:
-	_tip_idx = (_tip_idx + 1) % _tips_shuffled.size()
-	_show_current_tip()
-	if _tip_timer != null:
-		_tip_timer.start()  # 重置 4 秒自动计时
-
-
-# 顶层黑色 ColorRect, 初始透明. finish_and_fade 时 tween 到不透明
-func _setup_fade_overlay() -> void:
-	_fade_overlay = ColorRect.new()
-	_fade_overlay.name = "FadeOverlay"
-	_fade_overlay.color = Color(0, 0, 0, 0)
-	_fade_overlay.anchor_right = 1.0
-	_fade_overlay.anchor_bottom = 1.0
-	_fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_fade_overlay)
-
-
-# 加载完成调: 0.5s 黑屏淡出 → emit finished. main.gd 接到信号后 queue_free
 func finish_and_fade() -> void:
-	var t := create_tween()
-	t.tween_property(_fade_overlay, "color:a", 1.0, FADE_DURATION).set_trans(Tween.TRANS_SINE)
-	t.tween_callback(func(): finished.emit())
+	if _finishing or _progress < 1.0:
+		return
+	_finishing = true
+	_shown_progress = 1.0
+	_bar.overall = 1.0
+	_bar.queue_redraw()
+	var tween := create_tween()
+	tween.tween_property(_root, "modulate:a", 0.0, FADE_DURATION)
+	tween.tween_callback(func(): finished.emit())

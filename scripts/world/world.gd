@@ -126,8 +126,10 @@ var _falling: Dictionary = {}
 
 
 const TreeFrames = preload("res://scripts/world/tree_frames.gd")
+const TorchFrames = preload("res://scripts/world/torch_frames.gd")
 
 func _original_display_id(pos: Vector2i, tid: int) -> int:
+	if tid == Tiles.TORCH: return tid
 	var c: Chunk = chunk_manager.get_chunk(Chunk.chunk_x_of(pos.x))
 	return preload("res://scripts/world/original_structure_samples.gd").display_id(c, pos, tid)
 
@@ -147,6 +149,7 @@ func _render_decoration(pos: Vector2i, tile_id: int) -> void:
 
 
 func _decoration_frame(pos: Vector2i, tile_id: int) -> Vector2i:
+	if tile_id == Tiles.TORCH: return TorchFrames.frame(pos, chunk_manager)
 	if Tiles.is_water(tile_id) or Tiles.is_biome_water_visual(tile_id):
 		var above: int = chunk_manager.get_tile(pos.x, pos.y - 1)
 		return Vector2i(0, 1) if Tiles.is_water(above) or Tiles.is_solid(above) else Vector2i.ZERO
@@ -229,6 +232,23 @@ func get_init_step_count() -> int:
 
 func get_init_step_label(idx: int) -> String:
 	return STEP_LABELS[idx]
+
+
+# Populate the first visible frame before removing the loading screen. The
+# simulation is disabled here, so the normal throttled visual updates have not
+# run yet (in particular DarknessLayer starts with an all-black texture).
+func prepare_entry_view() -> void:
+	if camera != null:
+		camera.zoom = Vector2.ONE * GameSettings.camera_zoom
+		camera.reset_smoothing()
+		camera.force_update_scroll()
+	for layer_name in ["ScenicDirector", "SkyBackground", "MountainsLayer", "CelestialLayer", "CaveBackgroundLayer"]:
+		var visual := get_node_or_null(layer_name)
+		if visual != null and visual.has_method("_process"):
+			visual._process(0.0)
+	var darkness := get_node_or_null("DarknessLayer")
+	if darkness != null:
+		darkness._update_viewport()
 
 
 func run_init_step(idx: int) -> void:
@@ -1297,6 +1317,8 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				Autotile.refresh_tile(terrain_layer, Vector2i(col_x, y), sid, q, Autotile.make_solid_query(chunk_manager))
 			elif sid in TreeFrames.PARTS:
 				terrain_layer.set_cell(Vector2i(col_x, y), _original_display_id(Vector2i(col_x, y), sid), _decoration_frame(Vector2i(col_x, y), sid))
+			elif sid == Tiles.TORCH:
+				_refresh_torch_attachment(Vector2i(col_x, y))
 			# 新区块会补算天然墙接缝；从数据重读，包含已被内缩删掉的墙。
 			for wx in [col_x, col_x + (-1 if neighbor_cx < c.chunk_x else 1)]:
 				var wsid: int = chunk_manager.get_wall(wx, y)
@@ -2054,6 +2076,10 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 	# 火把光源生命周期: 先 remove 旧, 再 place 新
 	world_lighting.on_tile_removed(x, y, old_tid)
 	world_lighting.on_tile_placed(x, y, tile_id)
+	# Reattach side/floor torches after their support changes. Remote peers only
+	# refresh visuals; the peer that changes the support sends removal/drop data.
+	for offset in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP]:
+		_refresh_torch_attachment(pos + offset, not from_remote)
 	# 黑暗层: tile 改了 → 局部重算光值 (±8 涵盖火把半径 6)
 	darkness_layer.recompute_around(x, y, 8)
 	# 流水: 通知 water_sim, 让它评估 (x,y) 和 4 邻居是否要流
@@ -2065,6 +2091,24 @@ func _set_tile(x: int, y: int, tile_id: int, from_remote: bool = false, skip_san
 	# 沙子物理: 这格变 AIR → 上方 SAND 整柱下落
 	if tile_id == Tiles.AIR and not skip_sand:
 		_apply_sand_fall(x, y)
+
+
+func _refresh_torch_attachment(pos: Vector2i, remove_unsupported := false) -> void:
+	if chunk_manager.get_tile(pos.x, pos.y) != Tiles.TORCH: return
+	if TorchFrames.attachment(pos, chunk_manager) < 0 and remove_unsupported:
+		_set_tile(pos.x, pos.y, Tiles.AIR)
+		var drop_pos := Vector2(pos) * 12 + Vector2(6, 6)
+		if NetworkManager.connected() and not NetworkManager.is_host:
+			NetworkManager.send_drop_request("torch", 1, drop_pos.x, drop_pos.y)
+			return
+		var drop = ItemDropScene.instantiate()
+		drop.item_id = "torch"
+		drop.count = 1
+		drop.position = drop_pos
+		entities_root.add_child(drop)
+		return
+	terrain_layer.set_cell(pos, Tiles.TORCH, TorchFrames.frame(pos, chunk_manager))
+	world_lighting.refresh_torch(pos.x, pos.y)
 
 
 # 改背景墙 (锤子砸墙 / 放墙). 更新 chunk_manager 墙数据 (含 wall delta 存档) +
@@ -2091,6 +2135,7 @@ func _set_wall(x: int, y: int, wid: int) -> void:
 			if nsid != -1 and EdgeTemplates.FAMILY_OF.has(nsid):
 				var nq := Autotile.make_wall_query(nsid, chunk_manager)
 				Autotile.refresh_tile(wall_layer, npos, nsid, nq)
+	_refresh_torch_attachment(pos, true)
 
 
 # 沙子物理: (x, y_air) 这格变 AIR 后, 上方第一格如果是 SAND 就下落 1 格,

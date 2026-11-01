@@ -149,6 +149,17 @@ static func tree_piece(tile_id: int, joint: int, variant: int, style := 0) -> Im
 	img.resize(15, 15, Image.INTERPOLATE_NEAREST)
 	return ImageTexture.create_from_image(img)
 
+# Torch cells are 20×20 with a 22 px stride, not the terrain's 16×16.
+# Padding aligns the bottom of the upright handle with the 12 px floor and
+# keeps the wall brackets outside the cell without squashing the flame.
+static func torch_atlas(flame_only := false) -> ImageTexture:
+	var sheet := source_image("Flame_0.png" if flame_only else "Tiles_4.png")
+	var img := Image.create(72, 24, false, Image.FORMAT_RGBA8)
+	for orientation in 3:
+		img.blit_rect(sheet, Rect2i(orientation * 22, 0, 20, 20), Vector2i(orientation * 24 + 2, 0))
+	img.resize(54, 18, Image.INTERPOLATE_NEAREST)
+	return ImageTexture.create_from_image(img)
+
 static func block_single(tile_id: int) -> ImageTexture:
 	var img: Image
 	match tile_id:
@@ -162,7 +173,8 @@ static func block_single(tile_id: int) -> ImageTexture:
 		B.PLANT_GRASS:
 			img = _cell(source_image("Tiles_3.png"), Vector2i.ZERO)
 		B.TORCH:
-			img = source_image("Tiles_4.png").get_region(Rect2i(0, 0, 16, 16))
+			# Inventory/effect fallback; placed torches use the full torch atlas.
+			img = source_image("Item_8.png").duplicate()
 		B.CLOUD:
 			img = _cell(source_image("Tiles_189.png"), Vector2i(1, 1))
 		B.GRASS_SLOPE_R, B.GRASS_SLOPE_L:

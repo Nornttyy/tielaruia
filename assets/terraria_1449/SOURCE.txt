@@ -24,3 +24,11 @@ https://github.com/sullerandras/terraria-hd-textures/commit/c835594415e31ed88734
 图标 ID 对照资料：https://github.com/TEdit/Terraria-Map-Editor/blob/main/src/TEdit.Terraria/Data/items.json
 本次启用的 101 个物品均有对应原 PNG。食物的三行原图只切第一帧作图标。
 源文件不修改；图集切帧、服装染色和现有 16→12 世界格网适配在运行时进行。
+
+2026-11-01 火把修正：补充同一来源的 Flame_0.png 原火焰遮罩。
+Tiles_4.png 与 Flame_0.png 使用 22 像素步长的 20×20 完整帧；前三列
+分别是地面/背景墙、左侧支撑、右侧支撑。火焰轻微位移，不拉伸整根火把。
+
+World-entry UI: ui/WorldGen/Outer_{Corrupt,Crimson,Dirt,Lower}.png are original
+frame textures from the same pinned source-pngs revision listed in the expansion
+manifest. Loading logic and fill rendering are independently implemented.
