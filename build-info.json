@@ -1,12 +1,12 @@
 {
-  "build": "34eb6c87ef08",
+  "build": "c908afc485a4",
   "music": "CC0 replacement soundtrack",
   "files": {
-    "game-34eb6c87ef08.js": 315759,
-    "game-34eb6c87ef08.wasm": 37695054,
-    "game-34eb6c87ef08.audio.worklet.js": 7298,
-    "game-34eb6c87ef08.audio.position.worklet.js": 2973,
-    "game-34eb6c87ef08.bin": 20306804
+    "game-c908afc485a4.js": 315759,
+    "game-c908afc485a4.wasm": 37695054,
+    "game-c908afc485a4.audio.worklet.js": 7298,
+    "game-c908afc485a4.audio.position.worklet.js": 2973,
+    "game-c908afc485a4.bin": 20372704
   },
-  "source_commit": "f5fc1079995752a1f6dc3e79d631b4d2b61496f0"
+  "source_commit": "532b20e509a1f55715f79b1476cd9ef6662f021d"
 }
