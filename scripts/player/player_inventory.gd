@@ -138,13 +138,17 @@ func has_item(item_id: String) -> bool:
 	return false
 
 
-# 总防御值 (sum of 3 slots)
+# 三件护甲的防御 + 完整套装奖励（混穿不触发）。
 func total_defense() -> int:
 	var d: int = 0
 	for slot_data in [armor_helmet, armor_chest, armor_pants]:
 		if slot_data != null:
 			d += ItemDB.defense(slot_data.item_id)
-	return d
+	return d + armor_set_defense_bonus()
+
+
+func armor_set_defense_bonus() -> int:
+	return ItemDB.armor_set_bonus(armor_helmet.item_id if armor_helmet != null else "", armor_chest.item_id if armor_chest != null else "", armor_pants.item_id if armor_pants != null else "")
 
 
 # 装备盔甲: 把 hotbar/inv 里某槽的物品移到对应盔甲槽, 旧装备返回到原槽.

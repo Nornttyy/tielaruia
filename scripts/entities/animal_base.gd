@@ -35,6 +35,7 @@ const ENEMY_IFRAME_SEC := 0.2
 var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _stepping: bool = false   # auto-step tween 进行中, 物理暂停
+var _rest_sprite_scale := Vector2.ONE
 var _cached_player: Node2D = null  # 缓存 player ref, 每帧避免 get_first_node_in_group
 var _cached_cm: Node = null         # 缓存 chunk_manager 同理
 
@@ -43,6 +44,7 @@ var _cached_cm: Node = null         # 缓存 chunk_manager 同理
 
 func _ready() -> void:
 	current_health = max_health
+	_rest_sprite_scale = sprite.scale
 	if sprite_frames != null:
 		sprite.sprite_frames = sprite_frames
 	sprite.play("idle")
@@ -206,8 +208,8 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 		dir = dir.normalized()
 		velocity = dir * knockback
 	var tween := create_tween()
-	tween.tween_property(sprite, "scale", Vector2(1.15, 0.85), 0.06)
-	tween.tween_property(sprite, "scale", Vector2.ONE, 0.12)
+	tween.tween_property(sprite, "scale", _rest_sprite_scale * Vector2(1.15, 0.85), 0.06)
+	tween.tween_property(sprite, "scale", _rest_sprite_scale, 0.12)
 	if current_health == 0:
 		_die()
 	return true

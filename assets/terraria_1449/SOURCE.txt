@@ -32,3 +32,8 @@ Tiles_4.png 与 Flame_0.png 使用 22 像素步长的 20×20 完整帧；前三�
 World-entry UI: ui/WorldGen/Outer_{Corrupt,Crimson,Dirt,Lower}.png are original
 frame textures from the same pinned source-pngs revision listed in the expansion
 manifest. Loading logic and fill rendering are independently implemented.
+
+2026-11-01 小动物修正：NPC_46（兔子）、NPC_148/149（两色企鹅）、NPC_361（青蛙）。
+四份 PNG 同样来自上述固定提交，来源和 SHA-256 见 critter-manifest.json。
+分别按 48×40、28×42、26×22 切帧；保留原像素尺寸并统一应用 16→12 世界格网比例。
+行为为本项目独立实现。物种和基础数值参考官方 Wiki 的 Bunny、Penguin、Frog 条目。

@@ -28,9 +28,7 @@ const MummyScene = preload("res://scenes/entities/mummy.tscn")
 const KingSlimeScene = preload("res://scenes/entities/king_slime.tscn")
 const SkeletonKingScene = preload("res://scenes/entities/skeleton_king.tscn")
 const DemonLordScene = preload("res://scenes/entities/demon_lord.tscn")
-const CowScene = preload("res://scenes/entities/cow.tscn")
-const SheepScene = preload("res://scenes/entities/sheep.tscn")
-const PigScene = preload("res://scenes/entities/pig.tscn")
+const BunnyScene = preload("res://scenes/entities/bunny.tscn")
 const PenguinScene = preload("res://scenes/entities/penguin.tscn")
 const FrogScene = preload("res://scenes/entities/frog.tscn")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
@@ -45,7 +43,7 @@ const MAX_SLIMES := 4              # 白天上限 (slime)
 const UNDERGROUND_SLIME_MAX := 6  # 地下史莱姆额外上限 (跟地表分开算)
 # 夜间怪 (zombie + spider 共享) 上限按难度: 简单 8 / 普通 15 / 困难 25
 const NIGHT_CAP_BY_DIFFICULTY := [8, 15, 25]
-const MAX_ANIMALS := 3             # 动物上限 (牛+羊+猪+企鹅+豹+青蛙 总和)
+const MAX_ANIMALS := 3             # 无害小动物上限
 const SPAWN_INTERVAL := 6.0
 const ANIMAL_SPAWN_INTERVAL := 12.0  # 动物刷新更慢
 const SPAWN_RANGE_MIN := 12  # tiles
@@ -683,15 +681,15 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"mummy": scene = MummyScene
 		"harpy": scene = HarpyScene
 		"mimic": scene = MimicScene
-		"cow": scene = CowScene
-		"sheep": scene = SheepScene
-		"pig": scene = PigScene
-		"penguin": scene = PenguinScene
+		"cow", "sheep", "pig": return null # 拒绝旧联机版本遗留的家畜。
+		"bunny": scene = BunnyScene
+		"penguin", "penguin_black": scene = PenguinScene
 		"frog": scene = FrogScene
 		_: return null
 	if scene == null:
 		return null
 	var ent = scene.instantiate()
+	if kind == "penguin_black": ent.variant = 1
 	# 标记为远程, 实体 AI 应跳过
 	ent.set_meta("is_remote", true)
 	entities_root.add_child(ent)
@@ -962,23 +960,19 @@ func _mp_broadcast_entities(force_full: bool = true) -> void:
 						kind = "harpy"
 					elif "mimic" in scene_path_s:
 						kind = "mimic"
-					elif "frog" in scene_path_s:
-						continue   # 青蛙继承 slime 也在 slimes 组, 但由 "animals" 分支广播 → 这里跳过防双发
 					else:
 						kind = "slime"
 				"zombies": kind = "zombie"
 				"animals":
 					var scene_path: String = n2d.scene_file_path if n2d.scene_file_path != null else ""
-					if "cow" in scene_path:
-						kind = "cow"
-					elif "sheep" in scene_path:
-						kind = "sheep"
-					elif "pig" in scene_path:
-						kind = "pig"
+					if "bunny" in scene_path:
+						kind = "bunny"
 					elif "penguin" in scene_path:
-						kind = "penguin"
+						kind = "penguin_black" if n2d.variant == 1 else "penguin"
 					elif "frog" in scene_path:
 						kind = "frog"
+					else:
+						continue
 			if _too_far_from_players(n2d.global_position, pps):
 				continue
 			var espr: AnimatedSprite2D = n2d.get_node_or_null("AnimatedSprite2D")
@@ -1341,7 +1335,7 @@ func _on_chunk_unloaded(cx: int) -> void:
 			water_layer.erase_cell(Vector2i(world_x, y))
 			wall_layer.set_cell(Vector2i(world_x, y), -1)
 		SkyLightGrid.invalidate_column(world_x)
-	# 清该 chunk 像素范围内所有"短命"实体: 怪物 (slime/zombie) + 动物 (cow/sheep/pig) + 掉落物
+	# 清该 chunk 像素范围内所有短命实体：怪物、小动物和掉落物。
 	for group in ["slimes", "zombies", "animals", "item_drops"]:
 		for ent in get_tree().get_nodes_in_group(group):
 			# Boss 在 "slimes" 组里, 但有自己的远离消失逻辑 — chunk 卸载别误删 (否则用钩爪/传送拉开距离让王那列卸载, 王凭空消失+血条空挂)
@@ -1529,7 +1523,7 @@ func _spawn_hell_creature(scene: PackedScene) -> void:
 
 
 func _try_spawn_animal() -> void:
-	# 新刷新池不再混入 Minecraft 家畜；旧存档实体仍可读取。
+	# 仅按实际地表刷对应小动物，远程同步使用同一组物种。
 	var animals := get_tree().get_nodes_in_group("animals")
 	if animals.size() >= MAX_ANIMALS:
 		return
@@ -1548,35 +1542,35 @@ func _try_spawn_animal() -> void:
 		if Tiles.is_solid(t):
 			surf_tile = t
 			break
-	var scene: PackedScene
-	match surf_tile:
-		Tiles.SNOW:
-			scene = PenguinScene
-		Tiles.JUNGLE_GRASS:
-			scene = FrogScene
-		_:
-			return
-	_spawn_at_column(scene, cand_x)
+	var scene := _critter_scene_for_surface(surf_tile)
+	if scene != null: _spawn_at_column(scene, cand_x)
+
+
+static func _critter_scene_for_surface(tile: int) -> PackedScene:
+	match tile:
+		Tiles.GRASS: return BunnyScene
+		Tiles.SNOW, Tiles.ICE: return PenguinScene
+		Tiles.JUNGLE_GRASS: return FrogScene
+	return null
 
 
 # spawn 在指定列地表上, 不再随机选 column
 func _spawn_at_column(scene: PackedScene, cand_x: int) -> void:
-	var surf_y: int = -1
+	var surf_y := -1
 	for y in ChunkConstants.WORLD_HEIGHT:
-		if chunk_manager.get_tile(cand_x, y) != Tiles.AIR:
+		if Tiles.is_solid(chunk_manager.get_tile(cand_x, y)):
 			surf_y = y
 			break
-	if surf_y <= 0:
+	if surf_y < 3 or _critter_scene_for_surface(chunk_manager.get_tile(cand_x, surf_y)) != scene:
 		return
-	if chunk_manager.get_tile(cand_x, surf_y - 1) != Tiles.AIR:
-		return  # 头顶被堵 (树或方块)
-	if chunk_manager.get_tile(cand_x, surf_y) == Tiles.BEDROCK:
-		return
+	# 不在树冠、积水中或嵌入坡地出生；三列净空覆盖实际身体宽度。
+	for x in range(cand_x - 1, cand_x + 2):
+		for y in range(surf_y - 3, surf_y):
+			var tid: int = chunk_manager.get_tile(x, y)
+			if Tiles.is_solid(tid) or Tiles.is_water(tid): return
 	var creature := scene.instantiate()
-	creature.global_position = Vector2(
-		cand_x * TILE_SIZE + TILE_SIZE / 2.0,
-		(surf_y - 1) * TILE_SIZE + TILE_SIZE
-	)
+	if scene == PenguinScene: creature.variant = randi_range(0, 1)
+	creature.global_position = Vector2(cand_x * TILE_SIZE + TILE_SIZE / 2.0, surf_y * TILE_SIZE)
 	entities_root.add_child(creature)
 
 

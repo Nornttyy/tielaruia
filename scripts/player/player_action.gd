@@ -129,7 +129,7 @@ var _pickaxe_hit_this_spin: Dictionary = {}  # instance_id → true (1 spin 1 �
 # spin 起始旋转 + 朝向 (跟 held_item.play_pickaxe_attack 同步, 用于 hit 检测 tip 算法)
 var _pickaxe_spin_start_rot: float = 0.0
 var _pickaxe_spin_facing_right: bool = true
-var _pickaxe_spin_damages: bool = false   # 只有"攻击"spin 扣血; 挖矿/斧的 spin 纯视觉 (修挖矿误伤旁边怪)
+var _pickaxe_spin_damages: bool = false
 
 # 剑判定: 跟镐 spin 类似, 攻击期间每帧算 grip→tip 线段, 距怪 ≤ HIT_RADIUS 就扣血.
 # 1 攻击 1 只怪 1 击 (hit set 去重). 替代原来的 AoE 矩形/圆形.
@@ -255,7 +255,7 @@ func _physics_process(delta: float) -> void:
 			if primary_pressed_p and _attack_cooldown <= 0.0:
 				_pickaxe_attack()
 	elif kind == "axe":
-		# 用户改: 斧动作跟镐同款. 鼠标对 LOG → 砍 + spin; 否则 附近怪 → spin (0 伤害, 视觉)
+		# 斧可以砍树，也能用实际挥动的刃打中敌怪。
 		if _mouse_on_log():
 			_update_mining(delta)
 		else:
@@ -328,7 +328,7 @@ func _advance_attack_clock(delta: float) -> void:
 	_attack_cooldown = maxf(0.0, _attack_cooldown - delta)
 	if _attack_cooldown < CLOCK_EPSILON:
 		_attack_cooldown = 0.0
-	# 工具 spin 中: 每帧检查 tip 跟怪的距离, 碰到就扣血 (镐 + 斧共用; 斧 damage_mult=0 自动跳过)
+	# 工具挥动中逐帧检查可见的工具刃，一次挥动对同一目标只命中一次。
 	if _pickaxe_spin_active:
 		_pickaxe_spin_t += delta
 		if _pickaxe_spin_t + CLOCK_EPSILON >= _pickaxe_spin_duration:
@@ -445,6 +445,7 @@ func _update_mining(delta: float) -> void:
 		return
 	# 锤子: 破坏背景墙 (不挖方块). 独立分支, 创造模式也在里面处理.
 	if _current_tool_kind() == "hammer":
+		_ensure_mining_swing()
 		_update_wall_mining(delta)
 		return
 	# 创造模式: 秒挖 — 对准任意"可挖"方块瞬间破 (不要工具/不管树支撑). 基岩等不可挖的仍挡住.
@@ -1240,7 +1241,7 @@ func _current_tool_def() -> Variant:
 	return ItemDB.get_def(slot.item_id)
 
 
-# 工具的攻击倍率 (剑=1.0, 镐=0.5, 斧=0.0, 其他=0.0). 用 dict get 兜底防旧档.
+# 使用物品自身基础伤害，再乘角色增益；旧物品仍保留旧倍率。
 func _tool_damage_mult() -> float:
 	var def = _current_tool_def()
 	if def == null:
@@ -1293,7 +1294,7 @@ func _sword_damage() -> int:
 	var def = ItemDB.get_def(slot.item_id)
 	if def == null or def.tool_kind != "sword":
 		return 0
-	return _base_damage_for_tier(def.tool_tier)
+	return ItemDB.base_damage(slot.item_id)
 
 
 func _current_tool_tier() -> int:
@@ -1707,15 +1708,14 @@ func _mouse_has_enemy_nearby() -> bool:
 	return false
 
 
-# 镐基础伤害: 跟 _sword_damage 同 tier 表, 后面 _tool_damage_mult ×0.5 缩放.
-# (老公式 tier ≥ 2 → 5, else 3 已淘汰 — 新表 7 tier 都不同.)
+# 工具基础伤害（镐、斧、锤）；不再用矿物等级估算。
 func _pickaxe_base_damage() -> int:
 	var def = _current_tool_def()
 	if def == null:
 		return 0
-	if def.tool_kind != "pickaxe":
+	if def.tool_kind not in ["pickaxe", "axe", "hammer"]:
 		return 0
-	return _base_damage_for_tier(def.tool_tier)
+	return ItemDB.base_damage(_mining_item_id())
 
 
 # 镐攻击: 播放完整工具挥动，走 _check_pickaxe_spin_hits 判定。
@@ -1730,8 +1730,7 @@ func _pickaxe_attack() -> void:
 		player.shake(2.0)
 
 
-# 斧挥: 跟镐 _pickaxe_attack 同套路, 走 spin + collision. 但 damage_mult=0 自动
-# 让 _check_pickaxe_spin_hits 跳过扣血 (return early). 纯视觉动作.
+# 斧与镐共用实体挥动判定，按斧自己的伤害数值结算。
 func _axe_swing() -> void:
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
@@ -1746,7 +1745,7 @@ func _start_pickaxe_spin() -> void:
 	SfxBank.play("swing")
 	_pickaxe_spin_duration = _current_use_duration(23.0 / 60.0)
 	_attack_cooldown = _pickaxe_spin_duration
-	_pickaxe_spin_damages = false   # 默认纯视觉 (挖矿石头/斧砍树时不误伤怪); _pickaxe_attack 才设 true
+	_pickaxe_spin_damages = _tool_damage_mult() > 0.0 # 工具实体挥动也能伤敌，与是否瞄准方块无关。
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return
@@ -1778,7 +1777,7 @@ func _check_pickaxe_spin_hits() -> void:
 	if held == null or not held.visible:
 		return
 	if not _pickaxe_spin_damages:
-		return   # 挖矿/斧 的旋转: 纯视觉, 不扣血 (修"挖石头误伤旁边怪")
+		return
 	# tip 旋转角度按本次挥动时长计算，与 held_item 的 2.8 弧度轨迹一致。
 	# 不读 held.rotation — tween 在 _process 更新, _physics_process 这里读可能滞后.
 	var rot_delta: float = clampf(_pickaxe_spin_t / _pickaxe_spin_duration, 0.0, 1.0) * 2.8
@@ -2367,8 +2366,8 @@ func _try_fire_bow() -> void:
 	if entities == null:
 		entities = parent.get_parent()
 	entities.add_child(arrow)
-	var dmg: int = BOW_ARROW_DAMAGE
-	# 弓 tier 加伤: tier1 ×1.0, 后续 tier 加 (留口子未来 add bow tier 2-7)
+	var dmg: int = ItemDB.base_damage(_mining_item_id()) + ItemDB.base_damage("wood_arrow")
+	# 弓与弹药伤害相加，之后再应用角色的伤害加成。
 	dmg = int(round(float(dmg) * _tool_damage_mult()))
 	arrow.setup(start, target, dmg, parent)
 	# 让手里的弓转向鼠标 (修 bug: 之前箭朝鼠标飞, 但弓一直竖着不转 = 看着没瞄准)

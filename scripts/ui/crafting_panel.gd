@@ -362,7 +362,9 @@ func _refresh_armor_slots() -> void:
 			hint.visible = false
 			var name: String = _zh_name(equipped.item_id)
 			var defense: int = ItemDB.defense(equipped.item_id)
-			panel.tooltip_text = "%s\n防御 +%d (减 %.1f 伤)\n左键卸下" % [name, defense, float(defense) * 0.5]
+			panel.tooltip_text = "%s\n%d 防御\n左键卸下" % [name, defense]
+			var bonus: int = _player_inv.armor_set_defense_bonus()
+			if bonus > 0: panel.tooltip_text += "\n套装奖励：增加 %d 点防御" % bonus
 
 
 func _make_inv_slot(idx: int) -> PanelContainer:
@@ -683,9 +685,6 @@ func _zh_name(item_id: String) -> String:
 	return _ZH_NAMES.get(item_id, item_id)
 
 
-# tier → 近战基础伤害 (跟 player_action._TIER_BASE_DAMAGE 同步, 改一处记得同步另一处)
-const _TIER_BASE_DAMAGE := [0, 3, 5, 7, 10, 13, 16, 20, 26, 33]
-
 # 物品悬浮提示: 名字 + 数值 + 用途 (用户要求: 碰到物品显示名字/数值/有什么用)。
 func _item_tooltip(item_id: String) -> String:
 	var def = ItemDB.get_def(item_id)
@@ -697,15 +696,13 @@ func _item_tooltip(item_id: String) -> String:
 	var kind: String = String(def.get("tool_kind", ""))
 	match kind:
 		"sword":
-			var t: int = int(def.get("tool_tier", 0))
-			var base: int = _TIER_BASE_DAMAGE[t] if (t >= 1 and t < _TIER_BASE_DAMAGE.size()) else 0
-			lines.append("近战武器 · 伤害 ~%d" % int(round(base * float(def.get("damage_mult", 1.0)))))
+			lines.append("%d 近战伤害" % ItemDB.weapon_damage(item_id))
 			use = "左键挥砍打怪"
 		"pickaxe":
-			lines.append("镐子 · 挖石头和矿石")
+			lines.append("%d 近战伤害 · 镐子" % ItemDB.weapon_damage(item_id))
 			use = "左键挖方块"
 		"axe":
-			lines.append("斧头 · 砍树最快")
+			lines.append("%d 近战伤害 · 斧头" % ItemDB.weapon_damage(item_id))
 			use = "左键砍树"
 		"gun":
 			lines.append("枪 · 单发伤害 %d" % int(def.get("gun_damage", 0)))
@@ -720,7 +717,7 @@ func _item_tooltip(item_id: String) -> String:
 				lines.append("法杖 · 魔法伤害 %d · 耗蓝 %d" % [sd, int(def.get("mana_cost", 0))])
 				use = "瞄准鼠标放魔法"
 		"bow":
-			lines.append("弓 · 射箭 (需要箭)")
+			lines.append("%d 远程伤害 · 另加箭的伤害" % ItemDB.weapon_damage(item_id))
 			use = "瞄准鼠标射箭"
 		"thrown":
 			lines.append("投掷武器 · 伤害 %d" % int(def.get("thrown_damage", 0)))
@@ -729,10 +726,7 @@ func _item_tooltip(item_id: String) -> String:
 			lines.append("召唤物")
 			use = "使用召唤 Boss"
 		"flail":
-			# 流星锤伤害跟剑同公式 (tier 基础 × mult); flail.gd 里也是这么算的
-			var ft: int = int(def.get("tool_tier", 0))
-			var fbase: int = _TIER_BASE_DAMAGE[ft] if (ft >= 1 and ft < _TIER_BASE_DAMAGE.size()) else 0
-			lines.append("流星锤 · 伤害 ~%d" % int(round(fbase * float(def.get("damage_mult", 1.0)))))
+			lines.append("流星锤 · 伤害 %d" % ItemDB.weapon_damage(item_id))
 			if int(def.get("chain_lightning", 0)) > 0:
 				lines.append("命中: 闪电连跳 %d 次" % int(def.get("chain_lightning")))
 			elif float(def.get("blast_on_hit", 0.0)) > 0.0:
@@ -749,7 +743,7 @@ func _item_tooltip(item_id: String) -> String:
 			lines.append("史莱姆球 · 伤害 ~%d" % int(round(16 * float(def.get("damage_mult", 1.0)))))
 			use = "左键朝鼠标扔出"
 		"hammer":
-			lines.append("锤子 · 敲掉背景墙")
+			lines.append("%d 近战伤害 · 锤子" % ItemDB.weapon_damage(item_id))
 			use = "左键敲掉身后的墙"
 		"hook":
 			lines.append("钩爪 · 飞出去钩住墙")
@@ -760,11 +754,12 @@ func _item_tooltip(item_id: String) -> String:
 		"seed":
 			lines.append("种子 · 种在草地长出作物")
 			use = "右键种到草地上"
+	if item_id == "wood_arrow": lines.append("%d 远程伤害" % ItemDB.weapon_damage(item_id))
 	var aslot: String = ItemDB.armor_slot(item_id)
 	if aslot != "":
 		var slot_zh: String = {"helmet": "头部护甲", "chest": "胸甲", "pants": "腿甲"}.get(aslot, "护甲")
 		var df: int = ItemDB.defense(item_id)
-		lines.append("%s · 防御 +%d (减 %.1f 伤)" % [slot_zh, df, float(df) * 0.5])
+		lines.append("%s · %d 防御" % [slot_zh, df])
 		use = "右键穿上, 减少受到的伤害"
 	var ff: int = ItemDB.food_fill(item_id)
 	if ff > 0:
