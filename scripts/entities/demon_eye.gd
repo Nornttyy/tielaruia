@@ -1,6 +1,10 @@
 # 恶魔眼: 飞行怪. 不受重力, 漂浮追玩家.
 # 夜晚地表 + 地穴深处出没. HP 20 / 接触 8 伤 (Terraria 风, 玩家 100HP 12 击死).
 extends CharacterBody2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
+const FlyingNav = preload("res://scripts/entities/flying_nav.gd")
+const MobNav = preload("res://scripts/entities/mob_nav.gd")
+var _flight_nav = FlyingNav.new()
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
@@ -35,6 +39,7 @@ func _ready() -> void:
 	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
 	sprite.sprite_frames = ArtCache.demon_eye_frames
+	Metrics.align_feet(sprite)
 	sprite.play("idle")
 	add_to_group("demon_eyes")
 	add_to_group("slimes")  # 共享剑挥范围 + 出生点死亡清除
@@ -76,7 +81,8 @@ func _physics_process(delta: float) -> void:
 		var to_player: Vector2 = player.global_position - global_position
 		var dir: Vector2 = to_player.normalized() if to_player.length() > 1.0 else Vector2.ZERO
 		velocity = dir * FLY_SPEED
-		sprite.flip_h = dir.x < 0
+		velocity = _flight_nav.steer(self, player.global_position, velocity, delta)
+		MobNav.face(sprite, velocity.x)
 	else:
 		velocity = Vector2.ZERO
 	move_and_slide()
@@ -107,9 +113,7 @@ func _check_player_contact() -> void:
 	if player == null:
 		return
 	# AABB (飞行怪, dy 范围更宽因为它悬空, 玩家中部 ~ dy=-11).
-	var dx: float = abs(player.global_position.x - global_position.x)
-	var dy: float = player.global_position.y - global_position.y
-	if dx > 10.0 or dy < -22.0 or dy > 22.0:
+	if not Metrics.touching(self, player):
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

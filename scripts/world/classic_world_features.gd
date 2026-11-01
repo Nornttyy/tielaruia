@@ -82,6 +82,7 @@ static func _put(c: Chunk, x: int, y: int, tile: int, wall: int = -1) -> void:
 	var lx := x - c.chunk_x * CC.CHUNK_WIDTH
 	if lx < 0 or lx >= CC.CHUNK_WIDTH or y < 1 or y >= c.tiles[0].size() - 2: return
 	c.tiles[lx][y] = tile
+	c.original_visuals.erase(Vector2i(lx, y))
 	if wall >= 0: c.walls[lx][y] = wall
 
 static func _read_tile(c: Chunk, x: int, y: int) -> int:
@@ -127,12 +128,17 @@ static func _furniture(c: Chunk, x: int, floor_y: int) -> void:
 	_put(c, x - 1, floor_y - 4, Tiles.TORCH)
 
 static func _living_tree(c: Chunk, a: Vector2i, surface: Callable) -> void:
+	_ground_pad(c, a, 64, 28, surface)
 	Samples.stamp(c, "living_tree", a)
 
 static func _pyramid(c: Chunk, a: Vector2i, surface: Callable) -> void:
 	Samples.stamp(c, "pyramid", a)
 
 static func _cabin(c: Chunk, a: Vector2i, seed_value: int) -> void:
+	# 先挖出容纳木屋的洞厅，防止稀疏样本未记录的空位残留实心山体。
+	for dx in range(-22, 27):
+		var radius := int(sqrt(maxf(0.0, 1.0 - pow((dx - 2) / 25.0, 2))) * 13)
+		_box(c, Rect2i(a.x + dx, a.y - radius, 1, radius + 10), Tiles.AIR)
 	Samples.stamp(c, "cabin", a)
 
 static func _mushroom(c: Chunk, a: Vector2i) -> void:
@@ -151,7 +157,8 @@ static func _mushroom(c: Chunk, a: Vector2i) -> void:
 		_box(c, Rect2i(a.x + dx, floor_y - stem_h, 1, stem_h), Tiles.MUSHROOM_STEM)
 		_put(c, a.x + dx, floor_y - stem_h, Tiles.MUSHROOM_CAP)
 
-static func _dungeon(c: Chunk, a: Vector2i, _surface: Callable) -> void:
+static func _dungeon(c: Chunk, a: Vector2i, surface: Callable) -> void:
+	_ground_pad(c, a, 64, 36, surface)
 	Samples.stamp(c, "dungeon_entrance", a)
 
 static func _sky_house(c: Chunk, a: Vector2i) -> void:

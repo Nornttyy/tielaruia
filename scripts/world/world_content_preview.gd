@@ -14,6 +14,9 @@ func setup(target: Node2D) -> void:
 	world = target
 	layer = 20
 	stops = Features.landmarks(Generator.classic_plan(world.world_seed))
+	var centers: Dictionary = Generator._build_biome_centers(world.world_seed)
+	for biome in [2, 3]:
+		stops.append({"name": "雪原" if biome == 2 else "丛林", "hint": "树干、树冠与地下地层", "pos": Vector2i(centers[biome], -1), "feet": Vector2i(centers[biome], -1), "zoom": 1.75})
 	var panel := PanelContainer.new()
 	panel.position = Vector2(24, 605)
 	panel.size = Vector2(650, 96)

@@ -136,7 +136,7 @@ static func block_atlas(tile_id: int) -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 # 树干原帧为 20×20，格距为 16；留出外伸部分，不能压成普通方块。
-static func tree_piece(tile_id: int, joint: int, variant: int) -> ImageTexture:
+static func tree_piece(tile_id: int, joint: int, variant: int, style := 0) -> ImageTexture:
 	var uv := Vector2i(0, variant % 3)
 	if tile_id == B.LOG_ROOT_L: uv = Vector2i(2, 6 + variant % 3)
 	elif tile_id == B.LOG_ROOT_R: uv = Vector2i(1, 6 + variant % 3)
@@ -144,7 +144,8 @@ static func tree_piece(tile_id: int, joint: int, variant: int) -> ImageTexture:
 		uv = Vector2i([0, 2, 1, 3][joint], 3 + variant % 3)
 	elif joint >= 4:
 		uv = Vector2i([0, 4, 3, 0][joint - 4], 6 + variant % 3)
-	var img := _cell(source_image("Tiles_5.png"), uv, 22, 20)
+	var trunk: int = [-1, 3, 1, 0, 4][style]
+	var img := _cell(source_image("Tiles_5.png" if trunk == -1 else "Tiles_5_%d.png" % trunk), uv, 22, 20)
 	img.resize(15, 15, Image.INTERPOLATE_NEAREST)
 	return ImageTexture.create_from_image(img)
 
@@ -178,14 +179,20 @@ static func block_single(tile_id: int) -> ImageTexture:
 	if img.get_size() != Vector2i(16, 16): img.resize(16, 16, Image.INTERPOLATE_NEAREST)
 	return ImageTexture.create_from_image(img)
 
-static func crown(variant: int) -> ImageTexture:
-	# 80×80 画面 + 2px 间隔。保持整片树冠，绝不再铺一堆叶子方块。
-	var img := source_image("Tree_Tops_0.png").get_region(Rect2i(posmod(variant, 3) * 82, 0, 80, 80))
-	img.resize(60, 60, Image.INTERPOLATE_NEAREST)
-	return ImageTexture.create_from_image(img)
+# 同一套树冠/树枝/树干按根部群系取图。统一外框只补透明边，不拉伸树冠。
+static func crown(variant: int, style := 0) -> ImageTexture:
+	var sheet := source_image("Tree_Tops_%d.png" % [0, 4, 2, 1, 5][style])
+	var width := sheet.get_width() / 3 - 2
+	var height := sheet.get_height() - 2
+	var img := sheet.get_region(Rect2i(posmod(variant, 3) * (width + 2), 0, width, height))
+	img.resize(roundi(width * 0.75), roundi(height * 0.75), Image.INTERPOLATE_NEAREST)
+	var padded := Image.create(86, 72, false, Image.FORMAT_RGBA8)
+	padded.blit_rect(img, Rect2i(Vector2i.ZERO, img.get_size()), Vector2i((86 - img.get_width()) / 2, 72 - img.get_height()))
+	return ImageTexture.create_from_image(padded)
 
-static func branch(left: bool, variant := 0) -> ImageTexture:
-	var img := source_image("Tree_Branches_0.png").get_region(Rect2i(0 if left else 42, posmod(variant, 3) * 42, 40, 40))
+static func branch(left: bool, variant := 0, style := 0) -> ImageTexture:
+	var sheet := source_image("Tree_Branches_%d.png" % [0, 4, 2, 1, 5][style])
+	var img := sheet.get_region(Rect2i(0 if left else 42, posmod(variant, 3) * 42, 40, 40))
 	img.resize(30, 30, Image.INTERPOLATE_NEAREST)
 	return ImageTexture.create_from_image(img)
 
@@ -309,12 +316,22 @@ static func enemy_frames(filename: String, frame_size: Vector2i, output_size: Ve
 	var sheet := source_image(filename)
 	var result := SpriteFrames.new()
 	result.remove_animation("default")
+	var bottom := 0
+	var top := output_size.y
 	for name in animations:
 		result.add_animation(name)
 		result.set_animation_speed(name, 8.0)
 		result.set_animation_loop(name, name != "hop")
 		for index in animations[name]:
 			var img := sheet.get_region(Rect2i(Vector2i(0, index * frame_size.y), frame_size))
+			if filename != "NPC_78.png": img.flip_x() # 木乃伊原图朝右；其他原图朝左。
 			img.resize(output_size.x, output_size.y, Image.INTERPOLATE_NEAREST)
+			var visible_rect := img.get_used_rect()
+			bottom = maxi(bottom, visible_rect.end.y)
+			top = mini(top, visible_rect.position.y)
 			result.add_frame(name, ImageTexture.create_from_image(img))
+	# 鸟翼扇下时会低于脚，不能拿翼尖当身体脚底，否则身体整体悬空。
+	if filename == "NPC_48.png": bottom = roundi(58.0 * output_size.y / frame_size.y)
+	result.set_meta("foot_anchor", output_size.y / 2.0 - bottom)
+	result.set_meta("visible_height", bottom - top)
 	return result

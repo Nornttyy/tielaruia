@@ -92,7 +92,7 @@ const _DEFS := {
 	"frost_flail":  {"placeable_tile_id": -1, "tool_kind": "flail", "tool_tier": 6, "max_stack": 1, "damage_mult": 1.3, "melee_cooldown": 0.45, "melee_knockback": 200.0, "gun_visual": "ice", "gun_slow_factor": 0.5, "gun_slow_dur": 2.0},  # 寒冰锤: 命中减速
 	"flame_flail":  {"placeable_tile_id": -1, "tool_kind": "flail", "tool_tier": 6, "max_stack": 1, "damage_mult": 1.4, "melee_cooldown": 0.45, "melee_knockback": 200.0, "blast_on_hit": 22.0, "blast_visual": "fire", "gun_visual": "fire"},  # 烈焰锤: 命中即爆火
 	"leaf_flail":   {"placeable_tile_id": -1, "tool_kind": "flail", "tool_tier": 5, "max_stack": 1, "damage_mult": 1.2, "melee_cooldown": 0.45, "melee_knockback": 200.0, "lifesteal": 0.15, "gun_visual": "leaf"},
-	"apple":        {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 25},
+	"apple":        {"placeable_tile_id": -1,              "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 0, "buff_kind": "well_fed", "buff_secs": 300.0},
 	"stone_sword":   {"placeable_tile_id": -1,                     "tool_kind": "sword",   "tool_tier": 2, "max_stack": 1, "damage_mult": 1.2, "sword_style": "sweep"},
 	"stone_pickaxe": {"placeable_tile_id": -1,                     "tool_kind": "pickaxe", "tool_tier": 2, "max_stack": 1, "damage_mult": 0.5},
 	"stone_axe":     {"placeable_tile_id": -1,                     "tool_kind": "axe",     "tool_tier": 2, "max_stack": 1, "damage_mult": 0.0},
@@ -141,14 +141,14 @@ const _DEFS := {
 	# 料理 (在铁锅里做, 吃了回血 + 短时 buff). buff_kind: speed/jump/mining/regen
 	"bread":         {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 30, "buff_kind": "speed",  "buff_secs": 60.0},
 	"mushroom_soup": {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 30, "buff_kind": "regen",  "buff_secs": 30.0},
-	"apple_pie":     {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 45, "buff_kind": "jump",   "buff_secs": 60.0},
+	"apple_pie":     {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 0, "buff_kind": "exquisitely_stuffed", "buff_secs": 900.0},
 	"meat_skewer":   {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 60, "buff_kind": "mining", "buff_secs": 60.0},
 	"mushroom_stew": {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 65, "buff_kind": "mining", "buff_secs": 60.0},
 	"apple_jam":     {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 35, "buff_kind": "regen",  "buff_secs": 30.0},
 	"jelly_pudding": {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 40, "buff_kind": "jump",   "buff_secs": 60.0},
 	# 海鲜 (钓鱼获得, 生吃回血; 都是第3步寿司/刺身的料). 紫菜 food_fill=0 = 纯材料不可吃.
-	"salmon":        {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 25},
-	"tuna":          {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 28},
+	"salmon":        {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 0},
+	"tuna":          {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 0},
 	"octopus":       {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 22},
 	"sea_urchin":    {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 20},
 	"lobster":       {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 38},
@@ -156,9 +156,9 @@ const _DEFS := {
 	"sweet_shrimp":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 15},
 	"scallop":       {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 18},
 	"seaweed":       {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64},
-	"grilled_fish":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 45, "buff_kind": "speed", "buff_secs": 60.0},
+	"grilled_fish":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 0, "buff_kind": "well_fed", "buff_secs": 420.0},
 	# 蘑菇: 可吃 (+30 饥饿), 可放回 (玩家也能种回小室). 矿洞蘑菇地掉
-	"mushroom":      {"placeable_tile_id": Tiles.MUSHROOM,         "tool_kind": "",        "tool_tier": 0, "max_stack": 64, "food_fill": 30},
+	"mushroom":      {"placeable_tile_id": Tiles.MUSHROOM,         "tool_kind": "",        "tool_tier": 0, "max_stack": 64, "food_fill": 15},
 	# === 地狱 Phase 1 ===
 	"hell_stone":    {"placeable_tile_id": Tiles.HELL_STONE,       "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
 	"obsidian":      {"placeable_tile_id": Tiles.OBSIDIAN,         "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
@@ -273,7 +273,7 @@ const _DEFS := {
 	"greater_heal_staff":{"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 24, "heal_amount": 70},  # 强化治疗杖: 一口气回 70 血
 	"shield_staff":      {"placeable_tile_id": -1, "tool_kind": "staff", "tool_tier": 1, "max_stack": 1, "mana_cost": 20, "shield_sec": 4.0},  # 护盾杖: 4 秒无敌护盾
 	# 魔力药水: 喝下 → 立刻 +30 mana (类似食物回血但回魔)
-	"mana_potion":   {"placeable_tile_id": -1, "tool_kind": "",        "tool_tier": 0, "max_stack": 16, "mana_refill": 30},
+	"mana_potion":   {"placeable_tile_id": -1, "tool_kind": "",        "tool_tier": 0, "max_stack": 16, "mana_refill": 50},
 	# 生命药水: 喝下立刻回 50 HP (复用食物回血路径 food_fill; is_potion 标记 = 显示/手感算药水非食物)
 	"health_potion": {"placeable_tile_id": -1, "tool_kind": "",        "tool_tier": 0, "max_stack": 16, "food_fill": 50, "is_potion": true},
 	"leather":       {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
@@ -288,12 +288,12 @@ const _DEFS := {
 	"fish_slice":    {"placeable_tile_id": -1,                     "tool_kind": "",        "tool_tier": 0, "max_stack": 64, "food_fill": 18},
 	# 寿司 + 刺身 (菜板做, 吃了回血 + buff). 海鲜全是第 2 步钓来的.
 	"sushi":         {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 70, "buff_kind": "speed",  "buff_secs": 60.0},
-	"sashimi":       {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 50, "buff_kind": "regen",  "buff_secs": 30.0},
+	"sashimi":       {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 0, "buff_kind": "plenty_satisfied", "buff_secs": 480.0},
 	"onigiri":       {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 35},
 	"shrimp_sushi":  {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 45, "buff_kind": "speed",  "buff_secs": 60.0},
 	"uni_gunkan":    {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 64, "food_fill": 55, "buff_kind": "mining", "buff_secs": 60.0},
 	"chest":         {"placeable_tile_id": Tiles.CHEST,            "tool_kind": "",        "tool_tier": 0, "max_stack": 64},
-	"bed":           {"placeable_tile_id": Tiles.BED,              "tool_kind": "",        "tool_tier": 0, "max_stack": 1},
+	"bed":           {"placeable_tile_id": Tiles.BED_WIDE,              "tool_kind": "",        "tool_tier": 0, "max_stack": 1},
 	# === 菜园 v1 ===
 	# 小麦种子: 右键 GRASS 上才能种 (player_action 专门处理). placeable -1 = 不走通用放置.
 	"wheat_seed":    {"placeable_tile_id": -1,                     "tool_kind": "seed",    "tool_tier": 0, "max_stack": 99},
@@ -382,7 +382,7 @@ func sword_style(item_id: String) -> String:
 
 func is_food(item_id: String) -> bool:
 	var def = get_def(item_id)
-	return def != null and def.get("food_fill", 0) > 0
+	return def != null and (def.get("food_fill", 0) > 0 or def.get("buff_kind", "") != "")
 
 
 func food_fill(item_id: String) -> int:

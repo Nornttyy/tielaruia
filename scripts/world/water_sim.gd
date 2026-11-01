@@ -126,7 +126,7 @@ func tile_can_still_flow(tid: int, neighbors: Array) -> bool:
 		return false
 	var L: int = _level_of(tid)
 	for nt in neighbors:
-		if nt == -1 or nt == Tiles.AIR:
+		if nt == -1 or nt == Tiles.AIR or (kind == "water" and _water_enterable(nt)):
 			return true
 		if _liquid_kind(nt) == kind and _level_of(nt) < L:
 			return true
@@ -336,11 +336,10 @@ func _reduce_liquid(cm, x: int, y: int) -> void:
 	world._set_water_tile_fast(x, y, _tile_for_level("water", L - 1))
 
 
-# 水把空格 + 装饰小草当可流入: 小草碰水直接被冲掉 (覆盖即销毁, 用户要求)。
-# 别的植物 (树/仙人掌/蘑菇/庄稼...) 不在此列 → 挡水, 水绕开, 一直看得见。
-# (is_submersible_plant 现返 false → 没有植物会被"记元数据复原", 即小草是真销毁不是泡水。)
+# 水可以流过空气和背景植物。树木、叶片等覆盖期间暂存在 chunk 的 submerged 数据里，
+# 水退后恢复；装饰小草仍按既有规则被水冲掉。实心方块和仙人掌不允许液体穿过。
 func _water_enterable(tid: int) -> bool:
-	return tid == Tiles.AIR or tid == Tiles.PLANT_GRASS
+	return tid == Tiles.AIR or tid == Tiles.PLANT_GRASS or Tiles.is_submersible_plant(tid)
 
 
 # 水源块: 每 N 拍往正下方灌一格满水, 自己永不变少. 下方满/堵 → 不灌不重标 = 歇着 (self-limiting).
@@ -380,9 +379,9 @@ func _step_tile(cm, x: int, y: int) -> void:
 		return
 	var L: int = _level_of(tid)
 	var maxlv: int = _max_level(kind)   # 水 8 / 岩浆 4
-	# 重力: 下方 (水落到草须上 → 冲毁草; 岩浆维持原样只认空气)
+	# 重力: 水可落过背景植物 (小草会被冲毁，其余会在水退后恢复); 岩浆只认空气.
 	var below_tid: int = cm.get_tile(x, y + 1)
-	if below_tid == Tiles.AIR or (kind == "water" and below_tid == Tiles.PLANT_GRASS):
+	if below_tid == Tiles.AIR or (kind == "water" and _water_enterable(below_tid)):
 		world._set_water_tile_fast(x, y + 1, _tile_for_level(kind, L))
 		world._set_water_tile_fast(x, y, Tiles.AIR)
 		notify_tile_changed(x, y + 1)
@@ -443,7 +442,7 @@ func _step_water_lateral(cm, x: int, y: int, L: int, maxlv: int) -> void:
 			continue
 		if L < 2:
 			var bn: int = cm.get_tile(nx, y + 1)
-			if not (bn == Tiles.AIR or (_liquid_kind(bn) == "water" and _level_of(bn) < maxlv)):
+			if not (_water_enterable(bn) or (_liquid_kind(bn) == "water" and _level_of(bn) < maxlv)):
 				continue
 		if nlev < best_nl:
 			best_nl = nlev

@@ -2,6 +2,7 @@
 # 命中怪 → 造成伤害 + 销毁. 命中实心方块 → 销毁. 3s 自销.
 # 跟 fireball 同结构, 但反方向 (玩家发, 击中怪).
 extends Area2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
 
 const TILE_SIZE := 12
 const SPEED := 260.0
@@ -74,8 +75,7 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 			if not enemy is Node2D:
 				continue
 			# 大怪/Boss 给身子半径 (跟近战一致), 否则箭只认中心一点, 从大身子上飞过去不算命中
-			var radius: float = enemy.melee_hit_radius() if enemy.has_method("melee_hit_radius") else 0.0
-			if _seg_point_dist(from_pos, global_position, (enemy as Node2D).global_position) > HIT_RADIUS_PX + radius:
+			if not Metrics.segment_hits(enemy, from_pos, global_position):
 				continue
 			# 击退源位置: 沿飞行反方向退 32px, 让 (enemy - source).normalized 指向飞行方向.
 			var src: Vector2 = global_position - velocity.normalized() * 32.0
@@ -97,8 +97,7 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 			var rp := s as Node2D
 			if rp == null or not is_instance_valid(rp):
 				continue
-			var radius2: float = rp.melee_hit_radius() if rp.has_method("melee_hit_radius") else 8.0
-			if _seg_point_dist(from_pos, global_position, rp.global_position) > HIT_RADIUS_PX + radius2:
+			if not Metrics.segment_hits(rp, from_pos, global_position):
 				continue
 			var src2: Vector2 = global_position - velocity.normalized() * 32.0
 			var pid: String = String(rp.peer_id) if "peer_id" in rp else ""

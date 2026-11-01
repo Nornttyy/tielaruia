@@ -2,6 +2,7 @@
 # 阶段 (后续 task): 血<50% 召唤小史莱姆; 血越少体型越小、跳越快.
 # 收尾 (后续 task): 玩家死/远离 → 消失; 掉 slime_ball + 大量 slime_jelly.
 extends CharacterBody2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
@@ -76,13 +77,15 @@ func boss_display_name() -> String:
 func _apply_scale() -> void:
 	var s: float = lerp(SCALE_LOW, SCALE_FULL, _hp_ratio())
 	sprite.scale = Vector2(s, s)
+	Metrics.align_feet(sprite, s)
 	# 碰撞框跟着身体一起缩放. 之前固定 40×32 不跟着大, 满血大王身子大碰撞小 → 难打中.
 	if _collision != null:
 		_collision.scale = Vector2(s, s)
+		_collision.position.y = -_collision.shape.get_rect().size.y * s / 2.0
 	# 王冠跟着体型缩放, 坐在头顶: band 底边贴头顶 (-16-8s), 留 1px 嵌入防缝隙.
 	if _crown != null:
 		_crown.scale = Vector2(s, s)
-		_crown.position = Vector2(0.0, -16.0 - 8.0 * s)
+		_crown.position = Vector2(0.0, -float(sprite.sprite_frames.get_meta("visible_height", 18.0)) * s)
 
 
 # 近战命中半径: 王身子巨大, 让剑/镐碰到大身子就算命中 (不只认中心一点).
@@ -180,10 +183,7 @@ func _check_player_contact() -> void:
 	var player := _find_player()
 	if player == null:
 		return
-	var half: float = 6.0 * sprite.scale.x
-	var dx: float = abs(player.global_position.x - global_position.x)
-	var dy: float = player.global_position.y - global_position.y
-	if dx > half or dy < -2.0 * half or dy > 22.0:
+	if not Metrics.touching(self, player):
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

@@ -14,7 +14,7 @@ const SEARCH_GOAL_SCAN := 4   # 目标点不可站时, 往下扫几格找最近�
 
 static func _solid(cm, x: int, y: int) -> bool:
 	var t: int = cm.get_tile(x, y)
-	return t != Tiles.AIR and Tiles.is_solid(t)
+	return Tiles.is_solid(t) or t in [Tiles.DOOR, Tiles.DOOR_TOP, Tiles.DOOR_MID]
 
 
 # 可通过 (非实心: 空气/水/植物都算能穿过去)
@@ -23,42 +23,47 @@ static func _pass(cm, x: int, y: int) -> bool:
 
 
 # 能站: 本格 + 头顶空 (2 格高), 脚下实心
-static func _standable(cm, x: int, y: int) -> bool:
-	return _pass(cm, x, y) and _pass(cm, x, y - 1) and _solid(cm, x, y + 1)
+static func _clear_body(cm, x: int, y: int, height: int = 2) -> bool:
+	for dy in height:
+		if not _pass(cm, x, y - dy): return false
+	return true
+
+static func _standable(cm, x: int, y: int, height: int = 2) -> bool:
+	return _clear_body(cm, x, y, height) and _solid(cm, x, y + 1)
 
 
 # 把一个点吸附到"最近的可站格"(本格不行就往下找地面). 找不到返回 null。
-static func snap_to_ground(cm, x: int, y: int) -> Variant:
+static func snap_to_ground(cm, x: int, y: int, height: int = 2) -> Variant:
 	for dy in range(0, SEARCH_GOAL_SCAN + 1):
-		if _standable(cm, x, y + dy):
+		if _standable(cm, x, y + dy, height):
 			return Vector2i(x, y + dy)
 	return null
 
 
 # 站立格 c 的所有可达邻居 [[cell, cost], ...]
-static func _neighbors(cm, c: Vector2i) -> Array:
+static func _neighbors(cm, c: Vector2i, height: int = 2, jump_height: int = JUMP_H) -> Array:
 	var out: Array = []
 	var x: int = c.x
 	var y: int = c.y
 	for dir in [-1, 1]:
 		# 1) 平走一格
-		if _standable(cm, x + dir, y):
+		if _standable(cm, x + dir, y, height):
 			out.append([Vector2i(x + dir, y), 1.0])
 		# 2) 跳上 (1..JUMP_H 格): 起跳列要空 (能升上去), 落点可站 (_standable 已含落点+头顶空、脚下实心)
-		for h in range(1, JUMP_H + 1):
-			if not _pass(cm, x, y - h):
+		for h in range(1, jump_height + 1):
+			if not _clear_body(cm, x, y - h, height):
 				break   # 头顶被堵, 跳不上去
-			if _standable(cm, x + dir, y - h):
+			if _standable(cm, x + dir, y - h, height):
 				out.append([Vector2i(x + dir, y - h), 1.0 + float(h) * 0.6])
 		# 3) 跨 1 格坑: (x+dir,y) 是坑 (能过且脚下空), (x+2dir,y) 可站
-		if _pass(cm, x + dir, y) and _pass(cm, x + dir, y + 1) and _standable(cm, x + dir * 2, y):
+		if _clear_body(cm, x + dir, y, height) and _pass(cm, x + dir, y + 1) and _standable(cm, x + dir * 2, y, height):
 			out.append([Vector2i(x + dir * 2, y), 2.0])
 		# 4) 走下边沿掉落: (x+dir,y) 能过但脚下空 → 往下找第一个可站格
-		if _pass(cm, x + dir, y) and _pass(cm, x + dir, y + 1):
-			for d in range(2, MAX_DROP + 1):
+		if _clear_body(cm, x + dir, y, height) and _pass(cm, x + dir, y + 1):
+			for d in range(1, MAX_DROP + 1):
 				if not _pass(cm, x + dir, y + d - 1):
 					break
-				if _standable(cm, x + dir, y + d):
+				if _standable(cm, x + dir, y + d, height):
 					out.append([Vector2i(x + dir, y + d), 1.0 + float(d) * 0.2])
 					break
 	return out
@@ -69,11 +74,11 @@ static func _heur(a: Vector2i, b: Vector2i) -> float:
 
 
 # A* 从 start 到 goal (世界格坐标). 返回路点数组 (不含 start, 含 goal); 无路/太远返回 []。
-static func find_path(cm, start: Vector2i, goal: Vector2i) -> Array:
+static func find_path(cm, start: Vector2i, goal: Vector2i, height: int = 2, jump_height: int = JUMP_H) -> Array:
 	if cm == null:
 		return []
-	var s: Variant = snap_to_ground(cm, start.x, start.y)
-	var g: Variant = snap_to_ground(cm, goal.x, goal.y)
+	var s: Variant = snap_to_ground(cm, start.x, start.y, height)
+	var g: Variant = snap_to_ground(cm, goal.x, goal.y, height)
 	if s == null or g == null:
 		return []
 	var start_c: Vector2i = s
@@ -93,7 +98,7 @@ static func find_path(cm, start: Vector2i, goal: Vector2i) -> Array:
 		if expanded > MAX_NODES:
 			return []   # 太远/太复杂 → 放弃, 怪退回反应式
 		var cg: float = float(gscore.get(cur, 1e20))
-		for nb in _neighbors(cm, cur):
+		for nb in _neighbors(cm, cur, height, jump_height):
 			var ncell: Vector2i = nb[0]
 			var tentative: float = cg + float(nb[1])
 			if tentative < float(gscore.get(ncell, 1e20)):

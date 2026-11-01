@@ -19,10 +19,8 @@ const SlimeScene = preload("res://scenes/entities/slime.tscn")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 const SlimeClass = preload("res://scripts/entities/slime.gd")  # 用静态 color_for_depth / random_spawn_size
 const ZombieScene = preload("res://scenes/entities/zombie.tscn")
-const SpiderScene = preload("res://scenes/entities/spider.tscn")
 const DemonEyeScene = preload("res://scenes/entities/demon_eye.tscn")
 const MimicScene = preload("res://scenes/entities/mimic.tscn")
-const SkeletonScene = preload("res://scenes/entities/skeleton.tscn")
 const ImpScene = preload("res://scenes/entities/imp.tscn")
 const HellWaspScene = preload("res://scenes/entities/hell_wasp.tscn")
 const HarpyScene = preload("res://scenes/entities/harpy.tscn")
@@ -136,7 +134,11 @@ func _original_display_id(pos: Vector2i, tid: int) -> int:
 # 水独立画在人物和掉落物前方，暗度由同一光场决定；不要再把全身强行染蓝。
 func _render_decoration(pos: Vector2i, tile_id: int) -> void:
 	if Tiles.is_water(tile_id):
-		terrain_layer.erase_cell(pos)
+		var submerged: int = chunk_manager.get_submerged(pos.x, pos.y)
+		if submerged >= 0:
+			terrain_layer.set_cell(pos, submerged, _decoration_frame(pos, submerged))
+		else:
+			terrain_layer.erase_cell(pos)
 		water_layer.set_cell(pos, _display_water_tile(pos.x, tile_id), _decoration_frame(pos, tile_id))
 	else:
 		water_layer.erase_cell(pos)
@@ -157,6 +159,11 @@ func _ready() -> void:
 	# 这些 group 注册 + EffectsRoot 早期就要好 (被其他系统在 _ready 阶段 find).
 	add_to_group("world")
 	terrain_layer.add_to_group("terrain_layer")
+	var foliage := preload("res://scripts/world/foliage_layer.gd").new()
+	foliage.name = "FoliageLayer"
+	foliage.setup(self, terrain_layer)
+	add_child(foliage)
+	move_child(foliage, terrain_layer.get_index() + 1)
 	$EffectsRoot.add_to_group("effects_root")
 	# 火花对象池: 预分配 80 个 spark, 复用减 alloc
 	var SparkPoolClass = preload("res://scripts/fx/spark_pool.gd")
@@ -645,9 +652,9 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"demon_lord": scene = DemonLordScene   # 恶魔领主 Boss: client 也用真 scene (飞行体型/boss 血条)
 		"slime": scene = SlimeScene
 		"zombie": scene = ZombieScene
-		"spider": scene = SpiderScene
+		"spider": return null # 暂停蜘蛛，包括旧版本联机同步。
 		"demon_eye": scene = DemonEyeScene
-		"skeleton": scene = SkeletonScene
+		"skeleton": return null # 普通骷髅已移除，忽略旧客户端的同步。
 		"imp": scene = ImpScene
 		"hell_wasp": scene = HellWaspScene
 		"mummy": scene = MummyScene
@@ -854,7 +861,7 @@ func _process(delta: float) -> void:
 		if _slime_spawn_timer <= 0.0:
 			_slime_spawn_timer = SPAWN_INTERVAL
 			if TimeOfDay.is_night():
-				_try_spawn_zombie()      # 夜间(含地下)走僵尸/蜘蛛/地狱怪那套
+				_try_spawn_zombie()      # 夜间及地下按深度刷怪
 			elif _player_is_deep():
 				_try_spawn_underground_slime()  # 白天地下: 按深度配色史莱姆刷在玩家旁
 			else:
@@ -1035,7 +1042,8 @@ func sleep_in_bed(tile: Vector2i) -> void:
 	var player := get_player()
 	if player != null:
 		# 把玩家挪到床中央 (2 格宽: tile 是左格, +1.0 = 左右两格接缝 = 床正中)
-		player.global_position = Vector2((float(tile.x) + 1.0) * TILE_SIZE, (float(tile.y) + 1.0) * TILE_SIZE)
+		var bed_width := 4.0 if chunk_manager.get_tile(tile.x, tile.y) == Tiles.BED_WIDE else 2.0
+		player.global_position = Vector2((float(tile.x) + bed_width / 2.0) * TILE_SIZE, (float(tile.y) + 1.0) * TILE_SIZE)
 		_sleep_anchor_x = player.global_position.x
 		_sleep_armed = false   # 等触发睡觉那次点击松开才允许按键唤醒
 		# 睡觉期间禁止玩家移动 + 给一个安全 iframe (老 bug: 没锁, 怪打过来 = 任挨打死)
@@ -1439,49 +1447,24 @@ func _try_spawn_underground_slime() -> void:
 
 
 func _try_spawn_zombie() -> void:
-	# 夜间僵尸/蜘蛛/恶魔眼共享上限 (按难度: 简单 8 / 普通 15 / 困难 25).
+	# 夜间僵尸/恶魔眼共享上限 (按难度: 简单 8 / 普通 15 / 困难 25).
 	var diff: int = clampi(GameSettings.current_difficulty, 0, 2) if GameSettings != null else 1
 	var cap: int = NIGHT_CAP_BY_DIFFICULTY[diff]
 	var zombies := get_tree().get_nodes_in_group("zombies")
-	var spiders := get_tree().get_nodes_in_group("spiders")
 	var demon_eyes := get_tree().get_nodes_in_group("demon_eyes")
-	if zombies.size() + spiders.size() + demon_eyes.size() >= cap:
+	if zombies.size() + demon_eyes.size() >= cap:
 		return
-	# 概率分配: 玩家地表 (y<30): 40 zombie / 40 spider / 20 demon_eye
-	# 中地下 (30-220): 20 zombie / 50 spider / 30 demon_eye
-	# 地狱 (>=220): 40 skeleton / 35 imp / 25 hell_wasp
-	# 注: 阈值 220 跟 world_generator HELL_DEPTH=220 对齐. 老阈值 110 不对, 让深矿洞也刷地狱怪 bug.
 	var player := get_player()
-	var py_tile: int = 0
-	if player != null:
-		py_tile = int(floor(player.global_position.y / TILE_SIZE))
-	var r: float = randf()
-	var scene: PackedScene
+	var py_tile := floori(player.global_position.y / TILE_SIZE) if player != null else 0
+	var scene := _night_spawn_scene(py_tile, randf())
 	if py_tile >= 220:
-		# 地狱: 40 skeleton / 35 imp / 25 hell_wasp
-		if r < 0.40:
-			scene = SkeletonScene
-		elif r < 0.75:
-			scene = ImpScene
-		else:
-			scene = ImpScene
 		_spawn_hell_creature(scene)
-		return
-	elif py_tile >= 30:
-		if r < 0.2:
-			scene = ZombieScene
-		elif r < 0.7:
-			scene = SkeletonScene
-		else:
-			scene = DemonEyeScene
 	else:
-		if r < 0.4:
-			scene = ZombieScene
-		elif r < 0.8:
-			scene = ZombieScene
-		else:
-			scene = DemonEyeScene
-	_spawn_surface_creature(scene)
+		_spawn_surface_creature(scene)
+
+static func _night_spawn_scene(depth: int, roll: float) -> PackedScene:
+	if depth >= 220: return ImpScene
+	return ZombieScene if roll < (0.7 if depth >= 30 else 0.8) else DemonEyeScene
 
 
 # 地狱怪 spawn: 在玩家附近 (12-40 tile X 范围, ±10 Y 范围) 找一个 AIR 上有 HELL_STONE/OBSIDIAN 底的位置.
@@ -1748,21 +1731,9 @@ func _close_door_at(bottom: Vector2i) -> void:
 
 # 废弃矿井守卫蜘蛛: 同款机制
 var _mineshaft_chunks_spawned: Dictionary = {}   # chunk_x int → true
-func spawn_mineshaft_spiders_for_chunk(chunk_x: int, spots: Array) -> void:
-	if _no_mob_room():
-		return   # 对战房不刷怪
-	if spots.is_empty():
-		return
-	if _mineshaft_chunks_spawned.has(chunk_x):
-		return
-	_mineshaft_chunks_spawned[chunk_x] = true
-	for spot in spots:
-		var creature := SpiderScene.instantiate()
-		creature.global_position = Vector2(
-			spot.x * TILE_SIZE + TILE_SIZE / 2.0,
-			spot.y * TILE_SIZE + TILE_SIZE
-		)
-		entities_root.add_child(creature)
+func spawn_mineshaft_spiders_for_chunk(_chunk_x: int, _spots: Array) -> void:
+	# 保留旧区块元数据兼容入口，但不再生成蜘蛛。
+	return
 
 
 # 空岛哈比鸟: 同款 spot→spawn 机制 (dedup, chunk 重载不重生)
@@ -1830,7 +1801,7 @@ func _spawn_player() -> void:
 	entities_root.add_child(player)
 	camera.reparent(player)
 	camera.position = Vector2.ZERO
-	# 气氛效果 (萤火虫/流星/飘叶) 已删
+	# 枝叶与落叶由世界空间的 FoliageLayer 更新。
 
 
 # 清 (tx, ty) 周围 2 宽 × 3 高空气坑 (玩家 1×2 + 头顶余量). 防玩家 spawn 卡石头.

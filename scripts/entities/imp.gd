@@ -1,6 +1,10 @@
 # 火魔 (Imp): 地狱飞行远程怪. 不重力, 在玩家周围悬停 + 隔几秒丢火球.
 # HP 22 / dmg 0 (不近战) / 飞行 + 远距离压制. 死了掉 1-2 hell_stone + 偶发 obsidian.
 extends CharacterBody2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
+const FlyingNav = preload("res://scripts/entities/flying_nav.gd")
+const MobNav = preload("res://scripts/entities/mob_nav.gd")
+var _flight_nav = FlyingNav.new()
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
@@ -35,6 +39,7 @@ func _ready() -> void:
 	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
 	sprite.sprite_frames = ArtCache.imp_frames
+	Metrics.align_feet(sprite)
 	sprite.play("move")
 	add_to_group("imps")
 	add_to_group("slimes")
@@ -94,9 +99,10 @@ func _physics_process(delta: float) -> void:
 		velocity = -dir * FLY_SPEED * 0.7  # 退后 (慢些, 别甩出去)
 	else:
 		velocity = Vector2(-dir.y, dir.x) * 30.0  # 绕圈 (垂直方向漂)
-	sprite.flip_h = to_player.x < 0
+	MobNav.face(sprite, to_player.x)
 	# 加点 bobbing 上下漂
 	velocity.y += sin(_bob_phase) * 12.0
+	velocity = _flight_nav.steer(self, player.global_position, velocity, delta)
 	move_and_slide()
 	# 开火: cooldown 到 + 看得见玩家 → 发火球
 	if _attack_cooldown <= 0.0 and dist <= AGGRO_RANGE_PX:

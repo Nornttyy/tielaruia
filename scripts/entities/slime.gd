@@ -1,7 +1,9 @@
 # 史莱姆: 跳向玩家, 接触造成伤害, HP=10, 死亡掉 slime_jelly。
 extends CharacterBody2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
+const MobNav = preload("res://scripts/entities/mob_nav.gd")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 # Terraria 风血量基线 (玩家 100 HP, 5 颗心): 普通难度 25 HP / 6 dmg.
@@ -27,7 +29,7 @@ const TILE_SIZE := 12
 const SlimeScene = preload("res://scenes/entities/slime.tscn")  # 分裂用 (自引用 preload, Godot 允许)
 
 # 颜色 tier 0绿/1蓝/2红/3紫: modulate 染色(乘色, 蓝=原色不染) + HP/伤害乘数 + 掉 jelly 数.
-const _COLOR_TINT := [Color(0.55, 1.25, 0.55), Color(1, 1, 1), Color(1.5, 0.55, 0.55), Color(1.2, 0.6, 1.5)]
+const _COLOR_TINT := [Color(0.35, 0.95, 0.35), Color(0.30, 0.55, 1.0), Color(1.0, 0.28, 0.28), Color(0.70, 0.30, 0.95)]
 const _COLOR_HP_MULT := [0.6, 1.0, 1.8, 2.8]
 const _COLOR_DMG_MULT := [0.7, 1.0, 1.5, 2.2]
 const _COLOR_JELLY := [1, 1, 2, 3]
@@ -68,6 +70,8 @@ var _cached_player: Node2D = null  # 缓存 player ref, 每帧避免 get_nodes_i
 var _target_repick: float = 0.0    # 重选最近玩家的倒计时 (联机追最近的人)
 var _cached_cm: Node = null  # 缓存 chunk_manager (每帧 _is_in_water 不用查 3 层)
 var _hop_timer: float = 0.5
+var _nav = MobNav.new()
+var _nav_dir: int = MobNav.NO_PATH
 var _hit_flash: float = 0.0
 const ENEMY_IFRAME_SEC := 0.2
 var _iframe_t: float = 0.0
@@ -125,6 +129,13 @@ func _apply_tier() -> void:
 	if sprite != null:  # 裸实例 (测试 Slime.new()) 没 sprite, 只算数值不染色/缩放
 		sprite.modulate = _base_tint
 		sprite.scale = Vector2(_SIZE_SCALE[size], _SIZE_SCALE[size])
+		Metrics.align_feet(sprite, _SIZE_SCALE[size])
+	var collider := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collider != null:
+		var body_shape := RectangleShape2D.new()
+		body_shape.size = Vector2(24, 12) * _SIZE_SCALE[size]
+		collider.shape = body_shape
+		collider.position.y = -body_shape.size.y / 2.0
 
 
 func _ready() -> void:
@@ -135,6 +146,7 @@ func _ready() -> void:
 	add_to_group("slimes")
 	if sprite != null:
 		sprite.sprite_frames = ArtCache.slime_frames
+		Metrics.align_feet(sprite, _SIZE_SCALE[size])
 		sprite.play("idle")
 		# hop 动画不循环, 播完停在"压扁落地"帧; 接 animation_finished 落地后切回 idle
 		sprite.animation_finished.connect(_on_anim_done)
@@ -206,6 +218,10 @@ func _physics_process(delta: float) -> void:
 		if _poison_t <= 0.0:
 			_poison_dps = 0
 
+	_nav_dir = MobNav.NO_PATH
+	if _is_hostile() and _p != null and global_position.distance_to(_p.global_position) <= AGGRO_RANGE_PX:
+		_nav_dir = _nav.steer_node(self, _p, TILE_SIZE, delta)
+		if is_on_floor(): MobNav.face(sprite, _p.global_position.x - global_position.x)
 	# 史莱姆怕水: 碰到水继续正常重力下沉 + 每 0.5s 扣 1 HP (玩家可用水陷阱杀)
 	var in_water: bool = _is_in_water()
 	if in_water:
@@ -233,7 +249,6 @@ func _physics_process(delta: float) -> void:
 	# 给 slime 多次跳跃机会越过方块.
 	if is_on_wall() and is_on_floor() and _hop_timer < 0.05:
 		velocity.x = 0
-		sprite.flip_h = not sprite.flip_h
 		_hop_timer = min(_hop_timer, 0.2)
 	_check_player_contact()
 
@@ -247,34 +262,40 @@ func _attempt_hop() -> void:
 	var max_h_tiles: float = HOP_HEIGHT_MAX_TILES
 	var max_d_tiles: float = HOP_DIST_MAX_TILES
 	var min_h_tiles: float = HOP_HEIGHT_MIN_TILES
+	var min_d_tiles: float = HOP_DIST_MIN_TILES
 	# 仅在敌对状态下追玩家. 白天 (未被激怒) 当玩家不存在, 只闲逛.
 	if _is_hostile() and player != null \
 			and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
 		var dx: float = player.global_position.x - global_position.x
 		var dy: float = player.global_position.y - global_position.y
 		# 已经在玩家同列 (≤ 1 tile) 时不跳, 避免直接砸头顶
-		if abs(dx) < float(TILE_SIZE):
+		if abs(dx) < float(TILE_SIZE) * 0.5 and abs(dy) < float(TILE_SIZE):
 			return
-		dir = signf(dx)
-		sprite.flip_h = dir < 0
+		dir = float(_nav_dir) if _nav_dir != MobNav.NO_PATH else signf(dx)
+		MobNav.face(sprite, dir)
+		min_d_tiles = 1.8
+		if _nav_dir != MobNav.NO_PATH and _nav.want_jump:
+			min_h_tiles = 2.35
+			max_h_tiles = 2.5
 		# 玩家在下方 ≥ 1 tile → 小跳 (重力会带 slime 自然下落, 不要跃过去)
 		if dy > float(TILE_SIZE):
 			max_h_tiles = 0.6
 			min_h_tiles = 0.3
 			max_d_tiles = 1.5
+			min_d_tiles = 0.8
 		# 玩家在上方 ≥ 1 tile → 跳高一点跨过障碍 (维持默认上限)
 		# 同高 → 维持默认
 	else:
 		# 闲逛: 50% 几率跳一次, 随机方向 + 小跳 (闲逛不要大跳)
 		if randf() < 0.5:
 			dir = 1.0 if randf() < 0.5 else -1.0
-			sprite.flip_h = dir < 0
+			MobNav.face(sprite, dir)
 			max_h_tiles = 1.0
 		else:
 			return
 	# 本次跳跃: 高度 [min, max] tile, 距离 [0, max_d] tile, 由物理反算 vy/vx
 	var h_tiles: float = randf_range(min_h_tiles, max_h_tiles)
-	var d_tiles: float = randf_range(HOP_DIST_MIN_TILES, max_d_tiles)
+	var d_tiles: float = randf_range(min_d_tiles, max_d_tiles)
 	var h_px: float = h_tiles * TILE_SIZE
 	var d_px: float = d_tiles * TILE_SIZE
 	# h = vy² / (2g) → vy = sqrt(2*g*h)
@@ -313,10 +334,8 @@ func _check_player_contact() -> void:
 	var player := _find_player()
 	if player == null:
 		return
-	# AABB 盒重叠 (修踩头躲 bug). 史莱姆 12×10, 玩家 10×22.
-	var dx: float = abs(player.global_position.x - global_position.x)
-	var dy: float = player.global_position.y - global_position.y
-	if dx > 11.0 or dy < -10.0 or dy > 22.0:
+	# 接触范围随实际体型同步，不能大史莱姆用小史莱姆的碰撞尺寸。
+	if not Metrics.touching(self, player):
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:
@@ -349,11 +368,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 		dir = dir.normalized()
 		velocity = dir * knockback
 		_hop_timer = 0.5   # 击退后冷却再跳
-	# 压缩弹动: sprite scale Y 压扁 (按体型 base scale 缩放, 不然大史莱姆弹完会缩回 1.0)
-	var base_s: float = _SIZE_SCALE[size]
-	var tween := create_tween()
-	tween.tween_property(sprite, "scale", Vector2(base_s * 1.25, base_s * 0.75), 0.06)
-	tween.tween_property(sprite, "scale", Vector2(base_s, base_s), 0.12)
+	# 形变由原始动作帧负责；不再额外拉伸像素。
 	if current_health == 0:
 		_die()
 	return true

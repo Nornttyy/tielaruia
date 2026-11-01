@@ -1,6 +1,10 @@
 # 哈比鸟 (Harpy): 天空浮岛附近飞行怪. 看见玩家 260px 内俯冲撞过来, 撞 8 伤 + 击退.
 # HP 24. 死了掉 1-2 feather. 仿 hell_wasp 但调成天空版 (despawn 看离 spawn 远近).
 extends CharacterBody2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
+const FlyingNav = preload("res://scripts/entities/flying_nav.gd")
+const MobNav = preload("res://scripts/entities/mob_nav.gd")
+var _flight_nav = FlyingNav.new()
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
@@ -33,6 +37,7 @@ func _ready() -> void:
 	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
 	sprite.sprite_frames = ArtCache.harpy_frames
+	Metrics.align_feet(sprite)
 	sprite.play("move")
 	add_to_group("harpies")
 	add_to_group("slimes")
@@ -91,7 +96,8 @@ func _physics_process(delta: float) -> void:
 			velocity = Vector2(-dir.y, dir.x) * PATROL_SPEED
 	else:
 		velocity = Vector2.ZERO
-	sprite.flip_h = velocity.x < 0
+	velocity = _flight_nav.steer(self, player.global_position, velocity, delta)
+	MobNav.face(sprite, velocity.x)
 	move_and_slide()
 	_check_player_contact()
 
@@ -100,9 +106,7 @@ func _check_player_contact() -> void:
 	var player := _find_player()
 	if player == null:
 		return
-	var dx: float = abs(player.global_position.x - global_position.x)
-	var dy: float = player.global_position.y - global_position.y
-	if dx > 10.0 or dy < -22.0 or dy > 22.0:
+	if not Metrics.touching(self, player):
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

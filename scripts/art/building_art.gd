@@ -15,10 +15,13 @@ const GOLD_CHEST_PARTS := [B.GOLD_CHEST, 168, 169, 170]
 const DIAMOND_CHEST_PARTS := [B.DIAMOND_CHEST, 171, 172, 173]
 const SHADOW_CHEST_PARTS := [B.SHADOW_CHEST, 174, 175, 176]
 const MIMIC_CHEST_PARTS := [B.MIMIC_CHEST, 177, 178, 179]
+const BED_WIDE := 182
+const BED_WIDE_PARTS := [182, 183, 184, 185, 186, 187, 188, 189]
 const BED_PARTS := [B.BED, B.BED_RIGHT, 180, 181]
-const EXTRA_IDS := [117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181]
+const EXTRA_IDS := [117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189]
 const ITEMS := {"glass_wall": 117, "wood_beam_wall": 118, "wood_chair": 119, "wood_table": 121}
 const MULTI_LAYOUTS := {
+	BED_WIDE: {"size": Vector2i(4, 2), "parts": BED_WIDE_PARTS, "sheet": 79, "origin": Vector2i.ZERO, "style": 0},
 	B.WORKBENCH: {"size": Vector2i(2, 1), "parts": [B.WORKBENCH, WORKBENCH_RIGHT], "sheet": 18, "origin": Vector2i.ZERO, "style": 0},
 	B.FURNACE: {"size": Vector2i(3, 2), "parts": FURNACE_PARTS, "sheet": 17, "origin": Vector2i.ZERO, "style": 0},
 	B.CHEST: {"size": Vector2i(2, 2), "parts": CHEST_PARTS, "sheet": 21, "origin": Vector2i.ZERO, "style": 0},

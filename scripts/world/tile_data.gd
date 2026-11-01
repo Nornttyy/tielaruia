@@ -161,6 +161,7 @@ const MIMIC_CHEST_TOP_LEFT := 178
 const MIMIC_CHEST_TOP_RIGHT := 179
 const BED_TOP_LEFT := 180
 const BED_TOP_RIGHT := 181
+const BED_WIDE := 182 # 原尺寸 4×2；旧床格保留兼容存档
 
 # display_water_tile 用: 档位(1-8) → tile id. 索引 0 占位. 普通水 id 不连续故显式列。
 const _GENERIC_LV := [0, WATER_L1, WATER_L2, WATER_L3, WATER_L4, WATER_L5, WATER_L6, WATER_L7, WATER]
@@ -783,6 +784,14 @@ const _PROPS := {
 	179: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
 	180: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
 	181: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	182: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": [["bed", 100, 1, 1]]},
+	183: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	184: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	185: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	186: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	187: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	188: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	189: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
 }
 
 
@@ -811,11 +820,12 @@ func is_plant(tile_id: int) -> bool:
 	return _PLANT_TILES.has(tile_id)
 
 
-# 可被水淹没(泡水保留+退水复原)的植物。用户最终决定: 没有植物要泡水 —— 小草碰水直接被破坏(见
-# water_sim._water_enterable), 别的植物挡水不消失。所以这里返 false (没有植物记元数据复原)。
-# 留这个 hook: 以后想让某植物"泡在水里不消失", 在这里返 true 即可 (机制还在: _submerged + 总闸)。
-func is_submersible_plant(_tile_id: int) -> bool:
-	return false
+# 背景植物可与水共格：水流经过时暂存原 tile，水退后恢复。
+# 装饰小草依旧被水冲掉；仙人掌在液体规则里按实心植物处理。
+func is_submersible_plant(tile_id: int) -> bool:
+	if tile_id == PLANT_GRASS or tile_id == CACTUS or tile_id == CACTUS_BODY:
+		return false
+	return is_plant(tile_id) and not is_solid(tile_id)
 
 
 # 是不是背景墙 tile (4 种). 加新墙改这里.

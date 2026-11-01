@@ -2,7 +2,10 @@
 # HP 60 / dmg 14 / 速 25 (比骨架战士 80/18/35 弱一档, 平 zombie 30 之上).
 # 死了掉 1-3 bone + 30% gold_ingot (古墓陪葬品).
 extends CharacterBody2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
 
+const MobNav = preload("res://scripts/entities/mob_nav.gd")
+const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 
 const GRAVITY := 675.0
@@ -23,12 +26,14 @@ var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _jump_cooldown: float = 0.0
+var _nav = MobNav.new()
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
 func _ready() -> void:
 	sprite.sprite_frames = ArtCache.mummy_frames
+	Metrics.align_feet(sprite)
 	sprite.play("idle")
 	add_to_group("mummies")
 	add_to_group("slimes")
@@ -69,8 +74,14 @@ func _physics_process(delta: float) -> void:
 	var player := _find_player()
 	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
 		var dir: float = signf(player.global_position.x - global_position.x)
+		var nd: int = _nav.steer_node(self, player, TILE_SIZE, delta)
+		if nd != MobNav.NO_PATH:
+			dir = float(nd)
+			if _nav.want_jump and is_on_floor() and _jump_cooldown <= 0.0:
+				velocity.y = JUMP_VY
+				_jump_cooldown = 0.8
 		velocity.x = dir * WALK_SPEED
-		sprite.flip_h = dir < 0
+		MobNav.face(sprite, dir)
 		if sprite.animation != "walk":
 			sprite.play("walk")
 	else:
@@ -91,7 +102,7 @@ func _find_player() -> Node2D:
 	if players.is_empty():
 		_cached_player = null
 		return null
-	_cached_player = players[0]
+	_cached_player = PlayersUtil.nearest_player(get_tree(), global_position)
 	return _cached_player
 
 
@@ -100,9 +111,7 @@ func _check_player_contact() -> void:
 	if player == null:
 		return
 	# AABB 盒重叠 (修踩头躲 bug). 木乃伊体型同僵尸.
-	var dx: float = abs(player.global_position.x - global_position.x)
-	var dy: float = player.global_position.y - global_position.y
-	if dx > 10.0 or dy < -10.0 or dy > 22.0:
+	if not Metrics.touching(self, player):
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

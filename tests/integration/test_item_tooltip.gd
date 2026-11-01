@@ -27,25 +27,25 @@ func test_block_tooltip_says_placeable():
 	assert_true(t.contains("方块") or t.contains("放置"), "方块显示可放置")
 
 
-func test_food_tooltip_shows_heal():
+func test_food_tooltip_shows_buff_without_healing():
 	var cp = await _panel()
 	var t: String = cp._item_tooltip("apple")
-	assert_true(t.contains("回血"), "食物显示回血数值 (没饱食度, 直接回血)")
-	assert_true(t.contains("血量"), "食物用途说恢复血量")
+	assert_true(t.contains("吃得好"), "苹果显示食物增益")
+	assert_false(t.contains("恢复"), "苹果不显示不存在的回血")
 
 
 func test_potion_tooltip_says_potion():
 	var cp = await _panel()
 	var t: String = cp._item_tooltip("health_potion")
 	assert_true(t.contains("药水"), "药水标成药水")
-	assert_true(t.contains("回血"), "药水显示回血")
+	assert_true(t.contains("恢复") and t.contains("生命"), "药水显示恢复生命")
 
 
 func test_buff_food_shows_buff():
 	var cp = await _panel()
 	var t: String = cp._item_tooltip("bread")   # food_fill 30 + buff speed 60s
-	assert_true(t.contains("回血"), "面包回血")
-	assert_true(t.contains("跑得快"), "面包吃后加速 buff 显示")
+	assert_true(t.contains("恢复"), "面包显示当前的恢复效果")
+	assert_true(t.contains("移动加速"), "面包吃后加速 buff 显示")
 
 
 func test_armor_tooltip_shows_defense():

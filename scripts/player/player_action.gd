@@ -181,9 +181,10 @@ var last_swing_center: Vector2 = Vector2.ZERO
 var mouse_world_override: Variant = null
 
 # 进食状态
-const EAT_DURATION_SEC := 2.0   # 进食 2 秒 (按住右键 / F 键持续)
+const EAT_DURATION_SEC := 17.0 / 60.0   # 普通食物使用动画：17 帧
 var _eat_t: float = 0.0
 var _eat_item_id: String = ""
+var _consume_was_held := false
 var _f_was_pressed: bool = false   # F 键上一帧状态 (KEY_F 没有 is_key_just_pressed, 自己 track)
 
 
@@ -303,7 +304,12 @@ func _physics_process(delta: float) -> void:
 			_try_throw_weapon()
 			_aim_held_at_mouse()   # 投掷时武器朝鼠标方向显示
 	else:
-		_update_mining(delta)
+		var inventory := _inventory_node()
+		var slot = inventory.current_hotbar_slot() if inventory != null else null
+		if slot != null and (ItemDB.is_food(slot.item_id) or ItemDB.is_mana_potion(slot.item_id)):
+			_reset_mining()
+		else:
+			_update_mining(delta)
 	_update_eat_or_place(delta)
 
 
@@ -693,7 +699,7 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 			if chest_panel != null and chest_panel.has_method("is_open") and chest_panel.is_open():
 				if "_chest_tile" in chest_panel and chest_panel._chest_tile == multi_anchor:
 					chest_panel.close()
-		if multi_base == Tiles.BED and "bed_spawn_point" in world and world.bed_spawn_point == multi_anchor:
+		if multi_base in [Tiles.BED, Tiles.BED_WIDE] and "bed_spawn_point" in world and world.bed_spawn_point == multi_anchor:
 			world.bed_spawn_point = Vector2i(-99999, -99999)
 		var multi_tile_parts: Array = BuildingArt.multi_parts(multi_base)
 		var cm_multi = world.get("chunk_manager")
@@ -1177,7 +1183,10 @@ func _current_tool_kind() -> String:
 func _current_use_duration(fallback: float = 0.5) -> float:
 	var inv := _inventory_node()
 	var slot = inv.current_hotbar_slot() if inv != null else null
-	return UseTiming.seconds(slot.item_id if slot != null else "", fallback)
+	var duration := UseTiming.seconds(slot.item_id if slot != null else "", fallback)
+	var buffs := get_parent().get_node_or_null("PlayerBuffs")
+	if _current_tool_kind() == "sword" and buffs != null: duration /= buffs.melee_speed_mul()
+	return duration
 
 
 func _current_tool_def() -> Variant:
@@ -1195,7 +1204,8 @@ func _tool_damage_mult() -> float:
 	var def = _current_tool_def()
 	if def == null:
 		return 0.0
-	return def.get("damage_mult", 0.0)
+	var buffs := get_parent().get_node_or_null("PlayerBuffs")
+	return float(def.get("damage_mult", 0.0)) * (buffs.damage_mul() if buffs != null else 1.0)
 
 
 # 击退强度 (阶段 2): 按工具 + tier 缩放
@@ -1343,7 +1353,7 @@ func _update_eat_or_place(delta: float) -> void:
 	var inv: Node = _inventory_node()
 	var slot = null if inv == null else inv.current_hotbar_slot()
 	var holding_food: bool = slot != null and ItemDB.is_food(slot.item_id)
-	# 饱食度已删, 食物直接 PlayerHealth.heal(food_fill). 只有血未满才能吃.
+	# 食物提供增益；恢复类物品在缺血时使用。
 	var hp: Node = get_parent().get_node_or_null("PlayerHealth")
 
 	# 持钩爪 + 右键刚按下 → 朝鼠标发射钩爪 (玩家拉过去)
@@ -1433,76 +1443,60 @@ func _update_eat_or_place(delta: float) -> void:
 						if mn.try_extend_max():
 							_consume_crystal_tile(aim_tile, terrain, Color(0.55, 0.45, 1.0))
 					return
-				elif object_base == Tiles.BED:
+				elif object_base in [Tiles.BED, Tiles.BED_WIDE]:
 					# 点床的任一块都归一到左下角锚点。
 					var w: Node = terrain.get_parent()
 					if w != null and w.has_method("sleep_in_bed"):
 						w.sleep_in_bed(object_anchor)
 					return
 
-	# 持魔力药水 + 按住 → 喝下立刻 +30 mana (跟食物同流程, 进度条满后消耗)
+	# 消耗品单击使用，松手后完成一次短动画；按住不会连续吃光背包。
 	var holding_potion: bool = slot != null and ItemDB.is_mana_potion(slot.item_id)
-	var mana_node: Node = get_parent().get_node_or_null("PlayerMana")
-	if holding_potion and held and mana_node != null:
-		# 满蓝不让喝 (防误点浪费, 跟食物满血不让吃一致)
-		if mana_node.current_mana >= mana_node.MAX_MANA:
-			if _eat_item_id != "":
-				_eat_item_id = ""
-				_eat_t = 0.0
-				_stop_eat_anim()
-			return
-		if _eat_item_id != slot.item_id:
-			_eat_item_id = slot.item_id
-			_eat_t = 0.0
-			_start_eat_anim()
-		_eat_t += delta
-		if _eat_t >= EAT_DURATION_SEC:
-			_eat_t = 0.0
-			var refill: int = ItemDB.mana_refill(slot.item_id)
-			mana_node.current_mana = min(mana_node.MAX_MANA, mana_node.current_mana + refill)
-			if mana_node.has_signal("mana_changed"):
-				mana_node.mana_changed.emit(mana_node.current_mana, mana_node.MAX_MANA)
-			SfxBank.play("drink")
-			if NetworkManager == null or not NetworkManager.combat_enabled():
-				inv.consume_current(1)   # 对战房: 药水无限
-			_stop_eat_anim()
-		return
-
-	# 持食物 + 按住 → 进入/保持 eating. 食物 food_fill 现在直接当回血量.
-	# 普通食物满血不让吃 (防误点浪费); 带 buff 的料理满血也能吃 (为拿 buff).
-	if holding_food and held and hp != null:
-		var has_buff: bool = ItemDB.food_has_buff(slot.item_id)
-		if hp.current_health >= hp.MAX_HEALTH and not has_buff:
-			# 满血 + 无 buff: 中断进食状态, 不消耗食物
-			if _eat_item_id != "":
-				_eat_item_id = ""
-				_eat_t = 0.0
-				_stop_eat_anim()
-			return
-		if _eat_item_id != slot.item_id:
-			_eat_item_id = slot.item_id
-			_eat_t = 0.0
-			_start_eat_anim()
-		_eat_t += delta
-		if _eat_t >= EAT_DURATION_SEC:
-			_eat_t = 0.0
-			hp.heal(ItemDB.food_fill(slot.item_id))
-			# 料理 buff: 吃完触发临时增益
-			if has_buff:
-				var buffs: Node = get_parent().get_node_or_null("PlayerBuffs")
-				if buffs != null:
-					buffs.apply(ItemDB.food_buff_kind(slot.item_id), ItemDB.food_buff_secs(slot.item_id))
-			SfxBank.play("drink" if slot.item_id == "health_potion" else "eat")
-			if NetworkManager == null or not NetworkManager.combat_enabled():
-				inv.consume_current(1)   # 对战房: 食物/生命药水无限
-			_stop_eat_anim()  # 吃完一口, 下次按住会重新开始
-		return
-
-	# 取消进食 (松开 / 没食物 / 满血)
-	if _eat_t > 0.0:
-		_eat_t = 0.0
+	var primary_held: bool = primary_override == true if primary_override != null else Input.is_action_pressed("primary")
+	var use_held := held or primary_held
+	var use_pressed := use_held and not _consume_was_held
+	_consume_was_held = use_held
+	var consumable := holding_food or holding_potion
+	if _eat_item_id != "" and (not consumable or slot.item_id != _eat_item_id):
 		_eat_item_id = ""
+		_eat_t = 0.0
 		_stop_eat_anim()
+	if consumable:
+		var buffs := get_parent().get_node_or_null("PlayerBuffs")
+		var mana_node := get_parent().get_node_or_null("PlayerMana")
+		var recovery := ItemDB.food_fill(slot.item_id) > 0
+		var allowed := true
+		if holding_potion:
+			allowed = mana_node != null and mana_node.current_mana < mana_node.MAX_MANA
+		elif recovery:
+			allowed = hp != null and hp.current_health < hp.MAX_HEALTH and (buffs == null or not buffs.is_active("potion_sickness"))
+		if not allowed:
+			_eat_item_id = ""
+			_eat_t = 0.0
+			_stop_eat_anim()
+			return
+		if use_pressed and _eat_item_id == "":
+			_eat_item_id = slot.item_id
+			_eat_t = 0.0
+			_start_eat_anim()
+		if _eat_item_id == "": return
+		_eat_t += delta
+		if _eat_t + CLOCK_EPSILON < EAT_DURATION_SEC: return
+		if holding_potion:
+			mana_node.current_mana = mini(mana_node.MAX_MANA, mana_node.current_mana + ItemDB.mana_refill(slot.item_id))
+			mana_node.mana_changed.emit(mana_node.current_mana, mana_node.MAX_MANA)
+		else:
+			if recovery:
+				hp.heal(ItemDB.food_fill(slot.item_id))
+				if buffs != null: buffs.apply("potion_sickness", 60.0)
+			if ItemDB.food_has_buff(slot.item_id) and buffs != null:
+				buffs.apply(ItemDB.food_buff_kind(slot.item_id), ItemDB.food_buff_secs(slot.item_id))
+		SfxBank.play("drink" if holding_potion or slot.item_id == "health_potion" else "eat")
+		_eat_item_id = ""
+		_eat_t = 0.0
+		if NetworkManager == null or not NetworkManager.combat_enabled(): inv.consume_current(1)
+		_stop_eat_anim()
+		return
 
 	# 放置: 单击放一个; "连续放置"开 + 按住右键 → 沿划过的路径补满 (防跳格留空)
 	_place_hold_cd = max(0.0, _place_hold_cd - delta)
@@ -1752,6 +1746,11 @@ func _check_pickaxe_spin_hits() -> void:
 	# facing left 时 sprite scale.x=-1 镜像 X, tip 在世界坐标用 -held_rot 算 (等价 X 翻转)
 	var rot_for_tip: float = held_rot
 	var tip_world: Vector2 = held.global_position + Vector2(0, PICKAXE_TIP_LOCAL_Y).rotated(rot_for_tip)
+	var grip_world := held.global_position
+	var segment: PackedVector2Array = held.blade_world_segment()
+	if segment.size() == 2:
+		grip_world = segment[0]
+		tip_world = segment[1]
 	var base: int = _pickaxe_base_damage()
 	if base <= 0:
 		return
@@ -1769,10 +1768,7 @@ func _check_pickaxe_spin_hits() -> void:
 				continue
 			# 大怪给身子半径 (跟剑一致), 镐转碰到大身子就算命中; 普通怪没此方法 = 0
 			var radius: float = sn.melee_hit_radius() if sn.has_method("melee_hit_radius") else 0.0
-			# tip 碰到 OR 贴着手(贴身怪): 任一即命中 (修贴身怪在 tip 轨道死角打不到)
-			var to_tip: float = tip_world.distance_to(sn.global_position)
-			var to_hand: float = held.global_position.distance_to(sn.global_position)
-			if to_tip > PICKAXE_HIT_RADIUS + radius and to_hand > PICKAXE_HIT_RADIUS + radius:
+			if not _blade_intersects_body(sn, grip_world, tip_world, PICKAXE_HIT_RADIUS + radius):
 				continue
 			_pickaxe_hit_this_spin[id] = true
 			_deal_enemy_damage(sn, damage, tip_world, _pickaxe_knockback())
@@ -1848,6 +1844,13 @@ func _check_sword_blade_hits() -> void:
 	var tip_len: float = SWORD_TIP_LOCAL_Y - SWORD_SWEEP_REACH_BONUS if _sword_attack_is_sweep else SWORD_TIP_LOCAL_Y + DAGGER_BLADE_SHORTEN
 	tip_len -= _sword_attack_reach_bonus   # 武器自带额外射程 (长矛/链锤伸更长; tip_len 越负越远)
 	var tip_world: Vector2 = grip_world + Vector2(0, tip_len).rotated(blade_rot)
+	var visible_weapon := _held_item_node()
+	if visible_weapon != null and visible_weapon.visible and visible_weapon.has_method("blade_world_segment"):
+		var segment: PackedVector2Array = visible_weapon.blade_world_segment()
+		if segment.size() == 2:
+			grip_world = segment[0]
+			tip_world = segment[1]
+
 	# 短剑(戳)命中半径比阔剑小 → 命中更"贴", 不糊到远处怪 (用户: 戳得太远)
 	var hit_r: float = SWORD_HIT_RADIUS if _sword_attack_is_sweep else DAGGER_HIT_RADIUS
 	# 挥(sweep): 半圆扫过的怪全打 (群伤是阔剑的卖点)。
@@ -1867,11 +1870,8 @@ func _check_sword_blade_hits() -> void:
 				continue
 			# 大怪 (如史莱姆王) 给身子半径, 剑碰到大身子就算命中 (不只认中心一点); 普通怪没此方法 = 0
 			var radius: float = sn.melee_hit_radius() if sn.has_method("melee_hit_radius") else 0.0
-			# 贴脸保险: 怪在玩家 ≤ 22.5px(+身子半径) 内一律算命中 (剑指远处也保住近身怪)
 			var to_player_dist: float = sn.global_position.distance_to(player.global_position)
-			var hit: bool = to_player_dist <= SWORD_POINT_BLANK_DIST + radius
-			if not hit:
-				hit = _dist_point_to_segment(sn.global_position, grip_world, tip_world) <= hit_r + radius
+			var hit: bool = _blade_intersects_body(sn, grip_world, tip_world, hit_r + radius)
 			if not hit:
 				continue
 			if is_thrust:
@@ -1899,10 +1899,7 @@ func _check_sword_blade_hits() -> void:
 			if _sword_hit_this_attack.has(rid2):
 				continue
 			var radius2: float = rp.melee_hit_radius() if rp.has_method("melee_hit_radius") else 8.0
-			var to_p: float = rp.global_position.distance_to(player2.global_position)
-			var hit2: bool = to_p <= SWORD_POINT_BLANK_DIST + radius2
-			if not hit2:
-				hit2 = _dist_point_to_segment(rp.global_position, grip_world, tip_world) <= hit_r + radius2
+			var hit2: bool = _blade_intersects_body(rp, grip_world, tip_world, hit_r + radius2)
 			if not hit2:
 				continue
 			_sword_hit_this_attack[rid2] = true
@@ -2876,3 +2873,16 @@ func try_fishing_click() -> void:
 		var tid: int = terrain.get_cell_source_id(aim_t)
 		is_water = Tiles.is_water(tid)
 	pf.on_rod_click(aim_t, is_water)
+
+func _blade_intersects_body(target: Node2D, start: Vector2, end: Vector2, fallback_radius: float) -> bool:
+	var collider := target.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collider == null or collider.shape == null:
+		return _dist_point_to_segment(target.global_position, start, end) <= fallback_radius
+	var box := collider.shape.get_rect().grow(2.0)
+	var a := collider.to_local(start)
+	var b := collider.to_local(end)
+	if box.has_point(a) or box.has_point(b): return true
+	var corners := [box.position, Vector2(box.end.x, box.position.y), box.end, Vector2(box.position.x, box.end.y)]
+	for i in 4:
+		if Geometry2D.segment_intersects_segment(a, b, corners[i], corners[(i + 1) % 4]) != null: return true
+	return false

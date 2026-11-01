@@ -10,10 +10,10 @@ const UseTiming = preload("res://scripts/items/original_use_timing.gd")
 
 const HAND_OFFSET_X := 3.75     # 无动作姿势时的手位；使用时跟随原片手掌
 const HAND_OFFSET_Y := -15.0
-const TOOL_SIZE := 0.75        # 与玩家原图相同的世界比例
+const TOOL_SIZE := preload("res://scripts/art/world_metrics.gd").PIXEL_SCALE        # 与玩家原图相同的世界比例
 const SWEEP_HELD_SCALE := 1.0  # 原片阔剑不再二次放大
-const GUN_HELD_SCALE := 0.8    # 枪图标画宽到 20px 了, 手持缩回原比例 (用户嫌太大)
-const BLOCK_SIZE := 0.75
+const GUN_HELD_SCALE := 1.0    # 原图与其他武器使用相同世界比例
+const BLOCK_SIZE := preload("res://scripts/art/world_metrics.gd").PIXEL_SCALE
 const SWING_ANGLE_DEG := 75.0
 const SWING_DURATION := 0.50   # 仅作为旧档物品的回退值；原版物品逐件查表。
 
@@ -455,3 +455,9 @@ func _is_tool(item_id: String) -> bool:
 func _apply_scale() -> void:
 	var sx: float = _current_size if _facing_right else -_current_size
 	scale = Vector2(sx, _current_size)
+
+# 判定直接读取这一帧的可见武器位置，长短、左右镜像与动画同步。
+func blade_world_segment() -> PackedVector2Array:
+	if texture == null: return PackedVector2Array()
+	var tip := Vector2(texture.get_width() - 2, 2) if _diagonal_original_tool() else Vector2(texture.get_width() / 2.0, 1)
+	return PackedVector2Array([to_global(Vector2.ZERO), to_global(offset + tip)])

@@ -14,7 +14,7 @@ func before_each():
 func test_sushi_defs():
 	var expect := {
 		"sushi":        {"fill": 70, "kind": "speed"},
-		"sashimi":      {"fill": 50, "kind": "regen"},
+		"sashimi":      {"fill": 0, "kind": "plenty_satisfied"},
 		"onigiri":      {"fill": 35, "kind": ""},
 		"shrimp_sushi": {"fill": 45, "kind": "speed"},
 		"uni_gunkan":   {"fill": 55, "kind": "mining"},

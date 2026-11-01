@@ -5,6 +5,8 @@ extends Node
 
 signal buffs_changed
 
+const FOOD_TIERS := ["well_fed", "plenty_satisfied", "exquisitely_stuffed"]
+
 const SPEED_MUL := 1.4               # 跑快倍数
 const JUMP_MUL := 1.3                # 跳高倍数 (乘到负的 JUMP_VELOCITY → 更高)
 const MINING_MUL := 1.8              # 挖快倍数
@@ -43,6 +45,10 @@ func _process(delta: float) -> void:
 func apply(kind: String, secs: float) -> void:
 	if kind == "" or secs <= 0.0:
 		return
+	if kind in FOOD_TIERS:
+		for old in FOOD_TIERS:
+			_active.erase(old)
+			_total.erase(old)
 	# 取最长 (再吃个短 buff 不该缩短已有的长 buff)
 	var new_secs: float = maxf(_active.get(kind, 0.0), secs)
 	_active[kind] = new_secs
@@ -68,7 +74,7 @@ func active_kinds() -> Array:
 
 
 func speed_mul() -> float:
-	return SPEED_MUL if _active.has("speed") else 1.0
+	return (SPEED_MUL if _active.has("speed") else 1.0) + [0.0, 0.2, 0.3, 0.4][_food_tier()]
 
 
 func jump_mul() -> float:
@@ -76,4 +82,18 @@ func jump_mul() -> float:
 
 
 func mining_mul() -> float:
-	return MINING_MUL if _active.has("mining") else 1.0
+	return (MINING_MUL if _active.has("mining") else 1.0) + [0.0, 0.05, 0.1, 0.15][_food_tier()]
+
+func _food_tier() -> int:
+	for i in FOOD_TIERS.size():
+		if _active.has(FOOD_TIERS[i]): return i + 1
+	return 0
+
+func damage_mul() -> float:
+	return [1.0, 1.05, 1.075, 1.10][_food_tier()]
+
+func melee_speed_mul() -> float:
+	return damage_mul()
+
+func defense_bonus() -> int:
+	return [0, 2, 3, 4][_food_tier()]

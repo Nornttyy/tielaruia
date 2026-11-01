@@ -2,6 +2,7 @@
 # 命中怪 → 造成伤害 + 销毁. 命中实心方块 → 销毁. 1.2s 自销.
 # 跟 arrow.gd 同结构, 但: 无重力 / 更快 (560 vs 260) / 寿命更短.
 extends Area2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
 
 const TILE_SIZE := 12
 const SPEED := 560.0            # 比箭(260)快一倍多 → 几乎点哪打哪
@@ -254,8 +255,7 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 			if _hit_ids.has(enemy.get_instance_id()):
 				continue   # 穿透时: 这只已经打过, 不重复扣血
 			# 大怪/Boss 给身子半径 (跟近战一致), 否则子弹只认中心一点, 从大身子飞过去不算命中
-			var radius: float = enemy.melee_hit_radius() if enemy.has_method("melee_hit_radius") else 0.0
-			if _seg_point_dist(from_pos, global_position, (enemy as Node2D).global_position) > HIT_RADIUS_PX + radius:
+			if not Metrics.segment_hits(enemy, from_pos, global_position):
 				continue
 			_hit_ids[enemy.get_instance_id()] = true
 			# 击退源位置: 沿飞行反方向退 32px, 让 (enemy - source).normalized 指向飞行方向.
@@ -301,8 +301,7 @@ func _check_enemy_hit(from_pos: Vector2) -> void:
 				continue
 			if _hit_ids.has(rp.get_instance_id()):
 				continue   # 穿透: 同一个玩家不重复发伤害
-			var radius2: float = rp.melee_hit_radius() if rp.has_method("melee_hit_radius") else 8.0
-			if _seg_point_dist(from_pos, global_position, rp.global_position) > HIT_RADIUS_PX + radius2:
+			if not Metrics.segment_hits(rp, from_pos, global_position):
 				continue
 			_hit_ids[rp.get_instance_id()] = true
 			var psrc: Vector2 = global_position - velocity.normalized() * 32.0

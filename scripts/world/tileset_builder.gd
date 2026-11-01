@@ -132,6 +132,8 @@ static func build() -> TileSet:
 		else:
 			# 非 autotile: 单 cell
 			source.create_tile(Vector2i.ZERO)
+			if tile_id == Tiles.PLANT_GRASS:
+				source.get_tile_data(Vector2i.ZERO, 0).modulate.a = 0.0
 			if Tiles.is_slope(tile_id):
 				# 斜砖: 三角形碰撞 (实心半边). ◢ 右下三角 / ◣ 左下三角.
 				var spts: PackedVector2Array
@@ -182,25 +184,28 @@ static func build() -> TileSet:
 static func _add_tree_sprite(ts: TileSet, tile_id: int) -> void:
 	var is_crown := tile_id == Tiles.LOG_TOP
 	var is_branch := tile_id in [Tiles.BRANCH_L, Tiles.BRANCH_R]
-	var size := 60 if is_crown else (30 if is_branch else 15)
-	var rows := 8 if tile_id == Tiles.LOG else 1
-	var img := Image.create(size * 3, size * rows, false, Image.FORMAT_RGBA8)
-	for row in rows:
-		for i in 3:
-			var tex: ImageTexture
-			if is_crown: tex = OriginalSprites.crown(i)
-			elif is_branch: tex = OriginalSprites.branch(tile_id == Tiles.BRANCH_L, i)
-			else: tex = OriginalSprites.tree_piece(tile_id, row, i)
-			img.blit_rect(tex.get_image(), Rect2i(0, 0, size, size), Vector2i(i, row) * size)
+	var size := Vector2i(86, 72) if is_crown else Vector2i(30, 30) if is_branch else Vector2i(15, 15)
+	var joints := 8 if tile_id == Tiles.LOG else 1
+	var rows := joints * 5
+	var img := Image.create(size.x * 3, size.y * rows, false, Image.FORMAT_RGBA8)
+	for style in 5:
+		for joint in joints:
+			for i in 3:
+				var tex: ImageTexture
+				if is_crown: tex = OriginalSprites.crown(i, style)
+				elif is_branch: tex = OriginalSprites.branch(tile_id == Tiles.BRANCH_L, i, style)
+				else: tex = OriginalSprites.tree_piece(tile_id, joint, i, style)
+				img.blit_rect(tex.get_image(), Rect2i(Vector2i.ZERO, size), Vector2i(i, style * joints + joint) * size)
 	var source := TileSetAtlasSource.new()
 	source.texture = ImageTexture.create_from_image(img)
-	source.texture_region_size = Vector2i(size, size)
+	source.texture_region_size = size
 	ts.add_source(source, tile_id)
 	for row in rows:
 		for i in 3:
 			var coord := Vector2i(i, row)
 			source.create_tile(coord)
-			var data = source.get_tile_data(coord, 0)
-			# 树冠贴底；左枝贴格右边，右枝贴格左边，枝叶垂直居中。
-			if is_crown: data.texture_origin = Vector2i(0, 24)
+			var data := source.get_tile_data(coord, 0)
+			# 枝叶由 FoliageLayer 围绕固定连接点绘制，TileMap 保留格子数据供砍伐。
+			if is_crown or is_branch: data.modulate.a = 0.0
+			if is_crown: data.texture_origin = Vector2i(0, 30)
 			elif is_branch: data.texture_origin = Vector2i(9 if tile_id == Tiles.BRANCH_L else -9, 0)

@@ -38,3 +38,19 @@ func test_water_over_air_no_phantom_plant() -> void:
 	assert_eq(cm.get_submerged(x, y), -1, "空气进水不该记植物")
 	world._set_water_tile_fast(x, y, Tiles.AIR)
 	assert_eq(cm.get_tile(x, y), Tiles.AIR, "退水还是空气")
+
+func test_water_passes_tree_trunk_and_keeps_it_visible_and_restorable():
+	var main = MainScene.instantiate()
+	add_child_autofree(main)
+	main.boot_to_game(42)
+	await wait_frames(2)
+	var world = main.get_node("World")
+	var cm = world.chunk_manager
+	cm.set_tile(5, 120, Tiles.LOG)
+	world._set_water_tile_fast(5, 120, Tiles.WATER)
+	assert_eq(cm.get_tile(5, 120), Tiles.WATER)
+	assert_eq(cm.get_submerged(5, 120), Tiles.LOG)
+	assert_eq(world.terrain_layer.get_cell_source_id(Vector2i(5, 120)), Tiles.LOG)
+	world._set_water_tile_fast(5, 120, Tiles.AIR)
+	assert_eq(cm.get_tile(5, 120), Tiles.LOG)
+	assert_eq(cm.get_submerged(5, 120), -1)

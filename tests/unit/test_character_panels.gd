@@ -8,7 +8,7 @@ var panels
 func before_each():
 	panels = CharacterPanels.new()
 	add_child_autofree(panels)
-	CharacterManager.CHARS_DIR_OVERRIDE = "user://test_ui_chars/"
+	CharacterManager.CHARS_DIR_OVERRIDE = "/tmp/tielaruia-test-ui-chars-%d/" % OS.get_process_id()
 	_clear_dir(CharacterManager.chars_dir())
 
 func after_each():

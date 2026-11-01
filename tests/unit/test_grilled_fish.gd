@@ -14,8 +14,8 @@ func before_each():
 
 func test_grilled_fish_def():
 	assert_true(db.is_food("grilled_fish"), "烤鱼应能吃")
-	assert_eq(db.food_fill("grilled_fish"), 45, "烤鱼回 45 血")
-	assert_eq(db.food_buff_kind("grilled_fish"), "speed", "烤鱼给跑得快")
+	assert_eq(db.food_fill("grilled_fish"), 0, "烤鱼不直接回血")
+	assert_eq(db.food_buff_kind("grilled_fish"), "well_fed", "烤鱼提供吃得好")
 	assert_gt(db.food_buff_secs("grilled_fish"), 0.0)
 
 # 三文鱼/金枪鱼/鳗鱼 任意一种 → 烤鱼, 都在锅里做

@@ -7,6 +7,7 @@ const MAX_FALL_SPEED := 300.0
 const LIFETIME_SECONDS := 30.0
 const PICKUP_DELAY := 0.4  # 刚 spawn 时短暂无法拾取
 const TILE_SIZE := 12
+const Metrics = preload("res://scripts/art/world_metrics.gd")
 
 @export var item_id: String = ""
 @export var count: int = 1
@@ -22,11 +23,13 @@ const TILE_SIZE := 12
 var velocity: Vector2 = Vector2.ZERO
 var _pickup_ready: bool = false
 var _cached_terrain: TileMapLayer = null  # 缓存 terrain ref, 50+ drops 时每帧少 50 群组查
+var _half_size := Vector2(6, 6)
 
 
 func _ready() -> void:
 	if item_id != "":
 		sprite.texture = ArtCache.get_inventory_icon(item_id)
+	_configure_bounds()
 	lifetime.wait_time = LIFETIME_SECONDS
 	lifetime.one_shot = true
 	lifetime.start()
@@ -72,22 +75,57 @@ func _physics_process(delta: float) -> void:
 	velocity.y = min(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
 	# 水平摩擦
 	velocity.x = move_toward(velocity.x, 0.0, FRICTION * delta)
-	var prev_position := position
-	position += velocity * delta
-	# 简单地面检测：查脚下 tile 是否实心
 	if _cached_terrain == null or not is_instance_valid(_cached_terrain):
 		_cached_terrain = get_tree().get_first_node_in_group("terrain_layer") as TileMapLayer
-	var terrain := _cached_terrain
-	if terrain != null:
-		var foot_tile: Vector2i = terrain.local_to_map(terrain.to_local(global_position + Vector2(0, 3)))
-		var tid: int = terrain.get_cell_source_id(foot_tile)
-		if tid != -1 and Tiles.is_solid(tid):
-			if velocity.y > 0.0:
-				position = prev_position
-				velocity.y = -velocity.y * 0.25
+	if _cached_terrain == null:
+		position += velocity * delta
+		return
+	# 分步扫过整个物品的边缘，长剑/家具不能只检测贴图中心下方 3px。
+	_move_axis(velocity.x * delta, false)
+	_move_axis(velocity.y * delta, true)
+
+
+func _configure_bounds() -> void:
+	if sprite.texture == null: return
+	sprite.scale = Vector2.ONE * Metrics.PIXEL_SCALE
+	var opaque := sprite.texture.get_image().get_used_rect()
+	if not opaque.has_area(): return
+	sprite.offset = sprite.texture.get_size() / 2.0 - (Vector2(opaque.position) + Vector2(opaque.size) / 2.0)
+	_half_size = Vector2(opaque.size) * Metrics.PIXEL_SCALE / 2.0
+	var pickup_shape := RectangleShape2D.new()
+	pickup_shape.size = _half_size * 2.0 + Vector2(4, 4)
+	$CollisionShape2D.shape = pickup_shape
+
+
+func _move_axis(distance: float, vertical: bool) -> void:
+	if is_zero_approx(distance): return
+	var steps := maxi(1, ceili(absf(distance) / 3.0))
+	var amount := distance / steps
+	var direction := signf(amount)
+	for i in steps:
+		var proposed := global_position + (Vector2(0, amount) if vertical else Vector2(amount, 0))
+		var edge := proposed + (Vector2(0, direction * _half_size.y) if vertical else Vector2(direction * _half_size.x, 0))
+		var span := _half_size.x if vertical else _half_size.y
+		var a := edge - (Vector2(span - 0.1, 0) if vertical else Vector2(0, span - 0.1))
+		var b := edge + (Vector2(span - 0.1, 0) if vertical else Vector2(0, span - 0.1))
+		var first := _cached_terrain.local_to_map(_cached_terrain.to_local(a))
+		var last := _cached_terrain.local_to_map(_cached_terrain.to_local(b))
+		for n in range(first.x if vertical else first.y, (last.x if vertical else last.y) + 1):
+			var cell := Vector2i(n, first.y) if vertical else Vector2i(first.x, n)
+			var tile := _cached_terrain.get_cell_source_id(cell)
+			if not Tiles.is_solid(tile) and not (vertical and direction > 0 and tile == Tiles.WOOD_PLATFORM): continue
+			var center := _cached_terrain.to_global(_cached_terrain.map_to_local(cell))
+			if vertical:
+				proposed.y = center.y - direction * (TILE_SIZE / 2.0 + _half_size.y) - direction * 0.01
+				velocity.y = -velocity.y * 0.25 if direction > 0 else 0.0
 				velocity.x *= 0.5
-				if abs(velocity.y) < 30.0:
-					velocity.y = 0.0
+				if absf(velocity.y) < 30.0: velocity.y = 0.0
+			else:
+				proposed.x = center.x - direction * (TILE_SIZE / 2.0 + _half_size.x) - direction * 0.01
+				velocity.x *= -0.25
+			global_position = proposed
+			return
+		global_position = proposed
 
 
 func _on_body_entered(body: Node) -> void:

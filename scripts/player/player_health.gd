@@ -188,6 +188,8 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	var inv: Node = _player_inventory()
 	if inv != null and inv.has_method("total_defense"):
 		var defense: int = inv.total_defense()
+		var buffs := get_parent().get_node_or_null("PlayerBuffs")
+		if buffs != null: defense += buffs.defense_bonus()
 		raw_amount -= int(floor(float(defense) * 0.5))
 	var final_amount: int = max(1, raw_amount)
 	# 飘字显示真实扣血 (clamp 到剩余 HP), 防最后一击显示超额

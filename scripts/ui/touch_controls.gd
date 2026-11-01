@@ -225,7 +225,7 @@ func _use_action_for_held() -> String:
 		return "secondary"
 	if int(d.get("placeable_tile_id", -1)) >= 0:
 		return "secondary"
-	if int(d.get("food_fill", 0)) > 0 or bool(d.get("is_potion", false)):
+	if ItemDB.is_food(String(slot.item_id)) or ItemDB.is_mana_potion(String(slot.item_id)):
 		return "secondary"
 	return "primary"
 

@@ -9,7 +9,6 @@ const MobNav = preload("res://scripts/entities/mob_nav.gd")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const SkeletonKingArt = preload("res://scripts/art/skeleton_king_art.gd")
 const BoneProj = preload("res://scripts/entities/bone_projectile.gd")
-const SkeletonScene = preload("res://scenes/entities/skeleton.tscn")
 
 const BASE_MAX_HEALTH := 1200
 const CONTACT_DAMAGE := 15      # 摸到身子
@@ -269,19 +268,7 @@ func _do_sweep_hit(player: Node2D) -> void:
 
 # 召唤小骷髅 (复用普通骷髅). 只数普通骷髅小兵 (排除自己这个 boss)。
 func _spawn_minions() -> void:
-	var existing: int = 0
-	for s in get_tree().get_nodes_in_group("skeletons"):
-		if not s.is_in_group("boss"):
-			existing += 1
-	var entities: Node = _entities_root()
-	for i in MINION_PER_WAVE:
-		if existing >= MINION_CAP:
-			break
-		var m = SkeletonScene.instantiate()
-		entities.add_child(m)
-		m.global_position = global_position + Vector2(randf_range(-24.0, 24.0), -8.0)
-		existing += 1
-
+	pass # 普通骷髅已移除，Boss 不再重新召出。
 
 func _entities_root() -> Node:
 	var e: Node = get_tree().get_first_node_in_group("entities_root")

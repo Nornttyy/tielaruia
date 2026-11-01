@@ -31,12 +31,12 @@ func test_crowns_and_branches_are_large_sprites_without_new_collision():
 	var ts: TileSet = Builder.build()
 	assert_eq(ts.tile_size, Vector2i(12, 12), "不改变旧世界坐标")
 	var crown: TileSetAtlasSource = ts.get_source(Tiles.LOG_TOP)
-	assert_eq(crown.texture_region_size, Vector2i(60, 60))
-	assert_eq(crown.get_tiles_count(), 3)
+	assert_eq(crown.texture_region_size, Vector2i(86, 72))
+	assert_eq(crown.get_tiles_count(), 15)
 	for i in 3:
 		var tile = crown.get_tile_data(Vector2i(i, 0), 0)
 		assert_eq(tile.get_collision_polygons_count(0), 0, "树冠不能变成隐形墙")
-		assert_eq(tile.texture_origin, Vector2i(0, 24))
+		assert_eq(tile.texture_origin, Vector2i(0, 30))
 	assert_eq(ts.get_source(Tiles.BRANCH_L).texture_region_size, Vector2i(30, 30))
 
 func test_player_frames_have_fixed_bounds_and_real_walk_cycle():

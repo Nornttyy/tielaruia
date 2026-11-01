@@ -11,11 +11,11 @@ func before_each():
 # 8 种能吃的海鲜: food_fill 对; 紫菜是材料(food_fill 0, 不可吃)
 func test_seafood_defs():
 	var expect := {
-		"salmon": 25, "tuna": 28, "octopus": 22, "sea_urchin": 20,
+		"salmon": 0, "tuna": 0, "octopus": 22, "sea_urchin": 20,
 		"lobster": 38, "eel": 26, "sweet_shrimp": 15, "scallop": 18,
 	}
 	for id in expect:
-		assert_true(db.is_food(id), "%s 应能吃" % id)
+		assert_eq(db.is_food(id), expect[id] > 0, "%s 食材或可食用海鲜" % id)
 		assert_eq(db.food_fill(id), expect[id], "%s food_fill" % id)
 	# 紫菜: 纯材料, 不可吃
 	assert_not_null(db.get_def("seaweed"), "应有紫菜")

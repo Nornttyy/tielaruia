@@ -2,6 +2,10 @@
 # 撞到给 7 伤 + 击退. 撞墙也减速但不死. HP 15 (脆), 速度极快 (120 冲, 60 巡).
 # 死了掉 1-2 spider_eye + 偶发 hell_fruit.
 extends CharacterBody2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
+const FlyingNav = preload("res://scripts/entities/flying_nav.gd")
+const MobNav = preload("res://scripts/entities/mob_nav.gd")
+var _flight_nav = FlyingNav.new()
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
@@ -36,6 +40,7 @@ func _ready() -> void:
 	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
 	sprite.sprite_frames = ArtCache.hell_wasp_frames
+	Metrics.align_feet(sprite)
 	sprite.play("move")
 	add_to_group("hell_wasps")
 	add_to_group("slimes")
@@ -101,7 +106,8 @@ func _physics_process(delta: float) -> void:
 			velocity = Vector2(-dir.y, dir.x) * PATROL_SPEED
 	else:
 		velocity = Vector2.ZERO
-	sprite.flip_h = velocity.x < 0
+	velocity = _flight_nav.steer(self, player.global_position, velocity, delta)
+	MobNav.face(sprite, velocity.x)
 	move_and_slide()
 	_check_player_contact()
 
@@ -111,9 +117,7 @@ func _check_player_contact() -> void:
 	if player == null:
 		return
 	# AABB (飞行怪, dy 范围更宽因为它悬空冲撞).
-	var dx: float = abs(player.global_position.x - global_position.x)
-	var dy: float = player.global_position.y - global_position.y
-	if dx > 10.0 or dy < -22.0 or dy > 22.0:
+	if not Metrics.touching(self, player):
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

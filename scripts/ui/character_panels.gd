@@ -8,7 +8,7 @@ signal closed             # 返回主菜单
 const CharacterData = preload("res://scripts/save/character_data.gd")
 const Pack = preload("res://scripts/art/terraria_sprite_pack.gd")
 const PlayerArt = preload("res://scripts/art/player_art.gd")
-const UIStyle = preload("res://scripts/ui/ui_style.gd")
+const UIStyle = preload("res://scripts/ui/menu_style.gd")
 
 var _select_panel: Panel
 var _select_title: Label
@@ -54,33 +54,40 @@ func open_select() -> void:
 func _build_select_panel() -> void:
 	_select_panel = Panel.new()
 	_select_panel.name = "SelectPanel"
-	_select_panel.custom_minimum_size = Vector2(420, 460)
-	_select_panel.position = Vector2(430, 130)
-	_select_panel.size = Vector2(420, 460)
+	_select_panel.custom_minimum_size = Vector2(720, 440)
+	_select_panel.position = Vector2(280, 240)
+	_select_panel.size = Vector2(720, 440)
 	add_child(_select_panel)
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 8)
 	vbox.position = Vector2(20, 18)
-	vbox.custom_minimum_size = Vector2(380, 0)
+	vbox.custom_minimum_size = Vector2(680, 0)
 	_select_panel.add_child(vbox)
 	_select_title = Label.new()
 	_select_title.text = "选择角色"
-	_select_title.add_theme_font_size_override("font_size", 22)
+	_select_title.add_theme_font_size_override("font_size", 26)
+	_select_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_select_title)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(380, 300)
+	scroll.custom_minimum_size = Vector2(680, 290)
 	vbox.add_child(scroll)
 	_list = VBoxContainer.new()
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_list)
+	var footer := HBoxContainer.new()
+	footer.add_theme_constant_override("separation", 24)
+	vbox.add_child(footer)
 	var new_btn := Button.new()
-	new_btn.text = "＋ 捏个新角色"
+	new_btn.text = "新建角色"
+	new_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_btn.pressed.connect(_on_new_character)
-	vbox.add_child(new_btn)
+	footer.add_child(new_btn)
 	var back_btn := Button.new()
 	back_btn.text = "返回"
 	back_btn.pressed.connect(func(): visible = false; closed.emit())
-	vbox.add_child(back_btn)
+	footer.add_child(back_btn)
+	footer.move_child(back_btn, 0)
+	back_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	# 蓝色统一: 面板 + 按钮 (色块 ColorRect 保留原色, _style_controls 不动它)
 	_select_panel.add_theme_stylebox_override("panel", UIStyle.panel())
 	_style_controls(_select_panel)
@@ -110,21 +117,41 @@ func _refresh_list() -> void:
 
 
 func _make_row(char_name: String) -> void:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UIStyle.panel())
+	card.custom_minimum_size.y = 86
+	_list.add_child(card)
 	var row := HBoxContainer.new()
-	row.custom_minimum_size = Vector2(0, 40)
+	row.add_theme_constant_override("separation", 16)
+	card.add_child(row)
+	var data = CharacterManager.load_character_by_name(char_name)
+	var portrait := TextureRect.new()
+	portrait.custom_minimum_size = Vector2(48, 64)
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if data != null: portrait.texture = Pack.player_frames(data.appearance_dict()).get_frame_texture("idle", 0)
+	row.add_child(portrait)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
 	var lbl := Label.new()
 	lbl.text = char_name
-	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(lbl)
+	lbl.add_theme_font_size_override("font_size", 22)
+	info.add_child(lbl)
+	var stats := Label.new()
+	stats.text = "生命 %d    魔力 %d" % [data.player_max_hp, data.player_max_mana] if data != null else ""
+	stats.add_theme_font_size_override("font_size", 16)
+	stats.modulate = Color8(197, 215, 250)
+	info.add_child(stats)
 	var pick := Button.new()
-	pick.text = "选择"
+	pick.text = "游玩"
 	UIStyle.style_button(pick)
 	pick.pressed.connect(func(): _choose_character(char_name))
 	row.add_child(pick)
 	# 改造型: 把这个角色 load 进捏人改样子, 保存覆盖原角色 (不新建 → 不会越改越多)。
 	var edit := Button.new()
-	edit.text = "改造型"
+	edit.text = "外观"
 	UIStyle.style_button(edit)
 	edit.pressed.connect(func(): _on_edit_character(char_name))
 	row.add_child(edit)
@@ -132,11 +159,11 @@ func _make_row(char_name: String) -> void:
 	del.text = "删除"
 	UIStyle.style_button(del)
 	del.pressed.connect(func():
-		CharacterManager.delete_character_by_name(char_name)
-		_refresh_list()
+		UIStyle.show_dialog(self, "删除角色", "确定删除“%s”？" % char_name, func():
+			CharacterManager.delete_character_by_name(char_name)
+			_refresh_list(), "删除")
 	)
 	row.add_child(del)
-	_list.add_child(row)
 
 
 # 选中角色: 设 current → 发信号 (main_menu 去开世界选择)。
@@ -188,13 +215,13 @@ func _on_edit_character(char_name: String) -> void:
 func _build_creator_panel() -> void:
 	_creator_panel = Panel.new()
 	_creator_panel.name = "CreatorPanel"
-	_creator_panel.custom_minimum_size = Vector2(520, 470)
-	_creator_panel.size = Vector2(520, 470)
-	_creator_panel.position = Vector2(380, 125)
+	_creator_panel.custom_minimum_size = Vector2(720, 470)
+	_creator_panel.size = Vector2(720, 470)
+	_creator_panel.position = Vector2(280, 230)
 	add_child(_creator_panel)
 	# 左: 预览
 	_preview = AnimatedSprite2D.new()
-	_preview.position = Vector2(90, 250)
+	_preview.position = Vector2(120, 220)
 	_preview.scale = Vector2(3, 3)
 	# 强制最近邻过滤: 放大 3 倍的像素画必须清晰, 否则 1px 眼白会被线性插值糊成灰色
 	# (捏人预览在 UI 层下, 可能继承到 linear; 世界里玩家走项目默认 nearest 所以不糊).
@@ -202,7 +229,7 @@ func _build_creator_panel() -> void:
 	_creator_panel.add_child(_preview)
 	# 右: 选项 VBox
 	var vbox := VBoxContainer.new()
-	vbox.position = Vector2(190, 20)
+	vbox.position = Vector2(280, 20)
 	vbox.custom_minimum_size = Vector2(310, 0)
 	vbox.add_theme_constant_override("separation", 6)
 	_creator_panel.add_child(vbox)
@@ -225,7 +252,7 @@ func _build_creator_panel() -> void:
 	_build_color_editor(vbox)
 	# 保存/取消固定在面板底部，换发型和颜色时都不会挪位。
 	var btn_row := HBoxContainer.new()
-	btn_row.position = Vector2(190, 428)
+	btn_row.position = Vector2(280, 428)
 	var save_b := Button.new(); save_b.text = "保存"; save_b.pressed.connect(_save_creator)
 	var cancel_b := Button.new(); cancel_b.text = "取消"; cancel_b.pressed.connect(func():
 		_creator_panel.visible = false; _select_panel.visible = true; _refresh_list())

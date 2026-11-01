@@ -17,10 +17,11 @@ func test_original_furniture_frames_are_discarded_when_player_edits_tile():
 	var c := Chunk.new(0)
 	c.init_empty()
 	Samples.stamp(c, "sky_house", Vector2i(30, 60))
-	var chest := Vector2i(32, 57)
-	assert_gte(Samples.display_id(c, chest, Tiles.CHEST), Samples.VISUAL_BASE)
+	var chest: Vector2i = c.original_visuals.keys()[0]
+	var original_tile: int = c.tiles[chest.x][chest.y]
+	assert_gte(Samples.display_id(c, chest, original_tile), Samples.VISUAL_BASE)
 	c.apply_delta({chest: Tiles.AIR})
-	assert_eq(Samples.display_id(c, chest, Tiles.CHEST), Tiles.CHEST, "旧建筑帧不能覆盖玩家重建的物品")
+	assert_eq(Samples.display_id(c, chest, original_tile), original_tile, "旧建筑帧不能覆盖玩家重建的物品")
 
 func test_source_sample_crown_is_not_the_previous_elliptical_approximation():
 	var cells: Array = Samples.sample("living_tree").cells

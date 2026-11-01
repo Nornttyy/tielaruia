@@ -30,10 +30,11 @@ const FALL_SAFE_TILES := 10         # 安全摔落高度 (格): 摔 10 格内不
 const FALL_DMG_PER_TILE := 3        # 超过安全高度后, 每多摔 1 格 +3 点伤害 (用户规则)
 const WALK_PUFF_INTERVAL := 0.3     # 走路每 0.3s 一次 puff
 const TILE_SIZE := 12
-# 游泳物理: 水里重力 ~22%, 按 Space/W 持续上浮.
-const SWIM_GRAVITY := 150.0         # 水里重力 (vs GRAVITY 900 → 慢慢沉)
-const SWIM_UP_SPEED := -82.0       # 按 jump 上浮速度 (vs JUMP_VELOCITY -320 → 弱跳)
-const SWIM_MAX_SINK := 135.0        # 最大下沉速度 (浮力封顶)
+# 水中位移减半，触底后起跳；没有游泳装备不能按住键持续上浮。
+const SWIM_GRAVITY := 0.2 * 3600.0 * REFERENCE_SCALE * 0.5
+const SWIM_JUMP_SPEED := -6.01 * 60.0 * REFERENCE_SCALE * 0.5
+const SWIM_MAX_SINK := 5.0 * 60.0 * REFERENCE_SCALE * 0.5
+const SWIM_JUMP_HOLD := 30.0 / 60.0
 const ROPE_CLIMB_SPEED := 82.0     # 绳子上下爬速度 (vs SPEED 140 — 慢点)
 const ROPE_HOLD_GRAVITY := 0.0      # 抓绳子时无重力 (松手才掉)
 # 玩家碰撞框高度 (跟 player.tscn 同步, 用于水/绳/头检测)
@@ -260,23 +261,21 @@ static func _is_water_tile(tid: int) -> bool:
 
 
 # 玩家腰部是否在水里 (= 在游泳)
-func _is_in_water() -> bool:
+func _point_in_water(point: Vector2) -> bool:
 	var cm = _get_chunk_manager()
-	if cm == null:
-		return false
-	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
-	var ty: int = int(floor((global_position.y + float(PLAYER_WAIST_OFFSET)) / float(TILE_SIZE)))
-	return _is_water_tile(cm.get_tile(tx, ty))
+	if cm == null: return false
+	var cell := Vector2i(floori(point.x / TILE_SIZE), floori(point.y / TILE_SIZE))
+	var level: int = Tiles.water_level(cm.get_tile(cell.x, cell.y))
+	return level > 0 and point.y >= (cell.y + 1) * TILE_SIZE - level * TILE_SIZE / 8.0
+
+
+func _is_in_water() -> bool:
+	return _point_in_water(global_position + Vector2(0, PLAYER_WAIST_OFFSET))
 
 
 # 按实际液位判断头部，浅水不会让人物在水面上吐泡泡。
 func is_head_submerged() -> bool:
-	var cm = _get_chunk_manager()
-	if cm == null: return false
-	var head := global_position + Vector2(0, PLAYER_HEAD_OFFSET)
-	var cell := Vector2i(floori(head.x / TILE_SIZE), floori(head.y / TILE_SIZE))
-	var level: int = Tiles.water_level(cm.get_tile(cell.x, cell.y))
-	return level > 0 and head.y >= (cell.y + 1) * TILE_SIZE - level * TILE_SIZE / 8.0
+	return _point_in_water(global_position + Vector2(0, PLAYER_HEAD_OFFSET))
 
 
 # 玩家身体 (腰或胸) 是否在绳子 tile 内
@@ -295,12 +294,25 @@ func _is_on_rope() -> bool:
 
 # 头部是否露出水面 (用于"跳上岸": 头出水可走普通跳跃, 强度够蹬上岸)
 func _is_head_above_water() -> bool:
-	var cm = _get_chunk_manager()
-	if cm == null:
-		return true
-	var tx: int = int(floor(global_position.x / float(TILE_SIZE)))
-	var ty: int = int(floor((global_position.y + float(PLAYER_HEAD_OFFSET)) / float(TILE_SIZE)))
-	return not _is_water_tile(cm.get_tile(tx, ty))
+	return not is_head_submerged()
+
+
+# 低岸/一格台阶允许直接迈上去，先扫头顶和前方再找落脚面，不能穿墙或天花板。
+func _step_up(delta: float) -> void:
+	if not is_on_floor() or velocity.y < 0.0 or _down_held() or absf(velocity.x) < 0.1:
+		return
+	var across := Vector2(velocity.x * delta, 0)
+	if not test_move(global_transform, across): return
+	var rise := Vector2(0, -TILE_SIZE - 0.1)
+	if test_move(global_transform, rise): return
+	var raised := global_transform.translated(rise)
+	if test_move(raised, across): return
+	var landing := KinematicCollision2D.new()
+	if not test_move(raised.translated(across), -rise + Vector2(0, 0.2), landing): return
+	if landing.get_normal().y > -0.65: return
+	var lift := -rise.y - landing.get_travel().y
+	if lift > 0.05 and lift <= TILE_SIZE + 0.1:
+		global_position.y -= lift
 
 
 func _is_player_underground(tile_x: int, tile_y: int) -> bool:
@@ -381,7 +393,7 @@ func _physics_process(delta: float) -> void:
 	# 背包/合成/箱子 UI 打开时: 玩家停止 input, 只保留重力 (用户要求)
 	if _is_inventory_ui_open():
 		if not is_on_floor():
-			velocity.y += GRAVITY * delta
+			velocity.y = minf(SWIM_MAX_SINK, velocity.y + SWIM_GRAVITY * delta) if _is_in_water() else minf(MAX_FALL_SPEED, velocity.y + GRAVITY * delta)
 		velocity.x = move_toward(velocity.x, 0.0, 800.0 * delta)
 		move_and_slide()
 		if sprite.animation != "idle":
@@ -408,7 +420,7 @@ func _physics_process(delta: float) -> void:
 		_jump_hold_remaining = 0.0
 		_hurt_timer = max(0.0, _hurt_timer - delta)
 		if not is_on_floor():
-			velocity.y += GRAVITY * delta
+			velocity.y = minf(SWIM_MAX_SINK, velocity.y + SWIM_GRAVITY * delta) if _is_in_water() else minf(MAX_FALL_SPEED, velocity.y + GRAVITY * delta)
 		else:
 			velocity.x = move_toward(velocity.x, 0.0, 400.0 * delta)
 		move_and_slide()
@@ -454,7 +466,7 @@ func _physics_process(delta: float) -> void:
 			inertia_rate += MOVE_FRICTION
 	else:
 		inertia_rate = MOVE_FRICTION if is_on_floor() else MOVE_FRICTION_AIR
-	velocity.x = move_toward(velocity.x, target_vx, inertia_rate * delta)
+	velocity.x = move_toward(velocity.x, target_vx, inertia_rate * speed_mul * delta)
 	sprite.modulate = Color.WHITE
 
 	var on_floor_now := is_on_floor()
@@ -472,50 +484,42 @@ func _physics_process(delta: float) -> void:
 			velocity.y = ROPE_CLIMB_SPEED
 		else:
 			velocity.y = 0.0
-	elif in_water:
-		_jump_hold_remaining = 0.0
-		# 水里物理: 慢慢沉, 按 jump 上浮 (持续按住能游上去)
-		velocity.y += SWIM_GRAVITY * delta
-		if velocity.y > SWIM_MAX_SINK:
-			velocity.y = SWIM_MAX_SINK
-		# 头出水时按 jump 走普通跳跃 (强力, 能蹬上岸); 头在水里持续按走弱上浮
-		if Input.is_action_just_pressed("jump") and _is_head_above_water():
-			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
-			did_jump = true
-		elif Input.is_action_pressed("jump"):
-			velocity.y = SWIM_UP_SPEED
 	else:
-		if not on_floor_now:
-			_coyote_timer = maxf(0.0, _coyote_timer - delta)
-		else:
+		var jump_speed := SWIM_JUMP_SPEED if in_water else JUMP_VELOCITY
+		var hold_duration := SWIM_JUMP_HOLD if in_water else JUMP_HOLD_DURATION
+		var gravity := SWIM_GRAVITY if in_water else GRAVITY
+		var max_sink := SWIM_MAX_SINK if in_water else MAX_FALL_SPEED
+		if on_floor_now:
 			_coyote_timer = COYOTE_TIME
 			_double_jump_used = false
+		else:
+			_coyote_timer = maxf(0.0, _coyote_timer - delta)
 		var jump_pressed := Input.is_action_just_pressed("jump")
 		var jump_held := Input.is_action_pressed("jump")
 		if jump_pressed and (on_floor_now or _coyote_timer > 0.0):
-			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
-			_jump_hold_remaining = JUMP_HOLD_DURATION
+			velocity.y = jump_speed * _buff_jump_mul()
+			_jump_hold_remaining = hold_duration
 			_coyote_timer = 0.0
 			did_jump = true
 		elif jump_pressed and not _double_jump_used and _has_cloud_boots():
-			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
-			_jump_hold_remaining = JUMP_HOLD_DURATION
+			velocity.y = jump_speed * _buff_jump_mul()
+			_jump_hold_remaining = hold_duration
 			_double_jump_used = true
 			SfxBank.play("double_jump")
 			did_jump = true
 		elif jump_held and _jump_hold_remaining > 0.0001 and velocity.y < 0.0 and not is_on_ceiling():
-			# 起跳帧 + 最多 15 帧维持上升；松开立即进入重力阶段。
-			velocity.y = JUMP_VELOCITY * _buff_jump_mul()
-			_jump_hold_remaining = maxf(0.0, _jump_hold_remaining - delta)
+			# 维持已经开始的跳跃，不能用一次弱上浮覆盖离水起跳速度。
+			velocity.y = jump_speed * _buff_jump_mul()
+			_jump_hold_remaining = maxf(0.0, minf(_jump_hold_remaining, hold_duration) - delta)
 		else:
 			_jump_hold_remaining = 0.0
 		if not on_floor_now or did_jump:
-			velocity.y = minf(MAX_FALL_SPEED, velocity.y + GRAVITY * delta)
+			velocity.y = minf(max_sink, velocity.y + gravity * delta)
 			if velocity.y > GLIDE_FALL_SPEED and is_gliding():
 				velocity.y = GLIDE_FALL_SPEED
-		# 下平台: 按 S/Down 时关掉 bit 2 (木平台) 0.3s, 玩家从平台落下
 		if on_floor_now and _down_held():
 			_drop_through_t = DROP_THROUGH_DURATION
+
 	# 平台 mask 切换 (放最外层, 任何状态下 timer 都能跑完)
 	if _drop_through_t > 0.0:
 		_drop_through_t = max(0.0, _drop_through_t - delta)
@@ -523,6 +527,7 @@ func _physics_process(delta: float) -> void:
 	elif collision_mask != 5:
 		collision_mask = 5   # 恢复 bit 0+2
 
+	_step_up(delta)
 	# 记录跳前 vy 给落地用
 	var pre_move_vy := velocity.y
 
@@ -540,7 +545,7 @@ func _physics_process(delta: float) -> void:
 
 	# 坠落伤害：按摔落高度算 (用户规则: 摔超过 10 格, 每多 1 格 +3). 水/滑翔不疼。
 	# _fall_peak_y 是腾空时记下的最高点 (y 最小); 落地这一帧的 y 减去它 = 摔了多高。
-	if not _was_on_floor and on_floor_after and not in_water:
+	if not _was_on_floor and on_floor_after and not in_water and not _is_in_water():
 		var fall_tiles: float = max(0.0, global_position.y - _fall_peak_y) / float(TILE_SIZE)
 		var fall_dmg: int = fall_damage_for_height(fall_tiles)
 		if fall_dmg > 0:
@@ -548,7 +553,7 @@ func _physics_process(delta: float) -> void:
 			if hp_fall != null and hp_fall.has_method("take_damage"):
 				hp_fall.take_damage(fall_dmg)
 	# 更新最高点: 在地面就重置到当前 (没在摔); 腾空就记最高 (y 最小值)
-	if on_floor_after:
+	if on_floor_after or in_water or _is_in_water():
 		_fall_peak_y = global_position.y
 	else:
 		_fall_peak_y = min(_fall_peak_y, global_position.y)

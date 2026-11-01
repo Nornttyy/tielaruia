@@ -2,6 +2,7 @@
 # Terraria 风血厚怪: HP 90 / 接触 16 dmg. 跳得高 (-340 撞墙跳).
 # 死了掉 1-2 个好东西 (gold_ingot / iron_ingot / diamond_ore 随机).
 extends CharacterBody2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 const MobNav = preload("res://scripts/entities/mob_nav.gd")
 
@@ -35,10 +36,12 @@ var _nav = MobNav.new()   # 寻路跟随器
 
 
 func _ready() -> void:
+	_nav.jump_height = 6
 	# 难度缩放放最前面 (.new() 没 sprite 子节点时仍能正确生效)
 	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
 	sprite.sprite_frames = ArtCache.mimic_frames
+	Metrics.align_feet(sprite)
 	sprite.play("attack")  # 死人箱出生就张嘴扑过来, 没有 idle
 	add_to_group("mimics")
 	add_to_group("slimes")  # 共享剑挥击范围 + 死亡组清理
@@ -75,23 +78,21 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 	# 追玩家
 	var player := _find_player()
-	var used_path: bool = false
 	if player != null and global_position.distance_to(player.global_position) <= AGGRO_RANGE_PX:
 		var dir: float = signf(player.global_position.x - global_position.x)
 		var nd: int = _nav.steer_node(self, player, TILE_SIZE, delta)   # A* 寻路优先
 		if nd != MobNav.NO_PATH:
-			used_path = true
 			dir = float(nd)
 			if _nav.want_jump and is_on_floor() and _jump_cooldown <= 0.0:
 				velocity.y = JUMP_VY
 				_jump_cooldown = 0.6
 		velocity.x = dir * WALK_SPEED
-		sprite.flip_h = dir < 0
+		MobNav.face(sprite, dir)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, 120.0 * delta)
 	move_and_slide()
 	# 反应式避障 (没走寻路才兜底): 撞墙 + 落地 → 跳 (mimic 跳得高)
-	if not used_path and is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
+	if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
 		velocity.y = JUMP_VY
 		_jump_cooldown = 0.6
 	_check_player_contact()
@@ -113,9 +114,7 @@ func _check_player_contact() -> void:
 	if player == null:
 		return
 	# AABB 盒重叠 (修踩头躲 bug). Mimic 体型 12×14 大一点, dx 半径 11.
-	var dx: float = abs(player.global_position.x - global_position.x)
-	var dy: float = player.global_position.y - global_position.y
-	if dx > 11.0 or dy < -10.0 or dy > 22.0:
+	if not Metrics.touching(self, player):
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

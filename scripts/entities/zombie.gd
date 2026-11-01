@@ -1,6 +1,7 @@
 # 僵尸: 夜间地表刷怪. 走路向玩家移动, 接触造成伤害, HP=15, 死亡掉 bone.
 # 与 slime 区别: 不跳, 持续走动 (slow walk), 视线半径更大.
 extends CharacterBody2D
+const Metrics = preload("res://scripts/art/world_metrics.gd")
 
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
@@ -42,6 +43,7 @@ var _nav = MobNav.new()         # 寻路跟随器 (节流重算 A* + 路点跟�
 func _ready() -> void:
 	add_child(preload("res://scripts/audio/creature_voice.gd").new())
 	sprite.sprite_frames = sprite_frames_override if sprite_frames_override != null else ArtCache.zombie_frames
+	Metrics.align_feet(sprite)
 	sprite.play("idle")
 	add_to_group(entity_group)
 	add_to_group("slimes")  # 共享 slime 攻击/查找逻辑 (剑挥范围/出生点死亡清除)
@@ -93,24 +95,17 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 
 	var player := _find_player()
-	var used_path: bool = false
 	if player != null and global_position.distance_to(player.global_position) <= aggro_range_px:
 		# 优先 A* 寻路: 算出朝下一路点的方向 + 要不要跳; 没路 (太远/翻不过) 退回反应式"朝玩家走"。
 		var dir: float = signf(player.global_position.x - global_position.x)
-		var cm = _get_cm()
-		if cm != null:
-			var from_t := Vector2i(int(floor(global_position.x / TILE_SIZE)), int(floor(global_position.y / TILE_SIZE)))
-			var goal_t := Vector2i(int(floor(player.global_position.x / TILE_SIZE)), int(floor(player.global_position.y / TILE_SIZE)))
-			var nd: int = _nav.steer(cm, from_t, goal_t, delta)
-			if nd != MobNav.NO_PATH:
-				used_path = true
-				dir = float(nd)
-				# 寻路要跳 (爬台阶/跨坑) → 落地 + 冷却好就跳
-				if _nav.want_jump and is_on_floor() and _jump_cooldown <= 0.0:
-					velocity.y = JUMP_VY
-					_jump_cooldown = 0.5
+		var nd: int = _nav.steer_node(self, player, TILE_SIZE, delta)
+		if nd != MobNav.NO_PATH:
+			dir = float(nd)
+			if _nav.want_jump and is_on_floor() and _jump_cooldown <= 0.0:
+				velocity.y = JUMP_VY
+				_jump_cooldown = 0.5
 		velocity.x = dir * walk_speed
-		sprite.flip_h = dir < 0
+		MobNav.face(sprite, dir)
 		if sprite.animation != "walk":
 			sprite.play("walk")
 	else:
@@ -120,7 +115,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	# 反应式避障 (只在没走寻路时兜底): 撞墙 + 落地 → 小跳。玩家在下方时不跳 (免得砸头顶/飞过去)。
-	if not used_path and is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
+	if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
 		var skip_jump: bool = false
 		if player != null:
 			if player.global_position.y - global_position.y > float(TILE_SIZE) * 1.5:
@@ -185,9 +180,7 @@ func _check_player_contact() -> void:
 		return
 	# AABB 盒重叠 (修踩头躲 bug): 玩家 10×22, 僵尸 10×18.
 	# dx ≤ 10 + 玩家半宽 5 ≈ 10; dy 玩家在僵尸下方 (dy>0) 到玩家踩僵尸头上 (dy=-18).
-	var dx: float = abs(player.global_position.x - global_position.x)
-	var dy: float = player.global_position.y - global_position.y
-	if dx > 10.0 or dy < -10.0 or dy > 22.0:
+	if not Metrics.touching(self, player):
 		return
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp == null:

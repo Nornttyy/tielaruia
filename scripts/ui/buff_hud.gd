@@ -9,13 +9,20 @@ const BAR_H := 4
 
 # 每种 buff 的底色 (暖色, 一眼区分)
 const KIND_COLOR := {
+	"well_fed": Color8(236, 184, 92),
+	"plenty_satisfied": Color8(248, 159, 73),
+	"exquisitely_stuffed": Color8(255, 116, 92),
+	"potion_sickness": Color8(180, 140, 196),
 	"speed":  Color8(90, 200, 120),    # 绿: 跑快
 	"jump":   Color8(120, 170, 255),   # 蓝: 跳高
 	"mining": Color8(230, 180, 70),    # 橙黄: 挖快
 	"regen":  Color8(230, 90, 110),    # 红: 回血
 }
 # 8x8 像素字形 (X=画, .=透明)
+const FOOD_GLYPH := ["........", ".XXXXXX.", "XXXXXXXX", ".XXXXXX.", "..XXXX..", "...XX...", "..XXXX..", "........"]
 const KIND_GLYPH := {
+	"well_fed": FOOD_GLYPH, "plenty_satisfied": FOOD_GLYPH, "exquisitely_stuffed": FOOD_GLYPH,
+	"potion_sickness": ["..XXXX..", "...XX...", "..XXXX..", ".XX..XX.", ".X.XX.X.", ".X.XX.X.", ".XX..XX.", "..XXXX.."],
 	"speed":  ["........", "..XX.X..", ".XXXXX..", "XXXX.X..", ".XXXXX..", "..XX.X..", "........", "........"],
 	"jump":   ["...XX...", "..XXXX..", ".XX..XX.", "X.X..X.X", "...XX...", "...XX...", "..XXXX..", "........"],
 	"mining": [".....XX.", "....XXX.", "...XXX..", "..XXX.X.", ".XXX..X.", "XXX.....", "X.......", "........"],

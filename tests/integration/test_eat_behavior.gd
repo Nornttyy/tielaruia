@@ -1,86 +1,76 @@
-# 吃食物行为: 满血时不能吃 (避免误点浪费), 缺血时按住 2s 进度满了吃一口.
+# 消耗品短动作、食物增益与治疗冷却；不启动大地图，不触碰存档。
 extends GutTest
-
-const MainScene = preload("res://scenes/main.tscn")
-
-
-func _setup_game() -> Dictionary:
-	var main = MainScene.instantiate()
-	add_child_autofree(main)
-	main.boot_to_game()
-	await wait_frames(3)
-	var world: Node2D = main.get_node("World")
-	var player: Node2D = world.get_player()
-	return {
-		"main": main, "world": world, "player": player,
-		"action": player.get_node("PlayerAction"),
-		"inv": player.get_node("PlayerInventory"),
-		"hp": player.get_node("PlayerHealth"),
-	}
-
-
-func _equip(ctx: Dictionary, item_id: String, count: int) -> void:
-	var inv: Node = ctx["inv"]
-	inv.pickup(item_id, count)
-	for i in inv.inventory.slots.size():
-		var s = inv.inventory.slots[i]
-		if s != null and s.item_id == item_id:
-			inv.set_hotbar_selection(i)
-			return
-
-
-# 满血时按住右键: 不消耗食物, _eat_item_id 保持空
-func test_full_hp_blocks_eat():
-	var ctx: Dictionary = await _setup_game()
-	var hp: Node = ctx["hp"]
-	# 确保满血
-	hp.current_health = hp.MAX_HEALTH
-	_equip(ctx, "apple", 3)
-	var count_before: int = ctx["inv"].inventory.slots[0].count
-	ctx["action"].secondary_held_override = true
-	# 等远超过 EAT_DURATION_SEC (2s) 的帧数 (200 帧 = ~3.3s)
-	await wait_frames(200)
-	ctx["action"].secondary_held_override = false
-	var slot = ctx["inv"].inventory.slots[0]
-	# slot 可能是 null (如果食物消耗光) 或 count 不变
-	var count_after: int = 0 if slot == null else slot.count
-	assert_eq(count_after, count_before, "满血按住右键 2s 不应消耗食物")
-	# eat 状态也不应留着
-	assert_eq(ctx["action"]._eat_item_id, "", "满血不进入 eating 状态")
-
-
-# 半血时按住右键: 2s 后消耗 1 个食物 + 回血
-func test_low_hp_allows_eat():
-	var ctx: Dictionary = await _setup_game()
-	var hp: Node = ctx["hp"]
-	hp.current_health = 10   # 远低于 MAX_HEALTH=100
-	_equip(ctx, "apple", 3)
-	var count_before: int = ctx["inv"].inventory.slots[0].count
-	var hp_before: int = hp.current_health
-	ctx["action"].secondary_held_override = true
-	await wait_frames(200)  # > 2s EAT_DURATION
-	ctx["action"].secondary_held_override = false
-	var slot = ctx["inv"].inventory.slots[0]
-	var count_after: int = 0 if slot == null else slot.count
-	assert_lt(count_after, count_before, "缺血按住 2s 应消耗至少 1 个食物")
-	assert_gt(hp.current_health, hp_before, "缺血吃苹果应回血")
-
-
-# 吃到一半被治疗到满血 → 立刻中断 (不消耗本次食物)
-func test_heal_to_full_during_eat_cancels():
-	var ctx: Dictionary = await _setup_game()
-	var hp: Node = ctx["hp"]
-	hp.current_health = 50
-	_equip(ctx, "apple", 3)
-	var count_before: int = ctx["inv"].inventory.slots[0].count
-	ctx["action"].secondary_held_override = true
-	# 吃几帧 (远小于 EAT_DURATION 的 120 帧)
-	await wait_frames(30)
-	# 中途把玩家治满
-	hp.current_health = hp.MAX_HEALTH
-	# 再等远超过 EAT_DURATION 的时间
-	await wait_frames(200)
-	ctx["action"].secondary_held_override = false
-	var slot = ctx["inv"].inventory.slots[0]
-	var count_after: int = 0 if slot == null else slot.count
-	assert_eq(count_after, count_before, "中途回满血应中断进食, 不消耗食物")
+const PlayerScene = preload("res://scenes/player/player.tscn")
+var player: CharacterBody2D
+var action: Node
+var inventory: Node
+var health: Node
+var buffs: Node
+func before_each():
+	player = PlayerScene.instantiate()
+	add_child_autofree(player)
+	player.process_mode = Node.PROCESS_MODE_DISABLED
+	action = player.get_node("PlayerAction")
+	inventory = player.get_node("PlayerInventory")
+	health = player.get_node("PlayerHealth")
+	buffs = player.get_node("PlayerBuffs")
+	action.secondary_held_override = false
+	action.primary_override = false
+	inventory.inventory.slots.fill(null)
+func equip(id: String):
+	inventory.inventory.slots[0] = {"item_id": id, "count": 3}
+	inventory.set_hotbar_selection(0)
+	inventory.inventory_changed.emit()
+func tick(n: int):
+	for i in n: action._physics_process(1.0 / 60.0)
+func test_single_click_finishes_food_use_after_release_without_healing():
+	equip("apple")
+	health.current_health = 40
+	action.primary_override = true
+	tick(1)
+	action.primary_override = false
+	tick(15)
+	assert_eq(inventory.inventory.slots[0].count, 3)
+	tick(1)
+	assert_eq(inventory.inventory.slots[0].count, 2)
+	assert_eq(health.current_health, 40, "水果提供饱食增益，不直接回血")
+	assert_true(buffs.is_active("well_fed"))
+	assert_almost_eq(buffs.remaining("well_fed"), 300.0, 0.01)
+func test_full_health_can_eat_once_but_holding_does_not_repeat():
+	equip("apple")
+	health.current_health = health.MAX_HEALTH
+	action.primary_override = true
+	tick(180)
+	assert_eq(inventory.inventory.slots[0].count, 2)
+	assert_true(buffs.is_active("well_fed"))
+func test_mushroom_heals_fifteen_and_blocks_next_healing_use():
+	equip("mushroom")
+	health.current_health = 20
+	action.primary_override = true
+	tick(17)
+	assert_eq(health.current_health, 35)
+	assert_true(buffs.is_active("potion_sickness"))
+	action.primary_override = false
+	tick(1)
+	action.primary_override = true
+	tick(17)
+	assert_eq(inventory.inventory.slots[0].count, 2)
+	assert_eq(health.current_health, 35)
+func test_latest_food_replaces_previous_food_tier():
+	buffs.apply("well_fed", 300.0)
+	buffs.apply("exquisitely_stuffed", 900.0)
+	assert_false(buffs.is_active("well_fed"))
+	assert_eq(buffs.defense_bonus(), 4)
+	assert_almost_eq(buffs.speed_mul(), 1.4, 0.0001)
+	buffs.apply("plenty_satisfied", 480.0)
+	assert_false(buffs.is_active("exquisitely_stuffed"))
+	assert_eq(buffs.defense_bonus(), 3)
+func test_raw_fish_are_ingredients_and_full_mana_does_not_waste_potion():
+	assert_false(ItemDB.is_food("salmon"))
+	assert_false(ItemDB.is_food("tuna"))
+	equip("mana_potion")
+	var mana = player.get_node("PlayerMana")
+	mana.current_mana = mana.MAX_MANA
+	action.primary_override = true
+	tick(17)
+	assert_eq(inventory.inventory.slots[0].count, 3)

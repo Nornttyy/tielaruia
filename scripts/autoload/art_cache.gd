@@ -399,26 +399,26 @@ func player_frames_for(appearance: Dictionary) -> SpriteFrames:
 
 func _build_entities() -> void:
 	player_frames = OriginalSprites.player_frames(PlayerArt.DEFAULT_APPEARANCE)
-	slime_frames = OriginalSprites.enemy_frames("NPC_1.png", Vector2i(32, 26), Vector2i(16, 12), {"idle": [0, 1], "hop": [1, 0, 1]})
+	slime_frames = OriginalSprites.enemy_frames("NPC_1.png", Vector2i(32, 26), Vector2i(24, 20), {"idle": [0, 1], "hop": [1, 0, 1]})
 	slime_crown_tex = SlimeArt.build_crown_texture()   # 史莱姆王头顶王冠 (单独贴图)
-	zombie_frames = OriginalSprites.enemy_frames("NPC_3.png", Vector2i(38, 48), Vector2i(16, 24), {"idle": [0], "walk": [0, 1, 2]})
+	zombie_frames = OriginalSprites.enemy_frames("NPC_3.png", Vector2i(38, 48), Vector2i(29, 36), {"idle": [0], "walk": [0, 1, 2]})
 	cow_frames = CowArt.build_sprite_frames()
 	sheep_frames = SheepArt.build_sprite_frames()
 	pig_frames = PigArt.build_sprite_frames()
 	# 蜘蛛: OpenGameArt PNG sprite sheet (Heather Lee Harvey, CC-BY 3.0)
 	spider_frames = preload("res://scripts/art/spider_loader.gd").build_sprite_frames()
 	# 恶魔眼: OpenGameArt head.png 缩 32x18 (JacPete, CC0)
-	demon_eye_frames = OriginalSprites.enemy_frames("NPC_2.png", Vector2i(38, 24), Vector2i(24, 16), {"idle": [0, 1], "fly": [0, 1]})
+	demon_eye_frames = OriginalSprites.enemy_frames("NPC_2.png", Vector2i(38, 24), Vector2i(29, 18), {"idle": [0, 1], "fly": [0, 1]})
 	# Mimic: 自画 ASCII (chest + 红嘴牙)
-	mimic_frames = MimicArt.build_sprite_frames()
+	mimic_frames = OriginalSprites.enemy_frames("NPC_85.png", Vector2i(32, 46), Vector2i(24, 35), {"idle": [0], "attack": [1, 2, 3, 4, 5]})
 	# 骨架战士: 地狱近战怪
-	skeleton_frames = SkeletonArt.build_sprite_frames()
+	skeleton_frames = OriginalSprites.enemy_frames("NPC_21.png", Vector2i(40, 56), Vector2i(30, 42), {"idle": [0], "walk": range(1, 15), "attack": [1, 2, 3]})
 	# 火魔 (Imp): 飞行 + 火球远程
-	imp_frames = ImpArt.build_sprite_frames()
+	imp_frames = OriginalSprites.enemy_frames("NPC_24.png", Vector2i(54, 56), Vector2i(41, 42), {"idle": [0], "move": range(4), "attack": range(4, 10)})
 	# 地狱蜂: 飞行 + 冲撞
-	hell_wasp_frames = HellWaspArt.build_sprite_frames()
+	hell_wasp_frames = OriginalSprites.enemy_frames("NPC_42.png", Vector2i(48, 40), Vector2i(36, 30), {"idle": [0, 1, 2], "move": [0, 1, 2], "attack": [0, 1, 2]})
 	# 哈比鸟: 天空浮岛飞行怪
-	harpy_frames = HarpyArt.build_sprite_frames()
+	harpy_frames = OriginalSprites.enemy_frames("NPC_48.png", Vector2i(100, 86), Vector2i(75, 65), {"idle": range(6), "move": range(6), "attack": range(6)})
 	# 火球投射物 (Imp + 地狱法杖红弹). 法杖另两种元素 (蓝/绿) 单独建.
 	fireball_frames = FireballArt.build_sprite_frames("fire")
 	spell_frames_ice = FireballArt.build_sprite_frames("ice")
@@ -441,7 +441,7 @@ func _build_entities() -> void:
 	bomb_proj_frames = SpriteFrames.new()
 	bomb_proj_frames.add_frame("default", ItemsArt.bomb_proj_texture())
 	# 木乃伊: 金字塔守卫
-	mummy_frames = MummyArt.build_sprite_frames()
+	mummy_frames = OriginalSprites.enemy_frames("NPC_78.png", Vector2i(40, 56), Vector2i(30, 42), {"idle": [0], "walk": range(16)})
 	# Jaguar 已删 (用户要求)
 
 

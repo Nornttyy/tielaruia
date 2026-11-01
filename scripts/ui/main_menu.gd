@@ -11,7 +11,7 @@ const DIFF_EASY := 0
 const DIFF_NORMAL := 1
 const DIFF_HARD := 2
 
-const UIStyle = preload("res://scripts/ui/ui_style.gd")
+const UIStyle = preload("res://scripts/ui/menu_style.gd")
 const CharacterPanelsScene = preload("res://scripts/ui/character_panels.gd")
 const MenuSceneArt = preload("res://scripts/art/menu_scene_art.gd")
 const OriginalSprites = preload("res://scripts/art/terraria_sprite_pack.gd")
@@ -81,9 +81,11 @@ func _ready() -> void:
 	_start_title_breathing()
 	_setup_buttons()
 
+	_layout_submenus()
 	_setup_settings_panel()
 	_setup_new_game_panel()
 	_setup_world_select_panel()
+	_setup_settings_tabs()
 	_blue_dialogs()   # 弹窗面板 + 按钮统一蓝色
 	# i18n: 用当前语言覆盖 .tscn 默认中文; 切语言时再调一次刷新.
 	_refresh_localized_text()
@@ -139,9 +141,9 @@ func _refresh_localized_text() -> void:
 
 	# 世界选择面板
 	$WorldSelectPanel/VBox/TitleLabel.text = Locale.t("world_select_title")
-	$WorldSelectPanel/VBox/NewWorldButton.text = Locale.t("world_new")
+	$WorldSelectPanel/VBox/Footer/NewWorldButton.text = Locale.t("world_new")
 	$WorldSelectPanel/VBox/EmptyLabel.text = Locale.t("world_select_empty")
-	$WorldSelectPanel/VBox/BackButton.text = Locale.t("world_back")
+	$WorldSelectPanel/VBox/Footer/BackButton.text = Locale.t("world_back")
 
 	# 新建世界面板
 	$NewGamePanel/VBox/TitleLabel.text = Locale.t("newgame_title")
@@ -568,12 +570,7 @@ func _setup_buttons() -> void:
 		if entry[0] == "成就": box.move_child(btn, 2)
 		elif entry[0] == "创意工坊": box.move_child(btn, 3)
 		btn.pressed.connect(func():
-			var dialog := AcceptDialog.new()
-			dialog.title = entry[0]
-			dialog.dialog_text = entry[1]
-			add_child(dialog)
-			dialog.popup_centered(Vector2i(430, 150))
-			dialog.confirmed.connect(dialog.queue_free)
+			UIStyle.show_dialog(self, entry[0], entry[1])
 		)
 	var quit := Button.new()
 	quit.text = "退出"
@@ -581,10 +578,7 @@ func _setup_buttons() -> void:
 	box.add_child(quit)
 	quit.pressed.connect(func():
 		if OS.has_feature("web"):
-			var dialog := AcceptDialog.new()
-			dialog.dialog_text = "关闭浏览器标签页即可退出。"
-			add_child(dialog)
-			dialog.popup_centered()
+			UIStyle.show_dialog(self, "退出", "关闭浏览器标签页即可退出。")
 		else: get_tree().quit()
 	)
 
@@ -645,44 +639,7 @@ func _style_buttons_recursive(node: Node) -> void:
 
 
 func _apply_button_style(btn: Button) -> void:
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = BTN_NORMAL_BG
-	# 用户要求: 去掉边框 (border 全 0) + 圆角 (更圆润)
-	normal.border_width_left = 0
-	normal.border_width_top = 0
-	normal.border_width_right = 0
-	normal.border_width_bottom = 0
-	normal.corner_radius_top_left = 12
-	normal.corner_radius_top_right = 12
-	normal.corner_radius_bottom_left = 12
-	normal.corner_radius_bottom_right = 12
-	normal.content_margin_left = 18
-	normal.content_margin_right = 18
-	normal.content_margin_top = 9
-	normal.content_margin_bottom = 9
-	btn.add_theme_stylebox_override("normal", normal)
-
-	var hover := normal.duplicate() as StyleBoxFlat
-	hover.bg_color = BTN_HOVER_BG
-	hover.border_color = BTN_HOVER_BORDER
-	btn.add_theme_stylebox_override("hover", hover)
-
-	var pressed := normal.duplicate() as StyleBoxFlat
-	pressed.bg_color = BTN_PRESSED_BG
-	pressed.content_margin_top = 10
-	pressed.content_margin_bottom = 6
-	btn.add_theme_stylebox_override("pressed", pressed)
-
-	var disabled := normal.duplicate() as StyleBoxFlat
-	disabled.bg_color = Color8(40, 30, 20)
-	disabled.border_color = Color8(100, 80, 60)
-	btn.add_theme_stylebox_override("disabled", disabled)
-
-	btn.add_theme_color_override("font_color", BTN_NORMAL_TEXT)
-	btn.add_theme_color_override("font_hover_color", BTN_HOVER_TEXT)
-	btn.add_theme_color_override("font_pressed_color", BTN_NORMAL_TEXT)
-	btn.add_theme_color_override("font_disabled_color", Color8(120, 100, 80))
-	btn.add_theme_font_size_override("font_size", 18)
+	UIStyle.style_button(btn)
 
 
 func _on_new_game_pressed() -> void:
@@ -725,21 +682,32 @@ func _refresh_saves_list() -> void:
 
 # 创建一行存档: [世界名 难度]  [进入]  [删除]
 func _make_save_row(parent: VBoxContainer, save_name: String, data) -> void:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UIStyle.panel())
+	card.custom_minimum_size.y = 86
+	parent.add_child(card)
 	var row := HBoxContainer.new()
-	row.custom_minimum_size = Vector2(0, 44)
-	row.size_flags_horizontal = 3
-	# 世界名 + 难度 (难度文字按当前语言)
+	row.add_theme_constant_override("separation", 16)
+	card.add_child(row)
+	var icon := TextureRect.new()
+	icon.custom_minimum_size = Vector2(62, 58)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture = OriginalSprites.crown(0)
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	row.add_child(icon)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
 	var label := Label.new()
-	var diff_key: String = "save_diff_normal"
-	if data.difficulty == DIFF_EASY:
-		diff_key = "save_diff_easy"
-	elif data.difficulty == DIFF_HARD:
-		diff_key = "save_diff_hard"
-	label.text = "%s   [%s]" % [save_name, Locale.t(diff_key)]
-	label.size_flags_horizontal = 3
-	label.add_theme_color_override("font_color", Color(0.949, 0.761, 0.396, 1.0))
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(label)
+	label.text = save_name
+	label.add_theme_font_size_override("font_size", 22)
+	info.add_child(label)
+	var details := Label.new()
+	details.text = "%s · %s世界 · %s" % [["简单", "普通", "困难"][clampi(data.difficulty, 0, 2)], ["小", "中", "大"][clampi(data.world_size, 0, 2)], "创造" if data.creative_mode else "生存"]
+	details.add_theme_font_size_override("font_size", 16)
+	details.modulate = Color8(197, 215, 250)
+	info.add_child(details)
 	# 进入按钮
 	var enter_btn := Button.new()
 	enter_btn.text = Locale.t("world_enter")
@@ -754,26 +722,13 @@ func _make_save_row(parent: VBoxContainer, save_name: String, data) -> void:
 	_apply_button_style(del_btn)
 	del_btn.pressed.connect(func(): _confirm_delete_save(save_name))
 	row.add_child(del_btn)
-	parent.add_child(row)
 
 
 # 弹 ConfirmationDialog: 真的删存档吗? OK → 删 + 刷新; 取消 → 啥也不做
 func _confirm_delete_save(save_name: String) -> void:
-	var dlg := ConfirmationDialog.new()
-	dlg.title = Locale.t("delete_save_title")
-	dlg.dialog_text = Locale.t("delete_save_message") % save_name
-	dlg.ok_button_text = Locale.t("delete_save_ok")
-	dlg.get_cancel_button().text = Locale.t("delete_save_cancel")
-	dlg.confirmed.connect(func():
+	UIStyle.show_dialog(self, Locale.t("delete_save_title"), Locale.t("delete_save_message") % save_name, func():
 		SaveManager.delete_save_by_name(save_name)
-		_refresh_saves_list()
-		dlg.queue_free()
-	)
-	dlg.canceled.connect(func(): dlg.queue_free())
-	# 用户按 X 关 (close_requested) — 老代码漏接, 对话框留 scene tree leak
-	dlg.close_requested.connect(func(): dlg.queue_free())
-	add_child(dlg)
-	dlg.popup_centered()
+		_refresh_saves_list(), Locale.t("delete_save_ok"))
 
 
 # 点存档行的 "进入" → 用对应名字读存档进游戏
@@ -882,8 +837,8 @@ func _on_settings_back_pressed() -> void:
 
 func _setup_world_select_panel() -> void:
 	var panel := $WorldSelectPanel
-	var new_btn: Button = panel.get_node("VBox/NewWorldButton")
-	var back_btn: Button = panel.get_node("VBox/BackButton")
+	var new_btn: Button = panel.get_node("VBox/Footer/NewWorldButton")
+	var back_btn: Button = panel.get_node("VBox/Footer/BackButton")
 	_apply_button_style(new_btn)
 	_apply_button_style(back_btn)
 	new_btn.pressed.connect(_on_create_world_pressed)
@@ -1152,6 +1107,7 @@ func _refresh_multiplayer_status() -> void:
 func _add_settings_dropdown_row(label_text: String, options: Array, selected_idx: int, on_select: Callable) -> void:
 	var vbox: VBoxContainer = $SettingsPanel/VBox
 	var row := HBoxContainer.new()
+	row.name = "FrameRateRow" if label_text == "帧率" else "QualityRow"
 	var lbl := Label.new()
 	lbl.text = label_text
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1283,3 +1239,64 @@ func _setup_building_preview_button() -> void:
 	_apply_button_style(world_btn)
 	$ButtonLayer.add_child(world_btn)
 	world_btn.pressed.connect(func(): start_game.emit({"world_preview": true}))
+
+func _layout_submenus() -> void:
+	for name in ["WorldSelectPanel", "NewGamePanel", "SettingsPanel", "MultiplayerPanel"]:
+		var panel: Control = get_node(name)
+		panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		panel.position = Vector2(280, 240)
+		panel.size = Vector2(720, 440)
+		var box: VBoxContainer = panel.get_node("VBox")
+		box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		box.offset_left = 22
+		box.offset_right = -22
+		box.offset_top = 14
+		box.offset_bottom = -14
+		box.add_theme_constant_override("separation", 10)
+		var title: Label = box.get_node("TitleLabel")
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		title.add_theme_font_size_override("font_size", 26)
+	var world_box := $WorldSelectPanel/VBox
+	var footer := HBoxContainer.new()
+	footer.name = "Footer"
+	footer.add_theme_constant_override("separation", 24)
+	world_box.add_child(footer)
+	for name in ["BackButton", "NewWorldButton"]:
+		var button: Button = world_box.get_node(name)
+		button.reparent(footer)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	$WorldSelectPanel/VBox/SavesScroll.custom_minimum_size.y = 275
+	$WorldSelectPanel/VBox/SavesScroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+func _setup_settings_tabs() -> void:
+	var box := $SettingsPanel/VBox
+	var tabs := HBoxContainer.new()
+	tabs.name = "Categories"
+	tabs.add_theme_constant_override("separation", 10)
+	box.add_child(tabs)
+	box.move_child(tabs, 1)
+	var groups := [
+		["VolumeRow", "LanguageRow", "NameRow"],
+		["ZoomRow", "FrameRateRow", "QualityRow", "EnemyHpBarRow", "EnemyHpNumberRow"],
+		["ScrollWheelRow", "ContinuousPlaceRow"],
+	]
+	var button_group := ButtonGroup.new()
+	for i in 3:
+		var button := Button.new()
+		button.text = ["常规", "画面", "操作"][i]
+		button.toggle_mode = true
+		button.button_group = button_group
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tabs.add_child(button)
+		button.pressed.connect(func():
+			for j in groups.size():
+				for row_name in groups[j]: box.get_node(row_name).visible = j == i)
+		button.button_pressed = i == 0
+	for j in groups.size():
+		for row_name in groups[j]:
+			box.get_node(row_name).visible = j == 0
+			box.get_node(row_name).custom_minimum_size.y = 38
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(spacer)
+	box.move_child(spacer, box.get_node("BackButton").get_index())

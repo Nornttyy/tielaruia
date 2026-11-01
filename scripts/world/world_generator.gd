@@ -9,12 +9,12 @@ const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
 const BuildingArt = preload("res://scripts/art/building_art.gd")
 
 const SURFACE_BASE := 0.45       # 地表平均高度 (相对世界 0..1)
-const SURFACE_AMP := 0.11        # 地表起伏振幅 (大丘大谷但顺滑; 山高主要靠 MOUNTAIN_BOOST 撑)
+const SURFACE_AMP := 0.085        # 地表起伏振幅 (大丘大谷但顺滑; 山高主要靠 MOUNTAIN_BOOST 撑)
 const DIRT_DEPTH := 6            # 地表下泥土层厚度
 # 山区 noise: 低频 → 宽山区, max(0, n) 作为山高度系数 (实测 Perlin max ~0.31)
 # MOUNTAIN_BOOST 对世界高度的比例: 0.80 × 0.31 × 256 = 最高峰比平均地表再高 ~63 格 (大山)
 const MOUNTAIN_NOISE_FREQ := 0.008
-const MOUNTAIN_BOOST := 0.80     # 0.40→0.80: 山明显更高更壮观 (用户嫌山矮)
+const MOUNTAIN_BOOST := 0.35     # 0.40→0.80: 山明显更高更壮观 (用户嫌山矮)
 const MOUNTAIN_PIT_THRESHOLD := 0.12  # mountain_factor > 0.12 = 山区 (实测约占 16% 列)
 
 # Biome (生态群系) — 泰拉瑞亚风: 每种 biome 全世界只有一块, 固定方位.
@@ -349,6 +349,8 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 	# 露天矿洞: 漏斗坑 (pit) 或 窄缝 (crack) 直通地表, 玩家能跳下去
 	_carve_open_pits_chunk(c, chunk_heights, world_seed, chunk_x, chunk_width, height)
 
+	_apply_biome_geology(c, chunk_heights, world_seed, biome_centers, height)
+
 	# 地狱: y > HELL_DEPTH 区域换成 HELL_STONE + 散布 LAVA 池 + 周围 OBSIDIAN 环 + 火果挂顶
 	_apply_hell_biome_chunk(c, world_seed, chunk_x, chunk_width, height)
 
@@ -403,8 +405,43 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 		for y in column.size():
 			column[y] = preload("res://scripts/items/original_content.gd").generated_tile(column[y])
 	ClassicFeatures.apply(c, classic_plan(world_seed, height), _estimate_surf.bind(world_seed, height), world_seed)
+	_trim_unsupported_trees(c)
 	return c
 
+
+static func _trim_unsupported_trees(c: Chunk) -> void:
+	# 裂谷、建筑最后盖入；被挖掉树根的旧树不能留在空中。
+	for x in c.tiles.size():
+		for y in range(c.tiles[x].size() - 2, 0, -1):
+			if c.tiles[x][y] not in [Tiles.LOG, Tiles.LOG_TOP]: continue
+			var below: int = c.tiles[x][y + 1]
+			if below == Tiles.LOG or Tiles.is_solid(below): continue
+			c.tiles[x][y] = Tiles.AIR
+			if x > 0 and c.tiles[x - 1][y] in [Tiles.BRANCH_L, Tiles.LOG_ROOT_L]: c.tiles[x - 1][y] = Tiles.AIR
+			if x + 1 < c.tiles.size() and c.tiles[x + 1][y] in [Tiles.BRANCH_R, Tiles.LOG_ROOT_R]: c.tiles[x + 1][y] = Tiles.AIR
+
+
+# 群系延伸到地下，边界随深度自然展开；矿石、液体和空气不被整列覆盖。
+static func _apply_biome_geology(c: Chunk, heights: Dictionary, seed_value: int, centers: Dictionary, height: int) -> void:
+	var edge_noise := FastNoiseLite.new()
+	edge_noise.seed = seed_value + 9083
+	edge_noise.frequency = 0.045
+	for lx in c.tiles.size():
+		var x: int = c.chunk_x * 64 + lx
+		var surface: int = heights[x]
+		for y in range(surface + 1, mini(height - 30, surface + 112)):
+			var depth := y - surface
+			var tid: int = c.tiles[lx][y]
+			var snowy := absf(x - centers[BIOME_SNOW]) < 100 + depth * 0.35 + edge_noise.get_noise_2d(x, y) * 18
+			var jungle := absf(x - centers[BIOME_JUNGLE]) < 100 + depth * 0.45 + edge_noise.get_noise_2d(x + 300, y) * 20
+			if snowy:
+				if tid in [Tiles.DIRT, Tiles.SNOW_DIRT]: c.tiles[lx][y] = Tiles.SNOW
+				elif tid in [Tiles.STONE, Tiles.DEEP_STONE, Tiles.COAL_ORE]: c.tiles[lx][y] = Tiles.ICE
+			elif jungle:
+				if tid in [Tiles.DIRT, Tiles.JUNGLE_DIRT, Tiles.STONE, Tiles.DEEP_STONE, Tiles.COAL_ORE]:
+					c.tiles[lx][y] = Tiles.MUD
+					if (y > 0 and c.tiles[lx][y - 1] == Tiles.AIR) or (y + 1 < height and c.tiles[lx][y + 1] == Tiles.AIR):
+						c.tiles[lx][y] = Tiles.JUNGLE_GRASS
 
 # 沙漠地下: 矿洞被 SAND 包着的话, 沙子物理崩塌会立刻填回去 → 把 SAND
 # 邻 AIR 那些 tile 改成 STONE, 给沙漠矿洞砌一圈石头墙.
@@ -1860,7 +1897,7 @@ static func _biome_subsurface_tile(biome_id: int, is_sand_col: bool) -> int:
 	match biome_id:
 		BIOME_SWAMP: return Tiles.MUD
 		BIOME_JUNGLE: return Tiles.JUNGLE_DIRT  # 丛林深色泥
-		BIOME_SNOW: return Tiles.SNOW_DIRT      # 雪原冻土
+		BIOME_SNOW: return Tiles.SNOW      # 雪原冻土
 		_: return Tiles.DIRT
 
 
@@ -1918,7 +1955,7 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 		# 允许在 GRASS / JUNGLE_GRASS / SWAMP_GRASS / SNOW 长树 (各自树叶不同)
 		var leaves_for_biome: int = -1  # -1 = 跳过这列 (不长树)
 		match top_tile:
-			Tiles.GRASS:
+			Tiles.GRASS, Tiles.CORRUPT_GRASS, Tiles.CRIMSON_GRASS:
 				leaves_for_biome = Tiles.LEAVES
 			Tiles.JUNGLE_GRASS:
 				leaves_for_biome = Tiles.JUNGLE_LEAVES  # 深湿绿
@@ -1963,7 +2000,7 @@ static func _place_trees_chunk(c: Chunk, chunk_heights: Dictionary, world_seed: 
 		# 侧枝: 在树干中段随机放 1-3 个 (避开树底 1 格 + 树顶)
 		_place_branches(c, lx, trunk_top, surf, rng)
 		# 树冠: 越出 chunk 的部分裁掉
-		_place_canopy_chunk(c, world_x, trunk_top, canopy_kind, leaves_tile, chunk_start, chunk_end, height)
+		# 树叶由 LOG_TOP 和侧枝整图显示，不再生成透明却可挖的叶块。
 		last_tree_x = world_x
 
 
@@ -2240,14 +2277,6 @@ static func _stamp_sky_tree(c: Chunk, lx: int, grass_y: int, chunk_width: int, h
 		c.tiles[lx][y] = Tiles.LOG
 	# 与地表树共用整张树冠；旧叶块图层已隐藏，不能只留下光秃树干。
 	c.tiles[lx][trunk_top] = Tiles.LOG_TOP
-	for ddx in range(-1, 2):
-		for ddy in range(-1, 2):
-			var nx: int = lx + ddx
-			var ny: int = trunk_top + ddy
-			if nx < 0 or nx >= chunk_width or ny < 0 or ny >= height:
-				continue
-			if c.tiles[nx][ny] == Tiles.AIR:
-				c.tiles[nx][ny] = Tiles.LEAVES
 
 # 选址与正常世界共用，预览只传送到这些地点，不另造展示地图。
 static func classic_plan(seed_value: int, height: int = 256) -> Dictionary:

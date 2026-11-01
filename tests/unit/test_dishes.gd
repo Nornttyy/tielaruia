@@ -17,7 +17,7 @@ func test_dish_defs():
 	var expect := {
 		"bread":         {"fill": 30, "kind": "speed"},
 		"mushroom_soup": {"fill": 30, "kind": "regen"},
-		"apple_pie":     {"fill": 45, "kind": "jump"},
+		"apple_pie":     {"fill": 0, "kind": "exquisitely_stuffed"},
 		"meat_skewer":   {"fill": 60, "kind": "mining"},
 		"mushroom_stew": {"fill": 65, "kind": "mining"},
 		"apple_jam":     {"fill": 35, "kind": "regen"},
