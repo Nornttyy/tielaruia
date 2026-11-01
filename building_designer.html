@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<!--
+  teilaruia 建筑设计器 — 双击本文件即可在浏览器打开 (不用联网/不用装东西)。
+  画好建筑 → 点「复制设计码」→ 粘贴到聊天发给 AI, AI 就能精确看到你画的每一格。
+  方块字母跟游戏 village_prefab 对齐, 将来能直接把设计变成游戏里的真房子。
+-->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>teilaruia 建筑设计器</title>
+<style>
+  :root { --bg:#262b33; --panel:#2f3640; --panel2:#3a424e; --ink:#e8ebef; --accent:#ffb43a; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  header {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    padding: 10px 14px; background: var(--panel); border-bottom: 2px solid #1c2128;
+  }
+  header h1 { font-size: 20px; margin: 0 12px 0 0; }
+  button {
+    font-family: inherit; font-size: 15px; cursor: pointer;
+    background: var(--panel2); color: var(--ink); border: 2px solid #1c2128;
+    border-radius: 8px; padding: 7px 12px;
+  }
+  button:hover { background: #46505e; }
+  button.primary { background: var(--accent); color: #2a1c00; border-color: #b87c10; font-weight: bold; }
+  .main { display: flex; gap: 12px; padding: 12px; align-items: flex-start; flex-wrap: wrap; }
+  .palette {
+    width: 264px; flex-shrink: 0; background: var(--panel); border-radius: 10px; padding: 8px;
+    max-height: 560px; overflow-y: auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; align-content: start;
+  }
+  .palette .title { grid-column: 1 / -1; font-size: 13px; opacity: .7; margin: 2px 4px 4px; }
+  .swatch {
+    display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 7px;
+    border: 2px solid transparent; cursor: pointer; min-width: 0;
+  }
+  .swatch .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .swatch .badge { font-size: 11px; opacity: .85; flex-shrink: 0; }
+  .swatch:hover { background: var(--panel2); }
+  .swatch.sel { border-color: var(--accent); background: var(--panel2); }
+  .swatch .chip {
+    width: 22px; height: 22px; border-radius: 4px; flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,.4);
+    box-shadow: inset 2px 2px 0 rgba(255,255,255,.22), inset -2px -2px 0 rgba(0,0,0,.25);
+  }
+  .swatch .chip.empty { background:
+      repeating-conic-gradient(#3a424e 0% 25%, #2e333c 0% 50%) 50% / 12px 12px; box-shadow: none; }
+  .swatch .nm { font-size: 14px; }
+  .swatch .key { margin-left: auto; font-size: 12px; opacity: .55; }
+  .stage { display: flex; flex-direction: column; gap: 8px; }
+  #grid { background: #1c2128; border-radius: 8px; image-rendering: pixelated; touch-action: none; cursor: crosshair; }
+  .row2 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .row2 .lbl { font-size: 13px; opacity: .75; }
+  textarea {
+    width: 100%; min-height: 150px; background: #1c2128; color: #cfe6c0; border: 2px solid #1c2128;
+    border-radius: 8px; padding: 8px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px;
+    white-space: pre; user-select: text;
+  }
+  .hint { font-size: 13px; opacity: .8; line-height: 1.5; max-width: 560px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--accent); color: #2a1c00; font-weight: bold; padding: 10px 18px;
+    border-radius: 10px; opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏠 建筑设计器</h1>
+  <button class="primary" id="btnCopy">📋 复制设计码</button>
+  <button id="btnImg">🖼️ 存图片</button>
+  <button id="btnClear">🗑️ 清空</button>
+  <span class="lbl" style="margin-left:6px">网格</span>
+  <button id="wMinus">宽 −</button><button id="wPlus">宽 +</button>
+  <button id="hMinus">高 −</button><button id="hPlus">高 +</button>
+  <span id="sizeLbl" class="lbl"></span>
+  <span class="lbl" style="margin-left:12px">选中方块碰撞:</span>
+  <button id="btnCollide" title="切换选中方块能不能穿过 (实心=挡路, 可穿过=能走过去, 比如门/暗墙)">🧱</button>
+</header>
+
+<div class="main">
+  <div class="palette" id="palette">
+    <div class="title">选方块 (点画板画上去 · 右键擦)</div>
+  </div>
+
+  <div class="stage">
+    <canvas id="grid"></canvas>
+    <div class="hint">
+      画好后点 <b>📋 复制设计码</b>，再<b>粘贴到聊天发给我</b>，我就能精确看到你画的每一格 😄<br>
+      下面这块就是你的设计码 (也能直接选中复制):
+    </div>
+    <textarea id="code" readonly spellcheck="false"></textarea>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// 方块表: 字符 / 中文名 / 颜色. 字符跟游戏 village_prefab.char_to_tile 对齐 (P/L/W/D/C/B/F/T/_),
+// 扩展几个 (g/d/s/a/v) 留给将来导入游戏时补.
+// 颜色由 scripts/tools/gen_block_palette.gd 从游戏真贴图自动抓取 (含群系染色). 字符对齐 village_prefab.
+const BLOCKS = [
+  { ch: '.', name: '空 / 橡皮', color: null },
+  // 地面
+  { ch: 'g', name: '草', color: '#94824c' },
+  { ch: 'd', name: '土', color: '#9d7350' },
+  { ch: 'W', name: '石头', color: '#9a8d84' },
+  { ch: 'e', name: '深岩', color: '#52453b' },
+  { ch: 's', name: '沙', color: '#ddbb80' },
+  { ch: 'a', name: '砂岩', color: '#cca85c' },
+  { ch: 'w', name: '雪', color: '#eef2fb' },
+  { ch: 'N', name: '冻土', color: '#836a5e' },
+  { ch: 'I', name: '冰', color: '#6c96c3' },
+  { ch: 'u', name: '泥巴', color: '#7b5031' },
+  { ch: 'j', name: '丛林草', color: '#649c35' },
+  { ch: 'J', name: '丛林土', color: '#7f7a3a' },
+  { ch: 'm', name: '沼泽草', color: '#737837' },
+  { ch: 'k', name: '基岩', color: '#363636' },
+  { ch: 'o', name: '云', color: '#ecf1f9' },
+  // 建材 / 墙
+  { ch: 'P', name: '木板', color: '#98673d' },
+  { ch: 'L', name: '原木', color: '#7b5845' },
+  { ch: '_', name: '平台', color: '#966840' },
+  { ch: 'y', name: '绳子', color: '#a68557' },
+  { ch: 'p', name: '木墙', color: '#654429' },
+  { ch: 'q', name: '草墙', color: '#443725' },
+  { ch: 'r', name: '土墙', color: '#473523' },
+  { ch: 'h', name: '石墙', color: '#453f3b' },
+  // 树叶
+  { ch: 'v', name: '树叶', color: '#6e8e54' },
+  { ch: 'V', name: '松针', color: '#3c643a' },
+  { ch: 'z', name: '秋叶', color: '#a76032' },
+  { ch: 'Z', name: '丛林叶', color: '#49ad3f' },
+  // 家具 / 箱子
+  { ch: 'D', name: '门', color: '#694b42' },
+  { ch: 'C', name: '箱子', color: '#805b34' },
+  { ch: 'G', name: '金宝箱', color: '#a97a35' },
+  { ch: 'X', name: '钻石宝箱', color: '#454a6c' },
+  { ch: 'H', name: '阴影宝箱', color: '#644444' },
+  { ch: 'x', name: '死人箱', color: '#825c35' },
+  { ch: 'B', name: '工作台', color: '#8d603b' },
+  { ch: 'F', name: '熔炉', color: '#605349' },
+  { ch: 'K', name: '铁锅', color: '#654e39' },
+  { ch: 'Y', name: '菜板', color: '#9e6b3f' },
+  { ch: 'b', name: '床', color: '#853d32' },
+  { ch: 'T', name: '火把', color: '#af692f' },
+  { ch: 't', name: '史莱姆灯', color: '#95b976' },
+  // 矿石
+  { ch: '0', name: '煤矿', color: '#615a53' },
+  { ch: '1', name: '铁矿', color: '#76675b' },
+  { ch: '2', name: '铜矿', color: '#7a6a5c' },
+  { ch: '3', name: '锡矿', color: '#767069' },
+  { ch: '4', name: '银矿', color: '#807870' },
+  { ch: '5', name: '金矿', color: '#ccaa57' },
+  { ch: '6', name: '钻石矿', color: '#79b7d5' },
+  { ch: '7', name: '地狱合金矿', color: '#5c5269' },
+  { ch: '8', name: '地狱晶体', color: '#b0842b' },
+  // 特殊 / 装饰
+  { ch: 'A', name: '仙人掌', color: '#4f793f' },
+  { ch: 'U', name: '蘑菇', color: '#475d86' },
+  { ch: 'c', name: '小草', color: '#59a940' },
+  { ch: '9', name: '地狱石', color: '#892f1d' },
+  { ch: 'O', name: '黑曜石', color: '#120c17' },
+  { ch: 'R', name: '火果', color: '#a03e21' },
+  { ch: 'E', name: '生命水晶', color: '#b9435b' },
+  { ch: 'M', name: '魔力水晶', color: '#4b3e9d' },
+  { ch: 'Q', name: '小麦', color: '#90b84c' },
+  { ch: '*', name: '岩浆', color: '#fcc849' },
+  { ch: '~', name: '水', color: '#3c82d7' },
+];
+const BY_CH = {};
+BLOCKS.forEach(b => BY_CH[b.ch] = b);
+// 实心(挡路)的方块 — 来自游戏 Tiles.is_solid (gen_block_palette.gd 抓的). 其余可穿过(墙/门/火把/水等).
+// b.solid 是默认值, 玩家可在设计器里逐个切换 (导出会记下).
+const SOLID_CHARS = new Set('gdWesawNIujJmkoPBFKY0123456789OEM'.split(''));
+BLOCKS.forEach(b => { if (b.color) b.solid = SOLID_CHARS.has(b.ch); });
+
+let cols = 24, rows = 16;
+const CELL = 26;
+let grid = [];
+let cur = 'P';            // 当前选中方块
+let painting = false, paintBtn = 0;
+
+const canvas = document.getElementById('grid');
+const ctx = canvas.getContext('2d');
+
+function initGrid() {
+  grid = [];
+  for (let r = 0; r < rows; r++) grid.push(new Array(cols).fill('.'));
+}
+
+function resizeGrid(newCols, newRows) {
+  newCols = Math.max(6, Math.min(48, newCols));
+  newRows = Math.max(6, Math.min(40, newRows));
+  const old = grid;
+  const og = { c: cols, r: rows };
+  cols = newCols; rows = newRows;
+  initGrid();
+  // 保留已画内容 (左上对齐)
+  for (let r = 0; r < Math.min(og.r, rows); r++)
+    for (let c = 0; c < Math.min(og.c, cols); c++)
+      grid[r][c] = old[r][c];
+  setupCanvas();
+  redraw();
+}
+
+function setupCanvas() {
+  canvas.width = cols * CELL;
+  canvas.height = rows * CELL;
+  document.getElementById('sizeLbl').textContent = cols + ' × ' + rows;
+}
+
+function drawCell(r, c) {
+  const x = c * CELL, y = r * CELL, ch = grid[r][c];
+  if (ch === '.' || !BY_CH[ch] || !BY_CH[ch].color) {
+    // 空格: 棋盘格
+    ctx.fillStyle = ((r + c) % 2) ? '#2e333c' : '#343b45';
+    ctx.fillRect(x, y, CELL, CELL);
+  } else {
+    const col = BY_CH[ch].color;
+    ctx.fillStyle = col;
+    ctx.fillRect(x, y, CELL, CELL);
+    // 3D 块边
+    ctx.fillStyle = 'rgba(255,255,255,0.20)'; ctx.fillRect(x, y, CELL, 3); ctx.fillRect(x, y, 3, CELL);
+    ctx.fillStyle = 'rgba(0,0,0,0.24)'; ctx.fillRect(x, y + CELL - 3, CELL, 3); ctx.fillRect(x + CELL - 3, y, 3, CELL);
+    // 火把: 画个小火苗点
+    if (ch === 'T') { ctx.fillStyle = '#fff0a0'; ctx.fillRect(x + CELL/2 - 2, y + 5, 4, 6); }
+    // 门: 画个把手
+    if (ch === 'D') { ctx.fillStyle = '#ffe08a'; ctx.fillRect(x + CELL - 8, y + CELL/2 - 1, 3, 3); }
+    // 可穿过(无碰撞)的方块画斜线, 一眼看出能走过去 (门/火把/墙/水等)
+    if (BY_CH[ch] && !BY_CH[ch].solid) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x, y, CELL, CELL); ctx.clip();
+      ctx.strokeStyle = 'rgba(255,255,255,0.30)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let dd = -CELL; dd <= CELL; dd += 6) { ctx.moveTo(x + dd, y + CELL); ctx.lineTo(x + dd + CELL, y); }
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+  ctx.strokeRect(x + 0.5, y + 0.5, CELL, CELL);
+}
+
+function redraw() {
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      drawCell(r, c);
+  updateCode();
+}
+
+function cellAt(ev) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+  const px = (ev.clientX - rect.left) * sx, py = (ev.clientY - rect.top) * sy;
+  return { c: Math.floor(px / CELL), r: Math.floor(py / CELL) };
+}
+
+function paintAt(ev) {
+  const { r, c } = cellAt(ev);
+  if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+  const ch = (paintBtn === 2) ? '.' : cur;   // 右键 = 擦
+  if (grid[r][c] !== ch) { grid[r][c] = ch; drawCell(r, c); updateCode(); }
+}
+
+canvas.addEventListener('mousedown', e => { painting = true; paintBtn = e.button; paintAt(e); });
+canvas.addEventListener('mousemove', e => { if (painting) paintAt(e); });
+window.addEventListener('mouseup', () => painting = false);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+// 触屏 (iPad 等) 也能画
+canvas.addEventListener('touchstart', e => { e.preventDefault(); painting = true; paintBtn = 0; paintAt(e.touches[0]); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (painting) paintAt(e.touches[0]); }, { passive: false });
+window.addEventListener('touchend', () => painting = false);
+
+function updateCode() { document.getElementById('code').value = genCode(); }
+
+function genCode() {
+  const head = '=== TEILARUIA 建筑设计码 v1 (' + cols + 'x' + rows + ') ===';
+  const body = grid.map(row => row.join('')).join('\n');
+  // 图例只列用到的方块 (60 个全列太长)
+  const used = new Set();
+  grid.forEach(row => row.forEach(ch => { if (ch !== '.') used.add(ch); }));
+  const items = BLOCKS.filter(b => b.color && used.has(b.ch)).map(b => b.ch + '=' + b.name);
+  const legend = '图例 ' + (items.length ? items.join(' ') : '(还没画)') + '  (.=空)';
+  // 碰撞: 列出用到的、设成"可穿过(无碰撞)"的方块, 其余都实心挡路
+  const passable = BLOCKS.filter(b => b.color && used.has(b.ch) && !b.solid).map(b => b.ch + '=' + b.name);
+  const passLine = '可穿过(无碰撞): ' + (passable.length ? passable.join(' ') : '无 (全部实心)');
+  return head + '\n' + body + '\n' + legend + '\n' + passLine;
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 1400);
+}
+
+// 调色板 UI
+function buildPalette() {
+  const pal = document.getElementById('palette');
+  BLOCKS.forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'swatch' + (b.ch === cur ? ' sel' : '');
+    el.dataset.ch = b.ch;
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (b.color ? '' : ' empty');
+    if (b.color) chip.style.background = b.color;
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = b.name;
+    el.title = b.name + (b.ch === '.' ? '' : '  (' + b.ch + ')');
+    el.appendChild(chip); el.appendChild(nm);
+    if (b.color) {
+      const badge = document.createElement('span'); badge.className = 'badge';
+      badge.textContent = b.solid ? '🧱' : '👻';
+      el.appendChild(badge);
+    }
+    el.addEventListener('click', () => {
+      cur = b.ch;
+      document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('sel', s.dataset.ch === cur));
+      updateCollideBtn();
+    });
+    pal.appendChild(el);
+  });
+}
+
+function updateCollideBtn() {
+  const btn = document.getElementById('btnCollide');
+  const b = BY_CH[cur];
+  if (!b || !b.color) { btn.textContent = '🧱 —'; btn.disabled = true; return; }
+  btn.disabled = false;
+  btn.textContent = b.solid ? '🧱 实心(挡路)' : '👻 可穿过';
+}
+
+function updateSwatchBadge(ch) {
+  document.querySelectorAll('.swatch').forEach(s => {
+    if (s.dataset.ch === ch) {
+      const badge = s.querySelector('.badge');
+      if (badge) badge.textContent = BY_CH[ch].solid ? '🧱' : '👻';
+    }
+  });
+}
+
+// 按钮
+document.getElementById('btnClear').addEventListener('click', () => {
+  if (confirm('确定清空整张画板?')) { initGrid(); redraw(); }
+});
+document.getElementById('wPlus').addEventListener('click', () => resizeGrid(cols + 2, rows));
+document.getElementById('wMinus').addEventListener('click', () => resizeGrid(cols - 2, rows));
+document.getElementById('hPlus').addEventListener('click', () => resizeGrid(cols, rows + 2));
+document.getElementById('hMinus').addEventListener('click', () => resizeGrid(cols, rows - 2));
+
+document.getElementById('btnCopy').addEventListener('click', async () => {
+  const code = genCode();
+  try { await navigator.clipboard.writeText(code); toast('设计码已复制! 粘贴到聊天发给 AI 吧'); }
+  catch (e) {
+    const ta = document.getElementById('code'); ta.focus(); ta.select();
+    document.execCommand && document.execCommand('copy');
+    toast('已选中设计码, 按 Cmd+C 复制');
+  }
+});
+
+document.getElementById('btnImg').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '我的建筑.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('图片已下载: 我的建筑.png');
+  });
+});
+
+// 碰撞切换: 翻转当前选中方块的实心/可穿过, 更新徽章 + 画板 + 设计码
+document.getElementById('btnCollide').addEventListener('click', () => {
+  const b = BY_CH[cur];
+  if (!b || !b.color) return;
+  b.solid = !b.solid;
+  updateCollideBtn();
+  updateSwatchBadge(cur);
+  redraw();
+  toast(b.name + ' → ' + (b.solid ? '实心(挡路)' : '可穿过'));
+});
+
+// 启动
+buildPalette();
+updateCollideBtn();
+initGrid();
+setupCanvas();
+redraw();
+</script>
+</body>
+</html>
