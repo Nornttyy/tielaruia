@@ -156,6 +156,7 @@ func _ready() -> void:
 
 
 func _add_player_exception() -> void:
+	if not is_inside_tree() or is_queued_for_deletion(): return
 	var player = get_tree().get_first_node_in_group("player")
 	if player != null:
 		add_collision_exception_with(player)

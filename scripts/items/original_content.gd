@@ -20,6 +20,8 @@ const RETIRED_ITEMS := [
 ]
 
 const ORIGINAL_ITEM_IDS := {
+	"rotten_chunk": 86,
+	"vertebra": 1330,
 	"clay": 133, # Clay Block
 	"dirt": 2, # Dirt Block
 	"stone": 3, # Stone Block

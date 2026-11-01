@@ -174,14 +174,14 @@ func is_invulnerable() -> bool:
 
 
 # 返回 true 表示真的受了伤 (没在 i-frames 中且还活着)
-func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0) -> bool:
+func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: float = 0.0, fall_damage := false) -> bool:
 	if amount <= 0 or not is_alive() or is_invulnerable():
 		return false
 	if GameSettings != null and GameSettings.creative_mode:
 		return false   # 创造模式无敌, 不掉血
 	# 难度乘数: 简单 0.5x, 普通 1.0x, 困难 1.5x
 	var dm: float = 1.0
-	if GameSettings != null and GameSettings.has_method("damage_multiplier"):
+	if not fall_damage and GameSettings != null and GameSettings.has_method("damage_multiplier"):
 		dm = GameSettings.damage_multiplier()
 	var raw_amount: int = int(round(float(amount) * dm))
 	# 盔甲减伤: 1 防御 = 0.5 减伤. 减后下限 1 (永远不能完全免疫).
@@ -190,7 +190,7 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 		var defense: int = inv.total_defense()
 		var buffs := get_parent().get_node_or_null("PlayerBuffs")
 		if buffs != null: defense += buffs.defense_bonus()
-		raw_amount -= int(floor(float(defense) * 0.5))
+		raw_amount -= ceili(float(defense) * 0.5) if fall_damage else floori(float(defense) * 0.5)
 	var final_amount: int = max(1, raw_amount)
 	# 飘字显示真实扣血 (clamp 到剩余 HP), 防最后一击显示超额
 	var displayed_loss: int = min(final_amount, current_health)
@@ -220,6 +220,11 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 		if typeof(Achievements) != TYPE_NIL:
 			Achievements.fire("player_death")   # 成就: 第一次倒下
 	return true
+
+
+func take_fall_damage(amount: int) -> bool:
+	# 距离伤害不再经过旧“简单减半/困难加倍”乘数；保留防御和受伤无敌帧。
+	return take_damage(amount, Vector2.ZERO, 0.0, true)
 
 
 func heal(amount: int) -> void:

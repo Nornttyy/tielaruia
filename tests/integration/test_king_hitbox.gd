@@ -24,7 +24,8 @@ func test_sword_hits_kings_big_body():
 	await wait_frames(2)   # _ready 跑完 (player 加 "player" 组; king apply_scale 满血=4 → 大身子)
 	# 固定位置 (跟 swing 同步设, 不让重力把谁挪走)
 	player.global_position = Vector2.ZERO
-	king.global_position = Vector2(28, -32)
+	# 新原图身体脚底与角色脚底对齐；剑端应碰到大身体左下边缘。
+	king.global_position = Vector2(65, 0)
 	var hp0: int = king.current_health
 	_swing_right_at(player.get_node("PlayerAction"))
 	assert_lt(king.current_health, hp0, "剑碰到王的大身子就该命中 (不只是中心点)")

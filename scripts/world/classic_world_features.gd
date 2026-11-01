@@ -46,9 +46,11 @@ static func landmarks(p: Dictionary) -> Array:
 		{"name": "沙漠金字塔", "hint": "原始塔身样本 · 砂岩砖 · 斜向通道 · 地下宝藏室", "pos": pyramid + Vector2i(0, 37), "feet": pyramid + Vector2i(23, 52), "zoom": 0.65},
 		{"name": "地下小屋", "hint": "残缺木墙 · 木梁 · 可搜寻的宝箱", "pos": Vector2i(p.cabins[0]) + Vector2i(0, -5), "feet": Vector2i(p.cabins[0]) + Vector2i(-4, -1), "zoom": 2.0},
 		{"name": "发光蘑菇洞", "hint": "蘑菇草 · 巨型发光蘑菇 · 泥土洞厅", "pos": mushroom, "feet": mushroom + Vector2i(1, 10), "zoom": 1.8},
-		{"name": "地牢入口", "hint": "绿地牢砖 · 原始入口城垛 · 向下延伸的通道", "pos": dungeon + Vector2i(0, -7), "feet": dungeon + Vector2i(-17, -1), "zoom": 1.65},
+		{"name": "地牢入口", "hint": "粉地牢砖 · 原始入口城垛 · 向下延伸的通道", "pos": dungeon + Vector2i(0, -7), "feet": dungeon + Vector2i(-17, -1), "zoom": 1.65},
 		{"name": "地牢走廊", "hint": "原始入口下段 · 阶梯平台 · 曲折通道", "pos": dungeon + Vector2i(2, 36), "feet": dungeon + Vector2i(2, 40), "zoom": 1.7},
 	]
+	var hall: Rect2i = dungeon_rooms(dungeon)[2]
+	result.append({"name": "地牢下层", "hint": "分支大厅 · 连续阶梯 · 地下宝箱", "pos": hall.get_center(), "feet": Vector2i(hall.position.x + 12, hall.end.y - 1), "zoom": 1.6})
 	for island in p.sky:
 		result.append({"name": "空岛小屋", "hint": "日盘块 · 日盘墙 · 云层托起的浮岛", "pos": Vector2i(island) + Vector2i(0, -5), "feet": Vector2i(island) + Vector2i(-4, -2), "zoom": 1.8})
 		break
@@ -69,7 +71,7 @@ static func apply(c: Chunk, p: Dictionary, surface: Callable, seed_value: int) -
 	var mush: Vector2i = p.mushroom
 	if _overlaps(c, mush.x - 45, mush.x + 45): _mushroom(c, mush)
 	var dungeon: Vector2i = p.dungeon
-	if _overlaps(c, dungeon.x - 38, dungeon.x + 70): _dungeon(c, dungeon, surface)
+	if _overlaps(c, dungeon.x - 66, dungeon.x + 84): _dungeon(c, dungeon, surface)
 	for island in p.sky:
 		if _overlaps(c, island.x - 12, island.x + 12): _sky_house(c, island)
 	# 后盖的建筑可能覆盖原洞穴的箱子；元数据只保留实际存在的宝箱。
@@ -160,6 +162,33 @@ static func _mushroom(c: Chunk, a: Vector2i) -> void:
 static func _dungeon(c: Chunk, a: Vector2i, surface: Callable) -> void:
 	_ground_pad(c, a, 64, 36, surface)
 	Samples.stamp(c, "dungeon_entrance", a)
+	_dungeon_rooms(c, a)
+
+static func dungeon_rooms(a: Vector2i) -> Array[Rect2i]:
+	var first := mini(a.y + 78, 207)
+	var second := mini(first + 27, 236)
+	return [Rect2i(a.x - 54, first - 12, 28, 13), Rect2i(a.x + 35, first - 12, 29, 13), Rect2i(a.x - 24, second - 15, 45, 16)]
+
+static func _dungeon_rooms(c: Chunk, a: Vector2i) -> void:
+	var rooms := dungeon_rooms(a)
+	var junction := Vector2i(a.x + 4, rooms[0].end.y - 4)
+	var bottom := Vector2i(junction.x, rooms[2].end.y - 4)
+	# 样本末端 x=0..9、y=62 是走廊出口。新段从这里连续接入，而非另开孤立房间。
+	var halls := [Rect2i(a.x + 1, a.y + 60, 7, junction.y - a.y - 56),
+		Rect2i(rooms[0].get_center().x, junction.y - 2, rooms[1].get_center().x - rooms[0].get_center().x + 1, 5),
+		Rect2i(junction.x - 3, junction.y, 7, bottom.y - junction.y + 3)]
+	for room in rooms: _box(c, room.grow(2), Tiles.GREEN_DUNGEON_BRICK, Tiles.GREEN_DUNGEON_WALL)
+	for hall in halls: _box(c, hall.grow(2), Tiles.GREEN_DUNGEON_BRICK, Tiles.GREEN_DUNGEON_WALL)
+	for room in rooms: _box(c, room.grow(-1), Tiles.AIR, Tiles.GREEN_DUNGEON_WALL)
+	for hall in halls: _box(c, hall, Tiles.AIR, Tiles.GREEN_DUNGEON_WALL)
+	for y in range(a.y + 65, bottom.y + 1, 5):
+		for x in range(junction.x - 3, junction.x + 4): _put(c, x, y, Tiles.WOOD_PLATFORM)
+		_put(c, junction.x - 4, y - 2, Tiles.TORCH)
+	for room in rooms:
+		var floor_y: int = room.end.y - 1
+		_chest(c, room.position.x + 4, floor_y - 1)
+		_put(c, room.position.x + 2, floor_y - 5, Tiles.TORCH)
+		_put(c, room.end.x - 3, floor_y - 5, Tiles.TORCH)
 
 static func _sky_house(c: Chunk, a: Vector2i) -> void:
 	Samples.stamp(c, "sky_house", a)

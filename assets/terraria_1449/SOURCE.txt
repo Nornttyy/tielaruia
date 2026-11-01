@@ -37,3 +37,6 @@ manifest. Loading logic and fill rendering are independently implemented.
 四份 PNG 同样来自上述固定提交，来源和 SHA-256 见 critter-manifest.json。
 分别按 48×40、28×42、26×22 切帧；保留原像素尺寸并统一应用 16→12 世界格网比例。
 行为为本项目独立实现。物种和基础数值参考官方 Wiki 的 Bunny、Penguin、Frog 条目。
+
+2026-11-01 邪恶群系和史莱姆王：NPC_6 / NPC_173（42×80 双帧）、NPC_50（174×120 六帧）、Extra_39 王冠、Ninja 内层，以及 Item_86 / Item_1330。
+来自同一固定 1.4.4.9 source-pngs 提交；URL 和 SHA-256 见 evil-king-manifest.json。独立实现行为，未复制游戏源码。

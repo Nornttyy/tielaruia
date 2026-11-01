@@ -507,6 +507,7 @@ func _apply_save_data(data: Resource) -> void:
 					int(floor(player.global_position.y / 12.0)))
 	else:
 		player.global_position = saved_pos
+	player.reset_fall_distance()
 	# 玩家瞬移到存档位置后立刻同步加载落点 chunk: 否则这一帧 ScenicDirector 查不到地表(背景误显地底)
 	# + minimap 把那片当 AIR(显地底). ensure_loaded 是同步的, 当帧就有 surfaces/tile 数据.
 	if w.chunk_manager != null:

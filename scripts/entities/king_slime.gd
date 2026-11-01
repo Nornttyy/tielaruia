@@ -1,6 +1,4 @@
-# 史莱姆王 Boss: 巨大史莱姆, 大跳砸玩家. HP 1000.
-# 阶段 (后续 task): 血<50% 召唤小史莱姆; 血越少体型越小、跳越快.
-# 收尾 (后续 task): 玩家死/远离 → 消失; 掉 slime_ball + 大量 slime_jelly.
+# 史莱姆王：原始六帧身体、随血量缩小、大小跳交替。
 extends CharacterBody2D
 const Metrics = preload("res://scripts/art/world_metrics.gd")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
@@ -8,8 +6,11 @@ const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 const ItemDropScene = preload("res://scenes/items/item_drop.tscn")
 const SlimeScene = preload("res://scenes/entities/slime.tscn")
 
-const BASE_MAX_HEALTH := 1000
-const CONTACT_DAMAGE := 20
+const BASE_MAX_HEALTH := 2000
+const DEFENSE := 10
+const Pack = preload("res://scripts/art/terraria_sprite_pack.gd")
+static var _body_frames: SpriteFrames
+const CONTACT_DAMAGE := 40
 const GRAVITY := 675.0
 const TILE_SIZE := 12
 const HIT_FLASH_SEC := 0.1
@@ -19,9 +20,8 @@ const HOP_HEIGHT_TILES := 4.0
 const HOP_DIST_TILES := 5.0
 const HOP_COOLDOWN_FULL := 1.6
 const HOP_COOLDOWN_LOW := 0.5
-const SCALE_FULL := 4.0
-const SCALE_LOW := 2.0
-const MINION_INTERVAL := 4.0
+const SCALE_FULL := 0.75
+const SCALE_LOW := 0.375
 const MINION_PER_WAVE := 3
 const MINION_CAP := 8
 const DESPAWN_DISTANCE_PX := 960.0
@@ -38,20 +38,27 @@ var _hit_flash: float = 0.0
 var _iframe_t: float = 0.0
 var _is_dying: bool = false
 var _current_hop_vx: float = 0.0
-var _minion_timer: float = MINION_INTERVAL
+var _hop_count := 0
+var _minion_health := 0
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _collision: CollisionShape2D = $CollisionShape2D
 @onready var _crown: Sprite2D = $Crown
+@onready var _ninja: Sprite2D = $Ninja
 
 
 func _ready() -> void:
 	max_health = max(1, int(round(BASE_MAX_HEALTH * GameSettings.enemy_hp_multiplier())))
 	current_health = max_health
-	sprite.sprite_frames = ArtCache.slime_frames
+	if _body_frames == null:
+		_body_frames = Pack.enemy_frames("NPC_50.png", Vector2i(174, 120), Vector2i(174, 120), {"idle": [0, 1, 2, 3, 4, 5], "hop": [1, 2, 3, 4, 5, 0]})
+	sprite.sprite_frames = _body_frames
+	_minion_health = max_health
 	sprite.play("idle")
-	sprite.modulate = Color(0.7, 0.8, 1.1)  # 偏亮蓝 (boss 比普通蓝史莱姆更亮一档, 一眼区分)
-	_crown.texture = ArtCache.slime_crown_tex   # 头顶金王冠 (独立贴图, 不被身体染蓝/受击闪红)
+	sprite.frame_changed.connect(_place_crown)
+	sprite.modulate = Color.WHITE
+	_crown.texture = Pack.texture("Extra_39.png")
+	_ninja.texture = Pack.texture("Ninja.png")
 	add_to_group("king_slime")
 	add_to_group("slimes")
 	add_to_group("boss")
@@ -60,6 +67,7 @@ func _ready() -> void:
 
 
 func _add_player_exception() -> void:
+	if not is_inside_tree() or is_queued_for_deletion(): return
 	var player = get_tree().get_first_node_in_group("player")
 	if player != null:
 		add_collision_exception_with(player)
@@ -82,17 +90,27 @@ func _apply_scale() -> void:
 	if _collision != null:
 		_collision.scale = Vector2(s, s)
 		_collision.position.y = -_collision.shape.get_rect().size.y * s / 2.0
-	# 王冠跟着体型缩放, 坐在头顶: band 底边贴头顶 (-16-8s), 留 1px 嵌入防缝隙.
+	# 原版分层：身体中的忍者和王冠分别定位，不再使用自绘的方块皇冠。
 	if _crown != null:
-		_crown.scale = Vector2(s, s)
-		_crown.position = Vector2(0.0, -float(sprite.sprite_frames.get_meta("visible_height", 18.0)) * s)
+		_crown.scale = Vector2.ONE * s
+		_place_crown()
+	if _ninja != null:
+		_ninja.scale = Vector2.ONE * s
+		_ninja.position = Vector2(0.0, -48.0 * s)
+
+
+func _place_crown() -> void:
+	if _crown == null or sprite.sprite_frames == null: return
+	var frame := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	var top := frame.get_image().get_used_rect().position.y
+	_crown.position.y = sprite.position.y + (float(top) - 60.0 - 26.0) * sprite.scale.y
 
 
 # 近战命中半径: 王身子巨大, 让剑/镐碰到大身子就算命中 (不只认中心一点).
-# = 碰撞框半宽 (6.5) × 当前体型 scale. 满血 scale 4 → 26px; 血少体型小 → 半径也小.
+# 跟随当前身体碰撞框半宽，血少体型小则命中范围也小。
 # player_action 近战命中检测把这半径加到判定距离上 (普通小怪没此方法 = 半径 0, 行为不变).
 func melee_hit_radius() -> float:
-	return 6.5 * sprite.scale.x
+	return 62.0 * sprite.scale.x
 
 
 # 当前跳跃间隔: 血越少越短 (HOP_COOLDOWN_FULL → HOP_COOLDOWN_LOW)
@@ -126,6 +144,7 @@ func _find_player() -> Node2D:
 
 func _physics_process(delta: float) -> void:
 	if has_meta("is_remote"):
+		_apply_scale()
 		if not _is_dying:
 			_check_player_contact()  # 远程王仍能打伤本地(client)玩家
 		return
@@ -135,15 +154,9 @@ func _physics_process(delta: float) -> void:
 	_check_despawn(delta)
 	if _is_dying:
 		return
-	# 阶段 2: 血 < 50% 周期召唤小兵
-	if current_health < max_health / 2:
-		_minion_timer -= delta
-		if _minion_timer <= 0.0:
-			_minion_timer = MINION_INTERVAL
-			_spawn_minions()
 	if _hit_flash > 0.0:
 		_hit_flash = max(0.0, _hit_flash - delta)
-		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color(0.6, 0.5, 1.0)
+		sprite.modulate = Color(1.6, 1.0, 1.0) if _hit_flash > 0.0 else Color.WHITE
 	_iframe_t = max(0.0, _iframe_t - delta)
 
 	if not is_on_floor():
@@ -170,8 +183,11 @@ func _attempt_hop() -> void:
 		sprite.flip_h = dir < 0
 	else:
 		dir = 1.0 if randf() < 0.5 else -1.0
+	_hop_count += 1
 	var h_px: float = HOP_HEIGHT_TILES * TILE_SIZE
 	var d_px: float = HOP_DIST_TILES * TILE_SIZE
+	if _hop_count % 4 == 0: h_px *= 1.8
+	sprite.play("hop")
 	var vy_mag: float = sqrt(2.0 * GRAVITY * h_px)
 	var vx_mag: float = 0.0 if vy_mag == 0.0 else (d_px * GRAVITY) / (2.0 * vy_mag)
 	_current_hop_vx = dir * vx_mag
@@ -195,16 +211,15 @@ func take_damage(amount: int, source_pos: Vector2 = Vector2.ZERO, knockback: flo
 	if _is_dying or amount <= 0 or _iframe_t > 0.0:
 		return false
 	_iframe_t = ENEMY_IFRAME_SEC
-	var actual_loss: int = min(amount, current_health)
-	current_health = max(0, current_health - amount)
+	var actual_loss: int = min(maxi(1, amount - DEFENSE / 2), current_health)
+	current_health -= actual_loss
+	if current_health > 0 and _minion_health - current_health >= max_health / 20:
+		_minion_health = current_health
+		_spawn_minions()
 	_hit_flash = HIT_FLASH_SEC
 	sprite.modulate = Color(1.6, 1.0, 1.0)
 	Effects.spawn_damage_number(global_position + Vector2(0, -6), actual_loss)
 	if current_health > 0: SfxBank.play_creature("king_slime", global_position, false)
-	if knockback > 0.0 and source_pos != Vector2.ZERO:
-		var to_self: Vector2 = global_position - source_pos
-		var d: Vector2 = Vector2.UP if to_self.length() < 0.1 else to_self.normalized()
-		velocity += d * knockback * 0.1
 	_apply_scale()
 	if current_health == 0:
 		_die()

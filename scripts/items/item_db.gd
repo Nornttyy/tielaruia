@@ -4,6 +4,8 @@ extends Node
 const OriginalContent = preload("res://scripts/items/original_content.gd")
 
 const _DEFS := {
+	"rotten_chunk": {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
+	"vertebra": {"placeable_tile_id": -1, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
 	"ebonstone": {"placeable_tile_id": 131, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
 	"crimstone": {"placeable_tile_id": 132, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},
 	"corrupt_grass": {"placeable_tile_id": 133, "is_wall": false, "tool_kind": "", "tool_tier": 0, "max_stack": 9999},

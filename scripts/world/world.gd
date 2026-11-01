@@ -19,6 +19,8 @@ const SlimeScene = preload("res://scenes/entities/slime.tscn")
 const PlayersUtil = preload("res://scripts/entities/players_util.gd")
 const SlimeClass = preload("res://scripts/entities/slime.gd")  # 用静态 color_for_depth / random_spawn_size
 const ZombieScene = preload("res://scenes/entities/zombie.tscn")
+const EaterScene = preload("res://scenes/entities/eater_of_souls.tscn")
+const CrimeraScene = preload("res://scenes/entities/crimera.tscn")
 const DemonEyeScene = preload("res://scenes/entities/demon_eye.tscn")
 const MimicScene = preload("res://scenes/entities/mimic.tscn")
 const ImpScene = preload("res://scenes/entities/imp.tscn")
@@ -675,6 +677,8 @@ func _spawn_remote_entity(kind: String) -> Node:
 		"zombie": scene = ZombieScene
 		"spider": return null # 暂停蜘蛛，包括旧版本联机同步。
 		"demon_eye": scene = DemonEyeScene
+		"eater_of_souls": scene = EaterScene
+		"crimera": scene = CrimeraScene
 		"skeleton": return null # 普通骷髅已移除，忽略旧客户端的同步。
 		"imp": scene = ImpScene
 		"hell_wasp": scene = HellWaspScene
@@ -881,7 +885,9 @@ func _process(delta: float) -> void:
 		_slime_spawn_timer -= delta
 		if _slime_spawn_timer <= 0.0:
 			_slime_spawn_timer = SPAWN_INTERVAL
-			if TimeOfDay.is_night():
+			if _player_evil_biome() != 0:
+				_try_spawn_evil_flyer()
+			elif TimeOfDay.is_night():
 				_try_spawn_zombie()      # 夜间及地下按深度刷怪
 			elif _player_is_deep():
 				_try_spawn_underground_slime()  # 白天地下: 按深度配色史莱姆刷在玩家旁
@@ -944,6 +950,10 @@ func _mp_broadcast_entities(force_full: bool = true) -> void:
 						kind = "skeleton_king"   # 骷髅王 Boss (在 slimes 组, 路径区分, 否则当普通史莱姆广播)
 					elif "spider" in scene_path_s:
 						kind = "spider"
+					elif "eater_of_souls" in scene_path_s:
+						kind = "eater_of_souls"
+					elif "crimera" in scene_path_s:
+						kind = "crimera"
 					elif "demon_eye" in scene_path_s:
 						kind = "demon_eye"
 					elif "zombie" in scene_path_s:
@@ -1061,6 +1071,7 @@ func sleep_in_bed(tile: Vector2i) -> void:
 		# 把玩家挪到床中央 (2 格宽: tile 是左格, +1.0 = 左右两格接缝 = 床正中)
 		var bed_width := 4.0 if chunk_manager.get_tile(tile.x, tile.y) == Tiles.BED_WIDE else 2.0
 		player.global_position = Vector2((float(tile.x) + bed_width / 2.0) * TILE_SIZE, (float(tile.y) + 1.0) * TILE_SIZE)
+		player.reset_fall_distance()
 		_sleep_anchor_x = player.global_position.x
 		_sleep_armed = false   # 等触发睡觉那次点击松开才允许按键唤醒
 		# 睡觉期间禁止玩家移动 + 给一个安全 iframe (老 bug: 没锁, 怪打过来 = 任挨打死)
@@ -1468,6 +1479,31 @@ func _try_spawn_underground_slime() -> void:
 		entities_root.add_child(s)
 		return
 
+
+# 只在实际邪恶群系附近刷怪；白天同样生效，不能在世界中心随机冒出。
+func _player_evil_biome() -> int:
+	var p := get_player()
+	if p == null or p.position.y / TILE_SIZE >= 220: return 0
+	var biome := WorldGenerator._biome_at(floori(p.position.x / TILE_SIZE), world_seed)
+	return biome if biome in [5, 6] else 0
+
+func _try_spawn_evil_flyer() -> void:
+	var biome := _player_evil_biome()
+	if biome == 0 or get_tree().get_nodes_in_group("evil_flyers").size() >= 6: return
+	var player := get_player()
+	var center := Vector2i((player.position / TILE_SIZE).floor())
+	for attempt in 16:
+		var cell := center + Vector2i(randi_range(16, 28) * (-1 if randf() < 0.5 else 1), randi_range(-10, 5))
+		if WorldGenerator._biome_at(cell.x, world_seed) != biome: continue
+		if not preload("res://scripts/entities/flying_nav.gd").clear_at(chunk_manager, cell, Vector2(14, 14)): continue
+		var clear := true
+		for dy in range(-2, 3):
+			if chunk_manager.get_tile(cell.x, cell.y + dy) != Tiles.AIR: clear = false
+		if not clear: continue
+		var mob = (EaterScene if biome == 5 else CrimeraScene).instantiate()
+		mob.position = (Vector2(cell) + Vector2.ONE * 0.5) * TILE_SIZE
+		entities_root.add_child(mob)
+		return
 
 func _try_spawn_zombie() -> void:
 	# 夜间僵尸/恶魔眼共享上限 (按难度: 简单 8 / 普通 15 / 困难 25).
@@ -1944,6 +1980,7 @@ func respawn_player() -> void:
 	# 让玩家重生后乱飞 / 穿地 / 落不到地 (坠落伤害上线后高发, 用户报)。
 	if "velocity" in player:
 		player.velocity = Vector2.ZERO
+	player.reset_fall_distance()
 	var hp: Node = player.get_node_or_null("PlayerHealth")
 	if hp != null and hp.has_method("revive_full"):
 		hp.revive_full()

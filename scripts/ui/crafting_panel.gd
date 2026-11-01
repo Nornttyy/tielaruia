@@ -524,6 +524,8 @@ const _ZH_NAMES := {
 	"feather": "羽毛",
 	"cloud_boots": "云靴",
 	"lens": "镜片",
+	"rotten_chunk": "腐肉",
+	"vertebra": "椎骨",
 	"furnace": "熔炉",
 	"iron_anvil": "铁砧",
 	"chain": "链条",

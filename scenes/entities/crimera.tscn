@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/entities/evil_flyer.gd" id="1"]
+[sub_resource type="RectangleShape2D" id="shape"]
+size = Vector2(24, 24)
+[node name="EvilFlyer" type="CharacterBody2D"]
+script = ExtResource("1")
+collision_layer = 0
+collision_mask = 1
+species = "crimera"
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -12)
+shape = SubResource("shape")
