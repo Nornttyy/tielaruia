@@ -1,12 +1,12 @@
 {
-  "build": "6725b0c3cd76",
+  "build": "d0ea6f6a7434",
   "music": "CC0 replacement soundtrack",
   "files": {
-    "game-6725b0c3cd76.js": 315759,
-    "game-6725b0c3cd76.wasm": 37695054,
-    "game-6725b0c3cd76.audio.worklet.js": 7298,
-    "game-6725b0c3cd76.audio.position.worklet.js": 2973,
-    "game-6725b0c3cd76.bin": 20407788
+    "game-d0ea6f6a7434.js": 315759,
+    "game-d0ea6f6a7434.wasm": 37695054,
+    "game-d0ea6f6a7434.audio.worklet.js": 7298,
+    "game-d0ea6f6a7434.audio.position.worklet.js": 2973,
+    "game-d0ea6f6a7434.bin": 20430020
   },
-  "source_commit": "05afaff1e18cbd13fbfb83cbc5f705ffc653b5fd"
+  "source_commit": "d06c1307687f9de713275ba624df29f8923c1ac6"
 }
