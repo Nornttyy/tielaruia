@@ -174,6 +174,7 @@ const _SWAMP_LV   := [0, WATER_SWAMP_L1, WATER_SWAMP_L2, WATER_SWAMP_L3, WATER_S
 # tier: -1 = 该工具挖不动；0 = 徒手也行；1 = 需 1 级 (木质)
 
 # 群系扩展仅追加编号，保留旧存档的方块编号。
+const CLAY := 130
 const EBONSTONE := 131
 const CRIMSTONE := 132
 const CORRUPT_GRASS := 133

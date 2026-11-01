@@ -646,7 +646,7 @@ func _update_wall_mining(delta: float) -> void:
 	if Mining.TOOLS.has(item_id):
 		if _mining_hit_cooldown > CLOCK_EPSILON: return
 		_mining_hit_cooldown = Mining.interval(item_id)
-		_mining_progress += float(Mining.power(item_id)) / 100.0 * WALL_HARDNESS
+		_mining_progress += float(Mining.wall_damage(item_id)) / 100.0 * WALL_HARDNESS
 	else:
 		_mining_progress += _hammer_speed(_current_tool_tier()) * delta * _buff_mining_mul()
 	_play_mining_contact(wid)

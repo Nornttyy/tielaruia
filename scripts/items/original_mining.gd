@@ -23,6 +23,10 @@ static func interval(id: String, bonus := 0.0) -> float:
 static func power(id: String) -> int:
 	return TOOLS[id][0]
 
+static func wall_damage(id: String) -> int:
+	# 1.4.4.9: 每面墙 100 点，单次伤害为 floor(锤力 × 1.5)。
+	return floori(power(id) * 1.5)
+
 static func required_power(tid: int, below_surface := true) -> int:
 	if tid in [Tiles.EBONSTONE, Tiles.CRIMSTONE, Tiles.HELL_STONE]: return 65
 	if tid == Tiles.OBSIDIAN: return 55
@@ -36,7 +40,10 @@ static func grass_base(tid: int) -> int:
 	return -1
 
 static func hit_points(tid: int, kind: String) -> float:
-	if kind == "axe": return 500.0 if tid == Tiles.LOG else 100.0
-	if tid in [Tiles.DIRT, Tiles.SAND, Tiles.SNOW, Tiles.SNOW_DIRT, Tiles.MUD, Tiles.JUNGLE_DIRT, Tiles.HARDENED_SAND]: return 50.0
+	if kind == "axe":
+		if tid in [Tiles.LOG, Tiles.LOG_TOP, Tiles.LOG_ROOT_L, Tiles.LOG_ROOT_R, Tiles.BRANCH_L, Tiles.BRANCH_R]: return 500.0
+		if tid in [Tiles.CACTUS, Tiles.CACTUS_BODY]: return 170.0
+		return 100.0
+	if tid in [Tiles.DIRT, Tiles.SAND, Tiles.CLAY, Tiles.SNOW, Tiles.SNOW_DIRT, Tiles.MUD, Tiles.JUNGLE_DIRT, Tiles.HARDENED_SAND]: return 50.0
 	if tid in [Tiles.EBONSTONE, Tiles.CRIMSTONE, Tiles.HELL_STONE, Tiles.DUNGEON_BRICK, Tiles.GREEN_DUNGEON_BRICK]: return 200.0
 	return 100.0

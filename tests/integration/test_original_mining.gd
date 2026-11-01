@@ -26,7 +26,7 @@ func before_each():
 	world.terrain = TileMapLayer.new()
 	world.terrain.tile_set = TileSet.new()
 	world.terrain.tile_set.tile_size = Vector2i(12,12)
-	for id in [Tiles.STONE, Tiles.DIRT, Tiles.GRASS, Tiles.GOLD_ORE, Tiles.OBSIDIAN, Tiles.EBONSTONE]:
+	for id in [Tiles.STONE, Tiles.DIRT, Tiles.GRASS, Tiles.GOLD_ORE, Tiles.OBSIDIAN, Tiles.EBONSTONE, Tiles.CLAY, Tiles.LOG, Tiles.LOG_ROOT_L, Tiles.CACTUS]:
 		var source := TileSetAtlasSource.new()
 		source.texture = ImageTexture.create_from_image(Image.create(12,12,false,Image.FORMAT_RGBA8))
 		source.texture_region_size = Vector2i(12,12)
@@ -101,11 +101,11 @@ func test_target_switch_and_release_cannot_reset_hit_cooldown():
 	action.aim_override = TARGET
 	_ticks(15)
 	assert_almost_eq(action._mining_progress / action._hardness(Tiles.STONE), 0.7, 0.0001)
-func test_wooden_hammer_uses_half_tool_time_and_four_hits():
+func test_wooden_hammer_uses_half_tool_time_and_three_hits():
 	_equip("wood_hammer")
 	world.walls[TARGET] = Tiles.STONE_WALL
 	action._physics_process(0.0)
-	_ticks(35)
+	_ticks(23)
 	assert_eq(world.get_wall(2,0), Tiles.STONE_WALL)
 	_ticks(1)
 	assert_eq(world.get_wall(2,0), Tiles.AIR)
@@ -114,3 +114,39 @@ func test_buff_applies_only_to_pick_interval_not_power():
 	assert_eq(Mining.interval("copper_axe",0.25), Mining.interval("copper_axe"))
 	assert_eq(Mining.interval("wood_hammer",0.25), Mining.interval("wood_hammer"))
 	assert_eq(Mining.power("copper_pickaxe"),35)
+
+func test_clay_uses_two_copper_hits_like_dirt():
+	world._set_tile(2,0,Tiles.CLAY)
+	action._physics_process(0.0)
+	_ticks(14)
+	assert_eq(world.get_tile(2,0), Tiles.CLAY)
+	_ticks(1)
+	assert_eq(world.get_tile(2,0), Tiles.AIR)
+
+func test_copper_hammer_breaks_wall_on_second_hit():
+	_equip("copper_hammer")
+	world.walls[TARGET] = Tiles.STONE_WALL
+	action._physics_process(0.0)
+	_ticks(10)
+	assert_eq(world.get_wall(2,0), Tiles.STONE_WALL)
+	_ticks(1)
+	assert_eq(world.get_wall(2,0), Tiles.AIR)
+
+func test_copper_axe_takes_fifteen_hits_to_chop_a_tree():
+	_equip("copper_axe")
+	world._set_tile(2,0,Tiles.LOG)
+	world._set_tile(2,1,Tiles.DIRT)
+	action._physics_process(0.0)
+	_ticks(293)
+	assert_eq(world.get_tile(2,0), Tiles.LOG)
+	_ticks(1)
+	assert_eq(world.get_tile(2,0), Tiles.AIR)
+
+func test_cactus_uses_five_copper_axe_hits():
+	_equip("copper_axe")
+	world._set_tile(2,0,Tiles.CACTUS)
+	action._physics_process(0.0)
+	_ticks(83)
+	assert_eq(world.get_tile(2,0), Tiles.CACTUS)
+	_ticks(1)
+	assert_eq(world.get_tile(2,0), Tiles.AIR)

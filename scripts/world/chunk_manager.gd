@@ -166,6 +166,11 @@ func _load_chunk(cx: int) -> void:
 			world_node4.spawn_harpies_for_chunk(cx, c.harpy_spawn_spots)
 	# 世纪树已删 (用户要求)
 	_loaded[cx] = c
+	var natural_walls = preload("res://scripts/world/natural_walls.gd")
+	if _loaded.has(cx - 1):
+		natural_walls.join(_loaded[cx - 1], c, _wall_deltas.get(cx - 1, {}), _wall_deltas.get(cx, {}))
+	if _loaded.has(cx + 1):
+		natural_walls.join(c, _loaded[cx + 1], _wall_deltas.get(cx, {}), _wall_deltas.get(cx + 1, {}))
 	chunk_loaded.emit(c)
 
 

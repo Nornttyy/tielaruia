@@ -406,6 +406,7 @@ static func generate_chunk(world_seed: int, chunk_x: int, height: int = ChunkCon
 			column[y] = preload("res://scripts/items/original_content.gd").generated_tile(column[y])
 	ClassicFeatures.apply(c, classic_plan(world_seed, height), _estimate_surf.bind(world_seed, height), world_seed)
 	_trim_unsupported_trees(c)
+	preload("res://scripts/world/natural_walls.gd").inset(c)
 	return c
 
 

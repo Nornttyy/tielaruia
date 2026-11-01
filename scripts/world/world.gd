@@ -1297,10 +1297,14 @@ func _on_chunk_loaded(c: Chunk) -> void:
 				Autotile.refresh_tile(terrain_layer, Vector2i(col_x, y), sid, q, Autotile.make_solid_query(chunk_manager))
 			elif sid in TreeFrames.PARTS:
 				terrain_layer.set_cell(Vector2i(col_x, y), _original_display_id(Vector2i(col_x, y), sid), _decoration_frame(Vector2i(col_x, y), sid))
-			var wsid: int = wall_layer.get_cell_source_id(Vector2i(col_x, y))
-			if wsid != -1 and EdgeTemplates.FAMILY_OF.has(wsid):
-				var wq := Autotile.make_wall_query(wsid, chunk_manager)
-				Autotile.refresh_tile(wall_layer, Vector2i(col_x, y), wsid, wq)
+			# 新区块会补算天然墙接缝；从数据重读，包含已被内缩删掉的墙。
+			for wx in [col_x, col_x + (-1 if neighbor_cx < c.chunk_x else 1)]:
+				var wsid: int = chunk_manager.get_wall(wx, y)
+				if wsid == Tiles.AIR:
+					wall_layer.erase_cell(Vector2i(wx, y))
+				elif EdgeTemplates.FAMILY_OF.has(wsid):
+					var wq := Autotile.make_wall_query(wsid, chunk_manager)
+					Autotile.refresh_tile(wall_layer, Vector2i(wx, y), wsid, wq)
 
 
 func _on_chunk_unloaded(cx: int) -> void:

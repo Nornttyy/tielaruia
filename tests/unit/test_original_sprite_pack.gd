@@ -78,3 +78,27 @@ func test_shoe_color_survives_all_walk_frames_and_action_frames():
 			assert_gte(changed,8,"脚部鞋色必须可见，不再裁掉末尾像素：%d/%d" % [gender,frame])
 	var image := Pack.player_frame({"shoe_color": Color8(170,85,40)},0).get_image()
 	image.save_png("/tmp/tielaruia-player-shoes.png")
+
+func test_using_items_does_not_crop_or_replace_shoes():
+	for gender in [0,1]:
+		for style in [0,1,2,3,8]:
+			for leg in [0,5,6,10,14,19]:
+				var ap := {"gender":gender,"shirt_style":style,"shoe_color":Color.RED}
+				var base := Pack.player_frame(ap,leg).get_image()
+				ap.shoe_color = Color.BLUE
+				var blue := Pack.player_frame(ap,leg).get_image()
+				var mask: Array[Vector2i] = []
+				for y in range(32,48):
+					for x in 32:
+						if base.get_pixel(x,y) != blue.get_pixel(x,y): mask.append(Vector2i(x,y))
+				# 9 号长裙的第 6 帧原片没有鞋色像素，被裙摆遮住；其他帧必须保留。
+				if not (gender == 1 and style == 8 and leg == 6):
+					assert_gte(mask.size(),8, "鞋色消失 %d/%d/%d" % [gender,style,leg])
+				ap.shoe_color = Color.RED
+				for pose in ["swing","bow","eat"]:
+					for phase in 3:
+						var used := Pack.action_frame(ap,leg,pose,phase,0).get_image()
+						var same := true
+						for pixel in mask:
+							if used.get_pixelv(pixel) != base.get_pixelv(pixel): same = false
+						assert_true(same, "鞋子像素必须保留 %d/%d/%d/%s/%d" % [gender,style,leg,pose,phase])

@@ -57,3 +57,41 @@ func test_process_does_not_crash():
 	add_child_autofree(cl)
 	await wait_frames(3)
 	pass_test("3 帧 process 不崩")
+
+func test_underground_bands_cover_top_of_high_cave_and_deep_layers():
+	var cl = CaveBackgroundLayer.new()
+	add_child_autofree(cl)
+	cl._view = Vector2(1280,720)
+	for camera_y in [90.0, 125.0, 160.0, 222.0, 240.0]:
+		cl._camera_center = Vector2(0,camera_y*12)
+		for zoom in [0.75, 2.0, 3.0]:
+			cl._zoom = Vector2.ONE * zoom
+			for y in range(0,720,12):
+				var covers := 0
+				for band in cl._bands_for(0):
+					if y >= band[1] and y < band[2]: covers += 1
+				assert_eq(covers,1,"背景带不能留天空缝隙或重叠：%s/%s/%s" % [camera_y,zoom,y])
+
+class _World extends Node:
+	var chunk_manager
+class _Terrain extends RefCounted:
+	var c: Chunk
+	func get_chunk(_x): return c
+
+func test_background_clip_follows_real_hills_not_average_height():
+	var world := _World.new()
+	var terrain := _Terrain.new()
+	terrain.c = Chunk.new()
+	terrain.c.init_empty()
+	terrain.c.surfaces.fill(80)
+	terrain.c.surfaces[1] = 120
+	world.chunk_manager = terrain
+	add_child_autofree(world)
+	var cl = CaveBackgroundLayer.new()
+	world.add_child(cl)
+	cl._view = Vector2(24,24)
+	cl._zoom = Vector2.ONE
+	cl._camera_center = Vector2(12,100*12)
+	cl._update_surface_clips()
+	assert_lt(cl._surface_clips[0].z,0.0,"高山洞穴背景应能覆盖到视口顶部")
+	assert_gt(cl._surface_clips[1].z,24.0,"低处地表上方仍然是天空")

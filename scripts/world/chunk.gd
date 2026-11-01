@@ -10,6 +10,8 @@ var tiles: Array = []
 # 原始建筑的家具帧，仅显示用；玩家改动或重放存档时立即失效。
 var original_visuals: Dictionary = {}
 var walls: Array = []
+# 天然墙内缩前的左右边界，仅生成/接缝用，不写入玩家存档。
+var natural_wall_edges: Array = []
 var surfaces: Array = []   # 每列原始地表 y_tile (生成时定, 不被玩家挖动)
 # 矿洞宝箱位置 (世界坐标 Vector2i), 给 ChestStorage 首次填战利品用. 不存档 (chunk 一致性生成保证).
 var treasure_spots: Array = []

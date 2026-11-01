@@ -22,6 +22,7 @@ var _canvas: Node2D
 var _camera_center := Vector2.ZERO
 var _zoom := Vector2.ONE
 var _view := Vector2(1280, 720)
+var _surface_clips: Array[Vector3] = [] # 屏幕横段 [left, right, 地表以下的起始 y]
 
 func _ready() -> void:
 	layer = -8 # 天空/地表远景之上，墙和前景/光照之下。
@@ -40,6 +41,7 @@ func _process(delta: float) -> void:
 		_camera_center = camera.get_screen_center_position()
 		_zoom = camera.zoom
 	_view = get_viewport().get_visible_rect().size
+	_update_surface_clips()
 	for id in _weights.keys():
 		_weights[id] = move_toward(float(_weights[id]), 1.0 if id == _biome else 0.0, delta / CROSSFADE)
 		if id != _biome and _weights[id] <= 0.0: _weights.erase(id)
@@ -56,28 +58,41 @@ func _texture(id: int) -> Texture2D:
 func _screen_y(world_y: float) -> float:
 	return (world_y - _camera_center.y) * _zoom.y + _view.y * 0.5
 
+func _update_surface_clips() -> void:
+	_surface_clips.clear()
+	var world := get_parent()
+	var cm = world.get("chunk_manager") if world != null and "chunk_manager" in world else null
+	var left_world := _camera_center.x - _view.x * 0.5 / _zoom.x
+	var first := floori(left_world / 12.0)
+	var count := ceili(_view.x / (_zoom.x * 12.0)) + 1
+	for x in range(first, first + count):
+		var surface := Generator.SURFACE_BASE * 256.0 + 10.0
+		if cm != null:
+			var chunk = cm.get_chunk(Chunk.chunk_x_of(x))
+			if chunk != null: surface = float(chunk.surfaces[Chunk.local_x_of(x)]) + 1.0
+		var x0 := (x * 12.0 - left_world) * _zoom.x
+		_surface_clips.append(Vector3(maxf(0.0,x0), minf(_view.x,x0+12.0*_zoom.x), _screen_y(surface*12.0)))
+
+func _bands_for(biome: int) -> Array:
+	# 山坡里的洞穴可能高于全世界平均地表。当地下远景淡入时，泥土带必须
+	# 覆盖视口上缘，不能在洞顶留出天空；岩层和地狱边界仍固定在世界深度。
+	var ids: Array = STYLES[biome]
+	var rock := _screen_y((Generator.SURFACE_BASE * 256.0 + 36.0) * 12.0)
+	var lava := _screen_y(220.0 * 12.0)
+	var edge := 16.0 * PIXEL_SCALE * _zoom.y
+	var hell_edge := 48.0 * PIXEL_SCALE * _zoom.y
+	return [[ids[1], 0.0, rock, true], [ids[2], rock, rock + edge, false],
+		[ids[3], rock + edge, lava, true], [6, lava, lava + hell_edge, false],
+		[5, lava + hell_edge, _view.y, true]]
+
 func _draw_background() -> void:
 	if _shallow_alpha <= 0.001: return
-	# 当前地图只有 256 格高，层界适配现有深度，不能照搬大世界的绝对格数。
-	var dirt_y := (Generator.SURFACE_BASE * 256.0 + 10.0) * 12.0
-	var rock_y := (Generator.SURFACE_BASE * 256.0 + 36.0) * 12.0
-	var lava_y := 220.0 * 12.0
-	var edge_h := 16.0 * PIXEL_SCALE * _zoom.y
-	var a := _screen_y(dirt_y)
-	var b := _screen_y(rock_y)
-	var c := _screen_y(lava_y)
-	# 每层完全覆盖自己的区间。交叉淡入前先铺旧群系，避免混合中透出天空。
 	var first := true
 	for id in _weights:
 		var alpha := _shallow_alpha if first else _shallow_alpha * float(_weights[id])
 		first = false
-		var ids: Array = STYLES[id]
-		_band(ids[0], a, a + edge_h, alpha, false)
-		_band(ids[1], a + edge_h, b, alpha)
-		_band(ids[2], b, b + edge_h, alpha, false)
-		_band(ids[3], b + edge_h, c, alpha)
-		_band(6, c, c + 48.0 * PIXEL_SCALE * _zoom.y, alpha, false)
-		_band(5, c + 48.0 * PIXEL_SCALE * _zoom.y, _view.y, alpha)
+		for band in _bands_for(id):
+			_band(band[0], band[1], band[2], alpha, band[3])
 
 # 裁每个贴图格，边缘用同一坐标舍入，消除缩放时的细缝。
 func _band(id: int, top: float, bottom: float, alpha: float, repeat_y := true) -> void:
@@ -89,8 +104,8 @@ func _band(id: int, top: float, bottom: float, alpha: float, repeat_y := true) -
 	var left := -fposmod(_camera_center.x * PARALLAX * _zoom.x - _view.x * 0.5, size_px.x)
 	var y := top
 	if repeat_y:
-		# 锚在世界深度；上下行走时图案不会每过一格重新排布。
-		y -= fposmod(_camera_center.y * (PARALLAX - 1.0) * _zoom.y, size_px.y)
+		# 平铺相位只由世界摄像机坐标决定，与视口裁切边界无关。
+		y = -fposmod(_camera_center.y * PARALLAX * _zoom.y - _view.y * 0.5, size_px.y)
 		y += floor((maxf(0.0, top) - y) / size_px.y) * size_px.y
 	while y < minf(_view.y, bottom):
 		var y0 := maxf(maxf(y, top), 0.0)
@@ -99,9 +114,15 @@ func _band(id: int, top: float, bottom: float, alpha: float, repeat_y := true) -
 		while x < _view.x and y1 > y0:
 			var x0 := maxf(x, 0.0)
 			var x1 := minf(x + size_px.x, _view.x)
-			var dest := Rect2(Vector2(roundf(x0), roundf(y0)), Vector2(roundf(x1) - roundf(x0), roundf(y1) - roundf(y0)))
-			var src := Rect2(Vector2(x0 - x, y0 - y) / scale_px, Vector2(x1 - x0, y1 - y0) / scale_px)
-			_canvas.draw_texture_rect_region(tex, dest, src, Color(1, 1, 1, alpha))
+			# 根据每列真实地表裁掉外面的远景：洞内不能漏天，地表也不能糊成土色。
+			for clip in _surface_clips:
+				var clip_left := maxf(x0,clip.x)
+				var right := minf(x1,clip.y)
+				var top_y := maxf(y0,clip.z)
+				if right <= clip_left or y1 <= top_y: continue
+				var dest := Rect2(Vector2(roundf(clip_left),roundf(top_y)), Vector2(roundf(right)-roundf(clip_left),roundf(y1)-roundf(top_y)))
+				var src := Rect2(Vector2(clip_left-x,top_y-y)/scale_px,Vector2(right-clip_left,y1-top_y)/scale_px)
+				_canvas.draw_texture_rect_region(tex,dest,src,Color(1,1,1,alpha))
 			x += size_px.x
 		if not repeat_y: break
 		y += size_px.y
