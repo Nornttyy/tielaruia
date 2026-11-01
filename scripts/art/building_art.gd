@@ -7,8 +7,27 @@ const GLASS_WALL := 117
 const BEAM_WALL := 118
 const CHAIR := 119
 const TABLE := 121
-const EXTRA_IDS := [117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158]
+const WORKBENCH_RIGHT := 159
+# 按左下锚点、从下往上逐行：底排左/中/右，再顶排左/中/右。
+const FURNACE_PARTS := [B.FURNACE, 163, 164, 160, 161, 162]
+const CHEST_PARTS := [B.CHEST, 165, 166, 167]
+const GOLD_CHEST_PARTS := [B.GOLD_CHEST, 168, 169, 170]
+const DIAMOND_CHEST_PARTS := [B.DIAMOND_CHEST, 171, 172, 173]
+const SHADOW_CHEST_PARTS := [B.SHADOW_CHEST, 174, 175, 176]
+const MIMIC_CHEST_PARTS := [B.MIMIC_CHEST, 177, 178, 179]
+const BED_PARTS := [B.BED, B.BED_RIGHT, 180, 181]
+const EXTRA_IDS := [117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181]
 const ITEMS := {"glass_wall": 117, "wood_beam_wall": 118, "wood_chair": 119, "wood_table": 121}
+const MULTI_LAYOUTS := {
+	B.WORKBENCH: {"size": Vector2i(2, 1), "parts": [B.WORKBENCH, WORKBENCH_RIGHT], "sheet": 18, "origin": Vector2i.ZERO, "style": 0},
+	B.FURNACE: {"size": Vector2i(3, 2), "parts": FURNACE_PARTS, "sheet": 17, "origin": Vector2i.ZERO, "style": 0},
+	B.CHEST: {"size": Vector2i(2, 2), "parts": CHEST_PARTS, "sheet": 21, "origin": Vector2i.ZERO, "style": 0},
+	B.GOLD_CHEST: {"size": Vector2i(2, 2), "parts": GOLD_CHEST_PARTS, "sheet": 21, "origin": Vector2i(2, 0), "style": 1},
+	B.DIAMOND_CHEST: {"size": Vector2i(2, 2), "parts": DIAMOND_CHEST_PARTS, "sheet": 21, "origin": Vector2i(42, 0), "style": 21},
+	B.SHADOW_CHEST: {"size": Vector2i(2, 2), "parts": SHADOW_CHEST_PARTS, "sheet": 21, "origin": Vector2i(6, 0), "style": 3},
+	B.MIMIC_CHEST: {"size": Vector2i(2, 2), "parts": MIMIC_CHEST_PARTS, "sheet": 21, "origin": Vector2i(108, 0), "style": 54},
+	B.BED: {"size": Vector2i(2, 2), "parts": BED_PARTS, "sheet": -1, "origin": Vector2i.ZERO, "style": 0},
+}
 const DARK := Color8(65, 40, 24)
 const SHADE := Color8(98, 61, 33)
 const WOOD := Color8(151, 100, 52)
@@ -22,14 +41,37 @@ static func furniture_base(tid: int) -> int:
 	if tid >= 121 and tid <= 126: return TABLE
 	return -1
 
+static func multi_base(tid: int) -> int:
+	for base in MULTI_LAYOUTS:
+		if tid in MULTI_LAYOUTS[base].parts:
+			return base
+	return -1
+
+static func multi_layout(base: int) -> Dictionary:
+	return MULTI_LAYOUTS.get(base, {})
+
+static func multi_parts(base: int) -> Array:
+	return MULTI_LAYOUTS.get(base, {}).get("parts", [])
+
+static func multi_footprint(base: int) -> Vector2i:
+	return MULTI_LAYOUTS.get(base, {}).get("size", Vector2i.ONE)
+
 static func footprint(base: int) -> Vector2i:
 	return Vector2i(1, 2) if base == CHAIR else Vector2i(3, 2)
 
 # 锚点始终是左下角，按底行到顶行编号；存档只新增 ID，不改旧编号。
 static func part_offset(tid: int) -> Vector2i:
 	var base := furniture_base(tid)
-	var width := footprint(base).x
-	return Vector2i((tid - base) % width, -((tid - base) / width))
+	if base != -1:
+		var width := footprint(base).x
+		return Vector2i((tid - base) % width, -((tid - base) / width))
+	base = multi_base(tid)
+	if base == -1:
+		return Vector2i.ZERO
+	var parts: Array = multi_parts(base)
+	var index: int = parts.find(tid)
+	var width: int = multi_footprint(base).x
+	return Vector2i(index % width, -(index / width))
 
 # 原始家具图集按 18px 步长分格；不再手画轮廓、木纹或高光。
 static func source_object(sheet_id: int, size: Vector2i, origin := Vector2i.ZERO) -> Image:
@@ -43,6 +85,18 @@ static func source_object(sheet_id: int, size: Vector2i, origin := Vector2i.ZERO
 static func furniture_image(base: int) -> Image:
 	return source_object(15 if base == CHAIR else 14, footprint(base))
 
+static func multi_image(base: int) -> Image:
+	var layout: Dictionary = multi_layout(base)
+	var size: Vector2i = layout.get("size", Vector2i.ONE)
+	if base == B.BED:
+		# Tiles_79 没包含在本地原图包里；床物品本身是原版 32×22 像素图。
+		# 底对齐到 2×2 占位，既保留原像素，也不伪造床身细节。
+		var source := Pack.source_image("Item_224.png")
+		var padded := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		padded.blit_rect(source, Rect2i(0, 0, 32, 22), Vector2i(0, 10))
+		return padded
+	return source_object(int(layout.get("sheet", -1)), size, layout.get("origin", Vector2i.ZERO))
+
 static func door_image() -> Image:
 	return source_object(10, Vector2i(1, 3))
 
@@ -51,10 +105,15 @@ static func single(tid: int) -> ImageTexture:
 	if (tid >= 148 and tid <= 155) or tid in [157, 158]: return wall_atlas(tid)
 	if tid >= 143 and tid <= 147:
 		return mushroom_piece(tid)
-	if furniture_base(tid) != -1:
-		var base := furniture_base(tid)
+	if multi_base(tid) != -1:
+		var base := multi_base(tid)
+		var dims := multi_footprint(base)
 		var off := part_offset(tid)
-		img = furniture_image(base).get_region(Rect2i(off.x * 16, (footprint(base).y - 1 + off.y) * 16, 16, 16))
+		img = multi_image(base).get_region(Rect2i(off.x * 16, (dims.y - 1 + off.y) * 16, 16, 16))
+	elif furniture_base(tid) != -1:
+		var furniture_id := furniture_base(tid)
+		var off := part_offset(tid)
+		img = furniture_image(furniture_id).get_region(Rect2i(off.x * 16, (footprint(furniture_id).y - 1 + off.y) * 16, 16, 16))
 	elif tid in [B.DOOR, B.DOOR_MID, B.DOOR_TOP]:
 		var row := 2 if tid == B.DOOR else (1 if tid == B.DOOR_MID else 0)
 		img = door_image().get_region(Rect2i(0, row * 16, 16, 16))

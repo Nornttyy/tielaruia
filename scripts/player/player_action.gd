@@ -359,13 +359,14 @@ func _try_open_workbench_or_close() -> void:
 		var terrain := _terrain()
 		if terrain != null:
 			var aim_tid: int = terrain.get_cell_source_id(aim_tile)
-			if aim_tid == Tiles.CHEST or aim_tid == Tiles.GOLD_CHEST or aim_tid == Tiles.DIAMOND_CHEST or aim_tid == Tiles.SHADOW_CHEST:
+			var object_base: int = BuildingArt.multi_base(aim_tid)
+			if object_base in [Tiles.CHEST, Tiles.GOLD_CHEST, Tiles.DIAMOND_CHEST, Tiles.SHADOW_CHEST]:
 				var chest_p: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
 				if chest_p == null:
 					chest_p = get_tree().root.find_child("ChestPanel", true, false)
 				if chest_p != null and chest_p.has_method("open"):
 					var inv: Node = _inventory_node()
-					chest_p.open(aim_tile, inv)
+					chest_p.open(aim_tile - BuildingArt.part_offset(aim_tid), inv)
 				return
 	# 优先级 2.5: 没对准 chest 时, 找玩家身边 ±2 格里的 chest 开 (用户要求 "靠近就 E")
 	var near_chest: Vector2i = _find_chest_nearby()
@@ -406,7 +407,7 @@ func _has_workbench_nearby() -> bool:
 	for dx in range(-2, 3):
 		for dy in range(-2, 3):
 			var tid: int = terrain.get_cell_source_id(pt + Vector2i(dx, dy))
-			if tid == Tiles.WORKBENCH:
+			if BuildingArt.multi_base(tid) == Tiles.WORKBENCH:
 				return true
 	return false
 
@@ -422,8 +423,9 @@ func _find_chest_nearby() -> Vector2i:
 		for dx in range(-2, 3):
 			var coord: Vector2i = pt + Vector2i(dx, dy)
 			var tid: int = terrain.get_cell_source_id(coord)
-			if tid == Tiles.CHEST or tid == Tiles.GOLD_CHEST or tid == Tiles.DIAMOND_CHEST or tid == Tiles.SHADOW_CHEST:
-				return coord
+			var base: int = BuildingArt.multi_base(tid)
+			if base in [Tiles.CHEST, Tiles.GOLD_CHEST, Tiles.DIAMOND_CHEST, Tiles.SHADOW_CHEST]:
+				return coord - BuildingArt.part_offset(tid)
 	return Vector2i(-99999, -99999)
 
 
@@ -673,6 +675,44 @@ func _finish_mine(tile: Vector2i, tid: int, tool_kind: String, terrain: TileMapL
 			if not cm_pvp.is_pvp_placed(tile):
 				return
 			cm_pvp.unmark_pvp_placed(tile)
+	var multi_base := BuildingArt.multi_base(tid)
+	if multi_base != -1:
+		var multi_anchor: Vector2i = tile - BuildingArt.part_offset(tid)
+		if multi_base == Tiles.MIMIC_CHEST:
+			_trigger_mimic_trap(multi_anchor, world)
+			return
+		if multi_base in [Tiles.CHEST, Tiles.GOLD_CHEST, Tiles.DIAMOND_CHEST, Tiles.SHADOW_CHEST]:
+			var contents: Array = ChestStorage.clear(multi_anchor)
+			for stack in contents:
+				if stack != null:
+					for _i in stack.count:
+						_spawn_drop(stack.item_id, multi_anchor)
+			var chest_panel: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
+			if chest_panel == null:
+				chest_panel = get_tree().root.find_child("ChestPanel", true, false)
+			if chest_panel != null and chest_panel.has_method("is_open") and chest_panel.is_open():
+				if "_chest_tile" in chest_panel and chest_panel._chest_tile == multi_anchor:
+					chest_panel.close()
+		if multi_base == Tiles.BED and "bed_spawn_point" in world and world.bed_spawn_point == multi_anchor:
+			world.bed_spawn_point = Vector2i(-99999, -99999)
+		var multi_tile_parts: Array = BuildingArt.multi_parts(multi_base)
+		var cm_multi = world.get("chunk_manager")
+		for part in multi_tile_parts:
+			var multi_cell: Vector2i = multi_anchor + BuildingArt.part_offset(part)
+			if terrain.get_cell_source_id(multi_cell) == part and world.has_method("_set_tile"):
+				world._set_tile(multi_cell.x, multi_cell.y, Tiles.AIR)
+				if cm_multi != null and cm_multi.has_method("unmark_pvp_placed"):
+					cm_multi.unmark_pvp_placed(multi_cell)
+			SkyLightGrid.invalidate_column(multi_anchor.x)
+		for dx in range(1, BuildingArt.multi_footprint(multi_base).x):
+			SkyLightGrid.invalidate_column(multi_anchor.x + dx)
+		Effects.spawn_block_break(multi_anchor, multi_base)
+		_play_break_contact(multi_base)
+		var multi_drops: Dictionary = Tiles.drops_for(multi_base, tool_kind)
+		for item_id in multi_drops:
+			for _i in multi_drops[item_id]:
+				_spawn_drop(item_id, multi_anchor)
+		return
 	var furniture_base := BuildingArt.furniture_base(tid)
 	if furniture_base != -1:
 		var anchor := tile - BuildingArt.part_offset(tid)
@@ -961,6 +1001,32 @@ func try_place(force_tile: Variant = null) -> bool:
 		return false
 	var def = ItemDB.get_def(slot.item_id)
 	var world: Node = terrain.get_parent()
+	var multi_base: int = BuildingArt.multi_base(def.placeable_tile_id)
+	if multi_base != -1:
+		var dims: Vector2i = BuildingArt.multi_footprint(multi_base)
+		var parts: Array = BuildingArt.multi_parts(multi_base)
+		for part in parts:
+			var cell: Vector2i = tile + BuildingArt.part_offset(part)
+			var src: int = terrain.get_cell_source_id(cell)
+			if src != -1 and not Tiles.is_water(src): return false
+			if not in_reach(cell): return false
+			if cell.x == pt.x and cell.y >= pt.y - 2 and cell.y <= pt.y: return false
+		# 多格家具的底边每一格都必须落在地面或平台上。
+		for x in dims.x:
+			var floor_id: int = terrain.get_cell_source_id(tile + Vector2i(x, 1))
+			if not Tiles.is_solid(floor_id) and floor_id != Tiles.WOOD_PLATFORM: return false
+		if not world.has_method("_set_tile"):
+			return false
+		for part in parts:
+			var cell: Vector2i = tile + BuildingArt.part_offset(part)
+			world._set_tile(cell.x, cell.y, part)
+			_pvp_mark_placed(world, cell)
+		_consume_one(inv)
+		SkyLightGrid.invalidate_column(tile.x)
+		for x in range(1, dims.x): SkyLightGrid.invalidate_column(tile.x + x)
+		Effects.spawn_place_bounce(tile, multi_base)
+		SfxBank.play("place", 0.10)
+		return true
 	if BuildingArt.furniture_base(def.placeable_tile_id) != -1:
 		var base: int = def.placeable_tile_id
 		var dims := BuildingArt.footprint(base)
@@ -1284,7 +1350,8 @@ func _update_eat_or_place(delta: float) -> void:
 	if slot != null and slot.item_id == "grappling_hook" and just:
 		var player_node: Node = get_parent()
 		if player_node != null and player_node.has_method("fire_grappling_hook"):
-			player_node.fire_grappling_hook(player_node.get_global_mouse_position())
+			var hook_target: Vector2 = mouse_world_override if mouse_world_override != null else player_node.get_global_mouse_position()
+			player_node.fire_grappling_hook(hook_target)
 		return
 
 	# 持鱼竿 + 右键刚按下 → 甩竿 / 收竿 (交给 PlayerFishing 按状态决定)
@@ -1338,16 +1405,18 @@ func _update_eat_or_place(delta: float) -> void:
 			var terrain := _terrain()
 			if terrain != null:
 				var aim_tid: int = terrain.get_cell_source_id(aim_tile)
-				if aim_tid == Tiles.CHEST or aim_tid == Tiles.GOLD_CHEST or aim_tid == Tiles.DIAMOND_CHEST or aim_tid == Tiles.SHADOW_CHEST:
+				var object_base: int = BuildingArt.multi_base(aim_tid)
+				var object_anchor: Vector2i = aim_tile - BuildingArt.part_offset(aim_tid)
+				if object_base in [Tiles.CHEST, Tiles.GOLD_CHEST, Tiles.DIAMOND_CHEST, Tiles.SHADOW_CHEST]:
 					var cp: CanvasLayer = get_tree().get_first_node_in_group("chest_panel")
 					if cp == null:
 						cp = get_tree().root.find_child("ChestPanel", true, false)
 					if cp != null and cp.has_method("open"):
-						cp.open(aim_tile, inv)
+						cp.open(object_anchor, inv)
 					return
-				elif aim_tid == Tiles.MIMIC_CHEST:
+				elif object_base == Tiles.MIMIC_CHEST:
 					# 玩家以为是宝箱, 实际是陷阱: 爆炸 + 弹 mimic
-					_trigger_mimic_trap(aim_tile, terrain.get_parent())
+					_trigger_mimic_trap(object_anchor, terrain.get_parent())
 					return
 				elif aim_tid == Tiles.LIFE_CRYSTAL:
 					# 生命水晶: 右键吃 → 永久 +20 MAX HP + 同量当前回血 + 消失.
@@ -1364,14 +1433,11 @@ func _update_eat_or_place(delta: float) -> void:
 						if mn.try_extend_max():
 							_consume_crystal_tile(aim_tile, terrain, Color(0.55, 0.45, 1.0))
 					return
-				elif aim_tid == Tiles.BED or aim_tid == Tiles.BED_RIGHT:
-					# 床 (2 格宽): 点任一半都能睡. 锚点归一到左格 (BED), 让玩家躺床中央.
-					var bed_anchor: Vector2i = aim_tile
-					if aim_tid == Tiles.BED_RIGHT:
-						bed_anchor = aim_tile - Vector2i(1, 0)   # 点右半 → 用左格做锚
+				elif object_base == Tiles.BED:
+					# 点床的任一块都归一到左下角锚点。
 					var w: Node = terrain.get_parent()
 					if w != null and w.has_method("sleep_in_bed"):
-						w.sleep_in_bed(bed_anchor)
+						w.sleep_in_bed(object_anchor)
 					return
 
 	# 持魔力药水 + 按住 → 喝下立刻 +30 mana (跟食物同流程, 进度条满后消耗)
@@ -2751,9 +2817,17 @@ func _consume_arrow_fallback(inv: Node) -> bool:
 # 3) 玩家近距离 (≤2 tile) 扣 12 血 + knockback
 # 4) world.spawn_mimic_at_tile 召唤 Mimic 实体
 func _trigger_mimic_trap(tile: Vector2i, world: Node) -> void:
-	# 1) 删 tile
-	if world.has_method("_set_tile"):
-		world._set_tile(tile.x, tile.y, Tiles.AIR)
+	# 1) 删整只宝箱占位
+	var mimic_base := BuildingArt.multi_base(Tiles.MIMIC_CHEST)
+	if mimic_base != -1 and world.has_method("_set_tile"):
+		for part in BuildingArt.multi_parts(mimic_base):
+			var cell: Vector2i = tile + BuildingArt.part_offset(part)
+			var terrain := _terrain()
+			if terrain != null and terrain.get_cell_source_id(cell) == part:
+				world._set_tile(cell.x, cell.y, Tiles.AIR)
+	else:
+		if world.has_method("_set_tile"):
+			world._set_tile(tile.x, tile.y, Tiles.AIR)
 	# 2) 爆炸 FX + 音效
 	var center := Vector2(tile.x * TILE_SIZE + TILE_SIZE / 2.0, tile.y * TILE_SIZE + TILE_SIZE / 2.0)
 	Effects.spawn_explosion(center)

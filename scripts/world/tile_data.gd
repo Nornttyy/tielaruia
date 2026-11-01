@@ -138,6 +138,29 @@ const GLASS_WALL := 117
 const WOOD_BEAM_WALL := 118
 const WOOD_CHAIR := 119
 const WOOD_TABLE := 121
+const WORKBENCH_RIGHT := 159
+const FURNACE_TOP_LEFT := 160
+const FURNACE_TOP_MID := 161
+const FURNACE_TOP_RIGHT := 162
+const FURNACE_BOTTOM_MID := 163
+const FURNACE_BOTTOM_RIGHT := 164
+const CHEST_BOTTOM_RIGHT := 165
+const CHEST_TOP_LEFT := 166
+const CHEST_TOP_RIGHT := 167
+const GOLD_CHEST_BOTTOM_RIGHT := 168
+const GOLD_CHEST_TOP_LEFT := 169
+const GOLD_CHEST_TOP_RIGHT := 170
+const DIAMOND_CHEST_BOTTOM_RIGHT := 171
+const DIAMOND_CHEST_TOP_LEFT := 172
+const DIAMOND_CHEST_TOP_RIGHT := 173
+const SHADOW_CHEST_BOTTOM_RIGHT := 174
+const SHADOW_CHEST_TOP_LEFT := 175
+const SHADOW_CHEST_TOP_RIGHT := 176
+const MIMIC_CHEST_BOTTOM_RIGHT := 177
+const MIMIC_CHEST_TOP_LEFT := 178
+const MIMIC_CHEST_TOP_RIGHT := 179
+const BED_TOP_LEFT := 180
+const BED_TOP_RIGHT := 181
 
 # display_water_tile 用: 档位(1-8) → tile id. 索引 0 占位. 普通水 id 不连续故显式列。
 const _GENERIC_LV := [0, WATER_L1, WATER_L2, WATER_L3, WATER_L4, WATER_L5, WATER_L6, WATER_L7, WATER]
@@ -736,6 +759,30 @@ const _PROPS := {
 		"tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0},
 		"drops": [],  # 普通草不再掉自创农作物种子。
 	},
+	# 多格家具的子格。属性跟根 tile 一致，拆除时只由 PlayerAction 在锚点掉一件。
+	159: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	160: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1}, "drops": []},
+	161: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1}, "drops": []},
+	162: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1}, "drops": []},
+	163: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1}, "drops": []},
+	164: {"solid": true, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 1, "axe": -1, "sword": -1}, "drops": []},
+	165: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	166: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	167: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	168: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	169: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	170: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	171: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	172: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	173: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	174: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	175: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	176: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	177: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	178: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	179: {"solid": false, "mineable": true, "tool_tiers": {"": -1, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	180: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
+	181: {"solid": false, "mineable": true, "tool_tiers": {"": 0, "pickaxe": 0, "axe": 0, "sword": 0}, "drops": []},
 }
 
 

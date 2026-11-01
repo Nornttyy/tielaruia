@@ -31,6 +31,32 @@ static func place(cm: ChunkManager, terrain: TileMapLayer, prefab: Dictionary, a
 				if house.has("walls"):
 					var wid: int = {"w": Tiles.WOOD_WALL, "g": Tiles.GLASS_WALL, "b": Tiles.WOOD_WALL, "s": Tiles.STONE_WALL}.get(String(house.walls[y])[x], Tiles.AIR)
 					cm.set_wall(pos.x, pos.y, wid)
+		# C/B/F 等家具字元只在蓝图里写一个锚点；这里扩成原版占格，
+		# 并先确认空位与地面支撑，避免把家具半截嵌进墙或悬空。
+		for y in rows:
+			for x in cols:
+				var root_tid: int = VillagePrefab.char_to_tile(String(house.grid[y])[x])
+				var multi_object_base: int = BuildingArt.multi_base(root_tid)
+				if multi_object_base == -1 or multi_object_base != root_tid: continue
+				var multi_dims: Vector2i = BuildingArt.multi_footprint(multi_object_base)
+				var multi_anchor := start + Vector2i(x, y)
+				var can_place_multi := true
+				for check_part in BuildingArt.multi_parts(multi_object_base):
+					var check_cell: Vector2i = multi_anchor + BuildingArt.part_offset(check_part)
+					var existing_tid: int = cm.get_tile(check_cell.x, check_cell.y)
+					if existing_tid != Tiles.AIR and existing_tid != check_part:
+						can_place_multi = false
+						break
+				for multi_dx in multi_dims.x:
+					var floor_tid_multi: int = cm.get_tile(multi_anchor.x + multi_dx, multi_anchor.y + 1)
+					if not Tiles.is_solid(floor_tid_multi) and floor_tid_multi != Tiles.WOOD_PLATFORM:
+						can_place_multi = false
+						break
+				if not can_place_multi: continue
+				for place_part in BuildingArt.multi_parts(multi_object_base):
+					var place_cell: Vector2i = multi_anchor + BuildingArt.part_offset(place_part)
+					cm.set_tile(place_cell.x, place_cell.y, place_part)
+					if lighting != null: lighting.on_tile_placed(place_cell.x, place_cell.y, place_part)
 		for entry in house.get("furniture", []):
 			var base: int = entry.tile
 			var dims := BuildingArt.footprint(base)

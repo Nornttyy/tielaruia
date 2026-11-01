@@ -2,6 +2,7 @@
 extends RefCounted
 const Samples = preload("res://scripts/world/original_structure_samples.gd")
 const CC = preload("res://scripts/world/chunk_constants.gd")
+const BuildingArt = preload("res://scripts/art/building_art.gd")
 
 static func plan(seed_value: int, centers: Dictionary, surface: Callable, sky: Array, scale: float) -> Dictionary:
 	var edge := int(1700 * scale) + 80
@@ -98,7 +99,13 @@ static func _room(c: Chunk, rect: Rect2i, block: int, wall: int) -> void:
 	_box(c, rect.grow(-1), Tiles.AIR, wall)
 
 static func _chest(c: Chunk, x: int, y: int, tile: int = Tiles.GOLD_CHEST) -> void:
-	_put(c, x, y, tile)
+	var base: int = BuildingArt.multi_base(tile)
+	if base != -1:
+		for part in BuildingArt.multi_parts(base):
+			var offset: Vector2i = BuildingArt.part_offset(part)
+			_put(c, x + offset.x, y + offset.y, part)
+	else:
+		_put(c, x, y, tile)
 	if _overlaps(c, x, x) and not c.treasure_spots.has(Vector2i(x, y)):
 		c.treasure_spots.append(Vector2i(x, y))
 
@@ -108,7 +115,13 @@ static func _door(c: Chunk, x: int, floor_y: int) -> void:
 	_put(c, x, floor_y - 3, Tiles.DOOR_TOP)
 
 static func _furniture(c: Chunk, x: int, floor_y: int) -> void:
-	_put(c, x, floor_y - 1, Tiles.WORKBENCH)
+	var bench_base: int = BuildingArt.multi_base(Tiles.WORKBENCH)
+	if bench_base != -1:
+		for part in BuildingArt.multi_parts(bench_base):
+			var offset: Vector2i = BuildingArt.part_offset(part)
+			_put(c, x + offset.x, floor_y - 1 + offset.y, part)
+	else:
+		_put(c, x, floor_y - 1, Tiles.WORKBENCH)
 	_put(c, x + 3, floor_y - 1, 119)
 	_put(c, x + 3, floor_y - 2, 120)
 	_put(c, x - 1, floor_y - 4, Tiles.TORCH)

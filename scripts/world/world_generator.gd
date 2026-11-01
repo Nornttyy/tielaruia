@@ -6,6 +6,7 @@ extends RefCounted
 
 const Chunk = preload("res://scripts/world/chunk.gd")
 const ChunkConstants = preload("res://scripts/world/chunk_constants.gd")
+const BuildingArt = preload("res://scripts/art/building_art.gd")
 
 const SURFACE_BASE := 0.45       # 地表平均高度 (相对世界 0..1)
 const SURFACE_AMP := 0.11        # 地表起伏振幅 (大丘大谷但顺滑; 山高主要靠 MOUNTAIN_BOOST 撑)
@@ -826,8 +827,7 @@ static func _carve_circle(c: Chunk, center: Vector2, radius: float,
 				continue
 			if t == Tiles.GRASS:
 				continue  # 不破坏地表 (避免随机竖井裸露)
-			if t == Tiles.CHEST or t == Tiles.GOLD_CHEST or t == Tiles.DIAMOND_CHEST \
-					or t == Tiles.SHADOW_CHEST or t == Tiles.MIMIC_CHEST or t == Tiles.MUSHROOM:
+			if BuildingArt.multi_base(t) != -1 or t == Tiles.MUSHROOM:
 				continue  # 矿洞各种宝箱/蘑菇 (前一步刚放) 不要被后续 worm 步覆盖
 			c.tiles[lx][wy] = Tiles.AIR
 
@@ -856,14 +856,7 @@ static func _try_place_chest(c: Chunk, world_x: int, start_y: int, max_scan: int
 	if floor_y <= 0:
 		return
 	var chest_y: int = floor_y - 1
-	# chest 头顶那一格必须是 AIR (不然箱子嵌石头里看不到)
-	if c.tiles[lx][chest_y] != Tiles.AIR:
-		return
 	var is_mimic: bool = mimic_chance > 0.0 and rng != null and rng.randf() < mimic_chance
-	if is_mimic:
-		c.tiles[lx][chest_y] = Tiles.MIMIC_CHEST
-		# 死人箱不加 treasure_spots — 没储物, ChestStorage 不被填战利品
-		return
 	# tile_override > 0 直接用 (caller 已按深度/类别选好 tier);
 	# 否则按绝对 y 选 (兼容老 caller)
 	var chest_tile: int = tile_override
@@ -891,9 +884,38 @@ static func _try_place_chest(c: Chunk, world_x: int, start_y: int, max_scan: int
 						chest_tile = Tiles.SHADOW_CHEST
 					else:
 						chest_tile = Tiles.DIAMOND_CHEST   # 浅区给不了 shadow, 给 diamond
-		c._first_chest_placed = true
-	c.tiles[lx][chest_y] = chest_tile
+	if is_mimic:
+		chest_tile = Tiles.MIMIC_CHEST
+	if not _generated_multitile_area_clear(c, lx, chest_y, chest_tile):
+		return
+	_place_generated_multitile(c, lx, chest_y, chest_tile)
+	if is_mimic:
+		# 死人箱不加 treasure_spots — 没储物, ChestStorage 不被填战利品
+		return
+	c._first_chest_placed = true
 	c.treasure_spots.append(Vector2i(world_x, chest_y))
+
+
+static func _generated_multitile_area_clear(c: Chunk, anchor_x: int, anchor_y: int, base: int) -> bool:
+	var dims := BuildingArt.multi_footprint(base)
+	if anchor_x < 0 or anchor_x + dims.x > c.tiles.size() or anchor_y - dims.y + 1 < 0:
+		return false
+	# 底边要能站稳，其余占格必须为空。
+	for x in dims.x:
+		var floor_tid: int = c.tiles[anchor_x + x][anchor_y + 1]
+		if not Tiles.is_solid(floor_tid) and floor_tid != Tiles.WOOD_PLATFORM:
+			return false
+	for part in BuildingArt.multi_parts(base):
+		var cell: Vector2i = Vector2i(anchor_x, anchor_y) + BuildingArt.part_offset(part)
+		if c.tiles[cell.x][cell.y] != Tiles.AIR:
+			return false
+	return true
+
+
+static func _place_generated_multitile(c: Chunk, anchor_x: int, anchor_y: int, base: int) -> void:
+	for part in BuildingArt.multi_parts(base):
+		var cell: Vector2i = Vector2i(anchor_x, anchor_y) + BuildingArt.part_offset(part)
+		c.tiles[cell.x][cell.y] = part
 
 
 # 跟 _try_place_chest 同款 (找小室底 STONE 上面 AIR 那格), 但放 LIFE_CRYSTAL.
@@ -1480,7 +1502,10 @@ static func _place_pyramid_chunk(c: Chunk, chunk_heights: Dictionary,
 		if lx < 0 or lx >= chunk_width:
 			continue
 		var ct: int = chest_tiers[i]
-		c.tiles[lx][chest_y] = ct
+		if _generated_multitile_area_clear(c, lx, chest_y, ct):
+			_place_generated_multitile(c, lx, chest_y, ct)
+		else:
+			continue
 		c.treasure_spots.append(Vector2i(chunk_start + lx, chest_y))
 	# 4) 顶部入口 (中央竖井): 从 y=base_y-PYRAMID_ROOM_HEIGHT 到 y=top_y+1, 1 列宽 AIR
 	var shaft_x: int = x_center_local
@@ -1657,7 +1682,10 @@ static func _place_mineshaft_chunk(c: Chunk, chunk_heights: Dictionary,
 		if lx < 0 or lx >= chunk_width:
 			continue
 		var ct: int = Tiles.GOLD_CHEST if rng.randf() < 0.35 else Tiles.CHEST
-		c.tiles[lx][corridor_floor_y] = ct
+		if _generated_multitile_area_clear(c, lx, corridor_floor_y, ct):
+			_place_generated_multitile(c, lx, corridor_floor_y, ct)
+		else:
+			continue
 		c.treasure_spots.append(Vector2i(chunk_start + lx, corridor_floor_y))
 	# 4) 蜘蛛 spawn: 2-3 个, 随机走廊位置 (避开支柱 + chest)
 	var spider_count: int = rng.randi_range(2, 3)
@@ -2177,8 +2205,8 @@ static func _place_sky_island_chunk(c: Chunk, world_seed: int,
 	var chest_lx: int = x_center_local + chest_dx
 	if chest_lx >= 0 and chest_lx < chunk_width:
 		var chest_y: int = top_y - 1   # 草顶上方那格
-		if chest_y >= 0 and c.tiles[chest_lx][top_y] == Tiles.GRASS and c.tiles[chest_lx][chest_y] == Tiles.AIR:
-			c.tiles[chest_lx][chest_y] = Tiles.DIAMOND_CHEST
+		if chest_y >= 0 and c.tiles[chest_lx][top_y] == Tiles.GRASS and _generated_multitile_area_clear(c, chest_lx, chest_y, Tiles.DIAMOND_CHEST):
+			_place_generated_multitile(c, chest_lx, chest_y, Tiles.DIAMOND_CHEST)
 			c.treasure_spots.append(Vector2i(chunk_start + chest_lx, chest_y))
 
 	# 4) 树: 草地上种 2-4 棵小树, 避开水池 + 宝箱列 (树干会覆盖宝箱)

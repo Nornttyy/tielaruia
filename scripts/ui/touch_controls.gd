@@ -210,7 +210,7 @@ func _held_item_icon() -> Texture2D:
 	return ArtCache.get_inventory_icon(String(slot.item_id))
 
 
-# 按住"物品图标"钮 → 用哪个 action: 方块/食物/药水 = secondary (放/吃/喝); 工具/武器 = primary (挖/砍/攻击/射)。
+# 按住"物品图标"钮 → 按物品用途映射操作。钩爪、鱼竿、召唤物、种子需要 secondary 的单击逻辑。
 func _use_action_for_held() -> String:
 	var slot = _held_slot()
 	if slot == null:
@@ -220,6 +220,9 @@ func _use_action_for_held() -> String:
 	var d = ItemDB.get_def(String(slot.item_id))
 	if typeof(d) != TYPE_DICTIONARY:
 		return "primary"
+	# 这些物品的使用逻辑监听 secondary 的按下沿；若发 primary，触屏上会只挖掘而不触发物品。
+	if String(d.get("tool_kind", "")) in ["hook", "fishing", "summon", "seed"]:
+		return "secondary"
 	if int(d.get("placeable_tile_id", -1)) >= 0:
 		return "secondary"
 	if int(d.get("food_fill", 0)) > 0 or bool(d.get("is_potion", false)):

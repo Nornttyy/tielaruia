@@ -2,6 +2,7 @@
 extends RefCounted
 const ROOT := "res://resources/prefabs/terraria_samples/"
 const VISUAL_BASE := 20000
+const BuildingArt = preload("res://scripts/art/building_art.gd")
 static var _samples: Dictionary = {}
 static var _frames: Array = []
 static func sample(id: String) -> Dictionary:
@@ -19,8 +20,25 @@ static func stamp(c: Chunk, id: String, origin: Vector2i) -> void:
 		c.tiles[x][y] = tid
 		if int(cell[3]) >= 0: c.walls[x][y] = int(cell[3])
 		if int(cell[4]) >= 0: c.original_visuals[Vector2i(x, y)] = [VISUAL_BASE + int(cell[4]), tid]
-		if tid == Tiles.CHEST:
-			var pos := Vector2i(c.chunk_x * 64 + x, y)
+	# TEdit 样本只记录了物件锚点。按原版占格扩展宝箱，并让四格使用同一套原图裁切，
+	# 避免锚点还在用单格样本帧、旁边却没有碰撞/交互格。
+	for cell in sample(id).cells:
+		var tid := int(cell[2])
+		var base: int = BuildingArt.multi_base(tid)
+		if base == -1 or base not in [Tiles.CHEST, Tiles.GOLD_CHEST, Tiles.DIAMOND_CHEST, Tiles.SHADOW_CHEST]:
+			continue
+		var anchor_x: int = origin.x + int(cell[0])
+		var anchor_y: int = origin.y + int(cell[1])
+		for part in BuildingArt.multi_parts(base):
+			var world_x: int = anchor_x + BuildingArt.part_offset(part).x
+			var local_x: int = world_x - c.chunk_x * 64
+			var world_y: int = anchor_y + BuildingArt.part_offset(part).y
+			if local_x < 0 or local_x >= 64 or world_y < 1 or world_y >= c.tiles[0].size() - 2:
+				continue
+			c.tiles[local_x][world_y] = part
+			c.original_visuals.erase(Vector2i(local_x, world_y))
+		if anchor_x >= c.chunk_x * 64 and anchor_x < (c.chunk_x + 1) * 64:
+			var pos := Vector2i(anchor_x, anchor_y)
 			if not c.treasure_spots.has(pos): c.treasure_spots.append(pos)
 static func display_id(c: Chunk, pos: Vector2i, tid: int) -> int:
 	if c == null: return tid
